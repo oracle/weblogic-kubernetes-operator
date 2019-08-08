@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Job;
@@ -11,8 +14,6 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
-import java.util.ArrayList;
-import java.util.List;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -39,9 +40,10 @@ public class JobHelper {
   static final String START_TIME = "WlsRetriever-startTime";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   static final String INTROSPECTOR_LOG_PREFIX = "Introspector Job Log: ";
-  static final String EOL_PATTERN = "\\r?\\n";
+  private static final String EOL_PATTERN = "\\r?\\n";
 
-  private JobHelper() {}
+  private JobHelper() {
+  }
 
   static String createJobName(String domainUid) {
     return LegalNames.toJobIntrospectorName(domainUid);
@@ -92,15 +94,15 @@ public class JobHelper {
       int replicaCount = dom.getReplicaCount(cluster.getClusterName());
       String clusterServerStartPolicy = cluster.getServerStartPolicy();
       LOGGER.fine(
-          "Start Policy: "
-              + clusterServerStartPolicy
-              + ", replicaCount: "
-              + replicaCount
-              + " for cluster: "
-              + cluster);
+            "Start Policy: "
+                  + clusterServerStartPolicy
+                  + ", replicaCount: "
+                  + replicaCount
+                  + " for cluster: "
+                  + cluster);
       if ((clusterServerStartPolicy == null
-              || !clusterServerStartPolicy.equals(ConfigurationConstants.START_NEVER))
-          && replicaCount > 0) {
+            || !clusterServerStartPolicy.equals(ConfigurationConstants.START_NEVER))
+            && replicaCount > 0) {
         return true;
       }
     }
@@ -110,7 +112,7 @@ public class JobHelper {
     // NOTE: domainServerStartPolicy == null indicates default policy
     String domainServerStartPolicy = dom.getSpec().getServerStartPolicy();
     if (domainServerStartPolicy == null
-        || !domainServerStartPolicy.equals(ConfigurationConstants.START_NEVER)) {
+          || !domainServerStartPolicy.equals(ConfigurationConstants.START_NEVER)) {
       return true;
     }
 
@@ -119,7 +121,7 @@ public class JobHelper {
     for (ManagedServer server : servers) {
       String serverStartPolicy = server.getServerStartPolicy();
       if (serverStartPolicy == null
-          || !serverStartPolicy.equals(ConfigurationConstants.START_NEVER)) {
+            || !serverStartPolicy.equals(ConfigurationConstants.START_NEVER)) {
         return true;
       }
     }
@@ -149,7 +151,7 @@ public class JobHelper {
    */
   private static Step readDomainIntrospectorPodLogStep(Step next) {
     return createWatchDomainIntrospectorJobReadyStep(
-        readDomainIntrospectorPodStep(readDomainIntrospectorPodLog(next)));
+          readDomainIntrospectorPodStep(readDomainIntrospectorPodLog(next)));
   }
 
   /**
@@ -211,7 +213,7 @@ public class JobHelper {
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       // Pod for introspector job would use same environment variables as for admin server
       List<V1EnvVar> vars =
-          PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
+            PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
 
       addEnvVar(vars, "NAMESPACE", getNamespace());
       addEnvVar(vars, "DOMAIN_UID", getDomainUid());
@@ -241,11 +243,11 @@ public class JobHelper {
         packet.putIfAbsent(START_TIME, System.currentTimeMillis());
 
         return doNext(
-            context.createNewJob(
-                readDomainIntrospectorPodLogStep(
-                    deleteDomainIntrospectorJobStep(
-                        ConfigMapHelper.createSitConfigMapStep(getNext())))),
-            packet);
+              context.createNewJob(
+                    readDomainIntrospectorPodLogStep(
+                          deleteDomainIntrospectorJobStep(
+                                ConfigMapHelper.createSitConfigMapStep(getNext())))),
+              packet);
       }
 
       return doNext(getNext(), packet);
@@ -278,11 +280,11 @@ public class JobHelper {
       String jobName = JobHelper.createJobName(domainUid);
       logJobDeleted(domainUid, namespace, jobName);
       return new CallBuilder()
-          .deleteJobAsync(
-              jobName,
-              namespace,
-              new V1DeleteOptions().propagationPolicy("Foreground"),
-              new DefaultResponseStep<>(next));
+            .deleteJobAsync(
+                  jobName,
+                  namespace,
+                  new V1DeleteOptions().propagationPolicy("Foreground"),
+                  new DefaultResponseStep<>(next));
     }
   }
 
@@ -308,8 +310,8 @@ public class JobHelper {
 
     private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, Step next) {
       return new CallBuilder()
-          .readPodLogAsync(
-              jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep(next));
+            .readPodLogAsync(
+                  jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep(next));
     }
   }
 
@@ -333,7 +335,7 @@ public class JobHelper {
       }
 
       V1Job domainIntrospectorJob =
-          (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+            (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
       if (isNotComplete(domainIntrospectorJob)) return onFailure(packet, callResponse);
 
       return doNext(packet);
@@ -405,7 +407,7 @@ public class JobHelper {
 
     private void updateStatus(DomainPresenceInfo domainPresenceInfo) {
       KubernetesUtils.updateStatus(
-          domainPresenceInfo.getDomain(), "ErrIntrospector", onSeparateLines(severeStatuses));
+            domainPresenceInfo.getDomain(), "ErrIntrospector", onSeparateLines(severeStatuses));
     }
 
     private String onSeparateLines(List<String> lines) {
@@ -430,8 +432,8 @@ public class JobHelper {
 
     private Step readDomainIntrospectorPod(String domainUid, String namespace, Step next) {
       return new CallBuilder()
-          .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
-          .listPodAsync(namespace, new PodListStep(domainUid, next));
+            .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
+            .listPodAsync(namespace, new PodListStep(domainUid, next));
     }
   }
 
