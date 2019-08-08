@@ -226,8 +226,12 @@ public class ItOperator extends BaseTest {
       if (!domainUidsToBeDeleted.equals("")) {
         logger.info("About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
-        TestUtils.verifyAfterDeletion(domain1);
-        TestUtils.verifyAfterDeletion(domain2);
+        if(domain1 != null) {
+          TestUtils.verifyAfterDeletion(domain1);
+        }
+        if(domain2 != null) {
+          TestUtils.verifyAfterDeletion(domain2);
+        }
       }
     }
     logger.info("SUCCESS - " + testMethodName);
