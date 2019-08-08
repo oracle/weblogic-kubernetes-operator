@@ -4,6 +4,19 @@
 
 package oracle.kubernetes.operator;
 
+import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
+
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1ContainerState;
+import io.kubernetes.client.models.V1ContainerStatus;
+import io.kubernetes.client.models.V1Event;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1ObjectReference;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceList;
+import io.kubernetes.client.util.Watch;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,16 +27,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
-
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Event;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1ObjectReference;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodList;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -148,12 +151,9 @@ public class DomainProcessorImpl implements DomainProcessor {
     return Step.chain(bringAdminServerUpSteps(info, podAwaiterStepFactory, next));
   }
 
-  private static Step[] domainIntrospectionSteps(DomainPresenceInfo info, Step next) {
-    Domain dom = info.getDomain();
+  private static Step[] domainIntrospectionSteps(Step next) {
     List<Step> resources = new ArrayList<>();
-    resources.add(
-        JobHelper.deleteDomainIntrospectorJobStep(
-            dom.getDomainUid(), dom.getMetadata().getNamespace(), null));
+    resources.add(JobHelper.deleteDomainIntrospectorJobStep(null));
     resources.add(JobHelper.createDomainIntrospectorJobStep(next));
     return resources.toArray(new Step[0]);
   }
@@ -206,40 +206,67 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   public void dispatchPodWatch(Watch.Response<V1Pod> item) {
-    V1Pod pod = item.object;
-    if (pod != null) {
-      V1ObjectMeta metadata = pod.getMetadata();
-      String domainUid = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
-      String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
-      if (domainUid != null && serverName != null) {
-        DomainPresenceInfo info = getExistingDomainPresenceInfo(metadata.getNamespace(), domainUid);
-        if (info != null) {
-          switch (item.type) {
-            case "ADDED":
-              info.setServerPodBeingDeleted(serverName, Boolean.FALSE);
-              // fall through
-            case "MODIFIED":
-              info.setServerPodFromEvent(serverName, pod);
-              break;
-            case "DELETED":
-              boolean removed = info.deleteServerPodFromEvent(serverName, pod);
-              if (removed && info.isNotDeleting() && !info.isServerPodBeingDeleted(serverName)) {
-                LOGGER.info(
-                    MessageKeys.POD_DELETED, domainUid, metadata.getNamespace(), serverName);
-                makeRightDomainPresence(info, true, false, true);
-              }
-              break;
+    if (getPodLabel(item.object, LabelConstants.DOMAINUID_LABEL) == null) return;
 
-            case "ERROR":
-            default:
-          }
+    if (getPodLabel(item.object, LabelConstants.SERVERNAME_LABEL) != null)
+      processServerPodWatch(item.object, item.type);
+    else if (getPodLabel(item.object, LabelConstants.JOBNAME_LABEL) != null)
+      processIntrospectorJobPodWatch(item.object, item.type);
+  }
+
+  private void processServerPodWatch(V1Pod pod, String watchType) {
+    String domainUid = getPodLabel(pod, LabelConstants.DOMAINUID_LABEL);
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(getNamespace(pod), domainUid);
+    if (info == null) return;
+
+    String serverName = getPodLabel(pod, LabelConstants.SERVERNAME_LABEL);
+    switch (watchType) {
+      case "ADDED":
+        info.setServerPodBeingDeleted(serverName, Boolean.FALSE);
+        // fall through
+      case "MODIFIED":
+        info.setServerPodFromEvent(serverName, pod);
+        break;
+      case "DELETED":
+        boolean removed = info.deleteServerPodFromEvent(serverName, pod);
+        if (removed && info.isNotDeleting() && !info.isServerPodBeingDeleted(serverName)) {
+          LOGGER.info(MessageKeys.POD_DELETED, domainUid, getNamespace(pod), serverName);
+          makeRightDomainPresence(info, true, false, true);
         }
-      }
+        break;
+
+      case "ERROR":
+      default:
     }
   }
 
-  private V1Pod getNewerPod(V1Pod first, V1Pod second) {
-    return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
+  private String getNamespace(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getNamespace)
+        .orElse(null);
+  }
+
+  private String getPodLabel(V1Pod pod, String labelName) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(m -> m.get(labelName))
+        .orElse(null);
+  }
+
+  private void processIntrospectorJobPodWatch(V1Pod pod, String watchType) {
+    String domainUid = getPodLabel(pod, LabelConstants.DOMAINUID_LABEL);
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(getNamespace(pod), domainUid);
+    if (info == null) return;
+
+    switch (watchType) {
+      case "ADDED":
+      case "MODIFIED":
+        new DomainStatusUpdate(info.getDomain(), pod, domainUid).invoke();
+        break;
+      default:
+    }
   }
 
   /* Recently, we've seen a number of intermittent bugs where K8s reports
@@ -247,10 +274,6 @@ public class DomainProcessorImpl implements DomainProcessor {
    * event for a resource that was deleted, but has since been recreated, and 2)
    * a MODIFIED event for an object that has already had subsequent modifications.
    */
-
-  private V1ObjectMeta getMetadata(V1Pod pod) {
-    return pod == null ? null : pod.getMetadata();
-  }
 
   public void dispatchServiceWatch(Watch.Response<V1Service> item) {
     V1Service service = item.object;
@@ -360,32 +383,37 @@ public class DomainProcessorImpl implements DomainProcessor {
                     DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
                 FiberGate gate = getStatusFiberGate(info.getNamespace());
 
-                Fiber f = gate.startFiberIfNoCurrentFiber(
-                    info.getDomainUid(),
-                    strategy,
-                    packet,
-                    new CompletionCallback() {
-                      @Override
-                      public void onCompletion(Packet packet) {
-                        AtomicInteger serverHealthRead =
-                            packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ);
-                        if (serverHealthRead == null || serverHealthRead.get() == 0) {
-                          loggingFilter.setFiltering(false).resetLogHistory();
-                        } else {
-                          loggingFilter.setFiltering(true);
-                        }
-                      }
+                Fiber f =
+                    gate.startFiberIfNoCurrentFiber(
+                        info.getDomainUid(),
+                        strategy,
+                        packet,
+                        new CompletionCallback() {
+                          @Override
+                          public void onCompletion(Packet packet) {
+                            AtomicInteger serverHealthRead =
+                                packet.getValue(
+                                    ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ);
+                            if (serverHealthRead == null || serverHealthRead.get() == 0) {
+                              loggingFilter.setFiltering(false).resetLogHistory();
+                            } else {
+                              loggingFilter.setFiltering(true);
+                            }
+                          }
 
-                      @Override
-                      public void onThrowable(Packet packet, Throwable throwable) {
-                        LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                        loggingFilter.setFiltering(true);
-                      }
-                    });
+                          @Override
+                          public void onThrowable(Packet packet, Throwable throwable) {
+                            LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+                            loggingFilter.setFiltering(true);
+                          }
+                        });
               } catch (Throwable t) {
                 LOGGER.severe(MessageKeys.EXCEPTION, t);
               }
-            }, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
+            },
+            main.initialShortDelay,
+            main.initialShortDelay,
+            TimeUnit.SECONDS));
   }
 
   public void makeRightDomainPresence(
@@ -429,6 +457,8 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private void internalMakeRightDomainPresence(
       @Nullable DomainPresenceInfo info, boolean isDeleting, boolean isWillInterrupt) {
+    if (info == null) return;
+
     String ns = info.getNamespace();
     String domainUid = info.getDomainUid();
     Domain dom = info.getDomain();
@@ -456,6 +486,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         .listServiceAsync(info.getNamespace(), new ServiceListStep(info));
   }
 
+  @SuppressWarnings("unused")
   private void runDomainPlan(
       Domain dom,
       String domainUid,
@@ -537,7 +568,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step strategy =
         Step.chain(
             domainIntrospectionSteps(
-                info,
                 new DomainStatusStep(
                     info,
                     bringAdminServerUp(
@@ -735,6 +765,35 @@ public class DomainProcessorImpl implements DomainProcessor {
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
               Component.createFor(info, delegate.getVersion(), PodAwaiterStepFactory.class, pw));
       return doNext(packet);
+    }
+  }
+
+  private class DomainStatusUpdate {
+    private Domain domain;
+    private V1Pod pod;
+    private String domainUid;
+
+    DomainStatusUpdate(Domain domain, V1Pod pod, String domainUid) {
+      this.domain = domain;
+      this.pod = pod;
+      this.domainUid = domainUid;
+    }
+
+    public void invoke() {
+      Optional.ofNullable(getMatchingContainerStatus(pod, domainUid).getState())
+          .map(V1ContainerState::getWaiting)
+          .ifPresent(waiting -> updateStatus(waiting.getReason(), waiting.getMessage()));
+    }
+
+    private void updateStatus(String reason, String message) {
+      KubernetesUtils.updateStatus(domain, reason, message);
+    }
+
+    private V1ContainerStatus getMatchingContainerStatus(V1Pod pod, String domainUid) {
+      return pod.getStatus().getContainerStatuses().stream()
+          .filter(s -> toJobIntrospectorName(domainUid).equals(s.getName()))
+          .findFirst()
+          .orElse(null);
     }
   }
 }
