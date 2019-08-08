@@ -1569,6 +1569,9 @@ public class Domain {
           BaseTest.getResultDir()
               + "/"
               + ((String) domainMap.get("domainHomeImageBuildPath")).trim());
+      
+      domainMap.put("domainHomeImageBase", 
+          BaseTest.getWeblogicImageName()+":"+BaseTest.getWeblogicImageTag());
     }
 
     // remove null values if any attributes
