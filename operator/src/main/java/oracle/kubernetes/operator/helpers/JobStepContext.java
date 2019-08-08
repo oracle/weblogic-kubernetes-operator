@@ -4,21 +4,19 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1JobSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1PodTemplateSpec;
 import io.kubernetes.client.models.V1SecretVolumeSource;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -105,22 +103,18 @@ public abstract class JobStepContext extends StepContextBase {
     return new CallBuilder().createJobAsync(getNamespace(), getJobModel(), createResponse(next));
   }
 
-  protected void logJobCreated() {
+  private void logJobCreated() {
     LOGGER.info(getJobCreatedMessageKey(), getJobName());
   }
 
   abstract String getJobCreatedMessageKey();
 
-  protected String getNodeManagerHome() {
+  String getNodeManagerHome() {
     return NODEMGR_HOME;
   }
 
   protected String getLogHome() {
     return getDomain().getLogHome();
-  }
-
-  protected boolean isDomainHomeInImage() {
-    return getDomain().isDomainHomeInImage();
   }
 
   String getEffectiveLogHome() {
@@ -139,15 +133,15 @@ public abstract class JobStepContext extends StepContextBase {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
   }
 
-  protected String getIntrospectHome() {
+  String getIntrospectHome() {
     return getDomainHome();
   }
 
-  List<String> getConfigOverrideSecrets() {
+  private List<String> getConfigOverrideSecrets() {
     return getDomain().getConfigOverrideSecrets();
   }
 
-  String getConfigOverrides() {
+  private String getConfigOverrides() {
     return getDomain().getConfigOverrides();
   }
 
@@ -164,14 +158,12 @@ public abstract class JobStepContext extends StepContextBase {
   }
 
   V1ObjectMeta createMetadata() {
-    V1ObjectMeta metadata =
-        new V1ObjectMeta()
-            .name(getJobName())
-            .namespace(getNamespace())
-            .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
-            .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
-            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-    return metadata;
+    return new V1ObjectMeta()
+        .name(getJobName())
+        .namespace(getNamespace())
+        .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+        .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
+        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
 
   private long getActiveDeadlineSeconds() {
@@ -179,26 +171,32 @@ public abstract class JobStepContext extends StepContextBase {
         + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * info.getRetryCount());
   }
 
-  protected V1JobSpec createJobSpec(TuningParameters tuningParameters) {
+  V1JobSpec createJobSpec(TuningParameters tuningParameters) {
     LOGGER.fine(
         "Creating job "
             + getJobName()
             + " with activeDeadlineSeconds = "
             + getActiveDeadlineSeconds());
-    V1JobSpec jobSpec =
-        new V1JobSpec()
-            .backoffLimit(0)
-            .activeDeadlineSeconds(getActiveDeadlineSeconds())
-            .template(createPodTemplateSpec(tuningParameters));
 
-    return jobSpec;
+    return new V1JobSpec()
+        .backoffLimit(0)
+        .activeDeadlineSeconds(getActiveDeadlineSeconds())
+        .template(createPodTemplateSpec(tuningParameters));
   }
 
   private V1PodTemplateSpec createPodTemplateSpec(TuningParameters tuningParameters) {
-    V1ObjectMeta metadata = new V1ObjectMeta().name(getJobName());
-    V1PodTemplateSpec podTemplateSpec =
-        new V1PodTemplateSpec().metadata(metadata).spec(createPodSpec(tuningParameters));
-    return podTemplateSpec;
+    return new V1PodTemplateSpec()
+        .metadata(createPodTemplateMetadata())
+        .spec(createPodSpec(tuningParameters));
+  }
+
+  private V1ObjectMeta createPodTemplateMetadata() {
+    return new V1ObjectMeta()
+        .name(getJobName())
+        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
+        .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
+        .putLabelsItem(
+            LabelConstants.JOBNAME_LABEL, LegalNames.toJobIntrospectorName(getDomainUid()));
   }
 
   private V1PodSpec createPodSpec(TuningParameters tuningParameters) {
@@ -263,7 +261,7 @@ public abstract class JobStepContext extends StepContextBase {
     return container;
   }
 
-  String getImageName() {
+  private String getImageName() {
     String imageName = getDomain().getSpec().getImage();
     if (imageName == null) {
       imageName = KubernetesConstants.DEFAULT_IMAGE;
@@ -279,40 +277,31 @@ public abstract class JobStepContext extends StepContextBase {
     return imagePullPolicy;
   }
 
-  protected List<String> getContainerCommand() {
-    return Arrays.asList(WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH);
+  private List<String> getContainerCommand() {
+    return Collections.singletonList(WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH);
   }
 
   protected String getDomainHome() {
     return getDomain().getDomainHome();
   }
 
-  protected V1SecretVolumeSource getSecretsVolume() {
+  private V1SecretVolumeSource getSecretsVolume() {
     return new V1SecretVolumeSource()
         .secretName(getWebLogicCredentialsSecretName())
         .defaultMode(420);
   }
 
-  protected V1ConfigMapVolumeSource getConfigMapVolumeSource() {
+  private V1ConfigMapVolumeSource getConfigMapVolumeSource() {
     return new V1ConfigMapVolumeSource()
         .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
         .defaultMode(ALL_READ_AND_EXECUTE);
   }
 
-  protected V1ConfigMapVolumeSource getConfigMapVolumeSource(String name, int mode) {
-    return new V1ConfigMapVolumeSource().name(name).defaultMode(mode);
-  }
-
-  protected V1PersistentVolumeClaimVolumeSource getPersistenVolumeClaimVolumeSource(
-      String claimName) {
-    return new V1PersistentVolumeClaimVolumeSource().claimName(claimName);
-  }
-
-  protected V1SecretVolumeSource getOverrideSecretVolumeSource(String name) {
+  private V1SecretVolumeSource getOverrideSecretVolumeSource(String name) {
     return new V1SecretVolumeSource().secretName(name).defaultMode(420);
   }
 
-  protected V1ConfigMapVolumeSource getOverridesVolumeSource(String name) {
+  private V1ConfigMapVolumeSource getOverridesVolumeSource(String name) {
     return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
   }
 
