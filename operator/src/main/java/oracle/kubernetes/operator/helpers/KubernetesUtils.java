@@ -4,18 +4,20 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
+
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ObjectMeta;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import javax.json.Json;
 import javax.json.JsonPatchBuilder;
-
-import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.collections.MapUtils;
 import org.joda.time.DateTime;
-
-import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 
 public class KubernetesUtils {
 
@@ -148,5 +150,25 @@ public class KubernetesUtils {
     return Optional.ofNullable(metadata.getLabels())
         .map(labels -> labels.get(CREATEDBYOPERATOR_LABEL))
         .orElse("false");
+  }
+
+  public static void updateStatus(Domain domain, String reason, String message) {
+    if (reason == null) return;
+
+    try {
+      JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+      if (domain.getStatus() != null && domain.getStatus().getReason() != null) {
+        patchBuilder.replace("/status/reason", reason);
+        patchBuilder.replace("/status/message", message);
+      } else {
+        patchBuilder.add("/status/reason", reason);
+        patchBuilder.add("/status/message", message);
+      }
+      new CallBuilder()
+          .patchDomain(
+              domain.getDomainUid(), domain.getMetadata().getNamespace(), patchBuilder.build());
+    } catch (ApiException ignored) {
+      /* extraneous comment to fool checkstyle into thinking that this is not an empty catch block. */
+    }
   }
 }
