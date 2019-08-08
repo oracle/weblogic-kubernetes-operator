@@ -49,6 +49,7 @@ public class BaseTest {
   public static final String DOMAININIMAGE_WLST_YAML = "domaininimagewlst.yaml";
   public static final String DOMAININIMAGE_WDT_YAML = "domaininimagewdt.yaml";
   public static final String DOMAINONSHARINGPV_WLST_YAML = "domainonsharingpvwlst.yaml";
+  public static final String DOMAINONPV_LOGGINGEXPORTER_YAML = "loggingexpdomainonpvwlst.yaml";
 
   // property file used to configure constants for integration tests
   public static final String APP_PROPS_FILE = "OperatorIT.properties";
