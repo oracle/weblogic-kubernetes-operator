@@ -4,31 +4,22 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.io.StringReader;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonPatch;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
+import static java.util.Collections.emptyMap;
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -52,6 +43,29 @@ import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
+import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonPatch;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -64,12 +78,9 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static java.net.HttpURLConnection.HTTP_OK;
-import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
-import static java.util.Collections.emptyMap;
-import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 
 @SuppressWarnings("WeakerAccess")
 public class KubernetesTestSupport extends FiberTestSupport {
@@ -95,7 +106,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
    *
    * @return a memento which can be used to restore the production factory
    */
-  public Memento install() throws NoSuchFieldException {
+  public Memento install() {
     support(CUSTOM_RESOURCE_DEFINITION, V1beta1CustomResourceDefinition.class);
     support(SUBJECT_ACCESS_REVIEW, V1SubjectAccessReview.class);
     support(TOKEN_REVIEW, V1TokenReview.class);
@@ -161,6 +172,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     repositories.put(resourceName, new DataRepository<>(resourceClass, toList));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private <T> void supportNamespaced(String resourceName, Class<T> resourceClass) {
     dataTypes.put(resourceClass, resourceName);
     repositories.put(resourceName, new NamespacedDataRepository<>(resourceClass, null));
@@ -330,7 +342,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private class KubernetesTestSupportMemento implements Memento {
 
-    public KubernetesTestSupportMemento() throws NoSuchFieldException {
+    public KubernetesTestSupportMemento() {
       CallBuilder.setStepFactory(new AsyncRequestStepFactoryImpl());
       CallBuilder.setCallDispatcher(new CallDispatcherImpl());
     }
@@ -519,7 +531,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     @SuppressWarnings("unchecked")
     T fromJsonStructure(JsonStructure jsonStructure) {
-      return (T) new Gson().fromJson(jsonStructure.toString(), resourceType);
+      final GsonBuilder builder =
+          new GsonBuilder().registerTypeAdapter(DateTime.class, new DateTimeSerializer());
+      return (T) builder.create().fromJson(jsonStructure.toString(), resourceType);
     }
 
     JsonStructure toJsonStructure(T src) {
@@ -798,5 +812,23 @@ public class KubernetesTestSupport extends FiberTestSupport {
     public NotFoundException(String resourceType, String name, String namespace) {
       super(String.format("No %s named %s found in namespace %s", resourceType, name, namespace));
     }
+  }
+}
+
+class DateTimeSerializer implements JsonDeserializer<DateTime>, JsonSerializer<DateTime> {
+  private static final DateTimeFormatter DATE_FORMAT = ISODateTimeFormat.dateTime();
+
+  @Override
+  public DateTime deserialize(
+      final JsonElement je, final Type type, final JsonDeserializationContext jdc)
+      throws JsonParseException {
+    return new DateTime(Long.parseLong(je.getAsJsonObject().get("iMillis").getAsString()));
+  }
+
+  @Override
+  public JsonElement serialize(
+      final DateTime src, final Type typeOfSrc, final JsonSerializationContext context) {
+    String retVal = src == null ? "" : DATE_FORMAT.print(src);
+    return new JsonPrimitive(retVal);
   }
 }
