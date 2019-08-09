@@ -1,6 +1,7 @@
 // Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator;
 
 import java.nio.charset.Charset;
@@ -10,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Level;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -23,7 +25,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-/** Integration tests for testing the init container for weblogic server pods */
+/** Integration tests for testing the init container for WebLogic server pods. */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItInitContainers extends BaseTest {
 
@@ -86,7 +88,7 @@ public class ItInitContainers extends BaseTest {
   }
 
   /**
-   * creates the init container domain on PV
+   * creates the init container domain on PV.
    *
    * @return created domain Domain
    * @throws Exception when domain creation fails
@@ -102,7 +104,7 @@ public class ItInitContainers extends BaseTest {
   }
 
   /**
-   * destroys the running domain
+   * destroys the running domain.
    *
    * @throws Exception when domain destruction fails
    */
@@ -114,7 +116,7 @@ public class ItInitContainers extends BaseTest {
 
   /**
    * Add initContainers at domain spec level and verify the admin server pod goes through Init state
-   * before starting the admin server pod
+   * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
    *     weblogic server pod doesn't go through initialization and ready state
@@ -124,7 +126,7 @@ public class ItInitContainers extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String pods[] = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
+    final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
@@ -141,7 +143,7 @@ public class ItInitContainers extends BaseTest {
 
   /**
    * Add initContainers to adminServer and verify the admin server pod goes through Init state
-   * before starting the admin server pod
+   * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
    *     weblogic server pod doesn't go through initialization and ready state
@@ -151,7 +153,7 @@ public class ItInitContainers extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String adminPodName = domainUid + "-" + domain.getAdminServerName();
+    final String adminPodName = domainUid + "-" + domain.getAdminServerName();
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
@@ -166,7 +168,7 @@ public class ItInitContainers extends BaseTest {
 
   /**
    * Add initContainers to adminServer and verify the admin server pod goes through Init state
-   * before starting the admin server pod
+   * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
    *     weblogic server pod doesn't go through initialization and ready state
@@ -176,8 +178,8 @@ public class ItInitContainers extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String adminPodName = domainUid + "-" + domain.getAdminServerName();
-    String ms2PodName = domainUid + "-managed-server2";
+    final String adminPodName = domainUid + "-" + domain.getAdminServerName();
+    final String ms2PodName = domainUid + "-managed-server2";
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
@@ -193,18 +195,18 @@ public class ItInitContainers extends BaseTest {
 
   /**
    * Add initContainers to adminServer and verify the admin server pod goes through Init state
-   * before starting the admin server pod
+   * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
    *     weblogic server pod doesn't go through initialization and ready state
    */
   @Test
-  public void testMSInitContainer() throws Exception {
+  public void testMsInitContainer() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String adminPodName = domainUid + "-" + domain.getAdminServerName();
-    String ms1PodName = domainUid + "-managed-server1";
+    final String adminPodName = domainUid + "-" + domain.getAdminServerName();
+    final String ms1PodName = domainUid + "-managed-server1";
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
@@ -230,7 +232,7 @@ public class ItInitContainers extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String adminPodName = domainUid + "-" + domain.getAdminServerName();
+    final String adminPodName = domainUid + "-" + domain.getAdminServerName();
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
@@ -246,17 +248,17 @@ public class ItInitContainers extends BaseTest {
 
   /**
    * Add initContainers at domain and admin server level and verify init container runs at both
-   * level when the names are different
+   * level when the names are different.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *     WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testInitContainerDiffLevelDiffName() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String pods[] = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server2"};
+    final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server2"};
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
@@ -278,17 +280,17 @@ public class ItInitContainers extends BaseTest {
 
   /**
    * Add initContainers at domain and admin server level and verify init container is not run at
-   * both level when the names are same
+   * both level when the names are same.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *     WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testInitContainerDiffLevelSameName() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String pods[] = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server2"};
+    final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server2"};
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
@@ -304,18 +306,19 @@ public class ItInitContainers extends BaseTest {
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
+
   /**
-   * Add multiple initContainers at domain level and verify all of the init containers are run
+   * Add multiple initContainers at domain level and verify all of the init containers are run.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *     WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testInitContainerMultiple() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String pods[] = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
+    final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
@@ -336,10 +339,10 @@ public class ItInitContainers extends BaseTest {
 
   /**
    * Add initContainers to adminServer and verify the admin server pod goes through Init state
-   * before starting the admin server pod
+   * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *     WebLogic server pod doesn't go through initialization and ready state
    */
   private void testInitContainer(String modYaml) throws Exception {
     // Write the modified yaml to a new file

@@ -8,12 +8,15 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1ResourceRequirements;
 import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 
@@ -135,6 +138,22 @@ public interface ServerSpec {
   List<V1Container> getContainers();
 
   Map<String, String> getNodeSelectors();
+
+  V1Affinity getAffinity();
+
+  String getPriorityClassName();
+
+  List<V1PodReadinessGate> getReadinessGates();
+
+  String getRestartPolicy();
+
+  String getRuntimeClassName();
+
+  String getNodeName();
+
+  String getSchedulerName();
+
+  List<V1Toleration> getTolerations();
 
   V1ResourceRequirements getResources();
 
