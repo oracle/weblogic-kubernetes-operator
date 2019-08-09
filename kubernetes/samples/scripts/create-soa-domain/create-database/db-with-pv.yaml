@@ -61,4 +61,4 @@ spec:
       volumes:
       - name: soadb-storage
         persistentVolumeClaim:
-claimName: soadb-pvc
+          claimName: soadb-pvc
