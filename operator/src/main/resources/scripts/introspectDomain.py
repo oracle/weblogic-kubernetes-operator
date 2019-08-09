@@ -127,10 +127,10 @@ class OfflineWlstEnv(object):
     self.USERKEY_FILE       = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
     self.DOMAIN_ZIP         = self.INTROSPECT_HOME + '/domainzip.secure'
 
-
     self.INVENTORY_IMAGE_MD5 = self.INTROSPECT_HOME + '/inventory_image.md5'
     self.INVENTORY_CM_MD5 = self.INTROSPECT_HOME + '/inventory_cm.md5'
     self.INVENTORY_PASSPHRASE_MD5 = self.INTROSPECT_HOME + '/inventory_passphrase.md5'
+    self.MERGED_MODEL_FILE = self.INTROSPECT_HOME + '/merged_model.json'
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
@@ -763,7 +763,7 @@ class DomainSeedGenerator(Generator):
     self.domainzip = tempfile.mktemp(".zip")
     self.ziph = zipfile.ZipFile(self.domainzip, 'w', zipfile.ZIP_DEFLATED)
     self.domain_home = self.env.getDomainHome()
-    self.skiplist = [ os.path.join(self.domain_home, 'lib') ]
+    self.skiplist = [ os.path.join(self.domain_home, 'lib'), os.path.join(self.domain_home, 'wlsdeploy') ]
   def generate(self):
     self.open()
     try:
@@ -820,6 +820,28 @@ class InventoryMD5Generator(Generator):
       return "hasfile"
     else:
       return None
+
+class MergedModelGenerator(Generator):
+
+  def __init__(self, env, fromfile):
+    Generator.__init__(self, env, env.MERGED_MODEL_FILE)
+    self.env = env
+    self.fromfile = fromfile
+
+  def generate(self):
+    self.open()
+    try:
+      self.addMergedModelFile()
+      self.close()
+      self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addMergedModelFile(self):
+    if os.path.exists(self.fromfile):
+      file_str = self.env.readFile(self.fromfile)
+      self.writeln(base64.encodestring(file_str))
+
 
 class SitConfigGenerator(Generator):
 
@@ -1235,11 +1257,11 @@ class DomainIntrospector(SecretManager):
       BootPropertiesGenerator(self.env).generate()
       UserConfigAndKeyGenerator(self.env).generate()
       if os.path.exists('/u01/model_home'):
+        MergedModelGenerator(self.env, self.env.DOMAIN_HOME+"/wlsdeploy/domain_saved.json").generate()
         DomainSeedGenerator(self.env).generate()
         InventoryMD5Generator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
         InventoryMD5Generator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
         InventoryMD5Generator(self.env, self.env.INVENTORY_PASSPHRASE_MD5, '/tmp/inventory_passphrase.md5').generate()
-
 
     CustomSitConfigIntrospector(self.env).generateAndValidate()
     #WDTConfigIntrospector(self.env).generateAndValidate()

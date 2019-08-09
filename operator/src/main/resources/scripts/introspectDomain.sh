@@ -217,11 +217,10 @@ function createWLDomain() {
         trace "NEED TO CREATE DOMAIN"
         if [ $use_passphrase -eq 1 ]; then
             yes ${wdt_passphrase} | /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home \
-            $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption -extract_location \
-            /u01/apps/$DOMAIN_UID
+            $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption -store_model 1
         else
             /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list \
-            $archive_list $variable_list -extract_location /u01/apps/$DOMAIN_UID
+            $archive_list $variable_list -store_model 1
         fi
         ret=$?
         if [ $ret -ne 0 ]; then

@@ -263,9 +263,8 @@ public class ConfigMapHelper {
       String result = (String) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT);
       // Parse results into separate data files
       Map<String, String> data = parseIntrospectorResult(result, info.getDomainUID());
-      LOGGER.fine("================");
-      LOGGER.fine(data.toString());
-      LOGGER.fine("================");
+      // TODO:  Add logic here for checking introspect job result to minimize
+      //   restart.  Can we do it earlier ?
       String topologyYaml = data.get("topology.yaml");
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
