@@ -9,6 +9,7 @@ topology:
     FileName: '@@PROP:DOMAIN_NAME@@.log'
   Cluster:
     '@@PROP:CLUSTER_NAME@@':
+      CoherenceClusterSystemResource: CoherenceCluster
   Server:
     '@@PROP:ADMIN_NAME@@':
       ListenPort: '@@PROP:ADMIN_PORT@@'
@@ -27,9 +28,35 @@ topology:
       Cluster: '@@PROP:CLUSTER_NAME@@'
       ListenPort: '@@PROP:MANAGED_SERVER_PORT@@'
 
+    ServerTemplate:
+      'cluster-1-template':
+        ListenPort: 8001
+        Cluster: 'cluster-1'
+        JTAMigratableTarget:
+          Cluster: 'cluster-1'
+        Log:
+          FileCount: 100
+          LogFileSeverity: Trace
+          DateFormatPattern: 'MMM d, yyyy h:mm:ss,SSS a z'
+          RotateLogOnStartup: false
+          DomainLogBroadcastSeverity: Notice
+          RotationType: bySize
+          StdoutSeverity: Notice
+          PlatformLoggerLevels:
+            com.oracle.coherence: FINEST
+          FileMinSize: 5000
+          LoggerSeverity: Info
+          DomainLogBroadcasterBufferSize: 10
+          StdoutFormat: standard
+          FileName: 'logs/cluster-1-template.log'
+        SSL:
+          ListenPort: 8100
+        ServerStart:
+          Arguments: '-Dtangosol.coherence.log.level=9'
 resources:
   CoherenceClusterSystemResource:
     CoherenceCluster:
+      Target: '@@PROP:CLUSTER_NAME@@'
       CoherenceResource:
         CoherenceClusterParams:
           ClusteringMode: unicast
