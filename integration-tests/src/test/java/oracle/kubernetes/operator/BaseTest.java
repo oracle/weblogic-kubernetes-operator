@@ -49,6 +49,7 @@ public class BaseTest {
   public static final String DOMAININIMAGE_WLST_YAML = "domaininimagewlst.yaml";
   public static final String DOMAININIMAGE_WDT_YAML = "domaininimagewdt.yaml";
   public static final String DOMAINONSHARINGPV_WLST_YAML = "domainonsharingpvwlst.yaml";
+  public static final String DOMAINONPV_LOGGINGEXPORTER_YAML = "loggingexpdomainonpvwlst.yaml";
 
   // property file used to configure constants for integration tests
   public static final String APP_PROPS_FILE = "OperatorIT.properties";
@@ -688,7 +689,7 @@ public class BaseTest {
     String adminPodName = domainUid + "-" + adminServerName;
     String domainName = (String) domainMap.get("domainName");
 
-    copyScalingScriptToPod( domainUid, adminPodName, domainNS);
+    copyScalingScriptToPod(domainUid, adminPodName, domainNS);
     TestUtils.createRbacPoliciesForWldfScaling();
 
     // deploy opensessionapp
@@ -756,7 +757,7 @@ public class BaseTest {
     TestUtils.createDirUnderDomainPV(scriptsDir);
     // workaround for the issue with not allowing .. in the host-path in krun.sh
     Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
-        Paths.get(getResultDir()+"/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
+        Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
     // copy script to pod
     String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
         + getResultDir() + ":/tmpdir -m " + pvDir

@@ -4,11 +4,12 @@
 
 package oracle.kubernetes.operator.utils;
 
-import io.kubernetes.client.custom.IntOrString;
-import io.kubernetes.client.custom.Quantity;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+
+import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.custom.Quantity;
 import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;

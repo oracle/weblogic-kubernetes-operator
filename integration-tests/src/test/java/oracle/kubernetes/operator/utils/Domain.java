@@ -460,6 +460,52 @@ public class Domain {
   }
 
   /**
+   * undeploy webapp using adminPort or t3 channel port.
+   *
+   * @param webappName webappName
+   * @param appLocationInPod appLocationInPod
+   * @param useAdminPortToDeploy useAdminPortToDeploy
+   * @throws Exception exception
+   */
+  public void undeployWebAppViaWlst(
+      String webappName,
+      String appLocationInPod,
+      boolean useAdminPortToDeploy)
+      throws Exception {
+    String adminPod = domainUid + "-" + adminServerName;
+
+    TestUtils.copyFileViaCat(
+        projectRoot + "/integration-tests/src/test/resources/undeploywebapp.py",
+        appLocationInPod + "/undeploywebapp.py",
+        adminPod,
+        domainNS);
+
+    TestUtils.copyFileViaCat(
+        projectRoot + "/integration-tests/src/test/resources/callpyscript.sh",
+        appLocationInPod + "/callpyscript.sh",
+        adminPod,
+        domainNS);
+
+    String t3Url = "t3://" + adminPod + ":";
+    if (useAdminPortToDeploy) {
+      t3Url = t3Url + domainMap.getOrDefault("adminPort", 7001);
+    } else {
+      t3Url = t3Url + t3ChannelPort;
+    }
+
+    String[] args = {
+        appLocationInPod + "/undeploywebapp.py",
+        BaseTest.getUsername(),
+        BaseTest.getPassword(),
+        t3Url,
+        webappName
+    };
+
+    TestUtils.callShellScriptByExecToPod(
+        adminPod, domainNS, appLocationInPod, "callpyscript.sh", args);
+  }
+
+  /**
    * deploy webapp using t3 channel port for wlst.
    *
    * @param webappName webappName
@@ -533,52 +579,6 @@ public class Domain {
 
     TestUtils.callShellScriptByExecToPod(
         adminPod, domainNS, appLocationInPod, "callpyscript.sh", args);
-  }
-
-  /**
-   * undeploy webapp using adminPort or t3 channel port.
-   *
-   * @param webappName webappName
-   * @param appLocationInPod appLocationInPod
-   * @param useAdminPortToDeploy useAdminPortToDeploy
-   * @throws Exception exception
-   */
-  public void undeployWebAppViaWlst(
-          String webappName,
-          String appLocationInPod,
-          boolean useAdminPortToDeploy)
-          throws Exception {
-    String adminPod = domainUid + "-" + adminServerName;
-
-    TestUtils.copyFileViaCat(
-            projectRoot + "/integration-tests/src/test/resources/undeploywebapp.py",
-            appLocationInPod + "/undeploywebapp.py",
-            adminPod,
-            domainNS);
-
-    TestUtils.copyFileViaCat(
-            projectRoot + "/integration-tests/src/test/resources/callpyscript.sh",
-            appLocationInPod + "/callpyscript.sh",
-            adminPod,
-            domainNS);
-
-    String t3Url = "t3://" + adminPod + ":";
-    if (useAdminPortToDeploy) {
-      t3Url = t3Url + domainMap.getOrDefault("adminPort", 7001);
-    } else {
-      t3Url = t3Url + t3ChannelPort;
-    }
-
-    String[] args = {
-            appLocationInPod + "/undeploywebapp.py",
-            BaseTest.getUsername(),
-            BaseTest.getPassword(),
-            t3Url,
-            webappName
-    };
-
-    TestUtils.callShellScriptByExecToPod(
-            adminPod, domainNS, appLocationInPod, "callpyscript.sh", args);
   }
 
   /**
@@ -1024,7 +1024,7 @@ public class Domain {
     pvMap.values().removeIf(Objects::isNull);
 
     // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch, create PV/PVC
-    new PersistentVolume(BaseTest.getPvRoot() +"acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
+    new PersistentVolume(BaseTest.getPvRoot() + "acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
 
     String cmd =
         BaseTest.getProjectRoot()
@@ -1608,6 +1608,9 @@ public class Domain {
           BaseTest.getResultDir()
               + "/"
               + ((String) domainMap.get("domainHomeImageBuildPath")).trim());
+      
+      domainMap.put("domainHomeImageBase", 
+          BaseTest.getWeblogicImageName()+":"+BaseTest.getWeblogicImageTag());
     }
 
     // remove null values if any attributes
@@ -1782,7 +1785,8 @@ public class Domain {
                 .toPath(),
             new File(
                     BaseTest.getResultDir()
-                        + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/common/createFMWDomain.py")
+                        + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/"
+                        + "common/createFMWDomain.py")
                 .toPath(),
             StandardCopyOption.REPLACE_EXISTING);
       } else {
