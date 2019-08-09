@@ -12,6 +12,7 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.management.MBeanServerConnection;
@@ -22,12 +23,12 @@ import javax.management.remote.JMXServiceURL;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
-
 import weblogic.diagnostics.descriptor.WLDFHarvestedTypeBean;
 import weblogic.diagnostics.descriptor.WLDFInstrumentationMonitorBean;
 import weblogic.diagnostics.descriptor.WLDFResourceBean;
 import weblogic.j2ee.descriptor.wl.JDBCConnectionPoolParamsBean;
 import weblogic.j2ee.descriptor.wl.JDBCDataSourceBean;
+import weblogic.j2ee.descriptor.wl.JDBCDataSourceParamsBean;
 import weblogic.j2ee.descriptor.wl.JDBCDriverParamsBean;
 import weblogic.j2ee.descriptor.wl.JMSBean;
 import weblogic.j2ee.descriptor.wl.UniformDistributedTopicBean;
@@ -37,6 +38,8 @@ import weblogic.management.configuration.JMSSystemResourceMBean;
 import weblogic.management.configuration.NetworkAccessPointMBean;
 import weblogic.management.configuration.ServerDebugMBean;
 import weblogic.management.configuration.ServerMBean;
+import weblogic.management.configuration.ShutdownClassMBean;
+import weblogic.management.configuration.StartupClassMBean;
 import weblogic.management.configuration.WLDFSystemResourceMBean;
 import weblogic.management.jmx.MBeanServerInvocationHandler;
 import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
@@ -148,6 +151,19 @@ public class SitConfigTests {
 
     if (testName.equals("testCustomSitConfigOverridesForWldf")) {
       test.testSystemResourcesWldfAttributeAdd();
+    }
+
+    if (testName.equals("testOverrideJDBCResourceAfterDomainStart")) {
+      test.testOverrideJDBCResourceAfterDomainStart("JdbcTestDataSource-1");
+    }
+
+    if (testName.equals("testConfigOverrideAfterDomainStartup")) {
+      test.testConfigOverrideAfterDomainStartup();
+    }
+
+    if (testName.equals("testOverrideJDBCResourceWithNewSecret")) {
+      String jdbcUrl = args[5];
+      test.testSystemResourcesJdbcAttributeChange("JdbcTestDataSource-0", jdbcUrl);
     }
   }
 
@@ -360,6 +376,34 @@ public class SitConfigTests {
     return serverMBean;
   }
 
+  /** Test to verify the startup and shutdown class names after domain startup */
+  private void testConfigOverrideAfterDomainStartup() {
+    String startupClassName = "AddedStartupClassOne";
+    StartupClassMBean[] startupClasses =
+        runtimeServiceMBean.getDomainConfiguration().getStartupClasses();
+    assert startupClasses.length > 0;
+    for (StartupClassMBean startupClasse : startupClasses) {
+      assert startupClasse.getName().equals("StartupClass-0")
+          : "Startup class name is not StartupClass-0";
+      assert startupClasse.getClassName().equals(startupClassName)
+          : "Startup class name is not AddedStartupClassOne";
+      assert startupClasse.getDeploymentOrder() == 5 : "Startup class deployment order is not 5";
+      assert !startupClasse.getFailureIsFatal() : "FailureIsFatal is not false";
+      assert startupClasse.getLoadBeforeAppDeployments() : "LoadBeforeAppDeployments is not true";
+    }
+
+    ShutdownClassMBean[] shutdownClasses =
+        runtimeServiceMBean.getDomainConfiguration().getShutdownClasses();
+    assert shutdownClasses.length > 0;
+    for (ShutdownClassMBean shutdownClasse : shutdownClasses) {
+      assert shutdownClasse.getName().equals("ShutdownClass-0")
+          : "Shutdown class name is not ShutdownClass-0";
+      assert shutdownClasse.getClassName().equals("AddedShutdownClassOne")
+          : "Shutdownclassname is not AddedShutdownClassOne";
+      assert shutdownClasse.getDeploymentOrder() == 6 : "Deployment order is not 6";
+    }
+  }
+
   /**
    * Test that verifies the initialCapacity, maxCapacity, testConnectionsonReserve, harvestMaxCount
    * and inactiveConnectionTimeoutSeconds on the given JDBC resource with the overridden values used
@@ -409,18 +453,71 @@ public class SitConfigTests {
     assert dsUrl.equals(jdbcDriverParams.getUrl())
         : "Didn't get the expected url for datasource " + dsUrl;
 
-    // Assert datasource is working with overiridden JDBC URL value
-    DataSource dataSource = getDataSource("jdbc/" + jdbcResourceName);
+    createDatabase("mysqldb1", jdbcResourceName);
+  }
 
-    // Create DDL statement and execute it to verify the datasource actually works.
+  /**
+   * Test that verifies a new JDBC data source is created after domain start can be overridden with
+   * configmap change verifies the JDBC resource overriden values initialCapacity, maxCapacity,
+   * LoginDelaySeconds, IgnoreInUseConnectionsEnabled, StatementCacheType,
+   * GlobalTransactionsProtocol
+   *
+   * @param jdbcResourceName - name of the JDBC resource overridden in jdbc-JdbcTestDataSource-0.xml
+   */
+  public void testOverrideJDBCResourceAfterDomainStart(String jdbcResourceName) {
+
+    createDatabase("mysqldb2", jdbcResourceName);
+
+    final int initialCapacity = 5;
+    final int maxCapacity = 10;
+
+    println("Verifying the configuration changes made by sit config file");
+
+    JDBCSystemResourceMBean jdbcSystemResource = getJdbcSystemResource(jdbcResourceName);
+    JDBCDataSourceBean jdbcDataSourceBean = jdbcSystemResource.getJDBCResource();
+
+    // Assert the connection pool properties
+    JDBCConnectionPoolParamsBean jcpb = jdbcDataSourceBean.getJDBCConnectionPoolParams();
+    println("initialCapacity:" + jcpb.getInitialCapacity());
+    assert initialCapacity == jcpb.getInitialCapacity()
+        : "Didn't get the expected value " + initialCapacity + " for initialCapacity";
+    println("maxCapacity:" + jcpb.getMaxCapacity());
+    assert maxCapacity == jcpb.getMaxCapacity()
+        : "Didn't get the expected value " + maxCapacity + " for maxCapacity";
+    assert jcpb.getMinCapacity() == 6 : "Didn't get the expected value 6 for minCapacity";
+    assert jcpb.getLoginDelaySeconds() == 10
+        : "Didn't get the expected value 10 for LoginDelaySeconds";
+    assert jcpb.isIgnoreInUseConnectionsEnabled()
+        : "Didn't get the expected value of true for IgnoreInUseConnectionsEnabled";
+    assert jcpb.getStatementCacheType().equals("FIXED")
+        : "Didn't get the expected value of FIXED for StatementCacheType";
+
+    JDBCDataSourceParamsBean jdbcDataSourceParams = jdbcDataSourceBean.getJDBCDataSourceParams();
+    assert jdbcDataSourceParams.getGlobalTransactionsProtocol().equals("EmulateTwoPhaseCommit")
+        : "Didn't get the expected value of EmulateTwoPhaseCommit for GlobalTransactionsProtocol";
+  }
+
+  /**
+   * Utility method to create a database schema using the data source name
+   *
+   * @param dbName - name of the database schema to create
+   * @param jdbcResourceName name of the data source to lookup
+   */
+  private void createDatabase(String dbName, String jdbcResourceName) {
+    // Assert datasource is working with overiridden JDBC URL value
+    Random rand = new Random();
+    dbName = dbName + rand.nextInt(100);
+    DataSource dataSource = getDataSource("jdbc/" + jdbcResourceName);
     try {
       Connection connection = dataSource.getConnection();
       Statement stmt = connection.createStatement();
-      int createSchema = stmt.executeUpdate("CREATE SCHEMA `mysqldb` ;");
+      int createSchema = stmt.executeUpdate("CREATE SCHEMA `" + dbName + "` ;");
       println("create schema returned " + createSchema);
       int createTable =
           stmt.executeUpdate(
-              "CREATE TABLE IF NOT EXISTS mysqldb.testtable (title VARCHAR(255) "
+              "CREATE TABLE IF NOT EXISTS "
+                  + dbName
+                  + ".testtable (title VARCHAR(255) "
                   + "NOT NULL,description TEXT)ENGINE=INNODB;");
       println("create table returned " + createTable);
       assert createSchema == 1 : "create schema failed";
@@ -429,7 +526,6 @@ public class SitConfigTests {
       Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
     }
   }
-
   /**
    * Returns the JDBCSystemResourceMBean from the domain configuration matching with JDBC resource
    * name.
