@@ -4,16 +4,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.core.AllOf.allOf;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
@@ -24,11 +19,6 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.stream.IntStream;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -44,6 +34,17 @@ import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.LogMatcher.containsInfo;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.core.AllOf.allOf;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue"})
 public class DomainIntrospectorJobTest {
@@ -69,7 +70,8 @@ public class DomainIntrospectorJobTest {
   protected List<LogRecord> logRecords = new ArrayList<>();
   private RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
 
-  public DomainIntrospectorJobTest() {}
+  public DomainIntrospectorJobTest() {
+  }
 
   private static String getJobName() {
     return LegalNames.toJobIntrospectorName(UID);

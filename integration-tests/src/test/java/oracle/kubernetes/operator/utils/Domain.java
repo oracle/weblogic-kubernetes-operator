@@ -771,7 +771,7 @@ public class Domain {
   }
 
   /**
-   * Get the managed server pod name for a specific index
+   * Get the managed server pod name for a specific index.
    *
    * @param index  the managed server index
    * @return the managed server pod name
@@ -1216,7 +1216,7 @@ public class Domain {
 
       // Loop until all the servers have recycled.  Wait 5 minutes max for a managed server to be terminating.
       //
-      final int MAX_TERMINATE_LOOP = 300;
+      final int maxTerminateLoop = 300;
       int terminateLoopCount = 0;
       while (podNameSet.size() > 0) {
         Iterator<String> iter = podNameSet.iterator();
@@ -1226,7 +1226,8 @@ public class Domain {
             terminateLoopCount = 0;
 
             // Server is terminating, wait until server running then remove it from the list
-            logger.info("Managed managed server pod " + podName + "  is terminating, waiting until it is re-created and running.");
+            logger.info("Managed managed server pod " + podName
+                + "  is terminating, waiting until it is re-created and running.");
             TestUtils.checkPodCreated(domainUid + "-" + podName, domainNS);
 
             logger.info("Waiting until managed server pod " + podName + "  is ready");
@@ -1237,9 +1238,10 @@ public class Domain {
           }
         }
         // We iterated through all the servers and if there are some remaining then
-        // Sleep and loop through the remaining ones again.  Keep the sleep short so we don't miss the terminating status.
+        // Sleep and loop through the remaining ones again.
+        // Keep the sleep short so we don't miss the terminating status.
         if (podNameSet.size() > 0) {
-          if (++terminateLoopCount > MAX_TERMINATE_LOOP) {
+          if (++terminateLoopCount > maxTerminateLoop) {
             throw new RuntimeException("Timeout waiting for any managed server to terminate");
           }
           logger.info("Waiting for any managed server pod to be terminating...");
@@ -1610,7 +1612,7 @@ public class Domain {
               + ((String) domainMap.get("domainHomeImageBuildPath")).trim());
       
       domainMap.put("domainHomeImageBase", 
-          BaseTest.getWeblogicImageName()+":"+BaseTest.getWeblogicImageTag());
+          BaseTest.getWeblogicImageName() + ":" + BaseTest.getWeblogicImageTag());
     }
 
     // remove null values if any attributes
@@ -2033,7 +2035,8 @@ public class Domain {
 
     // Look for positive success marker.
     if (!resultStr.contains(successMarker)) {
-      throw new RuntimeException("FAILURE: Success marker not found after executing script" + scriptPathInPod + " in admin pod - " + resultStr);
+      throw new RuntimeException("FAILURE: Success marker not found after executing script"
+          + scriptPathInPod + " in admin pod - " + resultStr);
     }
   }
 

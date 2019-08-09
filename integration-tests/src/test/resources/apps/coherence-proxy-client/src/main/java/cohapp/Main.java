@@ -19,8 +19,7 @@ public class Main {
         if (arg.compareToIgnoreCase("load") == 0) {
           client.loadCache();
           exit(0);
-        }
-        else if (arg.compareToIgnoreCase("validate") == 0) {
+        } else if (arg.compareToIgnoreCase("validate") == 0) {
           client.validateCache();
           exit(0);
         }
