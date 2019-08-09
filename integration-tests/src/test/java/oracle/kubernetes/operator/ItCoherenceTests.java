@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -38,7 +39,7 @@ public class ItCoherenceTests extends BaseTest {
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes. Also, create the operator.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
@@ -50,9 +51,9 @@ public class ItCoherenceTests extends BaseTest {
   }
 
   /**
-   * Releases k8s cluster lease, archives result, pv directories and destroy the operator
+   * Releases k8s cluster lease, archives result, pv directories and destroy the operator.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
@@ -101,8 +102,8 @@ public class ItCoherenceTests extends BaseTest {
       final String domainNS = domain.getDomainNs();
 
       // Use the proxy running on Managed Server 1, get the internal POD IP
-      String podName = domain.getManagedSeverPodName(1);
-      String ProxyIP = TestUtils.getPodIP(domainNS, "", podName);
+      final String podName = domain.getManagedSeverPodName(1);
+      final String ProxyIP = TestUtils.getPodIP(domainNS, "", podName);
 
       String cohAppLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + PROXY_CLIENT_APP_NAME;
       String cohAppLocationInPod = BaseTest.getAppLocationInPod() + "/" + PROXY_CLIENT_APP_NAME;
@@ -140,20 +141,19 @@ public class ItCoherenceTests extends BaseTest {
   }
 
   /**
-   * Create the domain
+   * Create the domain.
    *
-   * @return
-   * @throws Exception
+   * @return domain
+   * @throws Exception exception
    */
   private Domain createDomain() throws Exception {
 
-    Map<String, String> envMap = new HashMap();
+    Map<String, String> envMap = new HashMap<>();
 
     // Set this ENV var with the WDT archive so that it is included in the image build.
     envMap.put("CUSTOM_WDT_ARCHIVE", buildProxyServerWdtZip());
 
     // create domain
-    Domain domain = null;
     Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
     domainMap.put("namespace", "test1");
     domainMap.put("domainUID", "coh");
@@ -163,15 +163,15 @@ public class ItCoherenceTests extends BaseTest {
         "customWdtTemplate",
         BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/wdt/coh-wdt-config.yaml");
-    domain = TestUtils.createDomain(domainMap);
+    Domain domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
-      return domain;
+    return domain;
   }
 
   /**
-   * Destroy the domain
+   * Destroy the domain.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   private static void destroyDomain() throws Exception {
     if (domain != null) {
@@ -184,7 +184,7 @@ public class ItCoherenceTests extends BaseTest {
    * Verify that all the server pods in the domain got re-started. The property tested is: env:
    * "-Dweblogic.StdoutDebugEnabled=false"--> "-Dweblogic.StdoutDebugEnabled=true"
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   private void restartDomainByChangingEnvProperty() throws Exception {
 
@@ -200,7 +200,7 @@ public class ItCoherenceTests extends BaseTest {
   }
 
   /**
-   * Build the WDT zip that contains the Coherence proxy server
+   * Build the WDT zip that contains the Coherence proxy server.
    *
    * @return the WDT zip path
    */

@@ -4,23 +4,15 @@
 
 package cohapp;
 
-import com.tangosol.net.CacheFactory;
-import com.tangosol.net.ConfigurableCacheFactory;
-import com.tangosol.net.NamedCache;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,6 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.tangosol.net.CacheFactory;
+import com.tangosol.net.ConfigurableCacheFactory;
+import com.tangosol.net.NamedCache;
 
 
 /**
@@ -52,10 +48,10 @@ public class CacheClient {
   private Path opConfigPath = null;
   private Path clientCacheConfigPath = null;
 
-  private final String KEY = "testKey";
-  private final String VAL = "testVal";
+  private static final String KEY = "testKey";
+  private static final String VAL = "testVal";
 
-  private final String CACHE_NAME = "test-cache-remote";
+  private static final String CACHE_NAME = "test-cache-remote";
 
   private static final String SUCCESS = "Success";
   private static final String FAILURE = "Failure";
@@ -84,7 +80,7 @@ public class CacheClient {
       Path path = FileSystems.getDefault().getPath("tmp-client-cache-config.xml");
       clientCacheConfigPath = path.toAbsolutePath();
       Files.deleteIfExists(clientCacheConfigPath);
-      PrintWriter writer = new PrintWriter( new FileWriter(new File(clientCacheConfigPath.toString())));
+      PrintWriter writer = new PrintWriter(new FileWriter(new File(clientCacheConfigPath.toString())));
 
       // get reader of cache config inside the jar
       BufferedReader reader = new BufferedReader(new InputStreamReader(
@@ -107,7 +103,9 @@ public class CacheClient {
   private void cleanup() {
     try {
       Files.deleteIfExists(clientCacheConfigPath);
-    } catch (Exception e) {}
+    } catch (Exception e) {
+      // no-op
+    }
   }
 
   private static String getStackTraceString(Exception e) {
@@ -132,7 +130,7 @@ public class CacheClient {
     // System.exit(0);
 
     System.out.println("Loading cache");
-    Instant startInstant = Instant.now();
+    final Instant startInstant = Instant.now();
     // Load the cache
     for (int i = 0; i < THREAD_COUNT; i++) {
       CacheThread t =
@@ -143,7 +141,7 @@ public class CacheClient {
                   getCcf(),
                   CACHE_NAME,
                   PREFIX + i,
-                  NUM_ITEMS/THREAD_COUNT));
+                  NUM_ITEMS / THREAD_COUNT));
       t.setDaemon(true);
       t.start();
       threadList.add(t);
@@ -164,7 +162,7 @@ public class CacheClient {
 
     List<CacheThread> threadList = new ArrayList<>();
 
-    Instant startInstant = Instant.now();
+    final Instant startInstant = Instant.now();
 
     // Verify the cache
     threadList.clear();
@@ -177,7 +175,7 @@ public class CacheClient {
                   getCcf(),
                   CACHE_NAME,
                   PREFIX + i,
-                  NUM_ITEMS/THREAD_COUNT));
+                  NUM_ITEMS / THREAD_COUNT));
       t.setDaemon(true);
       t.start();
       threadList.add(t);
@@ -212,7 +210,8 @@ public class CacheClient {
         ThreadConfig config = thread.config;
         System.out.println(config.operation + " " + config.prefix + " has terminated");
         if (thread.isError()) {
-          String msg = "Fatal Error in thread " + config.prefix + " for operation " + config.operation + "\n" + thread.error;
+          String msg = "Fatal Error in thread " + config.prefix + " for operation "
+              + config.operation + "\n" + thread.error;
           System.out.println(msg);
           throw new RuntimeException(msg);
         }
@@ -223,7 +222,7 @@ public class CacheClient {
     }
   }
 
-  /** Inner class CacheThread */
+  /** Inner class CacheThread. */
   private abstract static class CacheThread extends Thread {
 
     final ThreadConfig config;
@@ -244,7 +243,7 @@ public class CacheClient {
 
     NamedCache ensureTestCache(ConfigurableCacheFactory ccf, String cacheName) {
       NamedCache cache = null;
-      final int MAX_ENSURE_RETRY = 200;
+      final int maxEnsureRetry = 200;
       int count = 0;
       while (cache == null) {
         try {
@@ -252,7 +251,7 @@ public class CacheClient {
           cache = ccf.ensureCache(cacheName, config.loader);
           System.out.println("Successfully Created Named Cache");
         } catch (Exception e) {
-          if (++count == MAX_ENSURE_RETRY) {
+          if (++count == maxEnsureRetry) {
             throw new RuntimeException("Unable to create Named Cache after many retries");
           }
           System.out.println("Error creating Named Cache, retrying");
@@ -264,31 +263,30 @@ public class CacheClient {
 
     public void run() {
 
-      final int MAX_OP_RETRY = 10;
+      final int maxOpRetry = 10;
       int opRetry = 0;
 
       // Fill value buff
       StringBuffer valBuf = new StringBuffer(VALUE_SIZE);
-      for (int i=0; i < VALUE_SIZE; i++)
+      for (int i = 0; i < VALUE_SIZE; i++)
         valBuf.append('a');
 
       try {
         System.out.println("Running " + config.operation + " thread " + config.prefix);
         NamedCache cache = ensureTestCache(config.ccf, config.cacheName);
         int count = 0;
-        while (count < config.numItems)
-        {
+        while (count < config.numItems) {
           // Load map with a batch of values
           Map<String, String> map = new HashMap<>(MAX_BATCH_SIZE);
           int remaining = config.numItems - count;
           final int batchSize = remaining > MAX_BATCH_SIZE ? MAX_BATCH_SIZE : remaining;
-          for (int i =0; i <batchSize; i++) {
+          for (int i = 0; i < batchSize; i++) {
 
             // replace the leading chars in the array with the count
             String valStr = String.valueOf(count);
             valBuf.replace(0,valStr.length(),valStr);
 
-            map.put (config.prefix + "-" + count,  valBuf.toString());
+            map.put(config.prefix + "-" + count,  valBuf.toString());
             count++;
           }
           try {
@@ -304,7 +302,7 @@ public class CacheClient {
 
             System.out.println(getStackTraceString(e));
 
-            if (++opRetry == MAX_OP_RETRY) {
+            if (++opRetry == maxOpRetry) {
               error = "ERROR: Reached retry limit for operation " + config.operation;
               return;
             }
@@ -313,7 +311,8 @@ public class CacheClient {
             try {
               config.ccf.releaseCache(cache);
             } catch (Exception e1) {
-            } // ignore
+              // ignore
+            }
 
             cache = ensureTestCache(config.ccf, config.cacheName);
             delay = 0;
@@ -330,10 +329,10 @@ public class CacheClient {
       System.out.println("Finished running " + config.operation + " thread " + config.prefix);
     }
 
-    abstract String doCacheOperation(NamedCache cache, Map<String, String>map);
+    abstract String doCacheOperation(NamedCache cache, Map<String, String> map);
   }
 
-  /** Write the data to the cache */
+  /** Write the data to the cache. */
   private static class WriteThread extends CacheThread {
 
     private WriteThread(ThreadConfig config) {
@@ -341,7 +340,7 @@ public class CacheClient {
     }
 
     @Override
-    String doCacheOperation(NamedCache cache, Map<String, String>map) {
+    String doCacheOperation(NamedCache cache, Map<String, String> map) {
       //   System.out.println("Writing Map " + mapWriteCount.incrementAndGet());
       cache.putAll(map);
       return null;
@@ -356,7 +355,7 @@ public class CacheClient {
     }
 
     @Override
-    String doCacheOperation(NamedCache cache, Map<String, String>map) {
+    String doCacheOperation(NamedCache cache, Map<String, String> map) {
 
       //   System.out.println("Validating Map " + mapWriteCount.incrementAndGet());
       Map outMap = cache.getAll(map.keySet());
