@@ -54,4 +54,4 @@ spec:
             - "Done ! The database is ready for use ."
             - "/home/oracle/setup/log/setupDB.log"
           initialDelaySeconds: 300
-periodSeconds: 5
+          periodSeconds: 5
