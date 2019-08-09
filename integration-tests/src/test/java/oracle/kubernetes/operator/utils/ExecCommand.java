@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator.utils;
 
-import com.google.common.io.ByteStreams;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -15,6 +14,8 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.google.common.io.ByteStreams;
 
 /** Class for executing shell commands from java. */
 public class ExecCommand {
