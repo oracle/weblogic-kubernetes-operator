@@ -18,7 +18,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 /**
- * This class contains Coherence relates integraiton tests.
+ * This class contains Coherence related integration tests.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItCoherenceTests extends BaseTest {
@@ -165,7 +165,7 @@ public class ItCoherenceTests extends BaseTest {
             + "/integration-tests/src/test/resources/wdt/coh-wdt-config.yaml");
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
-    return domain;
+      return domain;
   }
 
   /**
