@@ -4,19 +4,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.LogMatcher.containsSevere;
-import static oracle.kubernetes.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
-import static oracle.kubernetes.operator.helpers.JobHelper.INTROSPECTOR_LOG_PREFIX;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.meterware.simplestub.Memento;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.LogRecord;
+
+import com.meterware.simplestub.Memento;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -25,6 +17,15 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static oracle.kubernetes.LogMatcher.containsInfo;
+import static oracle.kubernetes.LogMatcher.containsSevere;
+import static oracle.kubernetes.LogMatcher.containsWarning;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
+import static oracle.kubernetes.operator.helpers.JobHelper.INTROSPECTOR_LOG_PREFIX;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class IntrospectionLoggingTest {
   private Domain domain = DomainProcessorTestSetup.createTestDomain();

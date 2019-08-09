@@ -137,10 +137,10 @@ public class TestUtils {
   }
 
   /**
-   * check pod is in Terminating state without waiting
+   * check pod is in Terminating state without waiting.
    *
-   * @param podName - pod name
-   * @param domainNS - domain namespace name
+   * @param podName pod name
+   * @param domainNS domain namespace name
    *
    * @return true if pod terminating else false
    * @throws Exception exception
@@ -1079,6 +1079,38 @@ public class TestUtils {
   }
 
   /**
+   * exec into the pod and call the shell script with given arguments.
+   *
+   * @param podName pod name
+   * @param domainNS namespace
+   * @param scriptsLocInPod script location
+   * @param shScriptName script name
+   * @param args script arguments
+   * @throws Exception exception
+   */
+  public static void callShellScriptByExecToPod(
+      String podName, String domainNS, String scriptsLocInPod, String shScriptName, String[] args)
+      throws Exception {
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(podName)
+        .append(" -- bash -c 'chmod +x -R ")
+        .append(scriptsLocInPod)
+        .append("  && ")
+        .append(scriptsLocInPod)
+        .append("/")
+        .append(shScriptName)
+        .append(" ")
+        .append(String.join(" ", args).toString())
+        .append("'");
+
+    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
+    TestUtils.exec(cmdKubectlSh.toString());
+  }
+
+  /**
    * Build a jar archive.  The archive will only include the directory structure below the srcDir.
    *
    * @param jarPath  Jar file path for resulting archive
@@ -1137,18 +1169,14 @@ public class TestUtils {
 
   /**
    * Build a WDT zip archive, which consists of a set of archives structured as follows:
-   *
    * wlsdeploy/applications/archive1, archive2, etc
-   *
    * for example, the WDT archive with 3 artifacts could have the following...
-   *
-   *  wlsdeploy/applications/archive1.ear, wlsdeploy/applications/coh-archive.gar, wlsdeploy/applications/mywebapp.war
-   *
-   * Copy each archive to temp location then build the WDT archive
+   * wlsdeploy/applications/archive1.ear, wlsdeploy/applications/coh-archive.gar, wlsdeploy/applications/mywebapp.war.
+   * Copy each archive to temp location then build the WDT archive.
    *
    * @param wdtArchivePath path where new archive should be created
-   * @param archivePaths   array of archives to be included in the WDT archive
-   * @param tmpDirRoot     tmp directory that can be used to create the archve
+   * @param archivePaths array of archives to be included in the WDT archive
+   * @param tmpDirRoot tmp directory that can be used to create the archive
    */
   public static void buildWdtZip(
       String wdtArchivePath, String[] archivePaths, String tmpDirRoot)  {
@@ -1170,38 +1198,6 @@ public class TestUtils {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-  }
-
-  /**
-   * exec into the pod and call the shell script with given arguments.
-   *
-   * @param podName pod name
-   * @param domainNS namespace
-   * @param scriptsLocInPod script location
-   * @param shScriptName script name
-   * @param args script arguments
-   * @throws Exception exception
-   */
-  public static void callShellScriptByExecToPod(
-      String podName, String domainNS, String scriptsLocInPod, String shScriptName, String[] args)
-      throws Exception {
-    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
-    cmdKubectlSh
-        .append(domainNS)
-        .append(" exec -it ")
-        .append(podName)
-        .append(" -- bash -c 'chmod +x -R ")
-        .append(scriptsLocInPod)
-        .append("  && ")
-        .append(scriptsLocInPod)
-        .append("/")
-        .append(shScriptName)
-        .append(" ")
-        .append(String.join(" ", args).toString())
-        .append("'");
-
-    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
-    TestUtils.exec(cmdKubectlSh.toString());
   }
 
   public static void createDirUnderDomainPV(String dirPath) throws Exception {
@@ -1445,25 +1441,24 @@ public class TestUtils {
   }
 
   /**
-   * Check if the pod output contains the specified string
+   * Check if the pod output contains the specified string.
    *
    * @param cmd        command to execute
    * @param matchStr   matching string
    * @param k8sObjName pod Name
    *
    * @return true for match else false
-   * @throws Exception
+   * @throws Exception exception
    */
   public static boolean checkPodContains(String cmd, String matchStr, String k8sObjName)
       throws Exception {
-      ExecResult result = ExecCommand.exec(cmd);
-      if (result.exitValue() != 0
-          || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
-        return false;
-      } else {
-        logger.info("Pod " + k8sObjName + " match found for " + matchStr);
-        return true;
-      }
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0 || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
+      return false;
+    } else {
+      logger.info("Pod " + k8sObjName + " match found for " + matchStr);
+      return true;
+    }
   }
 
   private static void checkCmdInLoopForDelete(String cmd, String matchStr, String k8sObjName)
