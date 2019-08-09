@@ -1,7 +1,6 @@
 // Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
-
 package oracle.kubernetes.operator;
 
 import java.io.IOException;
@@ -10,6 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
@@ -43,6 +44,8 @@ public class ItSitConfig extends BaseTest {
   private static String mysqltmpDir = "";
   private static String configOverrideDir = "";
   private static String mysqlYamlFile = "";
+  private static String domainYaml;
+  private static String JDBC_RES_SCRIPT;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -81,6 +84,11 @@ public class ItSitConfig extends BaseTest {
       // create weblogic domain with configOverrides
       domain = createSitConfigDomain();
       Assert.assertNotNull(domain);
+      domainYaml =
+          BaseTest.getUserProjectsDir()
+              + "/weblogic-domains/"
+              + domain.getDomainUid()
+              + "/domain.yaml";
       // copy the jmx test client file the administratioin server weblogic server pod
       ADMINPODNAME = domain.getDomainUid() + "-" + domain.getAdminServerName();
       TestUtils.copyFileViaCat(
@@ -95,6 +103,7 @@ public class ItSitConfig extends BaseTest {
           domain.getDomainNs());
       KUBE_EXEC_CMD =
           "kubectl -n " + domain.getDomainNs() + "  exec -it " + ADMINPODNAME + "  -- bash -c";
+      JDBC_RES_SCRIPT = TEST_RES_DIR + "/sitconfig/scripts/create-jdbc-resource.py";
     }
   }
 
@@ -216,6 +225,7 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    transferTests();
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
@@ -246,6 +256,7 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    transferTests();
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
@@ -281,6 +292,7 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    transferTests();
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
@@ -314,6 +326,7 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    transferTests();
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
@@ -347,6 +360,7 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    transferTests();
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
@@ -360,6 +374,220 @@ public class ItSitConfig extends BaseTest {
     assertResult(result);
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+  }
+
+  /**
+   * Test to verify the configuration override after a domain is up and running. Modifies the
+   * existing config.xml entries to add startup and shutdown classes verifies those are overridden
+   * when domain is restarted.
+   *
+   * @throws Exception when assertions fail.
+   */
+  @Test
+  public void testConfigOverrideAfterDomainStartup() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    boolean testCompletedSuccessfully = false;
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    // recreate the map with new situational config files
+    String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
+    String dstDir = configOverrideDir;
+    Files.copy(
+        Paths.get(srcDir, "config_1.xml"),
+        Paths.get(dstDir, "config.xml"),
+        StandardCopyOption.REPLACE_EXISTING);
+    recreateCRDWithNewConfigMap();
+    transferTests();
+    ExecResult result =
+        TestUtils.exec(
+            KUBE_EXEC_CMD
+                + " 'sh runSitConfigTests.sh "
+                + fqdn
+                + " "
+                + T3CHANNELPORT
+                + " weblogic welcome1 "
+                + testMethod
+                + "'");
+    assertResult(result);
+    testCompletedSuccessfully = true;
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+  }
+
+  /**
+   * This test covers the overriding of JDBC system resource after a domain is up and running. It
+   * creates a datasource , recreates the K8S configmap with updated JDBC descriptor and verifies
+   * the new overridden values with restart of the WLS pods
+   *
+   * @throws Exception when assertions fail.
+   */
+  @Test
+  public void testOverrideJDBCResourceAfterDomainStart() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    boolean testCompletedSuccessfully = false;
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    createJdbcResource();
+    // recreate the map with new situational config files
+    String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
+    String dstDir = configOverrideDir;
+    Files.copy(
+        Paths.get(srcDir, "jdbc-JdbcTestDataSource-1.xml"),
+        Paths.get(dstDir, "jdbc-JdbcTestDataSource-1.xml"),
+        StandardCopyOption.REPLACE_EXISTING);
+    recreateCRDWithNewConfigMap();
+    transferTests();
+    ExecResult result =
+        TestUtils.exec(
+            KUBE_EXEC_CMD
+                + " 'sh runSitConfigTests.sh "
+                + fqdn
+                + " "
+                + T3CHANNELPORT
+                + " weblogic welcome1 "
+                + testMethod
+                + "'");
+    assertResult(result);
+    testCompletedSuccessfully = true;
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+  }
+
+  /**
+   * This test covers the overriding of JDBC system resource with new kubernetes secret name for
+   * dbusername and dbpassword
+   *
+   * @throws Exception when assertions fail.
+   */
+  @Test
+  public void testOverrideJDBCResourceWithNewSecret() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    boolean testCompletedSuccessfully = false;
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    // recreate the map with new situational config files
+    String files[] = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
+    String secretName = "test-secrets-new";
+    for (String file : files) {
+      Path path = Paths.get(sitconfigTmpDir, "configoverridefiles", file);
+      String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+      content = content.replaceAll("test-secrets", secretName);
+      if (getWeblogicImageTag().contains(PS3_TAG)) {
+        content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
+      }
+      Files.write(
+          Paths.get(sitconfigTmpDir, "configoverridefiles", file),
+          content.getBytes(StandardCharsets.UTF_8),
+          StandardOpenOption.TRUNCATE_EXISTING);
+    }
+    String content = new String(Files.readAllBytes(Paths.get(domainYaml)), StandardCharsets.UTF_8);
+    content = content.replaceAll("test-secrets", secretName);
+    Files.write(
+        Paths.get(domainYaml),
+        content.getBytes(StandardCharsets.UTF_8),
+        StandardOpenOption.TRUNCATE_EXISTING);
+
+    TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-test-secrets", true);
+    createNewSecret(secretName);
+    TestUtils.exec("kubectl apply -f " + domainYaml, true);
+    recreateCRDWithNewConfigMap();
+    transferTests();
+    ExecResult result =
+        TestUtils.exec(
+            KUBE_EXEC_CMD
+                + " 'sh runSitConfigTests.sh "
+                + fqdn
+                + " "
+                + T3CHANNELPORT
+                + " weblogic welcome1 "
+                + testMethod
+                + " "
+                + JDBC_URL
+                + "'");
+    assertResult(result);
+    testCompletedSuccessfully = true;
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+  }
+
+  /**
+   * Create a JDBC system resource in domain
+   *
+   * @throws Exception JDBC resource creation fails
+   */
+  private void createJdbcResource() throws Exception {
+    Path path = Paths.get(JDBC_RES_SCRIPT);
+    String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    content = content.replaceAll("JDBC_URL", JDBC_URL);
+    content = content.replaceAll("DOMAINUID", DOMAINUID);
+    if (getWeblogicImageTag().contains(PS3_TAG)) {
+      content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
+    }
+    Files.write(
+        Paths.get(sitconfigTmpDir, "create-jdbc-resource.py"),
+        content.getBytes(StandardCharsets.UTF_8));
+    TestUtils.copyFileViaCat(
+        Paths.get(sitconfigTmpDir, "create-jdbc-resource.py").toString(),
+        "create-jdbc-resource.py",
+        ADMINPODNAME,
+        domain.getDomainNs());
+    TestUtils.exec(KUBE_EXEC_CMD + " 'wlst.sh create-jdbc-resource.py'", true);
+  }
+
+  /**
+   * Update the configOverrides configmap and restart WLS pods.
+   *
+   * @throws Exception when pods restart fail
+   */
+  private void recreateCRDWithNewConfigMap() throws Exception {
+    int clusterReplicas =
+        TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
+
+    String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";
+    TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
+    domain.verifyServerPodsDeleted(clusterReplicas);
+
+    String cmd =
+        "kubectl create configmap "
+            + DOMAINUID
+            + "-sitconfigcm --from-file="
+            + configOverrideDir
+            + " -o yaml --dry-run | kubectl replace -f -";
+    TestUtils.exec(cmd, true);
+
+    patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
+    TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
+    domain.verifyDomainCreated();
+  }
+
+  private void createNewSecret(String secretName) throws Exception {
+    String cmd =
+        "kubectl -n "
+            + domain.getDomainNs()
+            + " create secret generic "
+            + domain.getDomainUid()
+            + "-"
+            + secretName
+            + " --from-literal=hostname="
+            + TestUtils.getHostName()
+            + " --from-literal=dbusername=root"
+            + " --from-literal=dbpassword=root123";
+    TestUtils.exec(cmd, true);
+  }
+
+  /**
+   * Transfer the tests to run in WLS pods
+   *
+   * @throws Exception
+   */
+  private void transferTests() throws Exception {
+    TestUtils.copyFileViaCat(
+        TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
+        "SitConfigTests.java",
+        ADMINPODNAME,
+        domain.getDomainNs());
+    TestUtils.copyFileViaCat(
+        TEST_RES_DIR + "sitconfig/scripts/runSitConfigTests.sh",
+        "runSitConfigTests.sh",
+        ADMINPODNAME,
+        domain.getDomainNs());
   }
 
   /**

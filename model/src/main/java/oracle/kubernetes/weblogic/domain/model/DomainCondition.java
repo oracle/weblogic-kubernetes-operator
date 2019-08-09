@@ -23,22 +23,27 @@ public class DomainCondition implements Comparable<DomainCondition> {
           + "Available, and Failed. Required.")
   @NotNull
   private final DomainConditionType type;
+
   @Description("Last time we probed the condition.")
   @SerializedName("lastProbeTime")
   @Expose
   private DateTime lastProbeTime;
+
   @Description("Last time the condition transitioned from one status to another.")
   @SerializedName("lastTransitionTime")
   @Expose
   private DateTime lastTransitionTime;
+
   @Description("Human-readable message indicating details about last transition.")
   @SerializedName("message")
   @Expose
   private String message;
+
   @Description("Unique, one-word, CamelCase reason for the condition's last transition.")
   @SerializedName("reason")
   @Expose
   private String reason;
+
   @Description("Status is the status of the condition. Can be True, False, Unknown. Required.")
   @SerializedName("status")
   @Expose

@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator.utils;
 
-import io.kubernetes.client.models.V1Pod;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,6 +28,8 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
@@ -1207,9 +1208,9 @@ public class TestUtils {
     dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
     String crdCmd =
         BaseTest.getProjectRoot()
-     + "/src/integration-tests/bash/krun.sh -m "+BaseTest.getPvRoot()+":/sharedparent -c 'mkdir -m 777 -p "
-     + dirPath
-     + "'"; 
+        + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot() + ":/sharedparent -c 'mkdir -m 777 -p "
+        + dirPath
+        + "'";
     
     ExecResult result = ExecCommand.exec(crdCmd);
     if (result.exitValue() != 0) {
@@ -1229,7 +1230,7 @@ public class TestUtils {
     // copy wldf.py script tp pod
     copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/wldf/wldf.py",
-        BaseTest.getAppLocationInPod() +"/wldf.py",
+        BaseTest.getAppLocationInPod() + "/wldf.py",
         adminPodName,
         domainNS);
 
@@ -1251,10 +1252,10 @@ public class TestUtils {
             + ":"
             + t3ChannelPort,
         
-      };
+    };
     
     // call callpyscript.sh in pod to deploy wldf module
-     TestUtils.callShellScriptByExecToPod(
+    TestUtils.callShellScriptByExecToPod(
         adminPodName, domainNS, BaseTest.getAppLocationInPod(), "callpyscript.sh", args);
   }
 
@@ -1397,8 +1398,8 @@ public class TestUtils {
     return myKeyStore;
   }
 
-
-/**
+  /**
+   * Checks command in a loop.
    * @param cmd command to run in the loop
    * @param matchStr expected string to match in the output
    * @throws Exception exception if fails to execute
