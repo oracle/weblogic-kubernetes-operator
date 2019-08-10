@@ -248,6 +248,11 @@ function createWLDomain() {
             for K in "${!inventory_passphrase[@]}"; do introspect_passphrase[$K]=${inventory_passphrase[$K]}; done
             declare -p introspect_passphrase > /tmp/inventory_passphrase.md5
         fi
+
+        if [ -f ${inventory_merged_model} ] ; then
+
+        fi
+
     fi
     return ${create_domain}
 }
@@ -259,6 +264,7 @@ declare -A inventory_passphrase
 inventory_image_md5="/weblogic-operator/introspectormd5/inventory_image.md5"
 inventory_cm_md5="/weblogic-operator/introspectormd5/inventory_cm.md5"
 inventory_passphrase_md5="/weblogic-operator/introspectormd5/inventory_passphrase.md5"
+inventory_merged_model="/weblogic-operator/introspectormd5/merged_model.json"
 wdt_config_root="/weblogic-operator/wdt-config-map"
 wdt_secret_path="/weblogic-operator/wdt-config-map-secrets"
 model_home="/u01/model_home"
