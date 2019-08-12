@@ -37,10 +37,10 @@ public class ItElasticLogging extends BaseTest {
   private static final String elasticStackYamlLoc =
       "kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml";
   private final String loggingJarRepos = 
-    "https://github.com/oracle/weblogic-logging-exporter/releases/download/v0.1.1";
+      "https://github.com/oracle/weblogic-logging-exporter/releases/download/v0.1.1";
   private final String wlsLoggingExpJar = "weblogic-logging-exporter-0.1.1.jar";
   private final String snakeyamlJarRepos = 
-    "https://repo1.maven.org/maven2/org/yaml/snakeyaml/1.23";
+      "https://repo1.maven.org/maven2/org/yaml/snakeyaml/1.23";
   private final String snakeyamlJar = "snakeyaml-1.23.jar";
   private static Operator operator;
   private static Domain domain;
@@ -224,13 +224,13 @@ public class ItElasticLogging extends BaseTest {
    * @throws Exception exception
    */
   @Test
-  public void testWLSLoggingExporter() throws Exception {
+  public void testWlsLoggingExporter() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     // Download Weblogic logging exporter 
-    downloadWLSLoggingExporterJars();
+    downloadWlsLoggingExporterJars();
     // Copy required resources to all wls server pods
     copyResourceFilesToAllPods();
 
@@ -265,7 +265,7 @@ public class ItElasticLogging extends BaseTest {
     Assume.assumeNotNull(indexStatus);
     Assume.assumeNotNull(indexName);
     
-    if(!index.equalsIgnoreCase(kibanaIndexKey)) {
+    if (!index.equalsIgnoreCase(kibanaIndexKey)) {
       // Add the logstash and wls index name to a Map
       testVarMap.put(index, indexName);
     }
@@ -278,16 +278,14 @@ public class ItElasticLogging extends BaseTest {
     String[] indexNameArr = 
       indexName.split(System.getProperty("line.separator"));
     
-    for(int i = 0; i < indexStatusArr.length; i++) {
-      logger.info("Health status of " + indexNameArr[i] + 
-                  " is: " + healthStatusArr[i]);
-      logger.info("Index status of " + indexNameArr[i] + 
-                  " is: " + indexStatusArr[i]);
+    for (int i = 0; i < indexStatusArr.length; i++) {
+      logger.info("Health status of " + indexNameArr[i] + " is: " + healthStatusArr[i]);
+      logger.info("Index status of " + indexNameArr[i] + " is: " + indexStatusArr[i]);
       // Verify that the health status of index
       Assume.assumeTrue(
           index + " is not ready!",
-          healthStatusArr[i].trim().equalsIgnoreCase("yellow") || 
-          healthStatusArr[i].trim().equalsIgnoreCase("green"));
+          healthStatusArr[i].trim().equalsIgnoreCase("yellow")
+              || healthStatusArr[i].trim().equalsIgnoreCase("green"));
       // Verify that the index is open for use
       Assume.assumeTrue(index + " index is not open!", 
                         indexStatusArr[i].trim().equalsIgnoreCase("open"));
@@ -395,7 +393,7 @@ public class ItElasticLogging extends BaseTest {
     return result.stdout();
   }
   
-  private void downloadWLSLoggingExporterJars() throws Exception {
+  private void downloadWlsLoggingExporterJars() throws Exception {
     File loggingJatReposDir = new File(loggingExpArchiveLoc);
 
     if (loggingJatReposDir.list().length == 0) {
@@ -455,8 +453,7 @@ public class ItElasticLogging extends BaseTest {
   
   private void copyResourceFilesToOnePod(String serverName, String domainNS) 
       throws Exception {
-    String resourceDir = 
-      BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
+    String resourceDir = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
     String testResourceDir = resourceDir + "/loggingexporter";
     final String loggingYamlFile = "WebLogicLoggingExporter.yaml";
     
