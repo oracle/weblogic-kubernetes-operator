@@ -16,13 +16,13 @@ When the first Coherence process starts, it will form a cluster.  The next
 Coherence process to start (i.e. in a different pod) will use UDP to try
 to contact the master.  Most Kubernetes overlay network providers do not
 support multicast, so you should configure Coherence to use unicast and 
-provide a "well known address" so that members can find the master. 
-This is normally done by using the cluster address, i.e. the address of
+provide a "well known address (WKA)" so that members can find the master. 
+This is typically done by using the cluster address, i.e. the address of
 the Kubernetes service that is pointing to all cluster members.
 
 {{% notice note %}}
 If you create your domain using the samples provided in this project, the
-cluster will be able to form, you do not need to manually specify WKA.
+cluster will be able to form; you do not need to manually specify WKA.
 However, the information is included below for completeness.
 {{% /notice %}}
 
@@ -36,7 +36,10 @@ would be called `domain1-cluster-cluster1` and follows the pattern:
 domainUID  "-cluster-"  cluster name
 ```
 
-Where `-cluster-` is a string literal. 
+Where `-cluster-` is a string literal. Note also that the operator
+normalizes the domainUID and the cluster name if necessary so that they
+are DNS compatible, for example all lower case, underscores converted 
+to hyphens.
 
 The Coherence well known addresses are provided in a variable named
 `coherence.wka` as shown in the example below:
@@ -47,7 +50,7 @@ The Coherence well known addresses are provided in a variable named
 
 #### Operating system library requirements
 
-In order for coherence clusters to form correctly, the `conntrack` library
+In order for Coherence clusters to form correctly, the `conntrack` library
 must be installed.  Most Kubernetes distributions will do this for you.
 If you have issues with clusters not forming, you should check that 
 `conntrack` is installed using this command (or equivalent):
@@ -87,7 +90,7 @@ using this command:
 Note that you will need to run that command for each line. So in the example
 above, you would need to run it twice. 
 
-Once you are done, you can run the previous command again and verify that
+After you are done, you can run the previous command again and verify that
 the output is now an empty list.
 
 After making this change, restart your domain(s) and the Coherence cluster
