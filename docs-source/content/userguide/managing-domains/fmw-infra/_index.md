@@ -15,6 +15,7 @@ pre = "<b> </b>"
 * [Create a Kubernetes secret with the RCU credentials](#create-a-kubernetes-secret-with-the-rcu-credentials)
 * [Creating an FMW Infrastructure domain](#creating-an-fmw-infrastructure-domain)
 * [Patching the FMW Infrastructure image](#patching-the-fmw-infrastructure-image)
+* [Additional considerations for Coherence](#additional-considerations-for-coherence)
 
 
 Starting with the 2.2.0 release, the operator supports FMW Infrastructure domains, that is,
@@ -431,3 +432,10 @@ for more information.
 
 An example of a non-ZDP compliant patch is one that includes a schema change
 that cannot be applied dynamically.
+
+#### Additional considerations for Coherence
+
+If you are running a domain which contains Coherence, please refer to
+[Coherence requirements]({{< relref "/faq/coherence-requirements.md" >}})
+for more information.
+
