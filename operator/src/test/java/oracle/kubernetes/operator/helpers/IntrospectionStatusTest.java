@@ -4,12 +4,10 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
-import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -19,10 +17,6 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1PodStatusBuilder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
@@ -34,6 +28,13 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
+import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** Tests updates to a domain status from progress of the instrospection job. */
 public class IntrospectionStatusTest {
@@ -119,15 +120,6 @@ public class IntrospectionStatusTest {
                 .build());
   }
 
-  private V1ContainerState createWaitingState(String reason, String message) {
-    return new V1ContainerStateBuilder()
-        .withNewWaiting()
-        .withReason(reason)
-        .withMessage(message)
-        .endWaiting()
-        .build();
-  }
-
   @SuppressWarnings("SameParameterValue")
   private V1Pod createIntrospectorJobPod(String domainUid) {
     return AnnotationHelper.withSha256Hash(
@@ -139,6 +131,15 @@ public class IntrospectionStatusTest {
                         .namespace(NS),
                     domainUid))
             .spec(new V1PodSpec()));
+  }
+
+  private V1ContainerState createWaitingState(String reason, String message) {
+    return new V1ContainerStateBuilder()
+        .withNewWaiting()
+        .withReason(reason)
+        .withMessage(message)
+        .endWaiting()
+        .build();
   }
 
   private String getPodSuffix() {

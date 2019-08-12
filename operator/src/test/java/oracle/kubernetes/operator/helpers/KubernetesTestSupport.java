@@ -4,11 +4,29 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static java.net.HttpURLConnection.HTTP_OK;
-import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
-import static java.util.Collections.emptyMap;
-import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
+import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonPatch;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -43,29 +61,6 @@ import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import java.io.StringReader;
-import java.lang.reflect.Field;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonPatch;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -81,6 +76,12 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
+
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
+import static java.util.Collections.emptyMap;
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 
 @SuppressWarnings("WeakerAccess")
 public class KubernetesTestSupport extends FiberTestSupport {
@@ -388,6 +389,24 @@ public class KubernetesTestSupport extends FiberTestSupport {
       } catch (HttpErrorException e) {
         throw new ApiException(e.status, "failure reported in test");
       }
+    }
+  }
+
+  static class DateTimeSerializer implements JsonDeserializer<DateTime>, JsonSerializer<DateTime> {
+    private static final DateTimeFormatter DATE_FORMAT = ISODateTimeFormat.dateTime();
+
+    @Override
+    public DateTime deserialize(
+        final JsonElement je, final Type type, final JsonDeserializationContext jdc)
+        throws JsonParseException {
+      return new DateTime(Long.parseLong(je.getAsJsonObject().get("iMillis").getAsString()));
+    }
+
+    @Override
+    public JsonElement serialize(
+        final DateTime src, final Type typeOfSrc, final JsonSerializationContext context) {
+      String retVal = src == null ? "" : DATE_FORMAT.print(src);
+      return new JsonPrimitive(retVal);
     }
   }
 
@@ -812,23 +831,5 @@ public class KubernetesTestSupport extends FiberTestSupport {
     public NotFoundException(String resourceType, String name, String namespace) {
       super(String.format("No %s named %s found in namespace %s", resourceType, name, namespace));
     }
-  }
-}
-
-class DateTimeSerializer implements JsonDeserializer<DateTime>, JsonSerializer<DateTime> {
-  private static final DateTimeFormatter DATE_FORMAT = ISODateTimeFormat.dateTime();
-
-  @Override
-  public DateTime deserialize(
-      final JsonElement je, final Type type, final JsonDeserializationContext jdc)
-      throws JsonParseException {
-    return new DateTime(Long.parseLong(je.getAsJsonObject().get("iMillis").getAsString()));
-  }
-
-  @Override
-  public JsonElement serialize(
-      final DateTime src, final Type typeOfSrc, final JsonSerializationContext context) {
-    String retVal = src == null ? "" : DATE_FORMAT.print(src);
-    return new JsonPrimitive(retVal);
   }
 }
