@@ -226,10 +226,10 @@ public class ItOperator extends BaseTest {
       if (!domainUidsToBeDeleted.equals("")) {
         logger.info("About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
-        if(domain1 != null) {
+        if (domain1 != null) {
           TestUtils.verifyAfterDeletion(domain1);
         }
-        if(domain2 != null) {
+        if (domain2 != null) {
           TestUtils.verifyAfterDeletion(domain2);
         }
       }
@@ -312,11 +312,11 @@ public class ItOperator extends BaseTest {
       if (!domainUidsToBeDeleted.equals("")) {
         logger.info("About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
-        if(domain1 != null) {
+        if (domain1 != null) {
           TestUtils.verifyAfterDeletion(domain1);
         }
-        if(domain2 != null) {
-        TestUtils.verifyAfterDeletion(domain2);
+        if (domain2 != null) {
+          TestUtils.verifyAfterDeletion(domain2);
         }
       }
     }

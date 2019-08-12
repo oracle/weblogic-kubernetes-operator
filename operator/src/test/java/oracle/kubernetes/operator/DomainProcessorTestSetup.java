@@ -4,8 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -22,6 +20,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.joda.time.DateTime;
+
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 
 /**
  * Setup for tests that will involve running the main domain processor functionality. Such tests
@@ -98,17 +98,6 @@ public class DomainProcessorTestSetup {
     defineKubernetesResources(getIntrospectResult(domainConfig));
   }
 
-  private String getIntrospectResult(WlsDomainConfig domainConfig) throws JsonProcessingException {
-    return String.format(INTROSPECT_RESULT, createTopologyYaml(domainConfig));
-  }
-
-  private String createTopologyYaml(WlsDomainConfig domainConfig) throws JsonProcessingException {
-    ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
-    return yamlMapper
-        .writerWithDefaultPrettyPrinter()
-        .writeValueAsString(domainConfig.toTopology());
-  }
-
   /**
    * Set up the in-memory Kubernetes environment for the domain processor, specifying the pod log.
    * This allows testing of log messages in the case of failures.
@@ -132,5 +121,16 @@ public class DomainProcessorTestSetup {
                     .putLabelsItem("job-name", "")
                     .name(LegalNames.toJobIntrospectorName(UID))
                     .namespace(NS)));
+  }
+
+  private String getIntrospectResult(WlsDomainConfig domainConfig) throws JsonProcessingException {
+    return String.format(INTROSPECT_RESULT, createTopologyYaml(domainConfig));
+  }
+
+  private String createTopologyYaml(WlsDomainConfig domainConfig) throws JsonProcessingException {
+    ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+    return yamlMapper
+        .writerWithDefaultPrettyPrinter()
+        .writeValueAsString(domainConfig.toTopology());
   }
 }

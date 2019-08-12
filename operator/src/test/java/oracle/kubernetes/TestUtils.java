@@ -4,10 +4,6 @@
 
 package oracle.kubernetes;
 
-import static com.meterware.simplestub.Stub.createStub;
-
-import ch.qos.logback.classic.LoggerContext;
-import com.meterware.simplestub.Memento;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,8 +14,13 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+
+import ch.qos.logback.classic.LoggerContext;
+import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.slf4j.LoggerFactory;
+
+import static com.meterware.simplestub.Stub.createStub;
 
 public class TestUtils {
   /**
