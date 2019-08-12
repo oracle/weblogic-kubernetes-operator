@@ -134,7 +134,7 @@ public class ItSitConfig extends BaseTest {
   private static Domain createSitConfigDomain() throws Exception {
     String createDomainScript = TEST_RES_DIR + "/domain-home-on-pv/create-domain.py";
     // load input yaml to map and add configOverrides
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
     domainMap.put("configOverrides", "sitconfigcm");
     domainMap.put("configOverridesFile", configOverrideDir);
     domainMap.put("domainUID", DOMAINUID);
