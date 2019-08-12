@@ -387,7 +387,7 @@ public class ItSitConfig extends BaseTest {
         Paths.get(srcDir, "config_1.xml"),
         Paths.get(dstDir, "config.xml"),
         StandardCopyOption.REPLACE_EXISTING);
-    recreateConfigMapandRestart("test-secrets");
+    recreateConfigMapandRestart("test-secrets", "test-secrets");
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -423,7 +423,7 @@ public class ItSitConfig extends BaseTest {
         Paths.get(srcDir, "jdbc-JdbcTestDataSource-1.xml"),
         Paths.get(dstDir, "jdbc-JdbcTestDataSource-1.xml"),
         StandardCopyOption.REPLACE_EXISTING);
-    recreateConfigMapandRestart("test-secrets");
+    recreateConfigMapandRestart("test-secrets", "test-secrets");
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -452,10 +452,10 @@ public class ItSitConfig extends BaseTest {
     logTestBegin(testMethod);
     // recreate the map with new situational config files
     String[] files = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
-    String secretName = "test-secrets-new";
+    String newSecret = "test-secrets-new";
     try {
-      copySitConfigFiles(files, secretName);
-      recreateConfigMapandRestart(secretName);
+      copySitConfigFiles(files, newSecret);
+      recreateConfigMapandRestart("test-secrets", newSecret);
       transferTests();
       ExecResult result =
           TestUtils.exec(
@@ -473,7 +473,7 @@ public class ItSitConfig extends BaseTest {
       logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
     } finally {
       copySitConfigFiles(files, "test-secrets");
-      recreateConfigMapandRestart(secretName);
+      recreateConfigMapandRestart("test-secrets-new", "test-secrets");
     }
   }
 
@@ -506,28 +506,31 @@ public class ItSitConfig extends BaseTest {
    *
    * @throws Exception when pods restart fail
    */
-  private void recreateConfigMapandRestart(String secretName) throws Exception {
-    String content = new String(Files.readAllBytes(Paths.get(domainYaml)), StandardCharsets.UTF_8);
-    content = content.replaceAll("test-secrets", secretName);
-    Files.write(
-        Paths.get(domainYaml),
-        content.getBytes(StandardCharsets.UTF_8),
-        StandardOpenOption.TRUNCATE_EXISTING);
+  private void recreateConfigMapandRestart(String oldSecret, String newSecret) throws Exception {
+    if (!oldSecret.equals(newSecret)) {
+      String content =
+          new String(Files.readAllBytes(Paths.get(domainYaml)), StandardCharsets.UTF_8);
+      content = content.replaceAll(oldSecret, newSecret);
+      Files.write(
+          Paths.get(domainYaml),
+          content.getBytes(StandardCharsets.UTF_8),
+          StandardOpenOption.TRUNCATE_EXISTING);
 
-    TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-test-secrets", true);
-    String cmd =
-        "kubectl -n "
-            + domain.getDomainNs()
-            + " create secret generic "
-            + domain.getDomainUid()
-            + "-"
-            + secretName
-            + " --from-literal=hostname="
-            + TestUtils.getHostName()
-            + " --from-literal=dbusername=root"
-            + " --from-literal=dbpassword=root123";
-    TestUtils.exec(cmd, true);
-    TestUtils.exec("kubectl apply -f " + domainYaml, true);
+      TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-" + oldSecret, true);
+      String cmd =
+          "kubectl -n "
+              + domain.getDomainNs()
+              + " create secret generic "
+              + domain.getDomainUid()
+              + "-"
+              + newSecret
+              + " --from-literal=hostname="
+              + TestUtils.getHostName()
+              + " --from-literal=dbusername=root"
+              + " --from-literal=dbpassword=root123";
+      TestUtils.exec(cmd, true);
+      TestUtils.exec("kubectl apply -f " + domainYaml, true);
+    }
 
     int clusterReplicas =
         TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
@@ -536,7 +539,7 @@ public class ItSitConfig extends BaseTest {
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
     domain.verifyServerPodsDeleted(clusterReplicas);
 
-    cmd =
+    String cmd =
         "kubectl create configmap "
             + DOMAINUID
             + "-sitconfigcm --from-file="
