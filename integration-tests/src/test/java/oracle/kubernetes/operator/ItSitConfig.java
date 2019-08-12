@@ -1,6 +1,7 @@
 // Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator;
 
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.logging.Level;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
@@ -222,7 +224,6 @@ public class ItSitConfig extends BaseTest {
   @Test
   public void testCustomSitConfigOverridesForDomain() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     transferTests();
@@ -237,7 +238,6 @@ public class ItSitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
@@ -253,7 +253,6 @@ public class ItSitConfig extends BaseTest {
   @Test
   public void testCustomSitConfigOverridesForDomainMS() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     transferTests();
@@ -268,7 +267,6 @@ public class ItSitConfig extends BaseTest {
                 + testMethod
                 + " managed-server1'");
     assertResult(result);
-    testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
@@ -289,7 +287,6 @@ public class ItSitConfig extends BaseTest {
   @Test
   public void testCustomSitConfigOverridesForJdbc() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     transferTests();
@@ -306,7 +303,6 @@ public class ItSitConfig extends BaseTest {
                 + JDBC_URL
                 + "'");
     assertResult(result);
-    testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
@@ -323,7 +319,6 @@ public class ItSitConfig extends BaseTest {
   @Test
   public void testCustomSitConfigOverridesForJms() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     transferTests();
@@ -338,7 +333,6 @@ public class ItSitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
@@ -357,7 +351,6 @@ public class ItSitConfig extends BaseTest {
   @Test
   public void testCustomSitConfigOverridesForWldf() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     transferTests();
@@ -372,7 +365,6 @@ public class ItSitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
@@ -386,7 +378,6 @@ public class ItSitConfig extends BaseTest {
   @Test
   public void testConfigOverrideAfterDomainStartup() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     // recreate the map with new situational config files
@@ -396,7 +387,7 @@ public class ItSitConfig extends BaseTest {
         Paths.get(srcDir, "config_1.xml"),
         Paths.get(dstDir, "config.xml"),
         StandardCopyOption.REPLACE_EXISTING);
-    recreateCRDWithNewConfigMap();
+    recreateCrdWithNewConfigMap();
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -409,7 +400,6 @@ public class ItSitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
@@ -421,9 +411,8 @@ public class ItSitConfig extends BaseTest {
    * @throws Exception when assertions fail.
    */
   @Test
-  public void testOverrideJDBCResourceAfterDomainStart() throws Exception {
+  public void testOverrideJdbcResourceAfterDomainStart() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     createJdbcResource();
@@ -434,7 +423,7 @@ public class ItSitConfig extends BaseTest {
         Paths.get(srcDir, "jdbc-JdbcTestDataSource-1.xml"),
         Paths.get(dstDir, "jdbc-JdbcTestDataSource-1.xml"),
         StandardCopyOption.REPLACE_EXISTING);
-    recreateCRDWithNewConfigMap();
+    recreateCrdWithNewConfigMap();
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -447,24 +436,22 @@ public class ItSitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
    * This test covers the overriding of JDBC system resource with new kubernetes secret name for
-   * dbusername and dbpassword
+   * dbusername and dbpassword.
    *
    * @throws Exception when assertions fail.
    */
   @Test
-  public void testOverrideJDBCResourceWithNewSecret() throws Exception {
+  public void testOverrideJdbcResourceWithNewSecret() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     // recreate the map with new situational config files
-    String files[] = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
+    String[] files = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
     String secretName = "test-secrets-new";
     for (String file : files) {
       Path path = Paths.get(sitconfigTmpDir, "configoverridefiles", file);
@@ -488,7 +475,7 @@ public class ItSitConfig extends BaseTest {
     TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-test-secrets", true);
     createNewSecret(secretName);
     TestUtils.exec("kubectl apply -f " + domainYaml, true);
-    recreateCRDWithNewConfigMap();
+    recreateCrdWithNewConfigMap();
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -503,12 +490,11 @@ public class ItSitConfig extends BaseTest {
                 + JDBC_URL
                 + "'");
     assertResult(result);
-    testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
-   * Create a JDBC system resource in domain
+   * Create a JDBC system resource in domain.
    *
    * @throws Exception JDBC resource creation fails
    */
@@ -536,7 +522,7 @@ public class ItSitConfig extends BaseTest {
    *
    * @throws Exception when pods restart fail
    */
-  private void recreateCRDWithNewConfigMap() throws Exception {
+  private void recreateCrdWithNewConfigMap() throws Exception {
     int clusterReplicas =
         TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
 
@@ -573,9 +559,9 @@ public class ItSitConfig extends BaseTest {
   }
 
   /**
-   * Transfer the tests to run in WLS pods
+   * Transfer the tests to run in WLS pods.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   private void transferTests() throws Exception {
     TestUtils.copyFileViaCat(

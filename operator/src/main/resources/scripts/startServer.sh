@@ -72,7 +72,7 @@ function startWLS() {
 
   trace "Start node manager"
   # call script to start node manager in same shell
-  # $SERVER_OUT_FILE will be set in startNodeManager.sh
+  # $SERVER_OUT_FILE, SERVER_PID_FILE, and SHUTDOWN_MARKER_FILE will be set in startNodeManager.sh
   . ${SCRIPTPATH}/startNodeManager.sh
   [ $? -ne 0 ] && trace SEVERE "failed to start node manager" && exitOrLoop
 
@@ -103,7 +103,7 @@ function waitUntilShutdown() {
   #
   if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
     trace "Showing the server out file from ${SERVER_OUT_FILE}"
-    ${SCRIPTPATH}/tailLog.sh ${SERVER_OUT_FILE} &
+    ${SCRIPTPATH}/tailLog.sh ${SERVER_OUT_FILE} ${SERVER_PID_FILE} &
   fi
   FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true} 
   SERVER_OUT_MONITOR_INTERVAL=${SERVER_OUT_MONITOR_INTERVAL:-3}
@@ -119,7 +119,7 @@ function waitForShutdownMarker() {
   #
   trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
   while true; do
-    if [ -e /weblogic-operator/doShutdown ] ; then
+    if [ -e ${SHUTDOWN_MARKER_FILE} ] ; then
       exit 0
     fi
     sleep 3
@@ -237,6 +237,8 @@ copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             
 copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
 copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
 copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
+
+
 
 if [ "${MOCK_WLS}" == 'true' ]; then
   mockWLS

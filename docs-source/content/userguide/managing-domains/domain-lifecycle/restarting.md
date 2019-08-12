@@ -199,3 +199,14 @@ If you've created a new image that is not rolling compatible, and you've changed
     the image, or the Kubernetes resources that register your domain with the operator.  For example, your servers are caching information from an external database and you've modified the contents of the database.
 
     In these cases, you must manually initiate a restart.
+
+* **Managed Coherence Servers safe shutdown**.
+
+    If the domain is configured to use a Coherence cluster, then you will need to increase the Kubernetes graceful timeout value.
+    When a server is shut down, Coherence needs time to recover partitions and rebalance the cluster before it is safe to shut down a second server.
+    Using the Kubernetes graceful termination feature, the operator will automatically wait until the Coherence HAStatus MBean attribute
+    indicates that it is safe to shut down the server.  However, after the graceful termination timeout expires, the pod will be deleted regardless.
+    Therefore, it is important to set the domain YAML `timeoutSeconds` to a large enough value to prevent the server from shutting down before
+    Coherence is safe. Furthermore, if the operator is not able to access the Coherence MBean, then the server will not be shut down
+    until the domain `timeoutSeconds` expires.  To minimize any possibility of cache data loss, you should increase the `timeoutSeconds`
+    value to a large number, for example, 15 minutes.

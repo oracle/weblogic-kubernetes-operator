@@ -23,6 +23,7 @@ import javax.management.remote.JMXServiceURL;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
+
 import weblogic.diagnostics.descriptor.WLDFHarvestedTypeBean;
 import weblogic.diagnostics.descriptor.WLDFInstrumentationMonitorBean;
 import weblogic.diagnostics.descriptor.WLDFResourceBean;
@@ -154,7 +155,7 @@ public class SitConfigTests {
     }
 
     if (testName.equals("testOverrideJDBCResourceAfterDomainStart")) {
-      test.testOverrideJDBCResourceAfterDomainStart("JdbcTestDataSource-1");
+      test.testOverrideJdbcResourceAfterDomainStart("JdbcTestDataSource-1");
     }
 
     if (testName.equals("testConfigOverrideAfterDomainStartup")) {
@@ -376,7 +377,7 @@ public class SitConfigTests {
     return serverMBean;
   }
 
-  /** Test to verify the startup and shutdown class names after domain startup */
+  /** Test to verify the startup and shutdown class names after domain startup. */
   private void testConfigOverrideAfterDomainStartup() {
     String startupClassName = "AddedStartupClassOne";
     StartupClassMBean[] startupClasses =
@@ -460,11 +461,11 @@ public class SitConfigTests {
    * Test that verifies a new JDBC data source is created after domain start can be overridden with
    * configmap change verifies the JDBC resource overriden values initialCapacity, maxCapacity,
    * LoginDelaySeconds, IgnoreInUseConnectionsEnabled, StatementCacheType,
-   * GlobalTransactionsProtocol
+   * GlobalTransactionsProtocol.
    *
    * @param jdbcResourceName - name of the JDBC resource overridden in jdbc-JdbcTestDataSource-0.xml
    */
-  public void testOverrideJDBCResourceAfterDomainStart(String jdbcResourceName) {
+  public void testOverrideJdbcResourceAfterDomainStart(String jdbcResourceName) {
 
     createDatabase("mysqldb2", jdbcResourceName);
 
@@ -498,9 +499,9 @@ public class SitConfigTests {
   }
 
   /**
-   * Utility method to create a database schema using the data source name
+   * Utility method to create a database schema using the data source name.
    *
-   * @param dbName - name of the database schema to create
+   * @param dbName name of the database schema to create
    * @param jdbcResourceName name of the data source to lookup
    */
   private void createDatabase(String dbName, String jdbcResourceName) {
@@ -526,12 +527,13 @@ public class SitConfigTests {
       Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
     }
   }
+
   /**
    * Returns the JDBCSystemResourceMBean from the domain configuration matching with JDBC resource
    * name.
    *
    * @param resourceName - name of the JDBC data source to lookup in domain configuration
-   * @return - the JDBC data source mbean
+   * @return the JDBC data source mbean
    */
   protected JDBCSystemResourceMBean getJdbcSystemResource(String resourceName) {
     println("Looking up the jdbc system module..." + resourceName);
