@@ -505,6 +505,17 @@ git checkout master git pull origin master git checkout -b your-branch  Make you
     </item>
     
     <item>
+      <title>Coherence Requirements</title>
+      <link>/weblogic-kubernetes-operator/faq/coherence-requirements/</link>
+      <pubDate>Mon, 12 Aug 2019 12:41:38 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/coherence-requirements/</guid>
+      <description>If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.
+Note that some Fusion Middleware products, like SOA Suite, use Coherence and so these requirements apply to them.
+Unicast and Well Known Address When the first Coherence process starts, it will form a cluster. The next Coherence process to start (i.e. in a different pod) will use UDP to try to contact the senior member.</description>
+    </item>
+    
+    <item>
       <title>Cannot Pull Image</title>
       <link>/weblogic-kubernetes-operator/faq/cannot-pull-image/</link>
       <pubDate>Sat, 23 Mar 2019 08:08:19 -0400</pubDate>

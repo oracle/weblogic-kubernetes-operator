@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.54.0" />
-    <meta name="description" content="These samples show various choices for working with domains.">
+    <meta name="description" content="">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>Domains :: WebLogic Kubernetes Operator</title>
+    <title>Coherence Requirements :: WebLogic Kubernetes Operator</title>
 
     
     <link href="/weblogic-kubernetes-operator/css/nucleus.css?1565730677" rel="stylesheet">
@@ -32,7 +32,7 @@
     </style>
     
   </head>
-  <body class="" data-url="/weblogic-kubernetes-operator/samples/simple/domains/">
+  <body class="" data-url="/weblogic-kubernetes-operator/faq/coherence-requirements/">
     <nav id="sidebar" class="">
 
 
@@ -1154,7 +1154,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/" title="Samples" class="dd-item 
-        parent
+        
         
         
         ">
@@ -1181,7 +1181,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/" title="Simple samples" class="dd-item 
-        parent
+        
         
         
         ">
@@ -1256,8 +1256,8 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/" title="Domains" class="dd-item 
-        parent
-        active
+        
+        
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/domains/">
@@ -2012,7 +2012,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/faq/" title="Frequently asked questions" class="dd-item 
-        
+        parent
         
         
         ">
@@ -2036,7 +2036,7 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/coherence-requirements/" title="Coherence Requirements" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/coherence-requirements/" title="Coherence Requirements" class="dd-item active">
         <a href="/weblogic-kubernetes-operator/faq/coherence-requirements/">
         Coherence Requirements
         
@@ -2129,13 +2129,7 @@
             
           
           
-            
-            
-          
-          
-            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/samples/'>Samples</a> > <a href='/weblogic-kubernetes-operator/samples/simple/'>Simple samples</a> > Domains
-          
-         
+            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/faq/'>Frequently asked questions</a> > Coherence Requirements
           
          
           
@@ -2148,7 +2142,22 @@
                 
                     <div class="progress">
     <div class="wrapper">
-
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#unicast-and-well-known-address">Unicast and Well Known Address</a></li>
+<li><a href="#operating-system-library-requirements">Operating system library requirements</a></li>
+<li><a href="#firewall-iptables-requirements">Firewall (iptables) requirements</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
     </div>
 </div>
 
@@ -2160,188 +2169,112 @@
         
         <div id="body-inner">
           
-            <h1>Domains</h1>
+            <h1>Coherence Requirements</h1>
           
 
         
 
 
-<p>These samples show various choices for working with domains.</p>
 
 
+<p>If you are running Coherence on Kubernetes, either inside a WebLogic domain
+or standalone, then there are some additional requirements to make sure
+that Coherence can form clusters.</p>
 
+<p>Note that some Fusion Middleware products, like SOA Suite, use Coherence
+and so these requirements apply to them.</p>
 
+<h4 id="unicast-and-well-known-address">Unicast and Well Known Address</h4>
 
+<p>When the first Coherence process starts, it will form a cluster.  The next
+Coherence process to start (i.e. in a different pod) will use UDP to try
+to contact the senior member.</p>
 
+<p>If you create a WebLogic domain which contains a Coherence cluster
+using the samples provided in this project, then that cluster will
+be configured correctly so that it is able to form;
+you do not need to do any additional manual configuration.</p>
 
+<p>If you are running Coherence standalone (outside a
+WebLogic domain) you should configure Coherence to use unicast and
+provide a &ldquo;well known address (WKA)&rdquo; so that all members can find the senior
+member.  Most Kubernetes overlay network providers do not
+support multicast.</p>
 
-<ul class="children children-h4">
-	
-    
-	    
-    
-    
+<p>This is done by specifying the Coherence well known addresses in a variable named
+<code>coherence.wka</code> as shown in the example below:</p>
 
-	
-		
-	
-		
-  
+<pre><code>-Dcoherence.wka=my-cluster-service
+</code></pre>
 
+<p>In this example <code>my-cluster-service</code> should be the name of the Kubernetes
+service that is pointing to all of the members of that Coherence cluster.</p>
 
-	
-	
+<p>Please refer to the <a href="https://oracle.github.io/coherence-operator/">Coherence operator documentation</a>
+for more information about running Coherence in Kubernetes outside of
+a WebLogic domain.</p>
 
-<h4>
-<a href="/weblogic-kubernetes-operator/samples/simple/domains/manually-create-domain/" >Manually</a>
-</h4>
+<h4 id="operating-system-library-requirements">Operating system library requirements</h4>
 
+<p>In order for Coherence clusters to form correctly, the <code>conntrack</code> library
+must be installed.  Most Kubernetes distributions will do this for you.
+If you have issues with clusters not forming, you should check that
+<code>conntrack</code> is installed using this command (or equivalent):</p>
 
+<pre><code>$ rpm -qa | grep conntrack
+libnetfilter_conntrack-1.0.6-1.el7_3.x86_64
+conntrack-tools-1.4.4-4.el7.x86_64
+</code></pre>
 
+<p>You should see output similar to that shown above.  If you do not, then you
+should install <code>conntrack</code> using your operating system tools.</p>
 
+<h4 id="firewall-iptables-requirements">Firewall (iptables) requirements</h4>
 
+<p>Some Kubernetes distributions create <code>iptables</code> rules that block some
+types of traffic that Coherence requires to form clusters.  If you are
+not able to form clusters, you can check for this issue using the
+following command:</p>
 
+<pre><code># iptables -t nat -v  -L POST_public_allow -n
+Chain POST_public_allow (1 references)
+pkts bytes target     prot opt in     out     source               destination
+164K   11M MASQUERADE  all  --  *      !lo     0.0.0.0/0            0.0.0.0/0
+   0     0 MASQUERADE  all  --  *      !lo     0.0.0.0/0            0.0.0.0/0
+</code></pre>
 
-			
-				
-<p>Sample for creating the domain custom resource manually.</p>
-				
-			
-		
+<p>If you see output similar to the example above, i.e. if you see any entries
+in this chain, then you need to remove them.  You can remove the entries
+using this command:</p>
 
-		
-			
+<pre><code># iptables -t nat -v -D POST_public_allow 1
+</code></pre>
 
-		
-	
-		
-  
+<p>Note that you will need to run that command for each line. So in the example
+above, you would need to run it twice.</p>
 
+<p>After you are done, you can run the previous command again and verify that
+the output is now an empty list.</p>
 
-	
-	
-
-<h4>
-<a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" >FMW Infrastructure domain</a>
-</h4>
-
-
-
-
-
-
-
-			
-				
-<p>Sample for creating an FMW Infrastructure domain home on an existing PV or PVC, and the domain resource YAML file for deploying the generated WebLogic domain.</p>
-				
-			
-		
-
-		
-			
-
-		
-	
-		
-  
-
-
-	
-	
-
-<h4>
-<a href="/weblogic-kubernetes-operator/samples/simple/domains/domain-home-on-pv/" >Domain home on a PV</a>
-</h4>
-
-
-
-
-
-
-
-			
-				
-<p>Sample for creating a WebLogic domain home on an existing PV or PVC, and the domain resource YAML file for deploying the generated WebLogic domain.</p>
-				
-			
-		
-
-		
-			
-
-		
-	
-		
-  
-
-
-	
-	
-
-<h4>
-<a href="/weblogic-kubernetes-operator/samples/simple/domains/domain-home-in-image/" >Domain home in image</a>
-</h4>
-
-
-
-
-
-
-
-			
-				
-<p>Sample for creating a WebLogic domain home inside a Docker image, and the domain resource YAML file for deploying the generated WebLogic domain.</p>
-				
-			
-		
-
-		
-			
-
-		
-	
-		
-  
-
-
-	
-	
-
-<h4>
-<a href="/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/" >Delete domain resources</a>
-</h4>
-
-
-
-
-
-
-
-			
-				
-<p>Delete the domain resources created while executing the samples.</p>
-				
-			
-		
-
-		
-			
-
-		
-	
-
-	
-</ul>
-
-
-
-
+<p>After making this change, restart your domain(s) and the Coherence cluster
+should now form correctly.</p>
 
 
 <footer class=" footline" >
 	
 </footer>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-129126578-2', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
 
         
         </div> 
@@ -3121,7 +3054,6 @@
             
                 
                     
-                    
                 
                 
 
@@ -3137,7 +3069,6 @@
             
                 
                     
-                    
                 
                 
 
@@ -3152,9 +3083,6 @@
             
             
                 
-                    
-                        
-                        
                     
                 
                 
@@ -3188,7 +3116,6 @@
             
                 
                     
-                    
                 
                 
 
@@ -3203,9 +3130,6 @@
             
             
                 
-                    
-                        
-                        
                     
                 
                 
@@ -3730,6 +3654,7 @@
             
                 
                     
+                    
                 
                 
 
@@ -3742,6 +3667,7 @@
             
             
                 
+                    
                     
                 
                 
@@ -3758,6 +3684,9 @@
             
             
                 
+                    
+                        
+                        
                     
                 
                 
@@ -3782,10 +3711,10 @@
 	 
 	 
 		
-			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/samples/simple/storage/" title="Storage"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/faq/" title="Frequently asked questions"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/weblogic-kubernetes-operator/samples/simple/domains/manually-create-domain/" title="Manually" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/faq/cannot-pull-image/" title="Cannot Pull Image" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
@@ -3816,3 +3745,4 @@
 
   </body>
 </html>
+
