@@ -44,3 +44,4 @@ dependency-reduced-pom.xml
 *.ipr
 *.iws
 docs-source/docs
+.git/logs

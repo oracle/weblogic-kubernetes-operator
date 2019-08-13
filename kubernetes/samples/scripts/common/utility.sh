@@ -368,6 +368,8 @@ function createFiles {
     sed -i -e "s:%CUSTOM_RCUPREFIX%:${rcuSchemaPrefix}:g" ${createJobOutput}
     sed -i -e "s|%CUSTOM_CONNECTION_STRING%|${rcuDatabaseURL}|g" ${createJobOutput}
     sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
+    # extra entries for SOASuite domains
+    sed -i -e "s:%DOMAIN_TYPE%:${domainType}:g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
     echo Generating ${deleteJobOutput}
@@ -401,6 +403,19 @@ function createFiles {
   echo Generating ${dcrOutput}
 
   cp ${dcrInput} ${dcrOutput}
+
+  #Adding additional cluster (osb_cluster) based on the domain type
+  if [ "${domainType}" == "soaosb" ] || [ "${domainType}" == "soaessosb" ]; then
+    echo "Domain type is: ${domainType}"
+    export ADDITIONAL_CLUSTER="clusters:\n\
+  - clusterName: osb_cluster\n\
+    serverStartState: \"RUNNING\"\n\
+    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n\
+    serverService:\n\
+      precreateService: true"
+    sed -i -e "s|clusters:|${ADDITIONAL_CLUSTER}|g" ${dcrOutput}
+  fi
+  
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}

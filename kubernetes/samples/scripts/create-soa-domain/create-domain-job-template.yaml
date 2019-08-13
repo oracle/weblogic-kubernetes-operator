@@ -76,7 +76,7 @@ spec:
             - name: EXPOSE_T3_CHANNEL_PREFIX
               value: "%EXPOSE_T3_CHANNEL_PREFIX%"
             - name: DOMAIN_TYPE
-              value: soa
+              value: "%DOMAIN_TYPE%"
       volumes:
         - name: create-fmw-infra-sample-domain-job-cm-volume
           configMap:

@@ -14,6 +14,10 @@ adminServerName: AdminServer
 # This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
 domainUID: soainfra
 
+# Domain Type. Mandatory input for SOASuite domains. User must provide one of the supported values given below.
+# In case of SOASuite domains, the supported domain types are soa,osb,soaess,soaosb,soaessosb
+domainType: soa
+
 # Home of the WebLogic domain
 # If not specified, the value is derived from the domainUID as /shared/domains/<domainUID>
 domainHome: /u01/oracle/user_projects/domains/soainfra

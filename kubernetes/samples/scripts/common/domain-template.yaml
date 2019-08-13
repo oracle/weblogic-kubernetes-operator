@@ -54,6 +54,8 @@ spec:
     %LOG_HOME_ON_PV_PREFIX%volumeMounts:
     %LOG_HOME_ON_PV_PREFIX%- mountPath: %DOMAIN_ROOT_DIR%
     %LOG_HOME_ON_PV_PREFIX%  name: weblogic-domain-storage-volume
+    serverService:
+      precreateService: true
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
     # serverStartState legal values are "RUNNING" or "ADMIN"
@@ -73,5 +75,7 @@ spec:
   - clusterName: %CLUSTER_NAME%
     serverStartState: "RUNNING"
     replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
+    serverService:
+      precreateService: true
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
