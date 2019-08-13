@@ -14,39 +14,32 @@ and so these requirements apply to them.
 #### Unicast and Well Known Address 
 When the first Coherence process starts, it will form a cluster.  The next
 Coherence process to start (i.e. in a different pod) will use UDP to try
-to contact the master.  Most Kubernetes overlay network providers do not
-support multicast, so you should configure Coherence to use unicast and 
-provide a "well known address (WKA)" so that members can find the master. 
-This is typically done by using the cluster address, i.e. the address of
-the Kubernetes service that is pointing to all cluster members.
+to contact the senior member.  
 
-{{% notice note %}}
-If you create your domain using the samples provided in this project, the
-cluster will be able to form; you do not need to manually specify WKA.
-However, the information is included below for completeness.
-{{% /notice %}}
+If you create a WebLogic domain which contains a Coherence cluster
+using the samples provided in this project, then that cluster will
+be configured correctly so that it is able to form; 
+you do not need to do any additional manual configuration.
 
-For example, suppose you have a domain called `domain1` and in that domain
-you have a cluster called `cluster1` and Coherence is running in that
-cluster.  You would therefore use the cluster service that is created by
-the operator as the well known address.  This service, in this example, 
-would be called `domain1-cluster-cluster1` and follows the pattern:
+If you are running Coherence standalone (outside a 
+WebLogic domain) you should configure Coherence to use unicast and 
+provide a "well known address (WKA)" so that all members can find the senior
+member.  Most Kubernetes overlay network providers do not
+support multicast.  
 
-```
-domainUID  "-cluster-"  cluster name
-```
-
-Where `-cluster-` is a string literal. Note also that the operator
-normalizes the domainUID and the cluster name if necessary so that they
-are DNS compatible, for example all lower case, underscores converted 
-to hyphens.
-
-The Coherence well known addresses are provided in a variable named
+This is done by specifying the Coherence well known addresses in a variable named
 `coherence.wka` as shown in the example below:
 
 ```
--Dcoherence.wka=domain1-cluster-cluster1
+-Dcoherence.wka=my-cluster-service
 ```
+
+In this example `my-cluster-service` should be the name of the Kubernetes 
+service that is pointing to all of the members of that Coherence cluster.
+
+Please refer to the [Coherence operator documentation](https://oracle.github.io/coherence-operator/)
+for more information about running Coherence in Kubernetes outside of 
+a WebLogic domain.
 
 #### Operating system library requirements
 
