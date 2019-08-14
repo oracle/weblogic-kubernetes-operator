@@ -32,7 +32,7 @@ public class DomainProcessorTestSetup {
   public static final String UID = "test-domain";
   public static final String NS = "namespace";
 
-  private static final String INTROSPECTION_JOB = "jobPod";
+  private static final String INTROSPECTION_JOB = LegalNames.toJobIntrospectorName(UID);
   private static final String INTROSPECT_RESULT =
       ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
           + "#WebLogic User Configuration File; 2\n"
@@ -57,7 +57,6 @@ public class DomainProcessorTestSetup {
           + "%s\n"
           + ">>> EOF";
 
-  private WlsDomainConfig domainConfig;
   private KubernetesTestSupport testSupport;
 
   public DomainProcessorTestSetup(KubernetesTestSupport testSupport) {
@@ -96,7 +95,16 @@ public class DomainProcessorTestSetup {
    */
   public void defineKubernetesResources(WlsDomainConfig domainConfig)
       throws JsonProcessingException {
-    this.domainConfig = domainConfig;
+    defineKubernetesResources(getIntrospectResult(domainConfig));
+  }
+
+  /**
+   * Set up the in-memory Kubernetes environment for the domain processor, specifying the pod log.
+   * This allows testing of log messages in the case of failures.
+   *
+   * @param introspectResult the log to be returned from the job pod
+   */
+  public void defineKubernetesResources(String introspectResult) {
     testSupport.addToPacket(JOB_POD_NAME, INTROSPECTION_JOB);
     testSupport.doOnCreate(
         KubernetesTestSupport.JOB,
@@ -105,24 +113,21 @@ public class DomainProcessorTestSetup {
                 .setStatus(
                     new V1JobStatus()
                         .addConditionsItem(new V1JobCondition().type("Complete").status("True"))));
-    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, getIntrospectResult());
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, introspectResult);
     testSupport.defineResources(
         new V1Pod()
             .metadata(
                 new V1ObjectMeta()
                     .putLabelsItem("job-name", "")
                     .name(LegalNames.toJobIntrospectorName(UID))
-                    .namespace(NS)),
-        new V1Job()
-            .metadata(
-                new V1ObjectMeta().name(LegalNames.toJobIntrospectorName(UID)).namespace(NS)));
+                    .namespace(NS)));
   }
 
-  private String getIntrospectResult() throws JsonProcessingException {
-    return String.format(INTROSPECT_RESULT, createTopologyYaml());
+  private String getIntrospectResult(WlsDomainConfig domainConfig) throws JsonProcessingException {
+    return String.format(INTROSPECT_RESULT, createTopologyYaml(domainConfig));
   }
 
-  private String createTopologyYaml() throws JsonProcessingException {
+  private String createTopologyYaml(WlsDomainConfig domainConfig) throws JsonProcessingException {
     ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
     return yamlMapper
         .writerWithDefaultPrettyPrinter()
