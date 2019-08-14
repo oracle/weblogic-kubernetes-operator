@@ -302,5 +302,13 @@
                 <jrf_enabled>false</jrf_enabled>
             </properties>
         </profile>
+        <profile>
+            <id>full-integration-tests</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>**/*.java</includes-failsafe>
+                <jrf_enabled>true</jrf_enabled>
+            </properties>
+        </profile>
     </profiles>
 </project>

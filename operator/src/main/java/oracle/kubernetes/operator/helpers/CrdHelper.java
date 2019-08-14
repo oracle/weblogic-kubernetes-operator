@@ -24,7 +24,6 @@ import io.kubernetes.client.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.models.V1beta1JSONSchemaProps;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -35,8 +34,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_OPERATOR_VERSION;
 
 /** Helper class to ensure Domain CRD is created. */
 public class CrdHelper {
@@ -114,8 +111,7 @@ public class CrdHelper {
 
     static V1ObjectMeta createMetadata() {
       return new V1ObjectMeta()
-          .name(KubernetesConstants.CRD_NAME)
-          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_OPERATOR_VERSION);
+          .name(KubernetesConstants.CRD_NAME);
     }
 
     static V1beta1CustomResourceDefinitionSpec createSpec(KubernetesVersion version) {
@@ -347,8 +343,6 @@ public class CrdHelper {
       return getSchemaValidation(actual) == null
           || !getSchemaValidation(expected).equals(getSchemaValidation(actual))
           || !getSchemaSubresources(expected).equals(getSchemaSubresources(actual));
-      // Similarly, we will later want to check:
-      // VersionHelper.matchesResourceVersion(existingCRD.getMetadata(), DEFAULT_OPERATOR_VERSION)
     }
 
     // true, if version is later than base

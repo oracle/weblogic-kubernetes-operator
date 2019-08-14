@@ -4,6 +4,11 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,13 +31,23 @@ import org.junit.runners.MethodSorters;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItElasticLogging extends BaseTest {
+  private static final String logstashIndexKey = "logstash";
+  private static final String kibanaIndexKey = "kibana";
+  private static final String wlsIndexKey = "wls";
   private static final String elasticStackYamlLoc =
       "kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml";
+  private final String loggingJarRepos = 
+      "https://github.com/oracle/weblogic-logging-exporter/releases/download/v0.1.1";
+  private final String wlsLoggingExpJar = "weblogic-logging-exporter-0.1.1.jar";
+  private final String snakeyamlJarRepos = 
+      "https://repo1.maven.org/maven2/org/yaml/snakeyaml/1.23";
+  private final String snakeyamlJar = "snakeyaml-1.23.jar";
   private static Operator operator;
   private static Domain domain;
   private static String k8sExecCmdPrefix;
   private static String elasticSearchURL;
   private static Map<String, Object> testVarMap;
+  private static String loggingExpArchiveLoc;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -66,7 +81,7 @@ public class ItElasticLogging extends BaseTest {
       // create domain
       if (domain == null) {
         logger.info("Creating WLS Domain & waiting for the script to complete execution");
-        domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
+        domain = TestUtils.createDomain(DOMAINONPV_LOGGINGEXPORTER_YAML);
         domain.verifyDomainCreated();
       }
 
@@ -94,7 +109,12 @@ public class ItElasticLogging extends BaseTest {
       k8sExecCmdPrefix = k8sExecCmdPrefixBuff.toString();
 
       // Verify that Elastic Stack is ready to use
-      verifyElasticStackReady();
+      verifyLoggingExpReady(logstashIndexKey);
+      verifyLoggingExpReady(kibanaIndexKey);
+      
+      // Create a dir to hold required Weblogic logging exporter archive files
+      loggingExpArchiveLoc = BaseTest.getResultDir() + "/loggingExpArchDir";
+      Files.createDirectories(Paths.get(loggingExpArchiveLoc));
     }
   }
 
@@ -124,79 +144,6 @@ public class ItElasticLogging extends BaseTest {
       logger.info("SUCCESS");
     }
   }
-  
-  private static void verifyElasticStackReady() throws Exception {
-    // Get Logstash info
-    String healthStatus = execElasticStackStatusCheck("*logstash*", "$1");
-    String indexStatus = execElasticStackStatusCheck("*logstash*", "$2");
-    String indexName = execElasticStackStatusCheck("*logstash*", "$3");
-
-    Assume.assumeNotNull(healthStatus);
-    Assume.assumeNotNull(indexStatus);
-    Assume.assumeNotNull(indexName);
-    // Verify that the health status of Logstash
-    Assume.assumeTrue(
-        "Logstash is not ready!",
-        healthStatus.equalsIgnoreCase("yellow") || 
-        healthStatus.equalsIgnoreCase("green"));
-    // Verify that the index is open for use
-    Assume.assumeTrue("Logstash index is not open!", 
-                      indexStatus.equalsIgnoreCase("open"));
-    // Add the index name to a Map
-    testVarMap.put("indexName", indexName);
-
-    // Get Kibana info
-    healthStatus = execElasticStackStatusCheck("*kibana*", "$1");
-    indexStatus = execElasticStackStatusCheck("*kibana*", "$2");
-    indexName = execElasticStackStatusCheck("*kibana*", "$3");
-    
-    Assume.assumeNotNull(healthStatus);
-    Assume.assumeNotNull(indexStatus);
-    Assume.assumeNotNull(indexName);
-
-    //There are multiple indexes from Kibana 6.8.0
-    String[] kibanahealthStatusArr = 
-      healthStatus.split(System.getProperty("line.separator"));
-    String[] kibanaindexStatusArr = 
-      indexStatus.split(System.getProperty("line.separator"));
-    String[] kibanaindexNameArr = 
-      indexName.split(System.getProperty("line.separator"));
-    
-    for(int i = 0; i < kibanaindexStatusArr.length; i++) {
-      logger.info("Health status of " + kibanaindexNameArr[i] + 
-                  "is:" + kibanahealthStatusArr[i]);
-      logger.info("Index status of " + kibanaindexNameArr[i] + 
-                  "is:" + kibanaindexStatusArr[i]);
-      // Verify that the health status of Kibana
-      Assume.assumeTrue(
-          "Kibana is not ready!",
-          kibanahealthStatusArr[i].trim().equalsIgnoreCase("yellow") || 
-          kibanahealthStatusArr[i].trim().equalsIgnoreCase("green"));
-      // Verify that the index is open for use
-      Assume.assumeTrue("Kibana index is not open!", 
-                        kibanaindexStatusArr[i].trim().equalsIgnoreCase("open"));
-    }
-    
-    logger.info("ELK Stack is up and running and ready to use!");
-  }
-
-  private static String execElasticStackStatusCheck(String indexName, String varLoc)
-      throws Exception {
-    StringBuffer k8sExecCmdPrefixBuff = new StringBuffer(k8sExecCmdPrefix);
-    String cmd =
-        k8sExecCmdPrefixBuff
-            .append("/_cat/indices/")
-            .append(indexName)
-            .append(" | awk '\\''{ print ")
-            .append(varLoc)
-            .append(" }'\\'")
-            .toString();
-    logger.info("Command to exec Elastic Stack status check: " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
-    logger.info("Results: " + result.stdout());
-
-    return result.stdout();
-  }
 
   /**
    * Use Elasticsearch Count API to query logs of level=INFO. Verify that total number of logs for
@@ -213,8 +160,8 @@ public class ItElasticLogging extends BaseTest {
     // Verify that number of logs is not zero and failed count is zero
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=level:INFO";
-    verifySearchResults(queryCriteria, regex, true);
-
+    verifySearchResults(queryCriteria, regex, logstashIndexKey,true);
+    
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -233,8 +180,8 @@ public class ItElasticLogging extends BaseTest {
     // Verify that log hits for Operator are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=type:weblogic-operator";
-    verifySearchResults(queryCriteria, regex, false);
-
+    verifySearchResults(queryCriteria, regex, logstashIndexKey, false);
+    
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -257,38 +204,165 @@ public class ItElasticLogging extends BaseTest {
     final String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
     final String managedServerPodName = domainUid + "-" + managedServerNameBase + "1";
 
-    // Wait 30 seconds for WLS log to be pushed to ELK Stack
-    logger.info("Wait 30 seconds for WLS log to be pushed to ELK Stack");
-    Thread.sleep(30 * 1000);
-
     // Verify that log hits for admin server are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=log:" + adminServerPodName + " | grep RUNNING";
-    verifySearchResults(queryCriteria, regex, false);
-
+    verifySearchResults(queryCriteria, regex, logstashIndexKey, false);
+    
     // Verify that log hits for managed server are not empty
     queryCriteria = "/_search?q=log:" + managedServerPodName + " | grep RUNNING";
-    verifySearchResults(queryCriteria, regex, false);
+    verifySearchResults(queryCriteria, regex, logstashIndexKey, false);
 
     logger.info("SUCCESS - " + testMethodName);
   }
 
-  private void verifySearchResults(String queryCriteria, String regex, boolean checkCount)
-      throws Exception {
-    String results = execElasticStackQuery(queryCriteria);
+  /**
+   * Install Weblogic logging exporter in all Weblogic server pods to collect Weblogic logs. 
+   * Use Elasticsearch Search APIs to query Weblogic log info pushed to Elasticsearch repository 
+   * by Weblogic logging exporter . Verify that log hits for Weblogic servers are not empty
+   *
+   * @throws Exception exception
+   */
+  @Test
+  public void testWlsLoggingExporter() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
 
+    // Download Weblogic logging exporter 
+    downloadWlsLoggingExporterJars();
+    // Copy required resources to all wls server pods
+    copyResourceFilesToAllPods();
+
+    // Rrestart Weblogic domain
+    domain.shutdownUsingServerStartPolicy();
+    domain.restartUsingServerStartPolicy();
+    
+    // Verify that Weblogic logging exporter installed successfully
+    verifyLoggingExpReady(wlsIndexKey);
+    
+    // Verify that hits of log level = Notice are not empty
+    String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
+    String queryCriteria = "/_search?q=level:Notice";
+    verifySearchResults(queryCriteria, regex, wlsIndexKey, false);
+    // Verify that hits of loggerName = WebLogicServer are not empty
+    queryCriteria = "/_search?q=loggerName:WebLogicServer";
+    verifySearchResults(queryCriteria, regex, wlsIndexKey, false);
+    // Verify that hits of _type:doc are not empty
+    queryCriteria = "/_search?q=_type:doc";
+    verifySearchResults(queryCriteria, regex, wlsIndexKey, false);
+ 
+    logger.info("SUCCESS - " + testMethodName);
+  }
+  
+  private static void verifyLoggingExpReady(String index) throws Exception {
+    // Get index status info
+    String healthStatus = execLoggingExpStatusCheck("*" + index + "*", "$1");
+    String indexStatus = execLoggingExpStatusCheck("*" + index + "*", "$2");
+    String indexName = execLoggingExpStatusCheck("*" + index + "*", "$3");
+    
+    Assume.assumeNotNull(healthStatus);
+    Assume.assumeNotNull(indexStatus);
+    Assume.assumeNotNull(indexName);
+    
+    if (!index.equalsIgnoreCase(kibanaIndexKey)) {
+      // Add the logstash and wls index name to a Map
+      testVarMap.put(index, indexName);
+    }
+
+    //There are multiple indexes from Kibana 6.8.0
+    String[] healthStatusArr = 
+      healthStatus.split(System.getProperty("line.separator"));
+    String[] indexStatusArr = 
+      indexStatus.split(System.getProperty("line.separator"));
+    String[] indexNameArr = 
+      indexName.split(System.getProperty("line.separator"));
+    
+    for (int i = 0; i < indexStatusArr.length; i++) {
+      logger.info("Health status of " + indexNameArr[i] + " is: " + healthStatusArr[i]);
+      logger.info("Index status of " + indexNameArr[i] + " is: " + indexStatusArr[i]);
+      // Verify that the health status of index
+      Assume.assumeTrue(
+          index + " is not ready!",
+          healthStatusArr[i].trim().equalsIgnoreCase("yellow")
+              || healthStatusArr[i].trim().equalsIgnoreCase("green"));
+      // Verify that the index is open for use
+      Assume.assumeTrue(index + " index is not open!", 
+                        indexStatusArr[i].trim().equalsIgnoreCase("open"));
+    }
+    
+    logger.info("ELK Stack is up and running and ready to use!");
+  }
+
+  private static String execLoggingExpStatusCheck(String indexName, String varLoc)
+      throws Exception {
+    ExecResult result = null;
+    StringBuffer k8sExecCmdPrefixBuff = new StringBuffer(k8sExecCmdPrefix);
+    String cmd =
+        k8sExecCmdPrefixBuff
+            .append("/_cat/indices/")
+            .append(indexName)
+            .append(" | awk '\\''{ print ")
+            .append(varLoc)
+            .append(" }'\\'")
+            .toString();
+    logger.info("Command to exec Elastic Stack status check: " + cmd);
+    
+    int i = 0;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      result = TestUtils.exec(cmd);
+      logger.info("Result: " + result.stdout());
+      if (null != result.stdout()) {
+        break;
+      }
+      
+      logger.info(
+          "ELK Stack is not ready Ite ["
+              + i
+              + "/"
+              + BaseTest.getMaxIterationsPod()
+              + "], sleeping "
+              + BaseTest.getWaitTimePod()
+              + " seconds more");
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
+    }
+        
+    return result.stdout();
+  }
+  
+  private void verifySearchResults(String queryCriteria, String regex, 
+                                   String index, boolean checkCount) throws Exception {
     int count = -1;
     int failedCount = -1;
     String hits = "";
-    Pattern pattern = Pattern.compile(regex);
-    Matcher matcher = pattern.matcher(results);
-    if (matcher.find()) {
-      count = Integer.parseInt(matcher.group(1));
-      if (checkCount) {
-        failedCount = Integer.parseInt(matcher.group(2));
-      } else {
-        hits = matcher.group(2);
+    String results = null;
+    int i = 0;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      results = execSearchQuery(queryCriteria, index);
+      Pattern pattern = Pattern.compile(regex);
+      Matcher matcher = pattern.matcher(results);
+      if (matcher.find()) {
+        count = Integer.parseInt(matcher.group(1));
+        if (checkCount) {
+          failedCount = Integer.parseInt(matcher.group(2));
+        } else {
+          hits = matcher.group(2);
+        }
+        
+        break;
       }
+      
+      logger.info(
+          "Logs are not pushed to ELK Stack Ite ["
+              + i
+              + "/"
+              + BaseTest.getMaxIterationsPod()
+              + "], sleeping "
+              + BaseTest.getWaitTimePod()
+              + " seconds more");
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
     }
 
     Assume.assumeTrue("Total count of logs should be more than 0!", count > 0);
@@ -301,11 +375,11 @@ public class ItElasticLogging extends BaseTest {
     }
   }
 
-  private String execElasticStackQuery(String queryCriteria) throws Exception {
+  private String execSearchQuery(String queryCriteria, String index) throws Exception {
     StringBuffer k8sExecCmdPrefixBuff = new StringBuffer(k8sExecCmdPrefix);
     int offset = k8sExecCmdPrefixBuff.indexOf("http");
     k8sExecCmdPrefixBuff.insert(offset, " -X GET ");
-    String indexName = (String) testVarMap.get("indexName");
+    String indexName = (String) testVarMap.get(index);
     String cmd =
         k8sExecCmdPrefixBuff
             .append("/")
@@ -317,5 +391,89 @@ public class ItElasticLogging extends BaseTest {
     ExecResult result = TestUtils.exec(cmd);
 
     return result.stdout();
+  }
+  
+  private void downloadWlsLoggingExporterJars() throws Exception {
+    File loggingJatReposDir = new File(loggingExpArchiveLoc);
+
+    if (loggingJatReposDir.list().length == 0) {
+      StringBuffer getJars = new StringBuffer();
+      getJars
+          .append(" wget -P ")
+          .append(loggingExpArchiveLoc)
+          .append(" ")
+          .append(loggingJarRepos)
+          .append("/")
+          .append(wlsLoggingExpJar)
+          .append(" ; ")
+          .append("wget -P ")
+          .append(loggingExpArchiveLoc)
+          .append(" ")
+          .append(snakeyamlJarRepos)
+          .append("/")
+          .append(snakeyamlJar);
+      logger.info("Executing cmd " + getJars.toString());
+      ExecResult result = TestUtils.exec(getJars.toString());
+      logger.info("Result: " + result.stdout());
+    } 
+  }
+  
+  private void copyResourceFilesToAllPods() throws Exception  {
+    Map<String, Object> domainMap = domain.getDomainMap();
+    String domainUid = domain.getDomainUid();
+    String domainNS = domainMap.get("namespace").toString();
+    String adminServerName = (String) domainMap.get("adminServerName");
+    String adminServerPodName = domainUid + "-" + adminServerName;
+    String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
+    String managedServerPodNameBase = domainUid + "-" + managedServerNameBase;
+    int initialManagedServerReplicas =
+        ((Integer) domainMap.get("initialManagedServerReplicas")).intValue();
+
+    //Copy test files to admin pod
+    logger.info(
+        "Copying the resources to admin pod("
+            + domainUid
+            + "-"
+            + adminServerPodName
+            + ")");
+    copyResourceFilesToOnePod(adminServerPodName, domainNS);
+
+    //Copy test files to all managed server pods
+    for (int i = 1; i <= initialManagedServerReplicas; i++) {
+      logger.info(
+          "Copying the resources to managed pod("
+              + domainUid
+              + "-"
+              + managedServerNameBase
+              + i
+              + ")");
+      copyResourceFilesToOnePod(managedServerPodNameBase + i, domainNS);
+    }
+  }
+  
+  private void copyResourceFilesToOnePod(String serverName, String domainNS) 
+      throws Exception {
+    String resourceDir = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
+    String testResourceDir = resourceDir + "/loggingexporter";
+    final String loggingYamlFile = "WebLogicLoggingExporter.yaml";
+    
+    //Copy test files to Weblogic server pod
+    TestUtils.kubectlcp(
+        loggingExpArchiveLoc + "/" + wlsLoggingExpJar,
+        "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar,
+        serverName,
+        domainNS);
+
+    TestUtils.kubectlcp(
+        loggingExpArchiveLoc + "/" + snakeyamlJar,
+        "/shared/domains/domainonpvwlst/lib/" + snakeyamlJar,
+        serverName,
+        domainNS);
+
+    TestUtils.kubectlcp(
+        testResourceDir + "/" + loggingYamlFile,
+        "/shared/domains/domainonpvwlst/config/" + loggingYamlFile,
+        serverName,
+        domainNS);
   }
 }
