@@ -67,6 +67,16 @@ $ helm upgrade \
   kubernetes/charts/weblogic-operator
 ```
 
+Enable operator debugging on port 30999. Again, we use `--reuse-values` to change one value without affecting the others:
+```
+$ helm upgrade \
+  --reuse-values \
+  --set "remoteDebugNodePortEnabled=true" \
+  --wait \
+  weblogic-operator \
+  kubernetes/charts/weblogic-operator
+```
+
 ### Operator Helm configuration values
 
 This section describes the details of the operator Helm chart's available configuration values.
@@ -101,7 +111,7 @@ javaLoggingLevel:  "FINE"
 
 Specifies the Docker image containing the operator code.
 
-Defaults to `weblogic-kubernetes-operator:2.2.1`.
+Defaults to `weblogic-kubernetes-operator:2.3.0`.
 
 Example:
 ```

@@ -17,10 +17,13 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -74,7 +77,7 @@ public class Domain {
   private String imageName;
   private boolean voyager;
   private boolean createDomainResource = true;
-  
+
   public Domain() throws Exception {
     domainMap = new HashMap<>();
   }
@@ -92,7 +95,7 @@ public class Domain {
   public Domain(Map<String, Object> inputDomainMap) throws Exception {
     this(inputDomainMap, true);
   }
-  
+
   public Domain(Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
     initialize(inputDomainMap);
     this.createDomainResource = createDomainResource;
@@ -441,6 +444,67 @@ public class Domain {
     }
   }
 
+
+  /**
+   * deploy webapp using t3 channel port for wlst.
+   *
+   * @param webappName webappName
+   * @param appLocationInPod appLocation
+   * @throws Exception exception
+   */
+  public void undeployWebAppViaWlst(
+          String webappName,
+          String appLocationInPod)
+          throws Exception {
+    undeployWebAppViaWlst(webappName, appLocationInPod, false);
+  }
+
+  /**
+   * undeploy webapp using adminPort or t3 channel port.
+   *
+   * @param webappName webappName
+   * @param appLocationInPod appLocationInPod
+   * @param useAdminPortToDeploy useAdminPortToDeploy
+   * @throws Exception exception
+   */
+  public void undeployWebAppViaWlst(
+      String webappName,
+      String appLocationInPod,
+      boolean useAdminPortToDeploy)
+      throws Exception {
+    String adminPod = domainUid + "-" + adminServerName;
+
+    TestUtils.copyFileViaCat(
+        projectRoot + "/integration-tests/src/test/resources/undeploywebapp.py",
+        appLocationInPod + "/undeploywebapp.py",
+        adminPod,
+        domainNS);
+
+    TestUtils.copyFileViaCat(
+        projectRoot + "/integration-tests/src/test/resources/callpyscript.sh",
+        appLocationInPod + "/callpyscript.sh",
+        adminPod,
+        domainNS);
+
+    String t3Url = "t3://" + adminPod + ":";
+    if (useAdminPortToDeploy) {
+      t3Url = t3Url + domainMap.getOrDefault("adminPort", 7001);
+    } else {
+      t3Url = t3Url + t3ChannelPort;
+    }
+
+    String[] args = {
+        appLocationInPod + "/undeploywebapp.py",
+        BaseTest.getUsername(),
+        BaseTest.getPassword(),
+        t3Url,
+        webappName
+    };
+
+    TestUtils.callShellScriptByExecToPod(
+        adminPod, domainNS, appLocationInPod, "callpyscript.sh", args);
+  }
+
   /**
    * deploy webapp using t3 channel port for wlst.
    *
@@ -451,12 +515,12 @@ public class Domain {
    * @throws Exception exception
    */
   public void deployWebAppViaWlst(
-      String webappName,
-      String webappLocation,
-      String appLocationInPod,
-      String username,
-      String password)
-      throws Exception {
+          String webappName,
+          String webappLocation,
+          String appLocationInPod,
+          String username,
+          String password)
+          throws Exception {
     deployWebAppViaWlst(webappName, webappLocation, appLocationInPod, username, password, false);
   }
 
@@ -707,6 +771,16 @@ public class Domain {
   }
 
   /**
+   * Get the managed server pod name for a specific index.
+   *
+   * @param index  the managed server index
+   * @return the managed server pod name
+   */
+  public String getManagedSeverPodName(int index) {
+    return domainUid + "-" + managedServerNameBase + index;
+  }
+
+  /**
    * delete PVC and check PV status released when weblogicDomainStorageReclaimPolicy is Recycle.
    *
    * @throws Exception exception
@@ -950,7 +1024,7 @@ public class Domain {
     pvMap.values().removeIf(Objects::isNull);
 
     // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch, create PV/PVC
-    new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
+    new PersistentVolume(BaseTest.getPvRoot() + "acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
 
     String cmd =
         BaseTest.getProjectRoot()
@@ -1016,6 +1090,7 @@ public class Domain {
       // verify the servers in the domain are being restarted in a sequence
       verifyAdminServerRestarted();
       verifyManagedServersRestarted();
+
       // make domain.yaml include the new changed property
       TestUtils.copyFile(
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
@@ -1118,8 +1193,9 @@ public class Domain {
     logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Terminating");
     TestUtils.checkPodTerminating(domainUid + "-" + adminServerName, domainNS);
 
-    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
+    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Ready");
     TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
+    TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
   }
 
   /**
@@ -1129,25 +1205,48 @@ public class Domain {
    */
   public void verifyManagedServersRestarted() throws Exception {
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
-      // check managed server pods
-      for (int i = 1; i <= initialManagedServerReplicas; i++) {
-        logger.info(
-            "Checking if managed pod("
-                + domainUid
-                + "-"
-                + managedServerNameBase
-                + i
-                + ") is Terminating");
-        TestUtils.checkPodTerminating(domainUid + "-" + managedServerNameBase + i, domainNS);
 
-        logger.info(
-            "Checking if managed pod("
-                + domainUid
-                + "-"
-                + managedServerNameBase
-                + i
-                + ") is Running");
-        TestUtils.checkPodCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
+      // Note: Managed Servers can be stopped in any order.  Build the set of server names
+      // then loop until all servers have been recycled.  When we find one that is terminating,
+      // wait until it is running then remove it from the set.
+      Set<String> podNameSet = new HashSet<>();
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        podNameSet.add(managedServerNameBase + i);
+      }
+
+      // Loop until all the servers have recycled.  Wait 5 minutes max for a managed server to be terminating.
+      //
+      final int maxTerminateLoop = 300;
+      int terminateLoopCount = 0;
+      while (podNameSet.size() > 0) {
+        Iterator<String> iter = podNameSet.iterator();
+        while (iter.hasNext()) {
+          String podName = iter.next();
+          if (TestUtils.checkPodTerminatingNoWait(domainUid + "-" + podName, domainNS)) {
+            terminateLoopCount = 0;
+
+            // Server is terminating, wait until server running then remove it from the list
+            logger.info("Managed managed server pod " + podName
+                + "  is terminating, waiting until it is re-created and running.");
+            TestUtils.checkPodCreated(domainUid + "-" + podName, domainNS);
+
+            logger.info("Waiting until managed server pod " + podName + "  is ready");
+            TestUtils.checkPodReady(domainUid + "-" + podName, domainNS);
+
+            logger.info("Managed server pod " + podName + " has been recycled");
+            iter.remove();
+          }
+        }
+        // We iterated through all the servers and if there are some remaining then
+        // Sleep and loop through the remaining ones again.
+        // Keep the sleep short so we don't miss the terminating status.
+        if (podNameSet.size() > 0) {
+          if (++terminateLoopCount > maxTerminateLoop) {
+            throw new RuntimeException("Timeout waiting for any managed server to terminate");
+          }
+          logger.info("Waiting for any managed server pod to be terminating...");
+          Thread.sleep(1000);
+        }
       }
     }
   }
@@ -1216,8 +1315,11 @@ public class Domain {
     // as samples only support DYNAMIC cluster or copy config cluster topology for domain in image
     changeClusterTypeInCreateDomainJobTemplate();
 
+    // Get the map of any additional environment vars, or null
+    Map<String, String> additionalEnvMap = (Map<String, String>)domainMap.get("additionalEnvMap");;
+
     logger.info("Running " + createDomainScriptCmd);
-    ExecResult result = ExecCommand.exec(createDomainScriptCmd, true);
+    ExecResult result = ExecCommand.exec(createDomainScriptCmd, true, additionalEnvMap);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
           "FAILURE: command "
@@ -1508,6 +1610,9 @@ public class Domain {
           BaseTest.getResultDir()
               + "/"
               + ((String) domainMap.get("domainHomeImageBuildPath")).trim());
+      
+      domainMap.put("domainHomeImageBase", 
+          BaseTest.getWeblogicImageName() + ":" + BaseTest.getWeblogicImageTag());
     }
 
     // remove null values if any attributes
@@ -1682,7 +1787,8 @@ public class Domain {
                 .toPath(),
             new File(
                     BaseTest.getResultDir()
-                        + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/common/createFMWDomain.py")
+                        + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/"
+                        + "common/createFMWDomain.py")
                 .toPath(),
             StandardCopyOption.REPLACE_EXISTING);
       } else {
@@ -1883,6 +1989,58 @@ public class Domain {
     }
   }
 
+
+  /**
+   * Run the shell script in the admin pod.
+   *
+   * @param successMarker output string from script that indicates success
+   * @param scriptPathInPod - bash script path name in the pod
+   * @param args - optional args to add for script if needed
+   * @throws Exception exception
+   */
+  public void callShellScriptInAdminPod(
+      String successMarker,  String scriptPathInPod, String... args)
+      throws Exception {
+
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(domainUid)
+        .append("-")
+        .append(adminServerName)
+        .append(" -- bash -c 'chmod +x -R ")
+        .append(scriptPathInPod)
+        .append(" && sh ")
+        .append(scriptPathInPod)
+        .append(" ")
+        .append(String.join(" ", args).toString())
+        .append("'");
+
+    logger.info("Command to exec script file: " + cmdKubectlSh);
+    ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
+
+    String resultStr =
+        "Command= '"
+            + cmdKubectlSh
+            + "'"
+            + ", exitValue="
+            + result.exitValue()
+            + ", stdout='"
+            + result.stdout()
+            + "'"
+            + ", stderr='"
+            + result.stderr()
+            + "'";
+
+    // Look for positive success marker.
+    if (!resultStr.contains(successMarker)) {
+      throw new RuntimeException("FAILURE: Success marker not found after executing script"
+          + scriptPathInPod + " in admin pod - " + resultStr);
+    }
+  }
+
+
   /**
    * create config map and label with domainUid and create secret used in custom situational
    * configuration which contains hostname, db user, db password.
@@ -2003,4 +2161,5 @@ public class Domain {
     callShellScriptToBuildDeployAppInPod(
         appName, scriptName, username, password, infoDirName, archiveExt);
   }
+
 }
