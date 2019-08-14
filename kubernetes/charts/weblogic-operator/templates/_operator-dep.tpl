@@ -1,4 +1,4 @@
-# Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorDeployment" }}
@@ -39,6 +39,12 @@ spec:
         {{- if .remoteDebugNodePortEnabled }}
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}
+        - name: "DEBUG_SUSPEND"
+          {{- if .suspendOnDebugStartup }}
+          value: "y"
+          {{- else }}
+          value: "n"
+          {{- end }}
         {{- end }}
         {{- if .mockWLS }}
         - name: "MOCK_WLS"
@@ -61,6 +67,7 @@ spec:
           name: "log-dir"
           readOnly: false
         {{- end }}
+        {{- if not .remoteDebugNodePortEnabled }}
         livenessProbe:
           exec:
             command:
@@ -75,6 +82,7 @@ spec:
               - "/operator/readinessProbe.sh"
           initialDelaySeconds: 2
           periodSeconds: 10
+        {{- end }}
       {{- if .elkIntegrationEnabled }}
       - name: "logstash"
         image: {{ .logStashImage | quote }}

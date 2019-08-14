@@ -4,9 +4,16 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1Pod;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -29,7 +36,8 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 public class RollingHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private RollingHelper() {}
+  private RollingHelper() {
+  }
 
   /**
    * Creates an asynchronous step that completes the rolling. The rolling parameter is a map from
@@ -47,6 +55,18 @@ public class RollingHelper {
     return new RollingStep(rolling, next);
   }
 
+  private static List<String> getReadyServers(DomainPresenceInfo info) {
+    // These are presently Ready servers
+    List<String> availableServers = new ArrayList<>();
+    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+      V1Pod pod = entry.getValue().getPod().get();
+      if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod)) {
+        availableServers.add(entry.getKey());
+      }
+    }
+    return availableServers;
+  }
+
   private static class RollingStep extends Step {
     private final Map<String, StepAndPacket> rolling;
 
@@ -62,7 +82,7 @@ public class RollingHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
 
       Domain dom = info.getDomain();
       // These are presently Ready servers
@@ -100,7 +120,7 @@ public class RollingHelper {
       }
 
       if (!servers.isEmpty()) {
-        LOGGER.info(MessageKeys.CYCLING_SERVERS, dom.getDomainUID(), servers);
+        LOGGER.info(MessageKeys.CYCLING_SERVERS, dom.getDomainUid(), servers);
       }
 
       Collection<StepAndPacket> work = new ArrayList<>();
@@ -141,18 +161,6 @@ public class RollingHelper {
     }
   }
 
-  private static List<String> getReadyServers(DomainPresenceInfo info) {
-    // These are presently Ready servers
-    List<String> availableServers = new ArrayList<>();
-    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-      V1Pod pod = entry.getValue().getPod().get();
-      if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod)) {
-        availableServers.add(entry.getKey());
-      }
-    }
-    return availableServers;
-  }
-
   private static class RollSpecificClusterStep extends Step {
     private final String clusterName;
     private final Queue<StepAndPacket> servers;
@@ -171,7 +179,7 @@ public class RollingHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
 
       // Refresh as this is constantly changing
@@ -197,7 +205,7 @@ public class RollingHelper {
         }
       }
 
-      LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUID(), servers, readyServers);
+      LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUid(), servers, readyServers);
 
       int countToRestartNow = Math.max(1, countReady - dom.getMinAvailable(clusterName));
       Collection<StepAndPacket> restarts = new ArrayList<>();

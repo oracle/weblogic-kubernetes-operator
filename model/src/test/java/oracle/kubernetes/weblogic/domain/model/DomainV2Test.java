@@ -4,6 +4,28 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.models.V1Capabilities;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1HostPathVolumeSource;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1SELinuxOptions;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Sysctl;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainTestBase;
+import org.hamcrest.Matcher;
+import org.junit.Before;
+import org.junit.Test;
+
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.weblogic.domain.ChannelMatcher.channelWith;
@@ -21,27 +43,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
-import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.V1Capabilities;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1HostPathVolumeSource;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SELinuxOptions;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Sysctl;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import oracle.kubernetes.weblogic.domain.DomainTestBase;
-import org.hamcrest.Matcher;
-import org.junit.Before;
-import org.junit.Test;
-
 public class DomainV2Test extends DomainTestBase {
 
   private static final int DEFAULT_REPLICA_LIMIT = 0;
@@ -49,6 +50,7 @@ public class DomainV2Test extends DomainTestBase {
   private static final String DOMAIN_V2_SAMPLE_YAML_2 = "model/domain-sample-2.yaml";
   private static final String DOMAIN_V2_SAMPLE_YAML_3 = "model/domain-sample-3.yaml";
   private static final String DOMAIN_V2_SAMPLE_YAML_4 = "model/domain-sample-4.yaml";
+  private static final String DOMAIN_V2_SAMPLE_YAML_5 = "model/domain-sample-5.yaml";
   private static final int INITIAL_DELAY = 17;
   private static final int TIMEOUT = 23;
   private static final int PERIOD = 5;
@@ -310,7 +312,7 @@ public class DomainV2Test extends DomainTestBase {
     configureServer(SERVER1).withNodeSelector("key3", "server");
     configureAdminServer().withNodeSelector("key2", "admin").withNodeSelector("key3", "admin");
 
-    ServerSpec serverSpec = domain.getServer(SERVER1, CLUSTER_NAME);
+    final ServerSpec serverSpec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("key1", "domain"));
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("key2", "admin"));
@@ -328,10 +330,10 @@ public class DomainV2Test extends DomainTestBase {
     configureServer(SERVER1).withRestartVersion("3");
     configureAdminServer().withRestartVersion("4");
 
-    ServerSpec clusteredServer = domain.getServer(SERVER1, CLUSTER_NAME);
-    ServerSpec nonClusteredServerWithRestartVersion = domain.getServer(SERVER1, null);
-    ServerSpec nonClusteredServerNoRestartVersion = domain.getServer("anyServer", null);
-    ServerSpec adminServer = domain.getAdminServerSpec();
+    final ServerSpec clusteredServer = domain.getServer(SERVER1, CLUSTER_NAME);
+    final ServerSpec nonClusteredServerWithRestartVersion = domain.getServer(SERVER1, null);
+    final ServerSpec nonClusteredServerNoRestartVersion = domain.getServer("anyServer", null);
+    final ServerSpec adminServer = domain.getAdminServerSpec();
 
     assertThat(clusteredServer.getDomainRestartVersion(), is("1"));
     assertThat(clusteredServer.getClusterRestartVersion(), is("2"));
@@ -739,8 +741,8 @@ public class DomainV2Test extends DomainTestBase {
   public void whenDomainReadFromYaml_AdminAndManagedOverrideDomainNodeSelectors()
       throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    ServerSpec server1Spec = domain.getServer("server1", null);
-    ServerSpec server2Spec = domain.getServer("server2", null);
+    final ServerSpec server1Spec = domain.getServer("server1", null);
+    final ServerSpec server2Spec = domain.getServer("server2", null);
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os_arch", "x86_64"));
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os", "linux"));
     assertThat(server2Spec.getNodeSelectors(), hasEntry("os_arch", "x86"));
@@ -753,8 +755,8 @@ public class DomainV2Test extends DomainTestBase {
   public void whenDomainReadFromYaml_ManagedServerOverrideDomainResourceRequirements()
       throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    V1ResourceRequirements server1ResReq = domain.getServer("server1", null).getResources();
-    V1ResourceRequirements server2ResReq = domain.getServer("server2", null).getResources();
+    final V1ResourceRequirements server1ResReq = domain.getServer("server1", null).getResources();
+    final V1ResourceRequirements server2ResReq = domain.getServer("server2", null).getResources();
 
     // Server1 overrides request memory: "32Mi" and limit memory: "256Mi"
     assertThat(server1ResReq.getRequests(), hasResourceQuantity("memory", "32Mi"));
@@ -1109,7 +1111,7 @@ public class DomainV2Test extends DomainTestBase {
 
     Shutdown shutdown = domain.getSpec().getShutdown();
     assertThat(shutdown.getShutdownType(), is("Graceful"));
-    assertThat(shutdown.getTimeoutSeconds(), is(45l));
+    assertThat(shutdown.getTimeoutSeconds(), is(45L));
   }
 
   @Test
@@ -1118,7 +1120,7 @@ public class DomainV2Test extends DomainTestBase {
 
     Shutdown shutdown = domain.getCluster("cluster2").getShutdown();
     assertThat(shutdown.getShutdownType(), is("Graceful"));
-    assertThat(shutdown.getTimeoutSeconds(), is(45l));
+    assertThat(shutdown.getTimeoutSeconds(), is(45L));
     assertThat(shutdown.getIgnoreSessions(), is(true));
   }
 
@@ -1128,8 +1130,56 @@ public class DomainV2Test extends DomainTestBase {
 
     Shutdown shutdown = domain.getServer("server2", "cluster2").getShutdown();
     assertThat(shutdown.getShutdownType(), is("Graceful"));
-    assertThat(shutdown.getTimeoutSeconds(), is(60l));
+    assertThat(shutdown.getTimeoutSeconds(), is(60L));
     assertThat(shutdown.getIgnoreSessions(), is(false));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_RestartPolicyIsReadFromSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+
+    String restartPolicy = domain.getSpec().getRestartPolicy();
+    assertThat(restartPolicy, is("OnFailure"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_RestartPolicyIsReadFromClusterSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+
+    String restartPolicy = domain.getCluster("cluster2").getRestartPolicy();
+    assertThat(restartPolicy, is("OnFailure"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_RuntimeClassNameIsReadFromSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+
+    String runtimeClassName = domain.getSpec().getRuntimeClassName();
+    assertThat(runtimeClassName, is("weblogic-class"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_RuntimeClassNameIsReadFromClusterSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+
+    String runtimeClassName = domain.getCluster("cluster2").getRuntimeClassName();
+    assertThat(runtimeClassName, is("weblogic-class"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_SchedulerNameIsReadFromSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+
+    String schedulerName = domain.getSpec().getSchedulerName();
+    assertThat(schedulerName, is("my-scheduler"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_SchedulerClassNameIsReadFromClusterSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+
+    String schedulerName = domain.getCluster("cluster2").getSchedulerName();
+    assertThat(schedulerName, is("my-scheduler"));
   }
 
   @Test
@@ -1170,8 +1220,8 @@ public class DomainV2Test extends DomainTestBase {
   @Test
   public void whenDomain3ReadFromYaml_NoRestartVersion() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
-    ServerSpec clusteredServer = domain.getServer("anyServer", "anyCluster");
-    ServerSpec nonClusteredServer = domain.getServer("anyServer", null);
+    final ServerSpec clusteredServer = domain.getServer("anyServer", "anyCluster");
+    final ServerSpec nonClusteredServer = domain.getServer("anyServer", null);
     assertThat(clusteredServer.getDomainRestartVersion(), nullValue());
     assertThat(clusteredServer.getClusterRestartVersion(), nullValue());
     assertThat(clusteredServer.getServerRestartVersion(), nullValue());

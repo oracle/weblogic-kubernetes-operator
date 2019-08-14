@@ -37,6 +37,39 @@ public class UpdateDynamicClusterStep extends Step {
     this.targetClusterSize = targetClusterSize;
   }
 
+  /**
+   * Static method to update the WebLogic dynamic cluster size configuration.
+   *
+   * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs
+   *     to be updated. The caller should make sure that the cluster is a dynamic cluster.
+   * @param targetClusterSize The target dynamic cluster size
+   * @param httpClient HttpClient object for issuing the REST request
+   * @param serviceUrl service URL of the WebLogic admin server
+   * @return true if the request to update the cluster size is successful, false if it was not
+   *     successful
+   */
+  private static boolean updateDynamicClusterSizeWithServiceUrl(
+      final WlsClusterConfig wlsClusterConfig,
+      final int targetClusterSize,
+      final HttpClient httpClient,
+      final String serviceUrl) {
+    LOGGER.entering();
+
+    boolean result = false;
+    // Update the dynamic cluster size of the WebLogic cluster
+    String jsonResult =
+        httpClient
+            .executePostUrlOnServiceClusterIP(
+                wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
+                serviceUrl,
+                wlsClusterConfig.getUpdateDynamicClusterSizePayload(targetClusterSize))
+            .getResponse();
+
+    result = wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult);
+    LOGGER.exiting(result);
+    return result;
+  }
+
   @Override
   public NextAction apply(Packet packet) {
 
@@ -48,7 +81,7 @@ public class UpdateDynamicClusterStep extends Step {
       try {
         LOGGER.info(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_STARTING, clusterName, targetClusterSize);
         HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
-        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
         WlsDomainConfig domainTopology =
             (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
         WlsServerConfig adminConfig =
@@ -56,16 +89,16 @@ public class UpdateDynamicClusterStep extends Step {
 
         long startTime = System.currentTimeMillis();
 
-        String serviceURL =
-            HttpClient.getServiceURL(
+        String serviceUrl =
+            HttpClient.getServiceUrl(
                 info.getServerService(domainTopology.getAdminServerName()),
                 info.getServerPod(domainTopology.getAdminServerName()),
                 adminConfig.getAdminProtocolChannelName(),
                 adminConfig.getListenPort());
 
         boolean successful =
-            updateDynamicClusterSizeWithServiceURL(
-                wlsClusterConfig, targetClusterSize, httpClient, serviceURL);
+            updateDynamicClusterSizeWithServiceUrl(
+                wlsClusterConfig, targetClusterSize, httpClient, serviceUrl);
 
         if (successful) {
           LOGGER.info(
@@ -81,38 +114,5 @@ public class UpdateDynamicClusterStep extends Step {
       }
     }
     return doNext(packet);
-  }
-
-  /**
-   * Static method to update the WebLogic dynamic cluster size configuration.
-   *
-   * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs
-   *     to be updated. The caller should make sure that the cluster is a dynamic cluster.
-   * @param targetClusterSize The target dynamic cluster size
-   * @param httpClient HttpClient object for issuing the REST request
-   * @param serviceURL service URL of the WebLogic admin server
-   * @return true if the request to update the cluster size is successful, false if it was not
-   *     successful
-   */
-  private static boolean updateDynamicClusterSizeWithServiceURL(
-      final WlsClusterConfig wlsClusterConfig,
-      final int targetClusterSize,
-      final HttpClient httpClient,
-      final String serviceURL) {
-    LOGGER.entering();
-
-    boolean result = false;
-    // Update the dynamic cluster size of the WebLogic cluster
-    String jsonResult =
-        httpClient
-            .executePostUrlOnServiceClusterIP(
-                wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
-                serviceURL,
-                wlsClusterConfig.getUpdateDynamicClusterSizePayload(targetClusterSize))
-            .getResponse();
-
-    result = wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult);
-    LOGGER.exiting(result);
-    return result;
   }
 }

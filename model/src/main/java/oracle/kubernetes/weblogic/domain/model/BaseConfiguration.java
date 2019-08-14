@@ -4,19 +4,23 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.models.V1Affinity;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1PodReadinessGate;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.operator.ServerStartState;
@@ -32,11 +36,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public abstract class BaseConfiguration {
 
-  @Description("Configuration affecting server pods")
+  @Description("Configuration affecting server pods.")
   private ServerPod serverPod = new ServerPod();
 
   @Description(
-      "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.")
+      "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
   @SerializedName("serverService")
   @Expose
   private ServerService serverService = new ServerService();
@@ -120,6 +124,8 @@ public abstract class BaseConfiguration {
     serverPod.addEnvVar(new V1EnvVar().name(name).value(value));
   }
 
+  public abstract String getServerStartPolicy();
+
   /**
    * Tells the operator whether the customer wants the server to be running. For non-clustered
    * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
@@ -130,8 +136,6 @@ public abstract class BaseConfiguration {
    * @param serverStartPolicy start policy
    */
   public abstract void setServerStartPolicy(String serverStartPolicy);
-
-  public abstract String getServerStartPolicy();
 
   void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
     serverPod.setLivenessProbe(initialDelay, timeout, period);
@@ -161,6 +165,38 @@ public abstract class BaseConfiguration {
     return serverPod.getNodeSelector();
   }
 
+  public V1Affinity getAffinity() {
+    return serverPod.getAffinity();
+  }
+
+  public String getPriorityClassName() {
+    return serverPod.getPriorityClassName();
+  }
+
+  public List<V1PodReadinessGate> getReadinessGates() {
+    return serverPod.getReadinessGates();
+  }
+
+  public String getRestartPolicy() {
+    return serverPod.getRestartPolicy();
+  }
+
+  public String getRuntimeClassName() {
+    return serverPod.getRuntimeClassName();
+  }
+
+  public String getNodeName() {
+    return serverPod.getNodeName();
+  }
+
+  public String getSchedulerName() {
+    return serverPod.getSchedulerName();
+  }
+
+  public List<V1Toleration> getTolerations() {
+    return serverPod.getTolerations();
+  }
+
   public V1ResourceRequirements getResources() {
     return serverPod.getResourceRequirements();
   }
@@ -177,12 +213,12 @@ public abstract class BaseConfiguration {
     return serverPod.getPodSecurityContext();
   }
 
-  V1SecurityContext getContainerSecurityContext() {
-    return serverPod.getContainerSecurityContext();
-  }
-
   void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
     serverPod.setPodSecurityContext(podSecurityContext);
+  }
+
+  V1SecurityContext getContainerSecurityContext() {
+    return serverPod.getContainerSecurityContext();
   }
 
   void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {

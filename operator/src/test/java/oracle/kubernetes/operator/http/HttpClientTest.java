@@ -1,18 +1,9 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.http;
 
-import static oracle.kubernetes.LogMatcher.containsFine;
-import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-
-import com.meterware.simplestub.Stub;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServicePort;
-import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -24,19 +15,29 @@ import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import com.meterware.simplestub.Stub;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
+import io.kubernetes.client.models.V1ServiceSpec;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.LogMatcher.containsFine;
+import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+
 public class HttpClientTest {
 
+  static final String FAKE_URL = "fake/url";
+  private static final String CHANNEL_NAME = "default";
   private List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
-  static final String FAKE_URL = "fake/url";
-
-  private static final String CHANNEL_NAME = "default";
 
   @Before
   public void setup() {
@@ -52,19 +53,19 @@ public class HttpClientTest {
   }
 
   @Test
-  public void messageLogged_when_executePostUrlOnServiceClusterIP_fails() throws HTTPException {
+  public void messageLogged_when_executePostUrlOnServiceClusterIP_fails() throws HttpException {
     executePostUrl(false);
     assertThat(logRecords, containsFine(HTTP_METHOD_FAILED, Status.NOT_FOUND.getStatusCode()));
   }
 
-  @Test(expected = HTTPException.class)
+  @Test(expected = HttpException.class)
   public void throws_when_executePostUrlOnServiceClusterIP_withThrowOnFailure_fails()
-      throws HTTPException {
+      throws HttpException {
     ignoreMessage(HTTP_METHOD_FAILED);
     executePostUrl(true);
   }
 
-  private void executePostUrl(boolean throwOnFailure) throws HTTPException {
+  private void executePostUrl(boolean throwOnFailure) throws HttpException {
     ClientStub clientStub =
         Stub.createStub(ClientStub.class)
             .withResponse(Stub.createStub(ResponseStub.class, Status.NOT_FOUND, null));
@@ -79,35 +80,35 @@ public class HttpClientTest {
   }
 
   @Test
-  public void getServiceURL_returnsUrlUsingClusterIP() {
-    final String CLUSTER_IP = "123.123.123.133";
-    final int PORT = 7101;
+  public void getServiceUrl_returnsUrlUsingClusterIP() {
+    final String clusterIp = "123.123.123.133";
+    final int port = 7101;
 
     List<V1ServicePort> ports = new ArrayList<>();
-    ports.add(new V1ServicePort().port(PORT).name(CHANNEL_NAME));
+    ports.add(new V1ServicePort().port(port).name(CHANNEL_NAME));
     V1Service service =
-        new V1Service().spec(new V1ServiceSpec().clusterIP(CLUSTER_IP).ports(ports));
-    String url = HttpClient.getServiceURL(service, null, CHANNEL_NAME, PORT);
-    assertEquals("http://" + CLUSTER_IP + ":" + PORT, url);
+        new V1Service().spec(new V1ServiceSpec().clusterIP(clusterIp).ports(ports));
+    String url = HttpClient.getServiceUrl(service, null, CHANNEL_NAME, port);
+    assertEquals("http://" + clusterIp + ":" + port, url);
   }
 
   @Test
-  public void getServiceURL_returnsUrlUsingDNS_ifNoneClusterIP() {
-    final String CLUSTER_IP = "None";
-    final int PORT = 7101;
-    final String NAMESPACE = "domain1";
-    final String SERVICE_NAME = "admin-server";
+  public void getServiceUrl_returnsUrlUsingDns_ifNoneClusterIP() {
+    final String clusterIp = "None";
+    final int port = 7101;
+    final String namespace = "domain1";
+    final String serviceName = "admin-server";
 
     List<V1ServicePort> ports = new ArrayList<>();
-    ports.add(new V1ServicePort().port(PORT).name(CHANNEL_NAME));
+    ports.add(new V1ServicePort().port(port).name(CHANNEL_NAME));
 
     V1Service service =
         new V1Service()
-            .spec(new V1ServiceSpec().clusterIP(CLUSTER_IP).ports(ports))
-            .metadata(new V1ObjectMeta().namespace(NAMESPACE).name(SERVICE_NAME));
+            .spec(new V1ServiceSpec().clusterIP(clusterIp).ports(ports))
+            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceName));
 
-    String url = HttpClient.getServiceURL(service, null, CHANNEL_NAME, PORT);
-    assertEquals("http://" + SERVICE_NAME + "." + NAMESPACE + ".pod.cluster.local:" + PORT, url);
+    String url = HttpClient.getServiceUrl(service, null, CHANNEL_NAME, port);
+    assertEquals("http://" + serviceName + "." + namespace + ".pod.cluster.local:" + port, url);
   }
 
   abstract static class ClientStub implements Client {

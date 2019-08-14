@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 # This python script is used to create a WebLogic domain
@@ -13,12 +13,12 @@
 
 # Read the domain secrets
 
-file = open('/weblogic-operator/secrets/username', 'r')		
-admin_username = file.read()		
-file.close()		
-		
-file = open('/weblogic-operator/secrets/password', 'r')		
-admin_password = file.read()		
+file = open('/weblogic-operator/secrets/username', 'r')
+admin_username = file.read()
+file.close()
+
+file = open('/weblogic-operator/secrets/password', 'r')
+admin_password = file.read()
 file.close()
 
 print('domain_path        : [%s]' % '${DOMAIN_HOME}');
@@ -191,14 +191,15 @@ def createOracleDataSource(dsName,dsJNDI,dsGlobalTX,dsXAInterface,dsHost,dsPort,
   createDataSource(dsName, dsJNDI, dsDriver, dsGlobalTX, dsXAInterface, dsURL, dsUser, dsPass, dsMinSize, dsMaxSize, dsTest, dsTarget)
 
 def createMySQLDataSource(dsName,dsJNDI,dsGlobalTX,dsXAInterface,dsHost,dsPort,dsDB,dsUser,dsPass,dsMinSize,dsMaxSize,dsTarget):
-  dsDriver='com.mysql.cj.jdbc.Driver'
+  #dsDriver='com.mysql.cj.jdbc.Driver'
+  dsDriver='com.mysql.jdbc.Driver'
   dsURL='jdbc:mysql://' + dsHost + ':' + dsPort + '/' + dsDB
   dsTest='SQL SELECT 1'
   createDataSource(dsName, dsJNDI, dsDriver, dsGlobalTX, dsXAInterface, dsURL, dsUser, dsPass, dsMinSize, dsMaxSize, dsTest, dsTarget)
 
 cd('/Servers/${ADMIN_NAME}')
 adminServerMBean=cmo
-  
+
 createOracleDataSource('testDS','testDS','None',false,'invalid-host','1521','invalid-sid','invalid-user','invalid-pass',0,10,adminServerMBean)
 createMySQLDataSource('mysqlDS','mysqlDS','None',false,'invalid-host','3306','invalid-db-name','invalid-user','invalid-pass',0,10,adminServerMBean)
 
@@ -242,6 +243,25 @@ else:
   cmo.setCluster(cl)
   print('Done setting attributes for Server Template: %s' % templateName);
 
+  templateName = '${CLUSTER_NAME}' + "-template-dummy1"
+  print('Creating Server Template: %s' % templateName)
+  st2=create(templateName, 'ServerTemplate')
+  print('Done creating Server Template: %s' % templateName)
+  cd('/ServerTemplates/%s' % templateName)
+  cmo.setListenPort(${MANAGED_SERVER_PORT})
+  #cmo.setListenAddress('${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE}${id}') # subst-ignore-missing
+  #cmo.setCluster(cl)
+  print('Done setting attributes for Server Template: %s' % templateName);
+ 
+  templateName = '${CLUSTER_NAME}' + "-template-dummy2"
+  print('Creating Server Template: %s' % templateName)
+  st3=create(templateName, 'ServerTemplate')
+  print('Done creating Server Template: %s' % templateName)
+  cd('/ServerTemplates/%s' % templateName)
+  cmo.setListenPort(${MANAGED_SERVER_PORT})
+  #cmo.setListenAddress('${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE}${id}') # subst-ignore-missing
+  #cmo.setCluster(cl)
+  print('Done setting attributes for Server Template: %s' % templateName);
 
   cd('/Clusters/%s' % '${CLUSTER_NAME}')
   create('${CLUSTER_NAME}', 'DynamicServers')
@@ -273,4 +293,3 @@ print 'Done'
 # Exit WLST
 # =========
 exit()
-

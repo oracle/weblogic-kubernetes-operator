@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -47,35 +47,6 @@ public class WlsMachineConfig {
     }
     return new WlsMachineConfig(
         machineName, nodeManagerListenPort, nodeManagerListenAddress, nodeManagerType);
-  }
-
-  /** @return Name of the machine that this WlsMachineConfig is created for */
-  public String getName() {
-    return name;
-  }
-
-  /**
-   * @return Listen port of the node manager for the machine that this WlsMachineConfig is created
-   *     for
-   */
-  public Integer getNodeManagerListenPort() {
-    return nodeManagerListenPort;
-  }
-
-  /**
-   * @return Listen address of the node manager for the machine that this WlsMachineConfig is
-   *     created for
-   */
-  public String getNodeManagerListenAddress() {
-    return nodeManagerListenAddress;
-  }
-
-  /**
-   * @return Type of node manager (Plain, SSL, etc) for the machine that this WlsMachineConfig is
-   *     created for
-   */
-  public String getNodeManagerType() {
-    return nodeManagerType;
   }
 
   /**
@@ -128,6 +99,46 @@ public class WlsMachineConfig {
    */
   private static String getNodeManagerSearchFields() {
     return "'listenAddress', 'listenPort', 'NMType' ";
+  }
+
+  /**
+   * Name of the machine that this WlsMachineConfig is created for.
+   *
+   * @return Name of the machine that this WlsMachineConfig is created for
+   */
+  public String getName() {
+    return name;
+  }
+
+  /**
+   * Listen port of the node manager for the machine that this WlsMachineConfig is created for.
+   *
+   * @return Listen port of the node manager for the machine that this WlsMachineConfig is created
+   *     for
+   */
+  public Integer getNodeManagerListenPort() {
+    return nodeManagerListenPort;
+  }
+
+  /**
+   * Listen address of the node manager for the machine that this WlsMachineConfig is created for.
+   *
+   * @return Listen address of the node manager for the machine that this WlsMachineConfig is
+   *     created for
+   */
+  public String getNodeManagerListenAddress() {
+    return nodeManagerListenAddress;
+  }
+
+  /**
+   * Type of node manager (Plain, SSL, etc) for the machine that this WlsMachineConfig is created
+   * for.
+   *
+   * @return Type of node manager (Plain, SSL, etc) for the machine that this WlsMachineConfig is
+   *     created for
+   */
+  public String getNodeManagerType() {
+    return nodeManagerType;
   }
 
   @Override

@@ -1,8 +1,12 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import com.appscode.voyager.client.models.V1beta1HTTPIngressBackend;
 import com.appscode.voyager.client.models.V1beta1HTTPIngressPath;
@@ -66,16 +70,15 @@ import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import io.kubernetes.client.models.V1beta1APIService;
 import io.kubernetes.client.models.V1beta1APIServiceSpec;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
-/** Utilities to help construct and manage kubernetes artifacts */
+/**
+ * Utilities to help construct and manage kubernetes artifacts.
+ */
 public class KubernetesArtifactUtils {
 
   public static final String API_GROUP_RBAC = "rbac.authorization.k8s.io";
@@ -160,13 +163,13 @@ public class KubernetesArtifactUtils {
     return (new V1Secret()).apiVersion(API_VERSION_V1).kind(KIND_SECRET);
   }
 
-  public static V1beta1APIService newAPIService() {
+  public static V1beta1APIService newApiService() {
     return (new V1beta1APIService())
         .apiVersion(API_VERSION_REGISTRATION_V1BETA1)
         .kind(KIND_API_SERVICE);
   }
 
-  public static V1beta1APIServiceSpec newAPIServiceSpec() {
+  public static V1beta1APIServiceSpec newApiServiceSpec() {
     return new V1beta1APIServiceSpec();
   }
 
@@ -178,15 +181,15 @@ public class KubernetesArtifactUtils {
     return (new V1beta1Ingress()).apiVersion(API_VERSION_VOYAGER_V1BETA1).kind(KIND_INGRESS);
   }
 
-  public static V1beta1HTTPIngressBackend newHTTPIngressBackend() {
+  public static V1beta1HTTPIngressBackend newHttpIngressBackend() {
     return new V1beta1HTTPIngressBackend();
   }
 
-  public static V1beta1HTTPIngressPath newHTTPIngressPath() {
+  public static V1beta1HTTPIngressPath newHttpIngressPath() {
     return new V1beta1HTTPIngressPath();
   }
 
-  public static V1beta1HTTPIngressRuleValue newHTTPIngressRuleValue() {
+  public static V1beta1HTTPIngressRuleValue newHttpIngressRuleValue() {
     return new V1beta1HTTPIngressRuleValue();
   }
 
@@ -324,7 +327,7 @@ public class KubernetesArtifactUtils {
     return new V1HostPathVolumeSource();
   }
 
-  public static V1NFSVolumeSource newNFSVolumeSource() {
+  public static V1NFSVolumeSource newNfsVolumeSource() {
     return new V1NFSVolumeSource();
   }
 
@@ -364,11 +367,11 @@ public class KubernetesArtifactUtils {
     return new V1LabelSelector();
   }
 
-  public static V1HTTPGetAction newHTTPGetAction() {
+  public static V1HTTPGetAction newHttpGetAction() {
     return new V1HTTPGetAction();
   }
 
-  public static V1TCPSocketAction newTCPSocketAction() {
+  public static V1TCPSocketAction newTcpSocketAction() {
     return new V1TCPSocketAction();
   }
 
@@ -394,16 +397,6 @@ public class KubernetesArtifactUtils {
 
   public static <E> FluentArrayList<E> newFluentArrayList(Class<E> type) {
     return new FluentArrayList<E>();
-  }
-
-  // The weblogic k8s artificats are missing fluent methods for adding items.
-  // Add fluent classes to help with this.
-  @SuppressWarnings("serial")
-  public static class FluentArrayList<E> extends ArrayList<E> {
-    public FluentArrayList<E> addElement(E e) {
-      add(e);
-      return this;
-    }
   }
 
   // Some of the k8s artifacts, especially config maps, contain scripts and
@@ -438,6 +431,16 @@ public class KubernetesArtifactUtils {
 
   public static String toContainsRegExp(String regexp) {
     return ".*" + regexp + ".*";
+  }
+
+  // The weblogic k8s artificats are missing fluent methods for adding items.
+  // Add fluent classes to help with this.
+  @SuppressWarnings("serial")
+  public static class FluentArrayList<E> extends ArrayList<E> {
+    public FluentArrayList<E> addElement(E e) {
+      add(e);
+      return this;
+    }
   }
 
   private static class RegexpsMatcher extends TypeSafeDiagnosingMatcher<String> {

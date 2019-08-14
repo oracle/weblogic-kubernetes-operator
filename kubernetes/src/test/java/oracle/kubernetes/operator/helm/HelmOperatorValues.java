@@ -1,8 +1,15 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import oracle.kubernetes.operator.utils.OperatorValues;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Collections.singletonList;
@@ -13,15 +20,9 @@ import static oracle.kubernetes.operator.helm.MapUtils.loadBooleanFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadIntegerFromMap;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import oracle.kubernetes.operator.utils.OperatorValues;
-
 class HelmOperatorValues extends OperatorValues {
-  HelmOperatorValues() {}
+  HelmOperatorValues() {
+  }
 
   HelmOperatorValues(Map<String, Object> map) {
     loadFromMap(map, this::setServiceAccount, "serviceAccount");
@@ -37,6 +38,7 @@ class HelmOperatorValues extends OperatorValues {
 
     loadBooleanFromMap(map, this::setExternalRestEnabled, "externalRestEnabled");
     loadBooleanFromMap(map, this::setRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
+    loadBooleanFromMap(map, this::setSuspendOnDebugStartup, "suspendOnDebugStartup");
     loadBooleanFromMap(map, this::setElkIntegrationEnabled, "elkIntegrationEnabled");
 
     loadIntegerFromMap(map, this::setExternalRestHttpsPort, "externalRestHttpsPort");
@@ -57,6 +59,12 @@ class HelmOperatorValues extends OperatorValues {
   private void setRemoteDebugNodePortEnabled(Boolean enabled) {
     if (enabled != null) {
       setRemoteDebugNodePortEnabled(enabled.toString());
+    }
+  }
+
+  private void setSuspendOnDebugStartup(Boolean enabled) {
+    if (enabled != null) {
+      setSuspendOnDebugStartup(enabled.toString());
     }
   }
 
@@ -82,7 +90,7 @@ class HelmOperatorValues extends OperatorValues {
         (List<Map<String, String>>) map.get("imagePullSecrets");
     if (imagePullSecrets != null) {
       // TBD - enhance OperatorValues to have an array of image pull secrets, instead of just one
-      String secretName = (String) imagePullSecrets.get(0).get("name");
+      String secretName = imagePullSecrets.get(0).get("name");
       if (secretName != null) {
         setWeblogicOperatorImagePullSecretName(secretName);
       }
@@ -104,7 +112,8 @@ class HelmOperatorValues extends OperatorValues {
     addStringMapEntry(map, this::getElasticSearchHost, "elasticSearchHost");
 
     addMapEntry(map, this::isExternalRestEnabled, "externalRestEnabled");
-    addMapEntry(map, this::isRemoteDebugNotPortEnabled, "remoteDebugNodePortEnabled");
+    addMapEntry(map, this::isRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
+    addMapEntry(map, this::isSuspendOnDebugStartup, "suspendOnDebugStartup");
     addMapEntry(map, this::isElkIntegrationEnabled, "elkIntegrationEnabled");
 
     addMapEntry(map, this::getExternalRestHttpsPortNum, "externalRestHttpsPort");
@@ -120,11 +129,7 @@ class HelmOperatorValues extends OperatorValues {
   private void addDomainNamespaces(HashMap<String, Object> map) {
     String targetNamespaces = getTargetNamespaces();
     if (targetNamespaces.length() > 0) {
-      List<String> namespaces = new ArrayList<>();
-      for (String namespace : targetNamespaces.split(",")) {
-        namespaces.add(namespace);
-      }
-      map.put("domainNamespaces", namespaces);
+      map.put("domainNamespaces", Arrays.asList(targetNamespaces.split(",")));
     }
   }
 
@@ -139,8 +144,12 @@ class HelmOperatorValues extends OperatorValues {
     return MapUtils.valueOf(getExternalRestEnabled());
   }
 
-  private Boolean isRemoteDebugNotPortEnabled() {
+  private Boolean isRemoteDebugNodePortEnabled() {
     return MapUtils.valueOf(getRemoteDebugNodePortEnabled());
+  }
+
+  private Boolean isSuspendOnDebugStartup() {
+    return MapUtils.valueOf(getSuspendOnDebugStartup());
   }
 
   private Boolean isElkIntegrationEnabled() {

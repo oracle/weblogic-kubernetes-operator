@@ -10,7 +10,7 @@ weight: 6
 
     ```bash
     $ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \
-      -u weblogic -p welcome1 -n sample-domain1-ns -d sample-domain1
+      -u <username> -p <password> -n sample-domain1-ns -d sample-domain1
     ```
 
     The sample will create a secret named `domainUID-weblogic-credentials` where the `domainUID` is replaced
@@ -35,7 +35,7 @@ If you set the `domainHomeImageBuildPath` property to `./docker-images/OracleWeb
 
     ```bash
     $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
-    $ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u weblogic -p welcome1 -e
+    $ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u <username> -p <password> -e
     ```
 
     You need to provide the WebLogic administration user name and password in the `-u` and `-p` options

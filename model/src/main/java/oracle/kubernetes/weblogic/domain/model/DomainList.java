@@ -1,16 +1,17 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.models.V1ListMeta;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.models.V1ListMeta;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -21,31 +22,34 @@ public class DomainList {
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
-   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
+   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources.
    */
   @SerializedName("apiVersion")
   @Expose
   private String apiVersion;
+
   /**
-   * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md
-   * (Required)
+   * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
+   * Required.
    */
   @SerializedName("items")
   @Expose
   @Valid
   @NotNull
   private List<Domain> items = new ArrayList<Domain>();
+
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
    * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
-   * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+   * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.
    */
   @SerializedName("kind")
   @Expose
   private String kind;
+
   /**
    * Standard list metadata. More info:
-   * https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+   * https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.
    */
   @SerializedName("metadata")
   @Expose
@@ -55,7 +59,7 @@ public class DomainList {
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
-   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
+   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources.
    *
    * @return API version
    */
@@ -66,7 +70,7 @@ public class DomainList {
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
-   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
+   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources.
    *
    * @param apiVersion API version
    */
@@ -77,7 +81,7 @@ public class DomainList {
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
-   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
+   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources.
    *
    * @param apiVersion API version
    * @return this
@@ -88,8 +92,8 @@ public class DomainList {
   }
 
   /**
-   * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md
-   * (Required)
+   * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
+   * Required.
    *
    * @return items
    */
@@ -98,8 +102,8 @@ public class DomainList {
   }
 
   /**
-   * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md
-   * (Required)
+   * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
+   * Required.
    *
    * @param items items
    */
@@ -108,8 +112,8 @@ public class DomainList {
   }
 
   /**
-   * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md
-   * (Required)
+   * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
+   * Required.
    *
    * @param items items
    * @return this

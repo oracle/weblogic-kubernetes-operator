@@ -4,23 +4,27 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
-import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
-
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SecurityContext;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
+
+import io.kubernetes.client.models.V1Affinity;
+import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1PodReadinessGate;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
 import oracle.kubernetes.operator.KubernetesConstants;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 
 /** Represents the effective configuration for a server, as seen by the operator runtime. */
 @SuppressWarnings("WeakerAccess")
@@ -101,6 +105,46 @@ public abstract class ServerSpecBase implements ServerSpec {
   @Nonnull
   public Map<String, String> getNodeSelectors() {
     return Collections.emptyMap();
+  }
+
+  @Override
+  public V1Affinity getAffinity() {
+    return null;
+  }
+
+  @Override
+  public String getPriorityClassName() {
+    return null;
+  }
+
+  @Override
+  public List<V1PodReadinessGate> getReadinessGates() {
+    return null;
+  }
+
+  @Override
+  public String getRestartPolicy() {
+    return null;
+  }
+
+  @Override
+  public String getRuntimeClassName() {
+    return null;
+  }
+
+  @Override
+  public String getNodeName() {
+    return null;
+  }
+
+  @Override
+  public String getSchedulerName() {
+    return null;
+  }
+
+  @Override
+  public List<V1Toleration> getTolerations() {
+    return null;
   }
 
   @Override

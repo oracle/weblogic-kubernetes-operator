@@ -1,78 +1,6 @@
 #!/bin/bash -x
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-
-function clean_jenkins {
-  echo "Cleaning."
-  /usr/local/packages/aime/ias/run_as_root "${PROJECT_ROOT}/src/integration-tests/bash/clean_docker_k8s.sh -y"
-}
-
-function setup_jenkins {
-  echo "Setting up."
-  /usr/local/packages/aime/ias/run_as_root "sh ${PROJECT_ROOT}/src/integration-tests/bash/install_docker_k8s.sh -y -u wls -v ${K8S_VERSION}"
-  if [ $? -ne 0 ]; then
-	  echo "k8s installation is not successful"
-	  exit 1
-  fi
-  set +x
-  . ~/.dockerk8senv
-  set -x
-  id
-
-  docker images
-
-  if [ "$JRF_ENABLED" = true ] ; then
-	pull_tag_images_jrf	
-  else
-  	pull_tag_images
-  fi
-
-  export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
-  # create a docker image for the operator code being tested
-  docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
-  docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
-  
-  docker images
-    
-  echo "Helm installation starts" 
-  wget -q -O  /tmp/helm-v2.8.2-linux-amd64.tar.gz https://kubernetes-helm.storage.googleapis.com/helm-v2.8.2-linux-amd64.tar.gz
-  mkdir /tmp/helm
-  tar xzf /tmp/helm-v2.8.2-linux-amd64.tar.gz -C /tmp/helm
-  chmod +x /tmp/helm/linux-amd64/helm
-  /usr/local/packages/aime/ias/run_as_root "cp /tmp/helm/linux-amd64/helm /usr/bin/"
-  rm -rf /tmp/helm
-  helm init
-  echo "Helm is configured."
-}
-
-function docker_login {
-
-  set +x 
-  if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ]; then
-        echo "DOCKER_USERNAME and DOCKER_PASSWORD not set !!!"
-	exit 1
-  fi
-  
-  if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then  
-	  echo "Creating Docker Secret"
-	  
-	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=index.docker.io/v1/ \
-	    --docker-username=$DOCKER_USERNAME \
-	    --docker-password=$DOCKER_PASSWORD
-	  
-	  echo "Checking Secret"
-	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
-	  if [ "$SECRET" != "1" ]; then
-	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
-	    exit 1
-	  fi
-	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
-	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-  fi
-  set -x
-
-}
 
 function setup_shared_cluster {
   echo "Perform setup for running on shared cluster"
@@ -88,9 +16,9 @@ function setup_shared_cluster {
   kubectl get po -n kube-system
   
   echo "Existing helm charts "
-  helm ls
+  helm ls --all
   echo "Deleting installed helm charts"
-  helm list --short | xargs -L1 helm delete --purge
+  helm list --short --all | xargs -L1 helm delete --purge
   echo "After helm delete, list of installed helm charts is: "
   helm ls
 
@@ -102,7 +30,7 @@ function clean_shared_cluster {
 	${PROJECT_ROOT}/src/integration-tests/bash/cleanup.sh
 }
 
-function pull_tag_images {
+function create_image_pull_secret_wl {
 
   set +x 
   if [ -z "$OCR_USERNAME" ] || [ -z "$OCR_PASSWORD" ]; then
@@ -114,11 +42,11 @@ function pull_tag_images {
   
   if [ -n "$OCR_USERNAME" ] && [ -n "$OCR_PASSWORD" ]; then  
 	  echo "Creating Docker Secret"
-	  
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=${WL_DOCKER_SERVER}/ \
+	    --docker-server=${OCR_SERVER}/ \
 	    --docker-username=$OCR_USERNAME \
-	    --docker-password=$OCR_PASSWORD
+	    --docker-password=$OCR_PASSWORD \
+            --dry-run -o yaml | kubectl apply -f -
 	  
 	  echo "Checking Secret"
 	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
@@ -126,14 +54,12 @@ function pull_tag_images {
 	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
 	    exit 1
 	  fi
-	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
-          echo "docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${WL_DOCKER_SERVER}"
-	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${WL_DOCKER_SERVER}
-          echo "docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC"
-   	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
+	  
+	  # below docker pull is needed to for domain home in image tests the base image should be in local repo
+	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}
+	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
   set -x
-
 }
 
 function pull_tag_images_jrf {
@@ -152,7 +78,7 @@ function pull_tag_images_jrf {
   fi
 
   # reuse the create secret logic
-  pull_tag_images
+  create_image_pull_secret_wl
 
   # pull fmw infra images
   docker pull $IMAGE_NAME_FMWINFRA:$IMAGE_TAG_FMWINFRA
@@ -163,18 +89,7 @@ function pull_tag_images_jrf {
   set -x
 }
 
-function get_wlthint3client_from_image {
-  # Get wlthint3client.jar from image
-  id=$(docker create $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)
-  docker cp $id:/u01/oracle/wlserver/server/lib/wlthint3client.jar $SCRIPTPATH
-  if [ ! "$?" = "0" ] ; then
-  	echo "Docker Copy failed for wlthint3client.jar"
-  	exit 1
-  fi
-  docker rm -v $id
-  
-}
-export WL_DOCKER_SERVER=container-registry.oracle.com
+export OCR_SERVER="${OCR_SERVER:-container-registry.oracle.com}"
 export WLS_IMAGE_URI=/middleware/weblogic
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
@@ -182,17 +97,17 @@ export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
 export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
 export BRANCH_NAME="${BRANCH_NAME:-$SHARED_CLUSTER_GIT_BRANCH}"
-export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3-190111}"
+export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
 
 if [ "$JRF_ENABLED" = true ] ; then
   export FMWINFRA_IMAGE_URI=/middleware/fmw-infrastructure
   export IMAGE_TAG_FMWINFRA=12.2.1.3
   export DB_IMAGE_URI=/database/enterprise
-  export IMAGE_NAME_ORACLEDB="${IMAGE_NAME_ORACLEDB:-`echo ${WL_DOCKER_SERVER}``echo ${DB_IMAGE_URI}`}"
+  export IMAGE_NAME_ORACLEDB="${IMAGE_NAME_ORACLEDB:-`echo ${OCR_SERVER}``echo ${DB_IMAGE_URI}`}"
   export IMAGE_TAG_ORACLEDB="${IMAGE_TAG_ORACLEDB:-12.2.0.1-slim}"
 fi
-export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-`echo ${WL_DOCKER_SERVER}``echo ${WLS_IMAGE_URI}`}"
-export IMAGE_NAME_FMWINFRA="${IMAGE_NAME_FMWINFRA:-`echo ${WL_DOCKER_SERVER}``echo ${FMWINFRA_IMAGE_URI}`}"
+export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-`echo ${OCR_SERVER}``echo ${WLS_IMAGE_URI}`}"
+export IMAGE_NAME_FMWINFRA="${IMAGE_NAME_FMWINFRA:-`echo ${OCR_SERVER}``echo ${FMWINFRA_IMAGE_URI}`}"
 export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
     
 if [ -z "$BRANCH_NAME" ]; then
@@ -226,11 +141,10 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
   clean_shared_cluster
     
   if [ "$JRF_ENABLED" = true ] ; then
-	pull_tag_images_jrf	
+	pull_tag_images_jrf
   else
   	export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
-	export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC
-  
+	export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC  
   
   	if [ "$IMAGE_PULL_POLICY_OPERATOR" = "Always" ]; then 
 		if [ -z "$REPO_REGISTRY" ] || [ -z "$REPO_USERNAME" ] || [ -z "$REPO_PASSWORD" ] || [ -z "$REPO_EMAIL" ]; then
@@ -243,7 +157,8 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 		    --docker-server=$REPO_REGISTRY \
 		    --docker-username=$REPO_USERNAME \
 		    --docker-password=$REPO_PASSWORD \
-		    --docker-email=$REPO_EMAIL 
+		    --docker-email=$REPO_EMAIL  \
+                    --dry-run -o yaml | kubectl apply -f -
 	
 		echo "Checking Secret"
 		SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
@@ -251,76 +166,41 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 		    echo "secret $IMAGE_PULL_SECRET_OPERATOR was not created successfully"
 		    exit 1
 		fi
-  	fi 
-  	
-  	if [ -z "$OCR_USERNAME" ] || [ -z "$OCR_PASSWORD" ]; then
-		echo "Provide Docker login details using OCR_USERNAME & OCR_PASSWORD env variables to push the Operator image to the repository."
-		exit 1
-	fi
-	
-	echo "Creating Docker Secret"
-	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=${WL_DOCKER_SERVER}/ \
-	    --docker-username=$DOCKER_USERNAME \
-	    --docker-password=$DOCKER_PASSWORD \
-	    --docker-email=$DOCKER_EMAIL 
-	
-	echo "Checking Secret"
-	SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
-	if [ "$SECRET" != "1" ]; then
-		echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
-	    exit 1
-	fi
+  	fi
 	  
 	if [ -z "$K8S_NODEPORT_HOST" ]; then
 	  	echo "When running in shared cluster option, provide DNS name or IP of a Kubernetes worker node using K8S_NODEPORT_HOST env variable"
 	  	exit 1
 	fi
-  
+    create_image_pull_secret_wl
 	
   fi
   setup_shared_cluster
-  get_wlthint3client_from_image
+  docker images
     
 elif [ "$JENKINS" = "true" ]; then
 
   echo "Test Suite is running on Jenkins and k8s is running locally on the same node."
+  docker images
 
-  # External customizable env vars unique to Jenkins:
-
-  export docker_pass=${docker_pass:?}
-  export M2_HOME=${M2_HOME:?}
-  export K8S_VERSION=${K8S_VERSION}
-
-  clean_jenkins
-
-  setup_jenkins
-
-  /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT"
-  /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT"
-
-  # 777 is needed because this script, k8s pods, and/or jobs may need access.
-
-  /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT/acceptance_test_tmp"
-  /usr/local/packages/aime/ias/run_as_root "chmod 777 $RESULT_ROOT/acceptance_test_tmp"
-
-  /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT/acceptance_test_tmp_archive"
-  /usr/local/packages/aime/ias/run_as_root "chmod 777 $RESULT_ROOT/acceptance_test_tmp_archive"
-
-  /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv"
-  /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv"
-
-  /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv_archive"
-  /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv_archive"
-  
-  if [ "$JRF_ENABLED" = false ]; then
-  	get_wlthint3client_from_image
+  if [ "$JRF_ENABLED" = true ] ; then
+	pull_tag_images_jrf	
+  else
+  	create_image_pull_secret_wl
   fi
+
+  export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
+  # create a docker image for the operator code being tested
+  docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
+  docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
+  
+  docker images
+
 else
   if [ "$JRF_ENABLED" = true ] ; then
 	pull_tag_images_jrf	
   else
-  	pull_tag_images
+  	create_image_pull_secret_wl
   fi
     
   #docker rmi -f $(docker images -q -f dangling=true)
@@ -330,8 +210,6 @@ else
 	
   export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
   docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
-  
-  if [ "$JRF_ENABLED" = false ]; then
-  	get_wlthint3client_from_image
-  fi
+  docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
+ 
 fi

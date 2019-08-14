@@ -4,11 +4,12 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Range;
@@ -30,7 +31,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   private String clusterName;
 
   /** The number of replicas to run in the cluster, if specified. */
-  @Description("The number of managed servers to run in this cluster.")
+  @Description("The number of cluster members to run.")
   @Range(minimum = 0)
   private Integer replicas;
 
@@ -52,7 +53,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Range(minimum = 1)
   private Integer maxUnavailable;
 
-  @Description("Customization affecting ClusterIP Kubernetes services for WebLogic cluster.")
+  @Description("Customization affecting ClusterIP Kubernetes services for the WebLogic cluster.")
   @SerializedName("clusterService")
   @Expose
   private KubernetesResource clusterService = new KubernetesResource();
@@ -85,23 +86,23 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.replicas = replicas;
   }
 
-  @Override
-  public void setServerStartPolicy(String serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
-  }
-
   @Nullable
   @Override
   public String getServerStartPolicy() {
     return serverStartPolicy;
   }
 
-  public void setClusterService(KubernetesResource clusterService) {
-    this.clusterService = clusterService;
+  @Override
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
   }
 
   public KubernetesResource getClusterService() {
     return clusterService;
+  }
+
+  public void setClusterService(KubernetesResource clusterService) {
+    this.clusterService = clusterService;
   }
 
   public Map<String, String> getClusterLabels() {

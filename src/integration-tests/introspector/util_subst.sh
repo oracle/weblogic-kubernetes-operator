@@ -1,8 +1,8 @@
 # !/bin/sh
 
-# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-# 
+#
 # Description:
 #
 #   This utility substitutes values for macros in a template.  It
@@ -20,7 +20,7 @@
 #     foo=bar ... : list of macro substitutions, these occlude
 #                   any macro values obtained via '-g'.
 #
-#   Mark a source file line with 'subst-ignore-missing' to cause subst 
+#   Mark a source file line with 'subst-ignore-missing' to cause subst
 #   to ignore any ${} macro names that have no corresponding macro values
 #   and leave the ${} in place.
 #
@@ -29,7 +29,7 @@
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SOURCEPATH="`echo $SCRIPTPATH | sed 's/weblogic-kubernetes-operator.*/weblogic-kubernetes-operator/'`"
-traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils.sh
+traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/utils.sh
 source ${traceFile}
 [ $? -ne 0 ] && echo "Error: missing file ${traceFile}" && exit 1
 

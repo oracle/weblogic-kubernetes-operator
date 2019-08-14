@@ -5,6 +5,7 @@
 package oracle.kubernetes.weblogic.domain;
 
 import java.util.List;
+
 import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;

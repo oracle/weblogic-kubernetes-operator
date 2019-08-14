@@ -4,13 +4,13 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertThat;
-
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import org.junit.Test;
+
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertThat;
 
 public class DomainPresenceInfoTest {
   private DomainPresenceInfo info = new DomainPresenceInfo("ns", "domain");

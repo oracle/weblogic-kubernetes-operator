@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -37,33 +38,6 @@ class FileGroupReader {
    */
   FileGroupReader(String pathToGroup) {
     this.pathToGroup = pathToGroup;
-  }
-
-  /**
-   * Loads the files at the defined location within the classpath into a map.
-   *
-   * @return a map of file paths to string contents.
-   */
-  Map<String, String> loadFilesFromClasspath() {
-    synchronized (FileGroupReader.class) {
-      try {
-        try (ScriptPath scriptPath = getScriptPath()) {
-          return loadContents(scriptPath.getScriptsDir());
-        }
-      } catch (Exception e) {
-        LOGGER.warning(MessageKeys.EXCEPTION, e);
-        throw new RuntimeException(e);
-      }
-    }
-  }
-
-  private ScriptPath getScriptPath() throws URISyntaxException, IOException {
-    URI uri = getClass().getResource(pathToGroup).toURI();
-    return isJar(uri) ? new JarScriptPath(uri) : new FileScriptPath(uri);
-  }
-
-  private boolean isJar(URI uri) {
-    return "jar".equals(uri.getScheme());
   }
 
   /**
@@ -93,6 +67,33 @@ class FileGroupReader {
     }
   }
 
+  /**
+   * Loads the files at the defined location within the classpath into a map.
+   *
+   * @return a map of file paths to string contents.
+   */
+  Map<String, String> loadFilesFromClasspath() {
+    synchronized (FileGroupReader.class) {
+      try {
+        try (ScriptPath scriptPath = getScriptPath()) {
+          return loadContents(scriptPath.getScriptsDir());
+        }
+      } catch (Exception e) {
+        LOGGER.warning(MessageKeys.EXCEPTION, e);
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private ScriptPath getScriptPath() throws URISyntaxException, IOException {
+    URI uri = getClass().getResource(pathToGroup).toURI();
+    return isJar(uri) ? new JarScriptPath(uri) : new FileScriptPath(uri);
+  }
+
+  private boolean isJar(URI uri) {
+    return "jar".equals(uri.getScheme());
+  }
+
   interface ScriptPath extends AutoCloseable {
     Path getScriptsDir();
   }
@@ -110,7 +111,8 @@ class FileGroupReader {
     }
 
     @Override
-    public void close() {}
+    public void close() {
+    }
   }
 
   class JarScriptPath implements ScriptPath {

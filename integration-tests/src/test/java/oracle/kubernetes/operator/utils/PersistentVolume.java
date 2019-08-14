@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -9,35 +9,27 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Logger;
+
 import oracle.kubernetes.operator.BaseTest;
 
 public class PersistentVolume {
 
+  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   private Map<String, Object> pvMap;
   private String dirPath;
-
-  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   public PersistentVolume(String dirPath, Map pvMap) throws Exception {
     this.dirPath = dirPath;
     this.pvMap = pvMap;
-
+    
     String cmd =
-        BaseTest.getProjectRoot()
-            + "/src/integration-tests/bash/job.sh \"mkdir -m 777 -p "
-            + dirPath
-            + "\"";
-
-    ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to create domain PV directory "
-              + cmd
-              + " failed, returned "
-              + result.stdout()
-              + result.stderr());
-    }
-    logger.info("command result " + result.stdout().trim());
+            BaseTest.getProjectRoot()
+        + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot()
+        + ":/sharedparent -t 120 -c 'mkdir -m 777 -p "
+        + dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/")
+        + "'"; 
+    
+    TestUtils.exec(cmd, true);
 
     Path parentDir =
         pvMap.get("domainUID") != null
@@ -60,16 +52,7 @@ public class PersistentVolume {
             + BaseTest.getUserProjectsDir();
     logger.info("Executing cmd " + cmdPvPvc);
 
-    result = ExecCommand.exec(cmdPvPvc);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to create PV/PVC "
-              + cmdPvPvc
-              + " failed, returned "
-              + result.stdout()
-              + result.stderr());
-    }
-    logger.info("command result " + result.stdout().trim());
+    TestUtils.exec(cmdPvPvc, true);
   }
 
   public String getDirPath() {

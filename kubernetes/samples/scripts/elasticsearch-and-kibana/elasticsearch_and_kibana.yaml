@@ -1,4 +1,4 @@
-# Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 # When a user installs the WebLogic operator Helm chart, the user can set
@@ -41,17 +41,22 @@ spec:
       labels:
         app: "elasticsearch"
     spec:
+      initContainers:
+      - name: set-vm-max-map-count
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        command: ['sysctl', '-w', 'vm.max_map_count=262144']
+        securityContext:
+          privileged: true
       containers:
       - name: "elasticsearch"
-        image: "elasticsearch:5"
+        image: "elasticsearch:6.8.0"
         ports:
         - containerPort: 9200
         - containerPort: 9300
         env:
         - name: ES_JAVA_OPTS
           value: -Xms1024m -Xmx1024m
-        - name: bootstrap.memory_lock
-          value: "true"
 
 ---
 kind: "Service"
@@ -92,7 +97,7 @@ spec:
     spec:
       containers:
       - name: "kibana"
-        image: "kibana:5"
+        image: "kibana:6.8.0"
         ports:
         - containerPort: 5601
 
