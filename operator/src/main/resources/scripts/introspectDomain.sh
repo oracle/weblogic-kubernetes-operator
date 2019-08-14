@@ -260,9 +260,10 @@ function createWLDomain() {
             if [ $? -eq 0 ] ; then
                 echo "using online update"
                 # look at the original model to get the admin user and password or get it from the secrets
-                admin_user=$(grep -Po "'AdminUserName':.*?'," /weblogic-operator/introspectormd5/merged_model.json | cut -d\' -f 4)
-                admin_pwd=$(grep -Po "'AdminPassword':.*?'," /weblogic-operator/introspectormd5/merged_model.json | cut -d\' -f 4)
-
+#                admin_user=$(grep -Po "'AdminUserName':.*?'," /weblogic-operator/introspectormd5/merged_model.json | cut -d\' -f 4)
+#                admin_pwd=$(grep -Po "'AdminPassword':.*?'," /weblogic-operator/introspectormd5/merged_model.json | cut -d\' -f 4)
+                admin_user=$(cat /weblogic-operator/secrets/username)
+                admin_pwd=$(cat /weblogic-operator/secrets/password)
                 echo "USER="$admin_user
                 echo "PWD="$admin_pwd
 
