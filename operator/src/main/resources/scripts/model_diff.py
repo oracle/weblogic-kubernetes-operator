@@ -1,26 +1,24 @@
 import sets
+import sys
+
 class ModelDiffer(object):
 
     def __init__(self, current_dict, past_dict):
 
         self.final_changed_model=dict()
-        self.current_dict = self._eval_file(current_dict)
-        self.past_dict = self._eval_file(past_dict)
-
+        # all_changes = []
+        self.current_dict = current_dict
+        self.past_dict = past_dict
         #self.current_dict, self.past_dict = current_dict, past_dict
         self.set_current = sets.Set()
         self.set_past = sets.Set()
-        for item in current_dict.keys():
+        for item in self.current_dict.keys():
             self.set_current.add(item)
-        for item in past_dict.keys():
+        for item in self.past_dict.keys():
             self.set_past.add(item)
         #set(current_dict.keys()), set(past_dict.keys())
         self.intersect = self.set_current.intersection(self.set_past)
 
-    def _eval_file(self, file):
-        fh = open(file, 'r')
-        content = fh.read()
-        return eval(content)
 
     def added(self):
         return self.set_current - self.intersect
@@ -74,14 +72,13 @@ class ModelDiffer(object):
     def calculate_changed_model(self):
         result = dict()
         changed=self.changed()
-        #print 'changed '
-        #print changed
+
         for s in changed:
             token=s
-            x=obj.recursive_changed_detail(s, token, s)
-            #print ' all changes '
-            #print all_changes
-            #print "token=" + str(x)
+            x=self.recursive_changed_detail(s, token, s)
+            # print ' all changes '
+            # print all_changes
+            # print "token=" + str(x)
             for item in all_changes:
                 splitted=item.split('.',1)
                 n=len(splitted)
@@ -112,7 +109,7 @@ class ModelDiffer(object):
 
                 leaf[splitted[0]] =value_tree[splitted[0]]
                 self.merge_dictionaries(self.final_changed_model, result)
-                #print changed_model
+                # print self.final_changed_model
 
     def merge_dictionaries(self, dictionary, new_dictionary):
         """
@@ -134,6 +131,8 @@ class ModelDiffer(object):
     def is_safe_diff(self, model):
         if model.has_key('appDeployments'):
             return 0
+        else:
+            return 1
 
     def get_final_changed_model(self):
         return self.final_changed_model
@@ -153,34 +152,55 @@ class ModelDiffer(object):
 # 'Server': {'admin-server': {'ListenPort': 7001L}}, \
 #  'ServerTemplate': {'cluster-1-template': {'Cluster': 'cluster-1', 'ListenPort': 8001L}}}}
 
-current={'domainInfo': {'AdminUserName': 'weblogic', 'AdminPassword': 'welcome1', 'ServerStartMode': 'prod'}, \
-         'topology': {'Name': 'simple_domain', 'SecurityConfiguration': {'NodeManagerUsername': 'weblogic', \
-                                                                         'NodeManagerPasswordEncrypted': 'welcome1'}, 'Cluster': {'mycluster': {'MulticastTTL': 3L}}, \
-                      'Server': {'AdminServer': {'ListenPort': 7002L, 'ListenAddress': 'localhost', 'Machine': 'machine1'}, \
-                                 's1': {'ListenPort': 8001L, 'ListenAddress': 'localhost', 'Cluster': 'mycluster', 'Machine': 'machine1'}}, \
-                      'Machine': {'machine1': {'NodeManager': {'ListenPort': 5556L, 'ListenAddress': 'localhost'}}}}, \
-         'resources': {'JDBCSystemResource': {'Generic2': {'Target': 'mycluster', 'JdbcResource': \
-             {'JDBCDataSourceParams': {'JNDIName': ['jdbc/generic2', 'jdbc/special2'], 'GlobalTransactionsProtocol': \
-                 'TwoPhaseCommit'}, 'JDBCDriverParams': {'DriverName': 'oracle.jdbc.xa.client.OracleXADataSource', \
-                                                         'URL': 'jdbc:oracle:thin:@//localhost:1522/ORCLPDB1.localdomain', 'PasswordEncrypted': 'Oradoc_db1', \
-                                                         'Properties': {'user': {'Value': 'sys as sysdba'}, 'oracle.net.CONNECT_TIMEOUT': {'Value': 5000L}, \
-                                                                        'oracle.jdbc.ReadTimeout': {'Value': 30000L}}}, 'JDBCConnectionPoolParams': {'InitialCapacity': 3L, '\
-     MaxCapacity': 15L, 'TestTableName': 'SQL ISVALID', 'TestConnectionsOnReserve': 'True'}}}}}}
+# current={'domainInfo': {'AdminUserName': 'weblogic', 'AdminPassword': 'welcome1', 'ServerStartMode': 'prod'}, \
+#          'topology': {'Name': 'simple_domain', 'SecurityConfiguration': {'NodeManagerUsername': 'weblogic', \
+#                                                                          'NodeManagerPasswordEncrypted': 'welcome1'}, 'Cluster': {'mycluster': {'MulticastTTL': 3L}}, \
+#                       'Server': {'AdminServer': {'ListenPort': 7002L, 'ListenAddress': 'localhost', 'Machine': 'machine1'}, \
+#                                  's1': {'ListenPort': 8001L, 'ListenAddress': 'localhost', 'Cluster': 'mycluster', 'Machine': 'machine1'}}, \
+#                       'Machine': {'machine1': {'NodeManager': {'ListenPort': 5556L, 'ListenAddress': 'localhost'}}}}, \
+#          'resources': {'JDBCSystemResource': {'Generic2': {'Target': 'mycluster', 'JdbcResource': \
+#              {'JDBCDataSourceParams': {'JNDIName': ['jdbc/generic2', 'jdbc/special2'], 'GlobalTransactionsProtocol': \
+#                  'TwoPhaseCommit'}, 'JDBCDriverParams': {'DriverName': 'oracle.jdbc.xa.client.OracleXADataSource', \
+#                                                          'URL': 'jdbc:oracle:thin:@//localhost:1522/ORCLPDB1.localdomain', 'PasswordEncrypted': 'Oradoc_db1', \
+#                                                          'Properties': {'user': {'Value': 'sys as sysdba'}, 'oracle.net.CONNECT_TIMEOUT': {'Value': 5000L}, \
+#                                                                         'oracle.jdbc.ReadTimeout': {'Value': 30000L}}}, 'JDBCConnectionPoolParams': {'InitialCapacity': 3L, '\
+#      MaxCapacity': 15L, 'TestTableName': 'SQL ISVALID', 'TestConnectionsOnReserve': 'True'}}}}}}
+#
+# past={'domainInfo': {'AdminUserName': 'weblogic', 'AdminPassword': 'welcome1', 'ServerStartMode': 'prod'}, \
+#       'topology': {'Name': 'simple_domain', 'SecurityConfiguration': {'NodeManagerUsername': 'weblogic', \
+#                                                                       'NodeManagerPasswordEncrypted': 'welcome1'}, 'Cluster': {'mycluster': {'MulticastTTL': 3L}}, \
+#                    'Server': {'AdminServer': {'ListenPort': 7001L, 'ListenAddress': 'localhost', 'Machine': 'machine1'}, \
+#                               's1': {'ListenPort': 8001L, 'ListenAddress': 'localhost', 'Cluster': 'mycluster', 'Machine': 'machine1'}}, \
+#                    'Machine': {'machine1': {'NodeManager': {'ListenPort': 5556L, 'ListenAddress': 'localhost'}}}}, \
+#       'resources': {'JDBCSystemResource': {'Generic2': {'Target': 'mycluster', 'JdbcResource': \
+#           {'JDBCDataSourceParams': {'JNDIName': ['jdbc/generic2', 'jdbc/special2'], 'GlobalTransactionsProtocol': \
+#               'TwoPhaseCommit'}, 'JDBCDriverParams': {'DriverName': 'oracle.jdbc.xa.client.OracleXADataSource', \
+#                                                       'URL': 'jdbc:oracle:thin:@//localhost:1522/ORCLPDB2.localdomain', 'PasswordEncrypted': 'Oradoc_db1', \
+#                                                       'Properties': {'user': {'Value': 'sys as sysdba'}, 'oracle.net.CONNECT_TIMEOUT': {'Value': 5000L}, \
+#                                                                      'oracle.jdbc.ReadTimeout': {'Value': 30000L}}}, 'JDBCConnectionPoolParams': {'InitialCapacity': 3L, '\
+#      MaxCapacity': 15L, 'TestTableName': 'SQL ISVALID', 'TestConnectionsOnReserve': 'True'}}}}}}
 
-past={'domainInfo': {'AdminUserName': 'weblogic', 'AdminPassword': 'welcome1', 'ServerStartMode': 'prod'}, \
-      'topology': {'Name': 'simple_domain', 'SecurityConfiguration': {'NodeManagerUsername': 'weblogic', \
-                                                                      'NodeManagerPasswordEncrypted': 'welcome1'}, 'Cluster': {'mycluster': {'MulticastTTL': 3L}}, \
-                   'Server': {'AdminServer': {'ListenPort': 7001L, 'ListenAddress': 'localhost', 'Machine': 'machine1'}, \
-                              's1': {'ListenPort': 8001L, 'ListenAddress': 'localhost', 'Cluster': 'mycluster', 'Machine': 'machine1'}}, \
-                   'Machine': {'machine1': {'NodeManager': {'ListenPort': 5556L, 'ListenAddress': 'localhost'}}}}, \
-      'resources': {'JDBCSystemResource': {'Generic2': {'Target': 'mycluster', 'JdbcResource': \
-          {'JDBCDataSourceParams': {'JNDIName': ['jdbc/generic2', 'jdbc/special2'], 'GlobalTransactionsProtocol': \
-              'TwoPhaseCommit'}, 'JDBCDriverParams': {'DriverName': 'oracle.jdbc.xa.client.OracleXADataSource', \
-                                                      'URL': 'jdbc:oracle:thin:@//localhost:1522/ORCLPDB2.localdomain', 'PasswordEncrypted': 'Oradoc_db1', \
-                                                      'Properties': {'user': {'Value': 'sys as sysdba'}, 'oracle.net.CONNECT_TIMEOUT': {'Value': 5000L}, \
-                                                                     'oracle.jdbc.ReadTimeout': {'Value': 30000L}}}, 'JDBCConnectionPoolParams': {'InitialCapacity': 3L, '\
-     MaxCapacity': 15L, 'TestTableName': 'SQL ISVALID', 'TestConnectionsOnReserve': 'True'}}}}}}
+def eval_file(file):
+    fh = open(file, 'r')
+    content = fh.read()
+    return eval(content)
 
-obj=ModelDiffer(current, past)
-obj.calculate_changed_model()
-print obj.get_final_changed_model()
+
+def main():
+    current_dict = eval_file(sys.argv[1])
+    past_dict = eval_file(sys.argv[2])
+    obj=ModelDiffer(current_dict, past_dict)
+    obj.calculate_changed_model()
+    net_diff = obj.get_final_changed_model()
+    fh=open('/tmp/diffed_model.py', 'w')
+    fh.write(net_diff)
+    fh.close()
+    if not obj.is_safe_diff(net_diff):
+        exit(1)
+    else:
+        exit(0)
+
+
+if __name__ == "__main__":
+    all_changes = []
+    main()

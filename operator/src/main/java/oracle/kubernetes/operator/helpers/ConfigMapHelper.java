@@ -291,6 +291,15 @@ public class ConfigMapHelper {
         return doNext(context.verifyConfigMap(getNext()), packet);
       }
 
+      String updateDomainResult = data.get("UPDATEDOMAINRESULT");
+      if (updateDomainResult != null) {
+        if (updateDomainResult.equals("102") || updateDomainResult.equals("103")) {
+          return doNext(getNext(), packet);
+        } else if (updateDomainResult.equals("0")) {
+          return doNext(null, packet);
+        }
+      }
+
       // TODO: How do we handle no topology?
       return doNext(getNext(), packet);
     }
@@ -532,8 +541,13 @@ public class ConfigMapHelper {
       while (line != null) {
         if (line.startsWith(">>>") && !line.endsWith("EOF")) {
           // Beginning of file, extract file name
-          String filename = extractFilename(line);
-          readFile(reader, filename, map, domainUID);
+          if (line.indexOf("updateDomainResult=") > 0) {
+            int last = line.lastIndexOf('=');
+            map.put("UPDATEDOMAINRESULT", line.substring(last + 1));
+          } else {
+            String filename = extractFilename(line);
+            readFile(reader, filename, map, domainUID);
+          }
         }
         line = reader.readLine();
       }

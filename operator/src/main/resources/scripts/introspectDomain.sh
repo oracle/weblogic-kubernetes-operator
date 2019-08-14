@@ -210,17 +210,24 @@ function createWLDomain() {
         wdt_passphrase=$(cat ${found_wdt_pwd})
         use_passphrase=1
     fi
+
+    # check to see if any model including changed (or first model in image deploy)
+    # if yes. then run create domain again
+
+    # if not (TODO) handle major upgrade ??
+
     checkExistInventory
     create_domain=$?
     if  [ ${create_domain} -ne 0 ] ; then
 
         trace "NEED TO CREATE DOMAIN"
+        export __WLSDEPLOY_STORE_MODEL__="true"
         if [ $use_passphrase -eq 1 ]; then
             yes ${wdt_passphrase} | /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home \
-            $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption -store_model 1
+            $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption
         else
             /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list \
-            $archive_list $variable_list -store_model 1
+            $archive_list $variable_list
         fi
         ret=$?
         if [ $ret -ne 0 ]; then
@@ -248,9 +255,33 @@ function createWLDomain() {
             for K in "${!inventory_passphrase[@]}"; do introspect_passphrase[$K]=${inventory_passphrase[$K]}; done
             declare -p introspect_passphrase > /tmp/inventory_passphrase.md5
         fi
-
         if [ -f ${inventory_merged_model} ] ; then
+            ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${inventory_merged_model} $DOMAIN_HOME/wlsdeploy/domain_model.json || exit 1
+            if [ $? -eq 0 ] ; then
+                echo "using online update"
+                # look at the original model to get the admin user and password or get it from the secrets
+                admin_user=$(grep -Po "'AdminUserName':.*?'," /weblogic-operator/introspectormd5/merged_model.json | cut -d\' -f 4)
+                admin_pwd=$(grep -Po "'AdminPassword':.*?'," /weblogic-operator/introspectormd5/merged_model.json | cut -d\' -f 4)
 
+                echo "USER="$admin_user
+                echo "PWD="$admin_pwd
+
+
+                yes ${admin_pwd} | /u01/weblogic-deploy/bin/updateDomain.sh -oracle_home $MW_HOME \
+                 -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
+                 /tmp/diffed_model.py $variable_list
+                #trace "domain restart >>>  updatedomainResult=$rc"
+                if [ $rc -eq 103 ] ; then
+                    trace "domain restart >>>  updatedomainResult=$rc"
+                elif [ $rc -eq 102 ] ; then
+                    trace "domain restart >>>  updatedomainResult=$rc"
+                elif [ $rc -ne 0 ] ; then
+                    trace "domain restart >>>  updatedomainResult=$rc"
+                    exit 1
+                fi
+              # perform wdt online update if the user has specify in the spec ? How to get it from the spec ?  env ?
+              # write something to the instrospec output so that the operator knows whether to restart the server
+            fi
         fi
 
     fi
@@ -338,5 +369,5 @@ if [ ${created_domain} -ne 0 ]; then
     ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
 fi
 trace "Domain introspection complete"
-
+sleep 50
 exit 0
