@@ -1257,8 +1257,12 @@ class DomainIntrospector(SecretManager):
       BootPropertiesGenerator(self.env).generate()
       UserConfigAndKeyGenerator(self.env).generate()
       if os.path.exists('/u01/model_home'):
+        print 'DEBUG:'
+        print self.env.DOMAIN_HOME+"/wlsdeploy/domain_model.json"
+        print os.path.exists(self.env.DOMAIN_HOME+"/wlsdeploy/domain_model.json")
+        print 'DEBUG'
         InventoryMD5Generator(self.env, self.env.MERGED_MODEL_FILE,
-                              self.env.DOMAIN_HOME+"/wlsdeploy/domain_saved.json").generate()
+                              self.env.DOMAIN_HOME+"/wlsdeploy/domain_model.json").generate()
         DomainSeedGenerator(self.env).generate()
         InventoryMD5Generator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
         InventoryMD5Generator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()

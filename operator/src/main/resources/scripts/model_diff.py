@@ -193,14 +193,15 @@ def main():
     obj.calculate_changed_model()
     net_diff = obj.get_final_changed_model()
     fh=open('/tmp/diffed_model.py', 'w')
-    fh.write(net_diff)
+    fh.write(str(net_diff))
     fh.close()
     if not obj.is_safe_diff(net_diff):
-        exit(1)
+        exit(exitcode=1)
     else:
-        exit(0)
+        exit(exitcode=0)
 
 
-if __name__ == "__main__":
+if __name__ == "main":
     all_changes = []
     main()
+
