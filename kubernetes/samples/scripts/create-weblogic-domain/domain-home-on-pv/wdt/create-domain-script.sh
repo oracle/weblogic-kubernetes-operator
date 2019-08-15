@@ -101,9 +101,7 @@ function install_wdt {
   while [ $curl_res -ne 0 -a $count -lt $max ] ; do
     sleep 10
     count=`expr $count + 1`
-    echo "before entering proxy"
-	for proxy in "${https_proxy}" "${https_proxy2}"; do
-	  echo "inside for loop"
+    for proxy in "${https_proxy}" "${https_proxy2}"; do
 	  echo @@ "Info:  Downloading $WDT_INSTALL_ZIP_URL with https_proxy=\"$proxy\""
 	  https_proxy="${proxy}" \
 	    curl --silent --show-error --connect-timeout 10 -O -L $WDT_INSTALL_ZIP_URL 
