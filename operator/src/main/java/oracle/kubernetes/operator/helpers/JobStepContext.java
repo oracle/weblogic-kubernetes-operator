@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.helpers;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.models.V1Container;
@@ -31,7 +32,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
-public abstract class JobStepContext extends StepContextBase {
+public abstract class JobStepContext extends BasePodStepContext {
   static final long DEFAULT_ACTIVE_DEADLINE_SECONDS = 120L;
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -75,6 +76,17 @@ public abstract class JobStepContext extends StepContextBase {
   }
 
   abstract String getJobName();
+
+  @Override
+  protected String getMainContainerName() {
+    return getJobName();
+  }
+
+  @Override
+  protected void augmentSubVars(Map<String, String> vars) {
+    // HERE: placeholder that needs to be documented
+    vars.put("SERVER_NAME", "introspector");
+  }
 
   String getWebLogicCredentialsSecretName() {
     return getDomain().getWebLogicCredentialsSecret().getName();
@@ -186,9 +198,12 @@ public abstract class JobStepContext extends StepContextBase {
   }
 
   private V1PodTemplateSpec createPodTemplateSpec(TuningParameters tuningParameters) {
-    return new V1PodTemplateSpec()
+    V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec()
           .metadata(createPodTemplateMetadata())
           .spec(createPodSpec(tuningParameters));
+
+    updateForDeepSubstitution(podTemplateSpec.getSpec());
+    return podTemplateSpec;
   }
 
   private V1ObjectMeta createPodTemplateMetadata() {
