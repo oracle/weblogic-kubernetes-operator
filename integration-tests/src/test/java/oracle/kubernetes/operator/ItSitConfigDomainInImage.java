@@ -22,6 +22,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     SitConfig.staticPrepare(
+        DOMAININIMAGE_WLST_YAML,
         "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config-inimage.py");
   }
 
