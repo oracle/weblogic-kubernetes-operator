@@ -1,5 +1,7 @@
 # Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Licensed under the Universal Permissive License v 1.0 as shown at
+# http://oss.oracle.com/licenses/upl.
+
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -8,6 +10,8 @@ metadata:
 spec:
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         weblogic.resourceVersion: domain-v2
         weblogic.domainUID: %DOMAIN_UID%
@@ -67,6 +71,10 @@ spec:
               value: "%DOMAIN_HOME%"
             - name: DOMAIN_LOGS_DIR
               value: "%DOMAIN_ROOT_DIR%/logs/%DOMAIN_UID%"
+            - name: ISTIO_ENABLED
+              value: "%ISTIO_ENABLED%"
+            - name: ISTIO_READINESS_PORT
+              value: "%ISTIO_READINESS_PORT%"
       volumes:
         - name: create-weblogic-sample-domain-job-cm-volume
           configMap:

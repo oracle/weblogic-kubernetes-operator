@@ -130,6 +130,14 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getLogHome();
   }
 
+  protected boolean isDomainHomeInImage() {
+    return getDomain().isDomainHomeInImage();
+  }
+
+  protected boolean istioEnabled() {
+    return getDomain().istioEnabled();
+  }
+
   String getEffectiveLogHome() {
     if (!getDomain().getLogHomeEnabled()) {
       return null;
@@ -207,12 +215,14 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private V1ObjectMeta createPodTemplateMetadata() {
-    return new V1ObjectMeta()
+    V1ObjectMeta metadata = new V1ObjectMeta()
           .name(getJobName())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(
                 LabelConstants.JOBNAME_LABEL, LegalNames.toJobIntrospectorName(getDomainUid()));
+    if (istioEnabled()) metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
+    return metadata;
   }
 
   private V1PodSpec createPodSpec(TuningParameters tuningParameters) {
