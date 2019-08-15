@@ -100,6 +100,8 @@ Configuration Overrides Usecases
 | JDBC Resource Override | Override JDBC connection pool properties; `initialCapacity`, `maxCapacity`, `test-connections-on-reserve`, `connection-harvest-max-count`, `inactive-connection-timeout-seconds`. Override the JDBC driver parameters like data source `URL`, `DB` `user` and `password` using kubernetes secret. The test verifies the overridden functionality datasource `URL`, `user`, `password` by getting the data source connection and running DDL statement it is connected to. |
 | JMS Resource Override | Override UniformDistributedTopic Delivery Failure Parameters, `redelivery-limit` and `expiration-policy`. The JMX test client verifies the serverConfig MBean tree for the expected delivery failure parameters, `redelivery-limit` and `expiration-policy`. |
 | WLDF Resource Override | Override `wldf-instrumentation-monitor` and `harvester` in a diagnostics module. The test client verifies the new instrumentation monitors/harvesters set by getting the WLDF resource from serverConfig tree with expected values.  |
+| Configuration override with running domain | Override the administration server with Startup and Shutdown class by editing the configmap and recreating the domain CRD. The override is verified by JMX client connecting to the serverConfig MBean tree and the values are checked against the expected values. |
+| JDBC Resource Override with running domain | Override non dynamic JDBC connection pool properties; `ignore-in-use-connections`, `login-delay-Seconds`, `connection-cache-type`, `global-transactions-protocol`  by editing the configmap and recreating the domain CRD. The test only verifies the expected values against the config tree |
 
 | Session Migration | Use Case |
 | --- | --- |
@@ -151,11 +153,12 @@ Configuration Overrides Usecases
 
 | Init Container | Use Case |
 | --- | --- |
-| Add initContainers to domain | Add a initContainers object to spec level and verify the init containers are created for weblogic server pods prior to starting it and runs to completion and then weblogic pod are started |
-| Add initContainers to adminServer | Add a initContainers object to adminServer level and verify the init container is created for administration server weblogic server pod prior to starting it and runs to completion and then weblogic pod is started |
-| Add initContainers to Clusters | Add a initContainers object to Clusters level and verify the init containers are created for weblogic server pods prior to starting the clusters and runs to completion and then weblogic pod are started |
-| Add initContainers to managedServers | Add a initContainers object to managed server level and verify the init container is created for managed server weblogic server pod prior to starting it and runs to completion and then weblogic pod is started |
-| Add bad initContainers to domain | Add a bad initContainers object to domain and verify the init container run fails and no weblogic pod is started |
-| Add multiple initContainers to domain | Add multiple initContainers object to domain level and verify all of the init container are run before weblogic server pod are started |
-| Add initContainers with different names at different level | Add a multiple initContainers object at domain level and server level and verify all of the init containers are run before weblogic server pods are started |
-| Add initContainers with same names at different level | Add a multiple initContainers object at domain level and server level and verify only the server level init containers are run before weblogic server pods are started |
+| Add initContainers to domain | Add a initContainers object to spec level and verify the init containers are created for Weblogic server pods prior to starting it and runs to completion and then Weblogic pod are started |
+| Add initContainers to adminServer | Add a initContainers object to adminServer level and verify the init container is created for administration server Weblogic server pod prior to starting it and runs to completion and then Weblogic pod is started |
+| Add initContainers to Clusters | Add a initContainers object to Clusters level and verify the init containers are created for Weblogic server pods prior to starting the clusters and runs to completion and then Weblogic pod are started |
+| Add initContainers to managedServers | Add a initContainers object to managed server level and verify the init container is created for managed server Weblogic server pod prior to starting it and runs to completion and then Weblogic pod is started |
+| Add bad initContainers to domain | Add a bad initContainers object to domain and verify the init container run fails and no Weblogic pod is started |
+| Add multiple initContainers to domain | Add multiple initContainers object to domain level and verify all of the init container are run before Weblogic server pod are started |
+| Add initContainers with different names at different level | Add a multiple initContainers object at domain level and server level and verify all of the init containers are run before Weblogic server pods are started |
+| Add initContainers with same names at different level | Add a multiple initContainers object at domain level and server level and verify only the server level init containers are run before Weblogic server pods are started |
+

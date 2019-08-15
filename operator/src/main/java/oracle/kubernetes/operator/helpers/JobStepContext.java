@@ -5,7 +5,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
@@ -13,7 +13,6 @@ import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1JobSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1PodTemplateSpec;
 import io.kubernetes.client.models.V1SecretVolumeSource;
@@ -37,7 +36,7 @@ public abstract class JobStepContext extends StepContextBase {
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
-      "/weblogic-operator/scripts/introspectDomain.sh";
+        "/weblogic-operator/scripts/introspectDomain.sh";
   private final DomainPresenceInfo info;
   private V1Job jobModel;
 
@@ -105,13 +104,13 @@ public abstract class JobStepContext extends StepContextBase {
     return new CallBuilder().createJobAsync(getNamespace(), getJobModel(), createResponse(next));
   }
 
-  protected void logJobCreated() {
+  private void logJobCreated() {
     LOGGER.info(getJobCreatedMessageKey(), getJobName());
   }
 
   abstract String getJobCreatedMessageKey();
 
-  protected String getNodeManagerHome() {
+  String getNodeManagerHome() {
     return NODEMGR_HOME;
   }
 
@@ -143,15 +142,15 @@ public abstract class JobStepContext extends StepContextBase {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
   }
 
-  protected String getIntrospectHome() {
+  String getIntrospectHome() {
     return getDomainHome();
   }
 
-  List<String> getConfigOverrideSecrets() {
+  private List<String> getConfigOverrideSecrets() {
     return getDomain().getConfigOverrideSecrets();
   }
 
-  String getConfigOverrides() {
+  private String getConfigOverrides() {
     return getDomain().getConfigOverrides();
   }
 
@@ -163,58 +162,63 @@ public abstract class JobStepContext extends StepContextBase {
 
   private V1Job createJobModel() {
     return new V1Job()
-        .metadata(createMetadata())
-        .spec(createJobSpec(TuningParameters.getInstance()));
+          .metadata(createMetadata())
+          .spec(createJobSpec(TuningParameters.getInstance()));
   }
 
   V1ObjectMeta createMetadata() {
-    V1ObjectMeta metadata =
-        new V1ObjectMeta()
-            .name(getJobName())
-            .namespace(getNamespace())
-            .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
-            .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
-            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-    return metadata;
+    return new V1ObjectMeta()
+          .name(getJobName())
+          .namespace(getNamespace())
+          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+          .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
+          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
 
   private long getActiveDeadlineSeconds() {
     return DEFAULT_ACTIVE_DEADLINE_SECONDS
-        + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * info.getRetryCount());
+          + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * info.getRetryCount());
   }
 
-  protected V1JobSpec createJobSpec(TuningParameters tuningParameters) {
+  V1JobSpec createJobSpec(TuningParameters tuningParameters) {
     LOGGER.fine(
-        "Creating job "
-            + getJobName()
-            + " with activeDeadlineSeconds = "
-            + getActiveDeadlineSeconds());
-    V1JobSpec jobSpec =
-        new V1JobSpec()
-            .backoffLimit(0)
-            .activeDeadlineSeconds(getActiveDeadlineSeconds())
-            .template(createPodTemplateSpec(tuningParameters));
+          "Creating job "
+                + getJobName()
+                + " with activeDeadlineSeconds = "
+                + getActiveDeadlineSeconds());
 
-    return jobSpec;
+    return new V1JobSpec()
+          .backoffLimit(0)
+          .activeDeadlineSeconds(getActiveDeadlineSeconds())
+          .template(createPodTemplateSpec(tuningParameters));
   }
 
   private V1PodTemplateSpec createPodTemplateSpec(TuningParameters tuningParameters) {
-    V1ObjectMeta metadata = new V1ObjectMeta().name(getJobName());
+    return new V1PodTemplateSpec()
+          .metadata(createPodTemplateMetadata())
+          .spec(createPodSpec(tuningParameters));
+  }
+
+  private V1ObjectMeta createPodTemplateMetadata() {
+    V1ObjectMeta metadata = new V1ObjectMeta()
+          .name(getJobName())
+          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
+          .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
+          .putLabelsItem(
+                LabelConstants.JOBNAME_LABEL, LegalNames.toJobIntrospectorName(getDomainUid()));
     if (istioEnabled()) metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
-    V1PodTemplateSpec podTemplateSpec =
-        new V1PodTemplateSpec().metadata(metadata).spec(createPodSpec(tuningParameters));
-    return podTemplateSpec;
+    return metadata;
   }
 
   private V1PodSpec createPodSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec =
-        new V1PodSpec()
-            .activeDeadlineSeconds(getActiveDeadlineSeconds())
-            .restartPolicy("Never")
-            .addContainersItem(createContainer(tuningParameters))
-            .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
-            .addVolumesItem(
-                new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
+          new V1PodSpec()
+                .activeDeadlineSeconds(getActiveDeadlineSeconds())
+                .restartPolicy("Never")
+                .addContainersItem(createContainer(tuningParameters))
+                .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
+                .addVolumesItem(
+                      new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
@@ -225,15 +229,15 @@ public abstract class JobStepContext extends StepContextBase {
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
       podSpec.addVolumesItem(
-          new V1Volume()
-              .name(secretName + "-volume")
-              .secret(getOverrideSecretVolumeSource(secretName)));
+            new V1Volume()
+                  .name(secretName + "-volume")
+                  .secret(getOverrideSecretVolumeSource(secretName)));
     }
     if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
       podSpec.addVolumesItem(
-          new V1Volume()
-              .name(getConfigOverrides() + "-volume")
-              .configMap(getOverridesVolumeSource(getConfigOverrides())));
+            new V1Volume()
+                  .name(getConfigOverrides() + "-volume")
+                  .configMap(getOverridesVolumeSource(getConfigOverrides())));
     }
 
     return podSpec;
@@ -241,14 +245,14 @@ public abstract class JobStepContext extends StepContextBase {
 
   private V1Container createContainer(TuningParameters tuningParameters) {
     V1Container container =
-        new V1Container()
-            .name(getJobName())
-            .image(getImageName())
-            .imagePullPolicy(getImagePullPolicy())
-            .command(getContainerCommand())
-            .env(getEnvironmentVariables(tuningParameters))
-            .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-            .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+          new V1Container()
+                .name(getJobName())
+                .image(getImageName())
+                .imagePullPolicy(getImagePullPolicy())
+                .command(getContainerCommand())
+                .env(getEnvironmentVariables(tuningParameters))
+                .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
+                .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       container.addVolumeMountsItem(additionalVolumeMount);
@@ -256,19 +260,19 @@ public abstract class JobStepContext extends StepContextBase {
 
     if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
       container.addVolumeMountsItem(
-          readOnlyVolumeMount(getConfigOverrides() + "-volume", OVERRIDES_CM_MOUNT_PATH));
+            readOnlyVolumeMount(getConfigOverrides() + "-volume", OVERRIDES_CM_MOUNT_PATH));
     }
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
       container.addVolumeMountsItem(
-          readOnlyVolumeMount(
-              secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
+            readOnlyVolumeMount(
+                  secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
     return container;
   }
 
-  String getImageName() {
+  private String getImageName() {
     String imageName = getDomain().getSpec().getImage();
     if (imageName == null) {
       imageName = KubernetesConstants.DEFAULT_IMAGE;
@@ -284,40 +288,31 @@ public abstract class JobStepContext extends StepContextBase {
     return imagePullPolicy;
   }
 
-  protected List<String> getContainerCommand() {
-    return Arrays.asList(WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH);
+  private List<String> getContainerCommand() {
+    return Collections.singletonList(WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH);
   }
 
   protected String getDomainHome() {
     return getDomain().getDomainHome();
   }
 
-  protected V1SecretVolumeSource getSecretsVolume() {
+  private V1SecretVolumeSource getSecretsVolume() {
     return new V1SecretVolumeSource()
-        .secretName(getWebLogicCredentialsSecretName())
-        .defaultMode(420);
+          .secretName(getWebLogicCredentialsSecretName())
+          .defaultMode(420);
   }
 
-  protected V1ConfigMapVolumeSource getConfigMapVolumeSource() {
+  private V1ConfigMapVolumeSource getConfigMapVolumeSource() {
     return new V1ConfigMapVolumeSource()
-        .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
-        .defaultMode(ALL_READ_AND_EXECUTE);
+          .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
+          .defaultMode(ALL_READ_AND_EXECUTE);
   }
 
-  protected V1ConfigMapVolumeSource getConfigMapVolumeSource(String name, int mode) {
-    return new V1ConfigMapVolumeSource().name(name).defaultMode(mode);
-  }
-
-  protected V1PersistentVolumeClaimVolumeSource getPersistenVolumeClaimVolumeSource(
-      String claimName) {
-    return new V1PersistentVolumeClaimVolumeSource().claimName(claimName);
-  }
-
-  protected V1SecretVolumeSource getOverrideSecretVolumeSource(String name) {
+  private V1SecretVolumeSource getOverrideSecretVolumeSource(String name) {
     return new V1SecretVolumeSource().secretName(name).defaultMode(420);
   }
 
-  protected V1ConfigMapVolumeSource getOverridesVolumeSource(String name) {
+  private V1ConfigMapVolumeSource getOverridesVolumeSource(String name) {
     return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
   }
 
