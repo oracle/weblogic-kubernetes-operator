@@ -335,7 +335,6 @@ exportInstallHomes
 
 checkEnv DOMAIN_UID \
          NAMESPACE \
-         DOMAIN_HOME \
          ORACLE_HOME \
          JAVA_HOME \
          NODEMGR_HOME \
@@ -349,7 +348,7 @@ for script_file in "${SCRIPTPATH}/wlst.sh" \
   [ ! -f "$script_file" ] && trace SEVERE "Missing file '${script_file}'." && exit 1
 done 
 
-for dir_var in DOMAIN_HOME JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
+for dir_var in JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
   [ ! -d "${!dir_var}" ] && trace SEVERE "Missing ${dir_var} directory '${!dir_var}'." && exit 1
 done
 
