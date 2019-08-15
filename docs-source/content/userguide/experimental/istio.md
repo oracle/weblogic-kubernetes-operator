@@ -10,7 +10,7 @@ WebLogic Kubernetes Operator version 2.3 includes experimental support for Istio
 This support allows you to run the operator itself, and WebLogic domains managed by
 the operator with Istio sidecar injection enabled.  It will allow you to use
 Istio gateways and virtual services to access applications deployed in these domains.
-If you applications have suitable tracing code in them, you will also be able to
+If your applications have suitable tracing code in them, you will also be able to
 use distributed tracing, such as Jaeger, to trace requests across domains and to
 other components and services that have tracing enabled.
 
@@ -18,13 +18,13 @@ other components and services that have tracing enabled.
 
 The current experimental support for Istio has the current limitations:
 
-* It is only tested with Istio 1.2.2, however it is tested with both single and 
+* It is tested only with Istio 1.2.2, however it is tested with both single and 
   multicluster installations of Istio.
-* Support is only provided for domains that are stored in persistent 
+* Support is provided only for domains that are stored in persistent 
   volumes and created with the provided sample using the WLST option. 
   We intend to support domain in image and WDT options as well, but that is not currently
   available.
-* Support is only provided for domains with a single dynamic cluster.
+* Support is provided only for domains with a single dynamic cluster.
   Multiple clusters and configured clusters are not currently supported.
 
 ### Using the operator with experimental Istio support
@@ -40,7 +40,7 @@ $ kubectl label namespace weblogic-operator istio-injection=enabled
 
 After the namespace is labeled, you can install the operator using the normal
 method.  When the operator pod starts, you will notice that Istio automatically
-inject and `initContainer` called `istio-init` and the envoy container `istio-proxy`.
+injects an `initContainer` called `istio-init` and the envoy container `istio-proxy`.
 
 You can check this using the following commands:
 
@@ -62,7 +62,7 @@ $ kubectl create namespace domain1
 $ kubectl label namespace domain1 istio-injection=enabled
 ```
 
-Currently, the experimental Istio support is only provided for domains stored on
+Currently, the experimental Istio support is provided only for domains stored on
 persistent volumes.  To enable the support for a domain, you need to add the 
 `experimental` section to your domain custom resource YAML file as shown in the
 example below.  
@@ -132,7 +132,7 @@ Istio support is enabled for a domain:
 ### Exposing applications in Istio-enanbled domains
 
 When a domain is running with the experimental Istio support, you should use the Istio
-gateway to provide external access to application, instead of using an ingress 
+gateway to provide external access to applications, instead of using an Ingress 
 controller like Traefik.  Using the Istio gateway will enable you to view the 
 traffic in Kiali and to use distributed tracing all the way from the entry point to 
 the cluster, i.e. the Istio gateway.
@@ -199,7 +199,7 @@ flowing:
 
 * In from the Istio gateway on the left.
 * To a domain called "bobbys-front-end".
-* To non-WebLogic application, in this case a Helidon microservice
+* To a non-WebLogic application, in this case a Helidon microservice
   called "bobbys-helidon-stock-application".
 * To a second domain called "bobs-bookstore".
 
@@ -214,7 +214,7 @@ in their documentation.
 ### Distributed tracing
 
 Istio provides distributed tracing capabilities, including the ability to view
-traces in Jaeger.  In order to use ditributed tracing though, you will need to 
+traces in Jaeger.  In order to use distributed tracing though, you will need to 
 instrument your application first, for example, using the 
 [Jaeger Java client](https://github.com/jaegertracing/jaeger-client-java).
 The image below shows an example of a distributed trace
