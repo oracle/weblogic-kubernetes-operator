@@ -99,7 +99,7 @@ public class ConfigMapHelper {
       while (line != null) {
         if (line.startsWith(">>>") && !line.endsWith("EOF")) {
           // Beginning of file, extract file name
-          if (line.indexOf("updateDomainResult=") > 0) {
+          if (line.indexOf("updatedomainResult=") > 0) {
             int last = line.lastIndexOf('=');
             map.put("UPDATEDOMAINRESULT", line.substring(last + 1));
           } else {

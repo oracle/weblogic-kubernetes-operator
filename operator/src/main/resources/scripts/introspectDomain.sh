@@ -283,14 +283,14 @@ function createWLDomain() {
                 retcode=$?
                 echo "return code "$retcode
                 if [ "${retcode}" == "103" ] ; then
-                    trace "domain restart >>>  updatedomainResult=${retcode}"
+                    trace ">>>  updatedomainResult=${retcode}"
                 elif [ "${retcode}" == "102" ] ; then
-                    trace "domain restart >>>  updatedomainResult=${retcode}"
+                    trace ">>>  updatedomainResult=${retcode}"
                 elif [ "${retcode}" != "0" ] ; then
-                    trace "domain restart >>>  updatedomainResult=${retcode}"
+                    trace ">>>  updatedomainResult=${retcode}"
                     exit 1
                 else
-                    trace "domain restart >>>  updatedomainResult=${retcode}"
+                    trace ">>>  updatedomainResult=${retcode}"
                 fi
               # perform wdt online update if the user has specify in the spec ? How to get it from the spec ?  env ?
               # write something to the instrospec output so that the operator knows whether to restart the server
@@ -309,6 +309,7 @@ inventory_image_md5="/weblogic-operator/introspectormd5/inventory_image.md5"
 inventory_cm_md5="/weblogic-operator/introspectormd5/inventory_cm.md5"
 inventory_passphrase_md5="/weblogic-operator/introspectormd5/inventory_passphrase.md5"
 inventory_merged_model="/weblogic-operator/introspectormd5/merged_model.json"
+domain_zipped="/weblogic-operator/introspector/domainzip.secure"
 wdt_config_root="/weblogic-operator/wdt-config-map"
 wdt_secret_path="/weblogic-operator/wdt-config-map-secrets"
 model_home="/u01/model_home"
