@@ -29,6 +29,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
@@ -83,9 +84,26 @@ public class TestUtils {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
-    // check for admin pod
+    // check for pod to be running
     checkCmdInLoop(cmd.toString(), "Running", podName);
   }
+
+  /**
+   * Checks that pod is ready and running.
+   *
+   * @param podName - pod name
+   * @param domainNS - domain namespace name
+   */
+  public static void checkPodReadyAndRunning(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for pod to be running
+    checkCmdInLoop(cmd.toString(), "Running", podName);
+    checkCmdInLoop(cmd.toString(), "1/1", podName);
+  }
+
 
   /**
    * Checks that pod is initializing.
@@ -116,6 +134,24 @@ public class TestUtils {
 
     // check for admin pod
     checkCmdInLoop(cmd.toString(), "Terminating", podName);
+  }
+
+  /**
+   * check pod is in Terminating state without waiting.
+   *
+   * @param podName pod name
+   * @param domainNS domain namespace name
+   *
+   * @return true if pod terminating else false
+   * @throws Exception exception
+   */
+  public static boolean checkPodTerminatingNoWait(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for admin pod
+    return checkPodContains(cmd.toString(), "Terminating", podName);
   }
 
   /**
@@ -397,6 +433,31 @@ public class TestUtils {
   }
 
   /**
+   * Get the POD IP.
+   *
+   * @param namespace  namespace of the POD
+   * @param labelSelectors  optional label selectors
+   * @param podName pod name
+   * @return podIP
+   */
+  public static String getPodIP(String namespace, String labelSelectors, String podName)
+      throws Exception {
+    V1Pod pod = null;
+    try {
+      labelSelectors = labelSelectors == null ? "" : labelSelectors;
+      pod = k8sTestUtils.getPod(namespace,"",podName);
+    } catch (Exception e) {
+      Exception re = new  Exception("Exception getting Pod  " + namespace  + "/" + podName);
+      re.initCause(e);
+      throw re;
+    }
+    if (pod == null) {
+      throw new Exception("Pod " + namespace  + "/" + podName  + "not found ");
+    }
+    return pod.getStatus().getPodIP();
+  }
+
+  /**
    * First, kill the mgd server process in the container three times to cause the node manager to
    * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
    * initiates a pod restart.
@@ -532,28 +593,28 @@ public class TestUtils {
       throws Exception {
     File appFileRoot = new File(appLocationOnHost);
     File[] appFileList = appFileRoot.listFiles();
-    String fileLocationInPod = appLocationInPod;
 
     if (appFileList == null) return;
 
     for (File file : appFileList) {
       if (file.isDirectory()) {
+
+        // Create the directory on the pod
+        String nestedDirOnPod = appLocationInPod + "/" + file.getName();
+        StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ").append(nestedDirOnPod).append("'");
+        TestUtils.kubectlexec(podName, namespace, mkdirCmd.toString());
+
         // Find dir recursively
-        copyAppFilesToPod(file.getAbsolutePath(), appLocationInPod, podName, namespace);
+        copyAppFilesToPod(file.getAbsolutePath(), nestedDirOnPod, podName, namespace);
       } else {
         logger.info("Copy file: " + file.getAbsoluteFile().toString() + " to the pod: " + podName);
 
         String fileParent = file.getParentFile().getName();
         logger.fine("file Parent: " + fileParent);
 
-        if (!appLocationInPod.contains(fileParent)) {
-          // Copy files in child dir of appLocationInPod
-          fileLocationInPod = appLocationInPod + "/" + fileParent;
-        }
-
         StringBuffer copyFileCmd = new StringBuffer(" -- bash -c 'cat > ");
         copyFileCmd
-            .append(fileLocationInPod)
+            .append(appLocationInPod)
             .append("/")
             .append(file.getName())
             .append("' < ")
@@ -1049,6 +1110,96 @@ public class TestUtils {
     TestUtils.exec(cmdKubectlSh.toString());
   }
 
+  /**
+   * Build a jar archive.  The archive will only include the directory structure below the srcDir.
+   *
+   * @param jarPath  Jar file path for resulting archive
+   * @param srcDir   source directory
+   */
+  public static void buildJarArchive(
+      String jarPath, String srcDir)  {
+
+    try {
+      StringBuffer cmd = new StringBuffer("jar -cf ");
+      cmd
+          .append(jarPath)
+          .append(" -C ")
+          .append(srcDir)
+          .append(" . ")
+      ;
+      logger.info("Command to call build a jar file " + cmd);
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Build a zip archive.  The archive will only include the directory structure below the srcDir.
+   *
+   * @param zipPath  zip file path for resulting archive
+   * @param srcDir   source directory
+   */
+  public static void buildZipArchive(
+      String zipPath, String srcDir)  {
+
+    try {
+      StringBuffer cmd = new StringBuffer();
+      cmd
+          .append("cd ")
+          .append(srcDir)
+          .append(" ; zip -r ")
+          .append(zipPath)
+          .append(" . ")
+      ;
+      logger.info("Command to call build a zip file " + cmd);
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Build a WDT zip archive, which consists of a set of archives structured as follows:
+   * wlsdeploy/applications/archive1, archive2, etc
+   * for example, the WDT archive with 3 artifacts could have the following...
+   * wlsdeploy/applications/archive1.ear, wlsdeploy/applications/coh-archive.gar, wlsdeploy/applications/mywebapp.war.
+   * Copy each archive to temp location then build the WDT archive.
+   *
+   * @param wdtArchivePath path where new archive should be created
+   * @param archivePaths array of archives to be included in the WDT archive
+   * @param tmpDirRoot tmp directory that can be used to create the archive
+   */
+  public static void buildWdtZip(
+      String wdtArchivePath, String[] archivePaths, String tmpDirRoot)  {
+
+    try {
+      // Create temp directory strucuture for the WDT archive
+      String archiveRoot = tmpDirRoot + "/wdt-archive-root";
+      String archiveDest = archiveRoot + "/wlsdeploy/applications";
+      File archiveDestDir = new File(archiveDest);
+      archiveDestDir.mkdirs();
+
+      // Copy archives to the dest
+      for (String archivePath: archivePaths) {
+        copyFile(archivePath, archiveDest + "/" + new File(archivePath).getName());
+      }
+
+      // Build the WDT zip
+      buildZipArchive(wdtArchivePath, archiveRoot);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static void createDirUnderDomainPV(String dirPath) throws Exception {
     dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
     String crdCmd =
@@ -1267,32 +1418,46 @@ public class TestUtils {
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException(
-                  "FAILURE: command " + cmd + " failed to execute or does not match the expected output "
-                      + matchStr + " , exiting!");
+              "FAILURE: Timeout - pod " + k8sObjName + " output does not contain '" + matchStr + "'");
         }
         logger.info(
-                "did not receive the expected output "
-                        + matchStr
-                        + " from command "
-                        + cmd
-                        + " Ite ["
-                        + i
-                        + "/"
-                        + BaseTest.getMaxIterationsPod()
-                        + "], sleeping "
-                        + BaseTest.getWaitTimePod()
-                        + " seconds more");
-
+            "Pod "
+                + k8sObjName
+                + "  output does not contain '" + matchStr + "'  Iteration ["
+                + i
+                + "/"
+                + BaseTest.getMaxIterationsPod()
+                + "], sleeping "
+                + BaseTest.getWaitTimePod()
+                + " seconds more");
 
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {
-        logger.info("Found expected output ");
-        if (!k8sObjName.equals("")) {
-          logger.info("Pod " + k8sObjName + " is Running");
-        }
+        logger.info("SUCCESS: Pod " + k8sObjName + " output contains '" + matchStr + "'");
         break;
       }
+    }
+  }
+
+  /**
+   * Check if the pod output contains the specified string.
+   *
+   * @param cmd        command to execute
+   * @param matchStr   matching string
+   * @param k8sObjName pod Name
+   *
+   * @return true for match else false
+   * @throws Exception exception
+   */
+  public static boolean checkPodContains(String cmd, String matchStr, String k8sObjName)
+      throws Exception {
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0 || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
+      return false;
+    } else {
+      logger.info("Pod " + k8sObjName + " match found for " + matchStr);
+      return true;
     }
   }
 

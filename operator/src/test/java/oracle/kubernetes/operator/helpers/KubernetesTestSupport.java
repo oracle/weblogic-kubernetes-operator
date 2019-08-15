@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.io.StringReader;
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,7 +29,15 @@ import javax.json.JsonStructure;
 import javax.json.JsonValue;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -64,6 +73,9 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -95,7 +107,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
    *
    * @return a memento which can be used to restore the production factory
    */
-  public Memento install() throws NoSuchFieldException {
+  public Memento install() {
     support(CUSTOM_RESOURCE_DEFINITION, V1beta1CustomResourceDefinition.class);
     support(SUBJECT_ACCESS_REVIEW, V1SubjectAccessReview.class);
     support(TOKEN_REVIEW, V1TokenReview.class);
@@ -161,6 +173,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     repositories.put(resourceName, new DataRepository<>(resourceClass, toList));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private <T> void supportNamespaced(String resourceName, Class<T> resourceClass) {
     dataTypes.put(resourceClass, resourceName);
     repositories.put(resourceName, new NamespacedDataRepository<>(resourceClass, null));
@@ -330,7 +343,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private class KubernetesTestSupportMemento implements Memento {
 
-    public KubernetesTestSupportMemento() throws NoSuchFieldException {
+    public KubernetesTestSupportMemento() {
       CallBuilder.setStepFactory(new AsyncRequestStepFactoryImpl());
       CallBuilder.setCallDispatcher(new CallDispatcherImpl());
     }
@@ -376,6 +389,24 @@ public class KubernetesTestSupport extends FiberTestSupport {
       } catch (HttpErrorException e) {
         throw new ApiException(e.status, "failure reported in test");
       }
+    }
+  }
+
+  static class DateTimeSerializer implements JsonDeserializer<DateTime>, JsonSerializer<DateTime> {
+    private static final DateTimeFormatter DATE_FORMAT = ISODateTimeFormat.dateTime();
+
+    @Override
+    public DateTime deserialize(
+        final JsonElement je, final Type type, final JsonDeserializationContext jdc)
+        throws JsonParseException {
+      return new DateTime(Long.parseLong(je.getAsJsonObject().get("iMillis").getAsString()));
+    }
+
+    @Override
+    public JsonElement serialize(
+        final DateTime src, final Type typeOfSrc, final JsonSerializationContext context) {
+      String retVal = src == null ? "" : DATE_FORMAT.print(src);
+      return new JsonPrimitive(retVal);
     }
   }
 
@@ -519,7 +550,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     @SuppressWarnings("unchecked")
     T fromJsonStructure(JsonStructure jsonStructure) {
-      return (T) new Gson().fromJson(jsonStructure.toString(), resourceType);
+      final GsonBuilder builder =
+          new GsonBuilder().registerTypeAdapter(DateTime.class, new DateTimeSerializer());
+      return (T) builder.create().fromJson(jsonStructure.toString(), resourceType);
     }
 
     JsonStructure toJsonStructure(T src) {
