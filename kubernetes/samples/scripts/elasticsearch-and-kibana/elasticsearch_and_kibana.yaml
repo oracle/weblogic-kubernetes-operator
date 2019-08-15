@@ -41,6 +41,13 @@ spec:
       labels:
         app: "elasticsearch"
     spec:
+      initContainers:
+      - name: set-vm-max-map-count
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        command: ['sysctl', '-w', 'vm.max_map_count=262144']
+        securityContext:
+          privileged: true
       containers:
       - name: "elasticsearch"
         image: "elasticsearch:6.8.0"
