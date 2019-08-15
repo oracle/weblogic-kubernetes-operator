@@ -1,7 +1,6 @@
 // Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
-
 package oracle.kubernetes.operator;
 
 import java.io.IOException;
@@ -18,14 +17,11 @@ import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 /** JUnit test class used for testing configuration override use cases. */
-public class ItSitConfig extends BaseTest {
+public class SitConfig extends BaseTest {
 
   private static final String DOMAINUID = "customsitconfigdomain";
   private static final String ADMINPORT = "30710";
@@ -56,13 +52,7 @@ public class ItSitConfig extends BaseTest {
    * @throws Exception when the initialization, creating directories , copying files and domain
    *     creation fails.
    */
-  @BeforeClass
-  public static void staticPrepare() throws Exception {
-    prepare(
-        "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
-  }
-
-  public static void prepare(String domainScript) throws Exception {
+  protected static void staticPrepare(String domainScript) throws Exception {
     // initialize test properties and create the directories
     if (!QUICKTEST) {
       // initialize test properties and create the directories
@@ -125,8 +115,7 @@ public class ItSitConfig extends BaseTest {
    *
    * @throws Exception when domain destruction or MySQL container destruction fails
    */
-  @AfterClass
-  public static void staticUnPrepare() throws Exception {
+  protected static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
       destroySitConfigDomain();
@@ -142,7 +131,7 @@ public class ItSitConfig extends BaseTest {
    * @return - created domain
    * @throws Exception - if it cannot create the domain
    */
-  protected static Domain createSitConfigDomain(String domainScript) throws Exception {
+  private static Domain createSitConfigDomain(String domainScript) throws Exception {
     // load input yaml to map and add configOverrides
     Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
     domainMap.put("configOverrides", "sitconfigcm");
@@ -224,8 +213,7 @@ public class ItSitConfig extends BaseTest {
    *
    * @throws Exception when the assertion fails due to unmatched values
    */
-  @Test
-  public void testCustomSitConfigOverridesForDomain() throws Exception {
+  protected void testCustomSitConfigOverridesForDomain() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -253,8 +241,7 @@ public class ItSitConfig extends BaseTest {
    *
    * @throws Exception when the assertion fails due to unmatched values
    */
-  @Test
-  public void testCustomSitConfigOverridesForDomainMS() throws Exception {
+  protected void testCustomSitConfigOverridesForDomainMS() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -287,8 +274,7 @@ public class ItSitConfig extends BaseTest {
    *
    * @throws Exception when the assertion fails due to unmatched values
    */
-  @Test
-  public void testCustomSitConfigOverridesForJdbc() throws Exception {
+  protected void testCustomSitConfigOverridesForJdbc() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -319,8 +305,7 @@ public class ItSitConfig extends BaseTest {
    *
    * @throws Exception when the assertion fails due to unmatched values
    */
-  @Test
-  public void testCustomSitConfigOverridesForJms() throws Exception {
+  protected void testCustomSitConfigOverridesForJms() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -351,8 +336,7 @@ public class ItSitConfig extends BaseTest {
    *
    * @throws Exception when the assertion fails due to unmatched values
    */
-  @Test
-  public void testCustomSitConfigOverridesForWldf() throws Exception {
+  protected void testCustomSitConfigOverridesForWldf() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -378,8 +362,7 @@ public class ItSitConfig extends BaseTest {
    *
    * @throws Exception when assertions fail.
    */
-  @Test
-  public void testConfigOverrideAfterDomainStartup() throws Exception {
+  protected void testConfigOverrideAfterDomainStartup() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -413,8 +396,7 @@ public class ItSitConfig extends BaseTest {
    *
    * @throws Exception when assertions fail.
    */
-  @Test
-  public void testOverrideJdbcResourceAfterDomainStart() throws Exception {
+  protected void testOverrideJdbcResourceAfterDomainStart() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -448,8 +430,7 @@ public class ItSitConfig extends BaseTest {
    *
    * @throws Exception when assertions fail.
    */
-  @Test
-  public void testOverrideJdbcResourceWithNewSecret() throws Exception {
+  protected void testOverrideJdbcResourceWithNewSecret() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
