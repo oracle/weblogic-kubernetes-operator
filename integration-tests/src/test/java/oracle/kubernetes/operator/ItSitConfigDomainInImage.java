@@ -139,7 +139,7 @@ public class ItSitConfigDomainInImage extends BaseTest {
    */
   private static Domain createSitConfigDomain() throws Exception {
     // load input yaml to map and add configOverrides
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
     domainMap.put("configOverrides", "sitconfigcm");
     domainMap.put("configOverridesFile", configOverrideDir);
     domainMap.put("domainUID", DOMAINUID);
@@ -147,7 +147,7 @@ public class ItSitConfigDomainInImage extends BaseTest {
     domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
     domainMap.put(
         "createDomainPyScript",
-        "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
+        "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config-inimage.py");
     domainMap.put(
         "javaOptions",
         "-Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true");
