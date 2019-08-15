@@ -1,7 +1,6 @@
 // Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
-
 package oracle.kubernetes.operator;
 
 import org.junit.AfterClass;
@@ -9,7 +8,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /** JUnit test class used for testing configuration override use cases. */
-public class ItSitConfigDomainInImage extends SitConfig {
+public class ItSitConfigDomainInPV extends SitConfig {
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -22,7 +21,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     SitConfig.staticPrepare(
-        "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config-inimage.py");
+        "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
   }
 
   /**
@@ -47,7 +46,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    * @throws Exception when the assertion fails due to unmatched values
    */
   @Test
-  public void testCustomSitConfigOverridesForDomainInImage() throws Exception {
+  public void testCustomSitConfigOverridesForDomainInPV() throws Exception {
     testCustomSitConfigOverridesForDomain();
   }
 
@@ -61,7 +60,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    * @throws Exception when the assertion fails due to unmatched values
    */
   @Test
-  public void testCustomSitConfigOverridesForDomainMSInImage() throws Exception {
+  public void testCustomSitConfigOverridesForDomainMSInPV() throws Exception {
     testCustomSitConfigOverridesForDomainMS();
   }
 
@@ -80,7 +79,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    * @throws Exception when the assertion fails due to unmatched values
    */
   @Test
-  public void testCustomSitConfigOverridesForJdbcInImage() throws Exception {
+  public void testCustomSitConfigOverridesForJdbcInPV() throws Exception {
     testCustomSitConfigOverridesForJdbc();
   }
 
@@ -95,7 +94,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    * @throws Exception when the assertion fails due to unmatched values
    */
   @Test
-  public void testCustomSitConfigOverridesForJmsInImage() throws Exception {
+  public void testCustomSitConfigOverridesForJmsInPV() throws Exception {
     testCustomSitConfigOverridesForJms();
   }
 
@@ -112,7 +111,42 @@ public class ItSitConfigDomainInImage extends SitConfig {
    * @throws Exception when the assertion fails due to unmatched values
    */
   @Test
-  public void testCustomSitConfigOverridesForWldfInImage() throws Exception {
+  public void testCustomSitConfigOverridesForWldfInPV() throws Exception {
     testCustomSitConfigOverridesForWldf();
+  }
+
+  /**
+   * Test to verify the configuration override after a domain is up and running. Modifies the
+   * existing config.xml entries to add startup and shutdown classes verifies those are overridden
+   * when domain is restarted.
+   *
+   * @throws Exception when assertions fail.
+   */
+  @Test
+  public void testConfigOverrideAfterDomainStartupInPV() throws Exception {
+    testConfigOverrideAfterDomainStartup();
+  }
+
+  /**
+   * This test covers the overriding of JDBC system resource after a domain is up and running. It
+   * creates a datasource , recreates the K8S configmap with updated JDBC descriptor and verifies
+   * the new overridden values with restart of the WLS pods
+   *
+   * @throws Exception when assertions fail.
+   */
+  @Test
+  public void testOverrideJdbcResourceAfterDomainStartInPV() throws Exception {
+    testOverrideJdbcResourceAfterDomainStart();
+  }
+
+  /**
+   * This test covers the overriding of JDBC system resource with new kubernetes secret name for
+   * dbusername and dbpassword.
+   *
+   * @throws Exception when assertions fail.
+   */
+  @Test
+  public void testOverrideJdbcResourceWithNewSecretInPV() throws Exception {
+    testOverrideJdbcResourceWithNewSecret();
   }
 }
