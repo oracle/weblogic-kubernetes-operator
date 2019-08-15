@@ -186,6 +186,68 @@ def eval_file(file):
     return eval(content)
 
 
+def write_dictionary_to_json_file(dictionary, writer, indent=''):
+    """
+    Write the python dictionary in json syntax using the provided writer stream.
+    :param dictionary: python dictionary to convert to json syntax
+    :param writer: where to write the dictionary into json syntax
+    :param indent: current string indention of the json syntax. If not provided, indent is an empty string
+    """
+    _start_dict = '{'
+    _end_dict = '}'
+
+    if dictionary is None:
+        return
+    end_line = ''
+    # writer.print causes print to be flagged with error in ide
+    writer.write(_start_dict)
+    end_indent = indent
+
+    indent += ' '
+    for key, value in dictionary.iteritems():
+        writer.write(end_line)
+        end_line = ','
+        writer.write(indent + '"' + quote_embedded_quotes(key) + '" : ')
+        if isinstance(value, dict):
+            write_dictionary_to_json_file(value, writer, indent)
+        else:
+            writer.write(format_json_value(value))
+    writer.write(str(end_indent + _end_dict))
+
+    return
+
+def quote_embedded_quotes(text):
+    """
+    Quote all embedded double quotes in a string with a backslash.
+    :param text: the text to quote
+    :return: the quotes result
+    """
+    result = text
+    if type(text) is str and '"' in text:
+        result = text.replace('"', '\\"')
+    return result
+
+def format_json_value(value):
+    """
+    Format the value as a JSON snippet.
+    :param value: the value
+    :return: the JSON snippet
+    """
+    import java.lang.StringBuilder as StringBuilder
+    builder = StringBuilder()
+    if type(value) == bool or (type(value) == str and (value == 'true' or value == 'false')):
+        if value:
+            v = "true"
+        else:
+            v = "false"
+        builder.append(v)
+    elif type(value) == str:
+        builder.append('"').append(quote_embedded_quotes(value)).append('"')
+    else:
+        builder.append(value)
+    return builder.toString()
+
+
 def main():
     current_dict = eval_file(sys.argv[1])
     past_dict = eval_file(sys.argv[2])
@@ -193,7 +255,8 @@ def main():
     obj.calculate_changed_model()
     net_diff = obj.get_final_changed_model()
     fh=open('/tmp/diffed_model.py', 'w')
-    fh.write(str(net_diff))
+    write_dictionary_to_json_file(net_diff, fh)
+    # fh.write(str(net_diff))
     fh.close()
     if not obj.is_safe_diff(net_diff):
         exit(exitcode=1)
