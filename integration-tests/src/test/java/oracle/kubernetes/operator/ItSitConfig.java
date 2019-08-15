@@ -58,6 +58,11 @@ public class ItSitConfig extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    prepare(
+        "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
+  }
+
+  public static void prepare(String domainScript) throws Exception {
     // initialize test properties and create the directories
     if (!QUICKTEST) {
       // initialize test properties and create the directories
@@ -90,7 +95,7 @@ public class ItSitConfig extends BaseTest {
       };
       copySitConfigFiles(files, "test-secrets");
       // create weblogic domain with configOverrides
-      domain = createSitConfigDomain();
+      domain = createSitConfigDomain(domainScript);
       Assert.assertNotNull(domain);
       domainYaml =
           BaseTest.getUserProjectsDir()
@@ -137,7 +142,7 @@ public class ItSitConfig extends BaseTest {
    * @return - created domain
    * @throws Exception - if it cannot create the domain
    */
-  private static Domain createSitConfigDomain() throws Exception {
+  protected static Domain createSitConfigDomain(String domainScript) throws Exception {
     // load input yaml to map and add configOverrides
     Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
     domainMap.put("configOverrides", "sitconfigcm");
@@ -145,9 +150,7 @@ public class ItSitConfig extends BaseTest {
     domainMap.put("domainUID", DOMAINUID);
     domainMap.put("adminNodePort", new Integer(ADMINPORT));
     domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
-    domainMap.put(
-        "createDomainPyScript",
-        "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
+    domainMap.put("createDomainPyScript", domainScript);
     domainMap.put(
         "javaOptions",
         "-Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true");
