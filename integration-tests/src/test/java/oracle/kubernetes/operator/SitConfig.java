@@ -52,7 +52,8 @@ public class SitConfig extends BaseTest {
    * @throws Exception when the initialization, creating directories , copying files and domain
    *     creation fails.
    */
-  protected static void staticPrepare(String domainScript) throws Exception {
+  protected static void staticPrepare(String domainInputYaml, String domainScript)
+      throws Exception {
     // initialize test properties and create the directories
     if (!QUICKTEST) {
       // initialize test properties and create the directories
@@ -85,7 +86,7 @@ public class SitConfig extends BaseTest {
       };
       copySitConfigFiles(files, "test-secrets");
       // create weblogic domain with configOverrides
-      domain = createSitConfigDomain(domainScript);
+      domain = createSitConfigDomain(domainInputYaml, domainScript);
       Assert.assertNotNull(domain);
       domainYaml =
           BaseTest.getUserProjectsDir()
@@ -131,9 +132,10 @@ public class SitConfig extends BaseTest {
    * @return - created domain
    * @throws Exception - if it cannot create the domain
    */
-  private static Domain createSitConfigDomain(String domainScript) throws Exception {
+  private static Domain createSitConfigDomain(String domainInputYaml, String domainScript)
+      throws Exception {
     // load input yaml to map and add configOverrides
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
+    Map<String, Object> domainMap = TestUtils.loadYaml(domainInputYaml);
     domainMap.put("configOverrides", "sitconfigcm");
     domainMap.put("configOverridesFile", configOverrideDir);
     domainMap.put("domainUID", DOMAINUID);
