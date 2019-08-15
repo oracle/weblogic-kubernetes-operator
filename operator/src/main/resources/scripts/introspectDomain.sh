@@ -275,11 +275,13 @@ function createWLDomain() {
                     export AS_SERVICE_NAME="${DOMAIN_UID}-admin-server"
                     export ADMIN_PORT=7001
                 fi
+                cat /tmp/diffed_model.json
                 yes ${admin_pwd} | /u01/weblogic-deploy/bin/updateDomain.sh -oracle_home $MW_HOME \
                  -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
-                 /tmp/diffed_model.py $variable_list -domain_home $DOMAIN_HOME
+                 /tmp/diffed_model.json $variable_list -domain_home $DOMAIN_HOME
                 #trace "domain restart >>>  updatedomainResult=$rc"
-                retcode=$rc
+                retcode=$?
+                echo "return code "$retcode
                 if [ "${retcode}" == "103" ] ; then
                     trace "domain restart >>>  updatedomainResult=${retcode}"
                 elif [ "${retcode}" == "102" ] ; then

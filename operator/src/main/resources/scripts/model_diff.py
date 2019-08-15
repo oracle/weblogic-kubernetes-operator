@@ -254,7 +254,7 @@ def main():
     obj=ModelDiffer(current_dict, past_dict)
     obj.calculate_changed_model()
     net_diff = obj.get_final_changed_model()
-    fh=open('/tmp/diffed_model.py', 'w')
+    fh=open('/tmp/diffed_model.json', 'w')
     write_dictionary_to_json_file(net_diff, fh)
     # fh.write(str(net_diff))
     fh.close()
