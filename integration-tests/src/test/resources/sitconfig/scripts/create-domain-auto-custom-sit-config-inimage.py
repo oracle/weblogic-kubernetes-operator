@@ -142,7 +142,7 @@ print('server_port              : [%s]' % server_port);
 print('number_of_ms             : [%s]' % number_of_ms);
 print('cluster_type             : [%s]' % cluster_type);
 print('managed_server_name_base : [%s]' % managed_server_name_base);
-print('production_mode_enabled  : [%s]' % production_mode_enabled);
+#print('production_mode_enabled  : [%s]' % production_mode_enabled);
 #print('dsname                   : [%s]' % dsname);
 print('t3_channel_port          : [%s]' % t3_channel_port);
 print('t3_public_address        : [%s]' % t3_public_address);
