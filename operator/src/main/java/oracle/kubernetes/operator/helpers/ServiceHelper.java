@@ -347,6 +347,26 @@ public class ServiceHelper {
     }
   }
 
+  private static boolean testNodePort(List<V1ServicePort> ports, Integer port) {
+    if (ports == null) return true;
+    for (V1ServicePort servicePort : ports) {
+      if (port.equals(servicePort.getPort())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static boolean testNodePort(Map<String, V1ServicePort> ports, Integer port) {
+    if (ports == null) return true;
+    for (V1ServicePort servicePort : ports.values()) {
+      if (port.equals(servicePort.getPort())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   private abstract static class ServiceStepContext {
     private final Step conflictStep;
     protected List<V1ServicePort> ports;
@@ -395,7 +415,10 @@ public class ServiceHelper {
 
     void addPort(V1ServicePort port) {
       if (ports == null) ports = new ArrayList<>();
-      ports.add(port);
+
+      if (testNodePort(ports, port.getPort())) {
+        ports.add(port);
+      }
     }
 
     void addNapServicePort(NetworkAccessPoint nap) {
@@ -405,6 +428,11 @@ public class ServiceHelper {
     abstract void addServicePortIfNeeded(String portName, Integer port);
 
     V1ServicePort createServicePort(String portName, Integer port) {
+      StringBuffer sb = new StringBuffer();
+      StackTraceElement[] stes = Thread.currentThread().getStackTrace();
+      for (StackTraceElement ste : stes) {
+        sb.append(ste.toString()).append("\r\n");
+      }
       return new V1ServicePort()
           .name(LegalNames.toDns1123LegalName(portName))
           .port(port)
@@ -663,7 +691,7 @@ public class ServiceHelper {
     }
 
     void addServicePortIfNeeded(String portName, Integer port) {
-      if (port != null) {
+      if (port != null && testNodePort(ports, port)) {
         ports.putIfAbsent(portName, createServicePort(portName, port));
       }
     }
@@ -829,9 +857,11 @@ public class ServiceHelper {
       Channel channel = getChannel(channelName);
       if (channel == null || internalPort == null) return;
 
-      addPort(
-          createServicePort(channelName, internalPort)
-              .nodePort(Optional.ofNullable(channel.getNodePort()).orElse(internalPort)));
+      if (testNodePort(ports, internalPort)) {
+        addPort(
+            createServicePort(channelName, internalPort)
+                .nodePort(Optional.ofNullable(channel.getNodePort()).orElse(internalPort)));
+      }
     }
 
     private Channel getChannel(String channelName) {

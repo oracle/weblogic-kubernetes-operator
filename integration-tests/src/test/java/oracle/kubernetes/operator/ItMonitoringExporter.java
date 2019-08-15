@@ -155,10 +155,10 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Utility to execute any shell scripts.
    *
-   * @srcLoc - path to the shel script
-   * @destLoc - destination path there the shell script will be executed
-   * @fileName - name of the shell script
-   * @args - args to pass to the shell script
+   * @param srcLoc - path to the shell script
+   * @param destLoc - destination path there the shell script will be executed
+   * @param fileName - name of the shell script
+   * @param args - args to pass to the shell script
    * @throws Exception if could not run the command successfully to clone from github
    */
   private static void executeShelScript(String srcLoc, String destLoc, String fileName, String args)

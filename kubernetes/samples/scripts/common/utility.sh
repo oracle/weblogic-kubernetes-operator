@@ -368,6 +368,8 @@ function createFiles {
     sed -i -e "s:%CUSTOM_RCUPREFIX%:${rcuSchemaPrefix}:g" ${createJobOutput}
     sed -i -e "s|%CUSTOM_CONNECTION_STRING%|${rcuDatabaseURL}|g" ${createJobOutput}
     sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
+    sed -i -e "s|%ISTIO_ENABLED%|${istioEnabled}|g" ${createJobOutput}
+    sed -i -e "s|%ISTIO_READINESS_PORT%|${istioReadinessPort}|g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
     echo Generating ${deleteJobOutput}
@@ -423,6 +425,8 @@ function createFiles {
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
+  sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
+  sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
 
   if [ "${domainHomeInImage}" == "true" ]; then
  
