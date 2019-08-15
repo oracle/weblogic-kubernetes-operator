@@ -75,3 +75,8 @@ spec:
     replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
+  # 
+  experimental:
+    istio:
+      enabled: %ISTIO_ENABLED%
+      readinessPort: %ISTIO_READINESS_PORT%
