@@ -19,7 +19,7 @@ public abstract class BasePodStepContext extends StepContextBase {
     getContainer(podSpec)
         .ifPresent(
             c -> {
-              doDeepSubstitution(deepSubVars(c.getEnv()), target);
+              doDeepSubstitution(augmentSubVars(deepSubVars(c.getEnv())), target);
             });
   }
 
@@ -27,8 +27,8 @@ public abstract class BasePodStepContext extends StepContextBase {
     return varsToSubVariables(envVars);
   }
 
-  protected void augmentSubVars(Map<String, String> vars) {
-    // no-op
+  protected Map<String, String> augmentSubVars(Map<String, String> vars) {
+    return vars;
   }
 
   protected Optional<V1Container> getContainer(V1Pod v1Pod) {

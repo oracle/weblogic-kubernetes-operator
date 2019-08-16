@@ -404,11 +404,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   @Override
-  protected void augmentSubVars(Map<String, String> vars) {
+  protected Map<String, String> augmentSubVars(Map<String, String> vars) {
     String clusterName = getClusterName();
     if (clusterName != null) {
       vars.put("CLUSTER_NAME", clusterName);
     }
+    return vars;
   }
 
   final void updateForStartupMode(V1Pod pod) {
