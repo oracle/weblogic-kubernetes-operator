@@ -83,9 +83,10 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   @Override
-  protected void augmentSubVars(Map<String, String> vars) {
+  protected Map<String, String> augmentSubVars(Map<String, String> vars) {
     // HERE: placeholder that needs to be documented
     vars.put("SERVER_NAME", "introspector");
+    return vars;
   }
 
   String getWebLogicCredentialsSecretName() {
