@@ -379,7 +379,7 @@
           "type": "number"
         },
         "enabled": {
-          "description": "True, if this domain is deployed under an Istio service mesh. Defaults to false. Not required.",
+          "description": "True, if this domain is deployed under an Istio service mesh. Defaults to true when the \u0027istio\u0027 element is included. Not required.",
           "type": "boolean"
         }
       }
