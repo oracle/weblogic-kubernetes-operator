@@ -120,6 +120,11 @@ public class SitConfig extends BaseTest {
     if (!QUICKTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
       destroySitConfigDomain();
+      if (operator1 != null) {
+        logger.log(Level.INFO, "Destroying operator...");
+        operator1.destroy();
+        operator1 = null;
+      }
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
     }
   }
@@ -157,10 +162,8 @@ public class SitConfig extends BaseTest {
    */
   private static void destroySitConfigDomain() throws Exception {
     if (domain != null) {
+      logger.log(Level.INFO, "Destroying domain...");
       domain.destroy();
-    }
-    if (operator1 != null) {
-        operator1.destroy();
     }
   }
 
