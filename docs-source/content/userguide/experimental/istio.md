@@ -129,7 +129,7 @@ Istio support is enabled for a domain:
 * The operator will ensure that the Istio sidecar is not injected into the introspector
   job's pods.
 
-### Exposing applications in Istio-enanbled domains
+### Exposing applications in Istio-enabled domains
 
 When a domain is running with the experimental Istio support, you should use the Istio
 gateway to provide external access to applications, instead of using an Ingress 
