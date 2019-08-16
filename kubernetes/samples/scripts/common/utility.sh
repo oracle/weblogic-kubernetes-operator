@@ -214,6 +214,42 @@ function getKubernetesClusterIP {
 }
 
 #
+# Function to set the serverPodResources variable for including into the generated
+# domain.yaml, base on the serverPod resource requests and limits input values,
+# if specified.
+# The serverPodResources variable remains unset if none of the input values are provided.
+#
+function buildServerPodResources {
+
+  if [ -n "${serverPodMemoryRequest}" ]; then
+    local memoryRequest="        memory\: \"${serverPodMemoryRequest}\"\n"
+  fi
+  if [ -n "${serverPodCpuRequest}" ]; then
+    local cpuRequest="       cpu\: \"${serverPodCpuRequest}\"\n"
+  fi
+  if [ -n "${memoryRequest}" ] || [ -n "${cpuRequest}" ]; then
+    local requests="      requests\: \n$memoryRequest $cpuRequest"
+    echo "requests is $requests"
+  fi
+
+  if [ -n "${serverPodMemoryLimit}" ]; then
+    local memoryLimit="        memory\: \"${serverPodMemoryLimit}\"\n"
+  fi
+  if [ -n "${serverPodCpuLimit}" ]; then
+    local cpuLimit="       cpu\: \"${serverPodCpuLimit}\"\n"
+  fi
+  if [ -n "${memoryLimit}" ] || [ -n "${cpuLimit}" ]; then
+    local limits="      limits\: \n$memoryLimit $cpuLimit"
+    echo "limits is $limits"
+  fi
+
+  if [ -n "${requests}" ] || [ -n "${limits}" ]; then
+    # build resources element and remove last '\n'
+    serverPodResources=$(echo "resources\:\n${requests}${limits}" | sed -e 's/\\n$//')
+  fi
+}
+
+#
 # Function to generate the properties and yaml files for creating a domain
 #
 function createFiles {
@@ -427,6 +463,13 @@ function createFiles {
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
+
+  buildServerPodResources
+  if [ -z "${serverPodResources}" ]; then
+    sed -i -e "/%OPTIONAL_SERVERPOD_RESOURCES%/d" ${dcrOutput}
+  else
+    sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+  fi
 
   if [ "${domainHomeInImage}" == "true" ]; then
  
