@@ -215,7 +215,7 @@ in their documentation.
 
 Istio provides distributed tracing capabilities, including the ability to view
 traces in Jaeger.  In order to use distributed tracing though, you will need to 
-instrument your application first, for example, using the 
+instrument your WebLogic application first, for example, using the 
 [Jaeger Java client](https://github.com/jaegertracing/jaeger-client-java).
 The image below shows an example of a distributed trace
 that shows a transaction following the same path through the system
