@@ -135,9 +135,12 @@ createDomainScriptName: create-domain-job.sh
 # so that the Kubernetes pod can use the scripts and supporting files to create a domain home.
 createDomainFilesDir: wlst
 
-# Uncomment and edit value(s) below to specify resource requests and limits of
-# each server pod. This is optional.
-# Please refer to the kubernetes documentation on meaning of the values.
+# Uncomment and edit value(s) below to specify the maximum amount of 
+# compute resources allowed, and minimum amount of compute resources
+# required for each server pod.
+# These are optional. 
+# Please refer to the kubernetes documentation on Managing Compute
+# Resources for Containers for details.
 #
 # serverPodMemoryRequest: "64Mi"
 # serverPodCpuRequest: "250m"
