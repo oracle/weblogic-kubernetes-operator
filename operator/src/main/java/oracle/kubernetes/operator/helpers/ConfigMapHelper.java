@@ -94,18 +94,19 @@ public class ConfigMapHelper {
 
   static Map<String, String> parseIntrospectorResult(String text, String domainUid) {
     Map<String, String> map = new HashMap<>();
+    String token = ">>>  updatedomainResult=";
+
     try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
       String line = reader.readLine();
       while (line != null) {
+        if (line.contains(token)) {
+          int index = line.indexOf(token);
+          int beg = index + 1 + token.length();
+          map.put("UPDATEDOMAINRESULT", line.substring(beg - 1));
+        }
         if (line.startsWith(">>>") && !line.endsWith("EOF")) {
-          // Beginning of file, extract file name
-          if (line.indexOf("updatedomainResult=") > 0) {
-            int last = line.lastIndexOf('=');
-            map.put("UPDATEDOMAINRESULT", line.substring(last + 1));
-          } else {
-            String filename = extractFilename(line);
-            readFile(reader, filename, map, domainUid);
-          }
+          String filename = extractFilename(line);
+          readFile(reader, filename, map, domainUid);
         }
         line = reader.readLine();
       }
@@ -364,6 +365,7 @@ public class ConfigMapHelper {
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
       String topologyYaml = data.get("topology.yaml");
+      String updateDomainResult = data.get("UPDATEDOMAINRESULT");
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
@@ -386,14 +388,21 @@ public class ConfigMapHelper {
             new SitConfigMapContext(
                 this, info.getDomainUid(), getOperatorNamespace(), info.getNamespace(), data);
 
+        if (updateDomainResult != null) {
+          LOGGER.fine("ConfigMapHelper:updateDomainResult " + updateDomainResult);
+          if (updateDomainResult.equals("0")) {
+            LOGGER.fine("ConfigMapHelper apply: short circuit finished online update");
+            return doNext(null, packet);
+          }
+        }
+
         return doNext(context.verifyConfigMap(getNext()), packet);
       }
 
-      String updateDomainResult = data.get("UPDATEDOMAINRESULT");
       if (updateDomainResult != null) {
-        if (updateDomainResult.equals("102") || updateDomainResult.equals("103")) {
-          return doNext(getNext(), packet);
-        } else if (updateDomainResult.equals("0")) {
+        LOGGER.fine("ConfigMapHelper:updateDomainResult " + updateDomainResult);
+        if (updateDomainResult.equals("0")) {
+          LOGGER.fine("ConfigMapHelper apply: short circuit finished online update");
           return doNext(null, packet);
         }
       }

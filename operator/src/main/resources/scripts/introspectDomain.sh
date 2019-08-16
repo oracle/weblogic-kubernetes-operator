@@ -219,12 +219,17 @@ function createWLDomain() {
 
     checkExistInventory
     create_domain=$?
+    # something changed in the wdt artifacts
     if  [ ${create_domain} -ne 0 ] ; then
 
-        trace "NEED TO CREATE DOMAIN"
+        trace "Need to create domain"
         export __WLSDEPLOY_STORE_MODEL__=1
 
-        trace "RUNNIN CREATEDOMAIN"
+        # We need to run wdt create to get a new merged model
+        # otherwise for the update case we won't have one to compare with
+
+        trace "Run wdt create domain"
+
         if [ $use_passphrase -eq 1 ]; then
             yes ${wdt_passphrase} | /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home \
             $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption
@@ -237,6 +242,65 @@ function createWLDomain() {
             trace "Create Domain Failed"
             exit 1
         fi
+
+
+        # if there is a merged model in the cm then it is an update case, try online update first
+        if [ -f ${inventory_merged_model} ] ; then
+
+
+            # TODO: this needs to be tested and rework, the diff needs to filter out obvious case like new deployments
+            #  and other cases not supported by operator like shape changes
+
+            ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${inventory_merged_model} $DOMAIN_HOME/wlsdeploy/domain_model.json || exit 1
+            if [ $? -eq 0 ] ; then
+                trace "Using online update"
+                admin_user=$(cat /weblogic-operator/secrets/username)
+                admin_pwd=$(cat /weblogic-operator/secrets/password)
+
+                # TODO fix this HACK
+
+                if [ "${AS_SERVICE_NAME}" == "" ] ; then
+                    export AS_SERVICE_NAME="${DOMAIN_UID}-admin-server"
+                    export ADMIN_PORT=7001
+                fi
+                cat /tmp/diffed_model.json
+
+                yes ${admin_pwd} | /u01/weblogic-deploy/bin/updateDomain.sh -oracle_home $MW_HOME \
+                 -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
+                 /tmp/diffed_model.json $variable_list -domain_home $DOMAIN_HOME
+                retcode=$?
+                trace "Completed update"
+                if [ ${retcode} -eq 103 ] ; then
+                    trace ">>>  updatedomainResult=103"
+                elif [ ${retcode} -eq 102 ] ; then
+                    trace ">>>  updatedomainResult=102"
+                elif [ ${retcode} -ne 0 ] ; then
+                    trace ">>>  updatedomainResult=${retcode}"
+                    exit 1
+                else
+                    trace ">>>  updatedomainResult=${retcode}"
+                fi
+                trace "wrote updateResult"
+
+                # if online update is successful, then we extract the old domain and use offline update, so that
+                # we can update the domain
+
+                rm -fr $DOMAIN_HOME
+                cd / && base64 -d /weblogic-operator/introspectormd5/domainzip.secure > /tmp/domain.zip && jar xvf \
+                /tmp/domain.zip
+                  # zip does not store external attributes - should we use find ?
+                chmod +x $DOMAIN_HOME/bin/*.sh $DOMAIN_HOME/*.sh
+
+                #Perform an offline update so that we can have a new domain zip later
+
+                /u01/weblogic-deploy/bin/updateDomain.sh -oracle_home $MW_HOME \
+                 -model_file /tmp/diffed_model.json $variable_list -domain_home $DOMAIN_HOME
+
+              # perform wdt online update if the user has specify in the spec ? How to get it from the spec ?  env ?
+              # write something to the instrospec output so that the operator knows whether to restart the server
+            fi
+        fi
+
         # The reason for copying the associative array is because they cannot be passed to the function for checking
         # and the script source the persisted associative variable shell script to retrieve it back to a variable
         # we are comparing  inventory* (which is the current image md5 contents) vs introspect* (which is the previous
@@ -257,45 +321,6 @@ function createWLDomain() {
             for K in "${!inventory_passphrase[@]}"; do introspect_passphrase[$K]=${inventory_passphrase[$K]}; done
             declare -p introspect_passphrase > /tmp/inventory_passphrase.md5
         fi
-        if [ -f ${inventory_merged_model} ] ; then
-
-
-            ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${inventory_merged_model} $DOMAIN_HOME/wlsdeploy/domain_model.json || exit 1
-            if [ $? -eq 0 ] ; then
-                echo "using online update"
-                # look at the original model to get the admin user and password or get it from the secrets
-#                admin_user=$(grep -Po "'AdminUserName':.*?'," /weblogic-operator/introspectormd5/merged_model.json | cut -d\' -f 4)
-#                admin_pwd=$(grep -Po "'AdminPassword':.*?'," /weblogic-operator/introspectormd5/merged_model.json | cut -d\' -f 4)
-                admin_user=$(cat /weblogic-operator/secrets/username)
-                admin_pwd=$(cat /weblogic-operator/secrets/password)
-
-                # TODO fix this HACK
-
-                if [ "${AS_SERVICE_NAME}" == "" ] ; then
-                    export AS_SERVICE_NAME="${DOMAIN_UID}-admin-server"
-                    export ADMIN_PORT=7001
-                fi
-                cat /tmp/diffed_model.json
-                yes ${admin_pwd} | /u01/weblogic-deploy/bin/updateDomain.sh -oracle_home $MW_HOME \
-                 -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
-                 /tmp/diffed_model.json $variable_list -domain_home $DOMAIN_HOME
-                #trace "domain restart >>>  updatedomainResult=$rc"
-                retcode=$?
-                echo "return code "$retcode
-                if [ "${retcode}" == "103" ] ; then
-                    trace ">>>  updatedomainResult=${retcode}"
-                elif [ "${retcode}" == "102" ] ; then
-                    trace ">>>  updatedomainResult=${retcode}"
-                elif [ "${retcode}" != "0" ] ; then
-                    trace ">>>  updatedomainResult=${retcode}"
-                    exit 1
-                else
-                    trace ">>>  updatedomainResult=${retcode}"
-                fi
-              # perform wdt online update if the user has specify in the spec ? How to get it from the spec ?  env ?
-              # write something to the instrospec output so that the operator knows whether to restart the server
-            fi
-        fi
 
     fi
     return ${create_domain}
@@ -309,7 +334,7 @@ inventory_image_md5="/weblogic-operator/introspectormd5/inventory_image.md5"
 inventory_cm_md5="/weblogic-operator/introspectormd5/inventory_cm.md5"
 inventory_passphrase_md5="/weblogic-operator/introspectormd5/inventory_passphrase.md5"
 inventory_merged_model="/weblogic-operator/introspectormd5/merged_model.json"
-domain_zipped="/weblogic-operator/introspector/domainzip.secure"
+domain_zipped="/weblogic-operator/introspectormd5/domainzip.secure"
 wdt_config_root="/weblogic-operator/wdt-config-map"
 wdt_secret_path="/weblogic-operator/wdt-config-map-secrets"
 model_home="/u01/model_home"

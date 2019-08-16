@@ -131,8 +131,9 @@ class ModelDiffer(object):
     def is_safe_diff(self, model):
         if model.has_key('appDeployments'):
             return 0
-        else:
-            return 1
+        if not model:
+            return 0
+        return 1
 
     def get_final_changed_model(self):
         return self.final_changed_model
