@@ -159,6 +159,9 @@ public class SitConfig extends BaseTest {
     if (domain != null) {
       domain.destroy();
     }
+    if (operator1 != null) {
+        operator1.destroy();
+    }
   }
 
   /**
