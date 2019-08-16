@@ -135,6 +135,15 @@ createDomainScriptName: create-domain-job.sh
 # so that the Kubernetes pod can use the scripts and supporting files to create a domain home.
 createDomainFilesDir: wlst
 
+# Uncomment and edit value(s) below to specify resource requests and limits of
+# each server pod. This is optional.
+# Please refer to the kubernetes documentation on meaning of the values.
+#
+# serverPodMemoryRequest: "64Mi"
+# serverPodCpuRequest: "250m"
+# serverPodMemoryLimit: "1Gi"
+# serverPodCpuLimit: "1000m"
+
 # experimental
 # istioEnabled specifies whether or not it is deployed under Istio.
 istioEnabled: false
