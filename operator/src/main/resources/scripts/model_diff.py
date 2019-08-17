@@ -6,19 +6,15 @@ class ModelDiffer(object):
     def __init__(self, current_dict, past_dict):
 
         self.final_changed_model=dict()
-        # all_changes = []
         self.current_dict = current_dict
         self.past_dict = past_dict
-        #self.current_dict, self.past_dict = current_dict, past_dict
         self.set_current = sets.Set()
         self.set_past = sets.Set()
         for item in self.current_dict.keys():
             self.set_current.add(item)
         for item in self.past_dict.keys():
             self.set_past.add(item)
-        #set(current_dict.keys()), set(past_dict.keys())
         self.intersect = self.set_current.intersection(self.set_past)
-
 
     def added(self):
         return self.set_current - self.intersect
@@ -32,7 +28,6 @@ class ModelDiffer(object):
             if self.past_dict[o] != self.current_dict[o]:
                 result.add(o)
         return result
-        #return set(o for o in self.intersect if self.past_dict[o] != self.current_dict[o])
 
     def unchanged(self):
         result = sets.Set()
@@ -40,7 +35,6 @@ class ModelDiffer(object):
             if self.past_dict[o] == self.current_dict[o]:
                 result.add(o)
         return result
-        #return set(o for o in self.intersect if self.past_dict[o] == self.current_dict[o])
 
     def print_diff(self,s, category):
         print category
@@ -48,12 +42,19 @@ class ModelDiffer(object):
             print s
 
     def recursive_changed_detail(self, key, token, root):
+        #print 'Entering recursive changed detail key=' + str(key) + ' token=' + str(token) + ' root=' + str(root)
         a=ModelDiffer(self.current_dict[key], self.past_dict[key])
         diff=a.changed()
+        added=a.added()
+        #print 'DEBUG: In recursive changed detail ' + str(diff)
+        #print 'DEBUG: In recursive added detail: ' + str(a.added())
         if len(diff) > 0:
             for o in diff:
+                # The token is a dotted string that is used to parse and rebuilt the structure later
+                #print 'DEBUG: in recursive changed detail walking down1 ' + str(o)
                 token=token+'.'+o
                 if a.is_dict(o):
+                    #print 'DEBUG: in recursive changed detail walking down2 ' + str(token)
                     a.recursive_changed_detail(o,token, root)
                     last=token.rfind('.')
                     token=root
@@ -61,7 +62,11 @@ class ModelDiffer(object):
                     all_changes.append(token)
                     last=token.rfind('.')
                     token=root
-        #token = root
+
+        if len(added) > 0:
+            for item in added:
+                all_added.append(token + '.' + item)
+        #print 'Exiting recursive_changed_detail'
 
     def is_dict(self,key):
         if isinstance(self.current_dict[key],dict):
@@ -74,11 +79,10 @@ class ModelDiffer(object):
         changed=self.changed()
 
         for s in changed:
+            #print 'DEBUG: calculated_change_model checking item ' + s
             token=s
             x=self.recursive_changed_detail(s, token, s)
-            # print ' all changes '
-            # print all_changes
-            # print "token=" + str(x)
+            #print 'DEBUG: after recursive changed details ' + str(all_changes)
             for item in all_changes:
                 splitted=item.split('.',1)
                 n=len(splitted)
@@ -138,48 +142,6 @@ class ModelDiffer(object):
     def get_final_changed_model(self):
         return self.final_changed_model
 
-# current={'domainInfo': \
-# {'AdminUserName': 'weblogic', 'AdminPassword': '{AES}OWNNcVhRUXVnNFZJTjdCUWZ3QkMwdnJYNlltUUk3Mjc6MXNDY1BrNzJRbnNZM1JLQTppS2NuenBpWDNSYz0=', 'ServerStartMode': 'prod'}, \
-# 'topology': {'Name': 'domain1', 'AdminServerName': 'admin-server', 'SecurityConfiguration': \
-# {'NodeManagerUsername': 'weblogic', 'NodeManagerPasswordEncrypted': '{AES}N0I0Rk5wZ0ZVWHh0RE1LMWY5Q3NrWFNsR3hYQndHdDU6MVJONG9mRFIzUHdqbzd4bTpWY2w1bSsvRE10WT0='}, \
-# 'Cluster': {'cluster-1': {'DynamicServers': {'ServerTemplate': 'cluster-1-template', 'ServerNamePrefix': 'managed-server', 'DynamicClusterSize': 5L, 'MaxDynamicClusterSize': 5L}}}, \
-#  'Server': {'admin-server': {'ListenPort': 7003L}}, \
-#  'ServerTemplate': {'cluster-1-template': {'Cluster': 'cluster-1', 'ListenPort': 8003L}}}}
-
-# past={'domainInfo': {'AdminUserName': 'weblogic', 'AdminPassword': '{AES}OWNNcVhRUXVnNFZJTjdCUWZ3QkMwdnJYNlltUUk3Mjc6MXNDY1BrNzJRbnNZM1JLQTppS2NuenBpWDNSYz0=', 'ServerStartMode': 'prod'}, \
-# 'topology': {'Name': 'domain1', 'AdminServerName': 'admin-server', 'SecurityConfiguration': \
-# {'NodeManagerUsername': 'weblogic', 'NodeManagerPasswordEncrypted': '{AES}N0I0Rk5wZ0ZVWHh0RE1LMWY5Q3NrWFNsR3hYQndHdDU6MVJONG9mRFIzUHdqbzd4bTpWY2w1bSsvRE10WT0='}, \
-# 'Cluster': {'cluster-1': {'DynamicServers': {'ServerTemplate': 'cluster-1-template', 'ServerNamePrefix': 'managed-server', 'DynamicClusterSize': 5L, 'MaxDynamicClusterSize': 5L}}}, \
-# 'Server': {'admin-server': {'ListenPort': 7001L}}, \
-#  'ServerTemplate': {'cluster-1-template': {'Cluster': 'cluster-1', 'ListenPort': 8001L}}}}
-
-# current={'domainInfo': {'AdminUserName': 'weblogic', 'AdminPassword': 'welcome1', 'ServerStartMode': 'prod'}, \
-#          'topology': {'Name': 'simple_domain', 'SecurityConfiguration': {'NodeManagerUsername': 'weblogic', \
-#                                                                          'NodeManagerPasswordEncrypted': 'welcome1'}, 'Cluster': {'mycluster': {'MulticastTTL': 3L}}, \
-#                       'Server': {'AdminServer': {'ListenPort': 7002L, 'ListenAddress': 'localhost', 'Machine': 'machine1'}, \
-#                                  's1': {'ListenPort': 8001L, 'ListenAddress': 'localhost', 'Cluster': 'mycluster', 'Machine': 'machine1'}}, \
-#                       'Machine': {'machine1': {'NodeManager': {'ListenPort': 5556L, 'ListenAddress': 'localhost'}}}}, \
-#          'resources': {'JDBCSystemResource': {'Generic2': {'Target': 'mycluster', 'JdbcResource': \
-#              {'JDBCDataSourceParams': {'JNDIName': ['jdbc/generic2', 'jdbc/special2'], 'GlobalTransactionsProtocol': \
-#                  'TwoPhaseCommit'}, 'JDBCDriverParams': {'DriverName': 'oracle.jdbc.xa.client.OracleXADataSource', \
-#                                                          'URL': 'jdbc:oracle:thin:@//localhost:1522/ORCLPDB1.localdomain', 'PasswordEncrypted': 'Oradoc_db1', \
-#                                                          'Properties': {'user': {'Value': 'sys as sysdba'}, 'oracle.net.CONNECT_TIMEOUT': {'Value': 5000L}, \
-#                                                                         'oracle.jdbc.ReadTimeout': {'Value': 30000L}}}, 'JDBCConnectionPoolParams': {'InitialCapacity': 3L, '\
-#      MaxCapacity': 15L, 'TestTableName': 'SQL ISVALID', 'TestConnectionsOnReserve': 'True'}}}}}}
-#
-# past={'domainInfo': {'AdminUserName': 'weblogic', 'AdminPassword': 'welcome1', 'ServerStartMode': 'prod'}, \
-#       'topology': {'Name': 'simple_domain', 'SecurityConfiguration': {'NodeManagerUsername': 'weblogic', \
-#                                                                       'NodeManagerPasswordEncrypted': 'welcome1'}, 'Cluster': {'mycluster': {'MulticastTTL': 3L}}, \
-#                    'Server': {'AdminServer': {'ListenPort': 7001L, 'ListenAddress': 'localhost', 'Machine': 'machine1'}, \
-#                               's1': {'ListenPort': 8001L, 'ListenAddress': 'localhost', 'Cluster': 'mycluster', 'Machine': 'machine1'}}, \
-#                    'Machine': {'machine1': {'NodeManager': {'ListenPort': 5556L, 'ListenAddress': 'localhost'}}}}, \
-#       'resources': {'JDBCSystemResource': {'Generic2': {'Target': 'mycluster', 'JdbcResource': \
-#           {'JDBCDataSourceParams': {'JNDIName': ['jdbc/generic2', 'jdbc/special2'], 'GlobalTransactionsProtocol': \
-#               'TwoPhaseCommit'}, 'JDBCDriverParams': {'DriverName': 'oracle.jdbc.xa.client.OracleXADataSource', \
-#                                                       'URL': 'jdbc:oracle:thin:@//localhost:1522/ORCLPDB2.localdomain', 'PasswordEncrypted': 'Oradoc_db1', \
-#                                                       'Properties': {'user': {'Value': 'sys as sysdba'}, 'oracle.net.CONNECT_TIMEOUT': {'Value': 5000L}, \
-#                                                                      'oracle.jdbc.ReadTimeout': {'Value': 30000L}}}, 'JDBCConnectionPoolParams': {'InitialCapacity': 3L, '\
-#      MaxCapacity': 15L, 'TestTableName': 'SQL ISVALID', 'TestConnectionsOnReserve': 'True'}}}}}}
 
 def eval_file(file):
     fh = open(file, 'r')
@@ -200,7 +162,6 @@ def write_dictionary_to_json_file(dictionary, writer, indent=''):
     if dictionary is None:
         return
     end_line = ''
-    # writer.print causes print to be flagged with error in ide
     writer.write(_start_dict)
     end_indent = indent
 
@@ -253,12 +214,15 @@ def main():
     current_dict = eval_file(sys.argv[1])
     past_dict = eval_file(sys.argv[2])
     obj=ModelDiffer(current_dict, past_dict)
+
     obj.calculate_changed_model()
     net_diff = obj.get_final_changed_model()
     fh=open('/tmp/diffed_model.json', 'w')
     write_dictionary_to_json_file(net_diff, fh)
     # fh.write(str(net_diff))
     fh.close()
+    #print 'all added '
+    #print all_added
     if not obj.is_safe_diff(net_diff):
         exit(exitcode=1)
     else:
@@ -267,5 +231,6 @@ def main():
 
 if __name__ == "main":
     all_changes = []
+    all_added = []
     main()
 
