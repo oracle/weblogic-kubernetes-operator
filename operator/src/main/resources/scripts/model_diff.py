@@ -1,7 +1,8 @@
 import sets
 import sys
 
-class ModelDiffer(object):
+
+class ModelDiffer:
 
     def __init__(self, current_dict, past_dict):
 
@@ -79,6 +80,9 @@ class ModelDiffer(object):
             return 0
 
     def calculate_changed_model(self):
+        """
+        Calculate the changed model.
+        """
         result = dict()
         changed=self.changed()
 
@@ -137,97 +141,132 @@ class ModelDiffer(object):
                     dictionary[key] = new_value
 
     def is_safe_diff(self, model):
+        """
+        Is it a safe difference to do online update.
+        :param model: diffed model
+        return 0 false 1 true
+        """
+
         if model.has_key('appDeployments'):
             return 0
+
+        # if nothing changed
         if not model:
             return 0
+
+        if len(all_removed) > 0 or len(all_added) > 0:
+            return 0
+
         return 1
 
     def get_final_changed_model(self):
+        """
+        Return the changed model.
+        """
         return self.final_changed_model
 
 
-def eval_file(file):
-    fh = open(file, 'r')
-    content = fh.read()
-    return eval(content)
+class ModelFileDiffer:
+
+    def __init__(self, current_dict, past_dict):
+
+        self.current_dict_file = current_dict
+        self.past_dict_file = past_dict
+
+    def eval_file(self, file):
+        fh = open(file, 'r')
+        content = fh.read()
+        return eval(content)
 
 
-def write_dictionary_to_json_file(dictionary, writer, indent=''):
-    """
-    Write the python dictionary in json syntax using the provided writer stream.
-    :param dictionary: python dictionary to convert to json syntax
-    :param writer: where to write the dictionary into json syntax
-    :param indent: current string indention of the json syntax. If not provided, indent is an empty string
-    """
-    _start_dict = '{'
-    _end_dict = '}'
+    def write_dictionary_to_json_file(self, dictionary, writer, indent=''):
+        """
+        Write the python dictionary in json syntax using the provided writer stream.
+        :param dictionary: python dictionary to convert to json syntax
+        :param writer: where to write the dictionary into json syntax
+        :param indent: current string indention of the json syntax. If not provided, indent is an empty string
+        """
+        _start_dict = '{'
+        _end_dict = '}'
 
-    if dictionary is None:
+        if dictionary is None:
+            return
+        end_line = ''
+        writer.write(_start_dict)
+        end_indent = indent
+
+        indent += ' '
+        for key, value in dictionary.iteritems():
+            writer.write(end_line)
+            end_line = ','
+            writer.write(indent + '"' + self.quote_embedded_quotes(key) + '" : ')
+            if isinstance(value, dict):
+                self.write_dictionary_to_json_file(value, writer, indent)
+            else:
+                writer.write(self.format_json_value(value))
+        writer.write(str(end_indent + _end_dict))
+
         return
-    end_line = ''
-    writer.write(_start_dict)
-    end_indent = indent
 
-    indent += ' '
-    for key, value in dictionary.iteritems():
-        writer.write(end_line)
-        end_line = ','
-        writer.write(indent + '"' + quote_embedded_quotes(key) + '" : ')
-        if isinstance(value, dict):
-            write_dictionary_to_json_file(value, writer, indent)
+    def quote_embedded_quotes(self, text):
+        """
+        Quote all embedded double quotes in a string with a backslash.
+        :param text: the text to quote
+        :return: the quotes result
+        """
+        result = text
+        if type(text) is str and '"' in text:
+            result = text.replace('"', '\\"')
+        return result
+
+    def format_json_value(self, value):
+        """
+        Format the value as a JSON snippet.
+        :param value: the value
+        :return: the JSON snippet
+        """
+        import java.lang.StringBuilder as StringBuilder
+        builder = StringBuilder()
+        if type(value) == bool or (type(value) == str and (value == 'true' or value == 'false')):
+            if value:
+                v = "true"
+            else:
+                v = "false"
+            builder.append(v)
+        elif type(value) == str:
+            builder.append('"').append(self.quote_embedded_quotes(value)).append('"')
         else:
-            writer.write(format_json_value(value))
-    writer.write(str(end_indent + _end_dict))
+            builder.append(value)
+        return builder.toString()
 
-    return
-
-def quote_embedded_quotes(text):
-    """
-    Quote all embedded double quotes in a string with a backslash.
-    :param text: the text to quote
-    :return: the quotes result
-    """
-    result = text
-    if type(text) is str and '"' in text:
-        result = text.replace('"', '\\"')
-    return result
-
-def format_json_value(value):
-    """
-    Format the value as a JSON snippet.
-    :param value: the value
-    :return: the JSON snippet
-    """
-    import java.lang.StringBuilder as StringBuilder
-    builder = StringBuilder()
-    if type(value) == bool or (type(value) == str and (value == 'true' or value == 'false')):
-        if value:
-            v = "true"
-        else:
-            v = "false"
-        builder.append(v)
-    elif type(value) == str:
-        builder.append('"').append(quote_embedded_quotes(value)).append('"')
-    else:
-        builder.append(value)
-    return builder.toString()
+    def compare(self):
+        current_dict = self.eval_file(sys.argv[1])
+        past_dict = self.eval_file(sys.argv[2])
+        obj = ModelDiffer(current_dict, past_dict)
+        obj.calculate_changed_model()
+        net_diff = obj.get_final_changed_model()
+        fh = open('/tmp/diffed_model.json', 'w')
+        self.write_dictionary_to_json_file(net_diff, fh)
+        #print all_added
+        fh.close()
+        return obj.is_safe_diff(net_diff)
 
 
 def main():
-    current_dict = eval_file(sys.argv[1])
-    past_dict = eval_file(sys.argv[2])
-    obj=ModelDiffer(current_dict, past_dict)
-
-    obj.calculate_changed_model()
-    net_diff = obj.get_final_changed_model()
-    fh=open('/tmp/diffed_model.json', 'w')
-    write_dictionary_to_json_file(net_diff, fh)
-    # fh.write(str(net_diff))
-    fh.close()
-    #print 'all added '
-    #print all_added
-    if not obj.is_safe_diff(net_diff):
+    obj = ModelFileDiffer(sys.argv[1], sys.argv[2])
+    # current_dict = eval_file(sys.argv[1])
+    # past_dict = eval_file(sys.argv[2])
+    # obj = ModelDiffer(current_dict, past_dict)
+    #
+    # obj.calculate_changed_model()
+    # net_diff = obj.get_final_changed_model()
+    # fh = open('/tmp/diffed_model.json', 'w')
+    # write_dictionary_to_json_file(net_diff, fh)
+    # # fh.write(str(net_diff))
+    # fh.close()
+    # #print 'all added '
+    # #print all_added
+    if not obj.compare():
         exit(exitcode=1)
     else:
         exit(exitcode=0)
