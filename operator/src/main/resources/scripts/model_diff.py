@@ -254,18 +254,6 @@ class ModelFileDiffer:
 
 def main():
     obj = ModelFileDiffer(sys.argv[1], sys.argv[2])
-    # current_dict = eval_file(sys.argv[1])
-    # past_dict = eval_file(sys.argv[2])
-    # obj = ModelDiffer(current_dict, past_dict)
-    #
-    # obj.calculate_changed_model()
-    # net_diff = obj.get_final_changed_model()
-    # fh = open('/tmp/diffed_model.json', 'w')
-    # write_dictionary_to_json_file(net_diff, fh)
-    # # fh.write(str(net_diff))
-    # fh.close()
-    # #print 'all added '
-    # #print all_added
     if not obj.compare():
         exit(exitcode=1)
     else:
