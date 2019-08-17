@@ -46,6 +46,7 @@ class ModelDiffer(object):
         a=ModelDiffer(self.current_dict[key], self.past_dict[key])
         diff=a.changed()
         added=a.added()
+        removed=a.removed()
         #print 'DEBUG: In recursive changed detail ' + str(diff)
         #print 'DEBUG: In recursive added detail: ' + str(a.added())
         if len(diff) > 0:
@@ -66,6 +67,9 @@ class ModelDiffer(object):
         if len(added) > 0:
             for item in added:
                 all_added.append(token + '.' + item)
+        if len(removed) > 0:
+            for item in added:
+                all_removed.append(token + '.' + item)
         #print 'Exiting recursive_changed_detail'
 
     def is_dict(self,key):
@@ -232,5 +236,6 @@ def main():
 if __name__ == "main":
     all_changes = []
     all_added = []
+    all_removed = []
     main()
 
