@@ -262,6 +262,12 @@ function createFiles {
     exposeAdminNodePortPrefix="${disabledPrefix}"
   fi
 
+  if [ "${istioEnabled}" == "true" ]; then
+    istioPrefix="${enabledPrefix}"
+  else
+    istioPrefix="${disabledPrefix}"
+  fi
+
   # For some parameters, use the default value if not defined.
   if [ -z "${domainPVMountPath}" ]; then
     domainPVMountPath="/shared"
@@ -399,12 +405,6 @@ function createFiles {
   else
     logHomeOnPVPrefix="${enabledPrefix}"
     logHomeOnPV=true
-  fi
-
-  if [ "${istioEnabled}" == "true" ]; then
-    istioPrefix="${enabledPrefix}"
-  else
-    istioPrefix="${disabledPrefix}"
   fi
 
   # Generate the yaml file for creating the domain resource
