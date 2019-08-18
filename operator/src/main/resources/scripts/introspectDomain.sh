@@ -74,6 +74,7 @@ function checkExistInventory() {
             if [ "$extension" == "yaml" -o "$extension" == "properties" -o "$extension" == "zip" ]; then
                 if [ ! "${inventory_image[$K]}" == "${introspect_image[$K]}" ]; then
                     trace "md5 not equal: create domain" $K
+                    archive_zip_changed=1
                     return 1
                 fi
             fi
@@ -245,7 +246,7 @@ function createWLDomain() {
 
 
         # if there is a merged model in the cm then it is an update case, try online update first
-        if [ -f ${inventory_merged_model} ] ; then
+        if [ -f ${inventory_merged_model} ] && [ ${archive_zip_changed} -eq 0 ] ; then
 
 
             # TODO: this needs to be tested and rework, the diff needs to filter out obvious case like new deployments
@@ -342,6 +343,7 @@ model_root="${model_home}/models"
 archive_root="${model_home}/archives"
 variable_root="${model_home}/variables"
 operator_md5=$DOMAIN_HOME/operatormd5
+archive_zip_changed=0
 
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
