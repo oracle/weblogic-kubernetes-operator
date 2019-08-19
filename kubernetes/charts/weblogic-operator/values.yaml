@@ -101,6 +101,6 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
 
-# experimental
-# istioEnabled specifies whether or not it is deployed under Istio.
+# Istio service mesh support is experimental.
+# istioEnabled specifies whether or not the domain is deployed under an Istio service mesh.
 istioEnabled: false
