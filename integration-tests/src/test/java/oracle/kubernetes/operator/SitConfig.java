@@ -44,8 +44,8 @@ public class SitConfig extends BaseTest {
   private static String mysqlYamlFile = "";
   private static String domainYaml;
   private static String JDBC_RES_SCRIPT;
-  private static String oldSecret = "test-secrets";
-  private static String newSecret = "test-secrets-new";
+  private static final String oldSecret = "test-secrets";
+  private static final String newSecret = "test-secrets-new";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -577,6 +577,7 @@ public class SitConfig extends BaseTest {
         "runSitConfigTests.sh",
         ADMINPODNAME,
         domain.getDomainNs());
+    TestUtils.exec("kubectl get all --all-namespaces", true);
   }
 
   /**
