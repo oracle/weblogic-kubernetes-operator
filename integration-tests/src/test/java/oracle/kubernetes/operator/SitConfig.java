@@ -202,11 +202,9 @@ public class SitConfig extends BaseTest {
   }
 
   private static void display(String dir) throws IOException {
-    File contents = new File(dir);
-    String[] list = contents.list();
-    for (String file : list) {
-      String content = new String(Files.readAllBytes(Paths.get(file)));
-      logger.log(Level.INFO, content);
+    for (File file : new File(dir).listFiles()) {
+      logger.log(Level.INFO, file.getAbsolutePath());
+      logger.log(Level.INFO, new String(Files.readAllBytes(file.toPath())));
     }
   }
 
