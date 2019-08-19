@@ -263,7 +263,7 @@ public class JobHelper {
         if (isLocalAdminProtocolChannelSecure()) {
           addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
         }
-        addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUid(), getAsName()));
+        addEnvVar(vars, "AS_SERVICE_NAME", getAsServiceName());
 
         // TBD Tom Barnes, Johnny Shum
         //     Do we need to pass to the jobwhether the admin server (or any pods)
