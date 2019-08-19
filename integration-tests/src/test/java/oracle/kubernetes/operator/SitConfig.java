@@ -191,7 +191,11 @@ public class SitConfig extends BaseTest {
       }
       path = Paths.get(dstDir, file);
       logger.log(Level.INFO, "to {0}", path.toString());
-      Files.write(path, content.getBytes(charset), StandardOpenOption.TRUNCATE_EXISTING);
+      if (path.toFile().exists()) {
+        Files.write(path, content.getBytes(charset), StandardOpenOption.TRUNCATE_EXISTING);
+      } else {
+        Files.write(path, content.getBytes(charset));
+      }
     }
   }
 
