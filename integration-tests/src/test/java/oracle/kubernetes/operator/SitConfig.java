@@ -78,8 +78,8 @@ public class SitConfig extends BaseTest {
       Assert.assertEquals(0, result.exitValue());
 
       // fqdn = TestUtils.getHostName();
-      
-      JDBC_URL = "jdbc:mysql://" + fqdn + ":" + MYSQL_DB_PORT + "/";
+
+      JDBC_URL = "jdbc:mysql://" + TestUtils.getHostName() + ":" + MYSQL_DB_PORT + "/";
       // copy the configuration override files to replacing the JDBC_URL token
       String[] files = {
         "config.xml",
