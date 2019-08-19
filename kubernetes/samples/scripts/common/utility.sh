@@ -229,7 +229,6 @@ function buildServerPodResources {
   fi
   if [ -n "${memoryRequest}" ] || [ -n "${cpuRequest}" ]; then
     local requests="      requests\: \n$memoryRequest $cpuRequest"
-    echo "requests is $requests"
   fi
 
   if [ -n "${serverPodMemoryLimit}" ]; then
@@ -240,7 +239,6 @@ function buildServerPodResources {
   fi
   if [ -n "${memoryLimit}" ] || [ -n "${cpuLimit}" ]; then
     local limits="      limits\: \n$memoryLimit $cpuLimit"
-    echo "limits is $limits"
   fi
 
   if [ -n "${requests}" ] || [ -n "${limits}" ]; then
