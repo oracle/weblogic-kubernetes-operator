@@ -37,7 +37,7 @@ function exitOrLoop {
 #
 
 function createFolder {
-  mkdir -m 750 -p $1
+  mkdir -m 777 -p $1
   if [ ! -d $1 ]; then
     trace "Unable to create folder $1"
     exitOrLoop
@@ -184,13 +184,28 @@ trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
 #
 # DATA_HOME env variable exists implies override directory specified.  Attempt to create directory
 #
-if [ -n ${DATA_HOME} ] && [ ! -d ${DATA_HOME} ]; then
-  createFolder ${DATA_HOME}
-  trace "Created data home directory: '${DATA_HOME}'"
+if [ -n ${DATA_HOME} ]; then
+  if [ ! -d ${DATA_HOME} ]; then
+    createFolder ${DATA_HOME}
+    trace "Created data home directory: '${DATA_HOME}'"
+  fi
+
+  # if server's default data directory does not exist than create symbolic link to location specified by DATA_HOME
+  if [ ! -d ${DOMAIN_HOME}/servers/${SERVER_NAME}/data ]; then
+    if [ ! -d ${DATA_HOME}/${SERVER_NAME}/data ]; then
+      trace "Creating directory ${DATA_HOME}/${SERVER_NAME}/data"
+      createFolder ${DATA_HOME}/${SERVER_NAME}/data
+    else
+      trace "Directory ${DATA_HOME}/${SERVER_NAME}/data exists"
+    fi
+
+    /bin/ln -sFf ${DATA_HOME}/${SERVER_NAME}/data ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
+    trace "Created symbolic link from ${DOMAIN_HOME}/servers/${SERVER_NAME}/data to ${DATA_HOME}/${SERVER_NAME}/data"
+  fi
 fi
 
 #
-# check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed:
+# check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HdOME if needed:
 #
 exportEffectiveDomainHome || exitOrLoop
 

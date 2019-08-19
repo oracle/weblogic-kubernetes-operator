@@ -118,7 +118,7 @@ public abstract class JobStepContext extends StepContextBase {
   }
 
   protected String getDataHome() {
-    return getDomain().getDataHome();
+    return getDomain().getDataHome() + File.separator + getDomainUID();
   }
 
   protected boolean isDomainHomeInImage() {

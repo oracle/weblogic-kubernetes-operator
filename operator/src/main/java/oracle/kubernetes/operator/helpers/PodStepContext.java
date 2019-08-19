@@ -194,7 +194,7 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   private String getDataHome() {
-    return getDomain().getDataHome();
+    return getDomain().getDataHome() + File.separator + getDomainUID();
   }
 
   private String getEffectiveLogHome() {

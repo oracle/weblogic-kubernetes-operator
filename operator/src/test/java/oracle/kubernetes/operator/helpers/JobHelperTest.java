@@ -16,6 +16,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1JobSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -280,10 +281,11 @@ public class JobHelperTest {
 
   @Test
   public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvDefined() {
-    final String OVERRIDE_DATA_HOME = "/u01/data/JobHelperTestDomain";
+    final String OVERRIDE_DATA_DIR = "/u01/data";
+    final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + DOMAIN_UID;
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
-    configureDomain(domainPresenceInfo).withDataHome(OVERRIDE_DATA_HOME);
+    configureDomain(domainPresenceInfo).withDataHome(OVERRIDE_DATA_DIR);
 
     Packet packet = new Packet();
     packet
