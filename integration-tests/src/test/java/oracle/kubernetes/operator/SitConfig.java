@@ -3,6 +3,7 @@
 // http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -196,6 +197,16 @@ public class SitConfig extends BaseTest {
       } else {
         Files.write(path, content.getBytes(charset));
       }
+    }
+    display(dstDir);
+  }
+
+  private static void display(String dir) throws IOException {
+    File contents = new File(dir);
+    String[] list = contents.list();
+    for (String file : list) {
+      String content = new String(Files.readAllBytes(Paths.get(file)));
+      logger.log(Level.INFO, content);
     }
   }
 
