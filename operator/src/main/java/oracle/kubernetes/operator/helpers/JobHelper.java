@@ -173,10 +173,13 @@ public class JobHelper {
   static class DomainIntrospectorJobStepContext extends JobStepContext {
     private final DomainPresenceInfo info;
 
+    // domainTopology is null if this is 1st time we're running job for this domain
+    private final WlsDomainConfig domainTopology; 
+
     DomainIntrospectorJobStepContext(DomainPresenceInfo info, Packet packet) {
       super(packet);
       this.info = info;
-
+      this.domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY); 
       init();
     }
 
@@ -215,6 +218,26 @@ public class JobHelper {
       return getDomain().getSpec().getAdditionalVolumeMounts();
     }
 
+    private String getAsName() {
+      return domainTopology.getAdminServerName();
+    }
+
+    private Integer getAsPort() {
+      return domainTopology
+          .getServerConfig(getAsName())
+          .getLocalAdminProtocolChannelPort();
+    }
+
+    private boolean isLocalAdminProtocolChannelSecure() {
+      return domainTopology
+          .getServerConfig(getAsName())
+          .isLocalAdminProtocolChannelSecure();
+    }
+
+    private String getAsServiceName() {
+      return LegalNames.toServerServiceName(getDomainUid(), getAsName());
+    }
+
     @Override
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       // Pod for introspector job would use same environment variables as for admin server
@@ -229,6 +252,23 @@ public class JobHelper {
       addEnvVar(vars, "INTROSPECT_HOME", getIntrospectHome());
       addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
       addEnvVar(vars, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
+
+      if (domainTopology != null) {
+        // The domainTopology != null when the job is rerun for the same domain. In which
+        // case we should now know how to contact the admin server, the admin server may
+        // already be running, and the job may want to contact the admin server.
+
+        addEnvVar(vars, "ADMIN_NAME", getAsName());
+        addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
+        if (isLocalAdminProtocolChannelSecure()) {
+          addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
+        }
+        addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUid(), getAsName()));
+
+        // TBD Tom Barnes, Johnny Shum
+        //     Do we need to pass to the jobwhether the admin server (or any pods)
+        //     are already running?
+      }
 
       return vars;
     }
