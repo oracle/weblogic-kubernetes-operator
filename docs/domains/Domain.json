@@ -249,6 +249,10 @@
           "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name.",
           "type": "string"
         },
+        "experimental": {
+          "description": "Experimental feature configurations.",
+          "$ref": "#/definitions/Experimental"
+        },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.",
           "type": "string",
@@ -355,6 +359,28 @@
           "items": {
             "$ref": "#/definitions/ClusterStatus"
           }
+        }
+      }
+    },
+    "Experimental": {
+      "type": "object",
+      "properties": {
+        "istio": {
+          "description": "Istio service mesh integration configuration.",
+          "$ref": "#/definitions/Istio"
+        }
+      }
+    },
+    "Istio": {
+      "type": "object",
+      "properties": {
+        "readinessPort": {
+          "description": "The WebLogic readiness port for Istio. Defaults to 8888. Not required.",
+          "type": "number"
+        },
+        "enabled": {
+          "description": "True, if this domain is deployed under an Istio service mesh. Defaults to true when the \u0027istio\u0027 element is included. Not required.",
+          "type": "boolean"
         }
       }
     },

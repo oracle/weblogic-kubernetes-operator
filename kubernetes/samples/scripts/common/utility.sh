@@ -262,6 +262,12 @@ function createFiles {
     exposeAdminNodePortPrefix="${disabledPrefix}"
   fi
 
+  if [ "${istioEnabled}" == "true" ]; then
+    istioPrefix="${enabledPrefix}"
+  else
+    istioPrefix="${disabledPrefix}"
+  fi
+
   # For some parameters, use the default value if not defined.
   if [ -z "${domainPVMountPath}" ]; then
     domainPVMountPath="/shared"
@@ -366,8 +372,12 @@ function createFiles {
     # extra entries for FMW Infra domains
     sed -i -e "s:%RCU_CREDENTIALS_SECRET_NAME%:${rcuCredentialsSecret}:g" ${createJobOutput}
     sed -i -e "s:%CUSTOM_RCUPREFIX%:${rcuSchemaPrefix}:g" ${createJobOutput}
-    sed -i -e "s|%CUSTOM_CONNECTION_STRING%|${rcuDatabaseURL}|g" ${createJobOutput}
+    sed -i -e "s:%CUSTOM_CONNECTION_STRING%:${rcuDatabaseURL}|g" ${createJobOutput}
     sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
+    # entries for Istio
+    sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${createJobOutput}
+    sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}|g" ${createJobOutput}
+    sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}|g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
     echo Generating ${deleteJobOutput}
@@ -423,6 +433,9 @@ function createFiles {
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
+  sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
+  sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
 
   if [ "${domainHomeInImage}" == "true" ]; then
  

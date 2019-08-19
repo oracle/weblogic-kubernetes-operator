@@ -649,12 +649,24 @@ public abstract class PodStepContext extends StepContextBase {
         .initialDelaySeconds(getReadinessProbeInitialDelaySeconds(tuning))
         .timeoutSeconds(getReadinessProbeTimeoutSeconds(tuning))
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
-        .failureThreshold(FAILURE_THRESHOLD)
-        .httpGet(
-            httpGetAction(
-                READINESS_PATH,
-                getLocalAdminProtocolChannelPort(),
-                isLocalAdminProtocolChannelSecure()));
+        .failureThreshold(FAILURE_THRESHOLD);
+    try {
+      boolean istioEnabled = getDomain().istioEnabled();
+      if (istioEnabled) {
+        int istioReadinessPort = getDomain().getIstioReadinessPort();
+        readinessProbe =
+            readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort, false));
+      } else {
+        readinessProbe =
+            readinessProbe.httpGet(
+                httpGetAction(
+                    READINESS_PATH,
+                    getLocalAdminProtocolChannelPort(),
+                    isLocalAdminProtocolChannelSecure()));
+      }
+    } catch (Exception e) {
+      // do nothing
+    }
     return readinessProbe;
   }
 
