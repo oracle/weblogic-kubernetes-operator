@@ -26,7 +26,7 @@ public class SitConfig extends BaseTest {
 
   private static final String DOMAINUID = "customsitconfigdomain";
   private static final String ADMINPORT = "30710";
-  private static final int T3CHANNELPORT = 30091;
+  private static final int T3CHANNELPORT = 7001;
   private static final String MYSQL_DB_PORT = "31306";
   private static String TEST_RES_DIR;
   private static String ADMINPODNAME;
@@ -77,7 +77,8 @@ public class SitConfig extends BaseTest {
       ExecResult result = TestUtils.exec("kubectl create -f " + mysqlYamlFile);
       Assert.assertEquals(0, result.exitValue());
 
-      fqdn = TestUtils.getHostName();
+      // fqdn = TestUtils.getHostName();
+      
       JDBC_URL = "jdbc:mysql://" + fqdn + ":" + MYSQL_DB_PORT + "/";
       // copy the configuration override files to replacing the JDBC_URL token
       String[] files = {
@@ -98,6 +99,7 @@ public class SitConfig extends BaseTest {
               + "/domain.yaml";
       // copy the jmx test client file the administratioin server weblogic server pod
       ADMINPODNAME = domain.getDomainUid() + "-" + domain.getAdminServerName();
+      fqdn = domain.getDomainNs() + "-" + ADMINPODNAME;
       TestUtils.copyFileViaCat(
           TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
           "SitConfigTests.java",
