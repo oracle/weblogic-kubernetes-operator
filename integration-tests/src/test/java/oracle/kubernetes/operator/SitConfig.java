@@ -553,6 +553,9 @@ public class SitConfig extends BaseTest {
             + " -o yaml --dry-run | kubectl replace -f -";
     TestUtils.exec(cmd, true);
 
+    cmd = "kubectl describe cm -n " + domain.getDomainNs() + " customsitconfigdomain-sitconfigcm";
+    TestUtils.exec(cmd, true);
+
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
     domain.verifyDomainCreated();
