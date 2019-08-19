@@ -26,7 +26,7 @@ public class SitConfig extends BaseTest {
 
   private static final String DOMAINUID = "customsitconfigdomain";
   private static final String ADMINPORT = "30710";
-  private static final int T3CHANNELPORT = 7001;
+  private static final int T3CHANNELPORT = 30091;
   private static final String MYSQL_DB_PORT = "31306";
   private static String TEST_RES_DIR;
   private static String ADMINPODNAME;
@@ -249,7 +249,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + 7001
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -277,7 +277,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + 7001
                 + " weblogic welcome1 "
                 + testMethod
                 + " managed-server1'");
@@ -310,7 +310,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + 7001
                 + " weblogic welcome1 "
                 + testMethod
                 + " "
@@ -341,7 +341,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + 7001
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -372,7 +372,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + 7001
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -406,7 +406,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + 7001
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -441,7 +441,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + 7001
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -471,7 +471,7 @@ public class SitConfig extends BaseTest {
                   + " 'sh runSitConfigTests.sh "
                   + fqdn
                   + " "
-                  + T3CHANNELPORT
+                  + 7001
                   + " weblogic welcome1 "
                   + testMethod
                   + " "
