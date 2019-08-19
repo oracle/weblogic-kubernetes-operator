@@ -523,6 +523,7 @@ public class HelmOperatorValuesTest {
         .append("image: oracle/weblogic-kubernetes-operator:2.3.0\n")
         .append("imagePullPolicy: IfNotPresent\n")
         .append("internalDebugHttpPort: 30999\n")
+        .append("istioEnabled: false\n")
         .append("javaLoggingLevel: INFO\n")
         .append("logStashImage: logstash:6.6.0\n")
         .append("remoteDebugNodePortEnabled: false\n")
