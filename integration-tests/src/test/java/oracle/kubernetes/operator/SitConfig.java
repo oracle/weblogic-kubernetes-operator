@@ -43,6 +43,8 @@ public class SitConfig extends BaseTest {
   private static String mysqlYamlFile = "";
   private static String domainYaml;
   private static String JDBC_RES_SCRIPT;
+  private static String oldSecret = "test-secrets";
+  private static String newSecret = "test-secrets-new";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -84,7 +86,7 @@ public class SitConfig extends BaseTest {
         "jms-ClusterJmsSystemResource.xml",
         "version.txt"
       };
-      copySitConfigFiles(files, "test-secrets");
+      copySitConfigFiles(files, oldSecret);
       // create weblogic domain with configOverrides
       domain = createSitConfigDomain(domainInputYaml, domainScript);
       Assert.assertNotNull(domain);
@@ -183,13 +185,13 @@ public class SitConfig extends BaseTest {
       logger.log(Level.INFO, "Copying {0}", path.toString());
       String content = new String(Files.readAllBytes(path), charset);
       content = content.replaceAll("JDBC_URL", JDBC_URL);
-      content = content.replaceAll("test-secrets", secretName);
+      content = content.replaceAll(oldSecret, secretName);
       if (getWeblogicImageTag().contains(PS3_TAG)) {
         content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
       }
       path = Paths.get(dstDir, file);
       logger.log(Level.INFO, "to {0}", path.toString());
-      Files.write(path, content.getBytes(charset));
+      Files.write(path, content.getBytes(charset), StandardOpenOption.TRUNCATE_EXISTING);
     }
   }
 
@@ -381,7 +383,7 @@ public class SitConfig extends BaseTest {
         Paths.get(srcDir, "config_1.xml"),
         Paths.get(dstDir, "config.xml"),
         StandardCopyOption.REPLACE_EXISTING);
-    recreateConfigMapandRestart("test-secrets", "test-secrets");
+    recreateConfigMapandRestart(oldSecret, oldSecret);
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -416,7 +418,7 @@ public class SitConfig extends BaseTest {
         Paths.get(srcDir, "jdbc-JdbcTestDataSource-1.xml"),
         Paths.get(dstDir, "jdbc-JdbcTestDataSource-1.xml"),
         StandardCopyOption.REPLACE_EXISTING);
-    recreateConfigMapandRestart("test-secrets", "test-secrets");
+    recreateConfigMapandRestart(oldSecret, oldSecret);
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -444,10 +446,9 @@ public class SitConfig extends BaseTest {
     logTestBegin(testMethod);
     // recreate the map with new situational config files
     String[] files = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
-    String newSecret = "test-secrets-new";
     try {
       copySitConfigFiles(files, newSecret);
-      recreateConfigMapandRestart("test-secrets", newSecret);
+      recreateConfigMapandRestart(oldSecret, newSecret);
       transferTests();
       ExecResult result =
           TestUtils.exec(
