@@ -258,12 +258,6 @@ function createWLDomain() {
                 admin_user=$(cat /weblogic-operator/secrets/username)
                 admin_pwd=$(cat /weblogic-operator/secrets/password)
 
-                # TODO fix this HACK
-
-                if [ "${AS_SERVICE_NAME}" == "" ] ; then
-                    export AS_SERVICE_NAME="${DOMAIN_UID}-admin-server"
-                    export ADMIN_PORT=7001
-                fi
                 cat /tmp/diffed_model.json
 
                 yes ${admin_pwd} | /u01/weblogic-deploy/bin/updateDomain.sh -oracle_home $MW_HOME \
