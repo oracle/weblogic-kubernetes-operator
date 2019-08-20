@@ -1,6 +1,7 @@
 #!/bin/bash
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at
+# http://oss.oracle.com/licenses/upl.
 #
 # Description:
 #
@@ -96,14 +97,19 @@ function install_wdt {
   cd $WDT_DIR || return 1
 
   local curl_res=1
-  for proxy in "${https_proxy}" "${https_proxy2}"; do
-    echo @@ "Info:  Downloading $WDT_INSTALL_ZIP_URL with https_proxy=\"$proxy\""
-    https_proxy="${proxy}" \
-      curl --silent --show-error --connect-timeout 10 -O -L $WDT_INSTALL_ZIP_URL 
-    curl_res=$?
-    [ $curl_res -eq 0 ] && break
+  max=20
+  count=0
+  while [ $curl_res -ne 0 -a $count -lt $max ] ; do
+    sleep 10
+    count=`expr $count + 1`
+    for proxy in "${https_proxy}" "${https_proxy2}"; do
+	  echo @@ "Info:  Downloading $WDT_INSTALL_ZIP_URL with https_proxy=\"$proxy\""
+	  https_proxy="${proxy}" \
+	    curl --silent --show-error --connect-timeout 10 -O -L $WDT_INSTALL_ZIP_URL 
+	  curl_res=$?
+	  [ $curl_res -eq 0 ] && break
+	done
   done
-
   if [ $curl_res -ne 0 ] || [ ! -f $WDT_INSTALL_ZIP_FILE ]; then
     cd $save_dir
     echo @@ "Error: Download failed or $WDT_INSTALL_ZIP_FILE not found."

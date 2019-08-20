@@ -15,31 +15,47 @@ metadata:
 spec:
   # The WebLogic Domain Home
   domainHome: %DOMAIN_HOME%
+
   # If the domain home is in the image
   domainHomeInImage: %DOMAIN_HOME_IN_IMAGE%
+
   # The WebLogic Server Docker image that the Operator uses to start the domain
   image: "%WEBLOGIC_IMAGE%"
+
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "%WEBLOGIC_IMAGE_PULL_POLICY%"
+
   # Identify which Secret contains the credentials for pulling an image
   %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
   %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%- name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%
+
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
   webLogicCredentialsSecret: 
     name: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
+
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: %INCLUDE_SERVER_OUT_IN_POD_LOG%
+
   # Whether to enable log home
   %LOG_HOME_ON_PV_PREFIX%logHomeEnabled: %LOG_HOME_ENABLED%
+
   # The in-pod location for domain log, server logs, server out, and Node Manager log files
   %LOG_HOME_ON_PV_PREFIX%logHome: %LOG_HOME%
+
+  # Istio service mesh support is experimental.
+  %ISTIO_PREFIX%experimental:
+  %ISTIO_PREFIX%  istio:
+  %ISTIO_PREFIX%    enabled: %ISTIO_ENABLED%
+  %ISTIO_PREFIX%    readinessPort: %ISTIO_READINESS_PORT%
+
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "NEVER" will not start any server in the domain
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "%SERVER_START_POLICY%"
+
   serverPod:
     # an (optional) list of environment variable to be set on the servers
     env:
@@ -54,6 +70,7 @@ spec:
     %LOG_HOME_ON_PV_PREFIX%volumeMounts:
     %LOG_HOME_ON_PV_PREFIX%- mountPath: %DOMAIN_ROOT_DIR%
     %LOG_HOME_ON_PV_PREFIX%  name: weblogic-domain-storage-volume
+
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
     # serverStartState legal values are "RUNNING" or "ADMIN"
@@ -67,6 +84,7 @@ spec:
     %EXPOSE_ADMIN_PORT_PREFIX%     nodePort: %ADMIN_NODE_PORT%
     # Uncomment to export the T3Channel as a service
     %EXPOSE_T3_CHANNEL_PREFIX%   - channelName: T3Channel
+
   # clusters is used to configure the desired behavior for starting member servers of a cluster.  
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
@@ -75,3 +93,4 @@ spec:
     replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
+

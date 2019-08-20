@@ -210,6 +210,8 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                                             newEnvVar()
                                                 .name("JAVA_LOGGING_LEVEL")
                                                 .value(getInputs().getJavaLoggingLevel()))
+                                        .addEnvItem(
+                                            newEnvVar().name("ISTIO_ENABLED").value("false"))
                                         .resources(
                                             new V1ResourceRequirements()
                                                 .putRequestsItem("cpu", Quantity.fromString("100m"))

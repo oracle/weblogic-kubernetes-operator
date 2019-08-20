@@ -1,5 +1,6 @@
 # Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Licensed under the Universal Permissive License v 1.0 as shown at
+# http://oss.oracle.com/licenses/upl.
 
 # The version of this inputs file.  Do not modify.
 version: create-weblogic-sample-domain-inputs-v1
@@ -133,3 +134,11 @@ createDomainScriptName: create-domain-job.sh
 # Kubernetes config map, which in turn is mounted to the `createDomainScriptsMountPath`,
 # so that the Kubernetes pod can use the scripts and supporting files to create a domain home.
 createDomainFilesDir: wlst
+
+# Istio service mesh support is experimental.
+# istioEnabled specifies whether or not it is deployed under Istio.
+istioEnabled: false
+
+# Istio service mesh support is experimental.
+# istioReadinessPort specifies the WebLogic NAP port for use by the readiness probe
+istioReadinessPort: 8888
