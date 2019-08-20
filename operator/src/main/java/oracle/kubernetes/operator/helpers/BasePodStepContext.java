@@ -15,12 +15,13 @@ import io.kubernetes.client.models.V1PodSpec;
 import oracle.kubernetes.operator.KubernetesConstants;
 
 public abstract class BasePodStepContext extends StepContextBase {
-  final void updateForDeepSubstitution(V1PodSpec podSpec, Object target) {
-    getContainer(podSpec)
-        .ifPresent(
+  final <T> T updateForDeepSubstitution(V1PodSpec podSpec, T target) {
+    return getContainer(podSpec)
+        .map(
             c -> {
-              doDeepSubstitution(augmentSubVars(deepSubVars(c.getEnv())), target);
-            });
+              return doDeepSubstitution(augmentSubVars(deepSubVars(c.getEnv())), target);
+            })
+        .orElse(target);
   }
 
   final Map<String, String> deepSubVars(List<V1EnvVar> envVars) {
