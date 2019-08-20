@@ -77,9 +77,8 @@ public class SitConfig extends BaseTest {
       ExecResult result = TestUtils.exec("kubectl create -f " + mysqlYamlFile);
       Assert.assertEquals(0, result.exitValue());
 
-      // fqdn = TestUtils.getHostName();
-
-      JDBC_URL = "jdbc:mysql://" + TestUtils.getHostName() + ":" + MYSQL_DB_PORT + "/";
+      fqdn = TestUtils.getHostName();
+      JDBC_URL = "jdbc:mysql://" + fqdn + ":" + MYSQL_DB_PORT + "/";
       // copy the configuration override files to replacing the JDBC_URL token
       String[] files = {
         "config.xml",
@@ -249,7 +248,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + 7001
+                + T3CHANNELPORT
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -277,7 +276,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + 7001
+                + T3CHANNELPORT
                 + " weblogic welcome1 "
                 + testMethod
                 + " managed-server1'");
@@ -310,7 +309,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + 7001
+                + T3CHANNELPORT
                 + " weblogic welcome1 "
                 + testMethod
                 + " "
@@ -341,7 +340,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + 7001
+                + T3CHANNELPORT
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -372,7 +371,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + 7001
+                + T3CHANNELPORT
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -406,7 +405,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + 7001
+                + T3CHANNELPORT
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -441,7 +440,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + 7001
+                + T3CHANNELPORT
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -471,7 +470,7 @@ public class SitConfig extends BaseTest {
                   + " 'sh runSitConfigTests.sh "
                   + fqdn
                   + " "
-                  + 7001
+                  + T3CHANNELPORT
                   + " weblogic welcome1 "
                   + testMethod
                   + " "
