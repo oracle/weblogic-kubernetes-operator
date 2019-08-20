@@ -398,9 +398,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     updateForStartupMode(pod);
     updateForShutdown(pod);
-    updateForDeepSubstitution(pod.getSpec(), pod);
-
-    return pod;
+    return updateForDeepSubstitution(pod.getSpec(), pod);
   }
 
   @Override

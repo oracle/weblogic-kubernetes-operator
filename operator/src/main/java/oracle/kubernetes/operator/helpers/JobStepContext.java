@@ -211,8 +211,7 @@ public abstract class JobStepContext extends BasePodStepContext {
           .metadata(createPodTemplateMetadata())
           .spec(createPodSpec(tuningParameters));
 
-    updateForDeepSubstitution(podTemplateSpec.getSpec(), podTemplateSpec);
-    return podTemplateSpec;
+    return updateForDeepSubstitution(podTemplateSpec.getSpec(), podTemplateSpec);
   }
 
   private V1ObjectMeta createPodTemplateMetadata() {
