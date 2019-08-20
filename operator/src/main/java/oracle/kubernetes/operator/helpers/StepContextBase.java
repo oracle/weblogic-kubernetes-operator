@@ -4,15 +4,13 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
-import java.util.Set;
 
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Pod;
@@ -20,7 +18,6 @@ import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public abstract class StepContextBase implements StepContextConstants {
@@ -74,49 +71,46 @@ public abstract class StepContextBase implements StepContextConstants {
     }
   }
 
-  protected void doDeepSubstitution(final Map<String, String> substitutionVariables, Object obj) {
-    if (obj != null) {
-      if (obj instanceof List) {
-        ListIterator<Object> it = ((List) obj).listIterator();
-        while (it.hasNext()) {
-          Object member = it.next();
-          if (member instanceof String) {
-            String trans = translate(substitutionVariables, (String) member);
-            if (!member.equals(trans)) {
-              it.set(trans);
-            }
-          } else if (member != null && isModelClass(member.getClass())) {
-            doDeepSubstitution(substitutionVariables, member);
-          }
-        }
-      } else {
+  protected <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj) {
+    if (obj instanceof String) {
+      return (T) translate(substitutionVariables, (String) obj);
+    } else if (obj instanceof List) {
+      List<Object> result = new ArrayList<>();
+      for (Object o : (List) obj) {
+        result.add(doDeepSubstitution(substitutionVariables, o));
+      }
+      return (T) result;
+    } else if (obj instanceof Map) {
+      Map<String, Object> result = new HashMap<>();
+      for (Map.Entry<String, Object> entry : ((Map<String, Object>) obj).entrySet()) {
+        result.put(
+            translate(substitutionVariables, entry.getKey()),
+            doDeepSubstitution(substitutionVariables, entry.getValue()));
+      }
+      return (T) result;
+    } else if (obj != null) {
+      Class<T> cls = (Class<T>) obj.getClass();
+      if (isModelClass(cls)) {
         try {
-          Class cls = obj.getClass();
-          if (isModelClass(cls)) {
-            List<Method> modelOrListBeans = modelOrListBeans(cls);
-            for (Method item : modelOrListBeans) {
-              doDeepSubstitution(substitutionVariables, item.invoke(obj));
-            }
+          Constructor<T> constructor = cls.getConstructor();
+          T subObj = constructor.newInstance();
 
-            List<Pair<Method, Method>> stringBeans = stringBeans(cls);
-            for (Pair<Method, Method> item : stringBeans) {
-              item.getRight().invoke(obj, translate(substitutionVariables, (String) item.getLeft().invoke(obj)));
-            }
-
-            List<Pair<Method, Method>> mapBeans = mapBeans(cls);
-            for (Pair<Method, Method> item : mapBeans) {
-              item.getRight().invoke(obj, translate(substitutionVariables, (Map) item.getLeft().invoke(obj)));
-            }
+          List<Pair<Method, Method>> typeBeans = typeBeans(cls);
+          for (Pair<Method, Method> item : typeBeans) {
+            item.getRight()
+                .invoke(
+                    subObj, doDeepSubstitution(substitutionVariables, item.getLeft().invoke(obj)));
           }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-          LOGGER.severe(MessageKeys.EXCEPTION, e);
+          return subObj;
+        } catch (NoSuchMethodException
+            | InstantiationException
+            | IllegalAccessException
+            | InvocationTargetException e) {
+          throw new RuntimeException(e);
         }
       }
     }
-  }
-
-  private boolean isModelOrListClass(Class cls) {
-    return isModelClass(cls) || List.class.isAssignableFrom(cls);
+    return obj;
   }
 
   private static final String MODELS_PACKAGE = V1Pod.class.getPackageName();
@@ -127,39 +121,20 @@ public abstract class StepContextBase implements StepContextConstants {
         || cls.getPackageName().startsWith(DOMAIN_MODEL_PACKAGE);
   }
 
-  private List<Method> modelOrListBeans(Class cls) {
-    List<Method> results = new ArrayList<>();
-    Method[] methods = cls.getMethods();
-    if (methods != null) {
-      for (Method m : methods) {
-        if (m.getName().startsWith("get")
-            && isModelOrListClass(m.getReturnType())
-            && m.getParameterCount() == 0) {
-          results.add(m);
-        }
-      }
-    }
-    return results;
-  }
-
-  private List<Pair<Method, Method>> stringBeans(Class cls) {
-    return typeBeans(cls, String.class);
-  }
-
-  private List<Pair<Method, Method>> mapBeans(Class cls) {
-    return typeBeans(cls, Map.class);
-  }
-
-  private List<Pair<Method, Method>> typeBeans(Class cls, Class type) {
+  private List<Pair<Method, Method>> typeBeans(Class cls) {
     List<Pair<Method, Method>> results = new ArrayList<>();
     Method[] methods = cls.getMethods();
-    if (methods != null) {
-      for (Method m : methods) {
-        if (m.getName().startsWith("get")
-            && m.getReturnType().equals(type)
-            && m.getParameterCount() == 0) {
+    for (Method m : methods) {
+      if (m.getParameterCount() == 0) {
+        String beanName = null;
+        if (m.getName().startsWith("get")) {
+          beanName = m.getName().substring(3);
+        } else if (m.getName().startsWith("is")) {
+          beanName = m.getName().substring(2);
+        }
+        if (beanName != null) {
           try {
-            Method set = cls.getMethod("set" + m.getName().substring(3), type);
+            Method set = cls.getMethod("set" + beanName, m.getReturnType());
             if (set != null) {
               results.add(new Pair<>(m, set));
             }
@@ -180,26 +155,6 @@ public abstract class StepContextBase implements StepContextConstants {
       }
     }
     return result;
-  }
-
-  private Map<String, Object> translate(final Map<String, String> substitutionVariables, Map<String, Object> rawValue) {
-    if (rawValue == null)
-      return null;
-
-    Map<String, Object> trans = new HashMap<>();
-    for (Map.Entry<String, ?> entry : rawValue.entrySet()) {
-      Object value = entry.getValue();
-      if (value instanceof String) {
-        value = translate(substitutionVariables, (String) value);
-      } else if (value instanceof Map) {
-        value = translate(substitutionVariables, (Map) value);
-      } else {
-        doDeepSubstitution(substitutionVariables, value);
-      }
-      trans.put(translate(substitutionVariables, entry.getKey()), value);
-    }
-
-    return trans;
   }
 
   protected void addEnvVar(List<V1EnvVar> vars, String name, String value) {
