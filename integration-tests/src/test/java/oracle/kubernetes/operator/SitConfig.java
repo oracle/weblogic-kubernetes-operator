@@ -98,7 +98,6 @@ public class SitConfig extends BaseTest {
               + "/domain.yaml";
       // copy the jmx test client file the administratioin server weblogic server pod
       ADMINPODNAME = domain.getDomainUid() + "-" + domain.getAdminServerName();
-      fqdn = ADMINPODNAME;
       TestUtils.copyFileViaCat(
           TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
           "SitConfigTests.java",
