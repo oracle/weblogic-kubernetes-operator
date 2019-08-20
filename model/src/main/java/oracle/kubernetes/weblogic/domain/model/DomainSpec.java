@@ -196,6 +196,9 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters.")
   protected List<Cluster> clusters = new ArrayList<>();
 
+  @Description("Experimental feature configurations.")
+  private Experimental experimental;
+
   /**
    * Adds a Cluster to the DomainSpec.
    *
@@ -502,6 +505,30 @@ public class DomainSpec extends BaseConfiguration {
     this.configOverrideSecrets = overridesSecretNames;
   }
 
+  /**
+   * Test if the domain is deployed under Istio environment.
+   *
+   * @return istioEnabled
+   */
+  boolean istioEnabled() {
+    return Optional.ofNullable(experimental)
+        .map(e -> e.getIstio())
+        .map(i -> i.getEnabled())
+        .orElse(false);
+  }
+
+  /**
+   * The WebLogic readiness port used under Istio environment.
+   *
+   * @return readinessPort
+   */
+  int getIstioReadinessPort() {
+    return Optional.ofNullable(experimental)
+        .map(e -> e.getIstio())
+        .map(i -> i.getReadinessPort())
+        .orElse(8888);
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -523,7 +550,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets);
+            .append("configOverrideSecrets", configOverrideSecrets)
+            .append("experimental", experimental);
 
     return builder.toString();
   }
@@ -549,7 +577,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled)
             .append(includeServerOutInPodLog)
             .append(configOverrides)
-            .append(configOverrideSecrets);
+            .append(configOverrideSecrets)
+            .append(experimental);
 
     return builder.toHashCode();
   }
@@ -583,7 +612,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
-            .append(configOverrideSecrets, rhs.configOverrideSecrets);
+            .append(configOverrideSecrets, rhs.configOverrideSecrets)
+            .append(experimental, rhs.experimental);
 
     return builder.isEquals();
   }
