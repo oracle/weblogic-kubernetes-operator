@@ -365,6 +365,14 @@ public class Domain {
     return spec.isDomainHomeInImage();
   }
 
+  public boolean istioEnabled() {
+    return spec.istioEnabled();
+  }
+
+  public int getIstioReadinessPort() {
+    return spec.getIstioReadinessPort();
+  }
+
   /**
    * Returns the domain home.
    *

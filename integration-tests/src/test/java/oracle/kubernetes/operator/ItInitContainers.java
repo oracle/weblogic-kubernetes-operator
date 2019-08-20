@@ -119,7 +119,7 @@ public class ItInitContainers extends BaseTest {
    * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *     WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testDomainInitContainer() throws Exception {
@@ -198,7 +198,7 @@ public class ItInitContainers extends BaseTest {
    * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *     WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testMsInitContainer() throws Exception {
