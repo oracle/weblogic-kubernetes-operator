@@ -266,3 +266,4 @@ function printSummary {
 # Perform the sequence of steps to create a domain
 createDomain false
 
+
