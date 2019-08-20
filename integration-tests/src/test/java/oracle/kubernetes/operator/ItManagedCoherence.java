@@ -133,9 +133,6 @@ public class ItManagedCoherence extends BaseTest {
                     testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(),
                     appToDeploy, "dataCluster");
 
-            // Wait some time for deployment to get into Active state
-            Thread.sleep(60 * 1000);
-
             coherenceCacheTest();
 
             testCompletedSuccessfully = true;
@@ -204,9 +201,6 @@ public class ItManagedCoherence extends BaseTest {
                     testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(),
                     appToDeploy, "dataCluster");
 
-            // Wait some time for deployment to get into Active state
-            Thread.sleep(60 * 1000);
-
             coherenceCacheTest();
 
             testCompletedSuccessfully = true;
@@ -234,9 +228,6 @@ public class ItManagedCoherence extends BaseTest {
     }
 
     private void coherenceCacheTest() throws Exception {
-        //Assume.assumeFalse(QUICKTEST);
-        //String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-        //logTestBegin(testMethodName);
 
         String[] firstNameList = {"Frodo", "Samwise", "Bilbo", "peregrin", "Meriadoc", "Gandalf"};
         String[] secondNameList = {"Baggins", "Gamgee", "Baggins", "Took", "Brandybuck", "TheGrey"};
@@ -261,7 +252,6 @@ public class ItManagedCoherence extends BaseTest {
         result = clearCache();
         logger.info("Cache is cleared and should be empty" + result.stdout());
   
-        //logger.info("SUCCESS - " + testMethodName);
     }
 
     private ExecResult addDataToCache(String firstName, String secondName) throws Exception {

@@ -1712,49 +1712,11 @@ public class TestUtils {
     // Create app dir in the admin pod
     kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
 
-/*
-    // Create gar directory under the app dir
-    mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
-    mkdirCmd.append(appLocationInPod + "/gar'");
-    kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
-
-    // Create ear directory under the app dir
-    mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
-    mkdirCmd.append(appLocationInPod + "/ear'");
-    kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
-
-    // Create war directory under the app dir if war directory exists in the host
-    if (new File(appLocationOnHost+"/war").exists()) {
-      // Create ear directory under the app dir
-      mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
-      mkdirCmd.append(appLocationInPod + "/war'");
-      kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
-    }
-
-    // Create META-INF in the gar dir
-    mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
-    mkdirCmd.append(appLocationInPod + "/gar/META-INF'");
-    kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
-
-    // Create META-INF in the ear dir
-    mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
-    mkdirCmd.append(appLocationInPod + "/ear/META-INF'");
-    kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
-*/
-
     // Copy shell script to the admin pod
     copyFileViaCat(scriptPathOnHost, scriptPathInPod, adminServerPod, domainNS);
 
     // Copy all App files to the admin pod
     copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
-
-/*
-    // Copy all App files to the admin pod
-    copyAppFilesToPod(
-        appLocationOnHost + "/gar", appLocationInPod + "/gar", adminServerPod, domainNS);
-    copyAppFilesToPod(
-        appLocationOnHost + "/ear", appLocationInPod + "/ear", adminServerPod, domainNS);
-*/
 
     logger.info("Creating WebService and WebService Servlet Client Applications");
 

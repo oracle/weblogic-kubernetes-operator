@@ -1,6 +1,6 @@
-<!-- Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-     Licensed under the Universal Permissive License v 1.0 as shown at
-          http://oss.oracle.com/licenses/upl.-->
+// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 
 package com.examples.pof;
 
@@ -13,107 +13,75 @@ import com.tangosol.util.Base;
 import java.io.IOException;
 
 /**
- * * ContactId represents a key to the contact for whom information is stored in
- * * the cache. *
- * <p/>
- * * The type implements PortableObject for efficient cross-platform 
+ * ContactId represents a key to the contact for whom information is stored in
+ * the cache.
+ * The type implements PortableObject for efficient cross-platform 
  */
 public class ContactId implements PortableObject {
-	/**
-	 * * Default constructor (necessary for PortableObject implementation).
-	 */
-	public ContactId() {
-	}
 
-	/**
-	 * * Construct a contact key. * * @param sFirstName first name * @param
-	 * sLastName last name
-	 */
-	public ContactId(String sFirstName, String sLastName) {
-		m_sFirstName = sFirstName;
-		m_sLastName = sLastName;
-	}
+  //The POF index for the FirstName property.
+  public static final int FIRSTNAME = 0;
 
-	/**
-	 * * Return the first name. * * @return the first name
-	 */
-	public String getFirstName() {
-		return m_sFirstName;
-	}
+  //The POF index for the LastName property.
+  public static final int LASTNAME = 1;
 
-	/**
-	 * * Return the last name. * * @return the last name
-	 */
-	public String getLastName() {
-		return m_sLastName;
-	}
+  private String m_sFirstName;
+  private String m_sLastName;
 
-	/**
-	 * * {@inheritDoc}
-	 */
-	public void readExternal(PofReader reader) throws IOException {
-		m_sFirstName = reader.readString(FIRSTNAME);
-		m_sLastName = reader.readString(LASTNAME);
-	}
+  /**
+   * Default constructor (necessary for PortableObject implementation).
+   */
+  public ContactId() {
+  }
 
-	/**
-	 * * {@inheritDoc}
-	 */
-	public void writeExternal(PofWriter writer) throws IOException {
-		writer.writeString(FIRSTNAME, m_sFirstName);
-		writer.writeString(LASTNAME, m_sLastName);
-	}
+  /**
+   * Construct a contact key
+   * @param sFirstName first name
+   * @param sLastName last name
+   */
+  public ContactId(String sFirstName, String sLastName) {
+    m_sFirstName = sFirstName;
+    m_sLastName = sLastName;
+  }
 
-	/**
-	 * * {@inheritDoc}
-	 */
-	public boolean equals(Object oThat) {
-		if (this == oThat) {
-			return true;
-		}
+  public String getFirstName() {
+    return m_sFirstName;
+  }
 
-		if (oThat == null) {
-			return false;
-		}
+  public String getLastName() {
+    return m_sLastName;
+  }
 
-		ContactId that = (ContactId) oThat;
+  public void readExternal(PofReader reader) throws IOException {
+    m_sFirstName = reader.readString(FIRSTNAME);
+    m_sLastName = reader.readString(LASTNAME);
+  }
 
-		return Base.equals(getFirstName(), that.getFirstName()) && Base.equals(getLastName(), that.getLastName());
-	}
+  public void writeExternal(PofWriter writer) throws IOException {
+    writer.writeString(FIRSTNAME, m_sFirstName);
+    writer.writeString(LASTNAME, m_sLastName);
+  }
 
-	/**
-	 * * {@inheritDoc}
-	 */
-	public int hashCode() {
-		return (getFirstName() == null ? 0 : getFirstName().hashCode())
-				^ (getLastName() == null ? 0 : getLastName().hashCode());
+  public boolean equals(Object oThat) {
+    if (this == oThat) {
+      return true;
+    }
 
-	}
+    if (oThat == null) {
+      return false;
+    }
 
-	/**
-	 * * {@inheritDoc}
-	 */
-	public String toString() {
-		return getFirstName() + " " + getLastName();
-	}
+    ContactId that = (ContactId) oThat;
 
-	/**
-	 * * The POF index for the FirstName property.
-	 */
-	public static final int FIRSTNAME = 0;
+    return Base.equals(getFirstName(), that.getFirstName()) && Base.equals(getLastName(), that.getLastName());
+  }
 
-	/**
-	 * * The POF index for the LastName property.
-	 */
-	public static final int LASTNAME = 1;
+  public int hashCode() {
+    return (getFirstName() == null ? 0 : getFirstName().hashCode())
+                ^ (getLastName() == null ? 0 : getLastName().hashCode());
+  }
 
-	/**
-	 * * First name.
-	 */
-	private String m_sFirstName;
-
-	/**
-	 * * Last name.
-	 */
-	private String m_sLastName;
+  public String toString() {
+    return getFirstName() + " " + getLastName();
+  }
 }
