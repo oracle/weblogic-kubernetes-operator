@@ -43,20 +43,20 @@ class ModelDiffer:
             print s
 
     def recursive_changed_detail(self, key, token, root):
-        #print 'Entering recursive changed detail key=' + str(key) + ' token=' + str(token) + ' root=' + str(root)
+        # print 'Entering recursive changed detail key=' + str(key) + ' token=' + str(token) + ' root=' + str(root)
         a=ModelDiffer(self.current_dict[key], self.past_dict[key])
         diff=a.changed()
         added=a.added()
         removed=a.removed()
-        #print 'DEBUG: In recursive changed detail ' + str(diff)
-        #print 'DEBUG: In recursive added detail: ' + str(a.added())
+        # print 'DEBUG: In recursive changed detail ' + str(diff)
+        # print 'DEBUG: In recursive added detail: ' + str(a.added())
         if len(diff) > 0:
             for o in diff:
                 # The token is a dotted string that is used to parse and rebuilt the structure later
-                #print 'DEBUG: in recursive changed detail walking down1 ' + str(o)
+                # print 'DEBUG: in recursive changed detail walking down1 ' + str(o)
                 token=token+'.'+o
                 if a.is_dict(o):
-                    #print 'DEBUG: in recursive changed detail walking down2 ' + str(token)
+                    # print 'DEBUG: in recursive changed detail walking down2 ' + str(token)
                     a.recursive_changed_detail(o,token, root)
                     last=token.rfind('.')
                     token=root
@@ -65,13 +65,20 @@ class ModelDiffer:
                     last=token.rfind('.')
                     token=root
 
+
+        # already out of recursive calls, add all entries from current dictionary
+        # resources.JDBCSubsystemResources.* (note it may not have the lower level nodes
+
         if len(added) > 0:
             for item in added:
                 all_added.append(token + '.' + item)
+
+        # We don't really care about this, just put something here is enough
+
         if len(removed) > 0:
             for item in added:
                 all_removed.append(token + '.' + item)
-        #print 'Exiting recursive_changed_detail'
+        # print 'Exiting recursive_changed_detail'
 
     def is_dict(self,key):
         if isinstance(self.current_dict[key],dict):
@@ -87,41 +94,43 @@ class ModelDiffer:
         changed=self.changed()
 
         for s in changed:
-            #print 'DEBUG: calculated_change_model checking item ' + s
             token=s
-            x=self.recursive_changed_detail(s, token, s)
-            #print 'DEBUG: after recursive changed details ' + str(all_changes)
-            for item in all_changes:
-                splitted=item.split('.',1)
+            self.recursive_changed_detail(s, token, s)
+            self._add_results(all_changes)
+            self._add_results(all_added)
+
+    def _add_results(self, ar_changes):
+        for item in ar_changes:
+            splitted=item.split('.',1)
+            n=len(splitted)
+            result=dict()
+            walked=[]
+
+            while n > 1:
+                tmp=dict()
+                tmp[splitted[0]]=dict()
+                if len(result) > 0:
+                    # traverse to the leaf
+                    leaf=result
+                    for k in walked:
+                        leaf = leaf[k]
+                    leaf[splitted[0]]=dict()
+                    walked.append(splitted[0])
+                else:
+                    result=tmp
+                    walked.append(splitted[0])
+                splitted=splitted[1].split('.',1)
                 n=len(splitted)
-                result=dict()
-                walked=[]
 
-                while n > 1:
-                    tmp=dict()
-                    tmp[splitted[0]]=dict()
-                    if len(result) > 0:
-                        # traverse to the leaf
-                        leaf=result
-                        for k in walked:
-                            leaf = leaf[k]
-                        leaf[splitted[0]]=dict()
-                        walked.append(splitted[0])
-                    else:
-                        result=tmp
-                        walked.append(splitted[0])
-                    splitted=splitted[1].split('.',1)
-                    n=len(splitted)
+            leaf=result
+            value_tree=self.current_dict
+            for k in walked:
+                leaf = leaf[k]
+                value_tree=value_tree[k]
 
-                leaf=result
-                value_tree=self.current_dict
-                for k in walked:
-                    leaf = leaf[k]
-                    value_tree=value_tree[k]
+            leaf[splitted[0]] =value_tree[splitted[0]]
+            self.merge_dictionaries(self.final_changed_model, result)
 
-                leaf[splitted[0]] =value_tree[splitted[0]]
-                self.merge_dictionaries(self.final_changed_model, result)
-                # print self.final_changed_model
 
     def merge_dictionaries(self, dictionary, new_dictionary):
         """
@@ -146,7 +155,6 @@ class ModelDiffer:
         :param model: diffed model
         return 0 false 1 true
         """
-
         if model.has_key('appDeployments'):
             return 0
 
@@ -154,7 +162,16 @@ class ModelDiffer:
         if not model:
             return 0
 
-        if len(all_removed) > 0 or len(all_added) > 0:
+        if len(all_removed) > 0:
+            return 0
+
+        if len(all_added) > 0:
+            # filter out topology
+            if model.has_key('topology'):
+                return 0
+            # TODO under what conditions we can return 1 to allow online changes = just resources/** for further
+            # filtering is needed ??
+
             return 0
 
         return 1
