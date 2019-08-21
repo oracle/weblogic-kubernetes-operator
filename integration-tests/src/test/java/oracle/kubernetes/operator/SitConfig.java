@@ -490,23 +490,7 @@ public class SitConfig extends BaseTest {
    * @throws Exception when pods restart fail
    */
   private void recreateConfigMapandRestart(String oldSecret, String newSecret) throws Exception {
-    // stop all running wls pods
-    int clusterReplicas =
-        TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
-
-    // recreate the configmap with new overrride files
-    String cmd =
-        "kubectl create configmap "
-            + DOMAINUID
-            + "-sitconfigcm --from-file="
-            + configOverrideDir
-            + " -o yaml --dry-run | kubectl replace -f -";
-    TestUtils.exec(cmd, true);
-
-    cmd = "kubectl describe cm -n " + domain.getDomainNs() + " customsitconfigdomain-sitconfigcm";
-    TestUtils.exec(cmd, true);
-
-    // now modify the domain.yaml if the secret name is changed
+    // modify the domain.yaml if the secret name is changed
     if (!oldSecret.equals(newSecret)) {
       String content =
           new String(Files.readAllBytes(Paths.get(domainYaml)), StandardCharsets.UTF_8);
@@ -515,11 +499,10 @@ public class SitConfig extends BaseTest {
           Paths.get(domainYaml),
           content.getBytes(StandardCharsets.UTF_8),
           StandardOpenOption.TRUNCATE_EXISTING);
-      logger.log(Level.INFO, content);
 
       // delete the old secret and add new secret to domain.yaml
       TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-" + oldSecret, true);
-      cmd =
+      String cmd =
           "kubectl -n "
               + domain.getDomainNs()
               + " create secret generic "
@@ -527,19 +510,32 @@ public class SitConfig extends BaseTest {
               + "-"
               + newSecret
               + " --from-literal=hostname="
-              + fqdn
+              + TestUtils.getHostName()
               + " --from-literal=dbusername=root"
               + " --from-literal=dbpassword=root123";
       TestUtils.exec(cmd, true);
-      // apply the new domain.yaml
       TestUtils.exec("kubectl apply -f " + domainYaml, true);
     }
+
+    int clusterReplicas =
+        TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
+
     // restart the pods so that introspector can run and replace files with new secret if changed
     // and with new config override files
     String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
     domain.verifyServerPodsDeleted(clusterReplicas);
-    TestUtils.exec("kubectl get all --all-namespaces", true);
+
+    String cmd =
+        "kubectl create configmap "
+            + DOMAINUID
+            + "-sitconfigcm --from-file="
+            + configOverrideDir
+            + " -o yaml --dry-run | kubectl replace -f -";
+    TestUtils.exec(cmd, true);
+    cmd = "kubectl describe cm -n " + domain.getDomainNs() + " customsitconfigdomain-sitconfigcm";
+    TestUtils.exec(cmd, true);
+
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
     domain.verifyDomainCreated();
