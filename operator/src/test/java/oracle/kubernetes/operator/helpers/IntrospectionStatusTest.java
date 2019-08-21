@@ -33,10 +33,11 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-/** Tests updates to a domain status from progress of the instrospection job. */
+/** Tests updates to a domain status from progress of the introspection job. */
 public class IntrospectionStatusTest {
   private static final String IMAGE_NAME = "abc";
   private static final String MESSAGE = "asdf";
@@ -68,6 +69,29 @@ public class IntrospectionStatusTest {
   }
 
   @Test
+  public void whenNewIntrospectorJobPodStatusContainerStatusesNull_ignoreIt() {
+    V1Pod introspectorJobPod = createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE));
+    introspectorJobPod.getStatus().containerStatuses(null);
+    
+    processor.dispatchPodWatch(WatchEvent.createAddedEvent(introspectorJobPod).toWatchResponse());
+
+    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
+    assertThat(updatedDomain.getStatus().getReason(), emptyOrNullString());
+    assertThat(updatedDomain.getStatus().getMessage(), emptyOrNullString());
+  }
+
+  @Test
+  public void whenNewIntrospectorJobPodStatusNull_ignoreIt() {
+    V1Pod introspectorJobPod = createIntrospectorJobPod(UID);
+
+    processor.dispatchPodWatch(WatchEvent.createAddedEvent(introspectorJobPod).toWatchResponse());
+
+    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
+    assertThat(updatedDomain.getStatus().getReason(), emptyOrNullString());
+    assertThat(updatedDomain.getStatus().getMessage(), emptyOrNullString());
+  }
+
+  @Test
   public void whenNewIntrospectorJobPodCreatedWithErrImagePullStatus_patchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
@@ -77,6 +101,18 @@ public class IntrospectionStatusTest {
     Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo(IMAGE_PULL_FAILURE));
     assertThat(updatedDomain.getStatus().getMessage(), equalTo(MESSAGE));
+  }
+
+  @Test
+  public void whenNewIntrospectorJobPodCreatedWithNullMessage_ignoreIt() {
+    processor.dispatchPodWatch(
+        WatchEvent.createAddedEvent(
+                createIntrospectorJobPod(createWaitingState(IMAGE_PULL_BACKOFF, null)))
+            .toWatchResponse());
+
+    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
+    assertThat(updatedDomain.getStatus().getReason(), emptyOrNullString());
+    assertThat(updatedDomain.getStatus().getMessage(), emptyOrNullString());
   }
 
   @Test
@@ -92,7 +128,7 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  public void whenNewIntrospectorJobPodStatusNullAfterImagePullFailure_dontPatchDomain() {
+  public void whenNewIntrospectorJobPodStatusReasonNullAfterImagePullFailure_dontPatchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
                 createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE)))
