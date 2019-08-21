@@ -197,7 +197,7 @@ public class SitConfig extends BaseTest {
       } else {
         Files.write(path, content.getBytes(charset));
       }
-      display(dstDir);
+      // display(dstDir);
     }
   }
 
@@ -490,6 +490,13 @@ public class SitConfig extends BaseTest {
    * @throws Exception when pods restart fail
    */
   private void recreateConfigMapandRestart(String oldSecret, String newSecret) throws Exception {
+    // stop all running wls pods
+    int clusterReplicas =
+        TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
+    String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";
+    TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
+    domain.verifyServerPodsDeleted(clusterReplicas);
+
     if (!oldSecret.equals(newSecret)) {
       String content =
           new String(Files.readAllBytes(Paths.get(domainYaml)), StandardCharsets.UTF_8);
@@ -499,6 +506,7 @@ public class SitConfig extends BaseTest {
           content.getBytes(StandardCharsets.UTF_8),
           StandardOpenOption.TRUNCATE_EXISTING);
 
+      // delete the old secret and add new secret to domain.yaml
       TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-" + oldSecret, true);
       String cmd =
           "kubectl -n "
@@ -512,16 +520,9 @@ public class SitConfig extends BaseTest {
               + " --from-literal=dbusername=root"
               + " --from-literal=dbpassword=root123";
       TestUtils.exec(cmd, true);
-      TestUtils.exec("kubectl apply -f " + domainYaml, true);
     }
 
-    int clusterReplicas =
-        TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
-
-    String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";
-    TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
-    domain.verifyServerPodsDeleted(clusterReplicas);
-
+    // recreate the configmap with new overrride files
     String cmd =
         "kubectl create configmap "
             + DOMAINUID
@@ -533,6 +534,11 @@ public class SitConfig extends BaseTest {
     cmd = "kubectl describe cm -n " + domain.getDomainNs() + " customsitconfigdomain-sitconfigcm";
     TestUtils.exec(cmd, true);
 
+    // apply the new domain.yaml
+    TestUtils.exec("kubectl apply -f " + domainYaml, true);
+
+    // start the pods so that introspector can run and replace files with new secret if changed and
+    // with new config override files
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
     domain.verifyDomainCreated();
