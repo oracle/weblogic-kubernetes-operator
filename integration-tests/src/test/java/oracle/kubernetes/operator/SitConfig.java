@@ -453,7 +453,6 @@ public class SitConfig extends BaseTest {
                   + JDBC_URL
                   + "'");
       assertResult(result);
-      logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
     } finally {
       copySitConfigFiles(files, "test-secrets");
       recreateConfigMapandRestart("test-secrets-new", "test-secrets");
