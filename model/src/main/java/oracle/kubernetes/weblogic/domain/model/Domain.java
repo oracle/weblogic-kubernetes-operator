@@ -4,18 +4,24 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
+import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -348,25 +354,33 @@ public class Domain {
     return Optional.ofNullable(spec.getDomainUid()).orElse(getMetadata().getName());
   }
 
-  public String getLogHome() {
+  /**
+   * Returns the path to the log home to be used by this domain. Null if the log home is disabled.
+   * @return a path on a persistent volume, or null
+   */
+  public @Nullable String getEffectiveLogHome() {
+    return isLogHomeEnabled() ? getLogHome() : null;
+  }
+
+  @Nonnull String getLogHome() {
     return Optional.ofNullable(spec.getLogHome())
         .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUid()));
   }
 
-  public boolean getLogHomeEnabled() {
-    return spec.getLogHomeEnabled();
+  boolean isLogHomeEnabled() {
+    return spec.isLogHomeEnabled();
   }
 
   public boolean isIncludeServerOutInPodLog() {
     return spec.getIncludeServerOutInPodLog();
   }
 
-  public boolean isDomainHomeInImage() {
+  boolean isDomainHomeInImage() {
     return spec.isDomainHomeInImage();
   }
 
-  public boolean istioEnabled() {
-    return spec.istioEnabled();
+  public boolean isIstioEnabled() {
+    return spec.isIstioEnabled();
   }
 
   public int getIstioReadinessPort() {
@@ -399,7 +413,7 @@ public class Domain {
    *
    * @return a list of names; may be empty
    */
-  public List<String> getAdminServerChannelNames() {
+  List<String> getAdminServerChannelNames() {
     return getEffectiveConfigurationFactory().getAdminServerChannelNames();
   }
 
@@ -459,5 +473,58 @@ public class Domain {
         .append(spec, rhs.spec)
         .append(status, rhs.status)
         .isEquals();
+  }
+
+  public List<String> getValidationFailures() {
+    return new Validator().getValidationFailures();
+  }
+
+  class Validator {
+    private List<String> failures = new ArrayList<>();
+    private Set<String> clusterNames = new HashSet<>();
+    private Set<String> serverNames = new HashSet<>();
+
+    List<String> getValidationFailures() {
+      addDuplicateNames();
+      addUnmappedLogHome();
+
+      return failures;
+    }
+
+    private void addDuplicateNames() {
+      getSpec().getManagedServers().stream().map(ManagedServer::getServerName).forEach(this::checkDuplicateServerName);
+      getSpec().getClusters().stream().map(Cluster::getClusterName).forEach(this::checkDuplicateClusterName);
+    }
+
+    private void checkDuplicateServerName(String s) {
+      if (serverNames.contains(s))
+        failures.add(String.format("More than one server is named '%s'", s));
+      else
+        serverNames.add(s);
+    }
+
+    private void checkDuplicateClusterName(String s) {
+      if (clusterNames.contains(s))
+        failures.add(String.format("More than one cluster is named '%s'", s));
+      else
+        clusterNames.add(s);
+    }
+
+    private void addUnmappedLogHome() {
+      if (!isLogHomeEnabled()) return;
+
+      if (getSpec().getAdditionalVolumeMounts().stream().map(V1VolumeMount::getMountPath).noneMatch(this::mapsLogHome))
+        failures.add("No volume mount contains path for log home");
+    }
+
+    private boolean mapsLogHome(String mountPath) {
+      return getLogHome().startsWith(separatorTerminated(mountPath));
+    }
+
+    private String separatorTerminated(String path) {
+      if (path.endsWith(File.separator)) return path;
+      else return path + File.separator;
+    }
+
   }
 }
