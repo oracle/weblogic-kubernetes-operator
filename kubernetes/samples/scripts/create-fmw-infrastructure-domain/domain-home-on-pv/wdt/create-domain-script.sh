@@ -157,7 +157,6 @@ function run_wdt {
     local domain_home_dir=$domain_dir/$domain_uid
   fi 
 
-  # Skip the line with comment tag #
   local domain_type=`egrep 'fmwDomainType:' $inputs_orig | grep -v '#' | awk '{print $2}'`
   echo domain_type = $domain_type
   echo domain_home_dir = $domain_home_dir

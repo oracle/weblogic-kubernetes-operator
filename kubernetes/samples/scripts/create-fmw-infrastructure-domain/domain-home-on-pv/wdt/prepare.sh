@@ -34,5 +34,5 @@ if [ "${domain_type}" == "JRF" ]; then
 fi 
 
 if [ "${domain_type}" == "RestrictedJRF" ]; then 
-cp ${externalFilesTmpDir}/wdt_model_restricted_jrf_configured.yaml ${externalFilesTmpDir}/wdt_model.yaml
+   cp ${externalFilesTmpDir}/wdt_model_restricted_jrf_configured.yaml ${externalFilesTmpDir}/wdt_model.yaml
 fi 
