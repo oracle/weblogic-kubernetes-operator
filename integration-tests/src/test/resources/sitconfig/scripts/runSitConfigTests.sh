@@ -15,5 +15,18 @@
 
 source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh
 javac -d . SitConfigTests.java
+domaindir="notexisting"
+if [ -d "/shared/domains/customsitconfigdomain/optconfig" ]
+then
+    domaindir="/shared/domains/customsitconfigdomain/optconfig"
+else
+    domaindir="/u01/oracle/user_projects/domains/customsitconfigdomain/optconfig"
+fi
+
+cat $domaindir/introspector-situational-config.xml
+cat $domaindir/custom-situational-config.xml
+cat $domaindir/jms/*
+cat $domaindir/jdbc/*
+cat $domaindir/diagnostics/*
 java -ea -cp $ORACLE_HOME:$CLASSPATH oracle.kubernetes.operator.SitConfigTests $@
 
