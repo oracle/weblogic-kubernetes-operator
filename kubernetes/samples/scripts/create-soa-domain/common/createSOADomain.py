@@ -1,4 +1,4 @@
-#Copyright 2014, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 import os
@@ -147,21 +147,7 @@ class SOA12213Provisioner:
 
         # Create managed servers
         self.MANAGED_SERVERS = self.createManagedServers(ms_count, managedNameBase, ms_port, clusterName, self.MANAGED_SERVERS)
-        #for index in range(0, ms_count):
-        #    cd('/')
-        #    msIndex = index+1
-        #    cd('/')
-        #    name = '%s%s' % (managedNameBase, msIndex)
-        #    create(name, 'Server')
-        #    cd('/Servers/%s/' % name )
-        #    print('managed server name is %s' % name);
-        #    set('ListenPort', ms_port)
-        #    set('NumOfRetriesBeforeMSIMode', 0)
-        #    set('RetryIntervalBeforeMSIMode', 1)
-        #    set('Cluster', clusterName)
-        #    self.MANAGED_SERVERS.append(name)
-        #print self.MANAGED_SERVERS
-
+        
         # Creating additional managed servers
         if  domainType == "soaosb" or domainType == "soaessosb":
             print 'Creating additional cluster... ' + self.ADDL_CLUSTER
@@ -170,20 +156,6 @@ class SOA12213Provisioner:
 
             # Creating  managed servers for additional cluster
             self.ADDL_MANAGED_SERVERS = self.createManagedServers(ms_count, self.ADDL_MANAGED_SERVER_BASENAME, self.ADDL_MANAGED_SERVER_PORT, self.ADDL_CLUSTER, self.ADDL_MANAGED_SERVERS)
-            #for index in range(0, ms_count):
-            #    cd('/')
-            #    msIndex = index+1
-            #    cd('/')
-            #    name = '%s%s' % (self.ADDL_MANAGED_SERVER_BASENAME, msIndex)
-            #    create(name, 'Server')
-            #    cd('/Servers/%s/' % name )
-            #    print('managed server name is %s' % name);
-            #    set('ListenPort', self.ADDL_MANAGED_SERVER_PORT)
-            #    set('NumOfRetriesBeforeMSIMode', 0)
-            #    set('RetryIntervalBeforeMSIMode', 1)
-            #    set('Cluster', self.ADDL_CLUSTER)
-            #    self.ADDL_MANAGED_SERVERS.append(name)
-            #print self.ADDL_MANAGED_SERVERS
             print 'Created managed Servers for additional cluster..... ' + self.ADDL_CLUSTER
 
         # Create Node Manager
