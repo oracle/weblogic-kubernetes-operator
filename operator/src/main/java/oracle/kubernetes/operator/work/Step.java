@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 
 /** Individual step in a processing flow. */
@@ -228,26 +229,6 @@ public abstract class Step {
     return next;
   }
 
-  /** Multi-exception. */
-  @SuppressWarnings("serial")
-  public static class MultiThrowable extends RuntimeException {
-    private final List<Throwable> throwables;
-
-    private MultiThrowable(List<Throwable> throwables) {
-      super(throwables.get(0));
-      this.throwables = throwables;
-    }
-
-    /**
-     * The multiple exceptions wrapped by this exception.
-     *
-     * @return Multiple exceptions
-     */
-    public List<Throwable> getThrowables() {
-      return throwables;
-    }
-  }
-
   /**
    * Create a {@link NextAction} that suspends the current {@link Fiber} and that starts child
    * fibers for each step and packet pair. When all of the created child fibers complete, then this
@@ -286,34 +267,6 @@ public abstract class Step {
         });
   }
 
-  private abstract static class JoinCompletionCallback implements CompletionCallback {
-    protected final Fiber fiber;
-    protected final Packet packet;
-    protected final AtomicInteger count;
-    protected final List<Throwable> throwables = new ArrayList<Throwable>();
-
-    JoinCompletionCallback(Fiber fiber, Packet packet, int initialCount) {
-      this.fiber = fiber;
-      this.packet = packet;
-      this.count = new AtomicInteger(initialCount);
-    }
-
-    @Override
-    public void onThrowable(Packet p, Throwable throwable) {
-      synchronized (throwables) {
-        throwables.add(throwable);
-      }
-      if (count.decrementAndGet() == 0) {
-        // no need to synchronize throwables as all fibers are done
-        if (throwables.size() == 1) {
-          fiber.terminate(throwable, packet);
-        } else {
-          fiber.terminate(new MultiThrowable(throwables), packet);
-        }
-      }
-    }
-  }
-
   /**
    * Create a {@link NextAction} that suspends the current {@link Fiber} and that starts child
    * fibers for each step and packet pair. When at least one of the created child fibers completes,
@@ -349,6 +302,54 @@ public abstract class Step {
             fiber.createChildFiber().start(sp.step, sp.packet, callback);
           }
         });
+  }
+
+  /** Multi-exception. */
+  @SuppressWarnings("serial")
+  public static class MultiThrowable extends RuntimeException {
+    private final List<Throwable> throwables;
+
+    private MultiThrowable(List<Throwable> throwables) {
+      super(throwables.get(0));
+      this.throwables = throwables;
+    }
+
+    /**
+     * The multiple exceptions wrapped by this exception.
+     *
+     * @return Multiple exceptions
+     */
+    public List<Throwable> getThrowables() {
+      return throwables;
+    }
+  }
+
+  private abstract static class JoinCompletionCallback implements CompletionCallback {
+    protected final Fiber fiber;
+    protected final Packet packet;
+    protected final AtomicInteger count;
+    protected final List<Throwable> throwables = new ArrayList<Throwable>();
+
+    JoinCompletionCallback(Fiber fiber, Packet packet, int initialCount) {
+      this.fiber = fiber;
+      this.packet = packet;
+      this.count = new AtomicInteger(initialCount);
+    }
+
+    @Override
+    public void onThrowable(Packet p, Throwable throwable) {
+      synchronized (throwables) {
+        throwables.add(throwable);
+      }
+      if (count.decrementAndGet() == 0) {
+        // no need to synchronize throwables as all fibers are done
+        if (throwables.size() == 1) {
+          fiber.terminate(throwable, packet);
+        } else {
+          fiber.terminate(new MultiThrowable(throwables), packet);
+        }
+      }
+    }
   }
 
   public static class StepAndPacket {

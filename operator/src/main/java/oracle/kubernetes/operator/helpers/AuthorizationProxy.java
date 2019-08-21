@@ -1,8 +1,10 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
+
+import java.util.List;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -14,7 +16,6 @@ import io.kubernetes.client.models.V1SelfSubjectRulesReviewSpec;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1SubjectAccessReviewSpec;
 import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
-import java.util.List;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -22,80 +23,6 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 /** Delegate authorization decisions to Kubernetes ABAC and/or RBAC. */
 public class AuthorizationProxy {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
-  public enum Operation {
-    get,
-    list,
-    create,
-    update,
-    patch,
-    replace,
-    watch,
-    proxy,
-    redirect,
-    delete,
-    deletecollection
-  }
-
-  public enum Resource {
-    CONFIGMAPS("configmaps", ""),
-    PODS("pods", ""),
-    LOGS("pods", "log", ""),
-    EXEC("pods", "exec", ""),
-    PODTEMPLATES("podtemplates", ""),
-    EVENTS("events", ""),
-    SERVICES("services", ""),
-    NAMESPACES("namespaces", ""),
-    JOBS("jobs", "batch"),
-    CRONJOBS("cronjobs", "batch"),
-    CRDS("customresourcedefinitions", "apiextensions.k8s.io"),
-    DOMAINS("domains", "weblogic.oracle"),
-    DOMAINSTATUSS("domains", "status", "weblogic.oracle"),
-    SUBJECTACCESSREVIEWS("subjectaccessreviews", "authorization.k8s.io"),
-    SELFSUBJECTACCESSREVIEWS("selfsubjectaccessreviews", "authorization.k8s.io"),
-    LOCALSUBJECTACCESSREVIEWS("localsubjectaccessreviews", "authorization.k8s.io"),
-    SELFSUBJECTRULESREVIEWS("selfsubjectrulesreviews", "authorization.k8s.io"),
-    TOKENREVIEWS("tokenreviews", "authentication.k8s.io"),
-    SECRETS("secrets", ""),
-    PERSISTENTVOLUMES("persistentvolumes", ""),
-    PERSISTENTVOLUMECLAIMS("persistentvolumeclaims", ""),
-    STORAGECLASSES("storageclasses", "storage.k8s.io"),
-    PODPRESETS("podpresets", "settings.k8s.io"),
-    INGRESSES("ingresses", "extensions"),
-    NETWORKPOLICIES("networkpolicies", "extensions"),
-    PODSECURITYPOLICIES("podsecuritypolicies", "extensions");
-
-    private final String resource;
-    private final String subResource;
-    private final String apiGroup;
-
-    Resource(String resource, String apiGroup) {
-      this(resource, "", apiGroup);
-    }
-
-    Resource(String resource, String subResource, String apiGroup) {
-      this.resource = resource;
-      this.subResource = subResource;
-      this.apiGroup = apiGroup;
-    }
-
-    public String getResource() {
-      return resource;
-    }
-
-    public String getSubResource() {
-      return subResource;
-    }
-
-    public String getAPIGroup() {
-      return apiGroup;
-    }
-  }
-
-  public enum Scope {
-    namespace,
-    cluster
-  }
 
   /**
    * Check if the specified principal is allowed to perform the specified operation on the specified
@@ -307,5 +234,79 @@ public class AuthorizationProxy {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       return null;
     }
+  }
+
+  public enum Operation {
+    get,
+    list,
+    create,
+    update,
+    patch,
+    replace,
+    watch,
+    proxy,
+    redirect,
+    delete,
+    deletecollection
+  }
+
+  public enum Resource {
+    CONFIGMAPS("configmaps", ""),
+    PODS("pods", ""),
+    LOGS("pods", "log", ""),
+    EXEC("pods", "exec", ""),
+    PODTEMPLATES("podtemplates", ""),
+    EVENTS("events", ""),
+    SERVICES("services", ""),
+    NAMESPACES("namespaces", ""),
+    JOBS("jobs", "batch"),
+    CRONJOBS("cronjobs", "batch"),
+    CRDS("customresourcedefinitions", "apiextensions.k8s.io"),
+    DOMAINS("domains", "weblogic.oracle"),
+    DOMAINSTATUSS("domains", "status", "weblogic.oracle"),
+    SUBJECTACCESSREVIEWS("subjectaccessreviews", "authorization.k8s.io"),
+    SELFSUBJECTACCESSREVIEWS("selfsubjectaccessreviews", "authorization.k8s.io"),
+    LOCALSUBJECTACCESSREVIEWS("localsubjectaccessreviews", "authorization.k8s.io"),
+    SELFSUBJECTRULESREVIEWS("selfsubjectrulesreviews", "authorization.k8s.io"),
+    TOKENREVIEWS("tokenreviews", "authentication.k8s.io"),
+    SECRETS("secrets", ""),
+    PERSISTENTVOLUMES("persistentvolumes", ""),
+    PERSISTENTVOLUMECLAIMS("persistentvolumeclaims", ""),
+    STORAGECLASSES("storageclasses", "storage.k8s.io"),
+    PODPRESETS("podpresets", "settings.k8s.io"),
+    INGRESSES("ingresses", "extensions"),
+    NETWORKPOLICIES("networkpolicies", "extensions"),
+    PODSECURITYPOLICIES("podsecuritypolicies", "extensions");
+
+    private final String resource;
+    private final String subResource;
+    private final String apiGroup;
+
+    Resource(String resource, String apiGroup) {
+      this(resource, "", apiGroup);
+    }
+
+    Resource(String resource, String subResource, String apiGroup) {
+      this.resource = resource;
+      this.subResource = subResource;
+      this.apiGroup = apiGroup;
+    }
+
+    public String getResource() {
+      return resource;
+    }
+
+    public String getSubResource() {
+      return subResource;
+    }
+
+    public String getApiGroup() {
+      return apiGroup;
+    }
+  }
+
+  public enum Scope {
+    namespace,
+    cluster
   }
 }

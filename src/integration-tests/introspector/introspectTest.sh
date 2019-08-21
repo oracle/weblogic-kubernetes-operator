@@ -1,5 +1,5 @@
 # !/bin/sh
-# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #############################################################################
@@ -20,7 +20,7 @@
 # Internal design:
 #
 #   The 'meat' of the test mainly works via a series of yaml and python
-#   template files in combination with a set of environment variables.  
+#   template files in combination with a set of environment variables.
 #
 #   The environment variables, such as PV_ROOT, DOMAIN_UID, NAMESPACE,
 #   IMAGE_NAME, etc, all have defaults, or can be passed in.  See the 'export'
@@ -34,7 +34,7 @@
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SOURCEPATH="`echo $SCRIPTPATH | sed 's/weblogic-kubernetes-operator.*/weblogic-kubernetes-operator/'`"
-traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils.sh
+traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/utils.sh
 source ${traceFile}
 source ${SCRIPTPATH}/util_dots.sh
 [ $? -ne 0 ] && echo "Error: missing file ${traceFile}" && exit 1
@@ -49,7 +49,7 @@ trace "Info: Starting."
 #############################################################################
 #
 # Set root directory for PV
-#   This matches env vars used by the 'cleanup.sh' call below. 
+#   This matches env vars used by the 'cleanup.sh' call below.
 #
 
 export PV_ROOT=${PV_ROOT:-/scratch/$USER/wl_k8s_test_results}
@@ -113,10 +113,10 @@ function cleanupMajor() {
 
   # first, let's delete the test's local tmp files for rm -fr
   #
-  # CAUTION: We deliberately hard code the path here instead of using 
+  # CAUTION: We deliberately hard code the path here instead of using
   #          using the test_home env var.  This helps prevent
   #          rm -fr from accidentally blowing away stuff it shouldn't!
-   
+
   rm -fr /tmp/introspect
   mkdir -p $test_home || exit 1
 
@@ -136,7 +136,8 @@ function cleanupMajor() {
   if [ $status -ne 0 ]; then
     trace "Error:  cleanup failed.   Cleanup output:"
     cat ${test_home}/cleanup.out
-    exit 1
+    trace "Error:  cleanup failed."
+    return 1
   fi
 }
 
@@ -186,12 +187,12 @@ function deployYamlTemplate() {
   ${SCRIPTPATH}/util_subst.sh -g ${yaml_file}t ${test_home}/${yaml_file} || exit 1
 
   kubectl create -f ${test_home}/${yaml_file} \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1
 }
 
 #############################################################################
 #
-# Helper function for deploying a configmap that contains the files in 
+# Helper function for deploying a configmap that contains the files in
 # a directory.
 #
 
@@ -201,13 +202,13 @@ createConfigMapFromDir() {
 
   kubectl -n $NAMESPACE create cm ${cm_name} \
     --from-file ${cm_dir} \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1
 
   kubectl -n $NAMESPACE label cm ${cm_name} \
     weblogic.createdByOperator=true \
     weblogic.operatorName=look-ma-no-hands \
     weblogic.resourceVersion=domain-v2 \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1
 }
 
 
@@ -226,7 +227,7 @@ function toDNS1123Legal {
 
 #############################################################################
 #
-# Deploy domain cm 
+# Deploy domain cm
 #   - this emulates what the operator pod would do
 #   - contains the operator's introspect, nm, start server scripts, etc.
 #   - mounted by create domain job, introspect job, and wl pods
@@ -244,7 +245,7 @@ function deployDomainConfigMap() {
 
 #############################################################################
 #
-# Deploy test script cm 
+# Deploy test script cm
 #   - contains create domain script, create test root script, and helpers for
 #     same
 #   - mounted by create test root job, and by create domain job
@@ -255,14 +256,14 @@ function deployTestScriptConfigMap() {
 
   mkdir -p ${test_home}/test-scripts
 
-  cp ${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils* ${test_home}/test-scripts || exit 1
+  cp ${SOURCEPATH}/operator/src/main/resources/scripts/utils* ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/wl-create-domain-pod.sh ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/createTestRoot.sh ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/wl-introspect-pod.sh ${test_home}/test-scripts || exit 1
 
   rm -f ${test_home}/test-scripts/wl-create-domain-pod.py
   ${SCRIPTPATH}/util_subst.sh -g wl-create-domain-pod.pyt ${test_home}/test-scripts/wl-create-domain-pod.py || exit 1
-  
+
   kubectl -n $NAMESPACE delete cm test-script-cm \
     --ignore-not-found  \
     2>&1 | tracePipe "Info: kubectl output: "
@@ -292,7 +293,7 @@ function deployCustomOverridesConfigMap() {
      bfilname="${bfilname/override--/}"
      bfilname="${bfilname/xmlt/xml}"
      bfilname="${bfilname/txtt/txt}"
-     #echo $filname "+" $bfilname "+" ${cmdir}/${bfilname} 
+     #echo $filname "+" $bfilname "+" ${cmdir}/${bfilname}
      #cp ${filname} ${cmdir}/${bfilname} || exit 1
      ${SCRIPTPATH}/util_subst.sh -g ${filname} ${cmdir}/${bfilname}  || exit 1
   done
@@ -428,7 +429,7 @@ function deployIntrospectJobPod() {
 
   # parse job pod's output files
 
-  kubectl -n $NAMESPACE logs $pod_name > ${test_home}/job-${DOMAIN_UID}-introspect-domain-pod-job.out 
+  kubectl -n $NAMESPACE logs $pod_name > ${test_home}/job-${DOMAIN_UID}-introspect-domain-pod-job.out
 
   ${SCRIPTPATH}/util_fsplit.sh \
     ${test_home}/job-${DOMAIN_UID}-introspect-domain-pod-job.out \
@@ -436,7 +437,7 @@ function deployIntrospectJobPod() {
 
   # put the outputfile in a cm
 
-  createConfigMapFromDir $introspect_output_cm_name ${test_home}/jobfiles 
+  createConfigMapFromDir $introspect_output_cm_name ${test_home}/jobfiles
 }
 
 #############################################################################
@@ -471,7 +472,7 @@ function waitForPod() {
 function deployPod() {
   local server_name=${1?}
   local pod_name=${DOMAIN_UID}-${server_name}
-  local target_yaml=${test_home}/wl-${server_name}-pod.yaml 
+  local target_yaml=${test_home}/wl-${server_name}-pod.yaml
 
   trace "Info: Deploying pod '$pod_name'."
 
@@ -486,7 +487,7 @@ function deployPod() {
 
   # Generate server pod yaml from template and deploy it
 
-  ( 
+  (
     export SERVER_NAME=${server_name}
     export SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
     export AS_SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${ADMIN_NAME}`
@@ -499,7 +500,7 @@ function deployPod() {
   ) || exit 1
 
   kubectl create -f ${target_yaml} \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1
 }
 
 function deploySinglePodService() {
@@ -519,7 +520,7 @@ function deploySinglePodService() {
     rm -f ${target_yaml}
   fi
 
-  ( # Generate svc yaml from template 
+  ( # Generate svc yaml from template
     export SERVER_NAME="${server_name}"
     export SERVICE_INTERNAL_PORT="${internal_port}"
     export SERVICE_EXTERNAL_PORT="${external_port}"
@@ -528,7 +529,7 @@ function deploySinglePodService() {
   )
 
   kubectl create -f ${target_yaml} \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1
 
   local svc=""
   local startsecs=$SECONDS
@@ -551,12 +552,12 @@ function deploySinglePodService() {
 #
 
 function checkOverrides() {
-  
+
   trace "Info: Checking admin server stdout to make sure situational config was loaded and there are no reported situational config errors."
-  
+
   # Check for exactly 3 occurances of Info.*.BEA.*situational lines -- one for each file we're overriding.
   #   the awk expression below gets the tail of the log, everything after the last occurance of 'Starting WebLogic...'
-  
+
   linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'BEA.*situational'`"
   logstatus=0
 
@@ -564,14 +565,14 @@ function checkOverrides() {
     trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 5 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
     logstatus=1
   fi
-  
+
   #
   # Call on-line WLST on the admin-server to determine if overrides are
   # taking effect in the admin tree
   #
-  
+
   trace "Info: Checking beans to see if sit-cfg took effect.  Input file '$test_home/checkBeans.input', output file '$test_home/checkBeans.out'."
-  
+
   rm -f ${test_home}/checkBeans.input
   ${SCRIPTPATH}/util_subst.sh -g checkBeans.inputt ${test_home}/checkBeans.input || exit 1
   kubectl -n ${NAMESPACE} cp ${test_home}/checkBeans.input ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.input || exit 1
@@ -597,6 +598,54 @@ function checkOverrides() {
 
 #############################################################################
 #
+# Check if wl version checks are working on the admin pod
+#
+
+function checkWLVersionChecks() {
+
+  trace "Info: Checking pod log for 'error' strings."
+
+  # Check for exactly 0 occurances of 'Error:' lines.
+  #   a version issue is reported as an 'error:' to the log
+  #   the awk expression below gets the tail of the log, everything after the last occurance of 'Starting WebLogic...'
+
+  linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'error:'`"
+  logstatus=0
+
+  if [ ! "$linecount" == "0" ]; then
+    trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' contains lines with the keyword 'error'."
+    logstatus=1
+  fi
+
+  # Copy version test file up to admin server and run it
+
+  local testscript="util_testwlversion.sh"
+  local outfile="$test_home/${testscript}.out"
+
+  trace "Info: Running version checks on admin-server, output file '$outfile'."
+
+  kubectl -n ${NAMESPACE} \
+    cp ${SCRIPTPATH}/${testscript} \
+       ${DOMAIN_UID}-${ADMIN_NAME}:/shared/${testscript} \
+    || exit 1
+
+  rm -f ${outfile}
+  kubectl exec -it ${DOMAIN_UID}-${ADMIN_NAME} \
+      /shared/${testscript} \
+      > ${outfile} 2>&1
+  status=$?
+
+  if [ $status -ne 0 ]; then
+    trace "Error: The version checks failed, see '${outfile}'."
+  fi
+
+  if [ $status -ne 0 ] || [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+}
+
+#############################################################################
+#
 # Check if datasource is working
 #
 
@@ -612,7 +661,7 @@ function checkDataSource() {
   local script_cmd="wlst.sh /shared/${script_file} ${admin_url} ${wl_server_name} ${data_source_name}"
 
   trace "Info: Checking datasource via '$script_cmd' on pod '$pod_name'."
-  
+
   kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/${script_file} ${pod_name}:/shared/${script_file} || exit 1
 
   tracen "Info: Waiting for script to complete"
@@ -633,7 +682,8 @@ function checkDataSource() {
 #
 
 if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
-  cleanupMajor
+  # retry on failure
+  cleanupMajor || cleanupMajor || exit 1
 else
   # This path assumes we've already run the test succesfully once, it re-uses
   # the existing domain-home/pv/pvc/secret/etc, deletes wl pods, deletes introspect job, then
@@ -672,6 +722,11 @@ waitForPod ${DOMAIN_UID}-${ADMIN_NAME?}
 deployPod ${MANAGED_SERVER_NAME_BASE?}1
 deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801
 waitForPod ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1
+
+# Check admin-server pod log for wl version errors and run some
+# tests on the life-cycle WL version checking code.
+
+checkWLVersionChecks
 
 # Check admin-server pod log and also call on-line WLST to check if
 # automatic and custom overrides are taking effect in the bean tree:

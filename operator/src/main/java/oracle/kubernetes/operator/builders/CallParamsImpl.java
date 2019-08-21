@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -27,9 +27,17 @@ class CallParamsImpl implements CallParams {
     return includeUninitialized;
   }
 
+  void setIncludeUninitialized(Boolean includeUninitialized) {
+    this.includeUninitialized = includeUninitialized;
+  }
+
   @Override
   public Integer getLimit() {
     return limit;
+  }
+
+  void setLimit(Integer limit) {
+    this.limit = limit;
   }
 
   @Override
@@ -37,9 +45,17 @@ class CallParamsImpl implements CallParams {
     return timeoutSeconds;
   }
 
+  void setTimeoutSeconds(Integer timeoutSeconds) {
+    this.timeoutSeconds = timeoutSeconds;
+  }
+
   @Override
   public String getFieldSelector() {
     return fieldSelector;
+  }
+
+  void setFieldSelector(String fieldSelector) {
+    this.fieldSelector = fieldSelector;
   }
 
   @Override
@@ -47,9 +63,17 @@ class CallParamsImpl implements CallParams {
     return labelSelector;
   }
 
+  void setLabelSelector(String labelSelector) {
+    this.labelSelector = labelSelector;
+  }
+
   @Override
   public String getPretty() {
     return pretty;
+  }
+
+  void setPretty(String pretty) {
+    this.pretty = pretty;
   }
 
   @Override
@@ -57,46 +81,22 @@ class CallParamsImpl implements CallParams {
     return resourceVersion;
   }
 
+  void setResourceVersion(String resourceVersion) {
+    this.resourceVersion = resourceVersion;
+  }
+
   @Override
   public ProgressResponseBody.ProgressListener getProgressListener() {
     return progressListener;
   }
 
+  void setProgressListener(ProgressResponseBody.ProgressListener progressListener) {
+    this.progressListener = progressListener;
+  }
+
   @Override
   public ProgressRequestBody.ProgressRequestListener getProgressRequestListener() {
     return progressRequestListener;
-  }
-
-  void setIncludeUninitialized(Boolean includeUninitialized) {
-    this.includeUninitialized = includeUninitialized;
-  }
-
-  void setLimit(Integer limit) {
-    this.limit = limit;
-  }
-
-  void setTimeoutSeconds(Integer timeoutSeconds) {
-    this.timeoutSeconds = timeoutSeconds;
-  }
-
-  void setFieldSelector(String fieldSelector) {
-    this.fieldSelector = fieldSelector;
-  }
-
-  void setLabelSelector(String labelSelector) {
-    this.labelSelector = labelSelector;
-  }
-
-  void setPretty(String pretty) {
-    this.pretty = pretty;
-  }
-
-  void setResourceVersion(String resourceVersion) {
-    this.resourceVersion = resourceVersion;
-  }
-
-  void setProgressListener(ProgressResponseBody.ProgressListener progressListener) {
-    this.progressListener = progressListener;
   }
 
   void setProgressRequestListener(

@@ -4,10 +4,6 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
-
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1SecretReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +11,10 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+
+import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1SecretReference;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
@@ -27,6 +27,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
+
 /** DomainSpec is a description of a domain. */
 @Description("DomainSpec is a description of a domain.")
 public class DomainSpec extends BaseConfiguration {
@@ -34,9 +36,10 @@ public class DomainSpec extends BaseConfiguration {
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
   @Description(
       "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
-          + " Defaults to the value of metadata.name")
-  @Pattern("^[a-z0-9_.]{1,253}$")
-  private String domainUID;
+          + " Defaults to the value of metadata.name.")
+  @Pattern("^[a-z0-9-.]{1,253}$")
+  @SerializedName("domainUID")
+  private String domainUid;
 
   /**
    * Domain home.
@@ -45,15 +48,15 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The folder for the WebLogic Domain. Not required."
-          + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
-          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true")
+          + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false."
+          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true.")
   private String domainHome;
 
   /**
    * Tells the operator whether the customer wants the server to be running. For non-clustered
    * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
    * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
-   * to be started to get to the cluster's replica count..
+   * to be started to get to the cluster's replica count.
    *
    * @since 2.0
    */
@@ -65,10 +68,10 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * Reference to secret containing WebLogic startup credentials username and password. Secret must
-   * contain keys names 'username' and 'password' (Required)
+   * contain keys names 'username' and 'password'. Required.
    */
   @Description(
-      "The name of a pre-created Kubernetes secret, in the domain's namepace, that holds"
+      "The name of a pre-created Kubernetes secret, in the domain's namespace, that holds"
           + " the username and password needed to boot WebLogic Server under the 'username' and "
           + "'password' fields.")
   @Valid
@@ -161,7 +164,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "True if this domain's home is defined in the docker image for the domain. Defaults to true.")
+      "True if this domain's home is defined in the Docker image for the domain. Defaults to true.")
   private Boolean domainHomeInImage;
 
   /**
@@ -185,7 +188,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for the admin server.")
+  @Description("Configuration for the Administration Server.")
   private AdminServer adminServer;
 
   /**
@@ -193,7 +196,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for the managed servers.")
+  @Description("Configuration for individual Managed Servers.")
   private List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
@@ -203,6 +206,9 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description("Configuration for the clusters.")
   protected List<Cluster> clusters = new ArrayList<>();
+
+  @Description("Experimental feature configurations.")
+  private Experimental experimental;
 
   /**
    * Adds a Cluster to the DomainSpec.
@@ -236,33 +242,33 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required) Defaults
-   * to the value of metadata.name
+   * Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults
+   * to the value of metadata.name.
    *
    * @return domain UID
    */
-  public String getDomainUID() {
-    return domainUID;
+  public String getDomainUid() {
+    return domainUid;
   }
 
   /**
-   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required) Defaults
-   * to the value of metadata.name
+   * Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults
+   * to the value of metadata.name.
    *
-   * @param domainUID domain UID
+   * @param domainUid domain UID
    */
-  public void setDomainUID(String domainUID) {
-    this.domainUID = domainUID;
+  public void setDomainUid(String domainUid) {
+    this.domainUid = domainUid;
   }
 
   /**
-   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Required)
+   * Domain unique identifier. Must be unique across the Kubernetes cluster. Required.
    *
-   * @param domainUID domain UID
+   * @param domainUid domain UID
    * @return this
    */
-  public DomainSpec withDomainUID(String domainUID) {
-    this.domainUID = domainUID;
+  public DomainSpec withDomainUid(String domainUid) {
+    this.domainUid = domainUid;
     return this;
   }
 
@@ -286,15 +292,15 @@ public class DomainSpec extends BaseConfiguration {
     this.domainHome = domainHome;
   }
 
-  @Override
-  public void setServerStartPolicy(String serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
-  }
-
   @Nullable
   @Override
   public String getServerStartPolicy() {
     return Optional.ofNullable(serverStartPolicy).orElse(START_IF_NEEDED);
+  }
+
+  @Override
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
   }
 
   /*
@@ -319,7 +325,7 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * Reference to secret containing WebLogic startup credentials username and password. Secret must
-   * contain keys names 'username' and 'password' (Required)
+   * contain keys names 'username' and 'password'. Required.
    *
    * @param webLogicCredentialsSecret WebLogic startup credentials secret
    * @return this
@@ -365,12 +371,12 @@ public class DomainSpec extends BaseConfiguration {
     }
   }
 
-  public void setImagePullSecret(@Nullable V1LocalObjectReference imagePullSecret) {
-    imagePullSecrets = Collections.singletonList(imagePullSecret);
-  }
-
   public void setImagePullSecrets(@Nullable List<V1LocalObjectReference> imagePullSecrets) {
     this.imagePullSecrets = imagePullSecrets;
+  }
+
+  public void setImagePullSecret(@Nullable V1LocalObjectReference imagePullSecret) {
+    imagePullSecrets = Collections.singletonList(imagePullSecret);
   }
 
   /**
@@ -528,12 +534,36 @@ public class DomainSpec extends BaseConfiguration {
     this.configOverrideSecrets = overridesSecretNames;
   }
 
+  /**
+   * Test if the domain is deployed under Istio environment.
+   *
+   * @return istioEnabled
+   */
+  boolean istioEnabled() {
+    return Optional.ofNullable(experimental)
+        .map(e -> e.getIstio())
+        .map(i -> i.getEnabled())
+        .orElse(false);
+  }
+
+  /**
+   * The WebLogic readiness port used under Istio environment.
+   *
+   * @return readinessPort
+   */
+  int getIstioReadinessPort() {
+    return Optional.ofNullable(experimental)
+        .map(e -> e.getIstio())
+        .map(i -> i.getReadinessPort())
+        .orElse(8888);
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .appendSuper(super.toString())
-            .append("domainUID", domainUID)
+            .append("domainUID", domainUid)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
             .append("serverStartPolicy", serverStartPolicy)
@@ -549,7 +579,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets);
+            .append("configOverrideSecrets", configOverrideSecrets)
+            .append("experimental", experimental);
 
     return builder.toString();
   }
@@ -559,7 +590,7 @@ public class DomainSpec extends BaseConfiguration {
     HashCodeBuilder builder =
         new HashCodeBuilder()
             .appendSuper(super.hashCode())
-            .append(domainUID)
+            .append(domainUid)
             .append(domainHome)
             .append(domainHomeInImage)
             .append(serverStartPolicy)
@@ -575,7 +606,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled)
             .append(includeServerOutInPodLog)
             .append(configOverrides)
-            .append(configOverrideSecrets);
+            .append(configOverrideSecrets)
+            .append(experimental);
 
     return builder.toHashCode();
   }
@@ -593,7 +625,7 @@ public class DomainSpec extends BaseConfiguration {
     EqualsBuilder builder =
         new EqualsBuilder()
             .appendSuper(super.equals(other))
-            .append(domainUID, rhs.domainUID)
+            .append(domainUid, rhs.domainUid)
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(serverStartPolicy, rhs.serverStartPolicy)
@@ -609,7 +641,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
-            .append(configOverrideSecrets, rhs.configOverrideSecrets);
+            .append(configOverrideSecrets, rhs.configOverrideSecrets)
+            .append(experimental, rhs.experimental);
 
     return builder.isEquals();
   }

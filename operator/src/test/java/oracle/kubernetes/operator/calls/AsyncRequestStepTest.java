@@ -1,26 +1,19 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
 
-import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertTrue;
-
-import com.meterware.simplestub.Memento;
-import io.kubernetes.client.ApiCallback;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.ApiCallback;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.ApiException;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -31,6 +24,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertTrue;
+
 public class AsyncRequestStepTest {
 
   private static final int TIMEOUT_SECONDS = 10;
@@ -40,8 +41,6 @@ public class AsyncRequestStepTest {
   private CallFactoryStub callFactory = new CallFactoryStub();
   private TestStep nextStep = new TestStep();
   private ClientPool helper = ClientPool.getInstance();
-  private List<Memento> mementos = new ArrayList<>();
-
   private final AsyncRequestStep<Integer> asyncRequestStep =
       new AsyncRequestStep<>(
           nextStep,
@@ -53,6 +52,7 @@ public class AsyncRequestStepTest {
           null,
           null,
           null);
+  private List<Memento> mementos = new ArrayList<>();
 
   @Before
   public void setUp() {
@@ -104,7 +104,7 @@ public class AsyncRequestStepTest {
     sendFailedCallback(HttpURLConnection.HTTP_UNAVAILABLE);
 
     assertThat(
-        testSupport.getPacketComponents().get(RESPONSE_COMPONENT_NAME).getSPI(RetryStrategy.class),
+        testSupport.getPacketComponents().get(RESPONSE_COMPONENT_NAME).getSpi(RetryStrategy.class),
         notNullValue());
   }
 
@@ -180,6 +180,7 @@ public class AsyncRequestStepTest {
   static class CancellableCallStub implements CancellableCall {
 
     @Override
-    public void cancel() {}
+    public void cancel() {
+    }
   }
 }

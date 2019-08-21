@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
@@ -24,17 +25,29 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final Collection<ServerStartupInfo> c;
+  private final Collection<ServerStartupInfo> cols;
 
-  public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> c, Step next) {
+  public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> cols, Step next) {
     super(next);
-    this.c = c;
+    this.cols = cols;
+  }
+
+  // pre-conditions: DomainPresenceInfo SPI
+  // "principal"
+  // "serverScan"
+  // "clusterScan"
+  // "envVars"
+  private static Step bringManagedServerUp(ServerStartupInfo ssi, Step next) {
+    return ssi.isServiceOnly()
+        ? ServiceHelper.createForServerStep(
+            true, new ServerDownStep(ssi.getServerName(), true, next))
+        : ServiceHelper.createForServerStep(PodHelper.createManagedPodStep(next));
   }
 
   @Override
   protected String getDetail() {
     List<String> serversToStart = new ArrayList<>();
-    for (ServerStartupInfo ssi : c) {
+    for (ServerStartupInfo ssi : cols) {
       serversToStart.add(ssi.serverConfig.getName());
     }
     return String.join(",", serversToStart);
@@ -46,7 +59,7 @@ public class ManagedServerUpIteratorStep extends Step {
     Map<String, StepAndPacket> rolling = new ConcurrentHashMap<>();
     packet.put(ProcessingConstants.SERVERS_TO_ROLL, rolling);
 
-    for (ServerStartupInfo ssi : c) {
+    for (ServerStartupInfo ssi : cols) {
       Packet p = packet.clone();
       p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
       p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
@@ -58,17 +71,17 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     if (LOGGER.isFineEnabled()) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
 
       Domain dom = info.getDomain();
 
       Collection<String> serverList = new ArrayList<>();
-      for (ServerStartupInfo ssi : c) {
+      for (ServerStartupInfo ssi : cols) {
         serverList.add(ssi.serverConfig.getName());
       }
       LOGGER.fine(
           "Starting or validating servers for domain with UID: "
-              + dom.getDomainUID()
+              + dom.getDomainUid()
               + ", server list: "
               + serverList);
     }
@@ -77,16 +90,5 @@ public class ManagedServerUpIteratorStep extends Step {
       return doNext(packet);
     }
     return doForkJoin(new ManagedServerUpAfterStep(getNext()), packet, startDetails);
-  }
-
-  // pre-conditions: DomainPresenceInfo SPI
-  // "principal"
-  // "serverScan"
-  // "clusterScan"
-  // "envVars"
-  private static Step bringManagedServerUp(ServerStartupInfo ssi, Step next) {
-    return ssi.isServiceOnly()
-        ? ServiceHelper.createForServerStep(new ServerDownStep(ssi.getServerName(), true, next))
-        : ServiceHelper.createForServerStep(PodHelper.createManagedPodStep(next));
   }
 }

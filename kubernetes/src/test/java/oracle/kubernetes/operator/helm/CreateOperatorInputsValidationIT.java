@@ -1,19 +1,20 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
+
+import java.util.Map;
+
+import org.hamcrest.Matcher;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyString;
-
-import java.util.Map;
-import org.hamcrest.Matcher;
-import org.junit.Before;
-import org.junit.Test;
 
 public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 

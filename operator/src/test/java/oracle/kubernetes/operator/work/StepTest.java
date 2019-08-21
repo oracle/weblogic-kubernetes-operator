@@ -1,12 +1,8 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -22,12 +18,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
+
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class StepTest {
   private static final String MARK = "mark";
@@ -44,13 +45,33 @@ public class StepTest {
   private static final int ACQUIRE_SEMAPHORE = 6;
 
   private static final Command DEFAULT_COMMAND = new Command(INVOKE_NEXT);
-
-  private Engine engine = null;
-
   private static final Logger UNDERLYING_LOGGER =
       LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
+  private Engine engine = null;
   private List<Handler> savedhandlers;
   private ScheduledExecutorService executorService;
+
+  /**
+   * Simplifies creation of stepline. Steps will be connected following the list ordering of their
+   * classes
+   *
+   * @param steps List of step classes
+   * @return Head step
+   */
+  private static Step createStepline(List<Class<? extends Step>> steps) {
+    try {
+      Step s = null;
+      ListIterator<Class<? extends Step>> it = steps.listIterator(steps.size());
+      while (it.hasPrevious()) {
+        Class<? extends Step> c = it.previous();
+        Constructor<? extends Step> construct = c.getConstructor(Step.class);
+        s = construct.newInstance(s);
+      }
+      return s;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   @Before
   public void disableConsoleLogging() {
@@ -124,31 +145,9 @@ public class StepTest {
     assertTrue(throwables.isEmpty());
   }
 
-  /**
-   * Simplifies creation of stepline. Steps will be connected following the list ordering of their
-   * classes
-   *
-   * @param steps List of step classes
-   * @return Head step
-   */
-  private static Step createStepline(List<Class<? extends Step>> steps) {
-    try {
-      Step s = null;
-      ListIterator<Class<? extends Step>> it = steps.listIterator(steps.size());
-      while (it.hasPrevious()) {
-        Class<? extends Step> c = it.previous();
-        Constructor<? extends Step> construct = c.getConstructor(Step.class);
-        s = construct.newInstance(s);
-      }
-      return s;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   @Test
   public void testRetry() throws InterruptedException {
-    Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
+    final Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
     Packet p = new Packet();
 
     Map<Class<? extends BaseStep>, Command> commandMap = new HashMap<>();
@@ -252,7 +251,7 @@ public class StepTest {
 
   @Test
   public void testSuspendAndThrow() throws InterruptedException {
-    Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
+    final Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
     Packet p = new Packet();
 
     Map<Class<? extends BaseStep>, Command> commandMap = new HashMap<>();
@@ -311,7 +310,7 @@ public class StepTest {
     List<List<Throwable>> ts = new ArrayList<>();
 
     for (int i = 0; i < 1000; i++) {
-      Packet p = new Packet();
+      final Packet p = new Packet();
 
       Semaphore signal = new Semaphore(0);
       List<Step> called = new ArrayList<>();
@@ -353,7 +352,7 @@ public class StepTest {
     for (int i = 0; i < 1000; i++) {
       Semaphore signal = sems.get(i);
       List<Step> called = calls.get(i);
-      List<Throwable> throwables = ts.get(i);
+      final List<Throwable> throwables = ts.get(i);
 
       boolean result = signal.tryAcquire(5, TimeUnit.SECONDS);
       assertTrue(result);
@@ -409,7 +408,7 @@ public class StepTest {
 
   @Test
   public void testCancel() throws InterruptedException {
-    Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
+    final Step stepline = createStepline(Arrays.asList(Step1.class, Step2.class, Step3.class));
     Packet p = new Packet();
 
     Map<Class<? extends BaseStep>, Command> commandMap = new HashMap<>();
@@ -447,7 +446,7 @@ public class StepTest {
     acquireSemaphore.release();
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    List<Step> called = (List) p.get(MARK);
+    final List<Step> called = (List) p.get(MARK);
 
     boolean result = signal.tryAcquire(1, TimeUnit.SECONDS);
     assertFalse(result);

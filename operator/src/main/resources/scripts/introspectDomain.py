@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -87,7 +87,7 @@ import shutil
 import re
 from datetime import datetime
 
-# Include this script's current directory in the import path (so we can import traceUtils, etc.)
+# Include this script's current directory in the import path (so we can import utils, etc.)
 # sys.path.append('/weblogic-operator/scripts')
 
 # Alternative way to dynamically get script's current directory
@@ -96,7 +96,7 @@ tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
 tmp_scriptdir=os.path.dirname(tmp_info[0])
 sys.path.append(tmp_scriptdir)
 
-from traceUtils import *
+from utils import *
 
 class OfflineWlstEnv(object):
 
@@ -181,6 +181,14 @@ class OfflineWlstEnv(object):
   def getErrors(self):
     return self.errors
 
+  def getClusterOrNone(self,serverOrTemplate):
+    try:
+      ret = serverOrTemplate.getCluster()
+    except:
+      trace("Ignoring getCluster() exception, this is expected.")
+      ret = None
+    return ret
+
   def addGeneratedFile(self, filePath):
     self.generatedFiles.append(filePath)
 
@@ -213,8 +221,8 @@ class OfflineWlstEnv(object):
 
   def getEnv(self, name):
     val = os.getenv(name)
-    if val == None or val == "null":
-      trace("ERROR: Env var "+name+" not set.")
+    if val is None or val == "null":
+      trace("SEVERE","Env var "+name+" not set.")
       sys.exit(1)
     return val
 
@@ -307,7 +315,7 @@ class TopologyGenerator(Generator):
   #     at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
   #     at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
   #     at java.lang.reflect.Method.invoke(Method.java:498)
-  def getDynamicServersWA(self,cluster):
+  def getDynamicServersOrNone(self,cluster):
     try:
       ret = cluster.getDynamicServers()
     except:
@@ -315,10 +323,17 @@ class TopologyGenerator(Generator):
       ret = None
     return ret
 
+  def getSSLOrNone(self,server):
+    try:
+      ret = server.getSSL()
+    except:
+      trace("Ignoring getSSL() exception, this is expected.")
+      ret = None
+    return ret
 
   def validateAdminServer(self):
     adminServerName = self.env.getDomain().getAdminServerName()
-    if adminServerName == None:
+    if adminServerName is None:
       addError("The admin server name is null.")
       return
     adminServer = None
@@ -328,8 +343,8 @@ class TopologyGenerator(Generator):
     if adminServer is None:
       addError("The admin server '" + adminServerName + "' does not exist.")
       return
-    cluster = adminServer.getCluster()
-    if cluster != None:
+    cluster = self.env.getClusterOrNone(adminServer)
+    if cluster is not None:
       self.addError("The admin server " + self.name(adminServer) + " belongs to the cluster " + self.name(cluster) + ".")
 
   def validateClusters(self):
@@ -337,7 +352,7 @@ class TopologyGenerator(Generator):
       self.validateCluster(cluster)
 
   def validateCluster(self, cluster):
-    if self.getDynamicServersWA(cluster) is None:
+    if self.getDynamicServersOrNone(cluster) is None:
       self.validateNonDynamicCluster(cluster)
     else:
       self.validateDynamicCluster(cluster)
@@ -350,13 +365,13 @@ class TopologyGenerator(Generator):
 
   def validateNonDynamicClusterReferencedByAtLeastOneServer(self, cluster):
     for server in self.env.getDomain().getServers():
-      if server.getCluster() is cluster:
+      if self.env.getClusterOrNone(server) is cluster:
         return
     self.addError("The non-dynamic cluster " + self.name(cluster) + " is not referenced by any servers.")
 
   def validateNonDynamicClusterNotReferencedByAnyServerTemplates(self, cluster):
     for template in self.env.getDomain().getServerTemplates():
-      if template.getCluster() is cluster:
+      if self.env.getClusterOrNone(template) is cluster:
         self.addError("The non-dynamic cluster " + self.name(cluster) + " is referenced by the server template " + self.name(template) + ".")
 
   LISTEN_PORT = 'listen port'
@@ -366,13 +381,14 @@ class TopologyGenerator(Generator):
   ADMIN_LISTEN_PORT = 'admin listen port'
   ADMIN_LISTEN_PORT_ENABLED = 'admin listen port enabled'
 
-  def getServerClusterPortPropertyValue(server, clusterListenPortProperty):
+  def getServerClusterPortPropertyValue(self, server, clusterListenPortProperty):
     sslListenPort = None
-    if server.getSSL() != None:
-      sslListenPort = server.getSSL().getListenPort()
+    ssl = self.getSSLOrNone(server)
+    if ssl is not None:
+      sslListenPort = ssl.getListenPort()
     sslListenPortEnabled = None
-    if server.getSSL()!= None:
-      sslListenPortEnabled = server.getSSL().isListenPortEnabled()
+    if ssl is not None:
+      sslListenPortEnabled = ssl.isListenPortEnabled()
     return {
              LISTEN_PORT: server.getListenPort(),
              LISTEN_PORT_ENABLED: server.isListenPortEnabled(),
@@ -391,10 +407,10 @@ class TopologyGenerator(Generator):
     firstAdminPort = None
     firstAdminPortEnabled = None
     for server in self.env.getDomain().getServers():
-      if cluster is server.getCluster():
+      if cluster is self.env.getClusterOrNone(server):
         listenPort = server.getListenPort()
         listenPortEnabled = server.isListenPortEnabled()
-        ssl = server.getSSL()
+        ssl = self.getSSLOrNone(server)
         sslListenPort = None
         sslListenPortEnabled = None
         if ssl is not None:
@@ -430,8 +446,8 @@ class TopologyGenerator(Generator):
     firstServer = None
     firstListenPortProperty = None
     for server in self.env.getDomain().getServers():
-      if cluster is server.getCluster():
-        listenPortProperty = getServerClusterPortPropertyValue(server, clusterListenPortProperty)
+      if cluster is self.env.getClusterOrNone(server):
+        listenPortProperty = getServerClusterPortPropertyValue(self, server, clusterListenPortProperty)
         if firstServer is None:
           firstServer = server
           firstListenPortProperty = listenPortProperty
@@ -444,7 +460,7 @@ class TopologyGenerator(Generator):
      firstServer = None
      serverNap = {}
      for server in self.env.getDomain().getServers():
-       if cluster is server.getCluster():
+       if cluster is self.env.getClusterOrNone(server):
          if firstServer is None:
            for nap in server.getNetworkAccessPoints():
              serverNap[nap.getName()] = nap.getProtocol() + "~" + str(nap.getListenPort());
@@ -473,7 +489,7 @@ class TopologyGenerator(Generator):
   def validateDynamicClusterReferencedByOneServerTemplate(self, cluster):
     server_template=None
     for template in self.env.getDomain().getServerTemplates():
-      if template.getCluster() is cluster:
+      if self.env.getClusterOrNone(template) is cluster:
         if server_template is None:
           server_template = template
         else:
@@ -485,7 +501,7 @@ class TopologyGenerator(Generator):
 
   def validateDynamicClusterNotReferencedByAnyServers(self, cluster):
     for server in self.env.getDomain().getServers():
-      if server.getCluster() is cluster:
+      if self.env.getClusterOrNone(server) is cluster:
         self.addError("The dynamic cluster " + self.name(cluster) + " is referenced by the server " + self.name(server) + ".")
 
   def validateDynamicClusterDynamicServersDoNotUseCalculatedListenPorts(self, cluster):
@@ -539,13 +555,13 @@ class TopologyGenerator(Generator):
   def getConfiguredClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
-      if self.getDynamicServersWA(cluster) is None:
+      if self.getDynamicServersOrNone(cluster) is None:
         rtn.append(cluster)
     return rtn
 
   def addConfiguredCluster(self, cluster):
     self.writeln("- name: " + self.name(cluster))
-    dynamicServers = self.getDynamicServersWA(cluster)
+    dynamicServers = self.getDynamicServersOrNone(cluster)
     if dynamicServers is not None:
       self.indent();
       self.writeln("dynamicServersConfig:")
@@ -575,7 +591,7 @@ class TopologyGenerator(Generator):
   def getClusteredServers(self, cluster):
     rtn = []
     for server in self.env.getDomain().getServers():
-      if server.getCluster() is cluster:
+      if self.env.getClusterOrNone(server) is cluster:
         rtn.append(server)
     return rtn
 
@@ -594,7 +610,7 @@ class TopologyGenerator(Generator):
     self.addNetworkAccessPoints(server)
 
   def addSSL(self, server):
-    ssl = server.getSSL()
+    ssl = self.getSSLOrNone(server)
     if ssl is not None and ssl.isEnabled():
       self.indent()
       self.writeln("sslListenPort: " + str(ssl.getListenPort()))
@@ -607,7 +623,8 @@ class TopologyGenerator(Generator):
     self.writeln("serverTemplates:")
     self.indent()
     for serverTemplate in serverTemplates:
-      self.addServerTemplate(serverTemplate)
+      if not (self.env.getClusterOrNone(serverTemplate) is None):
+        self.addServerTemplate(serverTemplate)
     self.undent()
 
   def addServerTemplate(self, serverTemplate):
@@ -627,7 +644,7 @@ class TopologyGenerator(Generator):
   def getDynamicClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
-      if self.getDynamicServersWA(cluster) is not None:
+      if self.getDynamicServersOrNone(cluster) is not None:
         rtn.append(cluster)
     return rtn
 
@@ -643,7 +660,7 @@ class TopologyGenerator(Generator):
 
   def findDynamicClusterServerTemplate(self, cluster):
     for template in cmo.getServerTemplates():
-      if template.getCluster() is cluster:
+      if self.env.getClusterOrNone(template) is cluster:
         return template
     # should never get here - the domain validator already checked that
     # one server template references the cluster
@@ -655,7 +672,7 @@ class TopologyGenerator(Generator):
     self.writeln("servers:")
     self.indent()
     for server in self.env.getDomain().getServers():
-      if server.getCluster() is None:
+      if self.env.getClusterOrNone(server) is None:
         self.addServer(server)
     self.undent()
 
@@ -820,7 +837,8 @@ class SitConfigGenerator(Generator):
 
   def customizeServerTemplates(self):
     for template in self.env.getDomain().getServerTemplates():
-      self.customizeServerTemplate(template)
+      if not (self.env.getClusterOrNone(template) is None):
+        self.customizeServerTemplate(template)
 
   def customizeServerTemplate(self, template):
     name=template.getName()
@@ -847,13 +865,21 @@ class SitConfigGenerator(Generator):
     # FWIW there's theoretically no need to 'add' or 'replace' when empty
     #   since the runtime default is the server listen-address.
     nap_name=nap.getName()
-    if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0:
-      self.writeln("<d:network-access-point>")
-      self.indent()
-      self.writeln("<d:name>" + nap_name + "</d:name>")
-      self.writeListenAddress("force a replace",listen_address)
-      self.undent()
-      self.writeln("</d:network-access-point>")
+    if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0 and not (nap_name.startswith('istio-')):
+        self.writeln("<d:network-access-point>")
+        self.indent()
+        self.writeln("<d:name>" + nap_name + "</d:name>")
+        self.writeListenAddress("force a replace",listen_address)
+        self.undent()
+        self.writeln("</d:network-access-point>")
+
+  def getLogOrNone(self,server):
+    try:
+      ret = server.getLog()
+    except:
+      trace("Ignoring getLog() exception, this is expected.")
+      ret = None
+    return ret
 
   def customizeLog(self, name, bean, isDomainBean):
     logs_dir = self.env.getDomainLogHome()
@@ -862,13 +888,14 @@ class SitConfigGenerator(Generator):
 
     logaction=''
     fileaction=''
-    if bean.getLog() is None:
+    log = self.getLogOrNone(bean)
+    if log is None:
       if not isDomainBean:
         # don't know why, but don't need to "add" a missing domain log bean, and adding it causes trouble
         logaction=' f:combine-mode="add"'
       fileaction=' f:combine-mode="add"'
     else:
-      if bean.getLog().getFileName() is None:
+      if log.getFileName() is None:
         fileaction=' f:combine-mode="add"'
       else:
         fileaction=' f:combine-mode="replace"'
@@ -963,7 +990,7 @@ class CustomSitConfigIntrospector(SecretManager):
         self.macroStr+=', '
       self.macroStr+='${' + key + '}'
 
-    trace("available macros: '" + self.macroStr + "'")
+    trace("Available macros: '" + self.macroStr + "'")
 
     # Populate module maps with known module files and names, log them
 
@@ -1181,9 +1208,16 @@ def main(env):
     finally:
       env.close()
     exit(exitcode=0)
-  except:
-    trace("Domain introspection unexpectedly failed:")
+  except WLSTException, e:
+    trace("SEVERE","Domain introspection failed with WLST exception: " + str(e))
+    print e
     traceback.print_exc()
+    dumpStack()
+    exit(exitcode=1)
+  except:
+    trace("SEVERE","Domain introspection unexpectedly failed:")
+    traceback.print_exc()
+    dumpStack()
     exit(exitcode=1)
 
 main(OfflineWlstEnv())

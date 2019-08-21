@@ -1,13 +1,9 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
 
-import io.kubernetes.client.ApiCallback;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ListMeta;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -16,6 +12,11 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.kubernetes.client.ApiCallback;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ListMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -43,11 +44,11 @@ public class AsyncRequestStep<T> extends Step {
   private final ClientPool helper;
   private final RequestParams requestParams;
   private final CallFactory<T> factory;
-  private int timeoutSeconds;
   private final int maxRetryCount;
   private final String fieldSelector;
   private final String labelSelector;
   private final String resourceVersion;
+  private int timeoutSeconds;
 
   /**
    * Construct async step.
@@ -84,6 +85,26 @@ public class AsyncRequestStep<T> extends Step {
     next.setPrevious(this);
   }
 
+  private static String accessContinue(Object result) {
+    String cont = "";
+    if (result != null) {
+      try {
+        Method m = result.getClass().getMethod("getMetadata");
+        Object meta = m.invoke(result);
+        if (meta instanceof V1ListMeta) {
+          return ((V1ListMeta) meta).getContinue();
+        }
+      } catch (NoSuchMethodException
+          | SecurityException
+          | IllegalAccessException
+          | IllegalArgumentException
+          | InvocationTargetException e) {
+        // no-op, no-log
+      }
+    }
+    return cont;
+  }
+
   @Override
   protected String getDetail() {
     return requestParams.call;
@@ -97,13 +118,13 @@ public class AsyncRequestStep<T> extends Step {
     Component oldResponse = packet.getComponents().remove(RESPONSE_COMPONENT_NAME);
     if (oldResponse != null) {
       @SuppressWarnings("unchecked")
-      CallResponse<T> old = oldResponse.getSPI(CallResponse.class);
+      CallResponse<T> old = oldResponse.getSpi(CallResponse.class);
       if (old != null && old.getResult() != null) {
         // called again, access continue value, if available
         cont = accessContinue(old.getResult());
       }
 
-      retry = oldResponse.getSPI(RetryStrategy.class);
+      retry = oldResponse.getSpi(RetryStrategy.class);
     }
     String c = (cont != null) ? cont : "";
     if (retry == null) {
@@ -234,24 +255,16 @@ public class AsyncRequestStep<T> extends Step {
         });
   }
 
-  private static String accessContinue(Object result) {
-    String cont = "";
-    if (result != null) {
-      try {
-        Method m = result.getClass().getMethod("getMetadata");
-        Object meta = m.invoke(result);
-        if (meta instanceof V1ListMeta) {
-          return ((V1ListMeta) meta).getContinue();
-        }
-      } catch (NoSuchMethodException
-          | SecurityException
-          | IllegalAccessException
-          | IllegalArgumentException
-          | InvocationTargetException e) {
-        // no-op, no-log
-      }
+  private abstract static class BaseApiCallback<T> implements ApiCallback<T> {
+    @Override
+    public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
+      // no-op
     }
-    return cont;
+
+    @Override
+    public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
+      // no-op
+    }
   }
 
   private final class DefaultRetryStrategy implements RetryStrategy {
@@ -315,18 +328,6 @@ public class AsyncRequestStep<T> extends Step {
     @Override
     public void reset() {
       retryCount = 0;
-    }
-  }
-
-  private abstract static class BaseApiCallback<T> implements ApiCallback<T> {
-    @Override
-    public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
-      // no-op
-    }
-
-    @Override
-    public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
-      // no-op
     }
   }
 }

@@ -1,4 +1,4 @@
-// Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -10,6 +10,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.CollectionModel;
@@ -44,9 +45,9 @@ public class DomainsResource extends BaseResource {
   public CollectionModel<DomainModel> get() {
     LOGGER.entering(href());
     CollectionModel<DomainModel> collection = new CollectionModel<DomainModel>();
-    for (String domainUID : getBackend().getDomainUIDs()) {
-      DomainModel item = new DomainModel(domainUID);
-      item.addSelfLinks(href(item.getDomainUID()));
+    for (String domainUid : getBackend().getDomainUids()) {
+      DomainModel item = new DomainModel(domainUid);
+      item.addSelfLinks(href(item.getDomainUid()));
       collection.addItem(item);
     }
     addSelfAndParentLinks(collection);
@@ -57,20 +58,20 @@ public class DomainsResource extends BaseResource {
   /**
    * Construct and return a 'domain' jaxrs child resource.
    *
-   * @param domainUID - the unique identifier assigned to the WebLogic domain when it was registered
+   * @param domainUid - the unique identifier assigned to the WebLogic domain when it was registered
    *     with the WebLogic operator.
    * @return the domain sub resource, throws a WebApplicationException if domainUID is not
    *     registered.
    */
   @Path("{domainUID}")
-  public DomainResource getDomainResource(@PathParam("domainUID") String domainUID) {
-    LOGGER.entering(href(), domainUID);
-    if (!getBackend().isDomainUID(domainUID)) {
-      WebApplicationException e = notFound(domainUID);
+  public DomainResource getDomainResource(@PathParam("domainUID") String domainUid) {
+    LOGGER.entering(href(), domainUid);
+    if (!getBackend().isDomainUid(domainUid)) {
+      WebApplicationException e = notFound(domainUid);
       LOGGER.throwing(e);
       throw e;
     }
-    DomainResource result = new DomainResource(this, domainUID);
+    DomainResource result = new DomainResource(this, domainUid);
     LOGGER.exiting(result);
     return result;
   }

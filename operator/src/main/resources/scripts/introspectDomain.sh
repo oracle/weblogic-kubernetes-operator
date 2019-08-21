@@ -28,9 +28,10 @@
 #
 # Prerequisites:
 #
-#    - Optionally set WL_HOME - default is /u01/oracle/wlserver.
-#
-#    - Optionally set MW_HOME - default is /u01/oracle.
+#    - Optionally set
+#        ORACLE_HOME = Oracle Install Home - defaults via utils.sh/exportInstallHomes
+#        MW_HOME     = MiddleWare Install Home - defaults to ${ORACLE_HOME}
+#        WL_HOME     = WebLogic Install Home - defaults to ${ORACLE_HOME}/wlserver
 #
 #    - Transitively requires other env vars for startNodeManager.sh, wlst.sh,
 #      and introspectDomain.py (see these scripts to find out what else needs to be set).
@@ -40,13 +41,12 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 # setup tracing
 
-source ${SCRIPTPATH}/traceUtils.sh
-[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exit 1 
+source ${SCRIPTPATH}/utils.sh
+[ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1 
 
 trace "Introspecting the domain"
 
-trace "Current environment:"
-env
+env | tracePipe "Current environment:"
 
 #
 # Define helper fn to create a folder
@@ -61,15 +61,16 @@ function createFolder {
 }
 
 # set defaults
+# set ORACLE_HOME/WL_HOME/MW_HOME to defaults if needed
 
-export WL_HOME=${WL_HOME:-/u01/oracle/wlserver}
-export MW_HOME=${MW_HOME:-/u01/oracle}
+exportInstallHomes
 
 # check if prereq env-vars, files, and directories exist
 
 checkEnv DOMAIN_UID \
          NAMESPACE \
          DOMAIN_HOME \
+         ORACLE_HOME \
          JAVA_HOME \
          NODEMGR_HOME \
          WL_HOME \
@@ -79,11 +80,11 @@ checkEnv DOMAIN_UID \
 for script_file in "${SCRIPTPATH}/wlst.sh" \
                    "${SCRIPTPATH}/startNodeManager.sh"  \
                    "${SCRIPTPATH}/introspectDomain.py"; do
-  [ ! -f "$script_file" ] && trace "Error: missing file '${script_file}'." && exit 1 
+  [ ! -f "$script_file" ] && trace SEVERE "Missing file '${script_file}'." && exit 1 
 done 
 
-for dir_var in DOMAIN_HOME JAVA_HOME WL_HOME MW_HOME; do
-  [ ! -d "${!dir_var}" ] && trace "Error: missing ${dir_var} directory '${!dir_var}'." && exit 1
+for dir_var in DOMAIN_HOME JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
+  [ ! -d "${!dir_var}" ] && trace SEVERE "Missing ${dir_var} directory '${!dir_var}'." && exit 1
 done
 
 trace "DATA_HOME=${DATA_HOME}"
@@ -101,6 +102,11 @@ fi
 
 exportEffectiveDomainHome || exit 1
 
+# check if we're using a supported WebLogic version
+# (the check  will log a message if it fails)
+
+checkWebLogicVersion || exit 1
+
 # start node manager
 
 trace "Starting node manager"
@@ -110,7 +116,6 @@ ${SCRIPTPATH}/startNodeManager.sh || exit 1
 # run instrospector wlst script
 
 trace "Running introspector WLST script ${SCRIPTPATH}/introspectDomain.py"
-
 
 ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
 

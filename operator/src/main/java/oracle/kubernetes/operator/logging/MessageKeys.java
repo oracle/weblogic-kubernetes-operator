@@ -9,8 +9,6 @@ package oracle.kubernetes.operator.logging;
  * the code more readable.
  */
 public class MessageKeys {
-  private MessageKeys() {}
-
   public static final String OPERATOR_STARTED = "WLSKO-0000";
   public static final String CREATING_API_CLIENT = "WLSKO-0001";
   public static final String K8S_MASTER_URL = "WLSKO-0002";
@@ -155,4 +153,9 @@ public class MessageKeys {
   public static final String EXTERNAL_CHANNEL_SERVICE_REPLACED = "WLSKO-0151";
   public static final String EXTERNAL_CHANNEL_SERVICE_EXISTS = "WLSKO-0152";
   public static final String WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT = "WLSKO-0153";
+  public static final String JOB_DEADLINE_EXCEEDED_MESSAGE = "WLSKO-0154";
+  public static final String JOB_LOG_PARSE_FAILURE = "WLSKO-0155";
+
+  private MessageKeys() {
+  }
 }

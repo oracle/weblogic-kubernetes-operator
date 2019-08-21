@@ -1,17 +1,43 @@
-// Copyright 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static java.net.HttpURLConnection.HTTP_OK;
-import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
-import static java.util.Collections.emptyMap;
-import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
+import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonPatch;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -35,28 +61,6 @@ import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import java.io.StringReader;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonPatch;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -69,14 +73,18 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
+import static java.util.Collections.emptyMap;
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 
 @SuppressWarnings("WeakerAccess")
 public class KubernetesTestSupport extends FiberTestSupport {
-  private Map<String, DataRepository<?>> repositories = new HashMap<>();
-  private Map<Class<?>, String> dataTypes = new HashMap<>();
-  private Failure failure;
-  private long resourceVersion;
-
   public static final String CONFIG_MAP = "ConfigMap";
   public static final String CUSTOM_RESOURCE_DEFINITION = "CRD";
   public static final String DOMAIN = "Domain";
@@ -89,17 +97,21 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String SERVICE = "Service";
   public static final String SUBJECT_ACCESS_REVIEW = "SubjectAccessReview";
   public static final String TOKEN_REVIEW = "TokenReview";
+  private Map<String, DataRepository<?>> repositories = new HashMap<>();
+  private Map<Class<?>, String> dataTypes = new HashMap<>();
+  private Failure failure;
+  private long resourceVersion;
 
   /**
    * Installs a factory into CallBuilder to use canned responses.
    *
    * @return a memento which can be used to restore the production factory
    */
-  public Memento install() throws NoSuchFieldException {
+  public Memento install() {
     support(CUSTOM_RESOURCE_DEFINITION, V1beta1CustomResourceDefinition.class);
     support(SUBJECT_ACCESS_REVIEW, V1SubjectAccessReview.class);
     support(TOKEN_REVIEW, V1TokenReview.class);
-    support(PV, V1PersistentVolume.class, this::createPVList);
+    support(PV, V1PersistentVolume.class, this::createPvList);
 
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
     supportNamespaced(DOMAIN, Domain.class, this::createDomainList);
@@ -107,7 +119,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     supportNamespaced(JOB, V1Job.class, this::createJobList);
     supportNamespaced(POD, V1Pod.class, this::createPodList);
     supportNamespaced(PODLOG, String.class);
-    supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPVCList);
+    supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPvcList);
     supportNamespaced(SERVICE, V1Service.class, this::createServiceList);
 
     return new KubernetesTestSupportMemento();
@@ -125,11 +137,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     return new V1EventList().metadata(createListMeta()).items(items);
   }
 
-  private V1PersistentVolumeList createPVList(List<V1PersistentVolume> items) {
+  private V1PersistentVolumeList createPvList(List<V1PersistentVolume> items) {
     return new V1PersistentVolumeList().metadata(createListMeta()).items(items);
   }
 
-  private V1PersistentVolumeClaimList createPVCList(List<V1PersistentVolumeClaim> items) {
+  private V1PersistentVolumeClaimList createPvcList(List<V1PersistentVolumeClaim> items) {
     return new V1PersistentVolumeClaimList().metadata(createListMeta()).items(items);
   }
 
@@ -161,6 +173,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     repositories.put(resourceName, new DataRepository<>(resourceClass, toList));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private <T> void supportNamespaced(String resourceName, Class<T> resourceClass) {
     dataTypes.put(resourceClass, resourceName);
     repositories.put(resourceName, new NamespacedDataRepository<>(resourceClass, null));
@@ -239,9 +252,98 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
   */
 
+  @SuppressWarnings({"unchecked", "unused"})
+  private enum Operation {
+    create {
+      @Override
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.createResource(dataRepository);
+      }
+
+      @Override
+      public String getName(RequestParams requestParams) {
+        return KubernetesUtils.getResourceName(requestParams.body);
+      }
+    },
+    delete {
+      @Override
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.deleteResource(dataRepository);
+      }
+    },
+    read {
+      @Override
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.readResource(dataRepository);
+      }
+    },
+    replace {
+      @Override
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.replaceResource(dataRepository);
+      }
+    },
+    list {
+      @Override
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.listResources(dataRepository);
+      }
+    },
+    patch {
+      @Override
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.patchResource(dataRepository);
+      }
+    },
+    deleteCollection {
+      @Override
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.deleteCollection(dataRepository);
+      }
+    };
+
+    abstract Object execute(CallContext callContext, DataRepository dataRepository);
+
+    public String getName(RequestParams requestParams) {
+      return requestParams.name;
+    }
+  }
+
+  static class Failure {
+    private String resourceType;
+    private String name;
+    private String namespace;
+    private int httpStatus;
+
+    public Failure(String resourceType, String name, String namespace, int httpStatus) {
+      this.resourceType = resourceType;
+      this.name = name;
+      this.namespace = namespace;
+      this.httpStatus = httpStatus;
+    }
+
+    public boolean matches(String resourceType, RequestParams requestParams, Operation operation) {
+      return this.resourceType.equals(resourceType)
+          && Objects.equals(name, operation.getName(requestParams))
+          && Objects.equals(namespace, requestParams.namespace);
+    }
+
+    public HttpErrorException getException() {
+      return new HttpErrorException(httpStatus);
+    }
+  }
+
+  static class HttpErrorException extends RuntimeException {
+    private int status;
+
+    public HttpErrorException(int status) {
+      this.status = status;
+    }
+  }
+
   private class KubernetesTestSupportMemento implements Memento {
 
-    public KubernetesTestSupportMemento() throws NoSuchFieldException {
+    public KubernetesTestSupportMemento() {
       CallBuilder.setStepFactory(new AsyncRequestStepFactoryImpl());
       CallBuilder.setCallDispatcher(new CallDispatcherImpl());
     }
@@ -290,7 +392,29 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
   }
 
+  static class DateTimeSerializer implements JsonDeserializer<DateTime>, JsonSerializer<DateTime> {
+    private static final DateTimeFormatter DATE_FORMAT = ISODateTimeFormat.dateTime();
+
+    @Override
+    public DateTime deserialize(
+        final JsonElement je, final Type type, final JsonDeserializationContext jdc)
+        throws JsonParseException {
+      return new DateTime(Long.parseLong(je.getAsJsonObject().get("iMillis").getAsString()));
+    }
+
+    @Override
+    public JsonElement serialize(
+        final DateTime src, final Type typeOfSrc, final JsonSerializationContext context) {
+      String retVal = src == null ? "" : DATE_FORMAT.print(src);
+      return new JsonPrimitive(retVal);
+    }
+  }
+
   private class DataRepository<T> {
+    private final String path = "\\w+(?:.\\w+)*";
+    private final String op = "=|==|!=";
+    private final String value = ".*";
+    private final Pattern fieldPat = Pattern.compile("(" + path + ")(" + op + ")(" + value + ")");
     private Map<String, T> data = new HashMap<>();
     private Class<?> resourceType;
     private Function<List<T>, Object> listFactory;
@@ -346,6 +470,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
           .collect(Collectors.toList());
     }
 
+    List<T> getResources() {
+      return new ArrayList<>(data.values());
+    }
+
     private Predicate<Object> withLabels(String[] labelSelectors) {
       return o -> labelSelectors == null || hasLabels(getMetadata(o), labelSelectors);
     }
@@ -372,56 +500,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return Arrays.stream(fieldSelector.split(",")).allMatch(f -> hasField(o, f));
     }
 
-    private final String path = "\\w+(?:.\\w+)*";
-    private final String op = "=|==|!=";
-    private final String value = ".*";
-    private final Pattern fieldPat = Pattern.compile("(" + path + ")(" + op + ")(" + value + ")");
-
     private boolean hasField(Object object, String fieldSpec) {
       Matcher fieldMatcher = fieldPat.matcher(fieldSpec);
       if (!fieldMatcher.find()) return false;
 
       return new FieldMatcher(fieldSpec).matches(object);
-    }
-
-    class FieldMatcher {
-      private String path;
-      private String op;
-      private String value;
-
-      FieldMatcher(String fieldSpec) {
-        Matcher fieldMatcher = fieldPat.matcher(fieldSpec);
-        if (fieldMatcher.find()) {
-          path = fieldMatcher.group(1);
-          op = fieldMatcher.group(2);
-          value = fieldMatcher.group(3);
-        }
-      }
-
-      boolean matches(Object object) {
-        String fieldValue = getFieldValue(object);
-        boolean matches = fieldValue.equals(value);
-        if (op.equals("!=")) return !matches;
-        else return matches;
-      }
-
-      private String getFieldValue(Object object) {
-        String[] split = path.split("\\.");
-        Object result = object;
-        for (String link : split) result = result == null ? null : getSubField(result, link);
-        return result == null ? "" : result.toString();
-      }
-
-      private Object getSubField(Object object, String fieldName) {
-        try {
-          Class<?> aClass = object.getClass();
-          Field field = aClass.getDeclaredField(fieldName);
-          field.setAccessible(true);
-          return field.get(object);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-          return "";
-        }
-      }
     }
 
     T replaceResource(String name, T resource) {
@@ -467,7 +550,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     @SuppressWarnings("unchecked")
     T fromJsonStructure(JsonStructure jsonStructure) {
-      return (T) new Gson().fromJson(jsonStructure.toString(), resourceType);
+      final GsonBuilder builder =
+          new GsonBuilder().registerTypeAdapter(DateTime.class, new DateTimeSerializer());
+      return (T) builder.create().fromJson(jsonStructure.toString(), resourceType);
     }
 
     JsonStructure toJsonStructure(T src) {
@@ -501,10 +586,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
       getMetadata(resource).setName(name);
     }
 
-    List<T> getResources() {
-      return new ArrayList<>(data.values());
-    }
-
     @SuppressWarnings("unchecked")
     public void addCreateAction(Consumer<?> consumer) {
       onCreateActions.add((Consumer<T>) consumer);
@@ -513,6 +594,46 @@ public class KubernetesTestSupport extends FiberTestSupport {
     @SuppressWarnings("unchecked")
     public void addUpdateAction(Consumer<?> consumer) {
       onUpdateActions.add((Consumer<T>) consumer);
+    }
+
+    class FieldMatcher {
+      private String path;
+      private String op;
+      private String value;
+
+      FieldMatcher(String fieldSpec) {
+        Matcher fieldMatcher = fieldPat.matcher(fieldSpec);
+        if (fieldMatcher.find()) {
+          path = fieldMatcher.group(1);
+          op = fieldMatcher.group(2);
+          value = fieldMatcher.group(3);
+        }
+      }
+
+      boolean matches(Object object) {
+        String fieldValue = getFieldValue(object);
+        boolean matches = fieldValue.equals(value);
+        if (op.equals("!=")) return !matches;
+        else return matches;
+      }
+
+      private String getFieldValue(Object object) {
+        String[] split = path.split("\\.");
+        Object result = object;
+        for (String link : split) result = result == null ? null : getSubField(result, link);
+        return result == null ? "" : result.toString();
+      }
+
+      private Object getSubField(Object object, String fieldName) {
+        try {
+          Class<?> aaClass = object.getClass();
+          Field field = aaClass.getDeclaredField(fieldName);
+          field.setAccessible(true);
+          return field.get(object);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+          return "";
+        }
+      }
     }
   }
 
@@ -575,69 +696,12 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
   }
 
-  @SuppressWarnings({"unchecked", "unused"})
-  private enum Operation {
-    create {
-      @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
-        return callContext.createResource(dataRepository);
-      }
-
-      @Override
-      public String getName(RequestParams requestParams) {
-        return KubernetesUtils.getResourceName(requestParams.body);
-      }
-    },
-    delete {
-      @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
-        return callContext.deleteResource(dataRepository);
-      }
-    },
-    read {
-      @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
-        return callContext.readResource(dataRepository);
-      }
-    },
-    replace {
-      @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
-        return callContext.replaceResource(dataRepository);
-      }
-    },
-    list {
-      @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
-        return callContext.listResources(dataRepository);
-      }
-    },
-    patch {
-      @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
-        return callContext.patchResource(dataRepository);
-      }
-    },
-    deleteCollection {
-      @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
-        return callContext.deleteCollection(dataRepository);
-      }
-    };
-
-    abstract Object execute(CallContext callContext, DataRepository dataRepository);
-
-    public String getName(RequestParams requestParams) {
-      return requestParams.name;
-    }
-  }
-
   private class CallContext {
     private final RequestParams requestParams;
-    private String resourceType;
-    private Operation operation;
     private final String fieldSelector;
     private final String[] labelSelector;
+    private String resourceType;
+    private Operation operation;
 
     CallContext(RequestParams requestParams) {
       this(requestParams, null, null);
@@ -763,41 +827,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
   }
 
-  static class Failure {
-    private String resourceType;
-    private String name;
-    private String namespace;
-    private int httpStatus;
-
-    public Failure(String resourceType, String name, String namespace, int httpStatus) {
-      this.resourceType = resourceType;
-      this.name = name;
-      this.namespace = namespace;
-      this.httpStatus = httpStatus;
-    }
-
-    public boolean matches(String resourceType, RequestParams requestParams, Operation operation) {
-      return this.resourceType.equals(resourceType)
-          && Objects.equals(name, operation.getName(requestParams))
-          && Objects.equals(namespace, requestParams.namespace);
-    }
-
-    public HttpErrorException getException() {
-      return new HttpErrorException(httpStatus);
-    }
-  }
-
   class NotFoundException extends RuntimeException {
     public NotFoundException(String resourceType, String name, String namespace) {
       super(String.format("No %s named %s found in namespace %s", resourceType, name, namespace));
-    }
-  }
-
-  static class HttpErrorException extends RuntimeException {
-    private int status;
-
-    public HttpErrorException(int status) {
-      this.status = status;
     }
   }
 }

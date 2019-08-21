@@ -1,34 +1,34 @@
 # !/bin/sh
 
-# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-# 
+#
 # Description:
 # ------------
 #
 # This helper utility parses $1 into multiple files.
-# 
+#
 # It looks for marker lines ">>> some_path" and ">>> EOF" in $1 to delimit
 # files, and then copies delimited files to directory $2 with file name
-# "`basename some_path`".  
+# "`basename some_path`".
 #
 # It ignores lines that aren't delimited.  E.g. it ignores all
 # lines up to the first ">>> some_path", lines between ">>> EOF"
 # and ">>> some_other_path", etc.
 #
-# If a ">>> EOF" is missing, then the next ">>> some_path" line is 
+# If a ">>> EOF" is missing, then the next ">>> some_path" line is
 # assumed to mark the end of the current file.
 #
 # Usage:
 # ------
-# 
+#
 # ./util_fsplit.sh input_file_name output_dir
 #
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SOURCEPATH="`echo $SCRIPTPATH | sed 's/weblogic-kubernetes-operator.*/weblogic-kubernetes-operator/'`"
-traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils.sh
+traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/utils.sh
 source ${traceFile}
 [ $? -ne 0 ] && echo "Error: missing file ${traceFile}" && exit 1
 

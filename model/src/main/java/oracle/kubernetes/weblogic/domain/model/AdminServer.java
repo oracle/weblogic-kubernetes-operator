@@ -7,16 +7,17 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("AdminServer represents the operator configuration for the admin server.")
+@Description("AdminServer represents the operator configuration for the Administration Server.")
 public class AdminServer extends Server {
 
   @Description(
-      "Configures which of the admin server's WebLogic admin channels should be exposed outside"
+      "Configures which of the Administration Server's WebLogic admin channels should be exposed outside"
           + " the Kubernetes cluster via a node port service.")
   private AdminService adminService;
 

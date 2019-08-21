@@ -4,10 +4,6 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1SecretReference;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -15,6 +11,11 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1SecretReference;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -65,7 +66,7 @@ public class Domain {
   @SerializedName("spec")
   @Expose
   @Valid
-  @Description("The specification of the domain. Required")
+  @Description("The specification of the domain. Required.")
   @Nonnull
   private DomainSpec spec = new DomainSpec();
 
@@ -78,6 +79,21 @@ public class Domain {
   @Valid
   @Description("The current status of the domain. Updated by the operator.")
   private DomainStatus status;
+
+  @SuppressWarnings({"rawtypes"})
+  static List sortOrNull(List list) {
+    return sortOrNull(list, null);
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  static List sortOrNull(List list, Comparator c) {
+    if (list != null) {
+      Object[] a = list.toArray(new Object[0]);
+      Arrays.sort(a, c);
+      return Arrays.asList(a);
+    }
+    return null;
+  }
 
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
@@ -295,6 +311,16 @@ public class Domain {
    * DomainStatus represents information about the status of a domain. Status may trail the actual
    * state of a system.
    *
+   * @param status Status
+   */
+  public void setStatus(DomainStatus status) {
+    this.status = status;
+  }
+
+  /**
+   * DomainStatus represents information about the status of a domain. Status may trail the actual
+   * state of a system.
+   *
    * @return Status
    */
   public DomainStatus getOrCreateStatus() {
@@ -302,16 +328,6 @@ public class Domain {
       status = new DomainStatus();
     }
     return status;
-  }
-
-  /**
-   * DomainStatus represents information about the status of a domain. Status may trail the actual
-   * state of a system.
-   *
-   * @param status Status
-   */
-  public void setStatus(DomainStatus status) {
-    this.status = status;
   }
 
   /**
@@ -328,13 +344,13 @@ public class Domain {
    *
    * @return domain UID
    */
-  public String getDomainUID() {
-    return Optional.ofNullable(spec.getDomainUID()).orElse(getMetadata().getName());
+  public String getDomainUid() {
+    return Optional.ofNullable(spec.getDomainUid()).orElse(getMetadata().getName());
   }
 
   public String getLogHome() {
     return Optional.ofNullable(spec.getLogHome())
-        .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUID()));
+        .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUid()));
   }
 
   public boolean getLogHomeEnabled() {
@@ -353,6 +369,14 @@ public class Domain {
     return spec.isDomainHomeInImage();
   }
 
+  public boolean istioEnabled() {
+    return spec.istioEnabled();
+  }
+
+  public int getIstioReadinessPort() {
+    return spec.getIstioReadinessPort();
+  }
+
   /**
    * Returns the domain home.
    *
@@ -367,7 +391,7 @@ public class Domain {
     if (spec.isDomainHomeInImage()) {
       return "/u01/oracle/user_projects/domains";
     }
-    return "/shared/domains/" + getDomainUID();
+    return "/shared/domains/" + getDomainUid();
   }
 
   public boolean isShuttingDown() {
@@ -439,20 +463,5 @@ public class Domain {
         .append(spec, rhs.spec)
         .append(status, rhs.status)
         .isEquals();
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  static List sortOrNull(List list) {
-    return sortOrNull(list, null);
-  }
-
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  static List sortOrNull(List list, Comparator c) {
-    if (list != null) {
-      Object[] a = list.toArray(new Object[0]);
-      Arrays.sort(a, c);
-      return Arrays.asList(a);
-    }
-    return null;
   }
 }

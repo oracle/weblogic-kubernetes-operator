@@ -4,9 +4,10 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import javax.validation.constraints.NotNull;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import javax.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -16,6 +17,12 @@ import org.joda.time.DateTime;
 
 /** DomainCondition contains details for the current condition of this domain. */
 public class DomainCondition implements Comparable<DomainCondition> {
+
+  @Description(
+      "The type of the condition. Valid types are Progressing, "
+          + "Available, and Failed. Required.")
+  @NotNull
+  private final DomainConditionType type;
 
   @Description("Last time we probed the condition.")
   @SerializedName("lastProbeTime")
@@ -37,17 +44,11 @@ public class DomainCondition implements Comparable<DomainCondition> {
   @Expose
   private String reason;
 
-  @Description("Status is the status of the condition. Can be True, False, Unknown. Required")
+  @Description("Status is the status of the condition. Can be True, False, Unknown. Required.")
   @SerializedName("status")
   @Expose
   @NotNull
   private String status;
-
-  @Description(
-      "The type of the condition. Valid types are Progressing, "
-          + "Available, and Failed. Required")
-  @NotNull
-  private final DomainConditionType type;
 
   public DomainCondition(DomainConditionType conditionType) {
     lastTransitionTime = SystemClock.now();
@@ -135,7 +136,7 @@ public class DomainCondition implements Comparable<DomainCondition> {
   }
 
   /**
-   * Status is the status of the condition. Can be True, False, Unknown. (Required)
+   * Status is the status of the condition. Can be True, False, Unknown. Required.
    *
    * @return status
    */
@@ -144,7 +145,7 @@ public class DomainCondition implements Comparable<DomainCondition> {
   }
 
   /**
-   * Status is the status of the condition. Can be True, False, Unknown. (Required)
+   * Status is the status of the condition. Can be True, False, Unknown. Required.
    *
    * @param status status
    * @return this
@@ -157,7 +158,7 @@ public class DomainCondition implements Comparable<DomainCondition> {
 
   /**
    * Type is the type of the condition. Currently, valid types are Progressing, Available, and
-   * Failure. (Required)
+   * Failure. Required.
    *
    * @return type
    */

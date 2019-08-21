@@ -33,6 +33,11 @@ public class TestMain implements Main {
     return includeDeprecated;
   }
 
+  @Override
+  public void setIncludeDeprecated(boolean includeDeprecated) {
+    this.includeDeprecated = includeDeprecated;
+  }
+
   URL[] getClasspath() {
     return classpath;
   }
@@ -73,8 +78,18 @@ public class TestMain implements Main {
     return kubernetesVersion;
   }
 
+  @Override
+  public void setKubernetesVersion(String kubernetesVersion) {
+    this.kubernetesVersion = kubernetesVersion;
+  }
+
   boolean isIncludeAdditionalProperties() {
     return includeAdditionalProperties;
+  }
+
+  @Override
+  public void setIncludeAdditionalProperties(boolean includeAdditionalProperties) {
+    this.includeAdditionalProperties = includeAdditionalProperties;
   }
 
   boolean isSupportObjectReferences() {
@@ -87,23 +102,8 @@ public class TestMain implements Main {
   }
 
   @Override
-  public void setKubernetesVersion(String kubernetesVersion) {
-    this.kubernetesVersion = kubernetesVersion;
-  }
-
-  @Override
-  public void defineSchemaUrlAndContents(URL schemaURL, URL cacheUrl) {
-    schemas.put(schemaURL, cacheUrl);
-  }
-
-  @Override
-  public void setIncludeDeprecated(boolean includeDeprecated) {
-    this.includeDeprecated = includeDeprecated;
-  }
-
-  @Override
-  public void setIncludeAdditionalProperties(boolean includeAdditionalProperties) {
-    this.includeAdditionalProperties = includeAdditionalProperties;
+  public void defineSchemaUrlAndContents(URL schemaUrl, URL cacheUrl) {
+    schemas.put(schemaUrl, cacheUrl);
   }
 
   @Override

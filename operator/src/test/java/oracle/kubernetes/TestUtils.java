@@ -4,10 +4,6 @@
 
 package oracle.kubernetes;
 
-import static com.meterware.simplestub.Stub.createStub;
-
-import ch.qos.logback.classic.LoggerContext;
-import com.meterware.simplestub.Memento;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,8 +14,13 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+
+import ch.qos.logback.classic.LoggerContext;
+import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.slf4j.LoggerFactory;
+
+import static com.meterware.simplestub.Stub.createStub;
 
 public class TestUtils {
   /**
@@ -58,7 +59,41 @@ public class TestUtils {
         : list.get(0);
   }
 
+  /**
+   * Removes the console handlers from the specified logger, in order to silence them during a test.
+   *
+   * @param logger a logger to silence
+   * @return a collection of the removed handlers
+   */
+  public static List<Handler> removeConsoleHandlers(Logger logger) {
+    List<Handler> savedHandlers = new ArrayList<>();
+    for (Handler handler : logger.getHandlers()) {
+      if (handler instanceof ConsoleHandler) {
+        savedHandlers.add(handler);
+      }
+    }
+    for (Handler handler : savedHandlers) logger.removeHandler(handler);
+    return savedHandlers;
+  }
+
+  /**
+   * Restores the silenced logger handlers.
+   *
+   * @param logger a logger to restore
+   * @param savedHandlers the handlers to restore
+   */
+  public static void restoreConsoleHandlers(Logger logger, List<Handler> savedHandlers) {
+    for (Handler handler : savedHandlers) {
+      logger.addHandler(handler);
+    }
+  }
+
+  public static Memento silenceJsonPathLogger() {
+    return new JsonPathLoggerMemento();
+  }
+
   abstract static class TestLogHandler extends Handler {
+    private static final List<String> ALL_MESSAGES = new ArrayList<>();
     private Throwable throwable;
     private List<Throwable> ignoredExceptions = new ArrayList<>();
     private List<Class<? extends Throwable>> ignoredClasses = new ArrayList<>();
@@ -69,7 +104,11 @@ public class TestUtils {
     public void publish(LogRecord record) {
       if (record.getThrown() != null && !shouldIgnore(record.getThrown()))
         throwable = record.getThrown();
-      if (messagesToTrack.contains(record.getMessage())) logRecords.add(record);
+      if (shouldTrack(record)) logRecords.add(record);
+    }
+
+    private boolean shouldTrack(LogRecord record) {
+      return messagesToTrack == ALL_MESSAGES || messagesToTrack.contains(record.getMessage());
     }
 
     boolean shouldIgnore(Throwable thrown) {
@@ -99,6 +138,11 @@ public class TestUtils {
       this.messagesToTrack.addAll(Arrays.asList(messages));
     }
 
+    void collectAllLogMessages(Collection<LogRecord> collection) {
+      this.logRecords = collection;
+      this.messagesToTrack = ALL_MESSAGES;
+    }
+
     void throwUncheckedLogMessages() {
       if (logRecords.isEmpty()) return;
 
@@ -107,35 +151,6 @@ public class TestUtils {
       for (LogRecord record : logRecords) messageKeys.add(formatter.format(record));
 
       throw new AssertionError("Unexpected log messages " + messageKeys);
-    }
-  }
-
-  /**
-   * Removes the console handlers from the specified logger, in order to silence them during a test.
-   *
-   * @param logger a logger to silence
-   * @return a collection of the removed handlers
-   */
-  public static List<Handler> removeConsoleHandlers(Logger logger) {
-    List<Handler> savedHandlers = new ArrayList<>();
-    for (Handler handler : logger.getHandlers()) {
-      if (handler instanceof ConsoleHandler) {
-        savedHandlers.add(handler);
-      }
-    }
-    for (Handler handler : savedHandlers) logger.removeHandler(handler);
-    return savedHandlers;
-  }
-
-  /**
-   * Restores the silenced logger handlers.
-   *
-   * @param logger a logger to restore
-   * @param savedHandlers the handlers to restore
-   */
-  public static void restoreConsoleHandlers(Logger logger, List<Handler> savedHandlers) {
-    for (Handler handler : savedHandlers) {
-      logger.addHandler(handler);
     }
   }
 
@@ -171,6 +186,11 @@ public class TestUtils {
       return this;
     }
 
+    public ConsoleHandlerMemento collectAllLogMessages(Collection<LogRecord> collection) {
+      testHandler.collectAllLogMessages(collection);
+      return this;
+    }
+
     public ConsoleHandlerMemento withLogLevel(Level logLevel) {
       if (!loggerLevelSaved) {
         savedLogLevel = logger.getLevel();
@@ -202,24 +222,20 @@ public class TestUtils {
     }
   }
 
-  public static Memento silenceJsonPathLogger() {
-    return new JsonPathLoggerMemento();
-  }
-
   static class JsonPathLoggerMemento implements Memento {
 
     private final ch.qos.logback.classic.Logger log;
     private final ch.qos.logback.classic.Level originalLogLevel;
-
-    static Memento silenceLogger() {
-      return new JsonPathLoggerMemento();
-    }
 
     private JsonPathLoggerMemento() {
       LoggerContext logContext = (LoggerContext) LoggerFactory.getILoggerFactory();
       log = logContext.getLogger("com.jayway.jsonpath.internal.path.CompiledPath");
       originalLogLevel = log.getLevel();
       log.setLevel(ch.qos.logback.classic.Level.INFO);
+    }
+
+    static Memento silenceLogger() {
+      return new JsonPathLoggerMemento();
     }
 
     @Override

@@ -10,30 +10,19 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Logger;
+
 import oracle.kubernetes.operator.BaseTest;
 
 /** Operator class with all the utility methods for Operator. */
 public class Operator {
 
-  public static enum RESTCertType {
-    /*self-signed certificate and public key stored in a kubernetes tls secret*/
-    SELF_SIGNED,
-    /*Certificate signed by an auto-created CA signed by an auto-created root certificate,
-     * both and stored in a kubernetes tls secret*/
-    CHAIN,
-    /*Certificate and public key, and stored in a kubernetes tls secret*/
-    LEGACY,
-    /* no Rest Support */
-    NONE
-  };
-
   public static final String CREATE_OPERATOR_SCRIPT_MESSAGE =
       "The Oracle WebLogic Server Kubernetes Operator is deployed";
-
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
-
+  private static int maxIterationsOp = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
+  private static int waitTimeOp = BaseTest.getWaitTimePod();
+  private static RestCertType restCertType = RestCertType.SELF_SIGNED;
   private Map<String, Object> operatorMap;
-
   // default values as in create-weblogic-operator-inputs.yaml,
   // if the property is not defined here, it takes the property and its value from
   // create-weblogic-operator-inputs.yaml
@@ -41,21 +30,16 @@ public class Operator {
   private boolean externalRestEnabled = false;
   private int externalRestHttpsPort = 31001;
   private String userProjectsDir = "";
-
   private String generatedInputYamlFile;
-
-  private static int maxIterationsOp = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
-  private static int waitTimeOp = BaseTest.getWaitTimePod();
-  private static RESTCertType restCertType = RESTCertType.SELF_SIGNED;
 
   /**
    * Takes operator input properties which needs to be customized and generates a operator input
    * yaml file.
    *
-   * @param inputYaml
-   * @throws Exception
+   * @param inputYaml input
+   * @throws Exception exception
    */
-  public Operator(String inputYaml, RESTCertType restCertType) throws Exception {
+  public Operator(String inputYaml, RestCertType restCertType) throws Exception {
     this.restCertType = restCertType;
     initialize(inputYaml);
     generateInputYaml();
@@ -66,53 +50,55 @@ public class Operator {
    * Takes operator input properties which needs to be customized and generates a operator input
    * yaml file.
    *
-   * @param inputYaml
-   * @throws Exception
+   * @param inputYaml input
+   * @throws Exception exception
    */
   public Operator(String inputYaml) throws Exception {
     initialize(inputYaml);
     generateInputYaml();
     callHelmInstall();
   }
+
   /**
    * Takes operator input properties which needs to be customized and generates a operator input
    * yaml file, with option to create operator namespace, serviceaccount, domain namespace.
    *
-   * @param inputMap
-   * @param opNS
-   * @param opSA
-   * @param targetdomainNS
-   * @param restCertType
-   * @throws Exception
+   * @param inputMap input
+   * @param opNS opNS
+   * @param opSA opSA
+   * @param targetdomainNS target
+   * @param restCertType cert
+   * @throws Exception exception
    */
   public Operator(
       Map<String, Object> inputMap,
       boolean opNS,
       boolean opSA,
       boolean targetdomainNS,
-      RESTCertType restCertType)
+      RestCertType restCertType)
       throws Exception {
     this.restCertType = restCertType;
     initialize(inputMap, opNS, opSA, targetdomainNS);
     generateInputYaml();
   }
+
   /**
    * Takes operator input properties from a map which needs to be customized and generates a
    * operator input yaml file.
    *
-   * @param inputMap
-   * @throws Exception
+   * @param inputMap input
+   * @throws Exception exception
    */
-  public Operator(Map<String, Object> inputMap, RESTCertType restCertType) throws Exception {
+  public Operator(Map<String, Object> inputMap, RestCertType restCertType) throws Exception {
     this.restCertType = restCertType;
     initialize(inputMap, true, true, true);
     generateInputYaml();
   }
 
   /**
-   * verifies operator pod is created
+   * verifies operator pod is created.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void verifyPodCreated() throws Exception {
     logger.info("Checking if Operator pod is Running");
@@ -121,9 +107,9 @@ public class Operator {
   }
 
   /**
-   * verifies operator pod is deleted
+   * verifies operator pod is deleted.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void verifyPodDeleted() throws Exception {
     logger.info("Checking if Operator pod is deleted");
@@ -132,9 +118,9 @@ public class Operator {
   }
 
   /**
-   * verifies operator pod is ready
+   * verifies operator pod is ready.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void verifyOperatorReady() throws Exception {
     logger.info("Checking if Operator pod is Ready");
@@ -143,10 +129,10 @@ public class Operator {
   }
 
   /**
-   * verifies operator pod is ready
+   * verifies operator pod is ready.
    *
    * @param containerNum - container number in a pod
-   * @throws Exception
+   * @throws Exception exception
    */
   public void verifyOperatorReady(String containerNum) throws Exception {
     logger.info("Checking if Operator pod is Ready");
@@ -155,9 +141,9 @@ public class Operator {
   }
 
   /**
-   * Start operator and makes sure it is deployed and ready
+   * Start operator and makes sure it is deployed and ready.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void create() throws Exception {
     logger.info("Starting Operator");
@@ -195,14 +181,15 @@ public class Operator {
 
     verifyPodCreated();
     verifyOperatorReady();
-    verifyExternalRESTService();
+    verifyExternalRestService();
   }
+
   /**
-   * Verify external REST service is running
+   * Verify external REST service is running.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
-  public void verifyExternalRESTService() throws Exception {
+  public void verifyExternalRestService() throws Exception {
     if (externalRestEnabled) {
       logger.info("Checking REST service is running");
       String restCmd =
@@ -226,9 +213,9 @@ public class Operator {
   }
 
   /**
-   * delete operator helm release
+   * delete operator helm release.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void destroy() throws Exception {
     String cmd = "helm del --purge " + operatorMap.get("releaseName");
@@ -242,12 +229,12 @@ public class Operator {
   }
 
   /**
-   * scale the given cluster in a domain to the given number of servers using Operator REST API
+   * scale the given cluster in a domain to the given number of servers using Operator REST API.
    *
-   * @param domainUid
-   * @param clusterName
-   * @param numOfMS
-   * @throws Exception
+   * @param domainUid uid
+   * @param clusterName cluster
+   * @param numOfMS num
+   * @throws Exception exception
    */
   public void scale(String domainUid, String clusterName, int numOfMS) throws Exception {
     String myJsonObjStr = "{\"managedServerCount\": " + numOfMS + "}";
@@ -271,10 +258,10 @@ public class Operator {
   }
 
   /**
-   * Verify the domain exists using Operator REST Api
+   * Verify the domain exists using Operator REST Api.
    *
-   * @param domainUid
-   * @throws Exception
+   * @param domainUid uid
+   * @throws Exception exception
    */
   public void verifyDomainExists(String domainUid) throws Exception {
     // Operator REST external API URL to scale
@@ -289,11 +276,11 @@ public class Operator {
   }
 
   /**
-   * Verify the Operator's REST Api is working fine over TLS
+   * Verify the Operator's REST Api is working fine over TLS.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
-  public void verifyOperatorExternalRESTEndpoint() throws Exception {
+  public void verifyOperatorExternalRestEndpoint() throws Exception {
     // Operator REST external API URL to scale
     StringBuffer myOpRestApiUrl =
         new StringBuffer("https://")
@@ -313,9 +300,24 @@ public class Operator {
         System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null
             ? System.getenv("IMAGE_PULL_POLICY_OPERATOR")
             : "IfNotPresent";
-    StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append(" && helm install kubernetes/charts/weblogic-operator ");
+    StringBuffer cmd = new StringBuffer("");
+    if (operatorMap.containsKey("operatorGitVersion")
+        && operatorMap.containsKey("operatorGitVersionDir")) {
+      TestUtils.exec(
+          "cd "
+              + operatorMap.get("operatorGitVersionDir")
+              + " && git clone -b "
+              + operatorMap.get("operatorGitVersion")
+              + " https://github.com/oracle/weblogic-kubernetes-operator");
+      cmd.append("cd ");
+      cmd.append(operatorMap.get("operatorGitVersionDir"))
+          .append("/weblogic-kubernetes-operator")
+          .append(" && helm install kubernetes/charts/weblogic-operator ");
+    } else {
+      cmd.append("cd ");
+      cmd.append(BaseTest.getProjectRoot())
+          .append(" && helm install kubernetes/charts/weblogic-operator ");
+    }
     cmd.append(" --name ")
         .append(operatorMap.get("releaseName"))
         .append(" --values ")
@@ -324,7 +326,7 @@ public class Operator {
         .append(operatorNS)
         .append(" --set \"imagePullPolicy=")
         .append(imagePullPolicy)
-        .append("\" --wait --timeout 60");
+        .append("\" --wait --timeout 120");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -406,6 +408,8 @@ public class Operator {
         sb.append(" -n ");
         sb.append(operatorNS);
         break;
+      default:
+        throw new IllegalArgumentException();
     }
     // here we are assuming that if the "host name" starts with a digit, then it is actually
     // an IP address, and so we need to use the "IP" prefix in the SANS.
@@ -519,6 +523,10 @@ public class Operator {
       operatorMap.put(
           "image",
           System.getenv("IMAGE_NAME_OPERATOR") + ":" + System.getenv("IMAGE_TAG_OPERATOR"));
+    } else if (operatorMap.containsKey("operatorImageName")) {
+      operatorMap.put(
+          "image",
+          operatorMap.get("operatorImageName") + ":" + operatorMap.get("operatorImageTag"));
     } else {
       operatorMap.put(
           "image",
@@ -533,9 +541,9 @@ public class Operator {
   }
 
   /**
-   * restart operator pod using replicas
+   * restart operator pod using replicas.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void restartUsingReplicas() throws Exception {
     stopUsingReplicas();
@@ -543,9 +551,9 @@ public class Operator {
   }
 
   /**
-   * stop operator pod by scaling its replicaset to 0
+   * stop operator pod by scaling its replicaset to 0.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void stopUsingReplicas() throws Exception {
     String cmd = "kubectl scale --replicas=0 deployment/weblogic-operator" + " -n " + operatorNS;
@@ -560,9 +568,9 @@ public class Operator {
   }
 
   /**
-   * start operator pod by scaling its replicaset to 1
+   * start operator pod by scaling its replicaset to 1.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void startUsingReplicas() throws Exception {
     String cmd = "kubectl scale --replicas=1 deployment/weblogic-operator" + " -n " + operatorNS;
@@ -583,15 +591,15 @@ public class Operator {
     return userProjectsDir;
   }
 
-  public RESTCertType getRestCertType() {
+  public RestCertType getRestCertType() {
     return restCertType;
   }
 
   /**
-   * Retrieve Operator pod name
+   * Retrieve Operator pod name.
    *
    * @return Operator pod name
-   * @throws Exception
+   * @throws Exception exception
    */
   public String getOperatorPodName() throws Exception {
     String cmd =
@@ -602,5 +610,17 @@ public class Operator {
     ExecResult result = TestUtils.exec(cmd);
 
     return result.stdout();
+  }
+
+  public static enum RestCertType {
+    /*self-signed certificate and public key stored in a kubernetes tls secret*/
+    SELF_SIGNED,
+    /*Certificate signed by an auto-created CA signed by an auto-created root certificate,
+     * both and stored in a kubernetes tls secret*/
+    CHAIN,
+    /*Certificate and public key, and stored in a kubernetes tls secret*/
+    LEGACY,
+    /* no Rest Support */
+    NONE
   }
 }

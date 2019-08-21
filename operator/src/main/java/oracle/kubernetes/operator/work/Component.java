@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -13,18 +13,6 @@ import java.util.Map;
  * @see ComponentRegistry
  */
 public interface Component {
-  /**
-   * Gets the specified SPI.
-   *
-   * <p>This method works as a kind of directory service for SPIs, allowing various components to
-   * define private contract and talk to each other.
-   *
-   * @param <S> SPI type
-   * @param spiType SPI class
-   * @return null if such an SPI is not provided by this object.
-   */
-  <S> S getSPI(Class<S> spiType);
-
   /**
    * Creates a Component that supports the given SPI instances. If an instance in objects is a Class
    * then this class is the key for the next object instance. Otherwise, the instance's own class is
@@ -57,7 +45,7 @@ public interface Component {
 
     return new Component() {
       @Override
-      public <S> S getSPI(Class<S> spiType) {
+      public <S> S getSpi(Class<S> spiType) {
         Object o = comps.get(spiType);
         if (o == null) {
           return null;
@@ -66,4 +54,16 @@ public interface Component {
       }
     };
   }
+
+  /**
+   * Gets the specified SPI.
+   *
+   * <p>This method works as a kind of directory service for SPIs, allowing various components to
+   * define private contract and talk to each other.
+   *
+   * @param <S> SPI type
+   * @param spiType SPI class
+   * @return null if such an SPI is not provided by this object.
+   */
+  <S> S getSpi(Class<S> spiType);
 }

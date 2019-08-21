@@ -22,8 +22,8 @@ The following prerequisites must be handled prior to running the create domain s
 ```
 $ cd ./kubernetes/samples/scripts/create-weblogic-domain-credentials
 $ create-weblogic-credentials.sh
-   -u weblogic
-   -p welcome1
+   -u <username>
+   -p <password>
    -d domain1
    -n default
    -s domain1-weblogic-credentials
