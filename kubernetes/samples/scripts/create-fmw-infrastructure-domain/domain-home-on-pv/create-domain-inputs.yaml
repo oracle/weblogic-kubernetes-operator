@@ -150,5 +150,5 @@ rcuDatabaseURL: database:1521/service
 # The kubernetes secret containing the database credentials
 rcuCredentialsSecret: domain1-rcu-credentials
 
-# FMW Infrastcructure Domain Type. It can be JRF or RestrictedJRF
+# FMW Infrastructure Domain Type. Legal values are JRF or RestrictedJRF
 fmwDomainType: JRF
