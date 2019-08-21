@@ -4,11 +4,16 @@
 
 package oracle.kubernetes.operator;
 
+import static oracle.kubernetes.operator.BaseTest.QUICKTEST;
+import static oracle.kubernetes.operator.BaseTest.logger;
+
+import java.util.logging.Level;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-/** JUnit test class used for testing configuration override use cases. */
+/** JUnit test class used for testing configuration override use cases for Domain In Image. */
 public class ItSitConfigDomainInImage extends SitConfig {
 
   /**
@@ -38,7 +43,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
 
   /**
    * This test covers custom configuration override use cases for config.xml for administration
-   * server.
+   * server for domain in image WLS servers.
    *
    * <p>The test checks the overridden config.xml attributes connect-timeout, max-message-size,
    * restart-max, JMXCore and ServerLifeCycle debug flags, the T3Channel public address. The
@@ -49,11 +54,16 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainInImage() throws Exception {
-    testCustomSitConfigOverridesForDomain();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testCustomSitConfigOverridesForDomain(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
-   * This test covers custom configuration override use cases for config.xml for managed server.
+   * This test covers custom configuration override use cases for config.xml for managed server for
+   * domain in image WLS servers
    *
    * <p>The test checks the overridden config.xml server template attribute max-message-size. The
    * overridden values are verified against the ServerConfig MBean tree. It does not verifies
@@ -63,7 +73,11 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainMSInImage() throws Exception {
-    testCustomSitConfigOverridesForDomainMS();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testCustomSitConfigOverridesForDomainMS(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -82,7 +96,11 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJdbcInImage() throws Exception {
-    testCustomSitConfigOverridesForJdbc();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testCustomSitConfigOverridesForJdbc(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -97,7 +115,11 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJmsInImage() throws Exception {
-    testCustomSitConfigOverridesForJms();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testCustomSitConfigOverridesForJms(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -114,6 +136,10 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForWldfInImage() throws Exception {
-    testCustomSitConfigOverridesForWldf();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testCustomSitConfigOverridesForWldf(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 }
