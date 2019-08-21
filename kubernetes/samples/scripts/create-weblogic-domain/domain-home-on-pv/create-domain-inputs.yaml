@@ -135,10 +135,10 @@ createDomainScriptName: create-domain-job.sh
 # so that the Kubernetes pod can use the scripts and supporting files to create a domain home.
 createDomainFilesDir: wlst
 
-# experimental
+# Istio service mesh support is experimental.
 # istioEnabled specifies whether or not it is deployed under Istio.
 istioEnabled: false
 
-# experimental
-# istioReadinessPort specifies the WebLogic port for readiness probe which is used under Istio.
+# Istio service mesh support is experimental.
+# istioReadinessPort specifies the WebLogic NAP port for use by the readiness probe
 istioReadinessPort: 8888
