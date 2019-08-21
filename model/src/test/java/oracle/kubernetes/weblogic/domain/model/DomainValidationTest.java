@@ -29,7 +29,15 @@ public class DomainValidationTest {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
 
-    assertThat(domain.getValidationFailures(), contains(stringContainsInOrder("server", "ms1")));
+    assertThat(domain.getValidationFailures(), contains(stringContainsInOrder("managedServers", "ms1")));
+  }
+
+  @Test
+  public void whenManagerServerSpecsHaveDns1123DuplicateNames_reportError() {
+    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("Server-1"));
+    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("server_1"));
+
+    assertThat(domain.getValidationFailures(), contains(stringContainsInOrder("managedServers", "server-1")));
   }
 
   @Test
@@ -45,7 +53,15 @@ public class DomainValidationTest {
     domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster1"));
     domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster1"));
 
-    assertThat(domain.getValidationFailures(), contains(stringContainsInOrder("cluster", "cluster1")));
+    assertThat(domain.getValidationFailures(), contains(stringContainsInOrder("clusters", "cluster1")));
+  }
+
+  @Test
+  public void whenClusterSpecsHaveDns1123DuplicateNames_reportError() {
+    domain.getSpec().getClusters().add(new Cluster().withClusterName("Cluster-1"));
+    domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster_1"));
+
+    assertThat(domain.getValidationFailures(), contains(stringContainsInOrder("clusters", "cluster-1")));
   }
 
   @Test
@@ -53,6 +69,13 @@ public class DomainValidationTest {
     configureDomain(domain).withLogHomeEnabled(false);
 
     assertThat(domain.getValidationFailures(), empty());
+  }
+
+  @Test
+  public void whenVolumeMountHasNonValidPath_reportError() {
+    configureDomain(domain).withAdditionalVolumeMount("sharedlogs", "shared/logs");
+
+    assertThat(domain.getValidationFailures(), contains(stringContainsInOrder("shared/logs", "sharedlogs")));
   }
 
   @Test
