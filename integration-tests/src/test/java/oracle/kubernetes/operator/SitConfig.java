@@ -493,35 +493,11 @@ public class SitConfig extends BaseTest {
     // stop all running wls pods
     int clusterReplicas =
         TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
-    String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";    
+    String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
     Thread.sleep(60000);
     domain.verifyServerPodsDeleted(clusterReplicas);
-
-    if (!oldSecret.equals(newSecret)) {
-      String content =
-          new String(Files.readAllBytes(Paths.get(domainYaml)), StandardCharsets.UTF_8);
-      content = content.replaceAll(oldSecret, newSecret);
-      Files.write(
-          Paths.get(domainYaml),
-          content.getBytes(StandardCharsets.UTF_8),
-          StandardOpenOption.TRUNCATE_EXISTING);
-
-      // delete the old secret and add new secret to domain.yaml
-      TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-" + oldSecret, true);
-      String cmd =
-          "kubectl -n "
-              + domain.getDomainNs()
-              + " create secret generic "
-              + domain.getDomainUid()
-              + "-"
-              + newSecret
-              + " --from-literal=hostname="
-              + TestUtils.getHostName()
-              + " --from-literal=dbusername=root"
-              + " --from-literal=dbpassword=root123";
-      TestUtils.exec(cmd, true);
-    }
+    TestUtils.exec("kubectl get all --all-namespaces", true);
 
     // recreate the configmap with new overrride files
     String cmd =
@@ -535,9 +511,34 @@ public class SitConfig extends BaseTest {
     cmd = "kubectl describe cm -n " + domain.getDomainNs() + " customsitconfigdomain-sitconfigcm";
     TestUtils.exec(cmd, true);
 
-    // apply the new domain.yaml
-    TestUtils.exec("kubectl apply -f " + domainYaml, true);
+    // now modify the domain.yaml if the secret name is changed
+    if (!oldSecret.equals(newSecret)) {
+      String content =
+          new String(Files.readAllBytes(Paths.get(domainYaml)), StandardCharsets.UTF_8);
+      content = content.replaceAll(oldSecret, newSecret);
+      Files.write(
+          Paths.get(domainYaml),
+          content.getBytes(StandardCharsets.UTF_8),
+          StandardOpenOption.TRUNCATE_EXISTING);
+      logger.log(Level.INFO, content);
 
+      // delete the old secret and add new secret to domain.yaml
+      TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-" + oldSecret, true);
+      cmd =
+          "kubectl -n "
+              + domain.getDomainNs()
+              + " create secret generic "
+              + domain.getDomainUid()
+              + "-"
+              + newSecret
+              + " --from-literal=hostname="
+              + fqdn
+              + " --from-literal=dbusername=root"
+              + " --from-literal=dbpassword=root123";
+      TestUtils.exec(cmd, true);
+      // apply the new domain.yaml
+      TestUtils.exec("kubectl apply -f " + domainYaml, true);
+    }
     // start the pods so that introspector can run and replace files with new secret if changed and
     // with new config override files
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
