@@ -177,6 +177,27 @@ function validateWeblogicImagePullPolicy {
 }
 
 #
+# Function to validate the fmwDomainType
+#
+function validateFmwDomainType {
+  if [ ! -z ${fmwDomainType} ]; then
+    case ${fmwDomainType} in
+      "JRF")
+      ;;
+      "RestrictedJRF")
+      ;;
+      *)
+        validationError "Invalid value for fmwDomainType: ${fmwDomainType}. Valid values are JRF or restrictedJRF."
+      ;;
+    esac
+  else
+    # Set the default
+    fmwDomainType="JRF"
+  fi
+  failIfValidationErrors
+}
+
+#
 # Function to validate the weblogic image pull secret name
 #
 function validateWeblogicImagePullSecretName {
@@ -371,6 +392,7 @@ function validateCommonInputs {
   validateServerStartPolicy
   validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
+  validateFmwDomainType
 
   failIfValidationErrors
 }

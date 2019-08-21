@@ -133,6 +133,19 @@ function initialize {
     t3PublicAddress="${K8S_IP}"
   fi
 
+  if [ "${fmwDomainType}" == "JRF" -a "${createDomainFilesDir}" == "wlst" ]; 
+  then
+   rm -rf ${scriptDir}/common/createFMWDomain.py
+   cp -f ${scriptDir}/common/createFMWJRFDomain.py \
+         ${scriptDir}/common/createFMWDomain.py
+  fi
+  if [ "${fmwDomainType}" == "RestrictedJRF" -a "${createDomainFilesDir}" == "wlst" ]; 
+  then
+    rm -rf ${scriptDir}/common/createFMWDomain.py
+    cp -f ${scriptDir}/common/createFMWRestrictedJRFDomain.py \
+         ${scriptDir}/common/createFMWDomain.py
+  fi
+  
 }
 
 # create domain configmap using what is in the createDomainFilesDir
@@ -159,7 +172,7 @@ function createDomainConfigmap {
   echo domainName: $domainName >> ${externalFilesTmpDir}/create-domain-inputs.yaml
 
   if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
-   sh ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir}
+   sh ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir} -t ${fmwDomainType}
   fi
  
   # create the configmap and label it properly
@@ -265,4 +278,3 @@ function printSummary {
 
 # Perform the sequence of steps to create a domain
 createDomain false
-
