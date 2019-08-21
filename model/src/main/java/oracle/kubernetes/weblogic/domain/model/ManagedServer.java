@@ -30,7 +30,7 @@ public class ManagedServer extends Server implements Comparable<ManagedServer> {
     this.serverName = serverName;
   }
 
-  ManagedServer withServerName(@Nonnull String serverName) {
+  public ManagedServer withServerName(@Nonnull String serverName) {
     setServerName(serverName);
     return this;
   }
