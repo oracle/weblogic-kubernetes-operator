@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -196,6 +197,14 @@ public class SitConfig extends BaseTest {
       } else {
         Files.write(path, content.getBytes(charset));
       }
+      display(dstDir);
+    }
+  }
+
+  private static void display(String dir) throws IOException {
+    for (File file : new File(dir).listFiles()) {
+      logger.log(Level.INFO, file.getAbsolutePath());
+      logger.log(Level.INFO, new String(Files.readAllBytes(file.toPath())));
     }
   }
 
@@ -519,6 +528,9 @@ public class SitConfig extends BaseTest {
             + "-sitconfigcm --from-file="
             + configOverrideDir
             + " -o yaml --dry-run | kubectl replace -f -";
+    TestUtils.exec(cmd, true);
+
+    cmd = "kubectl describe cm -n " + domain.getDomainNs() + " customsitconfigdomain-sitconfigcm";
     TestUtils.exec(cmd, true);
 
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
