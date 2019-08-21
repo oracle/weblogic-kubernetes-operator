@@ -285,7 +285,7 @@ public class DomainProcessorTest {
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
-    assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("server", "ms1"));
+    assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("managedServers", "ms1"));
   }
 
   private String getStatusReason(Domain updatedDomain) {

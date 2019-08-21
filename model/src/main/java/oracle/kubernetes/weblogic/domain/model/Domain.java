@@ -480,41 +480,82 @@ public class Domain {
   }
 
   class Validator {
+    static final String DUPLICATE_SERVER_NAME_FOUND
+          = "More than one item under spec.managedServers in the domain resource has DNS-1123 name '%s'";
+    static final String DUPLICATE_CLUSTER_NAME_FOUND
+          = "More than one item under spec.clusters in the domain resource has DNS-1123 name '%s'";
+    static final String LOG_HOME_PATH_NOT_MOUNTED
+          = "No volume mount contains path for log home '%s', %s in the domain resource";
+    static final String BAD_VOLUME_MOUNT_PATH
+          = "The mount path '%s', in entry '%s' of domain resource additionalVolumeMounts, is not valid";
+    
     private List<String> failures = new ArrayList<>();
     private Set<String> clusterNames = new HashSet<>();
     private Set<String> serverNames = new HashSet<>();
 
     List<String> getValidationFailures() {
       addDuplicateNames();
+      addInvalidMountPaths();
       addUnmappedLogHome();
 
       return failures;
     }
 
     private void addDuplicateNames() {
-      getSpec().getManagedServers().stream().map(ManagedServer::getServerName).forEach(this::checkDuplicateServerName);
-      getSpec().getClusters().stream().map(Cluster::getClusterName).forEach(this::checkDuplicateClusterName);
+      getSpec().getManagedServers()
+            .stream()
+            .map(ManagedServer::getServerName)
+            .map(this::toDns1123LegalName)
+            .forEach(this::checkDuplicateServerName);
+      getSpec().getClusters()
+            .stream()
+            .map(Cluster::getClusterName)
+            .map(this::toDns1123LegalName)
+            .forEach(this::checkDuplicateClusterName);
+    }
+
+    /**
+     * Converts value to nearest DNS-1123 legal name, which can be used as a Kubernetes identifier.
+     *
+     * @param value Input value
+     * @return nearest DNS-1123 legal name
+     */
+    String toDns1123LegalName(String value) {
+      return value.toLowerCase().replace('_', '-');
     }
 
     private void checkDuplicateServerName(String s) {
       if (serverNames.contains(s))
-        failures.add(String.format("More than one server is named '%s'", s));
+        failures.add(String.format(DUPLICATE_SERVER_NAME_FOUND, s));
       else
         serverNames.add(s);
     }
 
     private void checkDuplicateClusterName(String s) {
       if (clusterNames.contains(s))
-        failures.add(String.format("More than one cluster is named '%s'", s));
+        failures.add(String.format(DUPLICATE_CLUSTER_NAME_FOUND, s));
       else
         clusterNames.add(s);
+    }
+
+    private void addInvalidMountPaths() {
+      getSpec().getAdditionalVolumeMounts().forEach(this::checkValidMountPath);
+    }
+
+    private void checkValidMountPath(V1VolumeMount mount) {
+      if (!new File(mount.getMountPath()).isAbsolute())
+        failures.add(String.format(BAD_VOLUME_MOUNT_PATH, mount.getMountPath(), mount.getName()));
     }
 
     private void addUnmappedLogHome() {
       if (!isLogHomeEnabled()) return;
 
       if (getSpec().getAdditionalVolumeMounts().stream().map(V1VolumeMount::getMountPath).noneMatch(this::mapsLogHome))
-        failures.add("No volume mount contains path for log home");
+        failures.add(String.format(LOG_HOME_PATH_NOT_MOUNTED, getLogHome(), getLogHomeSource()));
+    }
+
+    private String getLogHomeSource() {
+      return getSpec().getLogHome() == null ? "implicit" : "specified";
     }
 
     private boolean mapsLogHome(String mountPath) {
