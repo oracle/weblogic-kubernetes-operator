@@ -415,7 +415,36 @@ public class ItElasticLogging extends BaseTest {
       logger.info("Executing cmd " + getJars.toString());
       ExecResult result = TestUtils.exec(getJars.toString());
       logger.info("Result: " + result.stdout());
-    } 
+    }
+    
+    int i = 0;
+    File wlsLoggingExpFile = new File(loggingExpArchiveLoc + "/" + wlsLoggingExpJar);
+    File snakeyamlFile = new File(loggingExpArchiveLoc + "/" + snakeyamlJar);
+    
+    // Make sure downloading completed
+    while (i < BaseTest.getMaxIterationsPod()) {
+      if(wlsLoggingExpFile.exists() && snakeyamlFile.exists()) {
+        break;
+      }
+      
+      logger.info(
+          "Downloading wls logging exporter jar files not done ["
+              + i
+              + "/"
+              + BaseTest.getMaxIterationsPod()
+              + "], sleeping "
+              + BaseTest.getWaitTimePod()
+              + " seconds more");
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
+    }
+    
+    Assume.assumeTrue("Failed to download <" + wlsLoggingExpFile + ">", wlsLoggingExpFile.exists());
+    Assume.assumeTrue("Failed to download <" + snakeyamlFile + ">", snakeyamlFile.exists());
+    File[] jarFiles = loggingJatReposDir.listFiles();
+    for (File jarFile : jarFiles) {
+      logger.info("Downloaded jar file : " + jarFile.getName());
+    }
   }
   
   private void copyResourceFilesToAllPods() throws Exception  {
