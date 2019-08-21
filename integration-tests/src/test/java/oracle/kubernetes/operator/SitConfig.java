@@ -1,9 +1,9 @@
 // Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -19,7 +19,6 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.Assert;
-import org.junit.Assume;
 
 /** JUnit test class used for testing configuration override use cases. */
 public class SitConfig extends BaseTest {
@@ -199,14 +198,6 @@ public class SitConfig extends BaseTest {
         Files.write(path, content.getBytes(charset));
       }
     }
-    display(dstDir);
-  }
-
-  private static void display(String dir) throws IOException {
-    for (File file : new File(dir).listFiles()) {
-      logger.log(Level.INFO, file.getAbsolutePath());
-      logger.log(Level.INFO, new String(Files.readAllBytes(file.toPath())));
-    }
   }
 
   /**
@@ -235,12 +226,10 @@ public class SitConfig extends BaseTest {
    * overridden values are verified against the ServerConfig MBean tree. It does not verifies
    * whether the overridden values are applied to the runtime.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  protected void testCustomSitConfigOverridesForDomain() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testCustomSitConfigOverridesForDomain(String testMethod) throws Exception {
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -253,7 +242,6 @@ public class SitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -263,12 +251,10 @@ public class SitConfig extends BaseTest {
    * overridden values are verified against the ServerConfig MBean tree. It does not verifies
    * whether the overridden values are applied to the runtime.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  protected void testCustomSitConfigOverridesForDomainMS() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testCustomSitConfigOverridesForDomainMS(String testMethod) throws Exception {
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -281,7 +267,6 @@ public class SitConfig extends BaseTest {
                 + testMethod
                 + " managed-server1'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -296,12 +281,10 @@ public class SitConfig extends BaseTest {
    * whether the overridden values are applied to the runtime except the JDBC URL which is verified
    * at runtime by making a connection to the MySql database and executing a DDL statement.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  protected void testCustomSitConfigOverridesForJdbc() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testCustomSitConfigOverridesForJdbc(String testMethod) throws Exception {
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -316,7 +299,6 @@ public class SitConfig extends BaseTest {
                 + JDBC_URL
                 + "'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -327,12 +309,10 @@ public class SitConfig extends BaseTest {
    * <p>The overridden values are verified against the ServerConfig MBean tree. It does not verifies
    * whether the overridden values are applied to the runtime.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  protected void testCustomSitConfigOverridesForJms() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testCustomSitConfigOverridesForJms(String testMethod) throws Exception {
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -345,7 +325,6 @@ public class SitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -358,12 +337,10 @@ public class SitConfig extends BaseTest {
    * <p>The overridden values are verified against the ServerConfig MBean tree. It does not verifies
    * whether the overridden values are applied to the runtime.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  protected void testCustomSitConfigOverridesForWldf() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testCustomSitConfigOverridesForWldf(String testMethod) throws Exception {
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -376,7 +353,6 @@ public class SitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -384,12 +360,10 @@ public class SitConfig extends BaseTest {
    * existing config.xml entries to add startup and shutdown classes verifies those are overridden
    * when domain is restarted.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when assertions fail.
    */
-  protected void testConfigOverrideAfterDomainStartup() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testConfigOverrideAfterDomainStartup(String testMethod) throws Exception {
     // recreate the map with new situational config files
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
     String dstDir = configOverrideDir;
@@ -410,7 +384,6 @@ public class SitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -418,12 +391,10 @@ public class SitConfig extends BaseTest {
    * creates a datasource , recreates the K8S configmap with updated JDBC descriptor and verifies
    * the new overridden values with restart of the WLS pods
    *
+   * @param testMethod - Name of the test
    * @throws Exception when assertions fail.
    */
-  protected void testOverrideJdbcResourceAfterDomainStart() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testOverrideJdbcResourceAfterDomainStart(String testMethod) throws Exception {
     createJdbcResource();
     // recreate the map with new situational config files
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
@@ -445,19 +416,16 @@ public class SitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
    * This test covers the overriding of JDBC system resource with new kubernetes secret name for
    * dbusername and dbpassword.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when assertions fail.
    */
-  protected void testOverrideJdbcResourceWithNewSecret() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testOverrideJdbcResourceWithNewSecret(String testMethod) throws Exception {
     // recreate the map with new situational config files
     String[] files = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
     try {
@@ -554,9 +522,6 @@ public class SitConfig extends BaseTest {
             + " -o yaml --dry-run | kubectl replace -f -";
     TestUtils.exec(cmd, true);
 
-    cmd = "kubectl describe cm -n " + domain.getDomainNs() + " customsitconfigdomain-sitconfigcm";
-    TestUtils.exec(cmd, true);
-
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
     domain.verifyDomainCreated();
@@ -578,7 +543,6 @@ public class SitConfig extends BaseTest {
         "runSitConfigTests.sh",
         ADMINPODNAME,
         domain.getDomainNs());
-    TestUtils.exec("kubectl get all --all-namespaces", true);
   }
 
   /**
