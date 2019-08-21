@@ -32,7 +32,6 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public abstract class JobStepContext extends StepContextBase {
-  static final long DEFAULT_ACTIVE_DEADLINE_SECONDS = 120L;
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
@@ -175,8 +174,8 @@ public abstract class JobStepContext extends StepContextBase {
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
 
-  private long getActiveDeadlineSeconds() {
-    return DEFAULT_ACTIVE_DEADLINE_SECONDS
+  private long getActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
+    return podTuning.introspectorJobActiveDeadlineSeconds
           + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * info.getRetryCount());
   }
 
@@ -185,11 +184,11 @@ public abstract class JobStepContext extends StepContextBase {
           "Creating job "
                 + getJobName()
                 + " with activeDeadlineSeconds = "
-                + getActiveDeadlineSeconds());
+                + getActiveDeadlineSeconds(tuningParameters.getPodTuning()));
 
     return new V1JobSpec()
           .backoffLimit(0)
-          .activeDeadlineSeconds(getActiveDeadlineSeconds())
+          .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
           .template(createPodTemplateSpec(tuningParameters));
   }
 
@@ -213,7 +212,7 @@ public abstract class JobStepContext extends StepContextBase {
   private V1PodSpec createPodSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec =
           new V1PodSpec()
-                .activeDeadlineSeconds(getActiveDeadlineSeconds())
+                .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
                 .restartPolicy("Never")
                 .addContainersItem(createContainer(tuningParameters))
                 .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
