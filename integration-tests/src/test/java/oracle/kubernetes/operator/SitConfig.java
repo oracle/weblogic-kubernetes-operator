@@ -493,8 +493,9 @@ public class SitConfig extends BaseTest {
     // stop all running wls pods
     int clusterReplicas =
         TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
-    String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";
+    String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";    
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
+    Thread.sleep(60000);
     domain.verifyServerPodsDeleted(clusterReplicas);
 
     if (!oldSecret.equals(newSecret)) {
