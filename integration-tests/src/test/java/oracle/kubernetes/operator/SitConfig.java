@@ -493,11 +493,6 @@ public class SitConfig extends BaseTest {
     // stop all running wls pods
     int clusterReplicas =
         TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
-    String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";
-    TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
-    Thread.sleep(60000);
-    domain.verifyServerPodsDeleted(clusterReplicas);
-    TestUtils.exec("kubectl get all --all-namespaces", true);
 
     // recreate the configmap with new overrride files
     String cmd =
@@ -539,8 +534,12 @@ public class SitConfig extends BaseTest {
       // apply the new domain.yaml
       TestUtils.exec("kubectl apply -f " + domainYaml, true);
     }
-    // start the pods so that introspector can run and replace files with new secret if changed and
-    // with new config override files
+    // restart the pods so that introspector can run and replace files with new secret if changed
+    // and with new config override files
+    String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";
+    TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
+    domain.verifyServerPodsDeleted(clusterReplicas);
+    TestUtils.exec("kubectl get all --all-namespaces", true);
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
     domain.verifyDomainCreated();
