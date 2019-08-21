@@ -21,6 +21,7 @@ public abstract class TuningParametersStub implements TuningParameters {
   static final int LIVENESS_INITIAL_DELAY = 4;
   static final int LIVENESS_PERIOD = 6;
   static final int LIVENESS_TIMEOUT = 5;
+  static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 180L;
   static Map<String, String> namedParameters;
 
   public static Memento install() throws NoSuchFieldException {
@@ -37,7 +38,8 @@ public abstract class TuningParametersStub implements TuningParameters {
         READINESS_PERIOD,
         LIVENESS_INITIAL_DELAY,
         LIVENESS_TIMEOUT,
-        LIVENESS_PERIOD);
+        LIVENESS_PERIOD,
+        INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS);
   }
 
   @Override
