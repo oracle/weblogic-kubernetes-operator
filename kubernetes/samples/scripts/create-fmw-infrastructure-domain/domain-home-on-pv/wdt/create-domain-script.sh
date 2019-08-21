@@ -157,6 +157,8 @@ function run_wdt {
     local domain_home_dir=$domain_dir/$domain_uid
   fi 
 
+  local domain_type=`egrep 'fmwDomainType:' $inputs_orig | grep -v '#' | awk '{print $2}'`
+  echo domain_type = $domain_type
   echo domain_home_dir = $domain_home_dir
 
   # Output files and directories.
@@ -193,7 +195,7 @@ function run_wdt {
   # domain_type can be WLS, JRF or RestrictedJRF
   $wdt_createDomain_script \
      -oracle_home $oracle_home \
-     -domain_type JRF \
+     -domain_type ${domain_type} \
      -domain_home $domain_home_dir \
      -model_file $model_final \
      -variable_file $inputs_final > $out_file 2>&1
