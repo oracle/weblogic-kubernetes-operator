@@ -172,7 +172,6 @@ function createDomainConfigmap {
   echo domainName: $domainName >> ${externalFilesTmpDir}/create-domain-inputs.yaml
 
   if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
-   #domain_type=`egrep 'fmwDomainType:' ${domainOutputDir}/create-domain-inputs.yaml | awk '{print $2}'`
    sh ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir} -t ${fmwDomainType}
   fi
  
