@@ -3,11 +3,16 @@
 // http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator;
 
+import static oracle.kubernetes.operator.BaseTest.QUICKTEST;
+import static oracle.kubernetes.operator.BaseTest.logger;
+
+import java.util.logging.Level;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-/** JUnit test class used for testing configuration override use cases. */
+/** JUnit test class used for testing configuration override use cases for domain in pv WLS. */
 public class ItSitConfigDomainInPV extends SitConfig {
 
   /**
@@ -48,7 +53,11 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainInPV() throws Exception {
-    testCustomSitConfigOverridesForDomain();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testCustomSitConfigOverridesForDomain(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -62,7 +71,11 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainMSInPV() throws Exception {
-    testCustomSitConfigOverridesForDomainMS();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testCustomSitConfigOverridesForDomainMS(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -81,7 +94,11 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJdbcInPV() throws Exception {
-    testCustomSitConfigOverridesForJdbc();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testCustomSitConfigOverridesForJdbc(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -96,7 +113,11 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJmsInPV() throws Exception {
-    testCustomSitConfigOverridesForJms();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testCustomSitConfigOverridesForJms(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -113,7 +134,11 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForWldfInPV() throws Exception {
-    testCustomSitConfigOverridesForWldf();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testCustomSitConfigOverridesForWldf(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -125,7 +150,11 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testConfigOverrideAfterDomainStartupInPV() throws Exception {
-    testConfigOverrideAfterDomainStartup();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testConfigOverrideAfterDomainStartup(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -137,7 +166,11 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testOverrideJdbcResourceAfterDomainStartInPV() throws Exception {
-    testOverrideJdbcResourceAfterDomainStart();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testOverrideJdbcResourceAfterDomainStart(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -148,6 +181,10 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testOverrideJdbcResourceWithNewSecretInPV() throws Exception {
-    testOverrideJdbcResourceWithNewSecret();
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    testOverrideJdbcResourceWithNewSecret(testMethod);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 }
