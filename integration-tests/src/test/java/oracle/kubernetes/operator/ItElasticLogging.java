@@ -423,7 +423,7 @@ public class ItElasticLogging extends BaseTest {
     
     // Make sure downloading completed
     while (i < BaseTest.getMaxIterationsPod()) {
-      if(wlsLoggingExpFile.exists() && snakeyamlFile.exists()) {
+      if (wlsLoggingExpFile.exists() && snakeyamlFile.exists()) {
         break;
       }
       

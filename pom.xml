@@ -12,7 +12,6 @@
 
   <modules>
     <module>build-tools</module>
-    <module>model</module>
     <module>operator</module>
     <module>swagger</module>
     <module>integration-tests</module>
