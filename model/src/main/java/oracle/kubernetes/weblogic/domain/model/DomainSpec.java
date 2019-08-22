@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -379,7 +380,13 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   public void setLogHome(String logHome) {
-    this.logHome = logHome;
+    this.logHome = Optional.ofNullable(logHome).map(this::validatePath).orElse(null);
+  }
+
+  private String validatePath(String s) {
+    if (s.isBlank()) return null;
+    if (s.endsWith(File.separator)) return s;
+    return s + File.separator;
   }
 
   /**
@@ -388,7 +395,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    * @return log home enabled
    */
-  boolean getLogHomeEnabled() {
+  boolean isLogHomeEnabled() {
     return Optional.ofNullable(logHomeEnabled).orElse(!isDomainHomeInImage());
   }
 
@@ -510,10 +517,10 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @return istioEnabled
    */
-  boolean istioEnabled() {
+  boolean isIstioEnabled() {
     return Optional.ofNullable(experimental)
-        .map(e -> e.getIstio())
-        .map(i -> i.getEnabled())
+        .map(Experimental::getIstio)
+        .map(Istio::getEnabled)
         .orElse(false);
   }
 
@@ -524,8 +531,8 @@ public class DomainSpec extends BaseConfiguration {
    */
   int getIstioReadinessPort() {
     return Optional.ofNullable(experimental)
-        .map(e -> e.getIstio())
-        .map(i -> i.getReadinessPort())
+        .map(Experimental::getIstio)
+        .map(Istio::getReadinessPort)
         .orElse(8888);
   }
 
