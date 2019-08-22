@@ -25,7 +25,6 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.Test;
 
-import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
@@ -33,6 +32,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_CREATED
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_PATCHED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.contains;

@@ -15,7 +15,6 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
@@ -131,7 +130,7 @@ public abstract class DomainTestBase {
 
     ServerSpec spec = domain.getAdminServerSpec();
 
-    assertThat(spec.getImage(), equalTo(KubernetesConstants.DEFAULT_IMAGE));
+    assertThat(spec.getImage(), equalTo(DEFAULT_IMAGE));
   }
 
   @Test
