@@ -12,8 +12,8 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.models.VersionInfo;
-import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ClientFactoryStub;
+import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.After;
@@ -23,14 +23,14 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.LOG_MSG_TEST;
 import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.VERSION_TEST;
 import static oracle.kubernetes.operator.helpers.VersionCheckTest.VersionMatcher.returnsVersion;
 import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_CHECK;
 import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_CHECK_FAILURE;
 import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_TOO_LOW;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @RunWith(Parameterized.class)
