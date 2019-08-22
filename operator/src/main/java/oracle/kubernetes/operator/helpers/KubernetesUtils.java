@@ -12,7 +12,6 @@ import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.collections.MapUtils;
 import org.joda.time.DateTime;
 

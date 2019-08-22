@@ -470,7 +470,7 @@ public class ItPodsShutdown extends BaseTest {
       updateCrdYamlVerifyShutdown(crd, delayTime);
 
       Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
-      if ((1.5 * terminationDefaultOptionsTime < terminationTime)) {
+      if ((2 * terminationDefaultOptionsTime < terminationTime)) {
         logger.info("\"FAILURE: ignored timeout Forced value during shutdown");
         throw new Exception("FAILURE: ignored timeout Forced during shutdown");
       }
