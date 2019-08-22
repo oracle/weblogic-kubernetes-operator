@@ -77,7 +77,8 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
             (int) readTuningParameter("readinessProbePeriodSeconds", 5),
             (int) readTuningParameter("livenessProbeInitialDelaySeconds", 30),
             (int) readTuningParameter("livenessProbeTimeoutSeconds", 5),
-            (int) readTuningParameter("livenessProbePeriodSeconds", 45));
+            (int) readTuningParameter("livenessProbePeriodSeconds", 45),
+            readTuningParameter("introspectorJobActiveDeadlineSeconds", 120));
 
     lock.writeLock().lock();
     try {
