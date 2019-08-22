@@ -245,9 +245,9 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
-   * Return the name of the WLS domain.
+   * Return the name of the admin server.
    *
-   * @return Name of the WLS domain
+   * @return Name of the admin server
    */
   public String getAdminServerName() {
     return this.adminServerName;
