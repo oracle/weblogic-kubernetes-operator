@@ -25,7 +25,7 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.Test;
 
-import static oracle.kubernetes.LogMatcher.containsFine;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;

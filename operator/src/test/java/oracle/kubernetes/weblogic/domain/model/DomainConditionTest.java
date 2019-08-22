@@ -9,11 +9,11 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.utils.SystemClockTestSupport;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static oracle.kubernetes.utils.SystemClockTestSupport.isDuringTest;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
@@ -36,7 +36,7 @@ public class DomainConditionTest {
 
   @Test
   public void whenCreated_conditionHasLastTransitionTime() {
-    assertThat(new DomainCondition(Available).getLastTransitionTime(), isDuringTest());
+    assertThat(new DomainCondition(Available).getLastTransitionTime(), SystemClockTestSupport.isDuringTest());
   }
 
   @Test
