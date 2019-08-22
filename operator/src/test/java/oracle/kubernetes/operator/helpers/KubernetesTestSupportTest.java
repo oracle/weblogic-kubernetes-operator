@@ -26,7 +26,7 @@ import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;

@@ -50,65 +50,65 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public void withDefaultReadinessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period) {
-    ((BaseConfiguration) getDomainSpec()).setReadinessProbe(initialDelay, timeout, period);
+    getDomainSpec().setReadinessProbe(initialDelay, timeout, period);
   }
 
   @Override
   public void withDefaultLivenessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period) {
-    ((BaseConfiguration) getDomainSpec()).setLivenessProbe(initialDelay, timeout, period);
+    getDomainSpec().setLivenessProbe(initialDelay, timeout, period);
   }
 
   @Override
   public DomainConfigurator withDefaultServerStartPolicy(String startPolicy) {
-    ((BaseConfiguration) getDomainSpec()).setServerStartPolicy(startPolicy);
+    getDomainSpec().setServerStartPolicy(startPolicy);
     return this;
   }
 
   @Override
   public DomainConfigurator withServerStartState(String startState) {
-    ((BaseConfiguration) getDomainSpec()).setServerStartState(startState);
+    getDomainSpec().setServerStartState(startState);
     return this;
   }
 
   @Override
   public DomainConfigurator withEnvironmentVariable(String name, String value) {
-    ((BaseConfiguration) getDomainSpec()).addEnvironmentVariable(name, value);
+    getDomainSpec().addEnvironmentVariable(name, value);
     return this;
   }
 
   @Override
   public DomainConfigurator withAdditionalVolume(String name, String path) {
-    ((BaseConfiguration) getDomainSpec()).addAdditionalVolume(name, path);
+    getDomainSpec().addAdditionalVolume(name, path);
     return this;
   }
 
   @Override
   public DomainConfigurator withAdditionalVolumeMount(String name, String path) {
-    ((BaseConfiguration) getDomainSpec()).addAdditionalVolumeMount(name, path);
+    getDomainSpec().addAdditionalVolumeMount(name, path);
     return this;
   }
 
   @Override
   public DomainConfigurator withInitContainer(V1Container initContainer) {
-    ((BaseConfiguration) getDomainSpec()).addInitContainer(initContainer);
+    getDomainSpec().addInitContainer(initContainer);
     return this;
   }
 
   @Override
   public DomainConfigurator withContainer(V1Container container) {
-    ((BaseConfiguration) getDomainSpec()).addContainer(container);
+    getDomainSpec().addContainer(container);
     return this;
   }
 
-  @Override
   /**
-   * Sets the WebLogic configuration overrides config map name for the domain
+   * Sets the WebLogic configuration overrides config map name for the domain.
    *
    * @param configMapName Name of the Kubernetes config map that contains the configuration
    *     overrides
    * @return this object
    */
+  @Override
   public DomainConfigurator withConfigOverrides(String configMapName) {
     getDomainSpec().setConfigOverrides(configMapName);
     return this;
@@ -158,38 +158,38 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   @Override
   public DomainConfigurator withNodeSelector(String labelKey, String labelValue) {
-    ((BaseConfiguration) getDomainSpec()).addNodeSelector(labelKey, labelValue);
+    getDomainSpec().addNodeSelector(labelKey, labelValue);
     return this;
   }
 
   @Override
   public DomainConfigurator withRequestRequirement(String resource, String quantity) {
-    ((BaseConfiguration) getDomainSpec()).addRequestRequirement(resource, quantity);
+    getDomainSpec().addRequestRequirement(resource, quantity);
     return this;
   }
 
   @Override
   public DomainConfigurator withLimitRequirement(String resource, String quantity) {
-    ((BaseConfiguration) getDomainSpec()).addLimitRequirement(resource, quantity);
+    getDomainSpec().addLimitRequirement(resource, quantity);
     return this;
   }
 
   @Override
   public DomainConfigurator withContainerSecurityContext(
       V1SecurityContext containerSecurityContext) {
-    ((BaseConfiguration) getDomainSpec()).setContainerSecurityContext(containerSecurityContext);
+    getDomainSpec().setContainerSecurityContext(containerSecurityContext);
     return this;
   }
 
   @Override
   public DomainConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
-    ((BaseConfiguration) getDomainSpec()).setPodSecurityContext(podSecurityContext);
+    getDomainSpec().setPodSecurityContext(podSecurityContext);
     return this;
   }
 
   @Override
   public DomainConfigurator withRestartVersion(String restartVersion) {
-    ((BaseConfiguration) getDomainSpec()).setRestartVersion(restartVersion);
+    getDomainSpec().setRestartVersion(restartVersion);
     return this;
   }
 

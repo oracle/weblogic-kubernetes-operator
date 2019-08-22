@@ -16,7 +16,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceSpec;
 import io.kubernetes.client.util.Watch;
-import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.operator.DomainProcessorDelegate;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.LabelConstants;
