@@ -260,15 +260,8 @@ EOF
   [ ! $? -eq 0 ] && trace SEVERE "Failed to create '${wl_props_file}'." && exit 1
 
   if [ ! "${ADMIN_NAME}" = "${SERVER_NAME}" ]; then
-    admin_protocol="http"
-    if [ "${ADMIN_PORT_SECURE}" = "true" ]; then
-      admin_protocol="https"
-    fi  
-    if [ "${ISTIO_ENABLED}" == "true" ]; then
-      echo "AdminURL=t3\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
-    else
-      echo "AdminURL=$admin_protocol\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
-    fi
+    ADMIN_URL=$(getAdminUrl)
+    echo "AdminURL=$ADMIN_URL" >> ${wl_props_file}
   fi
 fi
 
