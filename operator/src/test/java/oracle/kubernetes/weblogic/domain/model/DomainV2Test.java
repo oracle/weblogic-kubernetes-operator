@@ -77,7 +77,7 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDomainOnPVAndLogHomeDisabled_returnOverride() {
+  public void whenDomainOnPvAndLogHomeDisabled_returnOverride() {
     configureDomain(domain).withDomainHomeInImage(false).withLogHomeEnabled(false);
 
     assertThat(domain.isLogHomeEnabled(), is(false));

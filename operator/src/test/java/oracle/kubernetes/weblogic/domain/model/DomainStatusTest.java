@@ -5,7 +5,6 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.meterware.simplestub.Memento;
@@ -14,7 +13,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static oracle.kubernetes.utils.SystemClockTestSupport.isDuringTest;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
@@ -41,7 +39,7 @@ public class DomainStatusTest {
 
   @Test
   public void whenCreated_statusHasCreationTime() {
-    assertThat(domainStatus.getStartTime(), isDuringTest());
+    assertThat(domainStatus.getStartTime(), SystemClockTestSupport.isDuringTest());
   }
 
   @Test
