@@ -5,6 +5,10 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
+import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.contains;

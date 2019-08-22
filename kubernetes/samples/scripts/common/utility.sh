@@ -406,7 +406,7 @@ function createFiles {
     # extra entries for FMW Infra domains
     sed -i -e "s:%RCU_CREDENTIALS_SECRET_NAME%:${rcuCredentialsSecret}:g" ${createJobOutput}
     sed -i -e "s:%CUSTOM_RCUPREFIX%:${rcuSchemaPrefix}:g" ${createJobOutput}
-    sed -i -e "s:%CUSTOM_CONNECTION_STRING%:${rcuDatabaseURL}|g" ${createJobOutput}
+    sed -i -e "s:%CUSTOM_CONNECTION_STRING%:${rcuDatabaseURL}:g" ${createJobOutput}
     sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
     # entries for Istio
     sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${createJobOutput}
