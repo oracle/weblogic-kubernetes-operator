@@ -12,7 +12,7 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.models.VersionInfo;
-import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -23,8 +23,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.LogMatcher.containsWarning;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.LOG_MSG_TEST;
 import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.VERSION_TEST;
 import static oracle.kubernetes.operator.helpers.VersionCheckTest.VersionMatcher.returnsVersion;

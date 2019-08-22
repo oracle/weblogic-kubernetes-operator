@@ -7,7 +7,7 @@ package oracle.kubernetes.operator.helpers;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
-import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.operator.work.TerminalStep;
 import org.junit.Before;
 import org.junit.Test;

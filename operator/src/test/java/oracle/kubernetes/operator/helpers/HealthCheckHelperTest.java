@@ -18,7 +18,7 @@ import io.kubernetes.client.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
 import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
-import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
@@ -28,7 +28,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import static java.util.Collections.singletonList;
-import static oracle.kubernetes.LogMatcher.containsWarning;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.create;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.delete;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.deletecollection;
