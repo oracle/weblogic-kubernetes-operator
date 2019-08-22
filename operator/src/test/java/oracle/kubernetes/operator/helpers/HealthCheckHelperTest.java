@@ -18,17 +18,16 @@ import io.kubernetes.client.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
 import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
-import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
+import oracle.kubernetes.utils.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import static java.util.Collections.singletonList;
-import static oracle.kubernetes.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.create;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.delete;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.deletecollection;
@@ -41,6 +40,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_UID_UNIQUENE
 import static oracle.kubernetes.operator.logging.MessageKeys.PV_ACCESS_MODE_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID;
 import static oracle.kubernetes.operator.logging.MessageKeys.VERIFY_ACCESS_DENIED;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 
