@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -154,18 +153,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         .getLocalAdminProtocolChannelPort();
   }
 
-  private String getLogHome() {
-    return getDomain().getLogHome();
-  }
-
   private String getEffectiveLogHome() {
-    if (!getDomain().getLogHomeEnabled()) return null;
-    String logHome = getLogHome();
-    if (logHome == null || "".equals(logHome.trim())) {
-      // logHome not specified, use default value
-      return DEFAULT_LOG_HOME + File.separator + getDomainUid();
-    }
-    return logHome;
+    return getDomain().getEffectiveLogHome();
   }
 
   private String getIncludeServerOutInPodLog() {
@@ -633,7 +622,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD);
     try {
-      boolean istioEnabled = getDomain().istioEnabled();
+      boolean istioEnabled = getDomain().isIstioEnabled();
       if (istioEnabled) {
         int istioReadinessPort = getDomain().getIstioReadinessPort();
         readinessProbe =

@@ -42,7 +42,7 @@ public abstract class DomainTestBase {
   private static final String VALUE2 = "value2";
   private static final V1SecretReference SECRET = new V1SecretReference().name("secret");
   private static final String NS = "test-namespace";
-  private static final String DOMAIN_UID = "uid1";
+  protected static final String DOMAIN_UID = "uid1";
   private static final String DOMAIN_V2_SAMPLE_YAML = "model/domain-sample.yaml";
   private static final String IMAGE = "myimage";
   private static final String PULL_SECRET_NAME = "pull-secret";
