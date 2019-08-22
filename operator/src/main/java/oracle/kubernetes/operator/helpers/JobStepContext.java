@@ -84,7 +84,9 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   @Override
   protected Map<String, String> augmentSubVars(Map<String, String> vars) {
-    // HERE: placeholder that needs to be documented
+    // For other introspector job pod content, we use the values that would apply administration server; however,
+    // since we won't know the name of the administation server from the domain configuration until introspection
+    // has run, we will use the hardcoded value "introspector" as the server name.
     vars.put("SERVER_NAME", "introspector");
     return vars;
   }
