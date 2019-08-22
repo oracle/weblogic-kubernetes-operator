@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -19,14 +20,10 @@ import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 /** JUnit test class used for testing configuration override use cases. */
-public class ItSitConfig extends BaseTest {
+public class SitConfig extends BaseTest {
 
   private static final String DOMAINUID = "customsitconfigdomain";
   private static final String ADMINPORT = "30710";
@@ -48,6 +45,8 @@ public class ItSitConfig extends BaseTest {
   private static String mysqlYamlFile = "";
   private static String domainYaml;
   private static String JDBC_RES_SCRIPT;
+  private static final String oldSecret = "test-secrets";
+  private static final String newSecret = "test-secrets-new";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -57,8 +56,8 @@ public class ItSitConfig extends BaseTest {
    * @throws Exception when the initialization, creating directories , copying files and domain
    *     creation fails.
    */
-  @BeforeClass
-  public static void staticPrepare() throws Exception {
+  protected static void staticPrepare(String domainInputYaml, String domainScript)
+      throws Exception {
     // initialize test properties and create the directories
     if (!QUICKTEST) {
       // initialize test properties and create the directories
@@ -89,9 +88,9 @@ public class ItSitConfig extends BaseTest {
         "jms-ClusterJmsSystemResource.xml",
         "version.txt"
       };
-      copySitConfigFiles(files, "test-secrets");
+      copySitConfigFiles(files, oldSecret);
       // create weblogic domain with configOverrides
-      domain = createSitConfigDomain();
+      domain = createSitConfigDomain(domainInputYaml, domainScript);
       Assert.assertNotNull(domain);
       domainYaml =
           BaseTest.getUserProjectsDir()
@@ -121,11 +120,15 @@ public class ItSitConfig extends BaseTest {
    *
    * @throws Exception when domain destruction or MySQL container destruction fails
    */
-  @AfterClass
-  public static void staticUnPrepare() throws Exception {
+  protected static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
       destroySitConfigDomain();
+      if (operator1 != null) {
+        logger.log(Level.INFO, "Destroying operator...");
+        operator1.destroy();
+        operator1 = null;
+      }
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
     }
   }
@@ -138,17 +141,16 @@ public class ItSitConfig extends BaseTest {
    * @return - created domain
    * @throws Exception - if it cannot create the domain
    */
-  private static Domain createSitConfigDomain() throws Exception {
+  private static Domain createSitConfigDomain(String domainInputYaml, String domainScript)
+      throws Exception {
     // load input yaml to map and add configOverrides
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+    Map<String, Object> domainMap = TestUtils.loadYaml(domainInputYaml);
     domainMap.put("configOverrides", "sitconfigcm");
     domainMap.put("configOverridesFile", configOverrideDir);
     domainMap.put("domainUID", DOMAINUID);
     domainMap.put("adminNodePort", new Integer(ADMINPORT));
     domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
-    domainMap.put(
-        "createDomainPyScript",
-        "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
+    domainMap.put("createDomainPyScript", domainScript);
     domainMap.put(
         "javaOptions",
         "-Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true");
@@ -164,6 +166,7 @@ public class ItSitConfig extends BaseTest {
    */
   private static void destroySitConfigDomain() throws Exception {
     if (domain != null) {
+      logger.log(Level.INFO, "Destroying domain...");
       domain.destroy();
     }
   }
@@ -184,13 +187,25 @@ public class ItSitConfig extends BaseTest {
       logger.log(Level.INFO, "Copying {0}", path.toString());
       String content = new String(Files.readAllBytes(path), charset);
       content = content.replaceAll("JDBC_URL", JDBC_URL);
-      content = content.replaceAll("test-secrets", secretName);
+      content = content.replaceAll(oldSecret, secretName);
       if (getWeblogicImageTag().contains(PS3_TAG)) {
         content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
       }
       path = Paths.get(dstDir, file);
       logger.log(Level.INFO, "to {0}", path.toString());
-      Files.write(path, content.getBytes(charset));
+      if (path.toFile().exists()) {
+        Files.write(path, content.getBytes(charset), StandardOpenOption.TRUNCATE_EXISTING);
+      } else {
+        Files.write(path, content.getBytes(charset));
+      }
+      // display(dstDir);
+    }
+  }
+
+  private static void display(String dir) throws IOException {
+    for (File file : new File(dir).listFiles()) {
+      logger.log(Level.INFO, file.getAbsolutePath());
+      logger.log(Level.INFO, new String(Files.readAllBytes(file.toPath())));
     }
   }
 
@@ -220,13 +235,10 @@ public class ItSitConfig extends BaseTest {
    * overridden values are verified against the ServerConfig MBean tree. It does not verifies
    * whether the overridden values are applied to the runtime.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  @Test
-  public void testCustomSitConfigOverridesForDomain() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testCustomSitConfigOverridesForDomain(String testMethod) throws Exception {
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -239,7 +251,6 @@ public class ItSitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -249,13 +260,10 @@ public class ItSitConfig extends BaseTest {
    * overridden values are verified against the ServerConfig MBean tree. It does not verifies
    * whether the overridden values are applied to the runtime.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  @Test
-  public void testCustomSitConfigOverridesForDomainMS() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testCustomSitConfigOverridesForDomainMS(String testMethod) throws Exception {
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -268,7 +276,6 @@ public class ItSitConfig extends BaseTest {
                 + testMethod
                 + " managed-server1'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -283,13 +290,10 @@ public class ItSitConfig extends BaseTest {
    * whether the overridden values are applied to the runtime except the JDBC URL which is verified
    * at runtime by making a connection to the MySql database and executing a DDL statement.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  @Test
-  public void testCustomSitConfigOverridesForJdbc() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testCustomSitConfigOverridesForJdbc(String testMethod) throws Exception {
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -304,7 +308,6 @@ public class ItSitConfig extends BaseTest {
                 + JDBC_URL
                 + "'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -315,13 +318,10 @@ public class ItSitConfig extends BaseTest {
    * <p>The overridden values are verified against the ServerConfig MBean tree. It does not verifies
    * whether the overridden values are applied to the runtime.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  @Test
-  public void testCustomSitConfigOverridesForJms() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testCustomSitConfigOverridesForJms(String testMethod) throws Exception {
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -334,7 +334,6 @@ public class ItSitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -347,13 +346,10 @@ public class ItSitConfig extends BaseTest {
    * <p>The overridden values are verified against the ServerConfig MBean tree. It does not verifies
    * whether the overridden values are applied to the runtime.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  @Test
-  public void testCustomSitConfigOverridesForWldf() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testCustomSitConfigOverridesForWldf(String testMethod) throws Exception {
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -366,7 +362,6 @@ public class ItSitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -374,13 +369,10 @@ public class ItSitConfig extends BaseTest {
    * existing config.xml entries to add startup and shutdown classes verifies those are overridden
    * when domain is restarted.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when assertions fail.
    */
-  @Test
-  public void testConfigOverrideAfterDomainStartup() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testConfigOverrideAfterDomainStartup(String testMethod) throws Exception {
     // recreate the map with new situational config files
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
     String dstDir = configOverrideDir;
@@ -388,7 +380,7 @@ public class ItSitConfig extends BaseTest {
         Paths.get(srcDir, "config_1.xml"),
         Paths.get(dstDir, "config.xml"),
         StandardCopyOption.REPLACE_EXISTING);
-    recreateConfigMapandRestart("test-secrets", "test-secrets");
+    recreateConfigMapandRestart(oldSecret, oldSecret);
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -401,7 +393,6 @@ public class ItSitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -409,13 +400,10 @@ public class ItSitConfig extends BaseTest {
    * creates a datasource , recreates the K8S configmap with updated JDBC descriptor and verifies
    * the new overridden values with restart of the WLS pods
    *
+   * @param testMethod - Name of the test
    * @throws Exception when assertions fail.
    */
-  @Test
-  public void testOverrideJdbcResourceAfterDomainStart() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testOverrideJdbcResourceAfterDomainStart(String testMethod) throws Exception {
     createJdbcResource();
     // recreate the map with new situational config files
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
@@ -424,7 +412,7 @@ public class ItSitConfig extends BaseTest {
         Paths.get(srcDir, "jdbc-JdbcTestDataSource-1.xml"),
         Paths.get(dstDir, "jdbc-JdbcTestDataSource-1.xml"),
         StandardCopyOption.REPLACE_EXISTING);
-    recreateConfigMapandRestart("test-secrets", "test-secrets");
+    recreateConfigMapandRestart(oldSecret, oldSecret);
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -437,26 +425,21 @@ public class ItSitConfig extends BaseTest {
                 + testMethod
                 + "'");
     assertResult(result);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
    * This test covers the overriding of JDBC system resource with new kubernetes secret name for
    * dbusername and dbpassword.
    *
+   * @param testMethod - Name of the test
    * @throws Exception when assertions fail.
    */
-  @Test
-  public void testOverrideJdbcResourceWithNewSecret() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+  protected void testOverrideJdbcResourceWithNewSecret(String testMethod) throws Exception {
     // recreate the map with new situational config files
     String[] files = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
-    String newSecret = "test-secrets-new";
     try {
       copySitConfigFiles(files, newSecret);
-      recreateConfigMapandRestart("test-secrets", newSecret);
+      recreateConfigMapandRestart(oldSecret, newSecret);
       transferTests();
       ExecResult result =
           TestUtils.exec(
@@ -471,7 +454,6 @@ public class ItSitConfig extends BaseTest {
                   + JDBC_URL
                   + "'");
       assertResult(result);
-      logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
     } finally {
       copySitConfigFiles(files, "test-secrets");
       recreateConfigMapandRestart("test-secrets-new", "test-secrets");
@@ -508,6 +490,7 @@ public class ItSitConfig extends BaseTest {
    * @throws Exception when pods restart fail
    */
   private void recreateConfigMapandRestart(String oldSecret, String newSecret) throws Exception {
+    // modify the domain.yaml if the secret name is changed
     if (!oldSecret.equals(newSecret)) {
       String content =
           new String(Files.readAllBytes(Paths.get(domainYaml)), StandardCharsets.UTF_8);
@@ -517,6 +500,7 @@ public class ItSitConfig extends BaseTest {
           content.getBytes(StandardCharsets.UTF_8),
           StandardOpenOption.TRUNCATE_EXISTING);
 
+      // delete the old secret and add new secret to domain.yaml
       TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-" + oldSecret, true);
       String cmd =
           "kubectl -n "
@@ -536,6 +520,8 @@ public class ItSitConfig extends BaseTest {
     int clusterReplicas =
         TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
 
+    // restart the pods so that introspector can run and replace files with new secret if changed
+    // and with new config override files
     String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
     domain.verifyServerPodsDeleted(clusterReplicas);
@@ -546,6 +532,8 @@ public class ItSitConfig extends BaseTest {
             + "-sitconfigcm --from-file="
             + configOverrideDir
             + " -o yaml --dry-run | kubectl replace -f -";
+    TestUtils.exec(cmd, true);
+    cmd = "kubectl describe cm -n " + domain.getDomainNs() + " customsitconfigdomain-sitconfigcm";
     TestUtils.exec(cmd, true);
 
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
