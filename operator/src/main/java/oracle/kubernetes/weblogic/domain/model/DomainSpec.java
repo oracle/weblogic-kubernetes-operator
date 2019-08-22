@@ -28,8 +28,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
-
 /** DomainSpec is a description of a domain. */
 @Description("DomainSpec is a description of a domain.")
 public class DomainSpec extends BaseConfiguration {
@@ -285,7 +283,7 @@ public class DomainSpec extends BaseConfiguration {
   @Nullable
   @Override
   public String getServerStartPolicy() {
-    return Optional.ofNullable(serverStartPolicy).orElse(START_IF_NEEDED);
+    return Optional.ofNullable(serverStartPolicy).orElse(ConfigurationConstants.START_IF_NEEDED);
   }
 
   @Override
