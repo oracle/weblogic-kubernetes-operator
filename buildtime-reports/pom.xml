@@ -54,11 +54,6 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>operator-model</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>weblogic-kubernetes-operator</artifactId>
             <version>${project.version}</version>
         </dependency>
