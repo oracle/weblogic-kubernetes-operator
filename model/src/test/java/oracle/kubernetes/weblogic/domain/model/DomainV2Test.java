@@ -70,6 +70,76 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomainOnPV_logHomeDefaultsToEnabled() {
+    configureDomain(domain).withDomainHomeInImage(false);
+
+    assertThat(domain.isLogHomeEnabled(), is(true));
+  }
+
+  @Test
+  public void whenDomainOnPVAndLogHomeDisabled_returnOverride() {
+    configureDomain(domain).withDomainHomeInImage(false).withLogHomeEnabled(false);
+
+    assertThat(domain.isLogHomeEnabled(), is(false));
+  }
+
+  @Test
+  public void whenDomainInImage_logHomeDefaultsToDisabled() {
+    configureDomain(domain).withDomainHomeInImage(true);
+
+    assertThat(domain.isLogHomeEnabled(), is(false));
+  }
+
+  @Test
+  public void whenDomainInImageAndLogHomeEnabled_returnOverride() {
+    configureDomain(domain).withDomainHomeInImage(true).withLogHomeEnabled(true);
+
+    assertThat(domain.isLogHomeEnabled(), is(true));
+  }
+
+  @Test
+  public void whenLogHomeSet_returnIt() {
+    configureDomain(domain).withLogHome("/my/logs/");
+
+    assertThat(domain.getLogHome(), equalTo("/my/logs/"));
+  }
+
+  @Test
+  public void whenLogHomeSetWithoutTrailingSlash_appendOne() {
+    configureDomain(domain).withLogHome("/my/logs");
+
+    assertThat(domain.getLogHome(), equalTo("/my/logs/"));
+  }
+
+  @Test
+  public void whenLogHomeSetNull_returnDefaultLogHome() {
+    configureDomain(domain).withLogHome(null);
+
+    assertThat(domain.getLogHome(), equalTo("/shared/logs/" + DOMAIN_UID));
+  }
+
+  @Test
+  public void whenLogHomeSetToBlanks_returnDefaultLogHome() {
+    configureDomain(domain).withLogHome("   ");
+
+    assertThat(domain.getLogHome(), equalTo("/shared/logs/" + DOMAIN_UID));
+  }
+
+  @Test
+  public void whenLogHomeDisabled_effectiveLogHomeIsNull() {
+    configureDomain(domain).withLogHomeEnabled(false).withLogHome("/my/logs/");
+
+    assertThat(domain.getEffectiveLogHome(), nullValue());
+  }
+
+  @Test
+  public void whenLogHomeEnabled_effectiveLogHomeEqualsLogHome() {
+    configureDomain(domain).withLogHomeEnabled(true).withLogHome("/my/logs/");
+
+    assertThat(domain.getEffectiveLogHome(), equalTo("/my/logs/"));
+  }
+
+  @Test
   public void whenClusterNotConfiguredAndNoDomainReplicaCount_countIsZero() {
     assertThat(domain.getReplicaCount("nosuchcluster"), equalTo(0));
   }
@@ -1363,30 +1433,30 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenLogHomeSet_useValue() {
-    configureDomain(domain).withLogHome("/custom/logs");
+    configureDomain(domain).withLogHome("/custom/logs/");
 
-    assertThat(domain.getLogHome(), equalTo("/custom/logs"));
+    assertThat(domain.getLogHome(), equalTo("/custom/logs/"));
   }
 
   @Test
   public void whenDomainHomeInImage_logHomeNotEnabled() {
     configureDomain(domain).withDomainHomeInImage(true);
 
-    assertThat(domain.getSpec().getLogHomeEnabled(), is(false));
+    assertThat(domain.getSpec().isLogHomeEnabled(), is(false));
   }
 
   @Test
   public void whenDomainHomeNotInImage_logHomeEnabled() {
     configureDomain(domain).withDomainHomeInImage(false);
 
-    assertThat(domain.getSpec().getLogHomeEnabled(), is(true));
+    assertThat(domain.getSpec().isLogHomeEnabled(), is(true));
   }
 
   @Test
   public void whenLogHomeEnabledSet_useValue() {
     configureDomain(domain).withLogHomeEnabled(true);
 
-    assertThat(domain.getSpec().getLogHomeEnabled(), is(true));
+    assertThat(domain.getSpec().isLogHomeEnabled(), is(true));
   }
 
   @Test
