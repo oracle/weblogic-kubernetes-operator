@@ -4,10 +4,8 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.BaseTest.QUICKTEST;
-import static oracle.kubernetes.operator.BaseTest.logger;
-
 import java.util.logging.Level;
+
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -72,7 +70,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    * @throws Exception when the assertion fails due to unmatched values
    */
   @Test
-  public void testCustomSitConfigOverridesForDomainMSInImage() throws Exception {
+  public void testCustomSitConfigOverridesForDomainMsInImage() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);

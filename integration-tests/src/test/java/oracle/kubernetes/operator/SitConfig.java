@@ -15,6 +15,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.logging.Level;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
@@ -176,7 +177,7 @@ public class SitConfig extends BaseTest {
    *
    * @throws IOException when copying files from source location to staging area fails
    */
-  private static void copySitConfigFiles(String files[], String secretName) throws IOException {
+  private static void copySitConfigFiles(String[] files, String secretName) throws IOException {
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
     String dstDir = configOverrideDir;
 
