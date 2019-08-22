@@ -21,14 +21,14 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
-import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.utils.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 
