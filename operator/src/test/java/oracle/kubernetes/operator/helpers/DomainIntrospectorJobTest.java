@@ -87,6 +87,7 @@ public class DomainIntrospectorJobTest {
         TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, getMessageKeys())
             .withLogLevel(Level.INFO));
+    mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
