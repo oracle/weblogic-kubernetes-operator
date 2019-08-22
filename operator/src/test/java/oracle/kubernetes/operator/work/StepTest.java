@@ -19,9 +19,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
-import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
+import oracle.kubernetes.utils.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
