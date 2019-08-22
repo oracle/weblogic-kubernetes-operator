@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.meterware.simplestub.Memento;
-import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.utils.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
