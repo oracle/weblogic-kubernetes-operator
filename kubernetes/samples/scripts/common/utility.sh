@@ -315,9 +315,9 @@ function createFiles {
       defaultImageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
       baseTag=${domainHomeImageBase#*:}
       defaultImageName=${defaultImageName}:${baseTag:-"latest"}
-      sed -i -e "s|%IMAGE_NAME%|${defaultImageName}|g" ${domainPropertiesOutput}
+      sed -i -e "s:%IMAGE_NAME%|${defaultImageName}:g" ${domainPropertiesOutput}
     else 
-      sed -i -e "s|%IMAGE_NAME%|${image}|g" ${domainPropertiesOutput}
+      sed -i -e "s:%IMAGE_NAME%|${image}:g" ${domainPropertiesOutput}
     fi
   else
 
@@ -376,8 +376,8 @@ function createFiles {
     sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
     # entries for Istio
     sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${createJobOutput}
-    sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}|g" ${createJobOutput}
-    sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}|g" ${createJobOutput}
+    sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
+    sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
     echo Generating ${deleteJobOutput}
@@ -441,9 +441,9 @@ function createFiles {
  
     # now we know which image to use, update the domain yaml file
     if [ -z $image ]; then
-      sed -i -e "s|%WEBLOGIC_IMAGE%|${defaultImageName}|g" ${dcrOutput}
+      sed -i -e "s:%WEBLOGIC_IMAGE%|${defaultImageName}:g" ${dcrOutput}
     else
-      sed -i -e "s|%WEBLOGIC_IMAGE%|${image}|g" ${dcrOutput}
+      sed -i -e "s:%WEBLOGIC_IMAGE%|${image}:g" ${dcrOutput}
     fi
   else
     sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
