@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,7 +31,6 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public abstract class JobStepContext extends StepContextBase {
-  static final long DEFAULT_ACTIVE_DEADLINE_SECONDS = 120L;
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
@@ -114,28 +112,12 @@ public abstract class JobStepContext extends StepContextBase {
     return NODEMGR_HOME;
   }
 
-  protected String getLogHome() {
-    return getDomain().getLogHome();
-  }
-
-  protected boolean isDomainHomeInImage() {
-    return getDomain().isDomainHomeInImage();
-  }
-
-  protected boolean istioEnabled() {
-    return getDomain().istioEnabled();
+  private boolean isIstioEnabled() {
+    return getDomain().isIstioEnabled();
   }
 
   String getEffectiveLogHome() {
-    if (!getDomain().getLogHomeEnabled()) {
-      return null;
-    }
-    String logHome = getLogHome();
-    if (logHome == null || "".equals(logHome.trim())) {
-      // logHome not specified, use default value
-      return DEFAULT_LOG_HOME + File.separator + getDomainUid();
-    }
-    return logHome;
+    return getDomain().getEffectiveLogHome();
   }
 
   String getIncludeServerOutInPodLog() {
@@ -175,8 +157,8 @@ public abstract class JobStepContext extends StepContextBase {
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
 
-  private long getActiveDeadlineSeconds() {
-    return DEFAULT_ACTIVE_DEADLINE_SECONDS
+  private long getActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
+    return podTuning.introspectorJobActiveDeadlineSeconds
           + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * info.getRetryCount());
   }
 
@@ -185,11 +167,11 @@ public abstract class JobStepContext extends StepContextBase {
           "Creating job "
                 + getJobName()
                 + " with activeDeadlineSeconds = "
-                + getActiveDeadlineSeconds());
+                + getActiveDeadlineSeconds(tuningParameters.getPodTuning()));
 
     return new V1JobSpec()
           .backoffLimit(0)
-          .activeDeadlineSeconds(getActiveDeadlineSeconds())
+          .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
           .template(createPodTemplateSpec(tuningParameters));
   }
 
@@ -206,14 +188,14 @@ public abstract class JobStepContext extends StepContextBase {
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(
                 LabelConstants.JOBNAME_LABEL, LegalNames.toJobIntrospectorName(getDomainUid()));
-    if (istioEnabled()) metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
+    if (isIstioEnabled()) metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
     return metadata;
   }
 
   private V1PodSpec createPodSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec =
           new V1PodSpec()
-                .activeDeadlineSeconds(getActiveDeadlineSeconds())
+                .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
                 .restartPolicy("Never")
                 .addContainersItem(createContainer(tuningParameters))
                 .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
