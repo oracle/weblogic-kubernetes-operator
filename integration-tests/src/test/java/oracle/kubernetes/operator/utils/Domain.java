@@ -1817,7 +1817,6 @@ public class Domain {
     StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
     // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
-
       createDomainScriptCmd
           .append(
               "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
