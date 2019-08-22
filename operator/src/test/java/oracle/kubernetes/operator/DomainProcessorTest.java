@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -36,20 +37,26 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainProcessorTest {
@@ -91,6 +98,8 @@ public class DomainProcessorTest {
     mementos.add(UnitTestHash.install());
 
     domainConfigurator = DomainConfiguratorFactory.forDomain(domain);
+    domain.setStatus(new DomainStatus());
+    testSupport.defineResources(domain);
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig());
   }
 
@@ -248,5 +257,47 @@ public class DomainProcessorTest {
   private void assertServerPodAndServicePresent(DomainPresenceInfo info, String serverName) {
     assertThat(serverName + " server service", info.getServerService(serverName), notNullValue());
     assertThat(serverName + " pod", info.getServerPod(serverName), notNullValue());
+  }
+
+  @Test
+  public void whenDomainIsNotValid_dontBringUpServers() {
+    defineDuplicateServerNames();
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.makeRightDomainPresence(info, true, false, false);
+
+    assertServerPodAndServiceNotPresent(info, ADMIN_NAME);
+    for (String serverName : MANAGED_SERVER_NAMES)
+      assertServerPodAndServiceNotPresent(info, serverName);
+  }
+
+  private void assertServerPodAndServiceNotPresent(DomainPresenceInfo info, String serverName) {
+    assertThat(serverName + " server service", info.getServerService(serverName), nullValue());
+    assertThat(serverName + " pod", info.getServerPod(serverName), nullValue());
+  }
+
+  @Test
+  public void whenDomainIsNotValid_updateStatus() {
+    defineDuplicateServerNames();
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.makeRightDomainPresence(info, true, false, false);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
+    assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("managedServers", "ms1"));
+  }
+
+  private String getStatusReason(Domain updatedDomain) {
+    return Optional.ofNullable(updatedDomain).map(Domain::getStatus).map(DomainStatus::getReason).orElse(null);
+  }
+
+  private String getStatusMessage(Domain updatedDomain) {
+    return Optional.ofNullable(updatedDomain).map(Domain::getStatus).map(DomainStatus::getMessage).orElse(null);
+  }
+
+  private void defineDuplicateServerNames() {
+    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
+    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
   }
 }

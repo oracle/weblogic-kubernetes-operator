@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1PodStatus;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.util.Watch;
@@ -31,6 +33,8 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.DomainStatusPatch;
+import oracle.kubernetes.operator.helpers.DomainValidationStep;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -468,6 +472,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       Step strategy =
           new StartPlanStep(
               info, isDeleting ? createDomainDownPlan(info) : createDomainUpPlan(info));
+      if (!isDeleting && dom != null)
+        strategy = new DomainValidationStep(dom, strategy);
 
       runDomainPlan(
           dom,
@@ -781,20 +787,29 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     public void invoke() {
-      Optional.ofNullable(getMatchingContainerStatus(pod, domainUid).getState())
+      Optional.ofNullable(getMatchingContainerStatus())
+            .map(V1ContainerStatus::getState)
             .map(V1ContainerState::getWaiting)
             .ifPresent(waiting -> updateStatus(waiting.getReason(), waiting.getMessage()));
     }
 
     private void updateStatus(String reason, String message) {
-      KubernetesUtils.updateStatus(domain, reason, message);
+      DomainStatusPatch.updateDomainStatus(domain, reason, message);
     }
 
-    private V1ContainerStatus getMatchingContainerStatus(V1Pod pod, String domainUid) {
-      return pod.getStatus().getContainerStatuses().stream()
-            .filter(s -> toJobIntrospectorName(domainUid).equals(s.getName()))
-            .findFirst()
+    private V1ContainerStatus getMatchingContainerStatus() {
+      return Optional.ofNullable(pod.getStatus())
+            .map(V1PodStatus::getContainerStatuses)
+            .flatMap(this::getMatchingContainerStatus)
             .orElse(null);
+    }
+
+    private Optional<V1ContainerStatus> getMatchingContainerStatus(Collection<V1ContainerStatus> statuses) {
+      return statuses.stream().filter(this::hasInstrospectorJobName).findFirst();
+    }
+
+    private boolean hasInstrospectorJobName(V1ContainerStatus s) {
+      return toJobIntrospectorName(domainUid).equals(s.getName());
     }
   }
 }
