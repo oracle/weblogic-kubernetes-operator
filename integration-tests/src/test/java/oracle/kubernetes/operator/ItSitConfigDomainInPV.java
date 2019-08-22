@@ -1,12 +1,11 @@
 // Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.BaseTest.QUICKTEST;
-import static oracle.kubernetes.operator.BaseTest.logger;
-
 import java.util.logging.Level;
+
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -70,7 +69,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    * @throws Exception when the assertion fails due to unmatched values
    */
   @Test
-  public void testCustomSitConfigOverridesForDomainMSInPV() throws Exception {
+  public void testCustomSitConfigOverridesForDomainMsInPV() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
