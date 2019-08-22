@@ -24,6 +24,7 @@ import static oracle.kubernetes.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.JobHelper.INTROSPECTOR_LOG_PREFIX;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -99,7 +100,7 @@ public class IntrospectionLoggingTest {
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
     logRecords.clear();
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo("ErrIntrospector"));
     assertThat(updatedDomain.getStatus().getMessage(), equalTo(SEVERE_PROBLEM_1));
   }
@@ -113,7 +114,7 @@ public class IntrospectionLoggingTest {
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
     logRecords.clear();
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo("ErrIntrospector"));
     assertThat(
         updatedDomain.getStatus().getMessage(),

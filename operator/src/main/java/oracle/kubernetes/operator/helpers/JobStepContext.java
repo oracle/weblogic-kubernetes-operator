@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
@@ -114,28 +113,12 @@ public abstract class JobStepContext extends StepContextBase {
     return NODEMGR_HOME;
   }
 
-  protected String getLogHome() {
-    return getDomain().getLogHome();
-  }
-
-  protected boolean isDomainHomeInImage() {
-    return getDomain().isDomainHomeInImage();
-  }
-
-  protected boolean istioEnabled() {
-    return getDomain().istioEnabled();
+  private boolean isIstioEnabled() {
+    return getDomain().isIstioEnabled();
   }
 
   String getEffectiveLogHome() {
-    if (!getDomain().getLogHomeEnabled()) {
-      return null;
-    }
-    String logHome = getLogHome();
-    if (logHome == null || "".equals(logHome.trim())) {
-      // logHome not specified, use default value
-      return DEFAULT_LOG_HOME + File.separator + getDomainUid();
-    }
-    return logHome;
+    return getDomain().getEffectiveLogHome();
   }
 
   String getIncludeServerOutInPodLog() {
@@ -206,7 +189,7 @@ public abstract class JobStepContext extends StepContextBase {
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(
                 LabelConstants.JOBNAME_LABEL, LegalNames.toJobIntrospectorName(getDomainUid()));
-    if (istioEnabled()) metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
+    if (isIstioEnabled()) metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
     return metadata;
   }
 
