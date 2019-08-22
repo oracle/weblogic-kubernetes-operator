@@ -201,6 +201,7 @@ public interface TuningParameters extends Map<String, String> {
     public final int livenessProbeInitialDelaySeconds;
     public final int livenessProbeTimeoutSeconds;
     public final int livenessProbePeriodSeconds;
+    public final long introspectorJobActiveDeadlineSeconds;
 
     public PodTuning(
         int readinessProbeInitialDelaySeconds,
@@ -208,13 +209,15 @@ public interface TuningParameters extends Map<String, String> {
         int readinessProbePeriodSeconds,
         int livenessProbeInitialDelaySeconds,
         int livenessProbeTimeoutSeconds,
-        int livenessProbePeriodSeconds) {
+        int livenessProbePeriodSeconds,
+        long introspectorJobActiveDeadlineSeconds) {
       this.readinessProbeInitialDelaySeconds = readinessProbeInitialDelaySeconds;
       this.readinessProbeTimeoutSeconds = readinessProbeTimeoutSeconds;
       this.readinessProbePeriodSeconds = readinessProbePeriodSeconds;
       this.livenessProbeInitialDelaySeconds = livenessProbeInitialDelaySeconds;
       this.livenessProbeTimeoutSeconds = livenessProbeTimeoutSeconds;
       this.livenessProbePeriodSeconds = livenessProbePeriodSeconds;
+      this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
     }
 
     @Override

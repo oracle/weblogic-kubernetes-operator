@@ -180,7 +180,7 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
 
 * Maven and latest Git should be in PATH
 * export JAVA_HOME
-* export WEBLOGIC_IMAGE_NAME and WEBLOGIC_IMAGE_TAG if different from container-registry.oracle.com/middleware/weblogic and 12.2.1.3
+* export IMAGE_NAME_WEBLOGIC and IMAGE_TAG_WEBLOGIC if different from container-registry.oracle.com/middleware/weblogic and 12.2.1.3
 * Setup docker access to WebLogic 12c Images 
 
   * Method 1 

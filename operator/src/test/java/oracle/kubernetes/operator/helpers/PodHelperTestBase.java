@@ -481,18 +481,17 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_withLogHomeSpecified_hasLogHomeEnvVariable() {
-    final String myLogHome = "/shared/mylogs";
+    final String myLogHome = "/shared/mylogs/";
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
-    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs");
-    assertThat(getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", myLogHome)));
+    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME", myLogHome));
   }
 
   @Test
   public void whenPodCreated_withoutLogHomeSpecified_hasDefaultLogHomeEnvVariable() {
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome(null);
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID)));
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID));
   }
 
   @Test
