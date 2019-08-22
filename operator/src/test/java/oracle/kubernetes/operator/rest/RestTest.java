@@ -24,7 +24,7 @@ import javax.ws.rs.core.Response;
 
 import com.google.gson.Gson;
 import com.meterware.simplestub.Memento;
-import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
 import org.glassfish.jersey.test.JerseyTest;
