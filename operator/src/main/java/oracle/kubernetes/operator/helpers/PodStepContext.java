@@ -61,7 +61,7 @@ import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 @SuppressWarnings("deprecation")
-public abstract class PodStepContext extends StepContextBase {
+public abstract class PodStepContext extends BasePodStepContext {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -375,14 +375,6 @@ public abstract class PodStepContext extends StepContextBase {
     return withNonHashedElements(AnnotationHelper.withSha256Hash(createPodRecipe()));
   }
 
-  protected Optional<V1Container> getContainer(V1Pod v1Pod) {
-    return v1Pod.getSpec().getContainers().stream().filter(this::isK8sContainer).findFirst();
-  }
-
-  protected boolean isK8sContainer(V1Container c) {
-    return KubernetesConstants.CONTAINER_NAME.equals(c.getName());
-  }
-
   V1Pod withNonHashedElements(V1Pod pod) {
     V1ObjectMeta metadata = pod.getMetadata();
     // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
@@ -395,21 +387,11 @@ public abstract class PodStepContext extends StepContextBase {
 
     updateForStartupMode(pod);
     updateForShutdown(pod);
-    updateForDeepSubstitution(pod);
-
-    return pod;
+    return updateForDeepSubstitution(pod.getSpec(), pod);
   }
 
-  final void updateForDeepSubstitution(V1Pod pod) {
-    getContainer(pod)
-        .ifPresent(
-            c -> {
-              doDeepSubstitution(deepSubVars(c.getEnv()), pod);
-            });
-  }
-
-  final Map<String, String> deepSubVars(List<V1EnvVar> envVars) {
-    Map<String, String> vars = varsToSubVariables(envVars);
+  @Override
+  protected Map<String, String> augmentSubVars(Map<String, String> vars) {
     String clusterName = getClusterName();
     if (clusterName != null) {
       vars.put("CLUSTER_NAME", clusterName);
