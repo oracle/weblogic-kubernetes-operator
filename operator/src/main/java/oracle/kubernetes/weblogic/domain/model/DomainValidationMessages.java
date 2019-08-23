@@ -63,7 +63,7 @@ class DomainValidationMessages {
   }
 
   private static String getBundleString(String key) {
-    return ResourceBundle.getBundle("operator").getString(key);
+    return ResourceBundle.getBundle("Operator").getString(key);
   }
 
   static String reservedVariableNames(String prefix, List<String> reservedNames) {
