@@ -2,7 +2,9 @@
 
 #  This will create a base image with patches for the operator and the april psu
 
-imagetool create --tag model-in-image:12213p2 --user yourid --passwordEnv MYPWD --patches 29135930_12.2.1.3.190416,29016089 
+source $WORKDIR/imagetool/imagetool-*.*.*/bin/setup.sh
+
+imagetool create --tag model-in-image:12213p2 --user yourid --passwordEnv $1 --patches 29135930_12.2.1.3.190416,29016089 
 #--httpProxyUrl proxy --httpsProxyUrl proxy
 
 # This will create a domain in image using wdt

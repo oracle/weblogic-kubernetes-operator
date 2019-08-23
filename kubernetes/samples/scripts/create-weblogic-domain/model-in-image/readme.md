@@ -28,16 +28,16 @@ In a directory ```/home/acmeuser/wdtoverride```, place additional models and var
 
 ```WebLogic Deploy Tool``` allows you to encrypt sensitive information in the model.  If you model is using this feature, you need to create a secret to store the encryption passphrase.  The passphrase will be used for domain creation.  The secret can named anything but it must have a key ```wdtpassword```
 
-```kubectl -n sample-domain1-ns create secret generic simple-domain1-wdt-secret --from-literal=wdtpassword=welcome1```
+```kubectl -n sample-domain1-ns create secret generic sample-domain1-wdt-secret --from-literal=wdtpassword=welcome1```
 
 
 6. Update the domain resource yaml file
 
-If you have addtional models or encryption secret, you can add the following keys to the domain resource yaml file.
+If you have addtional models or encryption secrets, you can add the following keys to the domain resource yaml file.
 
 ```
 wdtConfigMap : wdt-config-map
-wdtConfigMapSecret : simple-domain1-wdt-secret
+wdtConfigMapSecret : sample-domain1-wdt-secret
 ```
 
 ## Naming convention of model files
