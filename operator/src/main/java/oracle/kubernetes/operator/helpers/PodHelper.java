@@ -251,7 +251,7 @@ public class PodHelper {
     @Override
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> vars = createCopy(getServerSpec().getEnvironmentVariables());
-      overrideContainerWeblogicEnvVars(vars);
+      addStartupEnvVars(vars);
       return vars;
     }
 
@@ -407,7 +407,7 @@ public class PodHelper {
       if (envVars != null) {
         vars.addAll(envVars);
       }
-      overrideContainerWeblogicEnvVars(vars);
+      addStartupEnvVars(vars);
       return vars;
     }
   }
