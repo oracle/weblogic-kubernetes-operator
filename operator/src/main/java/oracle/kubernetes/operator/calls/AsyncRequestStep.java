@@ -151,12 +151,12 @@ public class AsyncRequestStep<T> extends Step {
               new BaseApiCallback<T>() {
                 @Override
                 public void onFailure(
-                    ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+                    ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
                   if (didResume.compareAndSet(false, true)) {
                     if (statusCode != CallBuilder.NOT_FOUND) {
                       LOGGER.info(
                           MessageKeys.ASYNC_FAILURE,
-                          e,
+                          ae.getMessage(),
                           statusCode,
                           responseHeaders,
                           requestParams.call,
@@ -165,7 +165,8 @@ public class AsyncRequestStep<T> extends Step {
                           requestParams.body,
                           fieldSelector,
                           labelSelector,
-                          resourceVersion);
+                          resourceVersion,
+                          ae.getResponseBody());
                     }
 
                     helper.recycle(client);
@@ -176,7 +177,7 @@ public class AsyncRequestStep<T> extends Step {
                             Component.createFor(
                                 RetryStrategy.class,
                                 r,
-                                new CallResponse<Void>(null, e, statusCode, responseHeaders)));
+                                new CallResponse<Void>(null, ae, statusCode, responseHeaders)));
                     fiber.resume(packet);
                   }
                 }
@@ -233,9 +234,14 @@ public class AsyncRequestStep<T> extends Step {
                     timeoutSeconds,
                     TimeUnit.SECONDS);
           } catch (Throwable t) {
+            String responseBody = "";
+            if (t instanceof ApiException) {
+              ApiException ae = (ApiException) t;
+              responseBody = ae.getResponseBody();
+            }
             LOGGER.warning(
                 MessageKeys.ASYNC_FAILURE,
-                t,
+                t.getMessage(),
                 0,
                 null,
                 requestParams,
@@ -244,7 +250,8 @@ public class AsyncRequestStep<T> extends Step {
                 requestParams.body,
                 fieldSelector,
                 labelSelector,
-                resourceVersion);
+                resourceVersion,
+                responseBody);
             if (didResume.compareAndSet(false, true)) {
               packet
                   .getComponents()
