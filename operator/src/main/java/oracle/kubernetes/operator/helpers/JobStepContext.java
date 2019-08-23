@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.models.V1Container;
@@ -30,7 +31,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
-public abstract class JobStepContext extends StepContextBase {
+public abstract class JobStepContext extends BasePodStepContext {
+  static final long DEFAULT_ACTIVE_DEADLINE_SECONDS = 120L;
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
@@ -73,6 +75,20 @@ public abstract class JobStepContext extends StepContextBase {
   }
 
   abstract String getJobName();
+
+  @Override
+  protected String getMainContainerName() {
+    return getJobName();
+  }
+
+  @Override
+  protected Map<String, String> augmentSubVars(Map<String, String> vars) {
+    // For other introspector job pod content, we use the values that would apply administration server; however,
+    // since we won't know the name of the administation server from the domain configuration until introspection
+    // has run, we will use the hardcoded value "introspector" as the server name.
+    vars.put("SERVER_NAME", "introspector");
+    return vars;
+  }
 
   String getWebLogicCredentialsSecretName() {
     return getDomain().getWebLogicCredentialsSecret().getName();
@@ -176,9 +192,11 @@ public abstract class JobStepContext extends StepContextBase {
   }
 
   private V1PodTemplateSpec createPodTemplateSpec(TuningParameters tuningParameters) {
-    return new V1PodTemplateSpec()
+    V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec()
           .metadata(createPodTemplateMetadata())
           .spec(createPodSpec(tuningParameters));
+
+    return updateForDeepSubstitution(podTemplateSpec.getSpec(), podTemplateSpec);
   }
 
   private V1ObjectMeta createPodTemplateMetadata() {
