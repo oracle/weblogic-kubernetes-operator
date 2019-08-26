@@ -90,7 +90,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoConfiguredCluster() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
 
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -148,7 +148,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoMixedCluster() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String domainuid = "twomixedclusterdomain";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -205,7 +205,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoClusterWdtInImage() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String domainuid = "twoclusterdomainwdt";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);

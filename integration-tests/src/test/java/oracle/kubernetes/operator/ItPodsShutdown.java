@@ -249,7 +249,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testAddShutdownOptionsToMS() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     String podName = domainUid + "-managed-server1";
@@ -282,7 +282,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testAddShutdownOptionToCluster() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -317,7 +317,7 @@ public class ItPodsShutdown extends BaseTest {
   @Test
   public void testAddShutdownOptionsToDomain() throws Exception {
 
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -350,7 +350,7 @@ public class ItPodsShutdown extends BaseTest {
   // @Test
   public void testAddShutdownOptionsToMsIgnoreSessions() throws Exception {
 
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -411,7 +411,7 @@ public class ItPodsShutdown extends BaseTest {
   @Test
   public void testAddShutdownOptionsToMsTimeout() throws Exception {
 
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -450,7 +450,7 @@ public class ItPodsShutdown extends BaseTest {
   @Test
   public void testAddShutdownOptionsToMsForced() throws Exception {
 
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -489,7 +489,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testAddEnvShutdownOptions() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Files.createDirectories(Paths.get(shutdownTmpDir));
@@ -521,7 +521,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testShutdownOptionsOverrideViaEnv() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -562,7 +562,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testShutdownOptionsOverrideClusterLevel() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Files.createDirectories(Paths.get(shutdownTmpDir));

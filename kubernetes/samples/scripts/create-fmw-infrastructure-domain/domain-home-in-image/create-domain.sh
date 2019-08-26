@@ -204,7 +204,7 @@ function createDomainHome {
   sed  -i  '$ a extract_env IMAGE_TAG ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
 
   #exit -1000
-  sh ${dockerDir}/build.sh
+  bash ${dockerDir}/build.sh
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."

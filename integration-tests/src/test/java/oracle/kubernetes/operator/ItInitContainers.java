@@ -123,7 +123,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testDomainInitContainer() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
@@ -150,7 +150,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testAdminServerInitContainer() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();
@@ -175,7 +175,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testClusterInitContainer() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();
@@ -202,7 +202,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testMsInitContainer() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();
@@ -229,7 +229,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testDomainInitContainerNegative() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();
@@ -255,7 +255,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testInitContainerDiffLevelDiffName() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server2"};
@@ -287,7 +287,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testInitContainerDiffLevelSameName() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server2"};
@@ -315,7 +315,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testInitContainerMultiple() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};

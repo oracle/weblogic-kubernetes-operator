@@ -47,40 +47,40 @@ public class ItSessionMigration extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if (!QUICKTEST) {
-      // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE);
+    Assume.assumeTrue(NIGHTLY);
+    // initialize test properties and create the directories
+    initialize(APP_PROPS_FILE);
 
-      // Create operator1
-      if (operator == null) {
-        logger.info("Creating Operator & waiting for the script to complete execution");
-        operator = TestUtils.createOperator(OPERATOR1_YAML);
-      }
-
-      // create domain
-      if (domain == null) {
-        logger.info("Creating WLS Domain & waiting for the script to complete execution");
-        Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
-        wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
-        domain = TestUtils.createDomain(wlstDomainMap);
-        domain.verifyDomainCreated();
-      }
-
-      httpHeaderFile = BaseTest.getResultDir() + "/headers";
-      httpAttrMap = new HashMap<String, String>();
-      httpAttrMap.put("sessioncreatetime", "(.*)sessioncreatetime>(.*)</sessioncreatetime(.*)");
-      httpAttrMap.put("sessionid", "(.*)sessionid>(.*)</sessionid(.*)");
-      httpAttrMap.put("primary", "(.*)primary>(.*)</primary(.*)");
-      httpAttrMap.put("secondary", "(.*)secondary>(.*)</secondary(.*)");
-      httpAttrMap.put("count", "(.*)countattribute>(.*)</countattribute(.*)");
-
-      // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
-      domain.buildDeployJavaAppInPod(
-          testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-
-      // Wait some time for deployment gets ready
-      Thread.sleep(10 * 1000);
+    // Create operator1
+    if (operator == null) {
+      logger.info("Creating Operator & waiting for the script to complete execution");
+      operator = TestUtils.createOperator(OPERATOR1_YAML);
     }
+
+    // create domain
+    if (domain == null) {
+      logger.info("Creating WLS Domain & waiting for the script to complete execution");
+      Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+      wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
+      domain = TestUtils.createDomain(wlstDomainMap);
+      domain.verifyDomainCreated();
+    }
+
+    httpHeaderFile = BaseTest.getResultDir() + "/headers";
+    httpAttrMap = new HashMap<String, String>();
+    httpAttrMap.put("sessioncreatetime", "(.*)sessioncreatetime>(.*)</sessioncreatetime(.*)");
+    httpAttrMap.put("sessionid", "(.*)sessionid>(.*)</sessionid(.*)");
+    httpAttrMap.put("primary", "(.*)primary>(.*)</primary(.*)");
+    httpAttrMap.put("secondary", "(.*)secondary>(.*)</secondary(.*)");
+    httpAttrMap.put("count", "(.*)countattribute>(.*)</countattribute(.*)");
+
+    // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
+    domain.buildDeployJavaAppInPod(
+        testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
+
+    // Wait some time for deployment gets ready
+    Thread.sleep(10 * 1000);
+    
   }
 
   /**
@@ -90,15 +90,14 @@ public class ItSessionMigration extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
-      logger.info("++++++++++++++++++++++++++++++++++");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
+    Assume.assumeTrue(NIGHTLY);
+    logger.info("++++++++++++++++++++++++++++++++++");
+    logger.info("BEGIN");
+    logger.info("Run once, release cluster lease");
 
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
-      logger.info("SUCCESS");
-    }
+    logger.info("SUCCESS");    
   }
 
   /**
@@ -109,7 +108,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @Test
   public void testRepickPrimary() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -162,7 +161,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @Test
   public void testHttpSessionMigr() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 

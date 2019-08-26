@@ -76,6 +76,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testDomainOnPvUsingWlst() throws Exception {
+    Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");
@@ -98,7 +99,7 @@ public class ItOperator extends BaseTest {
     } finally {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
         domain.shutdownUsingServerStartPolicy();
-    }
+    } 
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -115,7 +116,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testDomainOnPvUsingWdt() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Domain using DomainOnPVUsingWDT & verifing the domain creation");
@@ -140,7 +141,7 @@ public class ItOperator extends BaseTest {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
       }
-    }
+    } 
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -159,7 +160,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testTwoDomainsManagedByTwoOperators() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Domain domain1 & verifing the domain creation");
@@ -233,7 +234,7 @@ public class ItOperator extends BaseTest {
           TestUtils.verifyAfterDeletion(domain2);
         }
       }
-    }
+    } 
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -251,7 +252,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testTwoDomainsManagedByOneOperatorSharingPV() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Domain domain1 & verifing the domain creation");
@@ -319,7 +320,7 @@ public class ItOperator extends BaseTest {
           TestUtils.verifyAfterDeletion(domain2);
         }
       }
-    }
+    } 
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -334,7 +335,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainWithStartPolicyAdminOnly() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Checking if operator1 is running, if not creating");
@@ -358,7 +359,7 @@ public class ItOperator extends BaseTest {
       }
     }
 
-    domain.createDomainOnExistingDirectory();
+    domain.createDomainOnExistingDirectory(); 
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -371,7 +372,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainPvReclaimPolicyRecycle() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Checking if operator1 is running, if not creating");
@@ -388,7 +389,7 @@ public class ItOperator extends BaseTest {
     } finally {
       if (domain != null) domain.shutdown();
     }
-    domain.deletePvcAndCheckPvReleased();
+    domain.deletePvcAndCheckPvReleased(); 
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -404,7 +405,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainWithDefaultValuesInSampleInputs() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Domain domain10 & verifing the domain creation");
@@ -425,7 +426,7 @@ public class ItOperator extends BaseTest {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         domain.destroy();
       }
-    }
+    } 
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -443,7 +444,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testAutoAndCustomSitConfigOverrides() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
 
@@ -485,7 +486,7 @@ public class ItOperator extends BaseTest {
       if (domain11 != null && (JENKINS || testCompletedSuccessfully)) {
         domain11.destroy();
       }
-    }
+    } 
     logger.info("SUCCESS - " + testMethod);
   }
 
@@ -498,7 +499,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testOperatorRestIdentityBackwardCompatibility() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
@@ -508,7 +509,7 @@ public class ItOperator extends BaseTest {
     }
     operatorForBackwardCompatibility.verifyOperatorExternalRestEndpoint();
     logger.info("Operator using legacy REST identity created successfully");
-    operatorForBackwardCompatibility.destroy();
+    operatorForBackwardCompatibility.destroy(); 
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -520,7 +521,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testOperatorRestUsingCertificateChain() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
 
     logTestBegin("testOperatorRestUsingCertificateChain");
     logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
@@ -528,7 +529,7 @@ public class ItOperator extends BaseTest {
       operatorForRESTCertChain = TestUtils.createOperator(OPERATOR_CHAIN_YAML, RestCertType.CHAIN);
     }
     operatorForRESTCertChain.verifyOperatorExternalRestEndpoint();
-    logger.info("Operator using legacy REST identity created successfully");
+    logger.info("Operator using legacy REST identity created successfully"); 
     logger.info("SUCCESS - testOperatorRestUsingCertificateChain");
   }
 
@@ -561,7 +562,7 @@ public class ItOperator extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
-    }
+    } 
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -573,7 +574,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWdt() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
 
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -600,7 +601,7 @@ public class ItOperator extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
-    }
+    } 
     logger.info("SUCCESS - " + testMethodName);
   }
 

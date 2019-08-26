@@ -65,7 +65,7 @@ public class ItCoherenceTests extends BaseTest {
 
   @Test
   public void testRollingRestart() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
 
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);

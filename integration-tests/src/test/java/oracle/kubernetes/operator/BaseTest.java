@@ -54,7 +54,7 @@ public class BaseTest {
   // property file used to configure constants for integration tests
   public static final String APP_PROPS_FILE = "OperatorIT.properties";
 
-  public static boolean QUICKTEST;
+  public static boolean QUICKTEST, FULLTEST, NIGHTLY;
   public static boolean SMOKETEST;
   public static boolean JENKINS;
   public static boolean SHARED_CLUSTER;
@@ -81,10 +81,25 @@ public class BaseTest {
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
+  // Set FULLTEST env var to true to run a broader set of tests including quicktest, one test for each feature
+  // Set NIGHTLY env var to true to run a all the tests, includes full tests
   // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
   static {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
+    FULLTEST =
+        System.getenv("FULLTEST") != null && System.getenv("FULLTEST").equalsIgnoreCase("true");
+    NIGHTLY =
+        System.getenv("NIGHTLY") != null && System.getenv("NIGHTLY").equalsIgnoreCase("true");    
+    
+    if(FULLTEST) {
+      QUICKTEST = true;
+    }
+    if(NIGHTLY) {
+      FULLTEST = true;
+      QUICKTEST = true;
+    }
+    
     SMOKETEST =
         System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
     if (SMOKETEST) {

@@ -153,7 +153,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @Test
   public void testLogLevelSearch() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -173,7 +173,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @Test
   public void testOperatorLogSearch() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -193,7 +193,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @Test
   public void testWeblogicLogSearch() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -225,7 +225,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @Test
   public void testWlsLoggingExporter() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
