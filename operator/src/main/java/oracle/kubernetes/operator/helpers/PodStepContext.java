@@ -150,7 +150,7 @@ public abstract class PodStepContext extends StepContextBase {
    */
   boolean isLocalAdminProtocolChannelSecure() {
     return domainTopology
-        .getServerConfig(domainTopology.getAdminServerName())
+        .getServerConfig(getServerName())
         .isLocalAdminProtocolChannelSecure();
   }
 
@@ -620,6 +620,7 @@ public abstract class PodStepContext extends StepContextBase {
     addEnvVar(vars, "ADMIN_NAME", getAsName());
     addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
     if (isLocalAdminProtocolChannelSecure()) {
+      // This env variable indicates whether the administration port in the WLS server on the local pod is secure
       addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
     }
     if (isAdminServerProtocolChannelSecure()) {
