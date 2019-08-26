@@ -66,6 +66,20 @@ Similarly, the properties will use the same sorting algorithm, but they are appe
 
 ## Using this example
 
+Prerequsite:
+
+1. Create namespace for the sample 
+```kubectl create namespace sample-domain1-ns```
+2. Enable WebLogic Operator to watch for the namespace, from the root of the weblogic-kubernetes-operator directory
+
+```helm upgrade \
+  --reuse-values \
+  --set "domainNamespaces={sample-domain1-ns}" \
+  --wait \
+  sample-weblogic-operator \
+  kubernetes/charts/weblogic-operator
+```
+
 1. Create a temporary directory with 10g space
 2. Go to edelivery.oracle.com
     - search for Oracle JRE

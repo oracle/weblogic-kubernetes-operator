@@ -1,6 +1,6 @@
 #!/bin/bash
-echo ">>>> Creating domain namespace"
-kubectl create namespace sample-domain1-ns
+#echo ">>>> Creating domain namespace"
+#kubectl create namespace sample-domain1-ns
 echo ">>>> Creating weblogic domain secret"
 kubectl -n sample-domain1-ns create secret generic sample-domain1-weblogic-credentials \
   --from-literal=username=weblogic \
