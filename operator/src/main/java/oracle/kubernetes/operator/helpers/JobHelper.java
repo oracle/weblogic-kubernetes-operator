@@ -452,7 +452,7 @@ public class JobHelper {
     }
 
     private void updateStatus(DomainPresenceInfo domainPresenceInfo) {
-      KubernetesUtils.updateStatus(
+      DomainStatusPatch.updateDomainStatus(
             domainPresenceInfo.getDomain(), "ErrIntrospector", onSeparateLines(severeStatuses));
     }
 

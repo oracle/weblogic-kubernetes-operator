@@ -2,6 +2,11 @@ domainInfo:
     AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
     AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
     ServerStartMode: prod
+    RCUDbInfo:
+        rcu_prefix: '@@PROP:rcuSchemaPrefix@@'
+        rcu_schema_password: Oradoc_db1
+        rcu_admin_password: Oradoc_db1
+        rcu_db_conn_string: '@@PROP:rcuDatabaseURL@@'
 topology:
     Name: '@@PROP:domainName@@'
     AdminServerName: '@@PROP:adminServerName@@'
