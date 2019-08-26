@@ -260,7 +260,7 @@ EOF
   [ ! $? -eq 0 ] && trace SEVERE "Failed to create '${wl_props_file}'." && exit 1
 
   if [ ! "${ADMIN_NAME}" = "${SERVER_NAME}" ]; then
-    ADMIN_URL=$(getAdminUrl)
+    ADMIN_URL=$(getAdminServerUrl)
     echo "AdminURL=$ADMIN_URL" >> ${wl_props_file}
   fi
 fi
