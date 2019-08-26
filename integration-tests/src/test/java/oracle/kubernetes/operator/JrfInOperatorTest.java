@@ -93,7 +93,8 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @Test
   public void testJrfDomainOnPvUsingWlst() throws Exception {
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+  	Assume.assumeTrue(QUICKTEST);
+  	String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
