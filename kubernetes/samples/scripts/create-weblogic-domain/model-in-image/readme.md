@@ -64,6 +64,32 @@ The combined model files list passing to the ```WebLogic Deploy Tool``` as
 Similarly, the properties will use the same sorting algorithm, but they are appended together to form a single variable properties file.  The resultant properties file will be used during domain creation.
 
 
+## Using this example
+
+1. Create a temporary directory with 10g space
+2. Go to edelivery.oracle.com
+    - search for Oracle JRE
+    - click on JRE 1.8.0_221 to add it to the shopping cart
+    - search for Oracle WebLogic Server again
+    - click on Oracle WebLogic Server 12.2.1.3.0 (Oracle WebLogic Server Enterprise Edition)
+    - click on Checkout
+    - click continue and accept license agreement 
+    - click on V982783-01.zip and V886243-01.zip to download the zip files 
+    (Oracle Fusion Middleware 12c (12.2.1.3.0) WebLogic Server and Coherence, 800.1 MB)
+    (Oracle SERVER JRE 1.8.0.221 media upload for Linux x86-64, 52.5 MB)
+3. Copy V982783-01.zip and V886243-01.zip to the temporary directory
+4. Run ./build.sh <full path to the temporary directory in step 1> <oracle support id capable to download patches> <password for the support id>
+
+5. Wait for it to finish
+6. At the end, you will see the message "Getting pod status - ctrl-c when all is running and ready to exit"
+7. Once all the pods are up, you can ctrl-c to exit the build script.
+8. Run ```kubectl apply -f nginx.yaml```
+9. Run ```kubectl cluster-info``` and make a note of the cluster ip address
+10. Run curl -kL http://<cluster ip>/sample_war/index.jsp, you should see something like:
+```Hello World, you have reached server managed-server1```
+
+
+
 
 
 

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<weblogic-web-app xmlns="http://www.bea.com/ns/weblogic/90">
+  <session-descriptor>
+     <timeout-secs>15</timeout-secs>
+     <invalidation-interval-secs>60</invalidation-interval-secs>
+  </session-descriptor>
+  <jsp-descriptor>
+    <page-check-seconds>1</page-check-seconds>
+    <verbose>true</verbose>
+  </jsp-descriptor>
+    <!--
+  Use the virtual-directory-mapping element to specify document roots other
+  than the default document root of the Web application for certain kinds of
+  requests, such as image requests. All images for a set of Web applications
+  can be stored in a single location, and need not be copied to the document
+  root of each Web application that uses them. For an incoming request, if a
+  virtual directory has been specified servlet container will search for the
+  requested resource first in the virtual directory and then in the
+  Web application's original document root.
+  <virtual-directory-mapping>
+    <local-path>@SAMPLES_HOME/server/</local-path>
+    <url-pattern>/examples/*</url-pattern>
+  </virtual-directory-mapping>
+  <virtual-directory-mapping>
+    <local-path>@SAMPLES_HOME/server/examples/build</local-path>
+    <url-pattern>images/*</url-pattern>
+  </virtual-directory-mapping>
+  -->
+</weblogic-web-app>

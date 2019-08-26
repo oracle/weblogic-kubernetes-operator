@@ -1,0 +1,34 @@
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee" version="2.4">
+
+<!--
+<security-constraint>
+
+    <display-name>Security Constraint for test  </display-name>
+    <web-resource-collection>
+         <web-resource-name>My webapp</web-resource-name>
+         <description>Group of Users</description>
+         <url-pattern>/*</url-pattern>
+         <http-method>GET</http-method>
+         <http-method>POST</http-method>
+     </web-resource-collection>
+     <auth-constraint>
+        <role-name>TESTrole</role-name>
+      </auth-constraint>
+   </security-constraint>
+   <login-config>
+       <auth-method>FORM</auth-method>
+        <form-login-config>
+            <form-login-page>/x.jsp</form-login-page>
+            <form-error-page>/x.jsp</form-error-page>
+        </form-login-config>
+
+  </login-config>
+
+  <jsp-config>
+    <taglib>
+      <taglib-uri>/WEB-INF/tlds/exprTag.tld</taglib-uri>
+      <taglib-location>/WEB-INF/tlds/exprTag.tld</taglib-location>
+    </taglib>
+  </jsp-config>
+-->
+</web-app>
