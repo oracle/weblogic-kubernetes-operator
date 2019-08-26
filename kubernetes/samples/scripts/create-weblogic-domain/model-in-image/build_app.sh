@@ -1,3 +1,4 @@
+#!/bin/bash
 cwd=`pwd`
 cd image/sample_app/wlsdeploy/applications
 if [ -f "sample_app.ear" ] ; then
