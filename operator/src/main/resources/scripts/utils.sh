@@ -395,3 +395,26 @@ checkWebLogicVersion()
   fi
   return 0
 }
+
+
+#
+# getAdminUrl
+#   purpose: Get the admin URL used to connect to the admin server internally, e.g. when starting a managed server
+#   sample:
+#     ADMIN_URL=$(getAdminServerUrl)
+#
+function getAdminServerUrl() {
+  local admin_protocol="http"
+  if [ "${ISTIO_ENABLED}" = "true" ]; then
+    admin_protocol="t3"
+  fi 
+
+  if [ "${ADMIN_SERVER_PORT_SECURE}" = "true" ]; then
+    if [ "${ISTIO_ENABLED}" = "true" ]; then
+      admin_protocol="t3s"
+    else
+      admin_protocol="https"
+    fi
+  fi
+  echo ${admin_protocol}://${AS_SERVICE_NAME}:${ADMIN_PORT}
+}
