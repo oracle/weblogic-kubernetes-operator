@@ -2,7 +2,7 @@
 
 This sample demonstrates how to create an Oracle DB service on Kubernetes cluster and create RCU schema on the Oracle DB being used by a Fusion Middleware domain.  
 
-The directory contains following sample scripts to Start an Oracle DB service in default namespace, Stop the Oracle DB service, Create an RCU schema and Drop the RCU schema
+The directory contains following sample scripts to start an Oracle DB service in default namespace, stop the Oracle DB service, create an RCU schema and drop the RCU schema
 
 ```
 $ ./start-db-service.sh   
