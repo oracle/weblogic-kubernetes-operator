@@ -6,10 +6,19 @@
     <description>Recent content on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 11 Apr 2019 13:15:32 -0400</lastBuildDate>
+    <lastBuildDate>Thu, 15 Aug 2019 13:30:04 -0400</lastBuildDate>
     
 	<atom:link href="/weblogic-kubernetes-operator/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Istio support</title>
+      <link>/weblogic-kubernetes-operator/userguide/experimental/istio/</link>
+      <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/userguide/experimental/istio/</guid>
+      <description>Overview WebLogic Kubernetes Operator version 2.3 includes experimental support for Istio 1.2.2. This support allows you to run the operator itself, and WebLogic domains managed by the operator with Istio sidecar injection enabled. It will allow you to use Istio gateways and virtual services to access applications deployed in these domains. If your applications have suitable tracing code in them, you will also be able to use distributed tracing, such as Jaeger, to trace requests across domains and to other components and services that have tracing enabled.</description>
+    </item>
     
     <item>
       <title>Docker image layering</title>
@@ -171,10 +180,7 @@ One of the operator&amp;rsquo;s most important jobs is to start and stop WebLogi
       <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/</guid>
-      <description>Use this document to set up and configure your own domain resource which can be used to configure your WLS domain. Then, you can use the domain resource to start the Kubernetes artifacts of the corresponding domain.
-Swagger documentation is available here.
-Prerequisites The following prerequisites must be fulfilled before proceeding with the creation of the resource:
- Make sure the WebLogic operator is running. Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.</description>
+      <description>Use this document to set up and configure your own domain resource which can be used to configure the operation of your WebLogic domain. The domain resource does not replace the traditional configuration of WebLogic domains found in the domain configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain. For instance, the WebLogic domain configuration will still specify deployed applications, data sources, and most other details about the domain while the domain resource will specify the number of cluster members currently running or the persistent volumes that will be mounted into the containers running WebLogic Server instances.</description>
     </item>
     
     <item>
@@ -307,7 +313,7 @@ You must configure your database to store its DB files on persistent storage. Re
       <description>Get these images and put them into your local registry.  If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store and accept the license agreement for the WebLogic Server image.
  Log in to the Docker store from your Docker client:
 $ docker login  Pull the operator image:
-$ docker pull oracle/weblogic-kubernetes-operator:2.2.1  Pull the Traefik load balancer image:
+$ docker pull oracle/weblogic-kubernetes-operator:2.3.0  Pull the Traefik load balancer image:
 $ docker pull traefik:1.</description>
     </item>
     
@@ -532,8 +538,8 @@ Unicast and Well Known Address When the first Coherence process starts, it will 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Recent changes    Date Version Introduces backward incompatibilities Change     June 20, 2019 v2.2.1 no The operator now supports Kubernetes 1.14.0+. This release is primarily a bug fix release and resolves the following issues:
-Servers in domains, where the domain home is on a persistent volume, would sometimes fail to start. These failures would be during the introspection phase following a full domain shutdown. Now, the introspection script better handles the relevant error conditions.</description>
+      <description>Recent changes    Date Version Introduces backward incompatibilities Change     August 27, 2019 v2.3.0 no Added support for Coherence cluster rolling, pod templating and additional pod content, and experimental support for running under an Istio service mesh.   June 20, 2019 v2.2.1 no The operator now supports Kubernetes 1.14.0+. This release is primarily a bug fix release and resolves the following issues:
+Servers in domains, where the domain home is on a persistent volume, would sometimes fail to start.</description>
     </item>
     
   </channel>

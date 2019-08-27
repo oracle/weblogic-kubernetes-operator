@@ -12,17 +12,17 @@
     <title>Storage :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1566943580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1566943580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1566943580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1566943580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1566943580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1566943580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1566943580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1566943580" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1566944474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1566944474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1566944474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1566944474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1566944474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1566944474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1566944474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1566944474" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1566943580"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1566944474"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1566943580"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1566943580"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1566944474"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1566944474"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1566943580"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1566944474"></script>
 
     
   </div>
@@ -1121,6 +1121,59 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/tools/" title="Tools" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/cicd/tools/">
         Tools
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/experimental/" title="Experimental features" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/experimental/">
+          Experimental features
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/experimental/istio/" title="Istio support" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/experimental/istio/">
+        Istio support
         
         </a>
     </li>
@@ -2298,7 +2351,7 @@ usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
 
 <h4 id="shared-versus-dedicated-pvc">Shared versus dedicated PVC</h4>
 
-<p>By default, the <code>domainUID</code> is left empty in the inputs file, which means the generated PV and PVC will not be associated with a particular domain, but can be shared by multiple domain resources in the same Kubernetes namespaces as the PV and PVC.</p>
+<p>By default, the <code>domainUID</code> is left empty in the inputs file, which means the generated PV and PVC will not be associated with a particular domain, but can be shared by multiple domain resources in the same Kubernetes namespaces as the PV and PVC. If the PV/PVC is being shared across domains, then, as a best practice, you should specify a unique <code>baseName</code>.</p>
 
 <p>For the use cases where dedicated PV and PVC are desired for a particular domain, the <code>domainUID</code> needs to be set in the <code>create-pv-pvc-inputs.yaml</code> file. The presence of a non-empty <code>domainUID</code> in the inputs file will cause the generated PV and PVC to be associated with the specified <code>domainUID</code>. The association includes that the names of the generated YAML files and the Kubernetes PV and PVC objects are decorated with the <code>domainUID</code>, and the PV and PVC objects are also labeled with the <code>domainUID</code>.</p>
 
@@ -3223,6 +3276,38 @@ Events:        &lt;none&gt;
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
             
         
                     
@@ -3905,20 +3990,20 @@ Events:        &lt;none&gt;
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1566943580"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1566943580"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1566943580"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1566943580"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1566943580"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1566943580"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1566943580"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1566944474"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1566944474"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1566944474"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1566944474"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1566944474"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1566944474"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1566944474"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1566943580"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1566943580"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1566943580"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1566944474"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1566944474"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1566944474"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1566943580" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1566943580"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1566944474" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1566944474"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
