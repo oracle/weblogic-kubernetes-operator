@@ -214,6 +214,40 @@ function getKubernetesClusterIP {
 }
 
 #
+# Function to set the serverPodResources variable for including into the generated
+# domain.yaml, base on the serverPod resource requests and limits input values,
+# if specified.
+# The serverPodResources variable remains unset if none of the input values are provided.
+#
+function buildServerPodResources {
+
+  if [ -n "${serverPodMemoryRequest}" ]; then
+    local memoryRequest="        memory\: \"${serverPodMemoryRequest}\"\n"
+  fi
+  if [ -n "${serverPodCpuRequest}" ]; then
+    local cpuRequest="       cpu\: \"${serverPodCpuRequest}\"\n"
+  fi
+  if [ -n "${memoryRequest}" ] || [ -n "${cpuRequest}" ]; then
+    local requests="      requests\: \n$memoryRequest $cpuRequest"
+  fi
+
+  if [ -n "${serverPodMemoryLimit}" ]; then
+    local memoryLimit="        memory\: \"${serverPodMemoryLimit}\"\n"
+  fi
+  if [ -n "${serverPodCpuLimit}" ]; then
+    local cpuLimit="       cpu\: \"${serverPodCpuLimit}\"\n"
+  fi
+  if [ -n "${memoryLimit}" ] || [ -n "${cpuLimit}" ]; then
+    local limits="      limits\: \n$memoryLimit $cpuLimit"
+  fi
+
+  if [ -n "${requests}" ] || [ -n "${limits}" ]; then
+    # build resources element and remove last '\n'
+    serverPodResources=$(echo "resources\:\n${requests}${limits}" | sed -e 's/\\n$//')
+  fi
+}
+
+#
 # Function to generate the properties and yaml files for creating a domain
 #
 function createFiles {
@@ -315,9 +349,9 @@ function createFiles {
       defaultImageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
       baseTag=${domainHomeImageBase#*:}
       defaultImageName=${defaultImageName}:${baseTag:-"latest"}
-      sed -i -e "s:%IMAGE_NAME%|${defaultImageName}:g" ${domainPropertiesOutput}
+      sed -i -e "s:%IMAGE_NAME%:${defaultImageName}:g" ${domainPropertiesOutput}
     else 
-      sed -i -e "s:%IMAGE_NAME%|${image}:g" ${domainPropertiesOutput}
+      sed -i -e "s:%IMAGE_NAME%:${image}:g" ${domainPropertiesOutput}
     fi
   else
 
@@ -437,13 +471,20 @@ function createFiles {
   sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
 
+  buildServerPodResources
+  if [ -z "${serverPodResources}" ]; then
+    sed -i -e "/%OPTIONAL_SERVERPOD_RESOURCES%/d" ${dcrOutput}
+  else
+    sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${dcrOutput}
+  fi
+
   if [ "${domainHomeInImage}" == "true" ]; then
  
     # now we know which image to use, update the domain yaml file
     if [ -z $image ]; then
-      sed -i -e "s:%WEBLOGIC_IMAGE%|${defaultImageName}:g" ${dcrOutput}
+      sed -i -e "s:%WEBLOGIC_IMAGE%:${defaultImageName}:g" ${dcrOutput}
     else
-      sed -i -e "s:%WEBLOGIC_IMAGE%|${image}:g" ${dcrOutput}
+      sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
     fi
   else
     sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}

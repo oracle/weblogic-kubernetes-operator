@@ -20,7 +20,7 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 
 * Make sure the WebLogic operator is running.
 * Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.
-* Create the Kubernetes secrets `username` and `password` of the administrative account in the same Kubernetes namespace as the domain resource.
+* Create the Kubernetes secrets containing the `username` and `password` of the administrative account in the same Kubernetes namespace as the domain resource.
 
 #### YAML files
 
@@ -85,7 +85,7 @@ Elements related to overriding WebLogic domain configuration:
 * `configOverrideSecrets`: A list of names of the secrets for optional WebLogic configuration overrides.
 
 Elements related to Kubernetes pod and service generation:
-* `serverPod`: Configuration affecting server pods.
+* `serverPod`: Configuration affecting server pods for WebLogic Server instances. Most entries specify standard Kubernetes content for pods that you may want the operator to include in pods generated for WebLogic Server instances, such as labels, annotations, volumes, or scheduling constraints, including anti-affinity.
 * `serverService`: Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.
 
 Sub-sections related to the Administration Server, specific clusters or specific Managed Servers:
@@ -97,7 +97,7 @@ The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverSer
 
 ### Pod generation
 
-The operator creates a pod for each running WebLogic Server instance.  This pod will have a container based on the Docker image specified by the `image` field.  Additional pod or container content can be specified using the elements under `serverPod`.  This includes Kubernetes labels and annotations, additional volumes on the pod or volume mounts on the container, [resource requirements](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) or [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+The operator creates a pod for each running WebLogic Server instance.  This pod will have a container based on the Docker image specified by the `image` field.  Additional pod or container content can be specified using the elements under `serverPod`.  This includes Kubernetes sidecar and init containers, labels, annotations, volumes, volume mounts, scheduling constraints, including anti-affinity, [resource requirements](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) or [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
 
 Prior to creating a pod, the operator replaces variable references allowing the pod content to be templates.  The format of these variable references is `$(VARIABLE_NAME)` where *VARIABLE_NAME* is one of the variable names available in the container for the WebLogic Server instance.  The default set of environment variables includes:
 * DOMAIN_NAME: The WebLogic domain name
@@ -106,3 +106,72 @@ Prior to creating a pod, the operator replaces variable references allowing the 
 * SERVER_NAME: The WebLogic Server name
 * CLUSTER_NAME: The WebLogic cluster name, if this is a cluster member
 * LOG_HOME: The WebLogic log location as a file system path within the container
+
+This example domain YAML specifies that pods for WebLogic Server instances in the "cluster-1" cluster will have a per-managed server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled as much as possible on different nodes:
+
+```
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+apiVersion: "weblogic.oracle/v5"
+kind: Domain
+metadata:
+  name: domain1
+  namespace: domains23
+  labels:
+    weblogic.resourceVersion: domain-v2
+    weblogic.domainUID: domain1
+spec:
+  domainHome: /u01/oracle/user_projects/domains/domain1
+  domainHomeInImage: true
+  image: "phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.3"
+  imagePullPolicy: "IfNotPresent"
+  imagePullSecrets:
+  - name: ocirsecret
+  webLogicCredentialsSecret:
+    name: domain1-weblogic-credentials
+  includeServerOutInPodLog: true
+  serverStartPolicy: "IF_NEEDED"
+  serverPod:
+    env:
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.StdoutDebugEnabled=false"
+    - name: USER_MEM_ARGS
+      value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+
+  adminServer:
+    serverStartState: "RUNNING"
+
+  clusters:
+  - clusterName: cluster-1
+    serverStartState: "RUNNING"
+    serverPod:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "weblogic.clusterName"
+                    operator: In
+                    values:
+                    - cluster-1
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+      - name: $(SERVER_NAME)-volume
+        emptyDir: {}
+      volumeMounts:
+      - mountPath: /server-volume
+        name: $(SERVER_NAME)-volume
+      initContainers:
+      - name: volumeinit
+        image: "oraclelinux:7-slim"
+        imagePullPolicy: IfNotPresent
+        command: ["/usr/bin/sh"]
+        args: ["echo", "Replace with command to initialize files in /init-volume"]
+        volumeMounts:
+        - mountPath: /init-volume
+          name: $(SERVER_NAME)-volume
+    replicas: 2
+```
+
+The operator uses an "introspection" job to discover details about the WebLogic domain configuration, such as the list of clusters and network access points.  The job pod for the introspector is generated using the `serverPod` entries for the administration server.  Because the administration server name is not known until the introspection step is complete, the value of the `$(SERVER_NAME)` variable for the introspection job will be "introspector".
