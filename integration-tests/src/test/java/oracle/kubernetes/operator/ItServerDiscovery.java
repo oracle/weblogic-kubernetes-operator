@@ -44,7 +44,7 @@ public class ItServerDiscovery extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    If(FULLTEST || QUICKTEST) {
+    if(FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
   
