@@ -269,6 +269,7 @@ public class BaseTest {
     logger.info("Env var IMAGE_TAG_WEBLOGIC " + System.getenv("IMAGE_TAG_WEBLOGIC"));
 
     logger.info("Env var BRANCH_NAME " + System.getenv("BRANCH_NAME"));
+    logger.info("QUICKTEST " + QUICKTEST+ " FULLTEST "+ FULLTEST +" NIGHTLY "+NIGHTLY);
   }
 
   /**

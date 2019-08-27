@@ -25,7 +25,6 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.Test;
 
-import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
@@ -33,6 +32,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_CREATED
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_PATCHED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.contains;
@@ -180,14 +180,16 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     V1EnvVar envVar = toEnvVar("TEST_ENV", "test-value");
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(envVar));
 
+    V1Container container = new V1Container()
+        .name("test")
+        .addCommandItem("/bin/bash")
+        .addArgsItem("echo")
+        .addArgsItem("This server is $(SERVER_NAME) and has $(TEST_ENV)");
+
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .withLogHomeEnabled(true)
-        .withContainer(new V1Container()
-            .name("test")
-            .addCommandItem("/bin/bash")
-            .addArgsItem("echo")
-            .addArgsItem("This server is $(SERVER_NAME) and has $(TEST_ENV)"))
+        .withContainer(container)
         .configureCluster(CLUSTER_NAME)
         .withPodLabel("myCluster", "my-$(CLUSTER_NAME)")
         .withPodLabel("logHome", "$(LOG_HOME)");
@@ -204,6 +206,10 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
         o.orElseThrow().getArgs(),
         allOf(
             hasItem("This server is " +  SERVER_NAME + " and has test-value")));
+    assertThat(
+        container.getArgs(),
+        allOf(hasItem("This server is $(SERVER_NAME) and has $(TEST_ENV)"))
+    );
   }
 
   @Test

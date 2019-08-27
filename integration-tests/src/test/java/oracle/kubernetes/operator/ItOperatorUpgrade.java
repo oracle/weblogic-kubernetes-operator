@@ -39,12 +39,6 @@ public class ItOperatorUpgrade extends BaseTest {
   private static Operator operator;
 
   
-  @BeforeClass
-  public static void staticPrepare() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
-  }
-  
-
   /**
    * cleanup the domain and operator after every test.
    *
@@ -71,12 +65,13 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
-    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-    logger.info("SUCCESS");
+    if(NIGHTLY) {
+      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      logger.info("SUCCESS");
+    }
   
   }
 
@@ -87,6 +82,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_0() throws Exception {
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator20";
@@ -106,6 +102,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_0_1() throws Exception {
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator201";
@@ -125,6 +122,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_1() throws Exception {
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator21";
@@ -144,6 +142,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_2_0() throws Exception {
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator220";
@@ -163,6 +162,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_2_1() throws Exception {
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator221";

@@ -59,7 +59,7 @@ public class ItPodsShutdown extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       initialize(APP_PROPS_FILE);
 
       logger.info("Checking if operator1 and domain are running, if not creating");
@@ -90,7 +90,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -470,7 +470,7 @@ public class ItPodsShutdown extends BaseTest {
       updateCrdYamlVerifyShutdown(crd, delayTime);
 
       Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
-      if ((1.5 * terminationDefaultOptionsTime < terminationTime)) {
+      if ((2 * terminationDefaultOptionsTime < terminationTime)) {
         logger.info("\"FAILURE: ignored timeout Forced value during shutdown");
         throw new Exception("FAILURE: ignored timeout Forced during shutdown");
       }
@@ -489,7 +489,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testAddEnvShutdownOptions() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Files.createDirectories(Paths.get(shutdownTmpDir));
@@ -562,7 +562,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testShutdownOptionsOverrideClusterLevel() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Files.createDirectories(Paths.get(shutdownTmpDir));

@@ -52,7 +52,7 @@ public class ItPodsRestart extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       initialize(APP_PROPS_FILE);
 
       logger.info("Checking if operator1 and domain are running, if not creating");
@@ -79,7 +79,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -144,7 +144,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingLogHomeEnabled() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -166,7 +166,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingImagePullPolicy() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -189,7 +189,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingIncludeServerOutInPodLog() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -211,9 +211,9 @@ public class ItPodsRestart extends BaseTest {
    *
    * @throws Exception exception
    */
-  //@Test
+  @Test
   public void testServerPodsRestartByChangingZImage() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -252,7 +252,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingContSecurityContext() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -289,7 +289,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingPodSecurityContext() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -362,7 +362,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testAdminServerRestartVersion() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     String podName = domainUid + "-" + domain.getAdminServerName();
@@ -408,7 +408,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testClusterRestartVersion() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     String podName = domainUid + "-managed-server1";
@@ -455,7 +455,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testMsRestartVersion() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeFalse(FULLTEST || QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     String podName = domainUid + "-managed-server1";

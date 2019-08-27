@@ -59,7 +59,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
 
@@ -125,7 +125,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -423,7 +423,7 @@ public class ItElasticLogging extends BaseTest {
     
     // Make sure downloading completed
     while (i < BaseTest.getMaxIterationsPod()) {
-      if(wlsLoggingExpFile.exists() && snakeyamlFile.exists()) {
+      if (wlsLoggingExpFile.exists() && snakeyamlFile.exists()) {
         break;
       }
       
