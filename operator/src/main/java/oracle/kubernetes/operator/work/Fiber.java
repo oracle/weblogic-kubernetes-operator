@@ -56,8 +56,6 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private static final int NOT_COMPLETE = 0;
   private static final int DONE = 1;
   private static final int CANCELLED = 2;
-  private static final ExitCallback PLACEHOLDER = () -> {
-  };
   private static final ThreadLocal<Fiber> CURRENT_FIBER = new ThreadLocal<Fiber>();
   /** Used to allocate unique number for each fiber. */
   private static final AtomicInteger iotaGen = new AtomicInteger();
@@ -546,7 +544,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
   private void triggerExitCallback() {
     synchronized (this) {
-      if (exitCallback != null && exitCallback != PLACEHOLDER) {
+      if (exitCallback != null) {
 
         if (LOGGER.isFinerEnabled()) {
           LOGGER.finer("{0} triggering exit callback", new Object[] {getName()});
@@ -554,7 +552,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
         exitCallback.onExit();
       }
-      exitCallback = PLACEHOLDER;
+      exitCallback = null;
     }
   }
 
@@ -686,7 +684,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   }
 
   /**
-   * Cancels the current thread and accepts a callback for when the current thread, if any, exits
+   * Cancels this fiber and accepts a callback for when the current thread, if any, exits
    * processing this fiber. Since the fiber will now be cancelled or done, no thread will re-enter
    * this fiber. If the return value is true, then there is a current thread processing in this
    * fiber and the caller can expect a callback; however, if the return value is false, then there
@@ -715,9 +713,13 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         count.incrementAndGet();
       }
 
+      ExitCallback preexistingExitCallback = this.exitCallback;
       ExitCallback myCallback =
           () -> {
             if (count.decrementAndGet() == 0) {
+              if (preexistingExitCallback != null) {
+                preexistingExitCallback.onExit();
+              }
               exitCallback.onExit();
             }
           };
@@ -732,9 +734,6 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
       boolean isWillCall = count.get() > 1; // more calls outstanding then our initial buffer count
       if (isWillCall) {
-        if (this.exitCallback != null || this.exitCallback == PLACEHOLDER) {
-          throw new IllegalStateException();
-        }
         this.exitCallback = myCallback;
         myCallback.onExit(); // remove the buffer count
       }
