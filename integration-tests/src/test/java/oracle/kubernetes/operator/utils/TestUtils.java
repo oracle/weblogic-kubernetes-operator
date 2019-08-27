@@ -1699,7 +1699,7 @@ public class TestUtils {
     String archiveExt = "war";
     String infoDirName = initInfoDirName;
     String domainNS = domain.getDomainNs();
-    String deployTargetForGAR = (args.length == 0) ? "dataCluster" : args[0];
+    final String deployTargetForGar = (args.length == 0) ? "dataCluster" : args[0];
     logger.info(
         "Build and deploy Coherence App: "
             + appName
@@ -1722,7 +1722,7 @@ public class TestUtils {
 
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     domain.callShellScriptToBuildDeployAppInPod(
-        appName, scriptName, username, password, appToDeploy, deployTargetForGAR);
+        appName, scriptName, username, password, appToDeploy, deployTargetForGar);
   }
 
   public static ExecResult loginAndPushImageToOcir(String image) throws Exception {
