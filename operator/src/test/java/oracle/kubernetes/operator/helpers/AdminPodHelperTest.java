@@ -219,6 +219,34 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenAdminPodCreatedWithAdminPortEnabled_adminServerPortSecureEnvVarIsTrue() {
+    final Integer adminPort = 9002;
+    getServerTopology().setAdminPort(adminPort);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true"));
+  }
+
+  @Test
+  public void whenAdminPodCreatedWithNullAdminPort_adminServerPortSecureEnvVarIsNotSet() {
+    final Integer adminPort = null;
+    getServerTopology().setAdminPort(adminPort);
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true")));
+  }
+
+  @Test
+  public void whenAdminPodCreatedWithAdminServerHasSslPortEnabled_adminServerPortSecureEnvVarIsTrue() {
+    final Integer adminServerSslPort = 9999;
+    getServerTopology().setSslListenPort(adminServerSslPort);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true"));
+  }
+
+  @Test
+  public void whenAdminPodCreatedWithAdminServerHasNullSslPort_adminServerPortSecureEnvVarIsNotSet() {
+    final Integer adminServerSslPort = null;
+    getServerTopology().setSslListenPort(adminServerSslPort);
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true")));
+  }
+
+  @Test
   public void whenDomainPresenceHasNoEnvironmentItems_createAdminPodStartupWithDefaultItems() {
     assertThat(getCreatedPodSpecContainer().getEnv(), not(empty()));
   }
