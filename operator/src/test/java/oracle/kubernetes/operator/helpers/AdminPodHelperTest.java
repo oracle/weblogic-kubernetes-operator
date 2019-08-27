@@ -233,16 +233,16 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenAdminPodCreatedWithAdminServerHasSSLPortEnabled_adminServerPortSecureEnvVarIsTrue() {
-    final Integer adminServerSSLPort = 9999;
-    getServerTopology().setSslListenPort(adminServerSSLPort);
+  public void whenAdminPodCreatedWithAdminServerHasSslPortEnabled_adminServerPortSecureEnvVarIsTrue() {
+    final Integer adminServerSslPort = 9999;
+    getServerTopology().setSslListenPort(adminServerSslPort);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true"));
   }
 
   @Test
-  public void whenAdminPodCreatedWithAdminServerHasNullSSLPort_adminServerPortSecureEnvVarIsNotSet() {
-    final Integer adminServerSSLPort = null;
-    getServerTopology().setSslListenPort(adminServerSSLPort);
+  public void whenAdminPodCreatedWithAdminServerHasNullSslPort_adminServerPortSecureEnvVarIsNotSet() {
+    final Integer adminServerSslPort = null;
+    getServerTopology().setSslListenPort(adminServerSslPort);
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true")));
   }
 
