@@ -162,3 +162,7 @@ Configuration Overrides Usecases
 | Add initContainers with different names at different level | Add a multiple initContainers object at domain level and server level and verify all of the init containers are run before Weblogic server pods are started |
 | Add initContainers with same names at different level | Add a multiple initContainers object at domain level and server level and verify only the server level init containers are run before Weblogic server pods are started |
 
+| Managed Coherence Tests | Use Case |
+| --- | --- |
+| Managed Coherence - Domain on PV | Sanity testing of managed coherence in domain on pv using WLST. The test adds data to be stored in the cache, retrieves it and clears the cache |
+| Managed Coherence - Domain in image | Sanity testing of managed coherence in domain in image using WLST. The test adds data to be stored in the cache, retrieves it and clears the cache |
