@@ -142,11 +142,30 @@ public abstract class PodStepContext extends BasePodStepContext {
         .getLocalAdminProtocolChannelPort();
   }
 
+  /**
+   * Check if the server is listening on a secure port. NOTE: If the targetted server is a managed
+   * server, this method is overridden to check if the managed server has a secure listen port rather
+   * than the admin server. See PodHelper.ManagedPodStepContext
+   *
+   * @return true if server is listening on a secure port
+   */
   boolean isLocalAdminProtocolChannelSecure() {
+    return domainTopology
+        .getServerConfig(getServerName())
+        .isLocalAdminProtocolChannelSecure();
+  }
+
+  /**
+   * Check if the admin server is listening on a secure port.
+   *
+   * @return true if admin server is listening on a secure port
+   */
+  private boolean isAdminServerProtocolChannelSecure() {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .isLocalAdminProtocolChannelSecure();
   }
+
 
   Integer getLocalAdminProtocolChannelPort() {
     return domainTopology
@@ -587,7 +606,15 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.ADMIN_NAME, getAsName());
     addEnvVar(vars, ServerEnvVars.ADMIN_PORT, getAsPort().toString());
     if (isLocalAdminProtocolChannelSecure()) {
+      // This env variable indicates whether the administration port in the WLS server on the local pod is secure
       addEnvVar(vars, ServerEnvVars.ADMIN_PORT_SECURE, "true");
+    }
+    if (isAdminServerProtocolChannelSecure()) {
+      // The following env variable determines whether to set a secure protocol(https/t3s) in the "AdminURL" property
+      // in NM startup.properties.
+      // WebLogic Node Manager then sets the ADMIN_URL env variable(based on the "AdminURL") before starting
+      // the managed server
+      addEnvVar(vars, "ADMIN_SERVER_PORT_SECURE", "true");
     }
     addEnvVar(vars, ServerEnvVars.SERVER_NAME, getServerName());
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
