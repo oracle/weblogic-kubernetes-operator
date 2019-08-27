@@ -46,20 +46,6 @@ public class TestUtils {
   }
 
   /**
-   * Converts a list of strings to a comma-separated list, using "and" for the last item.
-   *
-   * @param list the list to convert
-   * @return the resultant string
-   */
-  public static String joinListGrammatically(final List<String> list) {
-    return list.size() > 1
-        ? String.join(", ", list.subList(0, list.size() - 1))
-            .concat(String.format("%s and ", list.size() > 2 ? "," : ""))
-            .concat(list.get(list.size() - 1))
-        : list.get(0);
-  }
-
-  /**
    * Removes the console handlers from the specified logger, in order to silence them during a test.
    *
    * @param logger a logger to silence
