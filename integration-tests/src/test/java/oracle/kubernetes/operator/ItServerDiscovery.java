@@ -44,43 +44,43 @@ public class ItServerDiscovery extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
-    // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE);
-
-    // Create operator1
-    if (operator == null) {
-      logger.info("Creating Operator & waiting for the script to complete execution");
-      operator = TestUtils.createOperator(OPERATOR1_YAML);
+    If(FULLTEST || QUICKTEST) {
+      // initialize test properties and create the directories
+      initialize(APP_PROPS_FILE);
+  
+      // Create operator1
+      if (operator == null) {
+        logger.info("Creating Operator & waiting for the script to complete execution");
+        operator = TestUtils.createOperator(OPERATOR1_YAML);
+      }
+  
+      // create domain
+      if (domain == null) {
+        logger.info("Creating WLS Domain & waiting for the script to complete execution");
+        domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
+        domain.verifyDomainCreated();
+      }
+  
+      final String testYamlFileName = "custom-domaint.yaml";
+  
+      String domainYaml =
+          BaseTest.getUserProjectsDir()
+              + "/weblogic-domains/"
+              + domain.getDomainUid()
+              + "/domain.yaml";
+  
+      // create test domain yaml file
+      testDomainYamlFile = BaseTest.getResultDir() + "/" + testYamlFileName;
+  
+      Path sourceFile = Paths.get(domainYaml);
+      Path targetFile = Paths.get(testDomainYamlFile);
+  
+      Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+  
+      String content = new String(Files.readAllBytes(targetFile), StandardCharsets.UTF_8);
+      content = content.replaceAll("replicas: 2", "replicas: 3");
+      Files.write(targetFile, content.getBytes(StandardCharsets.UTF_8));
     }
-
-    // create domain
-    if (domain == null) {
-      logger.info("Creating WLS Domain & waiting for the script to complete execution");
-      domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
-      domain.verifyDomainCreated();
-    }
-
-    final String testYamlFileName = "custom-domaint.yaml";
-
-    String domainYaml =
-        BaseTest.getUserProjectsDir()
-            + "/weblogic-domains/"
-            + domain.getDomainUid()
-            + "/domain.yaml";
-
-    // create test domain yaml file
-    testDomainYamlFile = BaseTest.getResultDir() + "/" + testYamlFileName;
-
-    Path sourceFile = Paths.get(domainYaml);
-    Path targetFile = Paths.get(testDomainYamlFile);
-
-    Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-
-    String content = new String(Files.readAllBytes(targetFile), StandardCharsets.UTF_8);
-    content = content.replaceAll("replicas: 2", "replicas: 3");
-    Files.write(targetFile, content.getBytes(StandardCharsets.UTF_8));
-    
   }
 
   /**
@@ -90,15 +90,15 @@ public class ItServerDiscovery extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
-    logger.info("++++++++++++++++++++++++++++++++++");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
-
-    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-
-    logger.info("SUCCESS");
-    
+    if(FULLTEST) {
+      logger.info("++++++++++++++++++++++++++++++++++");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
+  
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+  
+      logger.info("SUCCESS");
+    }    
   }
 
   /**
