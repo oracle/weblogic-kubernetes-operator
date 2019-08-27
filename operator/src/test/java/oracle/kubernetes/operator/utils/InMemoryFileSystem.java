@@ -4,8 +4,6 @@
 
 package oracle.kubernetes.operator.utils;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
-
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
@@ -26,10 +24,11 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
-public abstract class InMemoryFileSystem extends FileSystem {
-  private FileSystemProviderStub provider = createStrictStub(FileSystemProviderStub.class);
+import static com.meterware.simplestub.Stub.createStrictStub;
 
+public abstract class InMemoryFileSystem extends FileSystem {
   private static InMemoryFileSystem instance;
+  private FileSystemProviderStub provider = createStrictStub(FileSystemProviderStub.class);
 
   public static InMemoryFileSystem createInstance() {
     return instance = createStrictStub(InMemoryFileSystem.class);
@@ -55,6 +54,30 @@ public abstract class InMemoryFileSystem extends FileSystem {
 
   private void defineFileContents(String filePath, String contents) {
     provider.fileContents.put(filePath, contents);
+  }
+
+  enum PathType {
+    DIRECTORY {
+      @Override
+      boolean isDirectory() {
+        return true;
+      }
+    },
+    FILE {
+      @Override
+      boolean isRegularFile() {
+        return true;
+      }
+    },
+    NONE;
+
+    boolean isDirectory() {
+      return false;
+    }
+
+    boolean isRegularFile() {
+      return false;
+    }
   }
 
   abstract static class PathStub implements Path {
@@ -83,6 +106,13 @@ public abstract class InMemoryFileSystem extends FileSystem {
   abstract static class FileSystemProviderStub extends FileSystemProvider {
     private Map<String, String> fileContents = new HashMap<>();
 
+    static String getFilePath(Path path) {
+      if (!(path instanceof PathStub))
+        throw new IllegalArgumentException(path.getClass() + " not supported");
+
+      return ((PathStub) path).filePath;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <A extends BasicFileAttributes> A readAttributes(
@@ -90,13 +120,6 @@ public abstract class InMemoryFileSystem extends FileSystem {
       if (!type.equals(BasicFileAttributes.class))
         throw new IllegalArgumentException("attributes type " + type + " not supported");
       return (A) createAttributes(getFilePath(path));
-    }
-
-    static String getFilePath(Path path) {
-      if (!(path instanceof PathStub))
-        throw new IllegalArgumentException(path.getClass() + " not supported");
-
-      return ((PathStub) path).filePath;
     }
 
     @SuppressWarnings("unchecked")
@@ -125,30 +148,6 @@ public abstract class InMemoryFileSystem extends FileSystem {
         if (key.equals(filePath)) return PathType.FILE;
       }
       return PathType.NONE;
-    }
-  }
-
-  enum PathType {
-    DIRECTORY {
-      @Override
-      boolean isDirectory() {
-        return true;
-      }
-    },
-    FILE {
-      @Override
-      boolean isRegularFile() {
-        return true;
-      }
-    },
-    NONE;
-
-    boolean isDirectory() {
-      return false;
-    };
-
-    boolean isRegularFile() {
-      return false;
     }
   }
 
@@ -191,7 +190,8 @@ public abstract class InMemoryFileSystem extends FileSystem {
     }
 
     @Override
-    public void close() {}
+    public void close() {
+    }
   }
 
   abstract static class SeekableByteChannelStub implements SeekableByteChannel {
@@ -217,6 +217,7 @@ public abstract class InMemoryFileSystem extends FileSystem {
     }
 
     @Override
-    public void close() {}
+    public void close() {
+    }
   }
 }

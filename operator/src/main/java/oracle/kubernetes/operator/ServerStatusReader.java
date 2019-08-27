@@ -4,15 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-
-import com.google.common.base.Charsets;
-import com.google.common.io.CharStreams;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Pod;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -24,6 +15,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import com.google.common.base.Charsets;
+import com.google.common.io.CharStreams;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.LastKnownStatus;
@@ -41,17 +38,37 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import org.joda.time.DateTime;
 
+import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+
 /** Creates an asynchronous step to read the WebLogic server state from a particular pod. */
 public class ServerStatusReader {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static KubernetesExecFactory EXEC_FACTORY = new KubernetesExecFactoryImpl();
   private static Function<Step, Step> STEP_FACTORY = ReadHealthStep::createReadHealthStep;
 
-  private ServerStatusReader() {}
+  private ServerStatusReader() {
+  }
 
   static Step createDomainStatusReaderStep(
       DomainPresenceInfo info, long timeoutSeconds, Step next) {
     return new DomainStatusReaderStep(info, timeoutSeconds, next);
+  }
+
+  /**
+   * Creates asynchronous step to read WebLogic server state from a particular pod.
+   *
+   * @param info the domain presence
+   * @param pod The pod
+   * @param serverName Server name
+   * @param timeoutSeconds Timeout in seconds
+   * @return Created step
+   */
+  private static Step createServerStatusReaderStep(
+      DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds) {
+    return new ServerStatusReaderStep(
+        info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, pod, null));
   }
 
   private static class DomainStatusReaderStep extends Step {
@@ -90,21 +107,6 @@ public class ServerStatusReader {
           createServerStatusReaderStep(info, pod, PodHelper.getPodServerName(pod), timeoutSeconds),
           packet.clone());
     }
-  }
-
-  /**
-   * Creates asynchronous step to read WebLogic server state from a particular pod.
-   *
-   * @param info the domain presence
-   * @param pod The pod
-   * @param serverName Server name
-   * @param timeoutSeconds Timeout in seconds
-   * @return Created step
-   */
-  private static Step createServerStatusReaderStep(
-      DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds) {
-    return new ServerStatusReaderStep(
-        info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, pod, null));
   }
 
   private static class ServerStatusReaderStep extends Step {

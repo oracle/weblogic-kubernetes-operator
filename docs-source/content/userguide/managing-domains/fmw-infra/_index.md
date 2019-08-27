@@ -431,11 +431,10 @@ you must shut down the entire domain before applying the patch. Please see the d
 for more information.
 
 An example of a non-ZDP compliant patch is one that includes a schema change
-that cannot be applied dynamically.
+that can not be applied dynamically.
 
 #### Additional considerations for Coherence
 
 If you are running a domain which contains Coherence, please refer to
 [Coherence requirements]({{< relref "/faq/coherence-requirements.md" >}})
 for more information.
-

@@ -1,15 +1,15 @@
 <!-- Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
      Licensed under the Universal Permissive License v 1.0 as shown at
      http://oss.oracle.com/licenses/upl. -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-  
+
     <parent>
-       <groupId>oracle.kubernetes</groupId>
-       <artifactId>operator-parent</artifactId>
-       <version>2.2.1</version>
-     </parent>
+        <groupId>oracle.kubernetes</groupId>
+        <artifactId>operator-parent</artifactId>
+        <version>2.3.0</version>
+    </parent>
 
     <artifactId>operator-swagger</artifactId>
 
@@ -20,19 +20,18 @@
     <url>https://oracle.github.io/weblogic-kubernetes-operator</url>
     <inceptionYear>2017</inceptionYear>
     <licenses>
-      <license>
-        <name>The Universal Permissive License (UPL), Version 1.0</name>
-        <url>https://github.com/oracle/weblogic-kubernetes-operator/blob/master/LICENSE</url>
-      </license>
+        <license>
+            <name>The Universal Permissive License (UPL), Version 1.0</name>
+            <url>https://github.com/oracle/weblogic-kubernetes-operator/blob/master/LICENSE</url>
+        </license>
     </licenses>
 
     <build>
-       <plugins>
+        <plugins>
             <!-- update the swagger html documentation for the REST server -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>${exec-maven-plugin-version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -46,31 +45,14 @@
                 </configuration>
             </plugin>
 
-         <plugin>
-           <groupId>org.apache.maven.plugins</groupId>
-           <artifactId>maven-compiler-plugin</artifactId>
-           <version>${maven-compiler-plugin-version}</version>
-           <configuration>
-             <release>11</release>
-             <compilerArgs>
-               <arg>-Xpkginfo:always</arg>
-             </compilerArgs>
-           </configuration>
-         </plugin>
-      		<plugin>
-				<groupId>com.coveo</groupId>
-				<artifactId>fmt-maven-plugin</artifactId>
-				<version>2.8</version>
-				<executions>
-					<execution>
-						<phase>test</phase>
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-      
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
 
@@ -90,15 +72,13 @@
 
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>operator-model</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${guava-version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.kubernetes</groupId>
+            <artifactId>client-java</artifactId>
+       </dependency>
     </dependencies>
-    
+
 </project>

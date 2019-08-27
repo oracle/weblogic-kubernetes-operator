@@ -4,6 +4,35 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.models.V1ContainerPort;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1SecretReference;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.helpers.UnitTestHash;
+import oracle.kubernetes.operator.steps.DomainPresenceStep;
+import oracle.kubernetes.operator.utils.InMemoryCertificates;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import org.hamcrest.Description;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainUpPlanTest.ContainerPortMatcher.hasContainerPort;
 import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStep;
@@ -15,46 +44,18 @@ import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
-import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.V1ContainerPort;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1SecretReference;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
-import oracle.kubernetes.operator.helpers.UnitTestHash;
-import oracle.kubernetes.operator.steps.DomainPresenceStep;
-import oracle.kubernetes.operator.utils.InMemoryCertificates;
-import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.operator.work.TerminalStep;
-import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.hamcrest.Description;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 public class DomainUpPlanTest {
   private static final String NS = "namespace";
   private static final String UID = "test-uid";
   private static final V1SecretReference SECRET = new V1SecretReference().name("secret");
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
   private final TerminalStep adminStep = new TerminalStep();
   private final TerminalStep managedServersStep = new TerminalStep();
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private List<Memento> mementos = new ArrayList<>();
   private Domain domain =
       new Domain()
           .withMetadata(new V1ObjectMeta().namespace(NS))
-          .withSpec(new DomainSpec().withDomainUID(UID).withWebLogicCredentialsSecret(SECRET));
+          .withSpec(new DomainSpec().withDomainUid(UID).withWebLogicCredentialsSecret(SECRET));
   private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
   private DomainProcessorImpl processor =

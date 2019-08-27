@@ -4,14 +4,15 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import java.util.HashMap;
-import java.util.Map;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParametersImpl;
+
+import static com.meterware.simplestub.Stub.createStrictStub;
 
 public abstract class TuningParametersStub implements TuningParameters {
   static final int READINESS_INITIAL_DELAY = 1;
@@ -20,6 +21,7 @@ public abstract class TuningParametersStub implements TuningParameters {
   static final int LIVENESS_INITIAL_DELAY = 4;
   static final int LIVENESS_PERIOD = 6;
   static final int LIVENESS_TIMEOUT = 5;
+  static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 180L;
   static Map<String, String> namedParameters;
 
   public static Memento install() throws NoSuchFieldException {
@@ -36,7 +38,8 @@ public abstract class TuningParametersStub implements TuningParameters {
         READINESS_PERIOD,
         LIVENESS_INITIAL_DELAY,
         LIVENESS_TIMEOUT,
-        LIVENESS_PERIOD);
+        LIVENESS_PERIOD,
+        INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS);
   }
 
   @Override
