@@ -580,7 +580,7 @@ function checkOverrides() {
   tracen "Info: Waiting for WLST checkBeans.py to complete."
   printdots_start
   # TBD weblogic/welcome1 should be deduced via a base64 of the admin secret
-  kubectl exec -it ${DOMAIN_UID}-${ADMIN_NAME} \
+  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} \
     wlst.sh /shared/checkBeans.py \
       weblogic welcome1 t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT} \
       /shared/checkBeans.input \
@@ -630,7 +630,7 @@ function checkWLVersionChecks() {
     || exit 1
 
   rm -f ${outfile}
-  kubectl exec -it ${DOMAIN_UID}-${ADMIN_NAME} \
+  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} \
       /shared/${testscript} \
       > ${outfile} 2>&1
   status=$?
@@ -666,7 +666,7 @@ function checkDataSource() {
 
   tracen "Info: Waiting for script to complete"
   printdots_start
-  kubectl exec -it ${pod_name} ${script_cmd} > ${out_file} 2>&1
+  kubectl exec -it -n ${NAMESPACE} ${pod_name} ${script_cmd} > ${out_file} 2>&1
   status=$?
   printdots_end
   if [ $status -ne 0 ]; then
