@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
-import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.utils.OperatorUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
@@ -72,7 +72,7 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<DomainStatus> {
     if (expectedMessage != null) expectations.add(expectation("reason", expectedMessage));
     description
         .appendText("domain containing condition: ")
-        .appendText(TestUtils.joinListGrammatically(expectations));
+        .appendText(OperatorUtils.joinListGrammatically(expectations));
   }
 
   private String expectation(String description, String value) {
