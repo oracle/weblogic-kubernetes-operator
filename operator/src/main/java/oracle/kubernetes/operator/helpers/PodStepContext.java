@@ -52,6 +52,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -141,11 +142,30 @@ public abstract class PodStepContext extends BasePodStepContext {
         .getLocalAdminProtocolChannelPort();
   }
 
+  /**
+   * Check if the server is listening on a secure port. NOTE: If the targetted server is a managed
+   * server, this method is overridden to check if the managed server has a secure listen port rather
+   * than the admin server. See PodHelper.ManagedPodStepContext
+   *
+   * @return true if server is listening on a secure port
+   */
   boolean isLocalAdminProtocolChannelSecure() {
+    return domainTopology
+        .getServerConfig(getServerName())
+        .isLocalAdminProtocolChannelSecure();
+  }
+
+  /**
+   * Check if the admin server is listening on a secure port.
+   *
+   * @return true if admin server is listening on a secure port
+   */
+  private boolean isAdminServerProtocolChannelSecure() {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .isLocalAdminProtocolChannelSecure();
   }
+
 
   Integer getLocalAdminProtocolChannelPort() {
     return domainTopology
@@ -157,7 +177,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return getDomain().getEffectiveLogHome();
   }
 
-  private String getIncludeServerOutInPodLog() {
+  private String isIncludeServerOutInPodLog() {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
   }
 
@@ -241,7 +261,7 @@ public abstract class PodStepContext extends BasePodStepContext {
    */
   private Step deletePod(Step next) {
     return new CallBuilder()
-        .deletePodAsync(getPodName(), getNamespace(), new V1DeleteOptions(), deleteResponse(next));
+          .deletePodAsync(getPodName(), getNamespace(), new V1DeleteOptions(), deleteResponse(next));
   }
 
   /**
@@ -337,7 +357,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private boolean canUseCurrentPod(V1Pod currentPod) {
     boolean useCurrent =
         AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
-    if (!useCurrent && AnnotationHelper.getDebugString(currentPod) != null)
+    if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0)
       LOGGER.info(
           MessageKeys.POD_DUMP,
           AnnotationHelper.getDebugString(currentPod),
@@ -399,7 +419,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return vars;
   }
 
-  final void updateForStartupMode(V1Pod pod) {
+  private void updateForStartupMode(V1Pod pod) {
     ServerSpec serverSpec = getServerSpec();
     if (serverSpec != null) {
       String desiredState = serverSpec.getDesiredState();
@@ -420,7 +440,7 @@ public abstract class PodStepContext extends BasePodStepContext {
    *
    * @param pod The pod
    */
-  final void updateForShutdown(V1Pod pod) {
+  private void updateForShutdown(V1Pod pod) {
     String shutdownType;
     Long timeout;
     boolean ignoreSessions;
@@ -576,23 +596,33 @@ public abstract class PodStepContext extends BasePodStepContext {
     return mounts;
   }
 
-  void overrideContainerWeblogicEnvVars(List<V1EnvVar> vars) {
-    // Override the domain name, domain directory, admin server name and admin server port.
-    addEnvVar(vars, "DOMAIN_NAME", getDomainName());
-    addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
-    addEnvVar(vars, "ADMIN_NAME", getAsName());
-    addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
+  /**
+   * Sets the environment variables used by operator/src/main/resources/scripts/startServer.sh
+   * @param vars a list to which new variables are to be added
+   */
+  void addStartupEnvVars(List<V1EnvVar> vars) {
+    addEnvVar(vars, ServerEnvVars.DOMAIN_NAME, getDomainName());
+    addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
+    addEnvVar(vars, ServerEnvVars.ADMIN_NAME, getAsName());
+    addEnvVar(vars, ServerEnvVars.ADMIN_PORT, getAsPort().toString());
     if (isLocalAdminProtocolChannelSecure()) {
-      addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
+      // This env variable indicates whether the administration port in the WLS server on the local pod is secure
+      addEnvVar(vars, ServerEnvVars.ADMIN_PORT_SECURE, "true");
     }
-    addEnvVar(vars, "SERVER_NAME", getServerName());
-    addEnvVar(vars, "DOMAIN_UID", getDomainUid());
-    addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
-    addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
-    addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
-    addEnvVar(
-        vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUid(), getServerName()));
-    addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUid(), getAsName()));
+    if (isAdminServerProtocolChannelSecure()) {
+      // The following env variable determines whether to set a secure protocol(https/t3s) in the "AdminURL" property
+      // in NM startup.properties.
+      // WebLogic Node Manager then sets the ADMIN_URL env variable(based on the "AdminURL") before starting
+      // the managed server
+      addEnvVar(vars, "ADMIN_SERVER_PORT_SECURE", "true");
+    }
+    addEnvVar(vars, ServerEnvVars.SERVER_NAME, getServerName());
+    addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
+    addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, NODEMGR_HOME);
+    addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
+    addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, isIncludeServerOutInPodLog());
+    addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
+    addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
     if (mockWls()) {
       addEnvVar(vars, "MOCK_WLS", "true");
     }

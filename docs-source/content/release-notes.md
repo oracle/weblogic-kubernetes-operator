@@ -8,7 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities | Change |
 | --- | --- | --- | --- |
-|  | v2.3.0 | no  | 
+| August 27, 2019 | v2.3.0 | no  | Added support for Coherence cluster rolling, pod templating and additional pod content, and experimental support for running under an Istio service mesh.
 | June 20, 2019 | v2.2.1 | no  | The operator now supports Kubernetes 1.14.0+.  This release is primarily a bug fix release and resolves the following issues:<br><ul><li>Servers in domains, where the domain home is on a persistent volume, would sometimes fail to start. These failures would be during the introspection phase following a full domain shutdown.  Now, the introspection script better handles the relevant error conditions.</li><li>The domain resource provides an option to <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md#server-service">pre-create Kubernetes services</a> for WebLogic Servers that are not yet running so that the DNS addresses of these services are resolvable.  These services are now created as non-headless so that they have an IP address.</li></ul>
 | June 6, 2019 | v2.2.0 | no  | Added support for FMW Infrastructure domains. WebLogic Server instances are now gracefully shut down by default and shutdown options are configurable. Operator is now built and runs on JDK 11.
 | April 4, 2019 | v2.1 | no  | Customers can add init and sidecar containers to generated pods.  
