@@ -10,9 +10,9 @@ This sample demonstrates how to specify a domain model to use in an image for th
 
 | directory | contents |
 |-----------|----------|
-| /u01/model_home/models| domain model yaml files |
-| /u01/model_home/variables | model variable files |
-| /u01/model_home/archives | deployment archive |
+| /u01/wdt/models| domain model yaml files |
+|                | model variable files |
+|                | deployment archive |
 
 
 4. Optionally create a config map

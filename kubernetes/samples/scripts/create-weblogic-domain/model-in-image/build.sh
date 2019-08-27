@@ -27,10 +27,13 @@ imagetool create --tag model-in-image:x0 --user $2 --password $3 --patches 29135
 #
 ./build_app.sh
 #
-cp weblogic-deploy.zip image
 cd image
-docker build --tag model-in-image:x1 .
+imagetool update --tag model-in-image:x1 --fromImage model-in-image:x0 --wdtModel model1.yaml --wdtVariable model1.10.properties --wdtArchive archive1.zip --wdtModelOnly
 cd ..
+# cp weblogic-deploy.zip image
+# cd image
+# docker build --tag model-in-image:x1 .
+# cd ..
 #
 ./k8sdomain.sh
 #
