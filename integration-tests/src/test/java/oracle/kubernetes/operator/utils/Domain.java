@@ -1535,7 +1535,7 @@ public class Domain {
       sampleDomainInputsFile =
           "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml";
     } else if (domainMap.containsKey("rcuDatabaseURL")) {
-    	sampleDomainInputsFile =
+      sampleDomainInputsFile =
           "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/create-domain-inputs.yaml";
     }
     logger.info("For this domain sampleDomainInputsFile is: " + sampleDomainInputsFile);
