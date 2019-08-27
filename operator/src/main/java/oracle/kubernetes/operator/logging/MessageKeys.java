@@ -156,6 +156,13 @@ public class MessageKeys {
   public static final String JOB_DEADLINE_EXCEEDED_MESSAGE = "WLSKO-0154";
   public static final String JOB_LOG_PARSE_FAILURE = "WLSKO-0155";
 
+  // domain status messages
+  public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
+  public static final String DUPLICATE_CLUSTER_NAME_FOUND = "WLSDO-0002";
+  public static final String LOG_HOME_NOT_MOUNTED = "WLSDO-0003";
+  public static final String BAD_VOLUME_MOUNT_PATH = "WLSDO-0004";
+  public static final String RESERVED_ENVIRONMENT_VARIABLES = "WLSDO-0005";
+
   private MessageKeys() {
   }
 }
