@@ -8,8 +8,8 @@
 # file which is updated by the node manager.
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-source ${SCRIPTPATH}/traceUtils.sh
-[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exit 1
+source ${SCRIPTPATH}/utils.sh
+[ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
 
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed:
 exportEffectiveDomainHome || exit 1
@@ -26,7 +26,7 @@ if [ `jps -v | grep -c " -Dweblogic.Name=${SERVER_NAME} "` -eq 0 ]; then
 fi
 
 if [ ! -f ${STATEFILE} ]; then
-  trace "Error: WebLogic Server state file not found."
+  trace "WebLogic Server state file not found."
   exit 2
 fi
 

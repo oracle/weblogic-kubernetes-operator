@@ -4,17 +4,24 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1EnvVar;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1Pod;
+import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public abstract class StepContextBase implements StepContextConstants {
-
-  // Map of <token, substitution string> to be used in the translate method
-  // Subclass should populate this map prior to calling translate().
-  protected Map<String, String> substitutionVariables = new HashMap<>();
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
    * Abstract method to be implemented by subclasses to return a list of configured and additional
@@ -42,18 +49,105 @@ public abstract class StepContextBase implements StepContextConstants {
         vars, "USER_MEM_ARGS", "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom");
 
     hideAdminUserCredentials(vars);
-    doSubstitution(vars);
+    doSubstitution(varsToSubVariables(vars), vars);
 
     return vars;
   }
 
-  protected void doSubstitution(List<V1EnvVar> vars) {
+  protected Map<String, String> varsToSubVariables(List<V1EnvVar> vars) {
+    Map<String, String> substitutionVariables = new HashMap<>();
+    if (vars != null) {
+      for (V1EnvVar envVar : vars) {
+        substitutionVariables.put(envVar.getName(), envVar.getValue());
+      }
+    }
+
+    return substitutionVariables;
+  }
+
+  protected void doSubstitution(final Map<String, String> substitutionVariables, List<V1EnvVar> vars) {
     for (V1EnvVar var : vars) {
-      var.setValue(translate(var.getValue()));
+      var.setValue(translate(substitutionVariables, var.getValue()));
     }
   }
 
-  private String translate(String rawValue) {
+  protected <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj) {
+    if (obj instanceof String) {
+      return (T) translate(substitutionVariables, (String) obj);
+    } else if (obj instanceof List) {
+      List<Object> result = new ArrayList<>();
+      for (Object o : (List) obj) {
+        result.add(doDeepSubstitution(substitutionVariables, o));
+      }
+      return (T) result;
+    } else if (obj instanceof Map) {
+      Map<String, Object> result = new HashMap<>();
+      for (Map.Entry<String, Object> entry : ((Map<String, Object>) obj).entrySet()) {
+        result.put(
+            translate(substitutionVariables, entry.getKey()),
+            doDeepSubstitution(substitutionVariables, entry.getValue()));
+      }
+      return (T) result;
+    } else if (obj != null) {
+      Class<T> cls = (Class<T>) obj.getClass();
+      if (isModelClass(cls)) {
+        try {
+          Constructor<T> constructor = cls.getConstructor();
+          T subObj = constructor.newInstance();
+
+          List<Pair<Method, Method>> typeBeans = typeBeans(cls);
+          for (Pair<Method, Method> item : typeBeans) {
+            item.getRight()
+                .invoke(
+                    subObj, doDeepSubstitution(substitutionVariables, item.getLeft().invoke(obj)));
+          }
+          return subObj;
+        } catch (NoSuchMethodException
+            | InstantiationException
+            | IllegalAccessException
+            | InvocationTargetException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+    return obj;
+  }
+
+  private static final String MODELS_PACKAGE = V1Pod.class.getPackageName();
+  private static final String DOMAIN_MODEL_PACKAGE = Domain.class.getPackageName();
+
+  private boolean isModelClass(Class cls) {
+    return cls.getPackageName().startsWith(MODELS_PACKAGE)
+        || cls.getPackageName().startsWith(DOMAIN_MODEL_PACKAGE);
+  }
+
+  private List<Pair<Method, Method>> typeBeans(Class cls) {
+    List<Pair<Method, Method>> results = new ArrayList<>();
+    Method[] methods = cls.getMethods();
+    for (Method m : methods) {
+      if (m.getParameterCount() == 0) {
+        String beanName = null;
+        if (m.getName().startsWith("get")) {
+          beanName = m.getName().substring(3);
+        } else if (m.getName().startsWith("is")) {
+          beanName = m.getName().substring(2);
+        }
+        if (beanName != null) {
+          try {
+            Method set = cls.getMethod("set" + beanName, m.getReturnType());
+            if (set != null) {
+              results.add(new Pair<>(m, set));
+            }
+          } catch (NoSuchMethodException nsme) {
+            // no-op
+          }
+        }
+      }
+    }
+    return results;
+  }
+
+  private String translate(final Map<String, String> substitutionVariables, String rawValue) {
     String result = rawValue;
     for (Map.Entry<String, String> entry : substitutionVariables.entrySet()) {
       if (result != null && entry.getValue() != null) {

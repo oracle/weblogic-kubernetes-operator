@@ -4,10 +4,11 @@
 
 package oracle.kubernetes.operator.steps;
 
-import io.kubernetes.client.models.V1ConfigMap;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.kubernetes.client.models.V1ConfigMap;
 import oracle.kubernetes.operator.ConfigMapWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
@@ -51,7 +52,7 @@ public class ConfigMapAfterStep extends Step {
 
   private ConfigMapWatcher createConfigMapWatcher(String namespace, String initialResourceVersion) {
     ThreadFactory factory =
-        ContainerResolver.getInstance().getContainer().getSPI(ThreadFactory.class);
+        ContainerResolver.getInstance().getContainer().getSpi(ThreadFactory.class);
 
     return ConfigMapWatcher.create(
         factory, namespace, initialResourceVersion, tuning, listener, stopping);

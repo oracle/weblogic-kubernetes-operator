@@ -5,8 +5,9 @@
 package oracle.kubernetes.operator;
 
 import java.util.Map;
-import oracle.kubernetes.operator.utils.DBUtils;
-import oracle.kubernetes.operator.utils.JRFDomain;
+
+import oracle.kubernetes.operator.utils.DbUtils;
+import oracle.kubernetes.operator.utils.JrfDomain;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -35,7 +36,8 @@ public class JrfInOperatorTest extends BaseTest {
   private static final String JRF_DOMAIN_SAMPLE_DEFAULTS_YAML = "jrfdomainsampledefaults.yaml";
   // property file for oracle db information
   private static final String DB_PROP_FILE = "oracledb.properties";
-  private static Operator operator1, operator2;
+  private static Operator operator1;
+  private static Operator operator2;
   private static String rcuPodName;
 
   /**
@@ -52,12 +54,12 @@ public class JrfInOperatorTest extends BaseTest {
     initialize(APP_PROPS_FILE);
 
     // create DB used for jrf domain
-    DBUtils.createOracleDB(DB_PROP_FILE);
+    DbUtils.createOracleDB(DB_PROP_FILE);
 
     // run RCU first
-    DBUtils.deleteNamespace(DBUtils.DEFAULT_RCU_NAMESPACE);
-    DBUtils.createNamespace(DBUtils.DEFAULT_RCU_NAMESPACE);
-    rcuPodName = DBUtils.createRCUPod(DBUtils.DEFAULT_RCU_NAMESPACE);
+    DbUtils.deleteNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
+    DbUtils.createNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
+    rcuPodName = DbUtils.createRcuPod(DbUtils.DEFAULT_RCU_NAMESPACE);
 
     // TODO: reconsider the logic to check the db readiness
     // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
@@ -90,7 +92,8 @@ public class JrfInOperatorTest extends BaseTest {
    * @throws Exception - if any error occurs when create operator and jrf domains
    */
   @Test
-  public void testJRFDomainOnPVUsingWLST() throws Exception {
+  public void testJrfDomainOnPvUsingWlst() throws Exception {
+    Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");
@@ -99,15 +102,15 @@ public class JrfInOperatorTest extends BaseTest {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
 
-    JRFDomain jrfdomain = null;
+    JrfDomain jrfdomain = null;
     boolean testCompletedSuccessfully = false;
 
     try {
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, JRF_DOMAIN_ON_PV_WLST_FILE);
+      DbUtils.runRcu(rcuPodName, JRF_DOMAIN_ON_PV_WLST_FILE);
 
       // create JRF domain
-      jrfdomain = new JRFDomain(JRF_DOMAIN_ON_PV_WLST_FILE);
+      jrfdomain = new JrfDomain(JRF_DOMAIN_ON_PV_WLST_FILE);
 
       // verify JRF domain created, servers up and running
       jrfdomain.verifyDomainCreated();
@@ -143,7 +146,7 @@ public class JrfInOperatorTest extends BaseTest {
    * @throws Exception - if any error occurs
    */
   @Test
-  public void testTwoJRFDomainsManagedByTwoOperators() throws Exception {
+  public void testTwoJrfDomainsManagedByTwoOperators() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -153,7 +156,8 @@ public class JrfInOperatorTest extends BaseTest {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
 
-    JRFDomain domain1 = null, domain2 = null;
+    JrfDomain domain1 = null;
+    JrfDomain domain2 = null;
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
@@ -166,7 +170,7 @@ public class JrfInOperatorTest extends BaseTest {
       domain1Map.put("namespace", "default");
 
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, domain1Map);
+      DbUtils.runRcu(rcuPodName, domain1Map);
 
       Map<String, Object> domain2Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE_2);
       domain2Map.put("domainUID", "jrfdomain2");
@@ -175,11 +179,11 @@ public class JrfInOperatorTest extends BaseTest {
       domain2Map.put("voyagerWebPort", 30308);
 
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, domain2Map);
+      DbUtils.runRcu(rcuPodName, domain2Map);
 
       // create domain1
       logger.info("Creating Domain domain1 & verifying the domain creation");
-      domain1 = new JRFDomain(domain1Map);
+      domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
       testBasicUseCases(domain1);
@@ -190,7 +194,7 @@ public class JrfInOperatorTest extends BaseTest {
       }
 
       // create domain2
-      domain2 = new JRFDomain(domain2Map);
+      domain2 = new JrfDomain(domain2Map);
       domain2.verifyDomainCreated();
 
       testBasicUseCases(domain2);
@@ -239,7 +243,7 @@ public class JrfInOperatorTest extends BaseTest {
    * @throws Exception - if any error occurs
    */
   @Test
-  public void testTwoJRFDomainsManagedByOneOperatorInSameNS() throws Exception {
+  public void testTwoJrfDomainsManagedByOneOperatorInSameNS() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -249,7 +253,8 @@ public class JrfInOperatorTest extends BaseTest {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
 
-    JRFDomain domain1 = null, domain2 = null;
+    JrfDomain domain1 = null;
+    JrfDomain domain2 = null;
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
@@ -261,7 +266,7 @@ public class JrfInOperatorTest extends BaseTest {
       domain1Map.put("rcuSchemaPrefix", "jrfd1");
 
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, domain1Map);
+      DbUtils.runRcu(rcuPodName, domain1Map);
 
       Map<String, Object> domain2Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
       domain2Map.put("domainUID", "jrfd2");
@@ -271,17 +276,17 @@ public class JrfInOperatorTest extends BaseTest {
       domain2Map.put("rcuSchemaPrefix", "jrfd2");
 
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, domain2Map);
+      DbUtils.runRcu(rcuPodName, domain2Map);
 
       // create domain1
       logger.info("Creating Domain domain1 & verifying the domain creation");
-      domain1 = new JRFDomain(domain1Map);
+      domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
       testBasicUseCases(domain1);
 
       // create domain2
-      domain2 = new JRFDomain(domain2Map);
+      domain2 = new JrfDomain(domain2Map);
       domain2.verifyDomainCreated();
 
       testBasicUseCases(domain2);
@@ -330,7 +335,7 @@ public class JrfInOperatorTest extends BaseTest {
    * @throws Exception - if any error occurs
    */
   @Test
-  public void testTwoJRFDomainsManagedByOneOperatorInDifferentNS() throws Exception {
+  public void testTwoJrfDomainsManagedByOneOperatorInDifferentNS() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -340,7 +345,8 @@ public class JrfInOperatorTest extends BaseTest {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
 
-    JRFDomain domain1 = null, domain2 = null;
+    JrfDomain domain1 = null;
+    JrfDomain domain2 = null;
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
@@ -354,7 +360,7 @@ public class JrfInOperatorTest extends BaseTest {
       domain1Map.put("loadBalancer", "VOYAGER");
 
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, domain1Map);
+      DbUtils.runRcu(rcuPodName, domain1Map);
 
       Map<String, Object> domain2Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
       domain2Map.put("domainUID", "jrfd21");
@@ -364,17 +370,17 @@ public class JrfInOperatorTest extends BaseTest {
       domain2Map.put("rcuSchemaPrefix", "jrfd21");
 
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, domain2Map);
+      DbUtils.runRcu(rcuPodName, domain2Map);
 
       // create domain1
       logger.info("Creating Domain domain1 & verifying the domain creation");
-      domain1 = new JRFDomain(domain1Map);
+      domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
       testBasicUseCases(domain1);
 
       // create domain2
-      domain2 = new JRFDomain(domain2Map);
+      domain2 = new JrfDomain(domain2Map);
       domain2.verifyDomainCreated();
 
       testBasicUseCases(domain2);
@@ -422,7 +428,7 @@ public class JrfInOperatorTest extends BaseTest {
    * @throws Exception - if any error occurs
    */
   @Test
-  public void testCreateJRFDomainWithStartPolicyAdminOnly() throws Exception {
+  public void testCreateJrfDomainWithStartPolicyAdminOnly() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -432,12 +438,12 @@ public class JrfInOperatorTest extends BaseTest {
     }
     logger.info("Creating Domain & verifying the domain creation");
     // create domain
-    JRFDomain domain = null;
+    JrfDomain domain = null;
     try {
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, JRF_DOMAIN_ADMINONLY_YAML);
+      DbUtils.runRcu(rcuPodName, JRF_DOMAIN_ADMINONLY_YAML);
 
-      domain = new JRFDomain(JRF_DOMAIN_ADMINONLY_YAML);
+      domain = new JrfDomain(JRF_DOMAIN_ADMINONLY_YAML);
       domain.verifyDomainCreated();
     } finally {
       if (domain != null) {
@@ -453,12 +459,12 @@ public class JrfInOperatorTest extends BaseTest {
 
   /**
    * Create operator and create jrf domain with pvReclaimPolicy="Recycle" Verify that the PV is
-   * deleted once the domain and PVC are deleted
+   * deleted once the domain and PVC are deleted.
    *
    * @throws Exception - if any error occurs
    */
   @Test
-  public void testCreateJRFDomainPVReclaimPolicyRecycle() throws Exception {
+  public void testCreateJrfDomainPvReclaimPolicyRecycle() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -468,18 +474,18 @@ public class JrfInOperatorTest extends BaseTest {
     }
     logger.info("Creating Domain domain & verifying the domain creation");
     // create domain
-    JRFDomain domain = null;
+    JrfDomain domain = null;
 
     try {
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, JRF_DOMAIN_RECYCLEPOLICY_YAML);
+      DbUtils.runRcu(rcuPodName, JRF_DOMAIN_RECYCLEPOLICY_YAML);
 
-      domain = new JRFDomain(JRF_DOMAIN_RECYCLEPOLICY_YAML);
+      domain = new JrfDomain(JRF_DOMAIN_RECYCLEPOLICY_YAML);
       domain.verifyDomainCreated();
     } finally {
       if (domain != null) domain.shutdown();
     }
-    domain.deletePVCAndCheckPVReleased("create-fmw-infra-sample-domain-job");
+    domain.deletePvcAndCheckPvReleased("create-fmw-infra-sample-domain-job");
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -494,7 +500,7 @@ public class JrfInOperatorTest extends BaseTest {
    * @throws Exception - if any error occurs
    */
   @Test
-  public void testCreateJRFDomainWithDefaultValuesInSampleInputs() throws Exception {
+  public void testCreateJrfDomainWithDefaultValuesInSampleInputs() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -504,13 +510,13 @@ public class JrfInOperatorTest extends BaseTest {
     }
 
     // create domain10
-    JRFDomain domain = null;
+    JrfDomain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, JRF_DOMAIN_SAMPLE_DEFAULTS_YAML);
+      DbUtils.runRcu(rcuPodName, JRF_DOMAIN_SAMPLE_DEFAULTS_YAML);
 
-      domain = new JRFDomain(JRF_DOMAIN_SAMPLE_DEFAULTS_YAML);
+      domain = new JrfDomain(JRF_DOMAIN_SAMPLE_DEFAULTS_YAML);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       testCompletedSuccessfully = true;
@@ -544,7 +550,7 @@ public class JrfInOperatorTest extends BaseTest {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
 
-    JRFDomain domain11 = null;
+    JrfDomain domain11 = null;
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
@@ -569,9 +575,9 @@ public class JrfInOperatorTest extends BaseTest {
       }
 
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, domainMap);
+      DbUtils.runRcu(rcuPodName, domainMap);
 
-      domain11 = new JRFDomain(domainMap);
+      domain11 = new JrfDomain(domainMap);
       domain11.verifyDomainCreated();
 
       testAdminT3Channel(domain11);
@@ -588,12 +594,12 @@ public class JrfInOperatorTest extends BaseTest {
   }
 
   /**
-   * deploy testwebapp using admin port
+   * deploy testwebapp using admin port.
    *
    * @param domain - jrfdomain
    * @throws Exception - if any error occurs
    */
-  private void testDeployAppUsingAdminPort(JRFDomain domain) throws Exception {
+  private void testDeployAppUsingAdminPort(JrfDomain domain) throws Exception {
     Map<String, Object> domainMap = domain.getDomainMap();
     // create the app directory in admin pod
     TestUtils.kubectlexec(
@@ -601,7 +607,7 @@ public class JrfInOperatorTest extends BaseTest {
         "" + domainMap.get("namespace"),
         " -- mkdir -p " + appLocationInPod);
 
-    domain.deployWebAppViaWLST(
+    domain.deployWebAppViaWlst(
         TESTWEBAPP,
         getProjectRoot() + "/src/integration-tests/apps/testwebapp.war",
         appLocationInPod,
@@ -613,12 +619,12 @@ public class JrfInOperatorTest extends BaseTest {
   }
 
   /**
-   * basic test cases
+   * basic test cases.
    *
    * @param domain - jrfdomain
    * @throws Exception - if any error occurs
    */
-  private void testBasicUseCases(JRFDomain domain) throws Exception {
+  private void testBasicUseCases(JrfDomain domain) throws Exception {
     // Bug 29591809
     // TODO: re-enable the test once the bug is fixed
     // testAdminT3Channel(domain);
@@ -627,13 +633,13 @@ public class JrfInOperatorTest extends BaseTest {
   }
 
   /**
-   * advanced test cases
+   * advanced test cases.
    *
    * @param operator - weblogic operator
    * @param domain - jrfdomain
    * @throws Exception - if any error occurs
    */
-  private void testAdvancedUseCasesForADomain(Operator operator, JRFDomain domain)
+  private void testAdvancedUseCasesForADomain(Operator operator, JrfDomain domain)
       throws Exception {
     if (!SMOKETEST) {
       testClusterScaling(operator, domain);

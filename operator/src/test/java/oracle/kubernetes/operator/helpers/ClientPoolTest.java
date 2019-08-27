@@ -4,18 +4,19 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiClient;
-import java.util.ArrayList;
-import java.util.List;
-import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.utils.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertThat;
 
 public class ClientPoolTest {
 

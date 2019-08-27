@@ -1,21 +1,9 @@
-// Copyright 2018, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
-import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED;
-import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.Stub;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServicePort;
-import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +11,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import oracle.kubernetes.TestUtils;
+
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.Stub;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
+import io.kubernetes.client.models.V1ServiceSpec;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
@@ -35,40 +28,54 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
 public class ReadHealthStepTest {
+  static final String OK_RESPONSE =
+      "{\n"
+          + "    \"overallHealthState\": {\n"
+          + "        \"state\": \"ok\",\n"
+          + "        \"subsystemName\": null,\n"
+          + "        \"partitionName\": null,\n"
+          + "        \"symptoms\": []\n"
+          + "    },\n"
+          + "    \"state\": \"RUNNING\",\n"
+          + "    \"activationTime\": 1556759105378\n"
+          + "}";
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
     WLS_HEALTH_READ_FAILED, WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT
   };
-
   private static final String NAMESPACE = "testnamespace";
   private static final String DOMAIN_UID = "domain-uid";
-
   private static final String DOMAIN_NAME = "domain";
   private static final String ADMIN_NAME = "admin-server";
   private static final int ADMIN_PORT_NUM = 3456;
-
   private static final String MANAGED_SERVER1 = "managed-server1";
   private static final int MANAGED_SERVER1_PORT_NUM = 8001;
-
-  private List<LogRecord> logRecords = new ArrayList<>();
-  private Memento consoleControl;
   private static final ClassCastException CLASSCAST_EXCEPTION = new ClassCastException("");
   private static final WlsDomainConfigSupport configSupport =
       new WlsDomainConfigSupport(DOMAIN_NAME)
           .withWlsServer(ADMIN_NAME, ADMIN_PORT_NUM)
           .withWlsServer(MANAGED_SERVER1, MANAGED_SERVER1_PORT_NUM)
           .withAdminServerName(ADMIN_NAME);
-
   V1Service service;
   Step next;
   HttpClientStub httpClientStub;
   ReadHealthWithHttpClientStep withHttpClientStep;
+  private List<LogRecord> logRecords = new ArrayList<>();
+  private Memento consoleControl;
 
   @Before
   public void setup() {
@@ -101,7 +108,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void withHttpClientStep_logIfMissingHTTPClient() {
+  public void withHttpClientStep_logIfMissingHttpClient() {
     Packet packet =
         Stub.createStub(PacketStub.class).withServerName(ADMIN_NAME).withGetKeyReturnValue(null);
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
@@ -140,9 +147,9 @@ public class ReadHealthStepTest {
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(2));
 
-    ReadHealthWithHttpClientStep withHttpClientStep1 =
+    final ReadHealthWithHttpClientStep withHttpClientStep1 =
         new ReadHealthWithHttpClientStep(service, null, next);
-    ReadHealthWithHttpClientStep withHttpClientStep2 =
+    final ReadHealthWithHttpClientStep withHttpClientStep2 =
         new ReadHealthWithHttpClientStep(service, null, next);
 
     Packet packet1 = packet.clone();
@@ -206,18 +213,6 @@ public class ReadHealthStepTest {
     Map<String, String> serverStateMap = packet.getValue(SERVER_STATE_MAP);
     assertThat(serverStateMap.get(MANAGED_SERVER1), is("UNKNOWN"));
   }
-
-  static final String OK_RESPONSE =
-      "{\n"
-          + "    \"overallHealthState\": {\n"
-          + "        \"state\": \"ok\",\n"
-          + "        \"subsystemName\": null,\n"
-          + "        \"partitionName\": null,\n"
-          + "        \"symptoms\": []\n"
-          + "    },\n"
-          + "    \"state\": \"RUNNING\",\n"
-          + "    \"activationTime\": 1556759105378\n"
-          + "}";
 
   Packet createPacketForTest() {
     Packet packet =

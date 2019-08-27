@@ -4,23 +4,16 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.LOG_MSG_TEST;
-import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.VERSION_TEST;
-import static oracle.kubernetes.operator.helpers.VersionCheckTest.VersionMatcher.returnsVersion;
-import static oracle.kubernetes.operator.logging.MessageKeys.*;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.VersionInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.LogRecord;
-import oracle.kubernetes.TestUtils;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.models.VersionInfo;
 import oracle.kubernetes.operator.ClientFactoryStub;
+import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.After;
@@ -29,6 +22,16 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.LOG_MSG_TEST;
+import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.VERSION_TEST;
+import static oracle.kubernetes.operator.helpers.VersionCheckTest.VersionMatcher.returnsVersion;
+import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_CHECK;
+import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_CHECK_FAILURE;
+import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_TOO_LOW;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @RunWith(Parameterized.class)
 public class VersionCheckTest {
@@ -64,19 +67,6 @@ public class VersionCheckTest {
     this.ignoredLogMessages = ignoredLogMessages;
   }
 
-  @Before
-  public void setUp() throws Exception {
-    consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS);
-    mementos.add(consoleControl);
-    mementos.add(ClientFactoryStub.install());
-    mementos.add(testSupport.installSynchronousCallDispatcher());
-  }
-
-  @After
-  public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
-  }
-
   @Parameters(name = "{0}: {1}.{2}.{3}")
   public static Collection<Object[]> data() {
     return Arrays.asList(
@@ -105,6 +95,42 @@ public class VersionCheckTest {
     return new String[0];
   }
 
+  private static VersionInfo createVersionInfo(
+      String majorVersion, String minorVersion, String revision) {
+    VersionInfo versionInfo;
+    versionInfo = new VersionInfo().major(majorVersion).minor(minorVersion);
+    versionInfo.setGitVersion(majorVersion + "." + minorVersion + "." + revision);
+    return versionInfo;
+  }
+
+  @Before
+  public void setUp() throws Exception {
+    consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS);
+    mementos.add(consoleControl);
+    mementos.add(ClientFactoryStub.install());
+    mementos.add(testSupport.installSynchronousCallDispatcher());
+  }
+
+  @After
+  public void tearDown() {
+    for (Memento memento : mementos) memento.revert();
+  }
+
+  @Test
+  public void test() {
+    specifyK8sVersion(majorVersion, minorVersion, revision);
+    for (String ignoredLogMessage : ignoredLogMessages)
+      consoleControl.ignoreMessage(ignoredLogMessage);
+
+    testType.runTest(logRecords, matcher);
+  }
+
+  private void specifyK8sVersion(String majorVersion, String minorVersion, String revision) {
+    testSupport
+        .createCannedResponse("getVersion")
+        .returning(createVersionInfo(majorVersion, minorVersion, revision));
+  }
+
   @SuppressWarnings("unchecked")
   enum TestType {
     LOG_MSG_TEST {
@@ -123,29 +149,6 @@ public class VersionCheckTest {
     };
 
     abstract void runTest(List<LogRecord> logRecords, Matcher matcher);
-  }
-
-  @Test
-  public void test() {
-    specifyK8sVersion(majorVersion, minorVersion, revision);
-    for (String ignoredLogMessage : ignoredLogMessages)
-      consoleControl.ignoreMessage(ignoredLogMessage);
-
-    testType.runTest(logRecords, matcher);
-  }
-
-  private void specifyK8sVersion(String majorVersion, String minorVersion, String revision) {
-    testSupport
-        .createCannedResponse("getVersion")
-        .returning(createVersionInfo(majorVersion, minorVersion, revision));
-  }
-
-  private static VersionInfo createVersionInfo(
-      String majorVersion, String minorVersion, String revision) {
-    VersionInfo versionInfo;
-    versionInfo = new VersionInfo().major(majorVersion).minor(minorVersion);
-    versionInfo.setGitVersion(majorVersion + "." + minorVersion + "." + revision);
-    return versionInfo;
   }
 
   @SuppressWarnings("unused")

@@ -4,14 +4,10 @@
 
 package oracle.kubernetes.operator.rest;
 
-import static java.net.HttpURLConnection.HTTP_CONFLICT;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.TOKEN_REVIEW;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import javax.ws.rs.WebApplicationException;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -21,16 +17,12 @@ import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
 import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1TokenReviewStatus;
 import io.kubernetes.client.models.V1UserInfo;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import javax.ws.rs.WebApplicationException;
-import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -40,6 +32,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.TOKEN_REVIEW;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
 public class RestBackendImplTest {
@@ -57,20 +58,12 @@ public class RestBackendImplTest {
   private Domain updatedDomain;
   private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private WlsDomainConfig config;
 
   private static Domain createDomain(String namespace, String name) {
     return new Domain()
         .withMetadata(new V1ObjectMeta().namespace(namespace).name(name))
-        .withSpec(new DomainSpec().withDomainUID(name));
-  }
-
-  private WlsDomainConfig config;
-
-  private class TopologyRetrieverStub implements TopologyRetriever {
-    @Override
-    public WlsDomainConfig getWlsDomainConfig(String ns, String domainUID) {
-      return config;
-    }
+        .withSpec(new DomainSpec().withDomainUid(name));
   }
 
   @Before
@@ -168,7 +161,7 @@ public class RestBackendImplTest {
   }
 
   @Test
-  public void verify_getWlsDomainConfig_doesNotReturnNull_whenNoSuchDomainUID() {
+  public void verify_getWlsDomainConfig_doesNotReturnNull_whenNoSuchDomainUid() {
     WlsDomainConfig wlsDomainConfig =
         ((RestBackendImpl) restBackend).getWlsDomainConfig("NoSuchDomainUID");
 
@@ -190,5 +183,12 @@ public class RestBackendImplTest {
 
   private void setupScanCache() {
     config = configSupport.createDomainConfig();
+  }
+
+  private class TopologyRetrieverStub implements TopologyRetriever {
+    @Override
+    public WlsDomainConfig getWlsDomainConfig(String ns, String domainUid) {
+      return config;
+    }
   }
 }

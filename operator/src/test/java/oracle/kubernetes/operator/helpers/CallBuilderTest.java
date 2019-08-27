@@ -4,11 +4,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static java.net.HttpURLConnection.HTTP_CONFLICT;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
 
 import com.google.gson.GsonBuilder;
 import com.meterware.pseudoserver.HttpUserAgentTest;
@@ -26,21 +26,22 @@ import io.kubernetes.client.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.VersionInfo;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Consumer;
-import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
 public class CallBuilderTest extends HttpUserAgentTest {
@@ -59,6 +60,10 @@ public class CallBuilderTest extends HttpUserAgentTest {
   private List<Memento> mementos = new ArrayList<>();
   private CallBuilder callBuilder = new CallBuilder();
   private Object requestBody;
+
+  private static String toJson(Object object) {
+    return new GsonBuilder().create().toJson(object);
+  }
 
   @Before
   public void setUp() throws NoSuchFieldException {
@@ -147,7 +152,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void createPVC_returnsClaimAsJson() throws ApiException {
+  public void createPvc_returnsClaimAsJson() throws ApiException {
     V1PersistentVolumeClaim claim = createPersistentVolumeClaim();
     defineHttpPostResponse(PVC_RESOURCE, claim);
 
@@ -159,7 +164,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void createPVC_sendsClaimAsJson() throws ApiException {
+  public void createPvc_sendsClaimAsJson() throws ApiException {
     V1PersistentVolumeClaim claim = createPersistentVolumeClaim();
     defineHttpPostResponse(
         PVC_RESOURCE, claim, (json) -> requestBody = fromJson(json, V1PersistentVolumeClaim.class));
@@ -170,7 +175,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void deletePVC_returnsStatus() throws ApiException {
+  public void deletePvc_returnsStatus() throws ApiException {
     defineHttpDeleteResponse(PVC_RESOURCE, NAME, new V1Status());
 
     assertThat(
@@ -182,8 +187,8 @@ public class CallBuilderTest extends HttpUserAgentTest {
     return new V1PersistentVolumeClaimSpec().volumeName("TEST_VOL");
   }
 
-  private Object fromJson(String json, Class<?> aClass) {
-    return new GsonBuilder().create().fromJson(json, aClass);
+  private Object fromJson(String json, Class<?> aaClass) {
+    return new GsonBuilder().create().fromJson(json, aaClass);
   }
 
   private V1ObjectMeta createMetadata() {
@@ -221,12 +226,9 @@ public class CallBuilderTest extends HttpUserAgentTest {
     defineResource(resourceName + "/" + name, new JsonDeleteServlet(response));
   }
 
-  private static String toJson(Object object) {
-    return new GsonBuilder().create().toJson(object);
-  }
-
   static class PseudoServletCallDispatcher implements SynchronousCallDispatcher {
     private static String basePath;
+    private SynchronousCallDispatcher underlyingDispatcher;
 
     static Memento install(String basePath) throws NoSuchFieldException {
       PseudoServletCallDispatcher.basePath = basePath;
@@ -235,8 +237,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
       dispatcher.setUnderlyingDispatcher(memento.getOriginalValue());
       return memento;
     }
-
-    private SynchronousCallDispatcher underlyingDispatcher;
 
     void setUnderlyingDispatcher(SynchronousCallDispatcher underlyingDispatcher) {
       this.underlyingDispatcher = underlyingDispatcher;
@@ -263,8 +263,8 @@ public class CallBuilderTest extends HttpUserAgentTest {
 
   static class ErrorCodePutServlet extends PseudoServlet {
 
-    int numGetPutResponseCalled = 0;
     final int errorCode;
+    int numGetPutResponseCalled = 0;
 
     ErrorCodePutServlet(int errorCode) {
       this.errorCode = errorCode;

@@ -4,24 +4,16 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.LogMatcher.containsFine;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
-import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
-import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_PATCHED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1Pod;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -32,6 +24,24 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.Test;
+
+import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
+import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_PATCHED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ManagedPodHelperTest extends PodHelperTestBase {
 
@@ -84,6 +94,11 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   @Override
   ServerConfigurator configureServer() {
     return configureServer(getConfigurator(), SERVER_NAME);
+  }
+
+  @Override
+  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
+    return configurator.configureServer(serverName);
   }
 
   private void expectReplaceDomainStatus() {
@@ -146,6 +161,58 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenClusterHasAdditionalVolumesWithVariables_createManagedPodWithSubstitutions() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withAdditionalVolume("volume1", "/source-$(SERVER_NAME)")
+        .withAdditionalVolume("volume2", "/source-$(DOMAIN_NAME)");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(
+            hasVolume("volume1", "/source-" + SERVER_NAME),
+            hasVolume("volume2", "/source-domain1")));
+  }
+
+  @Test
+  public void whenClusterHasLabelsWithVariables_createManagedPodWithSubstitutions() {
+    V1EnvVar envVar = toEnvVar("TEST_ENV", "test-value");
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(envVar));
+
+    V1Container container = new V1Container()
+        .name("test")
+        .addCommandItem("/bin/bash")
+        .addArgsItem("echo")
+        .addArgsItem("This server is $(SERVER_NAME) and has $(TEST_ENV)");
+
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .withLogHomeEnabled(true)
+        .withContainer(container)
+        .configureCluster(CLUSTER_NAME)
+        .withPodLabel("myCluster", "my-$(CLUSTER_NAME)")
+        .withPodLabel("logHome", "$(LOG_HOME)");
+
+    V1Pod pod = getCreatedPod();
+    assertThat(
+        pod.getMetadata().getLabels(),
+        allOf(
+            hasEntry("myCluster", "my-" + CLUSTER_NAME),
+            hasEntry("logHome", "/shared/logs/" +  UID)));
+    Optional<V1Container> o = pod.getSpec().getContainers()
+        .stream().filter(c -> "test".equals(c.getName())).findFirst();
+    assertThat(
+        o.orElseThrow().getArgs(),
+        allOf(
+            hasItem("This server is " +  SERVER_NAME + " and has test-value")));
+    assertThat(
+        container.getArgs(),
+        allOf(hasItem("This server is $(SERVER_NAME) and has $(TEST_ENV)"))
+    );
+  }
+
+  @Test
   public void createManagedPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList());
 
@@ -156,12 +223,12 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenPacketHasEnvironmentItemsWithVariable_createManagedPodShouldNotChangeItsValue() {
-    V1EnvVar ENVVAR = toEnvVar(ITEM1, RAW_VALUE_1);
-    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(ENVVAR));
+    V1EnvVar envVar = toEnvVar(ITEM1, RAW_VALUE_1);
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(envVar));
 
     getCreatedPodSpecContainer();
 
-    assertThat(ENVVAR.getValue(), is(RAW_VALUE_1));
+    assertThat(envVar.getValue(), is(RAW_VALUE_1));
   }
 
   @Test
@@ -725,10 +792,5 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   @Override
   V1Pod createPod(Packet packet) {
     return new PodHelper.ManagedPodStepContext(null, packet).getPodModel();
-  }
-
-  @Override
-  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
-    return configurator.configureServer(serverName);
   }
 }

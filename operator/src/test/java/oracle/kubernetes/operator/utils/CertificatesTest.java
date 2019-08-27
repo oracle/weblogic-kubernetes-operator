@@ -4,19 +4,20 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.meterware.simplestub.Memento;
+import oracle.kubernetes.utils.TestUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.meterware.simplestub.Memento;
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.List;
-import oracle.kubernetes.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 public class CertificatesTest {
   private List<Memento> mementos = new ArrayList<>();

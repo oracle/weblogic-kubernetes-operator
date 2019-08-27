@@ -4,15 +4,11 @@
 
 package oracle.kubernetes.operator.steps;
 
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.models.V1ObjectMeta;
-import java.util.ArrayList;
-import java.util.List;
-import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -20,6 +16,7 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -27,6 +24,10 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class BeforeAdminServiceStepTest {
 
@@ -57,7 +58,7 @@ public class BeforeAdminServiceStepTest {
   }
 
   private DomainSpec createDomainSpec() {
-    return new DomainSpec().withDomainUID(UID).withReplicas(1);
+    return new DomainSpec().withDomainUid(UID).withReplicas(1);
   }
 
   @Before

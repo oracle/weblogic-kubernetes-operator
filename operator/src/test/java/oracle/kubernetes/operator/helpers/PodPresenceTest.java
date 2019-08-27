@@ -4,6 +4,36 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodCondition;
+import io.kubernetes.client.models.V1PodStatus;
+import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.DomainProcessorDelegateStub;
+import oracle.kubernetes.operator.DomainProcessorImpl;
+import oracle.kubernetes.operator.DomainProcessorTestSetup;
+import oracle.kubernetes.operator.builders.WatchEvent;
+import oracle.kubernetes.operator.utils.InMemoryCertificates;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import org.hamcrest.junit.MatcherAssert;
+import org.joda.time.DateTime;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -22,35 +52,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.google.common.collect.ImmutableMap;
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodCondition;
-import io.kubernetes.client.models.V1PodStatus;
-import io.kubernetes.client.util.Watch;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.DomainProcessorDelegateStub;
-import oracle.kubernetes.operator.DomainProcessorImpl;
-import oracle.kubernetes.operator.DomainProcessorTestSetup;
-import oracle.kubernetes.operator.builders.WatchEvent;
-import oracle.kubernetes.operator.utils.InMemoryCertificates;
-import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.work.Component;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.hamcrest.junit.MatcherAssert;
-import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 public class PodPresenceTest {
 
@@ -185,14 +186,14 @@ public class PodPresenceTest {
   @Test
   public void whenPodHasNoDomainUid_returnNull() {
     pod.getMetadata().getLabels().remove(DOMAINUID_LABEL);
-    MatcherAssert.assertThat(PodHelper.getPodDomainUID(pod), nullValue());
+    MatcherAssert.assertThat(PodHelper.getPodDomainUid(pod), nullValue());
   }
 
   @Test
   public void whenPodHasDomainUid_returnIt() {
     pod.getMetadata().labels(ImmutableMap.of(DOMAINUID_LABEL, "domain1"));
 
-    MatcherAssert.assertThat(PodHelper.getPodDomainUID(pod), equalTo("domain1"));
+    MatcherAssert.assertThat(PodHelper.getPodDomainUid(pod), equalTo("domain1"));
   }
 
   @Test

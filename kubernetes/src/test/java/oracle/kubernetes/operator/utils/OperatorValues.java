@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.utils;
 
 import java.util.Objects;
+
 import org.apache.commons.codec.binary.Base64;
 
 public class OperatorValues {
@@ -33,6 +34,7 @@ public class OperatorValues {
   private String externalOperatorSecret = "";
   private String externalOperatorKey = "";
   private String remoteDebugNodePortEnabled = "";
+  private String suspendOnDebugStartup = "";
   private String internalDebugHttpPort = "";
   private String externalDebugHttpPort = "";
   private String javaLoggingLevel = "";
@@ -235,6 +237,19 @@ public class OperatorValues {
 
   public OperatorValues remoteDebugNodePortEnabled(String val) {
     setRemoteDebugNodePortEnabled(val);
+    return this;
+  }
+
+  public String getSuspendOnDebugStartup() {
+    return suspendOnDebugStartup;
+  }
+
+  protected void setSuspendOnDebugStartup(String val) {
+    suspendOnDebugStartup = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues suspendOnDebugStartup(String val) {
+    setSuspendOnDebugStartup(val);
     return this;
   }
 
