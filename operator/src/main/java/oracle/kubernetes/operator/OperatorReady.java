@@ -7,7 +7,7 @@ package oracle.kubernetes.operator;
 import java.io.File;
 import java.io.IOException;
 
-/** This task creates the "readiness" indicator so that Kubernetes knows the Operator is ready */
+/** This task creates the "readiness" indicator so that Kubernetes knows the Operator is ready. */
 public class OperatorReady {
 
   private static final File readinessFile = new File("/operator/.ready");

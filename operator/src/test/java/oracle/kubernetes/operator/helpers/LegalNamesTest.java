@@ -4,12 +4,12 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import org.junit.Test;
+
 import static oracle.kubernetes.operator.helpers.LegalNames.toClusterServiceName;
 import static oracle.kubernetes.operator.helpers.LegalNames.toServerServiceName;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-
-import org.junit.Test;
 
 public class LegalNamesTest {
 

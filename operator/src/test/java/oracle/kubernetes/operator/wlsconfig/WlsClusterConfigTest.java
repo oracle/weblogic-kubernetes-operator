@@ -4,9 +4,27 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
-import static oracle.kubernetes.LogMatcher.containsWarning;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+
+import com.meterware.simplestub.Memento;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.TestUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_WLS_SERVER_IN_CLUSTER;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -16,23 +34,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import com.meterware.simplestub.Memento;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
 public class WlsClusterConfigTest {
 
   // The log messages to be checked during this test
@@ -41,9 +42,26 @@ public class WlsClusterConfigTest {
   };
 
   private static final String ADMIN_SERVER = "admin-server";
-
+  Field nextField;
   private List<LogRecord> logRecords = new ArrayList<>();
   private Memento consoleControl;
+
+  static WlsDynamicServersConfig createDynamicServersConfig(
+      int clusterSize, int maxClusterSize, String serverNamePrefix, String clusterName) {
+    WlsServerConfig serverTemplate =
+        new WlsServerConfig("serverTemplate1", "host1", null, 7001, 7002, null, null);
+    List<String> serverNames = new ArrayList<>();
+    final int startingServerNameIndex = 1;
+    for (int i = 0; i < clusterSize; i++) {
+      serverNames.add(serverNamePrefix + (i + startingServerNameIndex));
+    }
+    List<WlsServerConfig> serverConfigs =
+        WlsDynamicServersConfig.createServerConfigsFromTemplate(
+            serverNames, serverTemplate, clusterName, "base-domain", false);
+
+    return new WlsDynamicServersConfig(
+        clusterSize, maxClusterSize, serverNamePrefix, false, null, serverTemplate, serverConfigs);
+  }
 
   @Before
   public void setup() {
@@ -561,7 +579,7 @@ public class WlsClusterConfigTest {
         new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
-    String names[] = wlsClusterConfig.getMachineNamesForDynamicServers("domain1-machine", 4);
+    String[] names = wlsClusterConfig.getMachineNamesForDynamicServers("domain1-machine", 4);
     assertEquals(2, names.length);
     assertEquals("domain1-machine3", names[0]);
     assertEquals("domain1-machine4", names[1]);
@@ -587,7 +605,7 @@ public class WlsClusterConfigTest {
         new WlsDomainConfig("base_domain", ADMIN_SERVER, clusters, null, null, machines);
     wlsClusterConfig.setWlsDomainConfig(wlsDomainConfig);
 
-    String names[] = wlsClusterConfig.getMachineNamesForDynamicServers("domain1-machine", 3);
+    String[] names = wlsClusterConfig.getMachineNamesForDynamicServers("domain1-machine", 3);
     assertEquals(0, names.length);
   }
 
@@ -605,7 +623,7 @@ public class WlsClusterConfigTest {
 
     assertNull("verify no domain config is setup", wlsClusterConfig.getWlsDomainConfig());
 
-    String names[] = wlsClusterConfig.getMachineNamesForDynamicServers("domain1-machine", 4);
+    String[] names = wlsClusterConfig.getMachineNamesForDynamicServers("domain1-machine", 4);
     assertEquals(0, names.length);
   }
 
@@ -662,21 +680,12 @@ public class WlsClusterConfigTest {
     assertEquals("domain1-machine2", names[1]);
   }
 
-  static WlsDynamicServersConfig createDynamicServersConfig(
-      int clusterSize, int maxClusterSize, String serverNamePrefix, String clusterName) {
-    WlsServerConfig serverTemplate =
-        new WlsServerConfig("serverTemplate1", "host1", null, 7001, 7002, null, null);
-    List<String> serverNames = new ArrayList<>();
-    final int startingServerNameIndex = 1;
-    for (int i = 0; i < clusterSize; i++) {
-      serverNames.add(serverNamePrefix + (i + startingServerNameIndex));
+  Step getNext(Step step) throws IllegalAccessException, NoSuchFieldException {
+    if (nextField == null) {
+      nextField = Step.class.getDeclaredField("next");
+      nextField.setAccessible(true);
     }
-    List<WlsServerConfig> serverConfigs =
-        WlsDynamicServersConfig.createServerConfigsFromTemplate(
-            serverNames, serverTemplate, clusterName, "base-domain", false);
-
-    return new WlsDynamicServersConfig(
-        clusterSize, maxClusterSize, serverNamePrefix, false, null, serverTemplate, serverConfigs);
+    return (Step) nextField.get(step);
   }
 
   static class MockStep extends Step {
@@ -688,15 +697,5 @@ public class WlsClusterConfigTest {
     public NextAction apply(Packet packet) {
       return null;
     }
-  }
-
-  Field nextField;
-
-  Step getNext(Step step) throws IllegalAccessException, NoSuchFieldException {
-    if (nextField == null) {
-      nextField = Step.class.getDeclaredField("next");
-      nextField.setAccessible(true);
-    }
-    return (Step) nextField.get(step);
   }
 }

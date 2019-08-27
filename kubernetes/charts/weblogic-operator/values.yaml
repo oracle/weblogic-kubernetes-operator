@@ -20,7 +20,7 @@ domainNamespaces:
   - "default"
 
 # image specifies the docker image containing the operator code.
-image: "oracle/weblogic-kubernetes-operator:2.2.1"
+image: "oracle/weblogic-kubernetes-operator:2.3.0"
 
 # imagePullPolicy specifies the image pull policy for the operator docker image.
 imagePullPolicy: "IfNotPresent"
@@ -59,14 +59,18 @@ externalRestHttpsPort: 31001
 # kubernetes/samples/scripts/rest/generate-external-rest-identity.sh
 #externalRestIdentitySecret: 
 
-# remoteDebugNodePortEnabled specifies whether or not the operator will start a Java remote debug server
-# on the provided port and suspend execution until a remote debugger has attached.
+# remoteDebugNodePortEnabled specifies whether or not the operator will start a Java remote debug server on the
+# provided port. If the 'suspendOnDebugStartup' property is specified, the operator will suspend execution
+# until a remote debugger has attached.
 # The 'internalDebugHttpPort' property controls the port number inside the Kubernetes
 # cluster and the 'externalDebugHttpPort' property controls the port number outside
 # the Kubernetes cluster.
 remoteDebugNodePortEnabled: false
 
-# internalDebugHttpPort specifes the port number inside the Kubernetes cluster for the operator's Java
+#suspendOnDebugStartup specifies whether the operator will suspend on startup when a Java remote debug server is started.
+suspendOnDebugStartup: false
+
+# internalDebugHttpPort specifies the port number inside the Kubernetes cluster for the operator's Java
 # remote debug server.
 # This parameter is required if 'remoteDebugNodePortEnabled' is true.
 # Otherwise, it is ignored.
@@ -96,3 +100,7 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # elasticSearchPort specifies the port number of where elasticsearch is running.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
+
+# Istio service mesh support is experimental.
+# istioEnabled specifies whether or not the domain is deployed under an Istio service mesh.
+istioEnabled: false

@@ -19,7 +19,9 @@
 #
 #   SERVER_NAME       = If not set, assumes this is introspector.
 #
-#   WL_HOME           = WebLogic Install Home - defaults to /u01/oracle/wlserver
+#   ORACLE_HOME       = Oracle Install Home - defaults via utils.sh/exportInstallHomes
+#   MW_HOME           = MiddleWare Install Home - defaults to ${ORACLE_HOME}
+#   WL_HOME           = WebLogic Install Home - defaults to ${ORACLE_HOME}/wlserver
 #
 #   NODEMGR_LOG_HOME  = Directory that will contain contain both
 #                          ${DOMAIN_UID}/${SERVER_NAME}_nodemanager.log
@@ -27,6 +29,9 @@
 #                       Default:
 #                          Use LOG_HOME.  If LOG_HOME not set, use NODEMGR_HOME.
 #   ADMIN_PORT_SECURE = "true" if the admin protocol is secure. Default is false
+#   FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR = "true" if WebLogic server should fail to 
+#                       boot if situational configuration related errors are 
+#                       found. Default to "true" if unspecified.
 #
 # If SERVER_NAME is set, then this NM is for a WL Server and these must also be set:
 # 
@@ -44,10 +49,11 @@
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
-source ${SCRIPTPATH}/traceUtils.sh 
-[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exit 1 
+source ${SCRIPTPATH}/utils.sh 
+[ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1 
 
-export WL_HOME="${WL_HOME:-/u01/oracle/wlserver}"
+# Set ORACLE_HOME/WL_HOME/MW_HOME to defaults if needed
+exportInstallHomes
 
 stm_script=${WL_HOME}/server/bin/startNodeManager.sh
 
@@ -56,19 +62,21 @@ ADMIN_PORT_SECURE=${ADMIN_PORT_SECURE:-false}
 
 trace "Starting node manager for domain-uid='$DOMAIN_UID' and server='$SERVER_NAME'."
 
-checkEnv JAVA_HOME NODEMGR_HOME DOMAIN_HOME DOMAIN_UID WL_HOME || exit 1
+checkEnv JAVA_HOME NODEMGR_HOME DOMAIN_HOME DOMAIN_UID ORACLE_HOME MW_HOME WL_HOME || exit 1
 
 if [ "${SERVER_NAME}" = "introspector" ]; then
   SERVICE_NAME=localhost
+  trace "Contents of '${DOMAIN_HOME}/config/config.xml':"
+  cat ${DOMAIN_HOME}/config/config.xml
 else
   checkEnv SERVER_NAME ADMIN_NAME AS_SERVICE_NAME SERVICE_NAME USER_MEM_ARGS || exit 1
 fi
 
-[ ! -d "${JAVA_HOME}" ]                     && trace "Error: JAVA_HOME directory not found '${JAVA_HOME}'."           && exit 1 
-[ ! -d "${DOMAIN_HOME}" ]                   && trace "Error: DOMAIN_HOME directory not found '${DOMAIN_HOME}'."       && exit 1 
-[ ! -f "${DOMAIN_HOME}/config/config.xml" ] && trace "Error: '${DOMAIN_HOME}/config/config.xml' not found."           && exit 1 
-[ ! -d "${WL_HOME}" ]                       && trace "Error: WL_HOME '${WL_HOME}' not found."                         && exit 1 
-[ ! -f "${stm_script}" ]                    && trace "Error: Missing script '${stm_script}' in WL_HOME '${WL_HOME}'." && exit 1 
+[ ! -d "${JAVA_HOME}" ]                     && trace SEVERE "JAVA_HOME directory not found '${JAVA_HOME}'."           && exit 1 
+[ ! -d "${DOMAIN_HOME}" ]                   && trace SEVERE "DOMAIN_HOME directory not found '${DOMAIN_HOME}'."       && exit 1 
+[ ! -f "${DOMAIN_HOME}/config/config.xml" ] && trace SEVERE "'${DOMAIN_HOME}/config/config.xml' not found."           && exit 1 
+[ ! -d "${WL_HOME}" ]                       && trace SEVERE "WL_HOME '${WL_HOME}' not found."                         && exit 1 
+[ ! -f "${stm_script}" ]                    && trace SEVERE "Missing script '${stm_script}' in WL_HOME '${WL_HOME}'." && exit 1 
 
 #
 # Helper fn to create a folder
@@ -77,7 +85,7 @@ fi
 function createFolder {
   mkdir -m 750 -p "$1"
   if [ ! -d "$1" ]; then
-    trace "Unable to create folder '$1'."
+    trace SEVERE "Unable to create folder '$1'."
     exit 1
   fi
 }
@@ -98,8 +106,11 @@ else
   # setup ".out" location for a WL server
   serverLogHome="${LOG_HOME:-${DOMAIN_HOME}/servers/${SERVER_NAME}/logs}"
   export SERVER_OUT_FILE="${serverLogHome}/${SERVER_NAME}.out"
+  export SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"
+  export SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"
   serverOutOption="-Dweblogic.Stdout=${SERVER_OUT_FILE}"
   createFolder "${serverLogHome}"
+  rm ${SHUTDOWN_MARKER_FILE}
 fi
 
 
@@ -113,12 +124,14 @@ export NODEMGR_HOME=${NODEMGR_HOME}/${DOMAIN_UID}/${SERVER_NAME}
 createFolder ${NODEMGR_HOME} 
 
 NODEMGR_LOG_HOME=${NODEMGR_LOG_HOME:-${LOG_HOME:-${NODEMGR_HOME}/${DOMAIN_UID}}}
+FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true}
 
-trace "Info: NODEMGR_HOME='${NODEMGR_HOME}'"
-trace "Info: LOG_HOME='${LOG_HOME}'"
-trace "Info: SERVER_NAME='${SERVER_NAME}'"
-trace "Info: DOMAIN_UID='${DOMAIN_UID}'"
-trace "Info: NODEMGR_LOG_HOME='${NODEMGR_LOG_HOME}'"
+trace "NODEMGR_HOME='${NODEMGR_HOME}'"
+trace "LOG_HOME='${LOG_HOME}'"
+trace "SERVER_NAME='${SERVER_NAME}'"
+trace "DOMAIN_UID='${DOMAIN_UID}'"
+trace "NODEMGR_LOG_HOME='${NODEMGR_LOG_HOME}'"
+trace "FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR='${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR}'"
 
 createFolder ${NODEMGR_LOG_HOME}
 
@@ -148,7 +161,7 @@ rm -f ${nodemgr_lck_file}
 # is the domain name:
 domain_name=`cat ${DOMAIN_HOME}/config/config.xml | sed 's/[[:space:]]//g' | grep '^<name>' | head -1 | awk -F'<|>' '{print $3}'`
 if [ "$domain_name" = "" ]; then
-  trace "Could not determine domain name"
+  trace SEVERE "Could not determine domain name"
   exit 1
 fi
 
@@ -165,7 +178,7 @@ cat <<EOF > ${nm_domains_file}
   ${domain_name}=${DOMAIN_HOME}
 EOF
 
-  [ ! $? -eq 0 ] && trace "Failed to create '${nm_domains_file}'." && exit 1
+  [ ! $? -eq 0 ] && trace SEVERE "Failed to create '${nm_domains_file}'." && exit 1
 
 cat <<EOF > ${nm_props_file}
   #Node manager properties
@@ -197,7 +210,7 @@ cat <<EOF > ${nm_props_file}
 
 EOF
 
-  [ ! $? -eq 0 ] && trace "Failed to create '${nm_props_file}'." && exit 1
+  [ ! $? -eq 0 ] && trace SEVERE "Failed to create '${nm_props_file}'." && exit 1
 
 ###############################################################################
 #
@@ -220,7 +233,8 @@ if [ ! "${SERVER_NAME}" = "introspector" ]; then
   
   if [ -f "$wl_state_file" ]; then
     trace "Removing stale file '$wl_state_file'."
-    rm -f ${wl_state_file} || exit 1
+    rm -f ${wl_state_file} 
+    [ ! $? -eq 0 ] && trace SEVERE "Could not remove stale file '$wl_state_file'." && exit 1
   fi
 
 
@@ -239,22 +253,17 @@ RestartInterval=3600
 NumberOfFilesLimited=true
 FileTimeSpan=24
 NMHostName=${SERVICE_NAME}
-Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap ${serverOutOption} ${JAVA_OPTIONS}
+Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap -Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} ${serverOutOption} ${JAVA_OPTIONS}
 
 EOF
  
-  [ ! $? -eq 0 ] && trace "Failed to create '${wl_props_file}'." && exit 1
+  [ ! $? -eq 0 ] && trace SEVERE "Failed to create '${wl_props_file}'." && exit 1
 
   if [ ! "${ADMIN_NAME}" = "${SERVER_NAME}" ]; then
-    admin_protocol="http"
-    if [ "${ADMIN_PORT_SECURE}" = "true" ]; then
-      admin_protocol="https"
-    fi  
-    echo "AdminURL=$admin_protocol\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
+    ADMIN_URL=$(getAdminServerUrl)
+    echo "AdminURL=$ADMIN_URL" >> ${wl_props_file}
   fi
 fi
-
-
 
 ###############################################################################
 #
@@ -290,8 +299,10 @@ export JAVA_OPTIONS="${JAVA_OPTIONS} -Dweblogic.RootDirectory=${DOMAIN_HOME}"
 
 trace "Start the nodemanager, node manager home is '${NODEMGR_HOME}', log file is '${nodemgr_log_file}', out file is '${nodemgr_out_file}'."
 
-rm -f ${nodemgr_log_file} || exit 1
-rm -f ${nodemgr_out_file} || exit 1
+rm -f ${nodemgr_log_file}
+[ ! $? -eq 0 ] && trace SEVERE "Could not remove old file '$nodemgr_log_file'." && exit 1
+rm -f ${nodemgr_out_file}
+[ ! $? -eq 0 ] && trace SEVERE "Could not remove old file '$nodemgr_out_file'." && exit 1
 
 ${stm_script} > ${nodemgr_out_file} 2>&1 &
 
@@ -304,11 +315,11 @@ while [ 1 -eq 1 ]; do
     break
   fi
   if [ $((SECONDS - $start_secs)) -ge $max_wait_secs ]; then
-    trace "Info: Contents of node manager log '$nodemgr_log_file':"
+    trace INFO "Contents of node manager log '$nodemgr_log_file':"
     cat ${nodemgr_log_file}
-    trace "Info: Contents of node manager out '$nodemgr_out_file':"
+    trace INFO "Contents of node manager out '$nodemgr_out_file':"
     cat ${NODEMGR_OUT_FILE}
-    trace "Error: node manager failed to start within $max_wait_secs seconds."
+    trace SEVERE "Node manager failed to start within $max_wait_secs seconds."
     exit 1
   fi
   wait_count=$((wait_count + 1))

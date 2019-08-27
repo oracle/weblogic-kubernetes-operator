@@ -4,6 +4,21 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
+import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.builders.WatchEvent;
+import oracle.kubernetes.utils.TestUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import static java.net.HttpURLConnection.HTTP_GONE;
 import static oracle.kubernetes.operator.builders.EventMatcher.addEvent;
 import static oracle.kubernetes.operator.builders.EventMatcher.modifyEvent;
@@ -11,20 +26,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
-
-import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.util.Watch;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
-import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.builders.WatchEvent;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /** Tests behavior of the Watcher class. */
 @SuppressWarnings("SameParameterValue")
@@ -35,19 +36,23 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   private static final String NAMESPACE = "testspace";
   private final RuntimeException hasNextException =
       new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE);
-
+  protected WatchTuning tuning = new WatchTuning(30, 0);
   private List<Memento> mementos = new ArrayList<>();
   private List<Watch.Response<?>> callBacks = new ArrayList<>();
-
   private int resourceVersion = INITIAL_RESOURCE_VERSION;
-
-  protected WatchTuning tuning = new WatchTuning(30, 0);
+  private AtomicBoolean stopping = new AtomicBoolean(false);
 
   private V1ObjectMeta createMetaData() {
     return createMetaData("test", NAMESPACE);
   }
 
-  private AtomicBoolean stopping = new AtomicBoolean(false);
+  @SuppressWarnings("SameParameterValue")
+  private V1ObjectMeta createMetaData(String name, String namespace) {
+    return new V1ObjectMeta()
+        .name(name)
+        .namespace(namespace)
+        .resourceVersion(getNextResourceVersion());
+  }
 
   @Override
   public void allWatchesClosed() {
@@ -212,14 +217,6 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
 
   protected void scheduleDeleteResponse(Object object) {
     StubWatchFactory.addCallResponses(createDeleteResponse(object));
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private V1ObjectMeta createMetaData(String name, String namespace) {
-    return new V1ObjectMeta()
-        .name(name)
-        .namespace(namespace)
-        .resourceVersion(getNextResourceVersion());
   }
 
   private String getNextResourceVersion() {

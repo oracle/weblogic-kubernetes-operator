@@ -18,7 +18,7 @@ abstract class FileSystem {
 
   static final FileSystem LIVE_FILE_SYSTEM = new LiveFileSystem();
 
-  abstract URL toURL(File file) throws MalformedURLException;
+  abstract URL toUrl(File file) throws MalformedURLException;
 
   abstract File[] listFiles(File directory);
 
@@ -41,7 +41,7 @@ abstract class FileSystem {
   private static class LiveFileSystem extends FileSystem {
 
     @Override
-    URL toURL(File file) throws MalformedURLException {
+    URL toUrl(File file) throws MalformedURLException {
       return file.toURI().toURL();
     }
 

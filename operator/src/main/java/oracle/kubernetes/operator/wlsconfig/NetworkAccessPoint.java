@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.Map;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -17,7 +18,8 @@ public class NetworkAccessPoint {
   Integer listenPort;
   Integer publicPort;
 
-  public NetworkAccessPoint() {}
+  public NetworkAccessPoint() {
+  }
 
   NetworkAccessPoint(Map<String, Object> networkAccessPointConfigMap) {
     this(
@@ -32,6 +34,14 @@ public class NetworkAccessPoint {
     this.protocol = protocol;
     this.listenPort = listenPort;
     this.publicPort = publicPort;
+  }
+
+  /**
+   * Return the list of configuration attributes to be retrieved from the REST search request to the
+   * WLS admin server. The value would be used for constructing the REST POST request.
+   */
+  static String getSearchFields() {
+    return "'name', 'protocol', 'listenPort', 'publicPort'";
   }
 
   public String getName() {
@@ -52,14 +62,6 @@ public class NetworkAccessPoint {
 
   public Integer getPublicPort() {
     return publicPort;
-  }
-
-  /**
-   * Return the list of configuration attributes to be retrieved from the REST search request to the
-   * WLS admin server. The value would be used for constructing the REST POST request.
-   */
-  static String getSearchFields() {
-    return "'name', 'protocol', 'listenPort', 'publicPort'";
   }
 
   @Override

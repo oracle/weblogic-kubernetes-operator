@@ -10,8 +10,8 @@
 #
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-source ${SCRIPTPATH}/traceUtils.sh
-[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exitOrLoop
+source ${SCRIPTPATH}/utils.sh
+[ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exitOrLoop
 
 trace "Starting WebLogic Server '${SERVER_NAME}'."
 
@@ -39,7 +39,7 @@ function exitOrLoop {
 function createFolder {
   mkdir -m 750 -p $1
   if [ ! -d $1 ]; then
-    trace "Unable to create folder $1"
+    trace SEVERE "Unable to create folder $1"
     exitOrLoop
   fi
 }
@@ -49,11 +49,13 @@ function createFolder {
 #
 
 function copyIfChanged() {
-  [ ! -f "${1?}" ] && echo "File '$1' not found." && exit 1
+  [ ! -f "${1?}" ] && trace SEVERE "File '$1' not found." && exit 1
   if [ ! -f "${2?}" ] || [ ! -z "`diff $1 $2 2>&1`" ]; then
     trace "Copying '$1' to '$2'."
-    cp $1 $2 || exitOrLoop
-    chmod 750 $2 || exitOrLoop
+    cp $1 $2
+    [ $? -ne 0 ] && trace SEVERE "failed cp $1 $2" && exitOrLoop
+    chmod 750 $2 
+    [ $? -ne 0 ] && trace SEVERE "failed chmod 750 $2" && exitOrLoop
   else
     trace "Skipping copy of '$1' to '$2' -- these files already match."
   fi
@@ -70,8 +72,9 @@ function startWLS() {
 
   trace "Start node manager"
   # call script to start node manager in same shell
-  # $SERVER_OUT_FILE will be set in startNodeManager.sh
-  . ${SCRIPTPATH}/startNodeManager.sh || exitOrLoop
+  # $SERVER_OUT_FILE, SERVER_PID_FILE, and SHUTDOWN_MARKER_FILE will be set in startNodeManager.sh
+  . ${SCRIPTPATH}/startNodeManager.sh
+  [ $? -ne 0 ] && trace SEVERE "failed to start node manager" && exitOrLoop
 
   #
   # Start WL Server
@@ -100,7 +103,12 @@ function waitUntilShutdown() {
   #
   if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
     trace "Showing the server out file from ${SERVER_OUT_FILE}"
-    ${SCRIPTPATH}/tailLog.sh ${SERVER_OUT_FILE} &
+    ${SCRIPTPATH}/tailLog.sh ${SERVER_OUT_FILE} ${SERVER_PID_FILE} &
+  fi
+  FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true} 
+  SERVER_OUT_MONITOR_INTERVAL=${SERVER_OUT_MONITOR_INTERVAL:-3}
+  if [ ${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} == 'true' ] ; then
+    ${SCRIPTPATH}/monitorLog.sh ${SERVER_OUT_FILE} ${SERVER_OUT_MONITOR_INTERVAL} &
   fi
   waitForShutdownMarker
 }
@@ -111,7 +119,7 @@ function waitForShutdownMarker() {
   #
   trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
   while true; do
-    if [ -e /weblogic-operator/doShutdown ] ; then
+    if [ -e ${SHUTDOWN_MARKER_FILE} ] ; then
       exit 0
     fi
     sleep 3
@@ -137,6 +145,8 @@ function copySitCfg() {
   if [ $? = 0 ]; then
     for local_fname in ${src_dir}/${fil_prefix}*.xml ; do
       copyIfChanged $local_fname $tgt_dir/`basename ${local_fname/${fil_prefix}//}`
+      trace "Printing contents of situational configuration file $local_fname:"
+      cat $local_fname
     done
   fi
 
@@ -145,7 +155,8 @@ function copySitCfg() {
     for local_fname in ${tgt_dir}/*.xml ; do
       if [ ! -f "$src_dir/${fil_prefix}`basename ${local_fname}`" ]; then
         trace "Deleting '$local_fname' since it has no corresponding '$src_dir' file."
-        rm -f $local_fname || exitOrLoop
+        rm -f $local_fname
+        [ $? -ne 0 ] && trace SEVERE "failed rm -f $local_fname" && exitOrLoop
       fi
     done
   fi
@@ -168,6 +179,7 @@ checkEnv \
   DOMAIN_NAME \
   DOMAIN_HOME \
   NODEMGR_HOME \
+  ORACLE_HOME \
   SERVER_NAME \
   SERVICE_NAME \
   ADMIN_NAME \
@@ -183,6 +195,7 @@ trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
 #
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed:
 #
+
 exportEffectiveDomainHome || exitOrLoop
 
 #
@@ -190,8 +203,18 @@ exportEffectiveDomainHome || exitOrLoop
 # the operator shouldn't try run a wl pod if the introspector failed.
 #
 
-if [ ! -f /weblogic-operator/introspector/boot.properties ]; then
-  trace "Error:  Missing introspector file '${bootpfile}'.  Introspector failed to run."
+bootpfile="/weblogic-operator/introspector/boot.properties"
+if [ ! -f ${bootpfile} ]; then
+  trace SEVERE "Missing introspector file '${bootpfile}'.  Introspector failed to run."
+  exitOrLoop
+fi
+
+#
+# Check if we're using a supported WebLogic version. The check  will
+# log a message if it fails.
+#
+
+if ! checkWebLogicVersion ; then
   exitOrLoop
 fi
 
@@ -214,6 +237,8 @@ copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             
 copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
 copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
 copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
+
+
 
 if [ "${MOCK_WLS}" == 'true' ]; then
   mockWLS

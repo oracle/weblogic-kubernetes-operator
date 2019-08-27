@@ -4,15 +4,15 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.VersionInfo;
 import java.util.Objects;
+
+import io.kubernetes.client.models.VersionInfo;
 
 /** Major and minor version of Kubernetes API Server. */
 public class KubernetesVersion {
-  static KubernetesVersion UNREADABLE = new KubernetesVersion(0, 0);
   public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(1, 10);
   private static final String[] MINIMUM_K8S_VERSIONS = {"1.11.5", "1.12.3", "1.13.0"};
-
+  static KubernetesVersion UNREADABLE = new KubernetesVersion(0, 0);
   private final int major;
   private final int minor;
   private final int revision;
@@ -32,18 +32,6 @@ public class KubernetesVersion {
     revision = getRevision(asDisplayString());
   }
 
-  int getMajor() {
-    return major;
-  }
-
-  int getMinor() {
-    return minor;
-  }
-
-  String asDisplayString() {
-    return version;
-  }
-
   static String getSupportedVersions() {
     return String.join("+,", MINIMUM_K8S_VERSIONS) + "+";
   }
@@ -61,11 +49,16 @@ public class KubernetesVersion {
     return numericString.length() == 0 ? 0 : Integer.parseInt(numericString);
   }
 
-  enum Compatibility {
-    REVISION_OK,
-    REVISION_TOO_LOW,
-    VERSION_HIGHER,
-    VERSION_LOWER
+  int getMajor() {
+    return major;
+  }
+
+  int getMinor() {
+    return minor;
+  }
+
+  String asDisplayString() {
+    return version;
   }
 
   boolean isCompatible() {
@@ -122,16 +115,16 @@ public class KubernetesVersion {
     return this.major > 1 || (this.major == 1 && this.minor >= 8);
   }
 
-  boolean isCRDSubresourcesSupported() {
+  boolean isCrdSubresourcesSupported() {
     return this.major > 1 || (this.major == 1 && this.minor >= 10);
   }
 
   // Even though subresources are supported at version 1.10, we've determined that the
   // 'status' subresource and the pattern of using "/status" doesn't actually work
   // until 1.13.  This is validated against the published recent changes doc.
-  // *NOTE*: To use this, update CRDHelper to include the status subresource and also
+  // *NOTE*: To use this, update CrdHelper to include the status subresource and also
   // update DomainStatusUpdater to use replaceDomainStatusAsync
-  boolean isCRDSubresourcesStatusPatternSupported() {
+  boolean isCrdSubresourcesStatusPatternSupported() {
     return this.major > 1 || (this.major == 1 && this.minor >= 13);
   }
 
@@ -152,5 +145,12 @@ public class KubernetesVersion {
   @Override
   public String toString() {
     return "KubernetesVersion{" + "major=" + major + ", minor=" + minor + '}';
+  }
+
+  enum Compatibility {
+    REVISION_OK,
+    REVISION_TOO_LOW,
+    VERSION_HIGHER,
+    VERSION_LOWER
   }
 }

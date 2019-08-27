@@ -8,12 +8,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import javax.annotation.Nonnull;
+
 import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 public class ThreadFactoryTestBase implements ThreadFactory {
+  private List<Thread> threads = new ArrayList<>();
+  private String testName;
   @Rule
   public TestRule watcher =
       new TestWatcher() {
@@ -22,9 +25,6 @@ public class ThreadFactoryTestBase implements ThreadFactory {
           testName = description.getMethodName();
         }
       };
-
-  private List<Thread> threads = new ArrayList<>();
-  private String testName;
 
   @Override
   public Thread newThread(@Nonnull Runnable r) {
@@ -43,6 +43,7 @@ public class ThreadFactoryTestBase implements ThreadFactory {
       thread.interrupt();
       thread.join();
     } catch (InterruptedException ignored) {
+      // no-op
     }
   }
 }
