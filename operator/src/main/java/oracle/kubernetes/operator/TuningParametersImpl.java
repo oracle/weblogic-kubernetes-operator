@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import oracle.kubernetes.operator.helpers.ConfigMapConsumer;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -23,6 +24,12 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
   private WatchTuning watch = null;
   private PodTuning pod = null;
 
+  private TuningParametersImpl(ScheduledExecutorService executorService, String mountPoint)
+      throws IOException {
+    super(executorService, mountPoint, TuningParametersImpl::updateTuningParameters);
+    update();
+  }
+
   static synchronized TuningParameters initializeInstance(
       ScheduledExecutorService executorService, String mountPoint) throws IOException {
     if (INSTANCE == null) {
@@ -34,12 +41,6 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
 
   public static synchronized TuningParameters getInstance() {
     return INSTANCE;
-  }
-
-  private TuningParametersImpl(ScheduledExecutorService executorService, String mountPoint)
-      throws IOException {
-    super(executorService, mountPoint, TuningParametersImpl::updateTuningParameters);
-    update();
   }
 
   private static void updateTuningParameters() {
@@ -76,7 +77,8 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
             (int) readTuningParameter("readinessProbePeriodSeconds", 5),
             (int) readTuningParameter("livenessProbeInitialDelaySeconds", 30),
             (int) readTuningParameter("livenessProbeTimeoutSeconds", 5),
-            (int) readTuningParameter("livenessProbePeriodSeconds", 45));
+            (int) readTuningParameter("livenessProbePeriodSeconds", 45),
+            readTuningParameter("introspectorJobActiveDeadlineSeconds", 120));
 
     lock.writeLock().lock();
     try {

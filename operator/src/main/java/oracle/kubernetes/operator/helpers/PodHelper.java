@@ -4,10 +4,17 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodCondition;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1PodStatus;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -27,14 +34,14 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 public class PodHelper {
+  static final long DEFAULT_ADDITIONAL_DELETE_TIME = 10;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  static final long DEFAULT_ADDITIONAL_DELETE_TIME = 10;
-
-  private PodHelper() {}
+  private PodHelper() {
+  }
 
   /**
-   * Creates an admin server pod resource, based on the specified packet
+   * Creates an admin server pod resource, based on the specified packet.
    *
    * @param packet a packet describing the domain model and topology.
    * @return an appropriate Kubernetes resource
@@ -44,7 +51,7 @@ public class PodHelper {
   }
 
   /**
-   * Creates a managed server pod resource, based on the specified packet
+   * Creates a managed server pod resource, based on the specified packet.
    *
    * @param packet a packet describing the domain model and topology.
    * @return an appropriate Kubernetes resource
@@ -99,7 +106,7 @@ public class PodHelper {
     return false;
   }
 
-  public static String getPodDomainUID(V1Pod pod) {
+  public static String getPodDomainUid(V1Pod pod) {
     V1ObjectMeta meta = pod.getMetadata();
     Map<String, String> labels = meta.getLabels();
     if (labels != null) {
@@ -115,6 +122,59 @@ public class PodHelper {
       return labels.get(LabelConstants.SERVERNAME_LABEL);
     }
     return null;
+  }
+
+  /**
+   * Factory for {@link Step} that creates admin server pod.
+   *
+   * @param next Next processing step
+   * @return Step for creating admin server pod
+   */
+  public static Step createAdminPodStep(Step next) {
+    return new AdminPodStep(next);
+  }
+
+  static void addToPacket(Packet packet, PodAwaiterStepFactory pw) {
+    packet
+        .getComponents()
+        .put(
+            ProcessingConstants.PODWATCHER_COMPONENT_NAME,
+            Component.createFor(PodAwaiterStepFactory.class, pw));
+  }
+
+  static PodAwaiterStepFactory getPodAwaiterStepFactory(Packet packet) {
+    return packet.getSpi(PodAwaiterStepFactory.class);
+  }
+
+  /**
+   * Factory for {@link Step} that creates managed server pod.
+   *
+   * @param next Next processing step
+   * @return Step for creating managed server pod
+   */
+  public static Step createManagedPodStep(Step next) {
+    return new ManagedPodStep(next);
+  }
+
+  /**
+   * Factory for {@link Step} that deletes server pod.
+   *
+   * @param serverName the name of the server whose pod is to be deleted
+   * @param next Next processing step
+   * @return Step for deleting server pod
+   */
+  public static Step deletePodStep(String serverName, Step next) {
+    return new DeletePodStep(serverName, next);
+  }
+
+  static List<V1EnvVar> createCopy(List<V1EnvVar> envVars) {
+    ArrayList<V1EnvVar> copy = new ArrayList<>();
+    if (envVars != null) {
+      for (V1EnvVar envVar : envVars) {
+        copy.add(new V1EnvVar().name(envVar.getName()).value(envVar.getValue()));
+      }
+    }
+    return copy;
   }
 
   static class AdminPodStepContext extends PodStepContext {
@@ -191,7 +251,7 @@ public class PodHelper {
     @Override
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> vars = createCopy(getServerSpec().getEnvironmentVariables());
-      overrideContainerWeblogicEnvVars(vars);
+      addStartupEnvVars(vars);
       return vars;
     }
 
@@ -210,16 +270,6 @@ public class PodHelper {
     }
   }
 
-  /**
-   * Factory for {@link Step} that creates admin server pod.
-   *
-   * @param next Next processing step
-   * @return Step for creating admin server pod
-   */
-  public static Step createAdminPodStep(Step next) {
-    return new AdminPodStep(next);
-  }
-
   static class AdminPodStep extends Step {
 
     AdminPodStep(Step next) {
@@ -232,28 +282,6 @@ public class PodHelper {
 
       return doNext(context.verifyPersistentVolume(context.verifyPod(getNext())), packet);
     }
-  }
-
-  static void addToPacket(Packet packet, PodAwaiterStepFactory pw) {
-    packet
-        .getComponents()
-        .put(
-            ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-            Component.createFor(PodAwaiterStepFactory.class, pw));
-  }
-
-  static PodAwaiterStepFactory getPodAwaiterStepFactory(Packet packet) {
-    return packet.getSPI(PodAwaiterStepFactory.class);
-  }
-
-  /**
-   * Factory for {@link Step} that creates managed server pod.
-   *
-   * @param next Next processing step
-   * @return Step for creating managed server pod
-   */
-  public static Step createManagedPodStep(Step next) {
-    return new ManagedPodStep(next);
   }
 
   static class ManagedPodStepContext extends PodStepContext {
@@ -360,7 +388,8 @@ public class PodHelper {
       return metadata;
     }
 
-    private String getClusterName() {
+    @Override
+    protected String getClusterName() {
       return clusterName;
     }
 
@@ -378,7 +407,7 @@ public class PodHelper {
       if (envVars != null) {
         vars.addAll(envVars);
       }
-      overrideContainerWeblogicEnvVars(vars);
+      addStartupEnvVars(vars);
       return vars;
     }
   }
@@ -396,17 +425,6 @@ public class PodHelper {
     }
   }
 
-  /**
-   * Factory for {@link Step} that deletes server pod.
-   *
-   * @param serverName the name of the server whose pod is to be deleted
-   * @param next Next processing step
-   * @return Step for deleting server pod
-   */
-  public static Step deletePodStep(String serverName, Step next) {
-    return new DeletePodStep(serverName, next);
-  }
-
   private static class DeletePodStep extends Step {
     private final String serverName;
 
@@ -418,7 +436,7 @@ public class PodHelper {
     @Override
     public NextAction apply(Packet packet) {
 
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       V1Pod oldPod = info.getServerPod(serverName);
 
       long gracePeriodSeconds = Shutdown.DEFAULT_TIMEOUT;
@@ -474,15 +492,5 @@ public class PodHelper {
           .deletePodAsync(
               name, namespace, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
     }
-  }
-
-  static List<V1EnvVar> createCopy(List<V1EnvVar> envVars) {
-    ArrayList<V1EnvVar> copy = new ArrayList<>();
-    if (envVars != null) {
-      for (V1EnvVar envVar : envVars) {
-        copy.add(new V1EnvVar().name(envVar.getName()).value(envVar.getValue()));
-      }
-    }
-    return copy;
   }
 }

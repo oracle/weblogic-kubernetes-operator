@@ -11,6 +11,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.Provider;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
@@ -34,7 +35,7 @@ public class ResponseDebugLoggingFilter extends BaseDebugLoggingFilter
     }
     LOGGER.entering();
     try {
-      String reqHeaders = getLoggableHeaders(req);
+      final String reqHeaders = getLoggableHeaders(req);
       LOGGER.fine("uri=" + req.getUriInfo().getRequestUri().toString());
       LOGGER.fine("method=" + req.getMethod());
       Object prop = req.getProperty(FILTER_REQUEST_START_TIME);

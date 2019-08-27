@@ -4,6 +4,31 @@
 
 package oracle.kubernetes.operator.builders;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Queue;
+
+import com.meterware.pseudoserver.HttpUserAgentTest;
+import com.meterware.pseudoserver.PseudoServlet;
+import com.meterware.pseudoserver.WebResource;
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Service;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import static java.net.HttpURLConnection.HTTP_ENTITY_TOO_LARGE;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -21,30 +46,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.fail;
-
-import com.meterware.pseudoserver.HttpUserAgentTest;
-import com.meterware.pseudoserver.PseudoServlet;
-import com.meterware.pseudoserver.WebResource;
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Queue;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.helpers.ClientPool;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Tests watches created by the WatchBuilder, verifying that they are created with the correct query
@@ -65,11 +66,15 @@ public class WatchBuilderTest extends HttpUserAgentTest {
   private static final String POD_RESOURCE = "/api/v1/namespaces/" + NAMESPACE + "/pods";
   private static final String EOL = "\n";
   private static final int INITIAL_RESOURCE_VERSION = 123;
-
+  private static final JsonServletAction NO_RESPONSES = new JsonServletAction();
   private static List<AssertionError> validationErrors;
-
   private int resourceVersion = INITIAL_RESOURCE_VERSION;
   private List<Memento> mementos = new ArrayList<>();
+
+  private static String getSingleValue(String[] values) {
+    if (values == null || values.length == 0) return null;
+    else return values[0];
+  }
 
   @Before
   public void setUp() throws Exception {
@@ -122,6 +127,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
       domainWatch.next();
       fail("Should have thrown an exception");
     } catch (Throwable ignore) {
+      // no-op
     }
 
     assertThat(ClientPoolStub.getPooledClients(), is(empty()));
@@ -219,79 +225,6 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     defineResource(resourceName, new JsonServlet(responses));
   }
 
-  static class ParameterValidation {
-    private String parameterName;
-    private String expectedValue;
-
-    private ParameterValidation(String parameterName) {
-      this.parameterName = parameterName;
-    }
-
-    static ParameterValidation parameter(String parameterName) {
-      return new ParameterValidation(parameterName);
-    }
-
-    ParameterValidation withValue(String expectedValue) {
-      this.expectedValue = expectedValue;
-      return this;
-    }
-
-    void verify(String[] parameterValues) {
-      try {
-        assertThat(
-            "parameter " + parameterName, getSingleValue(parameterValues), equalTo(expectedValue));
-      } catch (AssertionError e) {
-        validationErrors.add(e);
-      }
-    }
-  }
-
-  private static String getSingleValue(String[] values) {
-    if (values == null || values.length == 0) return null;
-    else return values[0];
-  }
-
-  static class JsonServletAction {
-    private ParameterValidation[] validations = new ParameterValidation[0];
-    private WebResource webResource;
-
-    private JsonServletAction(String... responses) {
-      webResource = new WebResource(String.join(EOL, responses), "application/json");
-    }
-
-    static JsonServletAction withResponses(String... responses) {
-      return new JsonServletAction(responses);
-    }
-
-    JsonServletAction andValidations(ParameterValidation... validations) {
-      this.validations = validations;
-      return this;
-    }
-  }
-
-  private static final JsonServletAction NO_RESPONSES = new JsonServletAction();
-
-  static class JsonServlet extends PseudoServlet {
-    private List<JsonServletAction> actions;
-    int requestNum = 0;
-
-    private JsonServlet(JsonServletAction... actions) {
-      this.actions = new ArrayList<>(Arrays.asList(actions));
-    }
-
-    @Override
-    public WebResource getGetResponse() {
-      if (requestNum >= actions.size())
-        return new WebResource("Unexpected Request #" + requestNum, HTTP_UNAVAILABLE);
-
-      JsonServletAction action = actions.get(requestNum++);
-      for (ParameterValidation validation : action.validations)
-        validation.verify(getParameter(validation.parameterName));
-
-      return action.webResource;
-    }
-  }
-
   @SuppressWarnings("SameParameterValue")
   private V1ObjectMeta createMetaData(String name, String namespace) {
     return new V1ObjectMeta()
@@ -321,9 +254,79 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     return WatchEvent.createErrorEvent(statusCode).toJson();
   }
 
+  static class ParameterValidation {
+    private String parameterName;
+    private String expectedValue;
+
+    private ParameterValidation(String parameterName) {
+      this.parameterName = parameterName;
+    }
+
+    static ParameterValidation parameter(String parameterName) {
+      return new ParameterValidation(parameterName);
+    }
+
+    ParameterValidation withValue(String expectedValue) {
+      this.expectedValue = expectedValue;
+      return this;
+    }
+
+    void verify(String[] parameterValues) {
+      try {
+        assertThat(
+            "parameter " + parameterName, getSingleValue(parameterValues), equalTo(expectedValue));
+      } catch (AssertionError e) {
+        validationErrors.add(e);
+      }
+    }
+  }
+
+  static class JsonServletAction {
+    private ParameterValidation[] validations = new ParameterValidation[0];
+    private WebResource webResource;
+
+    private JsonServletAction(String... responses) {
+      webResource = new WebResource(String.join(EOL, responses), "application/json");
+    }
+
+    static JsonServletAction withResponses(String... responses) {
+      return new JsonServletAction(responses);
+    }
+
+    JsonServletAction andValidations(ParameterValidation... validations) {
+      this.validations = validations;
+      return this;
+    }
+  }
+
+  static class JsonServlet extends PseudoServlet {
+    int requestNum = 0;
+    private List<JsonServletAction> actions;
+
+    private JsonServlet(JsonServletAction... actions) {
+      this.actions = new ArrayList<>(Arrays.asList(actions));
+    }
+
+    @Override
+    public WebResource getGetResponse() {
+      if (requestNum >= actions.size())
+        return new WebResource("Unexpected Request #" + requestNum, HTTP_UNAVAILABLE);
+
+      JsonServletAction action = actions.get(requestNum++);
+      for (ParameterValidation validation : action.validations)
+        validation.verify(getParameter(validation.parameterName));
+
+      return action.webResource;
+    }
+  }
+
   static class ClientPoolStub extends ClientPool {
-    private String basePath;
     private static Queue<ApiClient> queue;
+    private String basePath;
+
+    ClientPoolStub(String basePath) {
+      this.basePath = basePath;
+    }
 
     static Memento install(String basePath) throws NoSuchFieldException {
       queue = new ArrayDeque<>();
@@ -332,10 +335,6 @@ public class WatchBuilderTest extends HttpUserAgentTest {
 
     static Collection<ApiClient> getPooledClients() {
       return Collections.unmodifiableCollection(queue);
-    }
-
-    ClientPoolStub(String basePath) {
-      this.basePath = basePath;
     }
 
     @Override

@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.wlsconfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import oracle.kubernetes.operator.helpers.LegalNames;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -23,7 +24,8 @@ public class WlsServerConfig {
   Integer adminPort;
   List<NetworkAccessPoint> networkAccessPoints;
 
-  public WlsServerConfig() {}
+  public WlsServerConfig() {
+  }
 
   /**
    * Creates a server configuration.
@@ -36,6 +38,172 @@ public class WlsServerConfig {
     this.name = name;
     this.listenAddress = listenAddress;
     this.listenPort = listenPort;
+  }
+
+  /**
+   * Construct a WlsServerConfig object using values provided.
+   *
+   * @param name Name of the WLS server
+   * @param listenAddress Configured listen address for this WLS server
+   * @param machineName Configured machine name for this WLS server
+   * @param listenPort Configured listen port for this WLS server
+   * @param sslListenPort Configured SSL listen port for this WLS server
+   * @param adminPort Configured domain wide administration port
+   * @param networkAccessPoints List of NetworkAccessPoint containing channels configured for this
+   */
+  public WlsServerConfig(
+      String name,
+      String listenAddress,
+      String machineName,
+      Integer listenPort,
+      Integer sslListenPort,
+      Integer adminPort,
+      List<NetworkAccessPoint> networkAccessPoints) {
+    this.name = name;
+    this.listenAddress = listenAddress;
+    this.machineName = machineName;
+    this.listenPort = listenPort;
+    this.sslListenPort = sslListenPort;
+    this.adminPort = adminPort;
+    this.networkAccessPoints = networkAccessPoints;
+  }
+
+  /**
+   * Creates a WLSServerConfig object using an "servers" or "serverTemplates" item parsed from JSON
+   * result from WLS REST call.
+   *
+   * @param serverConfigMap A Map containing the parsed "servers" or "serverTemplates" element for a
+   *     WLS server or WLS server template.
+   * @return A new WlsServerConfig object using the provided configuration from the configuration
+   *     map
+   */
+  @SuppressWarnings("unchecked")
+  static WlsServerConfig create(Map<String, Object> serverConfigMap) {
+    // parse the configured network access points or channels
+    Map networkAccessPointsMap = (Map<String, Object>) serverConfigMap.get("networkAccessPoints");
+    List<NetworkAccessPoint> networkAccessPoints = new ArrayList<>();
+    if (networkAccessPointsMap != null) {
+      List<Map<String, Object>> networkAccessPointItems =
+          (List<Map<String, Object>>) networkAccessPointsMap.get("items");
+      if (networkAccessPointItems != null && networkAccessPointItems.size() > 0) {
+        for (Map<String, Object> networkAccessPointConfigMap : networkAccessPointItems) {
+          NetworkAccessPoint networkAccessPoint =
+              new NetworkAccessPoint(networkAccessPointConfigMap);
+          networkAccessPoints.add(networkAccessPoint);
+        }
+      }
+    }
+    // parse the SSL configuration
+    Map<String, Object> sslMap = (Map<String, Object>) serverConfigMap.get("SSL");
+    Integer sslListenPort = (sslMap == null) ? null : (Integer) sslMap.get("listenPort");
+    boolean sslPortEnabled = sslMap != null && sslMap.get("listenPort") != null;
+
+    // parse the administration port
+
+    return new WlsServerConfig(
+        (String) serverConfigMap.get("name"),
+        (String) serverConfigMap.get("listenAddress"),
+        getMachineNameFromJsonMap(serverConfigMap),
+        (Integer) serverConfigMap.get("listenPort"),
+        sslListenPort,
+        (Integer) serverConfigMap.get("adminPort"),
+        networkAccessPoints);
+  }
+
+  /**
+   * Helper method to parse the cluster name from an item from the Json "servers" or
+   * "serverTemplates" element.
+   *
+   * @param serverMap Map containing parsed Json "servers" or "serverTemplates" element
+   * @return Cluster name contained in the Json element
+   */
+  static String getClusterNameFromJsonMap(Map<String, Object> serverMap) {
+    // serverMap contains a "cluster" entry from the REST call which is in the form: "cluster":
+    // ["clusters", "DockerCluster"]
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    List<String> clusterList = (List) serverMap.get("cluster");
+    if (clusterList != null) {
+      for (String value : clusterList) {
+        // the first entry that is not "clusters" is assumed to be the cluster name
+        if (!"clusters".equals(value)) {
+          return value;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Helper method to parse the machine name from an item from the Json "servers" or
+   * "serverTemplates" element.
+   *
+   * @param serverMap Map containing parsed Json "servers" or "serverTemplates" element
+   * @return Machine name contained in the Json element
+   */
+  static String getMachineNameFromJsonMap(Map<String, Object> serverMap) {
+    // serverMap contains a "machine" entry from the REST call which is in the form: "machine":
+    // ["machines", "domain1-machine1"]
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    List<String> clusterList = (List) serverMap.get("machine");
+    if (clusterList != null) {
+      for (String value : clusterList) {
+        // the first entry that is not "machines" is assumed to be the machine name
+        if (!"machines".equals(value)) {
+          return value;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Return the list of configuration attributes to be retrieved from the REST search request to the
+   * WLS admin server. The value would be used for constructing the REST POST request.
+   *
+   * @return The list of configuration attributes to be retrieved from the REST search request to
+   *     the WLS admin server. The value would be used for constructing the REST POST request.
+   */
+  static String getSearchPayload() {
+    return "      fields: [ "
+        + getSearchFields()
+        + " ], "
+        + "      links: [], "
+        + "      children: { "
+        + "        SSL: { "
+        + "          fields: [ "
+        + getSslSearchFields()
+        + " ], "
+        + "          links: [] "
+        + "        }, "
+        + "        networkAccessPoints: { "
+        + "          fields: [ "
+        + NetworkAccessPoint.getSearchFields()
+        + " ], "
+        + "          links: [] "
+        + "        } "
+        + "      } ";
+  }
+
+  /**
+   * Return the fields from server or server template WLS configuration that should be retrieved
+   * from the WLS REST request.
+   *
+   * @return A string containing server or server template fields that should be retrieved from the
+   *     WLS REST request, in a format that can be used in the REST request payload
+   */
+  private static String getSearchFields() {
+    return "'name', 'cluster', 'listenPort', 'listenAddress', 'publicPort', 'machine' ";
+  }
+
+  /**
+   * Return the fields from SSL WLS configuration that should be retrieved from the WLS REST
+   * request.
+   *
+   * @return A string containing SSL fields that should be retrieved from the WLS REST request, in a
+   *     format that can be used in the REST request payload
+   */
+  private static String getSslSearchFields() {
+    return "'enabled', 'listenPort'";
   }
 
   /**
@@ -67,6 +235,10 @@ public class WlsServerConfig {
     return listenPort;
   }
 
+  public void setListenPort(Integer listenPort) {
+    this.listenPort = listenPort;
+  }
+
   /**
    * Return the configured listen address of this WLS server.
    *
@@ -83,6 +255,10 @@ public class WlsServerConfig {
    */
   public Integer getSslListenPort() {
     return sslListenPort;
+  }
+
+  public void setSslListenPort(Integer listenPort) {
+    this.sslListenPort = listenPort;
   }
 
   /**
@@ -124,6 +300,14 @@ public class WlsServerConfig {
     return this;
   }
 
+  public Integer getAdminPort() {
+    return adminPort;
+  }
+
+  public void setAdminPort(Integer adminPort) {
+    this.adminPort = adminPort;
+  }
+
   public WlsServerConfig setAdminPort(int adminPort) {
     this.adminPort = adminPort;
     return this;
@@ -137,22 +321,6 @@ public class WlsServerConfig {
     this.clusterName = clusterName;
   }
 
-  public Integer getAdminPort() {
-    return adminPort;
-  }
-
-  public void setAdminPort(Integer adminPort) {
-    this.adminPort = adminPort;
-  }
-
-  public void setListenPort(Integer listenPort) {
-    this.listenPort = listenPort;
-  }
-
-  public void setSslListenPort(Integer listenPort) {
-    this.sslListenPort = listenPort;
-  }
-
   public boolean isAdminPortEnabled() {
     return adminPort != null;
   }
@@ -162,7 +330,7 @@ public class WlsServerConfig {
     if (networkAccessPoints != null) {
       for (NetworkAccessPoint nap : networkAccessPoints) {
         if (nap.isAdminProtocol()) {
-          adminProtocolChannel = LegalNames.toDNS1123LegalName(nap.getName());
+          adminProtocolChannel = LegalNames.toDns1123LegalName(nap.getName());
           break;
         }
       }
@@ -229,178 +397,12 @@ public class WlsServerConfig {
   }
 
   /**
-   * Creates a WLSServerConfig object using an "servers" or "serverTemplates" item parsed from JSON
-   * result from WLS REST call.
-   *
-   * @param serverConfigMap A Map containing the parsed "servers" or "serverTemplates" element for a
-   *     WLS server or WLS server template.
-   * @return A new WlsServerConfig object using the provided configuration from the configuration
-   *     map
-   */
-  @SuppressWarnings("unchecked")
-  static WlsServerConfig create(Map<String, Object> serverConfigMap) {
-    // parse the configured network access points or channels
-    Map networkAccessPointsMap = (Map<String, Object>) serverConfigMap.get("networkAccessPoints");
-    List<NetworkAccessPoint> networkAccessPoints = new ArrayList<>();
-    if (networkAccessPointsMap != null) {
-      List<Map<String, Object>> networkAccessPointItems =
-          (List<Map<String, Object>>) networkAccessPointsMap.get("items");
-      if (networkAccessPointItems != null && networkAccessPointItems.size() > 0) {
-        for (Map<String, Object> networkAccessPointConfigMap : networkAccessPointItems) {
-          NetworkAccessPoint networkAccessPoint =
-              new NetworkAccessPoint(networkAccessPointConfigMap);
-          networkAccessPoints.add(networkAccessPoint);
-        }
-      }
-    }
-    // parse the SSL configuration
-    Map<String, Object> sslMap = (Map<String, Object>) serverConfigMap.get("SSL");
-    Integer sslListenPort = (sslMap == null) ? null : (Integer) sslMap.get("listenPort");
-    boolean sslPortEnabled = sslMap != null && sslMap.get("listenPort") != null;
-
-    // parse the administration port
-
-    return new WlsServerConfig(
-        (String) serverConfigMap.get("name"),
-        (String) serverConfigMap.get("listenAddress"),
-        getMachineNameFromJsonMap(serverConfigMap),
-        (Integer) serverConfigMap.get("listenPort"),
-        sslListenPort,
-        (Integer) serverConfigMap.get("adminPort"),
-        networkAccessPoints);
-  }
-
-  /**
-   * Construct a WlsServerConfig object using values provided.
-   *
-   * @param name Name of the WLS server
-   * @param listenAddress Configured listen address for this WLS server
-   * @param machineName Configured machine name for this WLS server
-   * @param listenPort Configured listen port for this WLS server
-   * @param sslListenPort Configured SSL listen port for this WLS server
-   * @param adminPort Configured domain wide administration port
-   * @param networkAccessPoints List of NetworkAccessPoint containing channels configured for this
-   */
-  public WlsServerConfig(
-      String name,
-      String listenAddress,
-      String machineName,
-      Integer listenPort,
-      Integer sslListenPort,
-      Integer adminPort,
-      List<NetworkAccessPoint> networkAccessPoints) {
-    this.name = name;
-    this.listenAddress = listenAddress;
-    this.machineName = machineName;
-    this.listenPort = listenPort;
-    this.sslListenPort = sslListenPort;
-    this.adminPort = adminPort;
-    this.networkAccessPoints = networkAccessPoints;
-  }
-
-  /**
-   * Helper method to parse the cluster name from an item from the Json "servers" or
-   * "serverTemplates" element.
-   *
-   * @param serverMap Map containing parsed Json "servers" or "serverTemplates" element
-   * @return Cluster name contained in the Json element
-   */
-  static String getClusterNameFromJsonMap(Map<String, Object> serverMap) {
-    // serverMap contains a "cluster" entry from the REST call which is in the form: "cluster":
-    // ["clusters", "DockerCluster"]
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    List<String> clusterList = (List) serverMap.get("cluster");
-    if (clusterList != null) {
-      for (String value : clusterList) {
-        // the first entry that is not "clusters" is assumed to be the cluster name
-        if (!"clusters".equals(value)) {
-          return value;
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Helper method to parse the machine name from an item from the Json "servers" or
-   * "serverTemplates" element.
-   *
-   * @param serverMap Map containing parsed Json "servers" or "serverTemplates" element
-   * @return Machine name contained in the Json element
-   */
-  static String getMachineNameFromJsonMap(Map<String, Object> serverMap) {
-    // serverMap contains a "machine" entry from the REST call which is in the form: "machine":
-    // ["machines", "domain1-machine1"]
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    List<String> clusterList = (List) serverMap.get("machine");
-    if (clusterList != null) {
-      for (String value : clusterList) {
-        // the first entry that is not "machines" is assumed to be the machine name
-        if (!"machines".equals(value)) {
-          return value;
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
    * Whether this server is a dynamic server, ie, not statically configured.
    *
    * @return True if this server is a dynamic server, false if this server is configured statically
    */
   public boolean isDynamicServer() {
     return false;
-  }
-
-  /**
-   * Return the list of configuration attributes to be retrieved from the REST search request to the
-   * WLS admin server. The value would be used for constructing the REST POST request.
-   *
-   * @return The list of configuration attributes to be retrieved from the REST search request to
-   *     the WLS admin server. The value would be used for constructing the REST POST request.
-   */
-  static String getSearchPayload() {
-    return "      fields: [ "
-        + getSearchFields()
-        + " ], "
-        + "      links: [], "
-        + "      children: { "
-        + "        SSL: { "
-        + "          fields: [ "
-        + getSSLSearchFields()
-        + " ], "
-        + "          links: [] "
-        + "        }, "
-        + "        networkAccessPoints: { "
-        + "          fields: [ "
-        + NetworkAccessPoint.getSearchFields()
-        + " ], "
-        + "          links: [] "
-        + "        } "
-        + "      } ";
-  }
-
-  /**
-   * Return the fields from server or server template WLS configuration that should be retrieved
-   * from the WLS REST request.
-   *
-   * @return A string containing server or server template fields that should be retrieved from the
-   *     WLS REST request, in a format that can be used in the REST request payload
-   */
-  private static String getSearchFields() {
-    return "'name', 'cluster', 'listenPort', 'listenAddress', 'publicPort', 'machine' ";
-  }
-
-  /**
-   * Return the fields from SSL WLS configuration that should be retrieved from the WLS REST
-   * request.
-   *
-   * @return A string containing SSL fields that should be retrieved from the WLS REST request, in a
-   *     format that can be used in the REST request payload
-   */
-  private static String getSSLSearchFields() {
-    return "'enabled', 'listenPort'";
   }
 
   @Override

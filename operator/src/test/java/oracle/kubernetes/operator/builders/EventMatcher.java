@@ -4,8 +4,9 @@
 
 package oracle.kubernetes.operator.builders;
 
-import io.kubernetes.client.util.Watch;
 import java.util.Objects;
+
+import io.kubernetes.client.util.Watch;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 

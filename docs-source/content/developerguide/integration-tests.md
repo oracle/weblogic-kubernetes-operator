@@ -15,6 +15,8 @@ You will need to obtain the `kube.config` file for an administrative user and ma
 $ mvn clean verify -P java-integration-tests
 ```
 
+For more detailed information, see [How to run the Java integration tests ](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/integration-tests#how-to-run-the-java-integration-tests).
+
 {{% notice note %}}
 When you run the integrations tests, they do a cleanup of any operator or domains on that cluster.   
 {{% /notice %}}

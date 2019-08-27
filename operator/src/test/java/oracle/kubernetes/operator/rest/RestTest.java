@@ -4,17 +4,6 @@
 
 package oracle.kubernetes.operator.rest;
 
-import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
-import static com.meterware.simplestub.Stub.createStrictStub;
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
-import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
-import static oracle.kubernetes.operator.rest.RestTest.JsonArrayMatcher.withValues;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.google.gson.Gson;
-import com.meterware.simplestub.Memento;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,9 +21,12 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import oracle.kubernetes.TestUtils;
+
+import com.google.gson.Gson;
+import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
+import oracle.kubernetes.utils.TestUtils;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.inmemory.InMemoryTestContainerFactory;
 import org.glassfish.jersey.test.spi.TestContainerException;
@@ -44,6 +36,15 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
+import static com.meterware.simplestub.Stub.createStrictStub;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
+import static oracle.kubernetes.operator.rest.RestTest.JsonArrayMatcher.withValues;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
 public class RestTest extends JerseyTest {
@@ -356,14 +357,14 @@ public class RestTest extends JerseyTest {
   }
 
   abstract static class RestConfigStub implements RestConfig {
-    static RestConfig create(Supplier<RestBackend> restBackendSupplier) {
-      return createStrictStub(RestConfigStub.class, restBackendSupplier);
-    }
-
     private Supplier<RestBackend> restBackendSupplier;
 
     RestConfigStub(Supplier<RestBackend> restBackendSupplier) {
       this.restBackendSupplier = restBackendSupplier;
+    }
+
+    static RestConfig create(Supplier<RestBackend> restBackendSupplier) {
+      return createStrictStub(RestConfigStub.class, restBackendSupplier);
     }
 
     @Override
@@ -388,34 +389,34 @@ public class RestTest extends JerseyTest {
     }
 
     @Override
-    public Set<String> getDomainUIDs() {
+    public Set<String> getDomainUids() {
       return domainClusters.keySet();
     }
 
     @Override
-    public boolean isDomainUID(String domainUID) {
-      return domainClusters.containsKey(domainUID);
+    public boolean isDomainUid(String domainUid) {
+      return domainClusters.containsKey(domainUid);
     }
 
     @Override
-    public Set<String> getClusters(String domainUID) {
-      return domainClusters.get(domainUID).stream()
+    public Set<String> getClusters(String domainUid) {
+      return domainClusters.get(domainUid).stream()
           .map(ClusterState::getClusterName)
           .collect(Collectors.toSet());
     }
 
     @Override
-    public boolean isCluster(String domainUID, String cluster) {
-      return getClusters(domainUID).contains(cluster);
+    public boolean isCluster(String domainUid, String cluster) {
+      return getClusters(domainUid).contains(cluster);
     }
 
     @Override
-    public void scaleCluster(String domainUID, String cluster, int managedServerCount) {
-      getClusterStateStream(domainUID, cluster).forEach(cs -> cs.setScale(managedServerCount));
+    public void scaleCluster(String domainUid, String cluster, int managedServerCount) {
+      getClusterStateStream(domainUid, cluster).forEach(cs -> cs.setScale(managedServerCount));
     }
 
-    Stream<ClusterState> getClusterStateStream(String domainUID, String cluster) {
-      return domainClusters.get(domainUID).stream().filter(cs -> cs.hasClusterName(cluster));
+    Stream<ClusterState> getClusterStateStream(String domainUid, String cluster) {
+      return domainClusters.get(domainUid).stream().filter(cs -> cs.hasClusterName(cluster));
     }
   }
 
