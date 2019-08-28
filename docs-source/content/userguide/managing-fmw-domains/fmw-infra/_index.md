@@ -1,9 +1,10 @@
-+++
-title = "FMW domains"
-date = 2019-04-18T06:46:23-05:00
-weight = 5
-pre = "<b> </b>"
-+++
+---
+title: "Manage FMW Infrastructure domains"
+date: 2019-04-18T06:46:23-05:00
+weight: 1
+description: "FMW Infrastructure domains contain the Java Required Files (JRF) feature and are
+the prerequisite for upper stack products like Oracle SOA Suite."
+---
 
 #### Contents
 
@@ -21,11 +22,11 @@ pre = "<b> </b>"
 Starting with release 2.2.0, the operator supports FMW Infrastructure domains.
 This means domains that are created with the FMW Infrastructure installer rather than the WebLogic
 Server installer.  These domains contain the Java Required Files (JRF) feature and are
-the pre-requisite for "upper stack" products like Oracle SOA Suite, for example.
+the prerequisite for "upper stack" products like Oracle SOA Suite, for example.
 These domains also require a database and the use of the Repository
 Creation Utility (RCU).
 
-This section provides details about the special considerations for running
+This document provides details about the special considerations for running
 FMW Infrastructure domains with the operator.  Other than those considerations
 listed here, FMW Infrastructure domains work in the same way as WebLogic Server domains.
 That is, the remainder of the documentation in this site applies equally to FMW
@@ -43,8 +44,8 @@ Compared to running a WebLogic Server domain in Kubernetes using the operator, t
 following limitations currently exist for FMW Infrastructure domains:
 
 * The [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
-  currently supports WebLogic server logs only.  Other logs will not be sent to
-  Elasticsearch.  Note however that you can use a sidecar with a log handling tool
+  currently supports WebLogic Server logs only.  Other logs will not be sent to
+  Elasticsearch.  Note, however, that you can use a sidecar with a log handling tool
   like Logstash or fluentd to get logs.
 * The [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter)
   currently supports the WebLogic MBean trees only.  Support for JRF MBeans has not
@@ -59,7 +60,7 @@ following limitations currently exist for FMW Infrastructure domains:
 #### Obtaining the FMW Infrastructure Docker Image
 
 The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
-The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3`, already has this patch applied. For detailed instructions on how to log into the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
+The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
 using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.  
