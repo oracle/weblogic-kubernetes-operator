@@ -99,7 +99,7 @@ public class BaseTest {
       FULLTEST = true;
       QUICKTEST = true;
     }
-    
+    logger.info("QUICKTEST " + QUICKTEST+ " FULLTEST "+ FULLTEST +" NIGHTLY "+NIGHTLY);
     SMOKETEST =
         System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
     if (SMOKETEST) {
