@@ -12,16 +12,13 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.Provider;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /** ResponseDebugLoggingFilter debug logs all the REST responses. */
 @Provider
 @Priority(FilterPriorities.RESPONSE_DEBUG_LOGGING_FILTER_PRIORITY)
 public class ResponseDebugLoggingFilter extends BaseDebugLoggingFilter
     implements ContainerResponseFilter {
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /** Construct a ResponseDebugLoggingFilter. */
   public ResponseDebugLoggingFilter() {

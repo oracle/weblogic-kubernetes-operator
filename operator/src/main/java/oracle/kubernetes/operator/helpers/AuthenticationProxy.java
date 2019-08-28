@@ -8,14 +8,12 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1TokenReviewSpec;
 import io.kubernetes.client.models.V1TokenReviewStatus;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /** Delegate authentication decisions to Kubernetes. */
 public class AuthenticationProxy {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private static final AuthorizationProxy authorizationProxy = new AuthorizationProxy();
 
   /**
