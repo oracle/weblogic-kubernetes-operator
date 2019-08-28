@@ -795,6 +795,7 @@ class DomainSeedGenerator(Generator):
 
   def zipdir_base64out(self):
     if self.domain_home:
+      trace('zipping up domain ' + self.domain_home)
       os.path.walk(self.domain_home, self.dir_visit, self.ziph)
       self.ziph.close()
       domain_data = self.env.readBinaryFile(self.domainzip)
@@ -802,16 +803,23 @@ class DomainSeedGenerator(Generator):
       for s in base64.encodestring(domain_data).splitlines():
         b64 = b64 + s
       self.writeln(b64)
+      trace('done zipping up domain ')
 
 
   def dir_visit(self, ziph, dir, files):
     for file in files:
       file_name = os.path.join(dir,file)
       if os.path.isfile(file_name):
-        if os.path.dirname(file_name) in self.skiplist:
-          continue
-        ziph.write(file_name)
-
+        fdir = os.path.dirname(file_name)
+        skip = false
+        for skipdir in self.skiplist:
+          if fdir.find(skipdir) == 0:
+            trace('skipping ' + file_name)
+            skip = true
+            break
+        if not skip:
+          ziph.write(file_name)
+          trace('writing ' + file_name)
 
 class InventoryMD5Generator(Generator):
 
