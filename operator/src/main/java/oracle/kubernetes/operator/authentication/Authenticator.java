@@ -17,8 +17,8 @@ import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.util.Config;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
+
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * This class contains methods to authenticate to the Kubernetes API Server in different ways and to
@@ -30,7 +30,6 @@ public class Authenticator {
   private static final String SERVICE_PORT = "KUBERNETES_SERVICE_PORT";
   // private final String _TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
   // private final String _CACERT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final ApiClient apiClient;
   private final Helpers helper;
   private String serviceToken;
