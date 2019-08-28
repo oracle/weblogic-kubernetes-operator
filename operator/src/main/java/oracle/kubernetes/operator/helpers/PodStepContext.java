@@ -515,6 +515,7 @@ public abstract class PodStepContext extends BasePodStepContext {
             .affinity(getAffinity())
             .nodeSelector(getServerSpec().getNodeSelectors())
             .nodeName(getServerSpec().getNodeName())
+            .serviceAccountName(getServerSpec().getServiceAccountName())
             .schedulerName(getServerSpec().getSchedulerName())
             .priorityClassName(getServerSpec().getPriorityClassName())
             .runtimeClassName(getServerSpec().getRuntimeClassName())

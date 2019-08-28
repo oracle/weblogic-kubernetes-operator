@@ -189,6 +189,10 @@ public abstract class BaseConfiguration {
     return serverPod.getNodeName();
   }
 
+  public String getServiceAccountName() {
+    return serverPod.getServiceAccountName();
+  }
+
   public String getSchedulerName() {
     return serverPod.getSchedulerName();
   }
