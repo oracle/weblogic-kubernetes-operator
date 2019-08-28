@@ -489,7 +489,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testAddEnvShutdownOptions() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Files.createDirectories(Paths.get(shutdownTmpDir));
@@ -562,7 +562,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testShutdownOptionsOverrideClusterLevel() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Files.createDirectories(Paths.get(shutdownTmpDir));

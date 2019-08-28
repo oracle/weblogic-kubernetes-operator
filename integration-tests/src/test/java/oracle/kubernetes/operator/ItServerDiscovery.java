@@ -109,7 +109,7 @@ public class ItServerDiscovery extends BaseTest {
    */
   @Test
   public void testOpConnToNewMS() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -142,7 +142,7 @@ public class ItServerDiscovery extends BaseTest {
    */
   @Test
   public void testOpReconnToDomain() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 

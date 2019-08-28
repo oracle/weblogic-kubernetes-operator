@@ -335,7 +335,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainWithStartPolicyAdminOnly() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Checking if operator1 is running, if not creating");
@@ -372,7 +372,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainPvReclaimPolicyRecycle() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Checking if operator1 is running, if not creating");
@@ -405,7 +405,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainWithDefaultValuesInSampleInputs() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Domain domain10 & verifing the domain creation");
@@ -444,7 +444,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testAutoAndCustomSitConfigOverrides() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
 

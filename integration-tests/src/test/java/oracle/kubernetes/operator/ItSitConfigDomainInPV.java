@@ -74,7 +74,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainMsInPV() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForDomainMS(testMethod);
@@ -116,7 +116,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJmsInPV() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForJms(testMethod);
@@ -137,7 +137,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForWldfInPV() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForWldf(testMethod);
@@ -153,7 +153,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testConfigOverrideAfterDomainStartupInPV() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testConfigOverrideAfterDomainStartup(testMethod);

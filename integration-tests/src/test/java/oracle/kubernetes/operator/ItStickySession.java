@@ -116,7 +116,7 @@ public class ItStickySession extends BaseTest {
    */
   @Test
   public void testSameSessionStickiness() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -199,7 +199,7 @@ public class ItStickySession extends BaseTest {
    */
   @Test
   public void testDiffSessionsNoSharing() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 

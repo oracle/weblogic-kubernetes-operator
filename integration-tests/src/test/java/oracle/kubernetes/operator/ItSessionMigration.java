@@ -110,7 +110,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @Test
   public void testRepickPrimary() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -163,7 +163,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @Test
   public void testHttpSessionMigr() throws Exception {
-    Assume.assumeFalse(FULLTEST || QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
