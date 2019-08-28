@@ -16,12 +16,9 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public abstract class StepContextBase implements StepContextConstants {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
    * Abstract method to be implemented by subclasses to return a list of configured and additional
@@ -54,7 +51,7 @@ public abstract class StepContextBase implements StepContextConstants {
     return vars;
   }
 
-  protected Map<String, String> varsToSubVariables(List<V1EnvVar> vars) {
+  Map<String, String> varsToSubVariables(List<V1EnvVar> vars) {
     Map<String, String> substitutionVariables = new HashMap<>();
     if (vars != null) {
       for (V1EnvVar envVar : vars) {
@@ -65,13 +62,15 @@ public abstract class StepContextBase implements StepContextConstants {
     return substitutionVariables;
   }
 
-  protected void doSubstitution(final Map<String, String> substitutionVariables, List<V1EnvVar> vars) {
+  private void doSubstitution(
+      final Map<String, String> substitutionVariables, List<V1EnvVar> vars) {
     for (V1EnvVar var : vars) {
       var.setValue(translate(substitutionVariables, var.getValue()));
     }
   }
 
-  protected <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj) {
+  @SuppressWarnings("unchecked")
+  <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj) {
     if (obj instanceof String) {
       return (T) translate(substitutionVariables, (String) obj);
     } else if (obj instanceof List) {
@@ -121,7 +120,7 @@ public abstract class StepContextBase implements StepContextConstants {
         || cls.getPackageName().startsWith(DOMAIN_MODEL_PACKAGE);
   }
 
-  private List<Pair<Method, Method>> typeBeans(Class cls) {
+  private <T> List<Pair<Method, Method>> typeBeans(Class<T> cls) {
     List<Pair<Method, Method>> results = new ArrayList<>();
     Method[] methods = cls.getMethods();
     for (Method m : methods) {
@@ -157,11 +156,11 @@ public abstract class StepContextBase implements StepContextConstants {
     return result;
   }
 
-  protected void addEnvVar(List<V1EnvVar> vars, String name, String value) {
+  void addEnvVar(List<V1EnvVar> vars, String name, String value) {
     vars.add(new V1EnvVar().name(name).value(value));
   }
 
-  protected boolean hasEnvVar(List<V1EnvVar> vars, String name) {
+  private boolean hasEnvVar(List<V1EnvVar> vars, String name) {
     for (V1EnvVar var : vars) {
       if (name.equals(var.getName())) {
         return true;
@@ -170,13 +169,13 @@ public abstract class StepContextBase implements StepContextConstants {
     return false;
   }
 
-  protected void addDefaultEnvVarIfMissing(List<V1EnvVar> vars, String name, String value) {
+  void addDefaultEnvVarIfMissing(List<V1EnvVar> vars, String name, String value) {
     if (!hasEnvVar(vars, name)) {
       addEnvVar(vars, name, value);
     }
   }
 
-  protected V1EnvVar findEnvVar(List<V1EnvVar> vars, String name) {
+  private V1EnvVar findEnvVar(List<V1EnvVar> vars, String name) {
     for (V1EnvVar var : vars) {
       if (name.equals(var.getName())) {
         return var;
@@ -185,7 +184,7 @@ public abstract class StepContextBase implements StepContextConstants {
     return null;
   }
 
-  protected void addOrReplaceEnvVar(List<V1EnvVar> vars, String name, String value) {
+  void addOrReplaceEnvVar(List<V1EnvVar> vars, String name, String value) {
     V1EnvVar var = findEnvVar(vars, name);
     if (var != null) {
       var.value(value);
@@ -201,7 +200,7 @@ public abstract class StepContextBase implements StepContextConstants {
   // Regardless, the pod ends up with an empty string as the value (v.s. thinking that
   // the environment variable hasn't been set), so it honors the value (instead of using
   // the default, e.g. 'weblogic' for the user name).
-  protected void hideAdminUserCredentials(List<V1EnvVar> vars) {
+  private void hideAdminUserCredentials(List<V1EnvVar> vars) {
     addEnvVar(vars, "ADMIN_USERNAME", null);
     addEnvVar(vars, "ADMIN_PASSWORD", null);
   }
