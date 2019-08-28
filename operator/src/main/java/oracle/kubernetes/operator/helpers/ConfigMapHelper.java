@@ -22,8 +22,6 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.Scan;
 import oracle.kubernetes.operator.rest.ScanCache;
@@ -37,10 +35,9 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 public class ConfigMapHelper {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private static final String SCRIPT_LOCATION = "/scripts";
   private static final ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
 
@@ -134,11 +131,10 @@ public class ConfigMapHelper {
 
   static String extractFilename(String line) {
     int lastSlash = line.lastIndexOf('/');
-    String fname = line.substring(lastSlash + 1, line.length());
-    return fname;
+    return line.substring(lastSlash + 1, line.length());
   }
 
-  public static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
+  static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
     try {

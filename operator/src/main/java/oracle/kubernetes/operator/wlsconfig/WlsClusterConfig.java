@@ -8,17 +8,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+
 /** Contains configuration of a WLS cluster. */
 public class WlsClusterConfig {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private String name;
   private List<WlsServerConfig> servers = new ArrayList<>();
@@ -140,7 +139,7 @@ public class WlsClusterConfig {
    * @param serverName the name to look for
    * @return true or false
    */
-  public boolean hasNamedServer(String serverName) {
+  boolean hasNamedServer(String serverName) {
     return getServerConfigs().stream().anyMatch(c -> serverName.equals(c.getName()));
   }
 
@@ -195,16 +194,12 @@ public class WlsClusterConfig {
     return this.dynamicServersConfig;
   }
 
-  public void setDynamicServersConfig(WlsDynamicServersConfig dynamicServersConfig) {
-    this.dynamicServersConfig = dynamicServersConfig;
-  }
-
   /**
    * Returns the WlsDomainConfig object for the WLS domain that this cluster belongs to.
    *
    * @return the WlsDomainConfig object for the WLS domain that this cluster belongs to
    */
-  public WlsDomainConfig getWlsDomainConfig() {
+  WlsDomainConfig getWlsDomainConfig() {
     return wlsDomainConfig;
   }
 
@@ -215,7 +210,7 @@ public class WlsClusterConfig {
    * @param wlsDomainConfig the WlsDomainConfig object for the WLS domain that this cluster belongs
    *     to
    */
-  public void setWlsDomainConfig(WlsDomainConfig wlsDomainConfig) {
+  void setWlsDomainConfig(WlsDomainConfig wlsDomainConfig) {
     this.wlsDomainConfig = wlsDomainConfig;
   }
 
@@ -383,7 +378,7 @@ public class WlsClusterConfig {
    *
    * @return The REST URL path for updating cluster size of dynamic servers for this cluster
    */
-  public String getUpdateDynamicClusterSizeUrl() {
+  String getUpdateDynamicClusterSizeUrl() {
     return "/management/weblogic/latest/edit/clusters/" + name + "/dynamicServers";
   }
 
@@ -395,7 +390,7 @@ public class WlsClusterConfig {
    * @return A string containing the payload to be used in the REST request for updating the dynamic
    *     cluster size to the specified value.
    */
-  public String getUpdateDynamicClusterSizePayload(final int clusterSize) {
+  String getUpdateDynamicClusterSizePayload(final int clusterSize) {
     return "{ dynamicClusterSize: " + clusterSize + " }";
   }
 
@@ -438,8 +433,7 @@ public class WlsClusterConfig {
     final int targetClusterSize;
     final WlsClusterConfig wlsClusterConfig;
 
-    public DynamicClusterSizeConfigUpdate(
-        WlsClusterConfig wlsClusterConfig, int targetClusterSize) {
+    DynamicClusterSizeConfigUpdate(WlsClusterConfig wlsClusterConfig, int targetClusterSize) {
       this.targetClusterSize = targetClusterSize;
       this.wlsClusterConfig = wlsClusterConfig;
     }
