@@ -97,10 +97,23 @@ Prerequsite:
 5. Wait for it to finish
 6. At the end, you will see the message "Getting pod status - ctrl-c when all is running and ready to exit"
 7. Once all the pods are up, you can ctrl-c to exit the build script.
-8. Install the nginx ingress controller in your environment For example, [Here](https://medium.com/oracledevs/experimenting-with-ingress-controllers-on-oracle-container-engine-oke-part-1-5af51e6cdb85)
-9. Run ```kubectl apply -f nginx.yaml```
-10. Run ```kubectl cluster-info``` and make a note of the cluster ip address
-11. Run curl -kL http://<cluster ip>/sample_war/index.jsp, you should see something like:
+8. Install the nginx ingress controller in your environment For example:
+```
+helm install --name acmecontroller stable/nginx-ingress \
+--namespace sample-domain1-ns \
+--set controller.name=acme \
+--set defaultBackend.enabled=true \
+--set defaultBackend.name=acmedefaultbackend \
+--set rbac.create=true
+```
+9. Install the ingress rule ```kubectl apply -f nginx.yaml```
+10. kubectl --namespace sample-domain1-ns get services -o wide -w acmecontroller-nginx-ingress-acme
+11. Note the ```EXTERNAL-IP```
+12. Since the ingress rule is using ```--host```, modify your ```/etc/hosts``` file and add the entry
+```
+<external address from step 11>  www.acme.com
+```
+13. Run curl -kL http:/www.acme.com/sample_war/index.jsp, you should see something like:
 ```Hello World, you have reached server managed-server1```
 
 
