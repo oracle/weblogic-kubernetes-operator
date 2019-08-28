@@ -11,17 +11,16 @@ import java.util.Map;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.RollingHelper;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
-public class ManagedServerUpAfterStep extends Step {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
-  public ManagedServerUpAfterStep(Step next) {
+public class ManagedServerUpAfterStep extends Step {
+
+  ManagedServerUpAfterStep(Step next) {
     super(next);
   }
 

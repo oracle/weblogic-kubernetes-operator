@@ -25,8 +25,6 @@ import io.kubernetes.client.models.V1beta1JSONSchemaProps;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
@@ -35,10 +33,10 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+
 /** Helper class to ensure Domain CRD is created. */
 public class CrdHelper {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private static final CrdComparator COMPARATOR = new CrdComparatorImpl();
 
   private CrdHelper() {
@@ -110,8 +108,7 @@ public class CrdHelper {
     }
 
     static V1ObjectMeta createMetadata() {
-      return new V1ObjectMeta()
-          .name(KubernetesConstants.CRD_NAME);
+      return new V1ObjectMeta().name(KubernetesConstants.CRD_NAME);
     }
 
     static V1beta1CustomResourceDefinitionSpec createSpec(KubernetesVersion version) {

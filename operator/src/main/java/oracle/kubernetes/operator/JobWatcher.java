@@ -25,8 +25,6 @@ import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.NextAction;
@@ -34,9 +32,10 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+
 /** Watches for Jobs to become Ready or leave Ready state. */
 public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final Map<String, JobWatcher> JOB_WATCHERS = new HashMap<>();
   private static JobWatcherFactory factory;
 
@@ -100,7 +99,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
 
   public static boolean isComplete(V1Job job) {
     V1JobStatus status = job.getStatus();
-    LOGGER.fine("JobWatcher.isComplete status of job " + job.getMetadata().getName() + ": " + status);
+    LOGGER.fine(
+        "JobWatcher.isComplete status of job " + job.getMetadata().getName() + ": " + status);
     if (status != null) {
       List<V1JobCondition> conds = status.getConditions();
       if (conds != null) {
@@ -118,7 +118,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return false;
   }
 
-  public static boolean isFailed(V1Job job) {
+  static boolean isFailed(V1Job job) {
     V1JobStatus status = job.getStatus();
     if (status != null) {
       if (status.getFailed() != null && status.getFailed() > 0) {
@@ -129,7 +129,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return false;
   }
 
-  public static String getFailedReason(V1Job job) {
+  static String getFailedReason(V1Job job) {
     V1JobStatus status = job.getStatus();
     if (status != null && status.getConditions() != null) {
       for (V1JobCondition cond : status.getConditions()) {
@@ -255,8 +255,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
                     // failed due to DeadlineExceeded, as the pod container would likely not
                     // be available for reading
                     if (isJobFailed && "DeadlineExceeded".equals(getFailedReason(job))) {
-                      fiber.terminate(
-                          new DeadlineExceededException(job), packet);
+                      fiber.terminate(new DeadlineExceededException(job), packet);
                     }
                     fiber.resume(packet);
                   }
@@ -271,7 +270,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
                         .readJobAsync(
                             metadata.getName(),
                             metadata.getNamespace(),
-                            new ResponseStep<V1Job>(null) {
+                            new ResponseStep<>(null) {
                               @Override
                               public NextAction onFailure(
                                   Packet packet,
@@ -306,7 +305,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   static class DeadlineExceededException extends Exception {
     final V1Job job;
 
-    public DeadlineExceededException(V1Job job) {
+    DeadlineExceededException(V1Job job) {
       super();
       this.job = job;
     }

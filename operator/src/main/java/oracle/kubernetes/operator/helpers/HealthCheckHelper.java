@@ -13,15 +13,12 @@ import io.kubernetes.client.models.V1ResourceRule;
 import io.kubernetes.client.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.models.VersionInfo;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /** A Helper Class for checking the health of the WebLogic Operator. */
 public final class HealthCheckHelper {
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private static final Map<AuthorizationProxy.Resource, AuthorizationProxy.Operation[]>
       namespaceAccessChecks = new HashMap<>();
   private static final Map<AuthorizationProxy.Resource, AuthorizationProxy.Operation[]>
