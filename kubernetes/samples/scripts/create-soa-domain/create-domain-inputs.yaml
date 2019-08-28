@@ -15,7 +15,13 @@ adminServerName: AdminServer
 domainUID: soainfra
 
 # Domain Type. Mandatory input for SOASuite domains. User must provide one of the supported values given below.
-# In case of SOASuite domains, the supported domain types are soa,osb,soaess,soaosb,soaessosb
+# Domain Type must be carefully chosen and specified depending on the usecase. It can't be changed once you proceed.
+# In case of SOASuite domains, the supported Domain types are soa,osb,soaess,soaosb,soaessosb.
+# soa       : Deploys a SOA Domain
+# osb       : Deploys an OSB Domain (Oracle Service Bus)
+# soaess   	: Deploys a SOA Domain with Enterprise Scheduler (ESS)
+# soaosb    : Deploys a Domain with SOA and OSB
+# soaessosb : Deploys a Domain with SOA, OSB and Enterprise Scheduler (ESS)
 domainType: soa
 
 # Home of the WebLogic domain
