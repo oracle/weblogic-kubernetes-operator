@@ -170,9 +170,9 @@ if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
   # unzip the domainlib from archive
   for fh in /u01/model_home/archives/*.zip ; do
     cd $DOMAIN_HOME/lib
-    jar xvf $file wlsdeploy/domainLibraries
+    jar xvf $fh wlsdeploy/domainLibraries
     cd $DOMAIN_HOME/
-    jar xvf $file wlsdeploy/
+    jar xvf $fh wlsdeploy/
     rm -fr wlsdeploy/domainLibraries
   done
 fi
