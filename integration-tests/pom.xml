@@ -275,7 +275,7 @@
 
     <profiles>
         <profile>
-            <id>java-integration-tests</id>
+            <id>wl-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>**/It*</includes-failsafe>
