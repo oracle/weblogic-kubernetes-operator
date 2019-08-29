@@ -41,6 +41,7 @@ export WLSIMG_BLDDIR=`pwd`
 #
 imagetool cache addInstaller --type jdk --version 8u221 --path `pwd`/server-jre-8u221-linux-x64.tar.gz
 imagetool cache addInstaller --type wls --version 12.2.1.3.0 --path `pwd`/V886423-01.zip
+imagetool cache addInstaller --type wdt --version latest --path `pwd`/weblogic-image-tool.zip
 #
 echo Creating base image with patches
 #
