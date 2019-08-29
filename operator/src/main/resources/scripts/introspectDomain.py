@@ -372,7 +372,7 @@ class TopologyGenerator(Generator):
       self.validateNonDynamicCluster(cluster)
     else:
       if self.env.isFMWInfraDomain() and not self.env.allowDynamicClusterInFMWInfraDomain():
-        self.addError("Dynamic clusters are not supported in FMW Infrastructure domains. Set ALLOW_DYNAMIC_IN_FMW_INFRA environment variable to true to bypass this validation.")
+        self.addError("Dynamic clusters are not supported in FMW Infrastructure domains. Set ALLOW_DYNAMIC_CLUSTER_IN_FMW environment variable to true to bypass this validation.")
       else:
         self.validateDynamicCluster(cluster)
 
