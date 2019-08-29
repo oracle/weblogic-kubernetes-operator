@@ -142,7 +142,7 @@ public class ItPodTemplates extends BaseTest {
       domain.verifyDomainCreated();
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         domain.shutdownUsingServerStartPolicy();
       }
     }

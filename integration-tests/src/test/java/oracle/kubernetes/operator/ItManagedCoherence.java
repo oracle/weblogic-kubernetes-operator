@@ -139,7 +139,7 @@ public class ItManagedCoherence extends BaseTest {
 
             testCompletedSuccessfully = true;
         } finally {
-            if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+            if (domain != null && (JENKINS || testCompletedSuccessfully)) {
               domain.destroy();
             }
         }
@@ -207,7 +207,7 @@ public class ItManagedCoherence extends BaseTest {
 
             testCompletedSuccessfully = true;
         } finally {
-            if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+            if (domain != null && (JENKINS || testCompletedSuccessfully)) {
               domain.destroy();
             }
         }

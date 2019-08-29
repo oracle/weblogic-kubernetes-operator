@@ -107,27 +107,21 @@ public class JrfInOperatorTest extends BaseTest {
     try {
       // run RCU script to load db schema
       DbUtils.runRcu(rcuPodName, JRF_DOMAIN_ON_PV_WLST_FILE);
-
       // create JRF domain
       jrfdomain = new JrfDomain(JRF_DOMAIN_ON_PV_WLST_FILE);
-
       // verify JRF domain created, servers up and running
       jrfdomain.verifyDomainCreated();
-
       // basic test cases
       testBasicUseCases(jrfdomain);
-
       // more advanced use cases
-      if (!SMOKETEST) {
+      if (NIGHTLY) {
         testAdvancedUseCasesForADomain(operator1, jrfdomain);
-
-        logger.info("testing WlsLivenessProbe ...");
-        jrfdomain.testWlsLivenessProbe();
       }
-
+      logger.info("testing WlsLivenessProbe ...");
+      jrfdomain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
-      if (jrfdomain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+      if (jrfdomain != null && (JENKINS || testCompletedSuccessfully)) {
         jrfdomain.shutdownUsingServerStartPolicy();
       }
     }
@@ -640,11 +634,10 @@ public class JrfInOperatorTest extends BaseTest {
    */
   private void testAdvancedUseCasesForADomain(Operator operator, JrfDomain domain)
       throws Exception {
-    if (!SMOKETEST) {
-      testClusterScaling(operator, domain);
-      int port = (Integer) domain.getDomainMap().get("managedServerPort");
-      testDomainLifecyle(operator, domain, port);
-      testOperatorLifecycle(operator, domain);
-    }
+    testClusterScaling(operator, domain);
+    int port = (Integer) domain.getDomainMap().get("managedServerPort");
+    testDomainLifecyle(operator, domain, port);
+    testOperatorLifecycle(operator, domain);
+    
   }
 }

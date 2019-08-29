@@ -162,7 +162,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_2_1() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator221";
@@ -175,6 +175,26 @@ public class ItOperatorUpgrade extends BaseTest {
     logger.info("SUCCESS - " + testMethod);
   }
 
+  /**
+   * Test for upgrading Operator from release 2.3.0 to develop branch.
+   *
+   * @throws Exception when upgrade fails
+   */
+  @Test
+  public void testOperatorUpgradeFrom2_3_0() throws Exception {
+    Assume.assumeTrue(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    OP_NS = "weblogic-operator230";
+    OP_DEP_NAME = "operator-upgrade230";
+    OP_SA = "operator-sa230";
+    DOM_NS = "weblogic-domain230";
+    DUID = "operatordomain230";
+    setupOperatorAndDomain("release/2.3.0", "2.3.0");
+    upgradeOperator(false);
+    logger.info("SUCCESS - " + testMethod);
+  }
+  
   /**
    * Upgrades operator to develop branch by using the helm upgrade.
    *

@@ -92,12 +92,10 @@ public class ItOperator extends BaseTest {
       testBasicUseCases(domain);
       TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
       testAdvancedUseCasesForADomain(operator1, domain);
-
-      if (!SMOKETEST) domain.testWlsLivenessProbe();
-
+      domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
+      if (domain != null && (JENKINS || testCompletedSuccessfully))
         domain.shutdownUsingServerStartPolicy();
     } 
 
@@ -606,15 +604,13 @@ public class ItOperator extends BaseTest {
   }
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
-    if (!SMOKETEST) {
-      domain.enablePrecreateService();
-      testClusterScaling(operator, domain);
-      domain.verifyServicesCreated(true);
-      if(NIGHTLY) {
-        testDomainLifecyle(operator, domain);
-        testOperatorLifecycle(operator, domain);
-      }
-    }
+    domain.enablePrecreateService();
+    testClusterScaling(operator, domain);
+    domain.verifyServicesCreated(true);
+    if(NIGHTLY) {
+      testDomainLifecyle(operator, domain);
+      testOperatorLifecycle(operator, domain);
+    }    
     return domain;
   }
 

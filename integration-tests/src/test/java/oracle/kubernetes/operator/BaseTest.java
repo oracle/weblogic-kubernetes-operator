@@ -55,7 +55,6 @@ public class BaseTest {
   public static final String APP_PROPS_FILE = "OperatorIT.properties";
 
   public static boolean QUICKTEST, NIGHTLY;
-  public static boolean SMOKETEST;
   public static boolean JENKINS;
   public static boolean SHARED_CLUSTER;
   public static boolean INGRESSPERDOMAIN = true;
@@ -93,11 +92,6 @@ public class BaseTest {
       QUICKTEST = true;
     }
     logger.info("QUICKTEST " + QUICKTEST+ " NIGHTLY "+NIGHTLY);
-    SMOKETEST =
-        System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
-    if (SMOKETEST) {
-      QUICKTEST = true;
-    }
     if (System.getenv("JENKINS") != null) {
       JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
     }
