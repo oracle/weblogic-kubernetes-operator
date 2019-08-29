@@ -229,14 +229,17 @@ function createWLDomain() {
         # We need to run wdt create to get a new merged model
         # otherwise for the update case we won't have one to compare with
 
+        if [ -z "${WDT_DOMAIN_TYPE}" ] ; then
+            WDT_DOMAIN_TYPE=WLS
+        fi
         trace "Run wdt create domain"
 
         if [ $use_passphrase -eq 1 ]; then
             yes ${wdt_passphrase} | ${wdt_bin}/createDomain.sh -oracle_home $MW_HOME -domain_home \
-            $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption
+            $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption -domain_type ${WDT_DOMAIN_TYPE}
         else
             ${wdt_bin}/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list \
-            $archive_list $variable_list
+            $archive_list $variable_list  -domain_type ${WDT_DOMAIN_TYPE}
         fi
         ret=$?
         if [ $ret -ne 0 ]; then
