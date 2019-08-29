@@ -644,8 +644,10 @@ public class JrfInOperatorTest extends BaseTest {
     if (!SMOKETEST) {
       testClusterScaling(operator, domain);
       int port = (Integer) domain.getDomainMap().get("managedServerPort");
-      testDomainLifecyle(operator, domain, port);
-      testOperatorLifecycle(operator, domain);
+      if (!QUICKTEST) {
+        testDomainLifecyle(operator, domain, port);
+        testOperatorLifecycle(operator, domain);
+      }
     }
   }
 }
