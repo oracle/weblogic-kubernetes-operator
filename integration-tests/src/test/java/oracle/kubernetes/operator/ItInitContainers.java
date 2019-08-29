@@ -46,7 +46,7 @@ public class ItInitContainers extends BaseTest {
   public static void staticPrepare() throws Exception {
     logger.info("staticPrepare------Begin");
     // initialize test properties and create the directories
-    if (FULLTEST) {
+    if (NIGHTLY) {
       initialize(APP_PROPS_FILE);
 
       logger.info("Checking if operator and domain are running, if not creating");
@@ -74,7 +74,7 @@ public class ItInitContainers extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (FULLTEST) {
+    if (NIGHTLY) {
       logger.info("staticUnPrepare------Begin");
       if (domain != null) {
         destroyInitContdomain();
@@ -123,7 +123,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testDomainInitContainer() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
@@ -175,7 +175,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testClusterInitContainer() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();

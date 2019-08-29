@@ -162,7 +162,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_2_1() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator221";
@@ -188,7 +188,9 @@ public class ItOperatorUpgrade extends BaseTest {
     }
     checkOperatorVersion();
     testBasicUseCases(domain);
-    testClusterScaling(operator, domain);
+    if(NIGHTLY) {
+      testClusterScaling(operator, domain);
+    }
   }
 
   /**

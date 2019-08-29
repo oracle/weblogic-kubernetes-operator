@@ -78,7 +78,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if (FULLTEST) {
+    if (NIGHTLY) {
       initialize(APP_PROPS_FILE);
       logger.info("Checking if operator and domain are running, if not creating");
       if (operator == null) {
@@ -116,7 +116,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (FULLTEST) {
+    if (NIGHTLY) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -853,7 +853,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test19_EndToEndViaChart() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;

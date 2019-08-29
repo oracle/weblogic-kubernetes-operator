@@ -42,7 +42,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-      if(NIGHTLY) {
+      if(QUICKTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);    
       }
@@ -55,7 +55,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if(NIGHTLY) {
+    if(QUICKTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -73,7 +73,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testOperatorCreateDeleteCreate() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator firstoperator = null;
@@ -500,7 +500,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateChartWithInvalidAttributesNegativeInstall() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -559,7 +559,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateWithMissingTargetDomainInstall() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -617,7 +617,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateWithDefaultTargetDomainInstall() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;

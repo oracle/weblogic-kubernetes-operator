@@ -24,7 +24,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if(FULLTEST) {
+    if(NIGHTLY) {
       SitConfig.staticPrepare(
           DOMAININIMAGE_WLST_YAML,
           "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config-inimage.py");
@@ -38,7 +38,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if(FULLTEST) {
+    if(NIGHTLY) {
       SitConfig.staticUnPrepare();
     }
   }
@@ -56,7 +56,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForDomain(testMethod);
@@ -98,7 +98,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJdbcInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForJdbc(testMethod);

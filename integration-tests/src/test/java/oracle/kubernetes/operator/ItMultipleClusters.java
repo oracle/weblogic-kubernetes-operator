@@ -48,7 +48,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if (FULLTEST) {
+    if (NIGHTLY) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
       String template =
@@ -73,7 +73,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (FULLTEST) {
+    if (NIGHTLY) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -205,7 +205,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoClusterWdtInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(NIGHTLY);
     String domainuid = "twoclusterdomainwdt";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);

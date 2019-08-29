@@ -45,7 +45,7 @@ public class ItPodTemplates extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-    if(FULLTEST) {
+    if(QUICKTEST) {
       initialize(APP_PROPS_FILE);
     }
   }
@@ -57,7 +57,7 @@ public class ItPodTemplates extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if(FULLTEST) {
+    if(QUICKTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -78,7 +78,7 @@ public class ItPodTemplates extends BaseTest {
    */
   @Test
   public void testPodTemplateUsingVariables() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");

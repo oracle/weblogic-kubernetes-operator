@@ -54,7 +54,7 @@ public class BaseTest {
   // property file used to configure constants for integration tests
   public static final String APP_PROPS_FILE = "OperatorIT.properties";
 
-  public static boolean QUICKTEST, FULLTEST, NIGHTLY;
+  public static boolean QUICKTEST, NIGHTLY;
   public static boolean SMOKETEST;
   public static boolean JENKINS;
   public static boolean SHARED_CLUSTER;
@@ -81,25 +81,18 @@ public class BaseTest {
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
-  // Set FULLTEST env var to true to run a broader set of tests including quicktest, one test for each feature
-  // Set NIGHTLY env var to true to run a all the tests, includes full tests
+  // Set NIGHTLY env var to true to run a all the tests, includes quick tests
   // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
   static {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
-    FULLTEST =
-        System.getenv("FULLTEST") != null && System.getenv("FULLTEST").equalsIgnoreCase("true");
     NIGHTLY =
         System.getenv("NIGHTLY") != null && System.getenv("NIGHTLY").equalsIgnoreCase("true");    
     
-    if(FULLTEST) {
-      QUICKTEST = true;
-    }
     if(NIGHTLY) {
-      FULLTEST = true;
       QUICKTEST = true;
     }
-    logger.info("QUICKTEST " + QUICKTEST+ " FULLTEST "+ FULLTEST +" NIGHTLY "+NIGHTLY);
+    logger.info("QUICKTEST " + QUICKTEST+ " NIGHTLY "+NIGHTLY);
     SMOKETEST =
         System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
     if (SMOKETEST) {
@@ -269,7 +262,6 @@ public class BaseTest {
     logger.info("Env var IMAGE_TAG_WEBLOGIC " + System.getenv("IMAGE_TAG_WEBLOGIC"));
 
     logger.info("Env var BRANCH_NAME " + System.getenv("BRANCH_NAME"));
-    logger.info("QUICKTEST " + QUICKTEST+ " FULLTEST "+ FULLTEST +" NIGHTLY "+NIGHTLY);
   }
 
   /**

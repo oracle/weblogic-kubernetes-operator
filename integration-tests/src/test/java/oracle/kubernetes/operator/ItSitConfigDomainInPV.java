@@ -24,7 +24,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if(FULLTEST) {
+    if(NIGHTLY) {
       SitConfig.staticPrepare(
           DOMAINONPV_WLST_YAML,
           "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
@@ -38,7 +38,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if(FULLTEST) {
+    if(NIGHTLY) {
       SitConfig.staticUnPrepare();
     }
   }
@@ -56,7 +56,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForDomain(testMethod);
@@ -97,7 +97,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJdbcInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForJdbc(testMethod);
@@ -169,7 +169,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testOverrideJdbcResourceAfterDomainStartInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testOverrideJdbcResourceAfterDomainStart(testMethod);
@@ -184,7 +184,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testOverrideJdbcResourceWithNewSecretInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testOverrideJdbcResourceWithNewSecret(testMethod);

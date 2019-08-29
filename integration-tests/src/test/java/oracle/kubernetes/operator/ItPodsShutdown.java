@@ -59,7 +59,7 @@ public class ItPodsShutdown extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-    if (FULLTEST) {
+    if (NIGHTLY) {
       initialize(APP_PROPS_FILE);
 
       logger.info("Checking if operator1 and domain are running, if not creating");
@@ -90,7 +90,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (FULLTEST) {
+    if (NIGHTLY) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -317,7 +317,7 @@ public class ItPodsShutdown extends BaseTest {
   @Test
   public void testAddShutdownOptionsToDomain() throws Exception {
 
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -521,7 +521,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testShutdownOptionsOverrideViaEnv() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
