@@ -12,9 +12,9 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.Provider;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.ErrorModel;
+
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * ErrorFilter reformats string entities from non-success responses into arrays of message entities.
@@ -22,8 +22,6 @@ import oracle.kubernetes.operator.rest.model.ErrorModel;
 @Provider
 @Priority(FilterPriorities.ERROR_FILTER_PRIORITY)
 public class ErrorFilter implements ContainerResponseFilter {
-
-  private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   public ErrorFilter() {
     // nothing to do

@@ -9,9 +9,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.DomainModel;
+
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * DomainResource is a jaxrs resource that implements the REST api for the
@@ -20,15 +20,13 @@ import oracle.kubernetes.operator.rest.model.DomainModel;
  */
 public class DomainResource extends BaseResource {
 
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   /**
    * Construct a DomainResource.
    *
    * @param parent - the jaxrs resource that parents this resource.
    * @param pathSegment - the last path segment in the url to this resource.
    */
-  public DomainResource(BaseResource parent, String pathSegment) {
+  DomainResource(BaseResource parent, String pathSegment) {
     super(parent, pathSegment);
   }
 
