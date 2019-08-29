@@ -136,7 +136,7 @@ class OfflineWlstEnv(object):
 
     # Check environment variable that allows dynamic clusters in FMW infrastructure
     # domains
-    self.ALLOW_DYNAMIC_IN_FMW_INFRA = self.getEnvOrDef('ALLOW_DYNAMIC_IN_FMW_INFRA', "False")
+    self.ALLOW_DYNAMIC_CLUSTER_IN_FMW = self.getEnvOrDef('ALLOW_DYNAMIC_CLUSTER_IN_FMW', "False")
 
     # maintain a list of errors that we include in topology.yaml on completion, if any
 
@@ -183,7 +183,7 @@ class OfflineWlstEnv(object):
     return self.IS_FMW_INFRA_DOMAIN
 
   def allowDynamicClusterInFMWInfraDomain(self):
-    return self.ALLOW_DYNAMIC_IN_FMW_INFRA.lower() == 'true'
+    return self.ALLOW_DYNAMIC_CLUSTER_IN_FMW.lower() == 'true'
 
   def addError(self, error):
     self.errors.append(error)
