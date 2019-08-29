@@ -94,6 +94,10 @@ export T3CHANNEL2_PORT=${T3CHANNEL2_PORT:-30013}
 export T3CHANNEL3_PORT=${T3CHANNEL3_PORT:-30014}
 export T3_PUBLIC_ADDRESS=${T3_PUBLIC_ADDRESS:-}
 export PRODUCTION_MODE_ENABLED=${PRODUCTION_MODE_ENABLED:-true}
+export ALLOW_DYNAMIC_CLUSTER_IN_FMW=${ALLOW_DYNAMIC_CLUSTER_IN_FMW:-false}
+
+# whether this test run is expecting a domain validation error
+export EXPECT_INVALID_DOMAIN=${EXPECT_INVALID_DOMAIN:-false}
 
 #############################################################################
 #
@@ -438,6 +442,25 @@ function deployIntrospectJobPod() {
   # put the outputfile in a cm
 
   createConfigMapFromDir $introspect_output_cm_name ${test_home}/jobfiles
+
+
+  # check domainValid value from domain introspector job output
+  domainValid=`cat ${test_home}/jobfiles/topology.yaml | awk '/domainValid:/{sub(/.*domainValid: /, ""); print}'`
+
+  if [ "$domainValid" = "false" ]; then
+    if [ "$EXPECT_INVALID_DOMAIN" = "true" ]; then
+      trace "Info: Success! domainValid is false as expected"
+    else
+      trace "Error: Exiting test due to domainValid from introspecting domain is false!"
+    fi
+    exit 1
+  fi
+
+  if [ "$EXPECT_INVALID_DOMAIN" = "true" ]; then
+    trace "Exiting test due to domainValid from introspecting domain not returning false for an invalid domain"
+    exit 1
+  fi
+
 }
 
 #############################################################################
