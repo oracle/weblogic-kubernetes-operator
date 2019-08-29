@@ -121,7 +121,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingEnvProperty() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -213,7 +213,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingZImage() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -408,7 +408,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testClusterRestartVersion() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     String podName = domainUid + "-managed-server1";
