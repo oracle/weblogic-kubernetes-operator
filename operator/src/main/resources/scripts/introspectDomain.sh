@@ -138,7 +138,7 @@ function createWLDomain() {
 
     model_list=""
     archive_list=""
-    variable_list="${model_home}/variables/_k8s_generated_props.properties"
+    variable_list="${model_home}/_k8s_generated_props.properties"
 
     # in case retry
     if [ -f ${variable_list} ] ; then

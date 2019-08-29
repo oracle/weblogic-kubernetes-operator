@@ -814,12 +814,12 @@ class DomainSeedGenerator(Generator):
         skip = false
         for skipdir in self.skiplist:
           if fdir.find(skipdir) == 0:
-            trace('skipping ' + file_name)
+            #trace('skipping ' + file_name)
             skip = true
             break
         if not skip:
           ziph.write(file_name)
-          trace('writing ' + file_name)
+          #trace('writing ' + file_name)
 
 class InventoryMD5Generator(Generator):
 

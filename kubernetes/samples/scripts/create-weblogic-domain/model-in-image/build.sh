@@ -7,31 +7,44 @@ usage() {
     echo "build.sh <working directory> <oracle support id> <oracle support id password>"
 }
 if [ "$#" != 3 ] ; then
-    usage
+    usage && exit
 fi
+
 if [ ! -d "$1" ] ; then
  echo "Directory $1 does not exists." && exit 
 fi
+
+if [ -f "V982783-01.zip" ] ; then
+ echo "Directory $1 does not contain V982783-01.zip." && exit 
+fi
+
+if [ -f "V886243-01.zip" ] ; then
+ echo "Directory $1 does not contain V886243-01.zip." && exit 
+fi
+
+#
+#
 shopt -s expand_aliases
 cp -R * $1
 cd $1
 unzip V982783-01.zip
 #
 echo Downloading latest WebLogic Image Tool
-#
+
 downloadlink=$(curl -sL https://github.com/oracle/weblogic-image-tool/releases/latest | grep "/oracle/weblogic-image-tool/releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
 echo Downdloading $downloadlink
 curl -L  https://github.com$downloadlink -o weblogic-image-tool.zip
-#
+
 echo Downloading latest WebLogic Deploy Tool
-#
+
 downloadlink=$(curl -sL https://github.com/oracle/weblogic-deploy-tooling/releases/latest | grep "/oracle/weblogic-deploy-tooling/releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
 echo $downloadlink
 curl -L  https://github.com$downloadlink -o weblogic-deploy.zip
-#
+
 unzip weblogic-image-tool.zip
 #
 echo Setting up imagetool
+set -x
 #
 source $1/imagetool-*/bin/setup.sh
 #
