@@ -2,7 +2,7 @@
 
 This sample demonstrates how to specify a domain model to use in an image for the operator. This allows the WebLogic domain to be created from the model in the image automatically.  The domain model format is described in the [WebLogic Deloy Tool](https://github.com/oracle/weblogic-deploy-tooling).
 
-## Steps in creating a domain model in image
+## High level steps in creating a domain model in image
 
 1. Obtain a base WebLogic image either from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or create one using [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
 
@@ -109,11 +109,7 @@ helm install --name acmecontroller stable/nginx-ingress \
 9. Install the ingress rule ```kubectl apply -f nginx.yaml```
 10. kubectl --namespace sample-domain1-ns get services -o wide -w acmecontroller-nginx-ingress-acme
 11. Note the ```EXTERNAL-IP```
-12. Since the ingress rule is using ```--host```, modify your ```/etc/hosts``` file and add the entry
-```
-<external address from step 11>  www.acme.com
-```
-13. Run curl -kL http:/www.acme.com/sample_war/index.jsp, you should see something like:
+12. Run curl -kL http://```EXTERNAL-IP```/sample_war/index.jsp, you should see something like:
 ```Hello World, you have reached server managed-server1```
 
 
