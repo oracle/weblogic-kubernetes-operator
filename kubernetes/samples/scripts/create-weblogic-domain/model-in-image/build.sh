@@ -4,13 +4,13 @@
 #
 #set -e
 usage() {
-    echo "build.sh <working directory> <oracle support id> <oracle support id password> <image type:WLS|FMW>"
+    echo "build.sh <working directory> <oracle support id> <oracle support id password> <domain type:WLS|RestrictedJRF|JRF>"
 }
 if [ "$#" != 4 ] ; then
     usage && exit
 fi
 
-if [ ! "$4" == "WLS" ] && [ ! "$4" == "FMW" ] ; then  echo "Invalid image type: WLS or FMW"; fi
+if [ ! "$4" == "WLS" ] && [ ! "$4" == "RestrictedJRF" ] && [ ! "$4" == "JRF"]; then  echo "Invalid image type: WLS or FMW"; fi
 
 if [ ! -d "$1" ] ; then
  echo "Directory $1 does not exists." && exit 
@@ -47,7 +47,7 @@ downloadlink=$(curl -sL https://github.com/oracle/weblogic-deploy-tooling/releas
 echo $downloadlink
 curl -L  https://github.com$downloadlink -o weblogic-deploy.zip
 
-unzip weblogic-image-tool.zip
+#unzip weblogic-image-tool.zip
 #
 echo Setting up imagetool
 #
