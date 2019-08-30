@@ -14,3 +14,8 @@ echo "Applying domain resource yaml"
 kubectl apply -f domain.yaml
 echo "Done setting up domain"
 
+echo "Getting pod status - ctrl-c when all is running and ready to exit"
+kubectl get pods -n sample-domain1-ns --watch
+#
+
+

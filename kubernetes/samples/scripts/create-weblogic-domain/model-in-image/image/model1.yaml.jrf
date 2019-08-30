@@ -1,0 +1,62 @@
+domainInfo:
+    AdminUserName: 'weblogic'
+    AdminPassword: 'welcome1'
+    ServerStartMode: 'prod'
+    RCUDbInfo:
+        rcu_prefix: FMW1
+        rcu_schema_password: welcome1
+        rcu_admin_password: 'Oradoc_db1'
+        rcu_db_conn_string: 'oracle-db.sample-domain1-ns.svc.cluster.local:1521/pdb1.k8s'
+
+topology:
+    Name: domain1
+    AdminServerName: "admin-server"
+    SecurityConfiguration:
+        NodeManagerUsername : 'weblogic'
+        NodeManagerPasswordEncrypted : 'welcome1'
+    Cluster:
+        "cluster-1":
+            DynamicServers:
+                ServerTemplate:  "cluster-1-template"
+                ServerNamePrefix: "managed-server"
+                DynamicClusterSize: 5
+                MaxDynamicClusterSize: 5
+                CalculatedListenPorts: false
+    Server:
+        "admin-server":
+            ListenPort: 7001
+    ServerTemplate:
+        "cluster-1-template":
+            Cluster: "cluster-1"
+            ListenPort : '@@PROP:MANSVR_PORT@@'
+resources:
+    WebAppContainer:
+        WAPEnabled: '@@PROP:WAPENABLED@@'
+        FilterDispatchedRequestsEnabled: true
+        AllowAllRoles: true
+        XPoweredByHeaderLevel: NONE
+        ServletAuthenticationFormURL: true
+        ServletReloadCheckSecs: 1
+        ChangeSessionIDOnAuthentication: true
+        MimeMappingFile: wlsdeploy/config/amimemappings.properties
+        AuthCookieEnabled: true
+        WorkContextPropagationEnabled: true
+        ReloginEnabled: true
+        GzipCompression:
+            GzipCompressionContentType: [ text/html, text/xml, text/plain ]
+            GzipCompressionEnabled: true
+appDeployments:
+    Library:
+        'jsf#1.2@1.2.9.0':
+            SourcePath: '@@WL_HOME@@/common/deployable-libraries/jsf-1.2.war'
+            ModuleType: war
+            Target: 'cluster-1'
+        'jax-rs#2.0@2.22.4.0':
+            SourcePath: '@@WL_HOME@@/common/deployable-libraries/jax-rs-2.0.war'
+            ModuleType: war
+            Target: 'cluster-1'
+    Application:
+        myear:
+            SourcePath: wlsdeploy/applications/sample_app.ear
+            ModuleType: ear
+            Target: 'cluster-1'

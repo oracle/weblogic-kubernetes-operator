@@ -85,13 +85,13 @@ cd ..
 # docker build --tag model-in-image:x1 .
 # cd ..
 #
-echo Settng up domain resources
-#
-./k8sdomain.sh
-#
-echo "Getting pod status - ctrl-c when all is running and ready to exit"
-kubectl get pods -n sample-domain1-ns --watch
-#
+# echo Settng up domain resources
+# #
+# ./k8sdomain.sh
+# #
+# echo "Getting pod status - ctrl-c when all is running and ready to exit"
+# kubectl get pods -n sample-domain1-ns --watch
+# #
 
 
 

@@ -111,9 +111,16 @@ Prerequsite:
 4. Run ./build.sh <full path to the temporary directory in step 1> <oracle support id capable to download patches> <password for the support id> <image type: WLS|FMW>
 
 5. Wait for it to finish
-6. At the end, you will see the message "Getting pod status - ctrl-c when all is running and ready to exit"
-7. Once all the pods are up, you can ctrl-c to exit the build script.
-8. Install the nginx ingress controller in your environment For example:
+
+
+6. Run ./k8sdomain.sh
+7. At the end, you will see the message "Getting pod status - ctrl-c when all is running and ready to exit"
+8. Once all the pods are up, you can ctrl-c to exit the build script.
+
+
+Optionally, you can install nginx to test the sample application
+
+9. Install the nginx ingress controller in your environment For example:
 ```
 helm install --name acmecontroller stable/nginx-ingress \
 --namespace sample-domain1-ns \
@@ -122,15 +129,51 @@ helm install --name acmecontroller stable/nginx-ingress \
 --set defaultBackend.name=acmedefaultbackend \
 --set rbac.create=true
 ```
-9. Install the ingress rule ```kubectl apply -f nginx.yaml```
-10. kubectl --namespace sample-domain1-ns get services -o wide -w acmecontroller-nginx-ingress-acme
-11. Note the ```EXTERNAL-IP```
-12. Run curl -kL http://```EXTERNAL-IP```/sample_war/index.jsp, you should see something like:
+10. Install the ingress rule ```kubectl apply -f nginx.yaml```
+11. kubectl --namespace sample-domain1-ns get services -o wide -w acmecontroller-nginx-ingress-acme
+12. Note the ```EXTERNAL-IP```
+13. Run curl -kL http://```EXTERNAL-IP```/sample_war/index.jsp, you should see something like:
 ```Hello World, you have reached server managed-server1```
 
 
+## Running the example for JRF domain
+
+JRF domain requires an infrastructure database.  This example shows how to setup a sample database,
+modify the WebLogic Deploy Tool Model to provide database connection information, and steps to create the infrastructure schema.
 
 
+1. kubectl apply -f db-slim.yaml
+2. Copy ```image/model1.yaml.jrf``` into ```image/model1.yaml```
+3. Copy ```domain.yaml.jrf``` into ```domain.yaml```
+4. Repeat the above steps 1-5, make sure use the image type ```FMW```  in step 4
+5. kubectl run rcu -i --tty  --image model-in-image:x0 --restart=Never -- sh
+6. Create the rcu schema
+
+```
+/u01/oracle/oracle_common/bin/rcu \
+  -silent \
+  -createRepository \
+  -databaseType ORACLE \
+  -connectString  oracle-db.sample-domain1-ns.svc.cluster.local:1521/pdb1.k8s \
+  -dbUser sys \
+  -dbRole sysdba \
+  -useSamePasswordForAllSchemaUsers true \
+  -selectDependentsForComponents true \
+  -schemaPrefix FMW1 \
+  -component MDS \
+  -component IAU \
+  -component IAU_APPEND \
+  -component IAU_VIEWER \
+  -component OPSS  \
+  -component WLS  \
+  -component STB <<EOF
+Oradoc_db1
+welcome1
+EOF
+```
+7. ctrl-d to exit the terminal
+8. kubectl delete pod rcu
+9. Repeat step 6-8
 
 
 
