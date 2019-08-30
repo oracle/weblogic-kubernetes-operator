@@ -40,6 +40,16 @@ wdtConfigMap : wdt-config-map
 wdtConfigMapSecret : sample-domain1-wdt-secret
 ```
 
+Specify the domain type if it is not WLS
+
+```
+  serverPod:
+    # an (optional) list of environment variable to be set on the servers
+    env:
+    - name: WDT_DOMAIN_TYPE
+      value: "RestrictedJRF"
+```
+
 ## Naming convention of model files
 
 During domain creation, we follow this alogrithm.  The model files are combined to form a list first from the image ```/u01/model_home/models``` and then followed by those in the config map. You can name the file using the convention ```filename.##.yaml```, where ```##``` is a numeric number.  
@@ -84,15 +94,22 @@ Prerequsite:
 2. Go to edelivery.oracle.com
     - search for Oracle JRE
     - click on JRE 1.8.0_221 to add it to the shopping cart
+    - click on V982783-01.zip to download the zip files 
     - search for Oracle WebLogic Server again
     - click on Oracle WebLogic Server 12.2.1.3.0 (Oracle WebLogic Server Enterprise Edition)
     - click on Checkout
     - click continue and accept license agreement 
-    - click on V982783-01.zip and V886243-01.zip to download the zip files 
+    - click on V886243-01.zip to download the zip files 
+    - click on Oracle Fusion Middleware 12c Infrastructure 12.2.1.3.0)
+    - click on Checkout
+    - click continue and accept license agreement 
+    - click on V886246-01.zip to download the zip files 
+
     (Oracle Fusion Middleware 12c (12.2.1.3.0) WebLogic Server and Coherence, 800.1 MB)
+    (Oracle Fusion Middleware 12c (12.2.1.3.0) Infrastructure, 1.5 GB)
     (Oracle SERVER JRE 1.8.0.221 media upload for Linux x86-64, 52.5 MB)
-3. Copy V982783-01.zip and V886243-01.zip to the temporary directory
-4. Run ./build.sh <full path to the temporary directory in step 1> <oracle support id capable to download patches> <password for the support id>
+3. Copy V982783-01.zip and V886243-01.zip or V886246-01.zip to the temporary directory
+4. Run ./build.sh <full path to the temporary directory in step 1> <oracle support id capable to download patches> <password for the support id> <domain type: WLS|JRF|RestrictedJRF>
 
 5. Wait for it to finish
 6. At the end, you will see the message "Getting pod status - ctrl-c when all is running and ready to exit"

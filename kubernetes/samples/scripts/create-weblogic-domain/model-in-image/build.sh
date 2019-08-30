@@ -4,9 +4,9 @@
 #
 #set -e
 usage() {
-    echo "build.sh <working directory> <oracle support id> <oracle support id password>"
+    echo "build.sh <working directory> <oracle support id> <oracle support id password> <domain type>"
 }
-if [ "$#" != 3 ] ; then
+if [ "$#" != 4 ] ; then
     usage && exit
 fi
 
@@ -44,7 +44,6 @@ curl -L  https://github.com$downloadlink -o weblogic-deploy.zip
 unzip weblogic-image-tool.zip
 #
 echo Setting up imagetool
-set -x
 #
 source $1/imagetool-*/bin/setup.sh
 #
@@ -53,12 +52,18 @@ export WLSIMG_CACHEDIR=`pwd`/cache
 export WLSIMG_BLDDIR=`pwd`
 #
 imagetool cache addInstaller --type jdk --version 8u221 --path `pwd`/server-jre-8u221-linux-x64.tar.gz
-imagetool cache addInstaller --type wls --version 12.2.1.3.0 --path `pwd`/V886423-01.zip
+if [ "$4" == "WLS" ] ; then
+    imagetool cache addInstaller --type wls --version 12.2.1.3.0 --path `pwd`/V886423-01.zip
+    IMGTYPE=wls
+else 
+    imagetool cache addInstaller --type fmw --version 12.2.1.3.0 --path `pwd`/V886426-01.zip
+    IMGTYPE=fmw
+fi
 imagetool cache addInstaller --type wdt --version latest --path `pwd`/weblogic-deploy.zip
 #
 echo Creating base image with patches
 #
-imagetool create --tag model-in-image:x0 --user $2 --password $3 --patches 29135930_12.2.1.3.190416,29016089 --jdkVersion 8u221
+imagetool create --tag model-in-image:x0 --user $2 --password $3 --patches 29135930_12.2.1.3.190416,29016089 --jdkVersion 8u221 --type ${IMGTYPE}
 #
 # Building sample app ear file
 #
@@ -67,7 +72,7 @@ imagetool create --tag model-in-image:x0 --user $2 --password $3 --patches 29135
 echo Creating deploy image with wdt models
 #
 cd image
-imagetool update --tag model-in-image:x1 --fromImage model-in-image:x0 --wdtModel model1.yaml --wdtVariables model1.10.properties --wdtArchive archive1.zip --wdtModelOnly
+imagetool update --tag model-in-image:x1 --fromImage model-in-image:x0 --wdtModel model1.yaml --wdtVariables model1.10.properties --wdtArchive archive1.zip --wdtModelOnly --wdtDomainType $4
 cd ..
 # cp weblogic-deploy.zip image
 # cd image

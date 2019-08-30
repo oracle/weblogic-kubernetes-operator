@@ -223,7 +223,7 @@ function createWLDomain() {
     # something changed in the wdt artifacts
     if  [ ${create_domain} -ne 0 ] ; then
 
-        trace "Need to create domain"
+        trace "Need to create domain " ${WDT_DOMAIN_TYPE}
         export __WLSDEPLOY_STORE_MODEL__=1
 
         # We need to run wdt create to get a new merged model
@@ -232,7 +232,7 @@ function createWLDomain() {
         if [ -z "${WDT_DOMAIN_TYPE}" ] ; then
             WDT_DOMAIN_TYPE=WLS
         fi
-        trace "Run wdt create domain"
+        trace "Run wdt create domain " ${WDT_DOMAIN_TYPE}
 
         if [ $use_passphrase -eq 1 ]; then
             yes ${wdt_passphrase} | ${wdt_bin}/createDomain.sh -oracle_home $MW_HOME -domain_home \
