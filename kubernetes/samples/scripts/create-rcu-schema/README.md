@@ -38,9 +38,9 @@ Oracle DB service is RUNNING with NodePort [30011]
 
 The DB Connection String is oracle-db.default.svc.cluster.local:1521/devpdb.k8s which can be used as  rcuDatabaseURL parameter to domain.input.yaml file while creating a Fusion Middleware domain in Operator Environment 
 
-The Database can be accessed thru external NodePort outside of Kubernates cluster using the URL String <hostmachine>:30011/devpdb.k8s
+The Database can be accessed through NodePort outside of Kubernates cluster using the URL String <hostmachine>:30011/devpdb.k8s
 
-Note: Domain-in-Image model need public DB url as rcuDatabaseURL parameter to configure Fusion Middleware domain
+Note: Domain-in-Image model need public DB url as rcuDatabaseURL parameter to configure a Fusion Middleware domain.
 
 ```
 

@@ -41,7 +41,7 @@ function checkPodDelete(){
  fi 
 }
 
-# Check if all the container(s) in a pod are running based on READY column 
+# Checks if all container(s) in a pod are running state based on READY column 
 #NAME                READY     STATUS    RESTARTS   AGE
 #domain1-adminserver 1/1       Running   0          4m
 
@@ -81,8 +81,7 @@ function checkPodState(){
  kubectl -n ${ns} get po ${pname}
 }
 
-# Check a pod is availabe in a given namesapce 
-
+# Checks if a pod is available in a given namesapce 
 function checkPod(){
 
  max=20
