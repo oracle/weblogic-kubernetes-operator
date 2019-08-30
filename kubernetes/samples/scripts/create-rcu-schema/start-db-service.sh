@@ -1,21 +1,22 @@
 #!/bin/bash
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-#
 
 # Bring up Oracle DB Instance in [default] NameSpace with a NodePort Service 
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
+source ${scriptDir}/common/utility.sh
 
 function usage {
   echo "usage: ${script} -p <nodeport> [-h]"
-  echo "  -p DBService External NodePort"
+  echo "  -p DB Service NodePort (optional)"
+  echo "      (default: 30011) "
   echo "  -h Help"
   exit $1
 }
 
-while getopts "h:p:" opt; do
+while getopts ":h:p:" opt; do
   case $opt in
     p) nodeport="${OPTARG}"
     ;;
@@ -30,10 +31,17 @@ if [ -z ${nodeport} ]; then
   nodeport=30011
 fi
 
-
 ocr_pfx=container-registry.oracle.com
 db_image=${ocr_pfx}/database/enterprise:12.2.0.1-slim
 docker pull ${db_image}
+if [ $? != 0  ]; then
+ echo "######################";
+ echo "[ERROR] Could not pull ${db_image}";
+ echo "Please run  [ docker login ${ocr_pfx} ]  and "
+ echo "Check-out the db image database/enterprise:12.2.0.1-slim  (if needed)"
+ echo "######################";
+ exit -1;
+fi
 
 kubectl apply -f ${scriptDir}/common/oradb.yaml
 # Modify the NodePort based on input 
@@ -41,9 +49,12 @@ sed -i -e "s?nodePort:.*?nodePort: ${nodeport}?g" ${scriptDir}/common/orasvc.yam
 kubectl apply -f ${scriptDir}/common/orasvc.yaml
 
 dbpod=`kubectl get po | grep oracle-db | cut -f1 -d " " `
-sh ${scriptDir}/common/checkPodReady.sh ${dbpod} default
+#sh ${scriptDir}/common/checkPodReady.sh ${dbpod} default
+
+checkPod ${dbpod} default
+checkPodState ${dbpod} default "1/1"
 
 kubectl get po
 kubectl get service
 
-echo "Oracle DB service is RUNNING with external NodePort [${nodeport}]"
+echo "Oracle DB service is RUNNING with NodePort [${nodeport}]"
