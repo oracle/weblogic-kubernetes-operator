@@ -40,14 +40,13 @@ wdtConfigMap : wdt-config-map
 wdtConfigMapSecret : sample-domain1-wdt-secret
 ```
 
-Specify the domain type if it is not WLS
+Specify one of the domain type if it is not WLS
 
 ```
   serverPod:
-    # an (optional) list of environment variable to be set on the servers
     env:
     - name: WDT_DOMAIN_TYPE
-      value: "RestrictedJRF"
+      value: "WLS|JRF|RestrictedJRF"
 ```
 
 ## Naming convention of model files
@@ -109,7 +108,7 @@ Prerequsite:
     (Oracle Fusion Middleware 12c (12.2.1.3.0) Infrastructure, 1.5 GB)
     (Oracle SERVER JRE 1.8.0.221 media upload for Linux x86-64, 52.5 MB)
 3. Copy V982783-01.zip and V886243-01.zip or V886246-01.zip to the temporary directory
-4. Run ./build.sh <full path to the temporary directory in step 1> <oracle support id capable to download patches> <password for the support id> <domain type: WLS|JRF|RestrictedJRF>
+4. Run ./build.sh <full path to the temporary directory in step 1> <oracle support id capable to download patches> <password for the support id> <image type: WLS|FMW>
 
 5. Wait for it to finish
 6. At the end, you will see the message "Getting pod status - ctrl-c when all is running and ready to exit"

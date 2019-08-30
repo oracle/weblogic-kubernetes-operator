@@ -4,11 +4,13 @@
 #
 #set -e
 usage() {
-    echo "build.sh <working directory> <oracle support id> <oracle support id password> <domain type>"
+    echo "build.sh <working directory> <oracle support id> <oracle support id password> <image type:WLS|FMW>"
 }
 if [ "$#" != 4 ] ; then
     usage && exit
 fi
+
+if [ ! "$4" == "WLS" ] && [ ! "$4" == "FMW" ] ; then  echo "Invalid image type: WLS or FMW"; fi
 
 if [ ! -d "$1" ] ; then
  echo "Directory $1 does not exists." && exit 
@@ -18,7 +20,11 @@ if [ -f "V982783-01.zip" ] ; then
  echo "Directory $1 does not contain V982783-01.zip." && exit 
 fi
 
-if [ -f "V886243-01.zip" ] ; then
+if [ -f "V886243-01.zip" ] && [ "$4" == "WLS" ] ; then
+ echo "Directory $1 does not contain V886243-01.zip." && exit 
+fi
+
+if [ -f "V886246-01.zip" ] && [ "$4" == "FMW" ] ; then
  echo "Directory $1 does not contain V886243-01.zip." && exit 
 fi
 
