@@ -49,6 +49,11 @@ spec:
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
       value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+    # - name: WDT_DOMAIN_TYPE
+    #   value: "WLS"
+    #   value: "JRF"
+    #   value: "RestrictedJRF"
+    #
     # volumes:
     # - name: weblogic-domain-storage-volume
     #   persistentVolumeClaim:
