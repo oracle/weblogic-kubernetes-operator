@@ -329,5 +329,5 @@ $
 #### Creating a SOA domain
 
 Now that you have your Docker images and you have created your RCU schemas, you are ready
-to create your domain.  A [sample]({{< relref "/samples/simple/domains/fmw-domain/_index.md" >}})
-is provided that demonstrates how to create a SOA Suite domain. (ToDo: update link to SOA sample)
+to create your domain.  A [sample]({{< relref "/samples/simple/domains/soa-domain/_index.md" >}})
+is provided that demonstrates how to create a SOA Suite domain. 
