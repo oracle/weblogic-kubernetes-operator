@@ -4,9 +4,9 @@
 #
 
 #
-# Usage: build.sh <working directory> <oracle support id> <oracle support id password>
+# Usage: build.sh <working directory> <oracle support id> <oracle support id password> <domain type:WLS|RestrictedJRF|JRF>
 #
-#set -e
+set -e
 usage() {
     echo "build.sh <working directory> <oracle support id> <oracle support id password> <domain type:WLS|RestrictedJRF|JRF>"
 }
@@ -14,29 +14,35 @@ if [ "$#" != 4 ] ; then
     usage && exit
 fi
 
-if [ ! "$4" == "WLS" ] && [ ! "$4" == "RestrictedJRF" ] && [ ! "$4" == "JRF"]; then  echo "Invalid image type: WLS or FMW"; fi
+WORKDIR=$1
+USERID=$2
+USERPWD=$3
+DOMAINTYPE=$4
 
-if [ ! -d "$1" ] ; then
- echo "Directory $1 does not exists." && exit 
+if [ ! "${DOMAINTYPE}" == "WLS" ] && [ ! "${DOMAINTYPE}" == "RestrictedJRF" ] && [ ! "${DOMAINTYPE}" == "JRF"]; then  echo "Invalid domain type: WLS or
+FMW"; fi
+
+if [ ! -d "${WORKDIR}" ] ; then
+ echo "Directory WORKDIR does not exists." && exit 
 fi
 
 if [ -f "V982783-01.zip" ] ; then
- echo "Directory $1 does not contain V982783-01.zip." && exit 
+ echo "Directory ${WORKDIR} does not contain V982783-01.zip." && exit 
 fi
 
-if [ -f "V886243-01.zip" ] && [ "$4" == "WLS" ] ; then
- echo "Directory $1 does not contain V886243-01.zip." && exit 
+if [ -f "V886243-01.zip" ] && [ "${DOMAINTYPE}" == "WLS" ] ; then
+ echo "Directory ${WORKDIR} does not contain V886243-01.zip." && exit 
 fi
 
-if [ -f "V886246-01.zip" ] && [ "$4" == "FMW" ] ; then
- echo "Directory $1 does not contain V886243-01.zip." && exit 
+if [ -f "V886246-01.zip" ] && [ "${DOMAINTYPE}" == "RestrictedJRF" -o "${DOMAINTYPE}" == "JRF" ] ; then
+ echo "Directory ${WORKDIR} does not contain V886243-01.zip." && exit 
 fi
 
 #
 #
 shopt -s expand_aliases
-cp -R * $1
-cd $1
+cp -R * ${WORKDIR}
+cd ${WORKDIR}
 unzip V982783-01.zip
 #
 echo Downloading latest WebLogic Image Tool
@@ -55,35 +61,47 @@ unzip weblogic-image-tool.zip
 #
 echo Setting up imagetool
 #
-source $1/imagetool-*/bin/setup.sh
+IMGTOOL_BIN=${WORKDIR}/imagetool-*/bin/imagetool.sh
+#source ${WORKDIR}/imagetool-*/bin/setup.sh
 #
 mkdir cache
 export WLSIMG_CACHEDIR=`pwd`/cache
 export WLSIMG_BLDDIR=`pwd`
 #
-imagetool cache addInstaller --type jdk --version 8u221 --path `pwd`/server-jre-8u221-linux-x64.tar.gz
-if [ "$4" == "WLS" ] ; then
-    imagetool cache addInstaller --type wls --version 12.2.1.3.0 --path `pwd`/V886423-01.zip
+${IMGTOOL_BIN} cache addInstaller --type jdk --version 8u221 --path `pwd`/server-jre-8u221-linux-x64.tar.gz
+if [ "${DOMAINTYPE}" == "WLS" ] ; then
+    ${IMGTOOL_BIN} cache addInstaller --type wls --version 12.2.1.3.0 --path `pwd`/V886423-01.zip
     IMGTYPE=wls
 else 
-    imagetool cache addInstaller --type fmw --version 12.2.1.3.0 --path `pwd`/V886426-01.zip
+    ${IMGTOOL_BIN} cache addInstaller --type fmw --version 12.2.1.3.0 --path `pwd`/V886426-01.zip
     IMGTYPE=fmw
 fi
-imagetool cache addInstaller --type wdt --version latest --path `pwd`/weblogic-deploy.zip
+${IMGTOOL_BIN} cache addInstaller --type wdt --version latest --path `pwd`/weblogic-deploy.zip
 #
 echo Creating base image with patches
 #
-imagetool create --tag model-in-image:x0 --user $2 --password $3 --patches 29135930_12.2.1.3.190416,29016089 --jdkVersion 8u221 --type ${IMGTYPE}
+${IMGTOOL_BIN} create --tag model-in-image:x0 --user ${USERID} --password ${USERPWD} --patches 29135930_12.2.1.3.190416,29016089 --jdkVersion 8u221 --type ${IMGTYPE}
 #
 # Building sample app ear file
 #
 ./build_app.sh
 #
+
+if [ "${DOMAINTYPE}" == "JRF" ] ; then
+    cp image/model1.yaml.jrf image/model1.yaml
+fi
+
 echo Creating deploy image with wdt models
 #
 cd image
-imagetool update --tag model-in-image:x1 --fromImage model-in-image:x0 --wdtModel model1.yaml --wdtVariables model1.10.properties --wdtArchive archive1.zip --wdtModelOnly --wdtDomainType $4
+${IMGTOOL_BIN} update --tag model-in-image:x1 --fromImage model-in-image:x0 --wdtModel model1.yaml --wdtVariables model1.10.properties --wdtArchive archive1.zip --wdtModelOnly --wdtDomainType ${DOMAINTYPE}
 cd ..
+
+echo Setting Domain Type in domain.yaml
+#
+sed -i s/@@DOMTYPE@@/${DOMAINTYPE}/ domain.yaml
+
+
 # cp weblogic-deploy.zip image
 # cd image
 # docker build --tag model-in-image:x1 .

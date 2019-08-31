@@ -79,7 +79,6 @@
 
 import base64
 import distutils.dir_util
-import glob
 import inspect
 import os
 import re
@@ -787,8 +786,8 @@ class DomainSeedGenerator(Generator):
   def __init__(self, env):
     Generator.__init__(self, env, env.DOMAIN_ZIP)
     self.env = env
-    self.domainzip = tempfile.mktemp(".zip")
-    self.ziph = zipfile.ZipFile(self.domainzip, 'w', zipfile.ZIP_DEFLATED)
+    # self.domainzip = tempfile.mktemp(".zip")
+    # self.ziph = zipfile.ZipFile(self.domainzip, 'w', zipfile.ZIP_DEFLATED)
     self.domain_home = self.env.getDomainHome()
     self.skiplist = [ os.path.join(self.domain_home, 'lib'), os.path.join(self.domain_home, 'wlsdeploy') ]
   def generate(self):
@@ -801,39 +800,57 @@ class DomainSeedGenerator(Generator):
       self.close()
 
   def addDomainSeed(self):
-    self.zipdir_base64out()
+    em_ear_path = self.env.getEmPath()
+    empath = ''
+    if em_ear_path is not None and os.path.exists(em_ear_path):
+      empath = em_ear_path
+    packcmd = "tar -pczf /tmp/domain.tar.gz --exclude %s/wlsdeploy --exclude %s/lib %s %s/*" % (self.domain_home, self.domain_home, empath, self.domain_home)
+    trace(packcmd)
+    rc = os.system(packcmd)
+    trace("targz " + str(rc))
+    domain_data = self.env.readBinaryFile("/tmp/domain.tar.gz")
+    b64 = ""
+    for s in base64.encodestring(domain_data).splitlines():
+      b64 = b64 + s
+    self.writeln(b64)
+    trace('done zipping up domain ')
+    # self.zipdir_base64out()
 
-  def zipdir_base64out(self):
-    if self.domain_home:
-      trace('zipping up domain ' + self.domain_home)
-      os.path.walk(self.domain_home, self.dir_visit, self.ziph)
-      em_ear_path = self.env.getEmPath()
-      if em_ear_path is not None and os.path.exists(em_ear_path):
-        self.ziph.write(em_ear_path)
+  # def zipdir_base64out(self):
+  #   if self.domain_home:
+  #     trace('zipping up domain ' + self.domain_home)
+  #     os.path.walk(self.domain_home, self.dir_visit, self.ziph)
+  #     em_ear_path = self.env.getEmPath()
+  #     if em_ear_path is not None and os.path.exists(em_ear_path):
+  #       self.ziph.write(em_ear_path)
+  #     self.ziph.close()
+  #     trace("done zipping up domain repacking now size= " + str(os.path.getsize(self.domainzip)))
+  #     packcmd = "gzip %s " % str(self.domainzip)
+  #     trace("cmd is " + packcmd)
+  #     rc = os.system(packcmd)
+  #     trace("gzip " + str(rc))
+  #     domain_data = self.env.readBinaryFile(self.domainzip + ".gz")
+  #     b64 = ""
+  #     for s in base64.encodestring(domain_data).splitlines():
+  #       b64 = b64 + s
+  #     self.writeln(b64)
+  #     trace('done zipping up domain ')
 
-      self.ziph.close()
-      domain_data = self.env.readBinaryFile(self.domainzip)
-      b64 = ""
-      for s in base64.encodestring(domain_data).splitlines():
-        b64 = b64 + s
-      self.writeln(b64)
-      trace('done zipping up domain ')
 
-
-  def dir_visit(self, ziph, dir, files):
-    for file in files:
-      file_name = os.path.join(dir,file)
-      if os.path.isfile(file_name):
-        fdir = os.path.dirname(file_name)
-        skip = false
-        for skipdir in self.skiplist:
-          if fdir.find(skipdir) == 0:
-            #trace('skipping ' + file_name)
-            skip = true
-            break
-        if not skip:
-          ziph.write(file_name)
-          #trace('writing ' + file_name)
+  # def dir_visit(self, ziph, dir, files):
+  #   for file in files:
+  #     file_name = os.path.join(dir,file)
+  #     if os.path.isfile(file_name):
+  #       fdir = os.path.dirname(file_name)
+  #       skip = false
+  #       for skipdir in self.skiplist:
+  #         if fdir.find(skipdir) == 0:
+  #           trace('skipping ' + file_name)
+  #           skip = true
+  #           break
+  #       if not skip:
+  #         ziph.write(file_name)
+  #         #trace('writing ' + file_name)
 
 class InventoryMD5Generator(Generator):
 
@@ -1306,11 +1323,15 @@ class DomainIntrospector(SecretManager):
       BootPropertiesGenerator(self.env).generate()
       UserConfigAndKeyGenerator(self.env).generate()
       if os.path.exists('/u01/wdt/models'):
+        trace("md5 model")
         InventoryMD5Generator(self.env, self.env.MERGED_MODEL_FILE,
                               self.env.DOMAIN_HOME+"/wlsdeploy/domain_model.json").generate()
         DomainSeedGenerator(self.env).generate()
+        trace("md5 image")
         InventoryMD5Generator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
+        trace("md5 cm")
         InventoryMD5Generator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
+        trace("md5 passphrase")
         InventoryMD5Generator(self.env, self.env.INVENTORY_PASSPHRASE_MD5, '/tmp/inventory_passphrase.md5').generate()
 
     CustomSitConfigIntrospector(self.env).generateAndValidate()

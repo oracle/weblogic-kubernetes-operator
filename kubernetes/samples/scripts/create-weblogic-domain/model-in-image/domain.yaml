@@ -48,8 +48,8 @@ spec:
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
       value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
-    # - name: WDT_DOMAIN_TYPE
-    #   value: "WLS"
+    - name: WDT_DOMAIN_TYPE
+      value: "@@DOMTYPE@@"
     #   value: "JRF"
     #   value: "RestrictedJRF"
     #
