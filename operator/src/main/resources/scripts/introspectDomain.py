@@ -165,6 +165,16 @@ class OfflineWlstEnv(object):
     readDomain(self.getDomainHome())
     self.domain = cmo
     self.DOMAIN_NAME = self.getDomain().getName()
+    try:
+      cd('Application/em')
+      em_attrs = ls(returnMap='true', returnType='a')
+      self.empath = em_attrs['SourcePath']
+    except:
+      self.empath = None
+      pass
+
+  def getEmPath(self):
+    return self.empath
 
   def close(self):
     closeDomain()
@@ -797,10 +807,10 @@ class DomainSeedGenerator(Generator):
     if self.domain_home:
       trace('zipping up domain ' + self.domain_home)
       os.path.walk(self.domain_home, self.dir_visit, self.ziph)
-      # TODO fix this
-      em_ear_path = os.path.abspath(self.domain_home + "/../applications/em.ear")
-      if os.path.exists(em_ear_path):
+      em_ear_path = self.env.getEmPath()
+      if em_ear_path is not None and os.path.exists(em_ear_path):
         self.ziph.write(em_ear_path)
+
       self.ziph.close()
       domain_data = self.env.readBinaryFile(self.domainzip)
       b64 = ""
