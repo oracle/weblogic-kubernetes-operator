@@ -1,5 +1,9 @@
 #!/bin/bash
-#echo ">>>> Creating domain namespace"
+# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+# This is an example of how to setup the WebLogic Kubernetes Cluster
+
 
 #kubectl create namespace sample-domain1-ns
 set -x

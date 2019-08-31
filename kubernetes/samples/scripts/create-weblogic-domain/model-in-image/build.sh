@@ -1,4 +1,8 @@
 #!/bin/bash
+# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+
 #
 # Usage: build.sh <working directory> <oracle support id> <oracle support id password>
 #
@@ -47,7 +51,7 @@ downloadlink=$(curl -sL https://github.com/oracle/weblogic-deploy-tooling/releas
 echo $downloadlink
 curl -L  https://github.com$downloadlink -o weblogic-deploy.zip
 
-#unzip weblogic-image-tool.zip
+unzip weblogic-image-tool.zip
 #
 echo Setting up imagetool
 #

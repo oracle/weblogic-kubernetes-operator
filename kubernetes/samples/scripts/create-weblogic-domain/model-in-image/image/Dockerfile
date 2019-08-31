@@ -1,3 +1,7 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+
 FROM model-in-image:x0
 #RUN mkdir -p /u01/model_home/models /u01/model_home/archives /u01/model_home/variables /u01/apps/$DOMAIN_UID /tmp/delme
 #RUN mkdir -p /u01/apps/$DOMAIN_UID/
