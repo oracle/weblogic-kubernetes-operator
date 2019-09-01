@@ -4,7 +4,7 @@ This sample demonstrates how to specify a domain model to use in an image for th
 
 ## High level steps in creating a domain model in image
 
-1. Obtain a base WebLogic image either from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or create one using [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
+1. Create a deployable image with the WebLogic Server installed and put all the WebLogic Deploy Tool artifacts in structure described in step 2.  You can use the image from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or create one using [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
 
 2. In the image, create the following structures and place the `WebLogic Deploy Tool``` artifacts
 
@@ -108,7 +108,7 @@ Prerequsite:
     (Oracle Fusion Middleware 12c (12.2.1.3.0) Infrastructure, 1.5 GB)
     (Oracle SERVER JRE 1.8.0.221 media upload for Linux x86-64, 52.5 MB)
 3. Copy V982783-01.zip and V886243-01.zip or V886246-01.zip to the temporary directory
-4. Run ./build.sh <full path to the temporary directory in step 1> <oracle support id capable to download patches> <password for the support id> <image type: WLS|FMW>
+4. Run ./build.sh <full path to the temporary directory in step 1> <oracle support id capable to download patches> <password for the support id> <domain type: WLS|RestrictedJRF|JRF>
 
 5. Wait for it to finish
 
@@ -141,13 +141,19 @@ helm install --name acmecontroller stable/nginx-ingress \
 JRF domain requires an infrastructure database.  This example shows how to setup a sample database,
 modify the WebLogic Deploy Tool Model to provide database connection information, and steps to create the infrastructure schema.
 
+Since JRF domain creation take considerable time, you should increase the timeout for the introspection job.
+
+```
+kubectl -n <operation namespace> edit configmap weblogic-operator-cm 
+```
+
+and add the parameter ```introspectorJobActiveDeadlineSeconds```  default is 120s
+
 
 1. kubectl apply -f db-slim.yaml
-2. Copy ```image/model1.yaml.jrf``` into ```image/model1.yaml```
-3. Copy ```domain.yaml.jrf``` into ```domain.yaml```
-4. Repeat the above steps 1-5, make sure use the image type ```FMW```  in step 4
-5. kubectl run rcu -i --tty  --image model-in-image:x0 --restart=Never -- sh
-6. Create the rcu schema
+2. Repeat the above steps 1-5, make sure use the domain type ```JRF```  in step 4
+3. kubectl run rcu -i --tty  --image model-in-image:x0 --restart=Never -- sh
+4. Create the rcu schema
 
 ```
 /u01/oracle/oracle_common/bin/rcu \
@@ -171,10 +177,31 @@ Oradoc_db1
 welcome1
 EOF
 ```
-7. ctrl-d to exit the terminal
-8. kubectl delete pod rcu
-9. Repeat step 6-8
+5. ctrl-d to exit the terminal
+6. kubectl delete pod rcu
+7. Repeat the above steps 6-8
 
+Note:  If you need to drop the repository, you can use the command in step 4
+
+```
+/u01/oracle/oracle_common/bin/rcu \
+  -silent \
+  -dropRepository \
+  -databaseType ORACLE \
+  -connectString  oracle-db.sample-domain1-ns.svc.cluster.local:1521/pdb1.k8s \
+  -dbUser sys \
+  -dbRole sysdba \
+  -schemaPrefix FMW1 \
+  -component MDS \
+  -component IAU \
+  -component IAU_APPEND \
+  -component IAU_VIEWER \
+  -component OPSS  \
+  -component WLS  \
+  -component STB <<EOF
+Oradoc_db1
+EOF
+```
 
 
 
