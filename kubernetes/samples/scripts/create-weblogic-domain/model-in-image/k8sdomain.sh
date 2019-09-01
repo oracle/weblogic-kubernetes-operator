@@ -6,7 +6,7 @@
 
 
 #kubectl create namespace sample-domain1-ns
-set -x
+set -e
 echo "Creating weblogic domain secret"
 kubectl -n sample-domain1-ns create secret generic sample-domain1-weblogic-credentials \
   --from-literal=username=weblogic \
