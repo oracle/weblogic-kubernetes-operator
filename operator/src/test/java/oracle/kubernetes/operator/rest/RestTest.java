@@ -24,9 +24,9 @@ import javax.ws.rs.core.Response;
 
 import com.google.gson.Gson;
 import com.meterware.simplestub.Memento;
-import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
+import oracle.kubernetes.utils.TestUtils;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.inmemory.InMemoryTestContainerFactory;
 import org.glassfish.jersey.test.spi.TestContainerException;

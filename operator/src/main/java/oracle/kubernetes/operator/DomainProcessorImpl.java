@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1PodStatus;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.util.Watch;
@@ -31,13 +33,13 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.DomainStatusPatch;
+import oracle.kubernetes.operator.helpers.DomainValidationStep;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.OncePerMessageLoggingFilter;
@@ -61,18 +63,17 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 public class DomainProcessorImpl implements DomainProcessor {
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
   private static final Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
   // Map from namespace to map of domainUID to Domain
   private static final Map<String, Map<String, DomainPresenceInfo>> DOMAINS =
-        new ConcurrentHashMap<>();
+      new ConcurrentHashMap<>();
   private static final ConcurrentMap<String, ConcurrentMap<String, ScheduledFuture<?>>>
-        statusUpdaters = new ConcurrentHashMap<>();
+      statusUpdaters = new ConcurrentHashMap<>();
   private DomainProcessorDelegate delegate;
 
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
@@ -85,8 +86,8 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static void registerDomainPresenceInfo(DomainPresenceInfo info) {
     DOMAINS
-          .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
-          .put(info.getDomainUid(), info);
+        .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
+        .put(info.getDomainUid(), info);
   }
 
   private static void unregisterPresenceInfo(String ns, String domainUid) {
@@ -97,9 +98,9 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static void registerStatusUpdater(
-        String ns, String domainUid, ScheduledFuture<?> future) {
+      String ns, String domainUid, ScheduledFuture<?> future) {
     ScheduledFuture<?> existing =
-          statusUpdaters.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).put(domainUid, future);
+        statusUpdaters.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).put(domainUid, future);
     if (existing != null) {
       existing.cancel(false);
     }
@@ -126,29 +127,29 @@ public class DomainProcessorImpl implements DomainProcessor {
     if (status == null) return;
 
     Optional.ofNullable(DOMAINS.get(event.getMetadata().getNamespace()))
-          .map(m -> m.get(domainUid))
-          .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
+        .map(m -> m.get(domainUid))
+        .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
   }
 
   private static String getReadinessStatus(V1Event event) {
     return Optional.ofNullable(event.getMessage())
-          .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
-          .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
-          .orElse(null);
+        .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
+        .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
+        .orElse(null);
   }
 
   private static Step readExistingPods(DomainPresenceInfo info) {
     return new CallBuilder()
-          .withLabelSelectors(
-                LabelConstants.forDomainUidSelector(info.getDomainUid()),
-                LabelConstants.CREATEDBYOPERATOR_LABEL)
-          .listPodAsync(info.getNamespace(), new PodListStep(info));
+        .withLabelSelectors(
+            LabelConstants.forDomainUidSelector(info.getDomainUid()),
+            LabelConstants.CREATEDBYOPERATOR_LABEL)
+        .listPodAsync(info.getNamespace(), new PodListStep(info));
   }
 
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
   static Step bringAdminServerUp(
-        DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory, Step next) {
+      DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory, Step next) {
     return Step.chain(bringAdminServerUpSteps(info, podAwaiterStepFactory, next));
   }
 
@@ -160,7 +161,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static Step[] bringAdminServerUpSteps(
-        DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory, Step next) {
+      DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory, Step next) {
     List<Step> resources = new ArrayList<>();
     resources.add(new BeforeAdminServiceStep(null));
     resources.add(PodHelper.createAdminPodStep(null));
@@ -468,6 +469,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       Step strategy =
           new StartPlanStep(
               info, isDeleting ? createDomainDownPlan(info) : createDomainUpPlan(info));
+      if (!isDeleting && dom != null) strategy = new DomainValidationStep(dom, strategy);
 
       runDomainPlan(
           dom,
@@ -626,8 +628,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
       return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-            ? onSuccess(packet, callResponse)
-            : super.onFailure(packet, callResponse);
+          ? onSuccess(packet, callResponse)
+          : super.onFailure(packet, callResponse);
     }
 
     @Override
@@ -683,8 +685,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1ServiceList> callResponse) {
       return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-            ? onSuccess(packet, callResponse)
-            : super.onFailure(packet, callResponse);
+          ? onSuccess(packet, callResponse)
+          : super.onFailure(packet, callResponse);
     }
 
     @Override
@@ -718,10 +720,10 @@ public class DomainProcessorImpl implements DomainProcessor {
       PodAwaiterStepFactory pw = delegate.getPodAwaiterStepFactory(info.getNamespace());
       info.setDeleting(false);
       packet
-            .getComponents()
-            .put(
-                  ProcessingConstants.DOMAIN_COMPONENT_NAME,
-                  Component.createFor(info, delegate.getVersion(), PodAwaiterStepFactory.class, pw));
+          .getComponents()
+          .put(
+              ProcessingConstants.DOMAIN_COMPONENT_NAME,
+              Component.createFor(info, delegate.getVersion(), PodAwaiterStepFactory.class, pw));
       return doNext(packet);
     }
   }
@@ -761,10 +763,10 @@ public class DomainProcessorImpl implements DomainProcessor {
       unregisterStatusUpdater(ns, info.getDomainUid());
       PodAwaiterStepFactory pw = delegate.getPodAwaiterStepFactory(ns);
       packet
-            .getComponents()
-            .put(
-                  ProcessingConstants.DOMAIN_COMPONENT_NAME,
-                  Component.createFor(info, delegate.getVersion(), PodAwaiterStepFactory.class, pw));
+          .getComponents()
+          .put(
+              ProcessingConstants.DOMAIN_COMPONENT_NAME,
+              Component.createFor(info, delegate.getVersion(), PodAwaiterStepFactory.class, pw));
       return doNext(packet);
     }
   }
@@ -781,20 +783,30 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     public void invoke() {
-      Optional.ofNullable(getMatchingContainerStatus(pod, domainUid).getState())
-            .map(V1ContainerState::getWaiting)
-            .ifPresent(waiting -> updateStatus(waiting.getReason(), waiting.getMessage()));
+      Optional.ofNullable(getMatchingContainerStatus())
+          .map(V1ContainerStatus::getState)
+          .map(V1ContainerState::getWaiting)
+          .ifPresent(waiting -> updateStatus(waiting.getReason(), waiting.getMessage()));
     }
 
     private void updateStatus(String reason, String message) {
-      KubernetesUtils.updateStatus(domain, reason, message);
+      DomainStatusPatch.updateDomainStatus(domain, reason, message);
     }
 
-    private V1ContainerStatus getMatchingContainerStatus(V1Pod pod, String domainUid) {
-      return pod.getStatus().getContainerStatuses().stream()
-            .filter(s -> toJobIntrospectorName(domainUid).equals(s.getName()))
-            .findFirst()
-            .orElse(null);
+    private V1ContainerStatus getMatchingContainerStatus() {
+      return Optional.ofNullable(pod.getStatus())
+          .map(V1PodStatus::getContainerStatuses)
+          .flatMap(this::getMatchingContainerStatus)
+          .orElse(null);
+    }
+
+    private Optional<V1ContainerStatus> getMatchingContainerStatus(
+        Collection<V1ContainerStatus> statuses) {
+      return statuses.stream().filter(this::hasInstrospectorJobName).findFirst();
+    }
+
+    private boolean hasInstrospectorJobName(V1ContainerStatus s) {
+      return toJobIntrospectorName(domainUid).equals(s.getName());
     }
   }
 }

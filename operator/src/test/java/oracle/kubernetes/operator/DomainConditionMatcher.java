@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
@@ -76,7 +76,7 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
     if (expectedMessage != null) expectations.add(expectation("reason", expectedMessage));
     description
         .appendText("domain containing condition: ")
-        .appendText(TestUtils.joinListGrammatically(expectations));
+        .appendText(OperatorUtils.joinListGrammatically(expectations));
   }
 
   private String expectation(String description, String value) {

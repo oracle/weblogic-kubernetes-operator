@@ -1534,7 +1534,11 @@ public class Domain {
     if (domainMap.containsKey("domainHomeImageBase")) {
       sampleDomainInputsFile =
           "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml";
+    } else if (domainMap.containsKey("rcuDatabaseURL")) {
+      sampleDomainInputsFile =
+          "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/create-domain-inputs.yaml";
     }
+    logger.info("For this domain sampleDomainInputsFile is: " + sampleDomainInputsFile);
     Yaml dyaml = new Yaml();
     InputStream sampleDomainInputStream =
         new FileInputStream(new File(BaseTest.getResultDir() + sampleDomainInputsFile));
@@ -1817,7 +1821,6 @@ public class Domain {
     StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
     // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
-
       createDomainScriptCmd
           .append(
               "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")

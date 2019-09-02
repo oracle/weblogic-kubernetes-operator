@@ -21,8 +21,6 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.utils.Certificates;
@@ -33,9 +31,10 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+
 public class PodHelper {
   static final long DEFAULT_ADDITIONAL_DELETE_TIME = 10;
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private PodHelper() {
   }
@@ -251,7 +250,7 @@ public class PodHelper {
     @Override
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> vars = createCopy(getServerSpec().getEnvironmentVariables());
-      overrideContainerWeblogicEnvVars(vars);
+      addStartupEnvVars(vars);
       return vars;
     }
 
@@ -407,7 +406,7 @@ public class PodHelper {
       if (envVars != null) {
         vars.addAll(envVars);
       }
-      overrideContainerWeblogicEnvVars(vars);
+      addStartupEnvVars(vars);
       return vars;
     }
   }

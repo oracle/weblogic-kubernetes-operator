@@ -144,24 +144,91 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>
 
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${src-generated-swagger}</source>
+                <source>${project.build.sourceDirectory}</source>
+                <source>${project.basedir}/src/build/java</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>jsonschema-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <rootClass>oracle.kubernetes.weblogic.domain.model.Domain</rootClass>
+              <kubernetesVersion>1.13.5</kubernetesVersion>
+              <generateMarkdown>true</generateMarkdown>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>install</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <resources>
+                <resource>
+                  <directory>
+                    ${project.build.outputDirectory}/schema/oracle/kubernetes/weblogic/domain/model
+                  </directory>
+                </resource>
+              </resources>
+              <outputDirectory>
+                ${project.basedir}/../docs/domains
+              </outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>operator-model</artifactId>
+      <artifactId>operator-swagger</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>operator-swagger</artifactId>
+      <artifactId>json-schema</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-annotations</artifactId>
       <version>${swagger-core-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.kjetland</groupId>
+      <artifactId>mbknor-jackson-jsonschema_2.12</artifactId>
     </dependency>
 
     <!-- HTTP client: jersey-client -->

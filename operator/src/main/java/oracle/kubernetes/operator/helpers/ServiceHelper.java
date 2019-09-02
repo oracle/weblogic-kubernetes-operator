@@ -22,8 +22,6 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -40,6 +38,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
@@ -56,7 +55,6 @@ import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REP
 public class ServiceHelper {
   public static final String CLUSTER_IP_TYPE = "ClusterIP";
   public static final String NODE_PORT_TYPE = "NodePort";
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private ServiceHelper() {
   }
@@ -92,10 +90,6 @@ public class ServiceHelper {
 
   public static void updatePresenceFromEvent(DomainPresenceInfo info, V1Service service) {
     OperatorServiceType.getType(service).updateFromEvent(info, service);
-  }
-
-  public static V1Service[] getServerServices(DomainPresenceInfo info) {
-    return OperatorServiceType.SERVER.getServices(info);
   }
 
   public static boolean isServerService(V1Service service) {
@@ -428,11 +422,6 @@ public class ServiceHelper {
     abstract void addServicePortIfNeeded(String portName, Integer port);
 
     V1ServicePort createServicePort(String portName, Integer port) {
-      StringBuffer sb = new StringBuffer();
-      StackTraceElement[] stes = Thread.currentThread().getStackTrace();
-      for (StackTraceElement ste : stes) {
-        sb.append(ste.toString()).append("\r\n");
-      }
       return new V1ServicePort()
           .name(LegalNames.toDns1123LegalName(portName))
           .port(port)

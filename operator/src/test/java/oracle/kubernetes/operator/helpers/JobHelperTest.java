@@ -13,12 +13,14 @@ import static org.junit.Assert.assertThat;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import com.meterware.simplestub.Memento;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1JobSpec;
@@ -43,6 +45,8 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Matcher;
 import org.hamcrest.junit.MatcherAssert;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 public class JobHelperTest {
@@ -53,12 +57,23 @@ public class JobHelperTest {
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
   private Method getDomainSpec;
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+  protected List<Memento> mementos = new ArrayList<>();
 
   private static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
     return hasItem(new V1EnvVar().name(name).value(value));
   }
 
   private static final String DATA_HOME = "DATA_HOME";
+
+  @Before
+  public void setup() throws Exception {
+    mementos.add(TuningParametersStub.install());
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    for (Memento memento : mementos) memento.revert();
+  }
 
   @Test
   public void creatingServers_true_whenClusterReplicas_gt_0() {
@@ -350,9 +365,9 @@ public class JobHelperTest {
 
     MatcherAssert.assertThat(
         jobSpec.getTemplate().getSpec().getActiveDeadlineSeconds(),
-        is(JobStepContext.DEFAULT_ACTIVE_DEADLINE_SECONDS));
+        is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
     MatcherAssert.assertThat(
-        jobSpec.getActiveDeadlineSeconds(), is(JobStepContext.DEFAULT_ACTIVE_DEADLINE_SECONDS));
+        jobSpec.getActiveDeadlineSeconds(), is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
   }
 
   @Test
@@ -362,7 +377,7 @@ public class JobHelperTest {
     V1JobSpec jobSpec = createJobSpec();
 
     long expectedActiveDeadlineSeconds =
-        JobStepContext.DEFAULT_ACTIVE_DEADLINE_SECONDS
+        TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS
             + (failureCount * JobStepContext.DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS);
     MatcherAssert.assertThat(
         jobSpec.getTemplate().getSpec().getActiveDeadlineSeconds(),

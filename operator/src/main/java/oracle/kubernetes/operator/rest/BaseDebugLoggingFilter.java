@@ -13,8 +13,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * BaseDebugLoggingFilter provides utilities shared by RequestDebugLoggingFilter and
@@ -22,18 +21,17 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
  */
 public abstract class BaseDebugLoggingFilter {
 
-  protected static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  protected static final String FILTER_REQUEST_START_TIME = "FILTER_REQUEST_START_TIME";
-  protected static final String FILTER_REQUEST_ENTITY = "FILTER_REQUEST_ENTITY";
+  static final String FILTER_REQUEST_START_TIME = "FILTER_REQUEST_START_TIME";
+  static final String FILTER_REQUEST_ENTITY = "FILTER_REQUEST_ENTITY";
   private static final String DATE_FORMAT =
       "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"; // ISO 8610, includes time zone
 
-  protected static String formatTime(long time) {
+  static String formatTime(long time) {
     // construct a new SimpleDataFormat each time since it is not thread safe:
     return new SimpleDateFormat(DATE_FORMAT).format(new Date(time));
   }
 
-  protected String formatEntity(MediaType type, String entityAsString) {
+  String formatEntity(MediaType type, String entityAsString) {
     String result = entityAsString;
     if (!MediaType.APPLICATION_JSON_TYPE.isCompatible(type)) {
       // TODO - convert to pretty printed json
@@ -41,12 +39,11 @@ public abstract class BaseDebugLoggingFilter {
     return result;
   }
 
-  protected String getLoggableHeaders(ContainerRequestContext req) {
+  String getLoggableHeaders(ContainerRequestContext req) {
     LOGGER.entering();
 
     // Make a copy of all of the request headers
-    MultivaluedHashMap<String, String> loggableHeaders =
-        new MultivaluedHashMap<String, String>(req.getHeaders());
+    MultivaluedHashMap<String, String> loggableHeaders = new MultivaluedHashMap<>(req.getHeaders());
 
     // Authorization headers contain credentials.  These credentials should not be
     // debug logged since they contain sensitive data.

@@ -22,13 +22,13 @@ import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
-import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.OperatorServiceType;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.joda.time.DateTime;
@@ -50,6 +50,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
   private static final String UID = "UID1";
+  private static final String OPERATOR_NAMESPACE = "operator";
 
   private List<Memento> mementos = new ArrayList<>();
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -100,7 +101,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   private void readExistingResources() {
-    testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
+    testSupport.runStepsToCompletion(Main.readExistingResources(OPERATOR_NAMESPACE, NS));
   }
 
   private void addDomainResource(String uid, String namespace) {

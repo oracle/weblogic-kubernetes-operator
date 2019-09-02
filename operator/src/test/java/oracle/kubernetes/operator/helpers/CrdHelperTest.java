@@ -21,18 +21,18 @@ import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinitionVersion;
 import io.kubernetes.client.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.models.V1beta1JSONSchemaProps;
-import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.VersionConstants.OPERATOR_V1;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
