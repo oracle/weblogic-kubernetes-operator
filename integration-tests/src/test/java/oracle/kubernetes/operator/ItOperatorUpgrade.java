@@ -78,7 +78,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if(NIGHTLY) {
+    if(FULLTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -95,7 +95,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_0() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator20";
@@ -115,7 +115,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_0_1() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator201";
@@ -135,7 +135,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_1() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator21";
@@ -155,7 +155,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_2_0() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator220";
@@ -175,7 +175,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_2_1() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator221";
@@ -221,7 +221,7 @@ public class ItOperatorUpgrade extends BaseTest {
     }
     checkOperatorVersion();
     testBasicUseCases(domain);
-    if(NIGHTLY) {
+    if(FULLTEST) {
       testClusterScaling(operator, domain);
     }
   }

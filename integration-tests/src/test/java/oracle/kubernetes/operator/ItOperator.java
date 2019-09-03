@@ -114,7 +114,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testDomainOnPvUsingWdt() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Domain using DomainOnPVUsingWDT & verifing the domain creation");
@@ -158,7 +158,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testTwoDomainsManagedByTwoOperators() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Domain domain1 & verifing the domain creation");
@@ -250,7 +250,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testTwoDomainsManagedByOneOperatorSharingPV() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Domain domain1 & verifing the domain creation");
@@ -333,7 +333,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainWithStartPolicyAdminOnly() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Checking if operator1 is running, if not creating");
@@ -370,7 +370,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainPvReclaimPolicyRecycle() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Checking if operator1 is running, if not creating");
@@ -403,7 +403,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainWithDefaultValuesInSampleInputs() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Domain domain10 & verifing the domain creation");
@@ -442,7 +442,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testAutoAndCustomSitConfigOverrides() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
 
@@ -497,7 +497,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testOperatorRestIdentityBackwardCompatibility() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
@@ -519,7 +519,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testOperatorRestUsingCertificateChain() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
 
     logTestBegin("testOperatorRestUsingCertificateChain");
     logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
@@ -572,7 +572,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWdt() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
 
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -607,7 +607,7 @@ public class ItOperator extends BaseTest {
     domain.enablePrecreateService();
     testClusterScaling(operator, domain);
     domain.verifyServicesCreated(true);
-    if(NIGHTLY) {
+    if(FULLTEST) {
       testDomainLifecyle(operator, domain);
       testOperatorLifecycle(operator, domain);
     }    

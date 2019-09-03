@@ -126,7 +126,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateSecondOperatorUsingSameOperatorNsNegativeInstall() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -182,7 +182,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testNotPreCreatedOpNsCreateOperatorNegativeInstall() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -216,7 +216,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testNotPreexistedOpServiceAccountCreateOperatorNegativeInstall() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -277,7 +277,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testSecondOpSharingSameTargetDomainsNsNegativeInstall() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -338,7 +338,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testTargetNsIsNotPreexistedNegativeInstall() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -393,7 +393,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testSecondOpSharingSameExternalRestPortNegativeInstall() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     int httpsRestPort = 0;
@@ -452,7 +452,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateWithUpperCaseTargetDomainNegativeInstall() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -588,7 +588,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateWithEmptyTargetDomainInstall() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -649,7 +649,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testAddRemoveDomainUpdateOperatorHC() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");
@@ -705,7 +705,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testDeleteOperatorButNotDomain() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");

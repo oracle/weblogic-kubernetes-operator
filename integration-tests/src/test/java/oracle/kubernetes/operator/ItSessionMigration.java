@@ -47,7 +47,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if(NIGHTLY) {
+    if(FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
   
@@ -91,7 +91,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if(NIGHTLY) {
+    if(FULLTEST) {
       logger.info("++++++++++++++++++++++++++++++++++");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -110,7 +110,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @Test
   public void testRepickPrimary() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -163,7 +163,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @Test
   public void testHttpSessionMigr() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 

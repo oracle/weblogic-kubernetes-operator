@@ -24,7 +24,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if(NIGHTLY) {
+    if(FULLTEST) {
       SitConfig.staticPrepare(
           DOMAINONPV_WLST_YAML,
           "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
@@ -38,7 +38,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if(NIGHTLY) {
+    if(FULLTEST) {
       SitConfig.staticUnPrepare();
     }
   }
@@ -56,7 +56,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainInPV() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForDomain(testMethod);
@@ -74,7 +74,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainMsInPV() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForDomainMS(testMethod);
@@ -97,7 +97,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJdbcInPV() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForJdbc(testMethod);
@@ -116,7 +116,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJmsInPV() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForJms(testMethod);
@@ -137,7 +137,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForWldfInPV() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForWldf(testMethod);
@@ -153,7 +153,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testConfigOverrideAfterDomainStartupInPV() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testConfigOverrideAfterDomainStartup(testMethod);
@@ -169,7 +169,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testOverrideJdbcResourceAfterDomainStartInPV() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testOverrideJdbcResourceAfterDomainStart(testMethod);
@@ -184,7 +184,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testOverrideJdbcResourceWithNewSecretInPV() throws Exception {
-    Assume.assumeTrue(NIGHTLY);
+    Assume.assumeTrue(FULLTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testOverrideJdbcResourceWithNewSecret(testMethod);

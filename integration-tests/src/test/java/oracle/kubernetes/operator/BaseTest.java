@@ -55,7 +55,7 @@ public class BaseTest {
   public static final String APP_PROPS_FILE = "OperatorIT.properties";
 
   public static boolean QUICKTEST = true;
-  public static boolean NIGHTLY;
+  public static boolean FULLTEST;
   public static boolean JENKINS;
   public static boolean SHARED_CLUSTER;
   public static boolean INGRESSPERDOMAIN = true;
@@ -81,18 +81,22 @@ public class BaseTest {
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
-  // Set NIGHTLY env var to true to run a all the tests, includes quick tests
+  // Set FULLTEST env var to true to run a all the tests, includes quick tests
   // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
   static {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
-    NIGHTLY =
-        System.getenv("NIGHTLY") != null && System.getenv("NIGHTLY").equalsIgnoreCase("true");    
     
-    if(NIGHTLY) {
+    // if QUICKTEST is false, run all the tests
+    if(!QUICKTEST) {
+      FULLTEST = true;
+    }
+   
+    // run all the tests including quicktest for FULLTEST or when quicktest is false
+    if(FULLTEST) {
       QUICKTEST = true;
     }
-    logger.info("QUICKTEST " + QUICKTEST+ " NIGHTLY "+NIGHTLY);
+    logger.info("QUICKTEST " + QUICKTEST+ " FULLTEST "+FULLTEST);
     if (System.getenv("JENKINS") != null) {
       JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
     }
