@@ -28,7 +28,7 @@ import org.junit.runners.MethodSorters;
 public class ItOperatorUpgrade extends BaseTest {
 
   private static final String OP_BASE_REL = "2.0";
-  private static final String OP_TARGET_RELEASE = "weblogic-kubernetes-operator:latest";
+  private static String OP_TARGET_RELEASE = "";
   private static String OP_NS = "";
   private static String OP_DEP_NAME = "";
   private static String OP_SA = "";
@@ -38,6 +38,16 @@ public class ItOperatorUpgrade extends BaseTest {
   private Domain domain = null;
   private static Operator operator;
 
+  /**
+   * This method gets called only once before any of the test methods are executed.
+   *
+   * @throws Exception exception
+   */
+  @BeforeClass
+  public static void staticPrepare() throws Exception {
+    OP_TARGET_RELEASE = System.getenv("IMAGE_NAME_OPERATOR")+":"+
+                  System.getenv("IMAGE_TAG_OPERATOR");
+  }
   
   /**
    * cleanup the domain and operator after every test.

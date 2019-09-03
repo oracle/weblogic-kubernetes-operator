@@ -500,8 +500,8 @@ public class Operator {
     }
     // customize the inputs yaml file to generate a self-signed cert for the external Operator REST
     // https port
-    externalRestEnabled =
-        (boolean) operatorMap.getOrDefault("externalRestEnabled", externalRestEnabled);
+    externalRestEnabled = operatorMap.containsKey("externalRestEnabled") ? 
+        (new Boolean((operatorMap.get("externalRestEnabled")).toString()).booleanValue() ): externalRestEnabled;
     if (externalRestEnabled) {
       if (operatorMap.get("externalRestHttpsPort") != null) {
         try {
