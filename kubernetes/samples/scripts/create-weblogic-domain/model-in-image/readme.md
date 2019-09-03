@@ -88,6 +88,7 @@ Prerequsite:
   sample-weblogic-operator \
   kubernetes/charts/weblogic-operator
 ```
+3. The image for deployment must have tar and gzip package installed
 
 1. Create a temporary directory with 10g space
 2. Go to edelivery.oracle.com
