@@ -21,13 +21,21 @@ public class PersistentVolume {
   public PersistentVolume(String dirPath, Map pvMap) throws Exception {
     this.dirPath = dirPath;
     this.pvMap = pvMap;
+    String cmd;
     
-    String cmd =
+    if (BaseTest.OPENSHIFT) {
+      cmd = "mkdir -m 777 -p " +  dirPath;
+      logger.info("BR: going to create the dir " + dirPath);
+   
+      logger.info("BR: command to create the dir " + cmd);
+    } else {
+      cmd =
             BaseTest.getProjectRoot()
         + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot()
         + ":/sharedparent -t 120 -c 'mkdir -m 777 -p "
         + dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/")
         + "'"; 
+    }
     
     TestUtils.exec(cmd, true);
 

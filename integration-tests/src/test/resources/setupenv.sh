@@ -98,6 +98,7 @@ export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
 export BRANCH_NAME="${BRANCH_NAME:-$SHARED_CLUSTER_GIT_BRANCH}"
 export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
+export OPENSHIFT=${OPENSHIFT:-false}
 
 if [ "$JRF_ENABLED" = true ] ; then
   export FMWINFRA_IMAGE_URI=/middleware/fmw-infrastructure

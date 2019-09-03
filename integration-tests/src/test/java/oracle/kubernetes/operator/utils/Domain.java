@@ -817,9 +817,10 @@ public class Domain {
    */
   public void createDomainOnExistingDirectory() throws Exception {
 
-    // use krun.sh so that the dir check can work on shared cluster/remote k8s cluster env as well
-    String cmd =
-        BaseTest.getProjectRoot()
+    if (!(BaseTest.OPENSHIFT)) {
+      // use krun.sh so that the dir check can work on shared cluster/remote k8s cluster env as well
+      String cmd =
+          BaseTest.getProjectRoot()
             + "/src/integration-tests/bash/krun.sh -m "
             + domainMap.get("persistentVolumeClaimName")
             + ":/pvc-"
@@ -829,21 +830,42 @@ public class Domain {
             + "/domains/"
             + domainMap.get("domainUID")
             + "\"";
-    logger.info("making sure the domain directory exists by running " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
-    // logger.info("Command result " + result.stdout() + " err =" + result.stderr());
-    logger.info("Run the script to create domain");
+      logger.info("making sure the domain directory exists by running " + cmd);
+      ExecResult result = TestUtils.exec(cmd);
+      // logger.info("Command result " + result.stdout() + " err =" + result.stderr());
+      logger.info("Run the script to create domain");
 
-    // create domain using different output dir but pv is same, it fails as the domain was already
-    // created on the pv dir
-    try {
-      callCreateDomainScript(userProjectsDir + "2");
-    } catch (RuntimeException re) {
-      re.printStackTrace();
-      logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
-      return;
+      // create domain using different output dir but pv is same, it fails as the domain was already
+      // created on the pv dir
+      try {
+        callCreateDomainScript(userProjectsDir + "2");
+      } catch (RuntimeException re) {
+        re.printStackTrace();
+        logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
+        return;
+      }
+      throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
+    } else {
+      String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
+      String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
+      logger.info("making sure the domain directory exists");
+      if (domainDir != null && !(new File(domainDir).exists())) {
+        throw new RuntimeException(
+          "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
+      }
+      logger.info("Run the script to create domain");
+
+      // create domain using different output dir but pv is same, it fails as the domain was already
+      // created on the pv dir
+      try {
+        callCreateDomainScript(userProjectsDir + "2");
+      } catch (RuntimeException re) {
+        re.printStackTrace();
+        logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
+        return;
+      }
+      throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
     }
-    throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
   }
 
   /**
@@ -1012,6 +1034,10 @@ public class Domain {
     pvMap.put("namespace", domainNS);
     pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
 
+    if (BaseTest.OPENSHIFT) {
+       pvMap.put("weblogicDomainStorageType", "NFS");
+    }
+
     // set pv path
     domainMap.put(
         "weblogicDomainStoragePath",
@@ -1024,7 +1050,7 @@ public class Domain {
     pvMap.values().removeIf(Objects::isNull);
 
     // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch, create PV/PVC
-    new PersistentVolume(BaseTest.getPvRoot() + "acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
+    new PersistentVolume(BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
 
     String cmd =
         BaseTest.getProjectRoot()

@@ -58,6 +58,7 @@ public class BaseTest {
   public static boolean SMOKETEST;
   public static boolean JENKINS;
   public static boolean SHARED_CLUSTER;
+  public static boolean OPENSHIFT;
   public static boolean INGRESSPERDOMAIN = true;
   protected static String appLocationInPod = "/u01/oracle/apps";
   private static String resultRoot = "";
@@ -95,6 +96,9 @@ public class BaseTest {
     }
     if (System.getenv("SHARED_CLUSTER") != null) {
       SHARED_CLUSTER = new Boolean(System.getenv("SHARED_CLUSTER")).booleanValue();
+    }
+    if (System.getenv("OPENSHIFT") != null) {
+      OPENSHIFT = new Boolean(System.getenv("OPENSHIFT")).booleanValue();
     }
     if (System.getenv("INGRESSPERDOMAIN") != null) {
       INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
@@ -755,6 +759,10 @@ public class BaseTest {
 
     // create scripts dir under domain pv
     TestUtils.createDirUnderDomainPV(scriptsDir);
+    if (System.getenv("OPENSHIFT") != null) {
+      Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
+        Paths.get(scriptsDir + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
+    }
     // workaround for the issue with not allowing .. in the host-path in krun.sh
     Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
         Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);

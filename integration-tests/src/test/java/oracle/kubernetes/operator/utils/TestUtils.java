@@ -699,34 +699,51 @@ public class TestUtils {
   }
 
   public static String getAccessToken(Operator operator) throws Exception {
-    StringBuffer secretCmd =
+    if (BaseTest.OPENSHIFT) {
+      StringBuffer tokenCmd = new StringBuffer(
+         "oc serviceaccounts get-token " + operator.getOperatorMap().get("serviceAccount"));
+      tokenCmd
+        .append(" -n ")
+        .append(operator.getOperatorNamespace());
+      logger.info("BR: tokenCmd = " + tokenCmd.toString());
+      ExecResult result = ExecCommand.exec(tokenCmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+         "FAILED: command " + tokenCmd + " failed to get the token for Operator");
+      }
+      String token = result.stdout().trim();
+      logger.info("BR: token = " + token);
+      return token;
+    } else {
+      StringBuffer secretCmd =
         new StringBuffer(
             "kubectl get serviceaccount " + operator.getOperatorMap().get("serviceAccount"));
-    secretCmd
+      secretCmd
         .append(" -n ")
         .append(operator.getOperatorNamespace())
         .append(" -o jsonpath='{.secrets[0].name}'");
 
-    ExecResult result = ExecCommand.exec(secretCmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
+      ExecResult result = ExecCommand.exec(secretCmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
           "FAILED: command " + secretCmd + " failed to get the secret name for Operator");
-    }
-    // String secretName = TestUtils.executeCommandStrArray(secretCmd.toString()).trim();
-    String secretName = result.stdout().trim();
-    StringBuffer etokenCmd = new StringBuffer("kubectl get secret ");
-    etokenCmd
+      }
+      // String secretName = TestUtils.executeCommandStrArray(secretCmd.toString()).trim();
+      String secretName = result.stdout().trim();
+      StringBuffer etokenCmd = new StringBuffer("kubectl get secret ");
+      etokenCmd
         .append(secretName)
         .append(" -n ")
         .append(operator.getOperatorNamespace())
         .append(" -o jsonpath='{.data.token}'");
-    result = ExecCommand.exec(etokenCmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
+      result = ExecCommand.exec(etokenCmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
           "FAILED: command " + etokenCmd + " failed to get secret token for Operator");
+      }
+      String etoken = result.stdout().trim();
+      return ExecCommand.exec("echo " + etoken + " | base64 --decode").stdout().trim();
     }
-    String etoken = result.stdout().trim();
-    return ExecCommand.exec("echo " + etoken + " | base64 --decode").stdout().trim();
   }
 
   public static String getExternalOperatorCertificate(Operator operator) throws Exception {
@@ -1201,23 +1218,40 @@ public class TestUtils {
   }
 
   public static void createDirUnderDomainPV(String dirPath) throws Exception {
-    dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
-    String crdCmd =
-        BaseTest.getProjectRoot()
-        + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot() + ":/sharedparent -c 'mkdir -m 777 -p "
-        + dirPath
-        + "'";
-    
-    ExecResult result = ExecCommand.exec(crdCmd);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
+    if (BaseTest.OPENSHIFT) {
+      String crdCmd = "mkdir -m 777 -p " +  dirPath;
+      logger.info("BR: going to create the dir " + dirPath);
+  
+      logger.info("BR: command to create dir in PV = " + crdCmd);
+      ExecResult result = ExecCommand.exec(crdCmd);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
           "FAILURE: command to create domain scripts directory "
               + crdCmd
               + " failed, returned "
               + result.stdout()
               + result.stderr());
+      }
+      logger.info("command result " + result.stdout().trim());
+    } else {
+      dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
+      String crdCmd =
+          BaseTest.getProjectRoot()
+          + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot() + ":/sharedparent -c 'mkdir -m 777 -p "
+          + dirPath
+          + "'";
+      
+      ExecResult result = ExecCommand.exec(crdCmd);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+          "FAILURE: command to create domain scripts directory "
+              + crdCmd
+              + " failed, returned "
+              + result.stdout()
+              + result.stderr());
+      }
+      logger.info("command result " + result.stdout().trim());
     }
-    logger.info("command result " + result.stdout().trim());
   }
 
   public static void createWldfModule(String adminPodName, String domainNS, int t3ChannelPort)
