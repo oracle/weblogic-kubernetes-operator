@@ -78,6 +78,7 @@ public class BaseTest {
   private static String weblogicImageName;
   private static String weblogicImageServer;
   private static String domainApiVersion;
+  private static String dburl;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
@@ -129,6 +130,10 @@ public class BaseTest {
         System.getenv("OCR_SERVER") != null
             ? System.getenv("OCR_SERVER")
             : appProps.getProperty("OCR_SERVER");
+    dburl =
+        System.getenv("DB_URL") != null
+            ? System.getenv("DB_URL")
+            : appProps.getProperty("DB_URL");        
     domainApiVersion =
         System.getenv("DOMAIN_API_VERSION") != null
             ? System.getenv("DOMAIN_API_VERSION")
@@ -294,6 +299,10 @@ public class BaseTest {
 
   public static String getDomainApiVersion() {
     return domainApiVersion;
+  }
+  
+  public static String getDbUrl() {
+    return dburl;
   }
 
   public static ExecResult cleanup() throws Exception {

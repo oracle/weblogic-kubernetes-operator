@@ -1109,6 +1109,40 @@ public class TestUtils {
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     TestUtils.exec(cmdKubectlSh.toString());
   }
+  
+  /**
+   * exec into the pod and call the shell script with given arguments.
+   *
+   * @param podName pod name
+   * @param domainNS namespace
+   * @param scriptsLocInPod script location
+   * @param shScriptName script name
+   * @param args script arguments
+   * @throws Exception exception
+   */
+  public static void callShellScriptInsidePod(
+      String podName, String domainNS, String scriptsLocInPod, String shScriptName, String[] args)
+      throws Exception {
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(podName)
+        .append(" -- bash -c 'chmod +x ")
+        .append(scriptsLocInPod)
+        .append("/")
+        .append(shScriptName)
+        .append("  && ")
+        .append(scriptsLocInPod)
+        .append("/")
+        .append(shScriptName)
+        .append(" ")
+        .append(String.join(" ", args).toString())
+        .append("'");
+
+    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
+    TestUtils.exec(cmdKubectlSh.toString(), true);
+  }
 
   /**
    * Build a jar archive.  The archive will only include the directory structure below the srcDir.

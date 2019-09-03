@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.utils;
 
 import java.util.Map;
 import java.util.logging.Logger;
+import oracle.kubernetes.operator.BaseTest;
 
 public class DbUtils {
   public static final String DEFAULT_FMWINFRA_DOCKER_IMAGENAME =
@@ -17,7 +18,7 @@ public class DbUtils {
   public static final String DEFAULT_RCU_SYS_PASSWORD = "Oradoc_db1";
   public static final String DEFAULT_RCU_NAMESPACE = "rcu";
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
-
+  
   /**
    * create oracle db pod in the k8s cluster.
    *
@@ -165,5 +166,17 @@ public class DbUtils {
       logger.info("Running " + command);
       TestUtils.exec(command);
     }
+  }
+  
+  public static void checkDb(String[] dburl, String rcuPod) throws Exception {
+  	String scriptsLocInPod = "/u01/oracle";
+  	TestUtils.copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/jrf/checkDb.sh",
+        scriptsLocInPod + "/checkDb.sh",
+        rcuPod,
+        DEFAULT_RCU_NAMESPACE);
+    TestUtils.callShellScriptInsidePod(
+        rcuPod, DEFAULT_RCU_NAMESPACE, scriptsLocInPod, "checkDb.sh", dburl);
+  	
   }
 }

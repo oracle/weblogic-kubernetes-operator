@@ -63,8 +63,11 @@ public class JrfInOperatorTest extends BaseTest {
 
     // TODO: reconsider the logic to check the db readiness
     // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
-    logger.info("waiting for the db to be visible to rcu script ...");
-    Thread.sleep(20000);
+    //logger.info("waiting for the db to be visible to rcu script ...");
+    //Thread.sleep(20000);
+    
+    logger.info("DB_URL is: " + getDbUrl());
+    DbUtils.checkDb(new String[] {getDbUrl()}, rcuPodName);
   }
 
   /**
