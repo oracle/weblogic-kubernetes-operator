@@ -28,7 +28,7 @@ import org.junit.runners.MethodSorters;
 public class ItOperatorUpgrade extends BaseTest {
 
   private static final String OP_BASE_REL = "2.0";
-  private static String OP_TARGET_RELEASE = "";
+  private static String OP_TARGET_RELEASE = "weblogic-kubernetes-operator:latest";
   private static String OP_NS = "";
   private static String OP_DEP_NAME = "";
   private static String OP_SA = "";
@@ -45,8 +45,11 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    if(System.getenv("IMAGE_NAME_OPERATOR") != null && 
+        System.getenv("IMAGE_TAG_OPERATOR") != null) {
     OP_TARGET_RELEASE = System.getenv("IMAGE_NAME_OPERATOR")+":"+
                   System.getenv("IMAGE_TAG_OPERATOR");
+    }
   }
   
   /**

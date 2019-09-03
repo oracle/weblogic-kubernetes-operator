@@ -50,21 +50,23 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE);
-
-    // create DB used for jrf domain
-    DbUtils.createOracleDB(DB_PROP_FILE);
-
-    // run RCU first
-    DbUtils.deleteNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
-    DbUtils.createNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
-    rcuPodName = DbUtils.createRcuPod(DbUtils.DEFAULT_RCU_NAMESPACE);
-
-    // TODO: reconsider the logic to check the db readiness
-    // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
-    logger.info("waiting for the db to be visible to rcu script ...");
-    Thread.sleep(20000);
+    if(NIGHTLY) {
+      // initialize test properties and create the directories
+      initialize(APP_PROPS_FILE);
+  
+      // create DB used for jrf domain
+      DbUtils.createOracleDB(DB_PROP_FILE);
+  
+      // run RCU first
+      DbUtils.deleteNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
+      DbUtils.createNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
+      rcuPodName = DbUtils.createRcuPod(DbUtils.DEFAULT_RCU_NAMESPACE);
+  
+      // TODO: reconsider the logic to check the db readiness
+      // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
+      logger.info("waiting for the db to be visible to rcu script ...");
+      Thread.sleep(20000);
+    }
   }
 
   /**
@@ -75,13 +77,15 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
-
-    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-
-    logger.info("SUCCESS");
+    if(NIGHTLY) {
+      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
+  
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+  
+      logger.info("SUCCESS");
+    }
   }
 
   /**
@@ -93,6 +97,7 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @Test
   public void testJrfDomainOnPvUsingWlst() throws Exception {
+    Assume.assumeTrue(NIGHTLY);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");
