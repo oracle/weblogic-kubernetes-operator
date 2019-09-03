@@ -29,7 +29,16 @@ public class PersistentVolume {
         + dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/")
         + "'"; 
     
-    TestUtils.exec(cmd, true);
+    // retry logic for PV dir creation as sometimes krun.sh fails
+    int cnt = 0, maxCnt = 10;
+    while(cnt < maxCnt) {
+      if(TestUtils.exec(cmd, true).exitValue() ==0) {
+        break;
+      } else {
+        Thread.sleep(BaseTest.getWaitTimePod());
+        cnt = cnt + 1;
+      }
+    }
 
     Path parentDir =
         pvMap.get("domainUID") != null
