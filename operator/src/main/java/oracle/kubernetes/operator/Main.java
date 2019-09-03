@@ -221,6 +221,7 @@ public class Main {
         stopping.set(true);
       }
       isNamespaceStarted.remove(ns);
+      domainWatchers.remove(ns);
     }
   }
 

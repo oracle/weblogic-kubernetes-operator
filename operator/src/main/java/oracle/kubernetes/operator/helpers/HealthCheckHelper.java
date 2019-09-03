@@ -115,7 +115,7 @@ public final class HealthCheckHelper {
 
     // Validate RBAC or ABAC policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
-    LOGGER.info(MessageKeys.VERIFY_ACCESS_START);
+    LOGGER.info(MessageKeys.VERIFY_ACCESS_START, ns);
 
     if (version.isRulesReviewSupported()) {
       boolean rulesReviewSuccessful = true;
@@ -147,7 +147,7 @@ public final class HealthCheckHelper {
       for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
 
         if (!ap.check(op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource(), ns);
         }
       }
     }
@@ -156,7 +156,7 @@ public final class HealthCheckHelper {
       for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
 
         if (!ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource(), ns);
         }
       }
     }
