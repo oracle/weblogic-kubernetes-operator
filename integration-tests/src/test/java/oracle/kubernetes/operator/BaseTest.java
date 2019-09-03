@@ -87,15 +87,12 @@ public class BaseTest {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
     
-    // if QUICKTEST is false, run all the tests
+    // if QUICKTEST is false, run all the tests including QUICKTEST
     if(!QUICKTEST) {
       FULLTEST = true;
-    }
-   
-    // run all the tests including quicktest for FULLTEST or when quicktest is false
-    if(FULLTEST) {
       QUICKTEST = true;
     }
+   
     logger.info("QUICKTEST " + QUICKTEST+ " FULLTEST "+FULLTEST);
     if (System.getenv("JENKINS") != null) {
       JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
