@@ -54,7 +54,8 @@ public class BaseTest {
   // property file used to configure constants for integration tests
   public static final String APP_PROPS_FILE = "OperatorIT.properties";
 
-  public static boolean QUICKTEST, NIGHTLY;
+  public static boolean QUICKTEST = true;
+  public static boolean NIGHTLY;
   public static boolean JENKINS;
   public static boolean SHARED_CLUSTER;
   public static boolean INGRESSPERDOMAIN = true;
