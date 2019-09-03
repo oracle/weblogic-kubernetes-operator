@@ -12,8 +12,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.WlsDomain;
@@ -21,9 +19,10 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+
 /** Contains a snapshot of configuration for a WebLogic Domain. */
 public class WlsDomainConfig implements WlsDomain {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   // Name of this WLS domain (This is NOT the domain UID in the weblogic domain kubernetes CRD)
   private String name;
@@ -77,10 +76,8 @@ public class WlsDomainConfig implements WlsDomain {
     this.name = name;
     this.adminServerName = adminServerName;
     // set domainConfig for each WlsClusterConfig
-    if (wlsClusterConfigs != null) {
-      for (WlsClusterConfig wlsClusterConfig : this.configuredClusters) {
-        wlsClusterConfig.setWlsDomainConfig(this);
-      }
+    for (WlsClusterConfig wlsClusterConfig : this.configuredClusters) {
+      wlsClusterConfig.setWlsDomainConfig(this);
     }
   }
 
@@ -156,10 +153,6 @@ public class WlsDomainConfig implements WlsDomain {
         wlsServerConfigs,
         wlsServerTemplates,
         wlsMachineConfigs);
-  }
-
-  public static String getRetrieveServersSearchUrl() {
-    return "/management/weblogic/latest/domainConfig/search";
   }
 
   public static String getRetrieveServersSearchPayload() {
@@ -245,9 +238,9 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
-   * Return the name of the WLS domain.
+   * Return the name of the admin server.
    *
-   * @return Name of the WLS domain
+   * @return Name of the admin server
    */
   public String getAdminServerName() {
     return this.adminServerName;
@@ -275,6 +268,7 @@ public class WlsDomainConfig implements WlsDomain {
     return this.configuredClusters;
   }
 
+  @SuppressWarnings("unused")
   public void setConfiguredClusters(List<WlsClusterConfig> configuredClusters) {
     this.configuredClusters = configuredClusters;
   }
@@ -306,6 +300,7 @@ public class WlsDomainConfig implements WlsDomain {
     return this.serverTemplates;
   }
 
+  @SuppressWarnings("unused")
   public void setServerTemplates(List<WlsServerConfig> serverTemplates) {
     this.serverTemplates = serverTemplates;
   }
@@ -315,7 +310,7 @@ public class WlsDomainConfig implements WlsDomain {
    *
    * @return A Map of WlsMachineConfig, keyed by name, for each machine configured the WLS domain
    */
-  public synchronized Map<String, WlsMachineConfig> getMachineConfigs() {
+  synchronized Map<String, WlsMachineConfig> getMachineConfigs() {
     return wlsMachineConfigs;
   }
 
@@ -352,17 +347,10 @@ public class WlsDomainConfig implements WlsDomain {
    * @return The WlsServerConfig object containing configuration of the WLS server with the given
    *     name. This methods return null if no WLS configuration is found for the given server name.
    */
-  public synchronized WlsServerConfig getServerConfig(String serverName) {
-    WlsServerConfig result = null;
-    if (serverName != null && servers != null) {
-      for (WlsServerConfig serverConfig : servers) {
-        if (serverConfig.getName().equals(serverName)) {
-          result = serverConfig;
-          break;
-        }
-      }
-    }
-    return result;
+  public synchronized WlsServerConfig getServerConfig(@Nonnull String serverName) {
+    if (servers == null) return null;
+
+    return WlsServerConfig.getServerConfig(serverName, servers);
   }
 
   /**
@@ -372,7 +360,7 @@ public class WlsDomainConfig implements WlsDomain {
    * @return The WlsMachineConfig object containing configuration of the WLS machine with the given
    *     name. This methods return null if no WLS machine is configured with the given name.
    */
-  public synchronized WlsMachineConfig getMachineConfig(String machineName) {
+  synchronized WlsMachineConfig getMachineConfig(String machineName) {
     WlsMachineConfig result = null;
     if (machineName != null && wlsMachineConfigs != null) {
       result = wlsMachineConfigs.get(machineName);
@@ -397,7 +385,6 @@ public class WlsDomainConfig implements WlsDomain {
   public boolean validate(Domain domain, List<ConfigUpdate> suggestedConfigUpdates) {
     LOGGER.entering();
 
-    boolean updated = false;
     for (String clusterName : getClusterNames()) {
       WlsClusterConfig wlsClusterConfig = getClusterConfig(clusterName);
       if (wlsClusterConfig.getMaxClusterSize() > 0) {
@@ -423,8 +410,8 @@ public class WlsDomainConfig implements WlsDomain {
       }
     }
 
-    LOGGER.exiting(updated);
-    return updated;
+    LOGGER.exiting(false);
+    return false;
   }
 
   @Override
@@ -570,7 +557,7 @@ public class WlsDomainConfig implements WlsDomain {
     }
   }
 
-  WlsServerConfig getServerTemplate(String serverTemplateName) {
+  private WlsServerConfig getServerTemplate(String serverTemplateName) {
     for (WlsServerConfig serverTemplate : serverTemplates) {
       if (serverTemplate.getName().equals(serverTemplateName)) {
         return serverTemplate;

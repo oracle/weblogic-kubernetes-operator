@@ -16,9 +16,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * Kubernetes mounts ConfigMaps in the Pod's file-system as directories where the contained files
@@ -26,8 +26,6 @@ import oracle.kubernetes.operator.logging.MessageKeys;
  * parsing this data and representing it as a Map.
  */
 public class ConfigMapConsumer implements Map<String, String> {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private final File mountPointDir;
   private final ScheduledExecutorService threadPool;
   private final AtomicReference<ScheduledFuture<?>> future = new AtomicReference<>(null);

@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,8 +41,6 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -53,19 +50,19 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 @SuppressWarnings("deprecation")
-public abstract class PodStepContext extends StepContextBase {
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
+public abstract class PodStepContext extends BasePodStepContext {
   private static final String STOP_SERVER = "/weblogic-operator/scripts/stopServer.sh";
   private static final String START_SERVER = "/weblogic-operator/scripts/startServer.sh";
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
@@ -142,11 +139,30 @@ public abstract class PodStepContext extends StepContextBase {
         .getLocalAdminProtocolChannelPort();
   }
 
+  /**
+   * Check if the server is listening on a secure port. NOTE: If the targetted server is a managed
+   * server, this method is overridden to check if the managed server has a secure listen port rather
+   * than the admin server. See PodHelper.ManagedPodStepContext
+   *
+   * @return true if server is listening on a secure port
+   */
   boolean isLocalAdminProtocolChannelSecure() {
+    return domainTopology
+        .getServerConfig(getServerName())
+        .isLocalAdminProtocolChannelSecure();
+  }
+
+  /**
+   * Check if the admin server is listening on a secure port.
+   *
+   * @return true if admin server is listening on a secure port
+   */
+  private boolean isAdminServerProtocolChannelSecure() {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .isLocalAdminProtocolChannelSecure();
   }
+
 
   Integer getLocalAdminProtocolChannelPort() {
     return domainTopology
@@ -154,21 +170,11 @@ public abstract class PodStepContext extends StepContextBase {
         .getLocalAdminProtocolChannelPort();
   }
 
-  private String getLogHome() {
-    return getDomain().getLogHome();
-  }
-
   private String getEffectiveLogHome() {
-    if (!getDomain().getLogHomeEnabled()) return null;
-    String logHome = getLogHome();
-    if (logHome == null || "".equals(logHome.trim())) {
-      // logHome not specified, use default value
-      return DEFAULT_LOG_HOME + File.separator + getDomainUid();
-    }
-    return logHome;
+    return getDomain().getEffectiveLogHome();
   }
 
-  private String getIncludeServerOutInPodLog() {
+  private String isIncludeServerOutInPodLog() {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
   }
 
@@ -252,7 +258,7 @@ public abstract class PodStepContext extends StepContextBase {
    */
   private Step deletePod(Step next) {
     return new CallBuilder()
-        .deletePodAsync(getPodName(), getNamespace(), new V1DeleteOptions(), deleteResponse(next));
+          .deletePodAsync(getPodName(), getNamespace(), new V1DeleteOptions(), deleteResponse(next));
   }
 
   /**
@@ -348,7 +354,7 @@ public abstract class PodStepContext extends StepContextBase {
   private boolean canUseCurrentPod(V1Pod currentPod) {
     boolean useCurrent =
         AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
-    if (!useCurrent && AnnotationHelper.getDebugString(currentPod) != null)
+    if (!useCurrent && !isNullOrEmpty(AnnotationHelper.getDebugString(currentPod)))
       LOGGER.info(
           MessageKeys.POD_DUMP,
           AnnotationHelper.getDebugString(currentPod),
@@ -386,14 +392,6 @@ public abstract class PodStepContext extends StepContextBase {
     return withNonHashedElements(AnnotationHelper.withSha256Hash(createPodRecipe()));
   }
 
-  protected Optional<V1Container> getContainer(V1Pod v1Pod) {
-    return v1Pod.getSpec().getContainers().stream().filter(this::isK8sContainer).findFirst();
-  }
-
-  protected boolean isK8sContainer(V1Container c) {
-    return KubernetesConstants.CONTAINER_NAME.equals(c.getName());
-  }
-
   V1Pod withNonHashedElements(V1Pod pod) {
     V1ObjectMeta metadata = pod.getMetadata();
     // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
@@ -406,21 +404,11 @@ public abstract class PodStepContext extends StepContextBase {
 
     updateForStartupMode(pod);
     updateForShutdown(pod);
-    updateForDeepSubstitution(pod);
-
-    return pod;
+    return updateForDeepSubstitution(pod.getSpec(), pod);
   }
 
-  final void updateForDeepSubstitution(V1Pod pod) {
-    getContainer(pod)
-        .ifPresent(
-            c -> {
-              doDeepSubstitution(deepSubVars(c.getEnv()), pod);
-            });
-  }
-
-  final Map<String, String> deepSubVars(List<V1EnvVar> envVars) {
-    Map<String, String> vars = varsToSubVariables(envVars);
+  @Override
+  protected Map<String, String> augmentSubVars(Map<String, String> vars) {
     String clusterName = getClusterName();
     if (clusterName != null) {
       vars.put("CLUSTER_NAME", clusterName);
@@ -428,7 +416,7 @@ public abstract class PodStepContext extends StepContextBase {
     return vars;
   }
 
-  final void updateForStartupMode(V1Pod pod) {
+  private void updateForStartupMode(V1Pod pod) {
     ServerSpec serverSpec = getServerSpec();
     if (serverSpec != null) {
       String desiredState = serverSpec.getDesiredState();
@@ -449,7 +437,7 @@ public abstract class PodStepContext extends StepContextBase {
    *
    * @param pod The pod
    */
-  final void updateForShutdown(V1Pod pod) {
+  private void updateForShutdown(V1Pod pod) {
     String shutdownType;
     Long timeout;
     boolean ignoreSessions;
@@ -605,23 +593,33 @@ public abstract class PodStepContext extends StepContextBase {
     return mounts;
   }
 
-  void overrideContainerWeblogicEnvVars(List<V1EnvVar> vars) {
-    // Override the domain name, domain directory, admin server name and admin server port.
-    addEnvVar(vars, "DOMAIN_NAME", getDomainName());
-    addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
-    addEnvVar(vars, "ADMIN_NAME", getAsName());
-    addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
+  /**
+   * Sets the environment variables used by operator/src/main/resources/scripts/startServer.sh
+   * @param vars a list to which new variables are to be added
+   */
+  void addStartupEnvVars(List<V1EnvVar> vars) {
+    addEnvVar(vars, ServerEnvVars.DOMAIN_NAME, getDomainName());
+    addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
+    addEnvVar(vars, ServerEnvVars.ADMIN_NAME, getAsName());
+    addEnvVar(vars, ServerEnvVars.ADMIN_PORT, getAsPort().toString());
     if (isLocalAdminProtocolChannelSecure()) {
-      addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
+      // This env variable indicates whether the administration port in the WLS server on the local pod is secure
+      addEnvVar(vars, ServerEnvVars.ADMIN_PORT_SECURE, "true");
     }
-    addEnvVar(vars, "SERVER_NAME", getServerName());
-    addEnvVar(vars, "DOMAIN_UID", getDomainUid());
-    addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
-    addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
-    addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
-    addEnvVar(
-        vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUid(), getServerName()));
-    addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUid(), getAsName()));
+    if (isAdminServerProtocolChannelSecure()) {
+      // The following env variable determines whether to set a secure protocol(https/t3s) in the "AdminURL" property
+      // in NM startup.properties.
+      // WebLogic Node Manager then sets the ADMIN_URL env variable(based on the "AdminURL") before starting
+      // the managed server
+      addEnvVar(vars, "ADMIN_SERVER_PORT_SECURE", "true");
+    }
+    addEnvVar(vars, ServerEnvVars.SERVER_NAME, getServerName());
+    addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
+    addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, NODEMGR_HOME);
+    addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
+    addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, isIncludeServerOutInPodLog());
+    addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
+    addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
     if (mockWls()) {
       addEnvVar(vars, "MOCK_WLS", "true");
     }
@@ -651,7 +649,7 @@ public abstract class PodStepContext extends StepContextBase {
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD);
     try {
-      boolean istioEnabled = getDomain().istioEnabled();
+      boolean istioEnabled = getDomain().isIstioEnabled();
       if (istioEnabled) {
         int istioReadinessPort = getDomain().getIstioReadinessPort();
         readinessProbe =
@@ -918,7 +916,7 @@ public abstract class PodStepContext extends StepContextBase {
           new CallBuilder()
               .withLabelSelectors(forDomainUidSelector(domainUid))
               .listPersistentVolumeAsync(
-                  new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
+                  new DefaultResponseStep<>(getNext()) {
                     @Override
                     public NextAction onSuccess(
                         Packet packet,

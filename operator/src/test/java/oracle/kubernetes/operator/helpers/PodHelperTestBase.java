@@ -41,7 +41,6 @@ import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1SecurityContext;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
-import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -55,6 +54,7 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
@@ -68,8 +68,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.LogMatcher.containsFine;
-import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
@@ -88,6 +86,8 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_T
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -481,18 +481,17 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_withLogHomeSpecified_hasLogHomeEnvVariable() {
-    final String myLogHome = "/shared/mylogs";
+    final String myLogHome = "/shared/mylogs/";
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
-    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs");
-    assertThat(getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", myLogHome)));
+    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME", myLogHome));
   }
 
   @Test
   public void whenPodCreated_withoutLogHomeSpecified_hasDefaultLogHomeEnvVariable() {
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome(null);
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID)));
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID));
   }
 
   @Test

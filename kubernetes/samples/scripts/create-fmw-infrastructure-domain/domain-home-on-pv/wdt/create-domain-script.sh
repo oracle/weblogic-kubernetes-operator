@@ -45,7 +45,7 @@
 #                  default:  weblogic-deploy.zip
 #
 #   WDT_INSTALL_ZIP_URL   URL for downloading WDT install zip
-#                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.1.1/$WDT_INSTALL_ZIP_FILE
+#                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.2.0/$WDT_INSTALL_ZIP_FILE
 #
 #   https_proxy    Proxy for downloading WDT_INSTALL_ZIP_URL.
 #                  default: "http://www-proxy-hqdc.us.oracle.com:80"
@@ -74,7 +74,7 @@ WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 WDT_DIR=${WDT_DIR:-/shared/wdt}
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
-WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.1.1/$WDT_INSTALL_ZIP_FILE"}
+WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.2.0/$WDT_INSTALL_ZIP_FILE"}
 
 # using "-" instead of ":-" in case proxy vars are explicitly set to "".
 https_proxy=${https_proxy-""}
@@ -157,6 +157,8 @@ function run_wdt {
     local domain_home_dir=$domain_dir/$domain_uid
   fi 
 
+  local domain_type=`egrep 'fmwDomainType:' $inputs_orig | grep -v '#' | awk '{print $2}'`
+  echo domain_type = $domain_type
   echo domain_home_dir = $domain_home_dir
 
   # Output files and directories.
@@ -193,7 +195,7 @@ function run_wdt {
   # domain_type can be WLS, JRF or RestrictedJRF
   $wdt_createDomain_script \
      -oracle_home $oracle_home \
-     -domain_type JRF \
+     -domain_type ${domain_type} \
      -domain_home $domain_home_dir \
      -model_file $model_final \
      -variable_file $inputs_final > $out_file 2>&1

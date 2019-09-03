@@ -18,14 +18,11 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.Scan;
 import oracle.kubernetes.operator.rest.ScanCache;
@@ -48,6 +45,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
@@ -58,11 +56,12 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progre
  * processing flow can use to explicitly set the condition to Progressing or Failed.
  */
 public class DomainStatusUpdater {
-  public static final String INSPECTING_DOMAIN_PROGRESS_REASON = "InspectingDomainPrescence";
   public static final String MANAGED_SERVERS_STARTING_PROGRESS_REASON = "ManagedServersStarting";
-  public static final String SERVERS_READY_REASON = "ServersReady";
   public static final String ALL_STOPPED_AVAILABLE_REASON = "AllServersStopped";
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
+  static final String INSPECTING_DOMAIN_PROGRESS_REASON = "InspectingDomainPresence";
+  static final String SERVERS_READY_REASON = "ServersReady";
+
   private static final String TRUE = "True";
   private static final String FALSE = "False";
 
@@ -130,7 +129,7 @@ public class DomainStatusUpdater {
                 meta.getName(),
                 meta.getNamespace(),
                 dom,
-                new DefaultResponseStep<Domain>(next) {
+                new DefaultResponseStep<>(next) {
                   @Override
                   public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
                     if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
@@ -160,7 +159,7 @@ public class DomainStatusUpdater {
         .readDomainAsync(
             meta.getName(),
             meta.getNamespace(),
-            new DefaultResponseStep<Domain>(next) {
+            new DefaultResponseStep<>(next) {
               @Override
               public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
                 info.setDomain(callResponse.getResult());
@@ -291,9 +290,8 @@ public class DomainStatusUpdater {
       }
 
       private Stream<ServerStartupInfo> getServerStartupInfos() {
-        return Optional.ofNullable(getInfo().getServerStartupInfo())
-            .map(Collection::stream)
-            .orElse(Stream.empty());
+        return Optional.ofNullable(getInfo().getServerStartupInfo()).stream()
+            .flatMap(Collection::stream);
       }
 
       private Optional<WlsDomainConfig> getDomainConfig() {
@@ -303,7 +301,7 @@ public class DomainStatusUpdater {
       private Optional<WlsDomainConfig> getScanCacheDomainConfig() {
         DomainPresenceInfo info = getInfo();
         Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
-        return Optional.ofNullable(scan).map(s -> s.getWlsDomainConfig());
+        return Optional.ofNullable(scan).map(Scan::getWlsDomainConfig);
       }
 
       private boolean shouldBeRunning(ServerStartupInfo startupInfo) {
@@ -323,7 +321,9 @@ public class DomainStatusUpdater {
       }
 
       private boolean hasReadyServerPod(String serverName) {
-        return Optional.ofNullable(getInfo().getServerPod(serverName)).filter(PodHelper::getReadyStatus).isPresent();
+        return Optional.ofNullable(getInfo().getServerPod(serverName))
+            .filter(PodHelper::getReadyStatus)
+            .isPresent();
       }
 
       Map<String, ServerStatus> getServerStatuses() {
@@ -377,12 +377,16 @@ public class DomainStatusUpdater {
       private ClusterStatus createClusterStatus(String clusterName) {
         return new ClusterStatus()
             .withClusterName(clusterName)
-            .withReplicas(Optional.ofNullable(getClusterCounts().get(clusterName)).map(Long::intValue).orElse(null))
+            .withReplicas(
+                Optional.ofNullable(getClusterCounts().get(clusterName))
+                    .map(Long::intValue)
+                    .orElse(null))
             .withReadyReplicas(
-                Optional.ofNullable(getClusterCounts(true).get(clusterName)).map(Long::intValue).orElse(null))
+                Optional.ofNullable(getClusterCounts(true).get(clusterName))
+                    .map(Long::intValue)
+                    .orElse(null))
             .withMaximumReplicas(getClusterMaximumSize(clusterName));
       }
-
 
       private String getNodeName(String serverName) {
         return Optional.ofNullable(getInfo().getServerPod(serverName))
@@ -404,26 +408,34 @@ public class DomainStatusUpdater {
 
       private Collection<String> getServerNames() {
         Set<String> result = new HashSet<>();
-        getDomainConfig().stream().forEach(config -> {
-          result.addAll(config.getServerConfigs().keySet());
-          for (WlsClusterConfig cluster : config.getConfiguredClusters()) {
-            Optional.ofNullable(cluster.getDynamicServersConfig())
-                .ifPresent(dynamicConfig -> Optional.ofNullable(dynamicConfig.getServerConfigs())
-                    .ifPresent(servers -> servers.stream().forEach(item -> result.add(item.getName()))));
-          }
-        });
+        getDomainConfig()
+            .ifPresent(
+                config -> {
+                  result.addAll(config.getServerConfigs().keySet());
+                  for (WlsClusterConfig cluster : config.getConfiguredClusters()) {
+                    Optional.ofNullable(cluster.getDynamicServersConfig())
+                        .ifPresent(
+                            dynamicConfig ->
+                                Optional.ofNullable(dynamicConfig.getServerConfigs())
+                                    .ifPresent(
+                                        servers ->
+                                            servers.forEach(item -> result.add(item.getName()))));
+                  }
+                });
         return result;
       }
 
       private Collection<String> getClusterNames() {
         Set<String> result = new HashSet<>();
-        getDomainConfig().stream().forEach(config -> result.addAll(config.getClusterConfigs().keySet()));
+        getDomainConfig().ifPresent(config -> result.addAll(config.getClusterConfigs().keySet()));
         return result;
       }
 
       private Integer getClusterMaximumSize(String clusterName) {
-        return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
-            .map(cluster -> cluster.map(c -> c.getMaxClusterSize()).orElse(0)).get();
+        return getDomainConfig()
+            .map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
+            .map(cluster -> cluster.map(WlsClusterConfig::getMaxClusterSize).orElse(0))
+            .get();
       }
     }
   }
@@ -530,7 +542,8 @@ public class DomainStatusUpdater {
     }
   }
 
-  private static boolean modifyDomainStatus(DomainStatus domainStatus, Consumer<DomainStatus> statusUpdateConsumer) {
+  private static boolean modifyDomainStatus(
+      DomainStatus domainStatus, Consumer<DomainStatus> statusUpdateConsumer) {
     final DomainStatus currentStatus = new DomainStatus(domainStatus);
     synchronized (domainStatus) {
       statusUpdateConsumer.accept(domainStatus);
@@ -566,7 +579,6 @@ public class DomainStatusUpdater {
                   s.addCondition(new DomainCondition(Progressing).withStatus(FALSE));
                 }
               });
-
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
