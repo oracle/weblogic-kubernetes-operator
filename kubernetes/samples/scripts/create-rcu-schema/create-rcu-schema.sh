@@ -9,19 +9,27 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/common/utility.sh
 
 function usage {
-  echo "usage: ${script} -s <schemaPrefix> -d <dburl>  [-h]"
+  echo "usage: ${script} -s <schemaPrefix> -d <dburl> -i <image> -s <pullsecret> [-h]"
   echo "  -s RCU Schema Prefix (needed)"
   echo "  -d RCU Oracle Database URL (optional) "
   echo "      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s) "
+  echo "  -p Fmw Infrastructure ImagePull Secret (optional) "
+  echo "      (default: pullsecret) "
+  echo "  -i Fmw Infrastructure Image (optional) "
+  echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3) "
   echo "  -h Help"
   exit $1
 }
 
-while getopts ":h:s:d:" opt; do
+while getopts ":h:s:d:p:" opt; do
   case $opt in
     s) schemaPrefix="${OPTARG}"
     ;;
     d) dburl="${OPTARG}"
+    ;;
+    p) pullsecret="${OPTARG}"
+    ;;
+    i) fmwimage="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -40,17 +48,15 @@ if [ -z ${dburl} ]; then
   dburl="oracle-db.default.svc.cluster.local:1521/devpdb.k8s"
 fi
 
-ocr_pfx=container-registry.oracle.com
-jrf_image=${ocr_pfx}/middleware/fmw-infrastructure:12.2.1.3
-docker pull ${jrf_image}
-if [ $? != 0  ]; then
- echo "######################";
- echo "[ERROR] Could not pull ${jrf_image}";
- echo "Please run  [ docker login ${ocr_pfx} ]  and "
- echo "Check-out the fmw-infrastructure:12.2.1.3 image (if needed)"
- echo "######################";
- exit -1;
+if [ -z ${pullsecret} ]; then
+  pullsecret="pullsecret"
 fi
+
+if [ -z ${fmwimage} ]; then
+  fmwimage="container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3"
+fi
+
+echo "ImagePullSecret[$pullsecret] Image[${fmwimage}] dburl[${dburl}]"
 
 dbpod=`kubectl get po | grep oracle | cut -f1 -d " " `
 if [ -z ${dbpod} ]; then
@@ -63,7 +69,15 @@ fi
 checkPod ${dbpod} default
 checkPodState ${dbpod} default "1/1"
 
-kubectl run rcu --generator=run-pod/v1 --image ${jrf_image} -- sleep infinity
+#kubectl run rcu --generator=run-pod/v1 --image ${jrf_image} -- sleep infinity
+# Modify the ImagePullSecret based on input
+sed -i -e '$d' ${scriptDir}/common/rcu.yaml
+echo '           - name: pullsecret' >> ${scriptDir}/common/rcu.yaml
+sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/rcu.yaml
+sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/rcu.yaml
+sed -i -e "s?image:.*?image: ${fmwimage}?g" ${scriptDir}/common/rcu.yaml
+kubectl apply -f ${scriptDir}/common/rcu.yaml
+
 # Make sure the rcu deployment Pod is RUNNING
 checkPod rcu default
 checkPodState rcu default "1/1"

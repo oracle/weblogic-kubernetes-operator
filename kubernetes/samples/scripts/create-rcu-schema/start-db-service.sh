@@ -9,16 +9,24 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/common/utility.sh
 
 function usage {
-  echo "usage: ${script} -p <nodeport> [-h]"
+  echo "usage: ${script} -p <nodeport> -i <image> -s <pullsecret> [-h]"
+  echo "  -i  Oracle DB Image (optional)"
+  echo "      (default: container-registry.oracle.com/database/enterprise:12.2.0.1-slim ) "
   echo "  -p DB Service NodePort (optional)"
   echo "      (default: 30011) "
+  echo "  -s DB Image PullSecret  (optional)"
+  echo "      (default: pullsecret) "
   echo "  -h Help"
   exit $1
 }
 
-while getopts ":h:p:" opt; do
+while getopts ":h:p:s:i:" opt; do
   case $opt in
     p) nodeport="${OPTARG}"
+    ;;
+    s) pullsecret="${OPTARG}"
+    ;;
+    i) dbimage="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -31,29 +39,34 @@ if [ -z ${nodeport} ]; then
   nodeport=30011
 fi
 
-ocr_pfx=container-registry.oracle.com
-db_image=${ocr_pfx}/database/enterprise:12.2.0.1-slim
-docker pull ${db_image}
-if [ $? != 0  ]; then
- echo "######################";
- echo "[ERROR] Could not pull ${db_image}";
- echo "Please run  [ docker login ${ocr_pfx} ]  and "
- echo "Check-out the db image database/enterprise:12.2.0.1-slim  (if needed)"
- echo "######################";
- exit -1;
+if [ -z ${pullsecret} ]; then
+  pullsecret="pullsecret"
 fi
 
+if [ -z ${cenodeport} ]; then
+  nodeport=30011
+fi
+
+if [ -z ${dbimage} ]; then
+  dbimage="container-registry.oracle.com/database/enterprise:12.2.0.1-slim"
+fi
+
+echo "NodePort[$nodeport] ImagePullSecret[$pullsecret] Image[${dbimage}]"
+
+# Modify the ImagePullSecret based on input 
+sed -i -e '$d' ${scriptDir}/common/oradb.yaml
+echo '           - name: pullsecret' >> ${scriptDir}/common/oradb.yaml
+sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/oradb.yaml
+sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/oradb.yaml
+sed -i -e "s?image:.*?image: ${dbimage}?g" ${scriptDir}/common/oradb.yaml
 kubectl apply -f ${scriptDir}/common/oradb.yaml
+
 # Modify the NodePort based on input 
 sed -i -e "s?nodePort:.*?nodePort: ${nodeport}?g" ${scriptDir}/common/orasvc.yaml
 kubectl apply -f ${scriptDir}/common/orasvc.yaml
-
 dbpod=`kubectl get po | grep oracle-db | cut -f1 -d " " `
-#sh ${scriptDir}/common/checkPodReady.sh ${dbpod} default
-
 checkPod ${dbpod} default
 checkPodState ${dbpod} default "1/1"
-
 kubectl get po
 kubectl get service
 
