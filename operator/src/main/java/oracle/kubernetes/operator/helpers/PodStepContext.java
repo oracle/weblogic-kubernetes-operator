@@ -41,8 +41,6 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -57,15 +55,14 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 @SuppressWarnings("deprecation")
 public abstract class PodStepContext extends BasePodStepContext {
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private static final String STOP_SERVER = "/weblogic-operator/scripts/stopServer.sh";
   private static final String START_SERVER = "/weblogic-operator/scripts/startServer.sh";
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
@@ -142,11 +139,30 @@ public abstract class PodStepContext extends BasePodStepContext {
         .getLocalAdminProtocolChannelPort();
   }
 
+  /**
+   * Check if the server is listening on a secure port. NOTE: If the targetted server is a managed
+   * server, this method is overridden to check if the managed server has a secure listen port rather
+   * than the admin server. See PodHelper.ManagedPodStepContext
+   *
+   * @return true if server is listening on a secure port
+   */
   boolean isLocalAdminProtocolChannelSecure() {
+    return domainTopology
+        .getServerConfig(getServerName())
+        .isLocalAdminProtocolChannelSecure();
+  }
+
+  /**
+   * Check if the admin server is listening on a secure port.
+   *
+   * @return true if admin server is listening on a secure port
+   */
+  private boolean isAdminServerProtocolChannelSecure() {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .isLocalAdminProtocolChannelSecure();
   }
+
 
   Integer getLocalAdminProtocolChannelPort() {
     return domainTopology
@@ -338,7 +354,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private boolean canUseCurrentPod(V1Pod currentPod) {
     boolean useCurrent =
         AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
-    if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0)
+    if (!useCurrent && !isNullOrEmpty(AnnotationHelper.getDebugString(currentPod)))
       LOGGER.info(
           MessageKeys.POD_DUMP,
           AnnotationHelper.getDebugString(currentPod),
@@ -587,7 +603,15 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.ADMIN_NAME, getAsName());
     addEnvVar(vars, ServerEnvVars.ADMIN_PORT, getAsPort().toString());
     if (isLocalAdminProtocolChannelSecure()) {
+      // This env variable indicates whether the administration port in the WLS server on the local pod is secure
       addEnvVar(vars, ServerEnvVars.ADMIN_PORT_SECURE, "true");
+    }
+    if (isAdminServerProtocolChannelSecure()) {
+      // The following env variable determines whether to set a secure protocol(https/t3s) in the "AdminURL" property
+      // in NM startup.properties.
+      // WebLogic Node Manager then sets the ADMIN_URL env variable(based on the "AdminURL") before starting
+      // the managed server
+      addEnvVar(vars, "ADMIN_SERVER_PORT_SECURE", "true");
     }
     addEnvVar(vars, ServerEnvVars.SERVER_NAME, getServerName());
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
@@ -892,7 +916,7 @@ public abstract class PodStepContext extends BasePodStepContext {
           new CallBuilder()
               .withLabelSelectors(forDomainUidSelector(domainUid))
               .listPersistentVolumeAsync(
-                  new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
+                  new DefaultResponseStep<>(getNext()) {
                     @Override
                     public NextAction onSuccess(
                         Packet packet,

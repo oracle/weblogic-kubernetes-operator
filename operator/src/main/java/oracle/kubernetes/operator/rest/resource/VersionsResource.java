@@ -11,11 +11,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.backend.VersionUtils;
 import oracle.kubernetes.operator.rest.model.CollectionModel;
 import oracle.kubernetes.operator.rest.model.VersionModel;
+
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * VersionsResource is a jaxrs resource that implements the REST api for the /operator path. It is
@@ -24,8 +24,6 @@ import oracle.kubernetes.operator.rest.model.VersionModel;
  */
 @Path("operator")
 public class VersionsResource extends BaseResource {
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /** Construct a VersionsResource. */
   public VersionsResource() {
@@ -41,7 +39,7 @@ public class VersionsResource extends BaseResource {
   @Produces(MediaType.APPLICATION_JSON)
   public CollectionModel<VersionModel> get() {
     LOGGER.entering(href());
-    CollectionModel<VersionModel> collection = new CollectionModel<VersionModel>();
+    CollectionModel<VersionModel> collection = new CollectionModel<>();
     for (String version : VersionUtils.getVersions()) {
       VersionModel item =
           new VersionModel(

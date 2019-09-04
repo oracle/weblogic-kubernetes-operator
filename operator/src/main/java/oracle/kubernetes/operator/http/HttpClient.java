@@ -18,18 +18,17 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
 import oracle.kubernetes.operator.helpers.SecretHelper;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+
 /** HTTP Client. */
 public class HttpClient {
   public static final String KEY = "httpClient";
 
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String HTTP_PROTOCOL = "http://";
   private static final String HTTPS_PROTOCOL = "https://";
   private Client httpClient;
@@ -58,28 +57,6 @@ public class HttpClient {
   }
 
   /**
-   * Create authenticated client specifically targeted at an admin server.
-   *
-   * @param namespace Namespace
-   * @param adminSecretName Admin secret name
-   * @return authenticated client
-   */
-  public static HttpClient createAuthenticatedClientForServer(
-      String namespace, String adminSecretName) {
-    SecretHelper secretHelper = new SecretHelper(namespace);
-    Map<String, byte[]> secretData =
-        secretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, adminSecretName);
-
-    byte[] username = null;
-    byte[] password = null;
-    if (secretData != null) {
-      username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
-      password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
-    }
-    return createAuthenticatedClient(username, password);
-  }
-
-  /**
    * Erase authentication credential so that it is not sitting in memory where a rogue program can
    * find it.
    */
@@ -94,7 +71,8 @@ public class HttpClient {
    * @param password Password
    * @return authenticated client
    */
-  public static HttpClient createAuthenticatedClient(final byte[] username, final byte[] password) {
+  private static HttpClient createAuthenticatedClient(
+      final byte[] username, final byte[] password) {
     // build client with authentication information.
     Client client = ClientBuilder.newClient();
     String encodedCredentials = null;
@@ -156,38 +134,6 @@ public class HttpClient {
       }
     }
     return null;
-  }
-
-  /**
-   * Constructs a URL using the provided service URL and request URL, and use the resulting URL to
-   * issue a HTTP GET request.
-   *
-   * @param requestUrl The request URL containing the request of the REST call
-   * @param serviceUrl The service URL containing the host and port of the server where the HTTP
-   *     request is to be sent to
-   * @return A Result object containing the respond from the REST call
-   */
-  public Result executeGetOnServiceClusterIP(String requestUrl, String serviceUrl) {
-    String url = serviceUrl + requestUrl;
-    WebTarget target = httpClient.target(url);
-    Invocation.Builder invocationBuilder =
-        target
-            .request()
-            .accept("application/json")
-            .header("Authorization", "Basic " + encodedCredentials);
-    Response response = invocationBuilder.get();
-    String responseString = null;
-    int status = response.getStatus();
-    boolean successful = false;
-    if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-      successful = true;
-      if (response.hasEntity()) {
-        responseString = String.valueOf(response.readEntity(String.class));
-      }
-    } else {
-      LOGGER.warning(MessageKeys.HTTP_METHOD_FAILED, "GET", url, response.getStatus());
-    }
-    return new Result(responseString, status, successful);
   }
 
   /**
@@ -261,7 +207,7 @@ public class HttpClient {
     private final String namespace;
     private final String adminSecretName;
 
-    public AuthenticatedClientForServerStep(String namespace, String adminSecretName, Step next) {
+    AuthenticatedClientForServerStep(String namespace, String adminSecretName, Step next) {
       super(next);
       this.namespace = namespace;
       this.adminSecretName = adminSecretName;
@@ -278,7 +224,7 @@ public class HttpClient {
 
   private static class WithSecretDataStep extends Step {
 
-    public WithSecretDataStep(Step next) {
+    WithSecretDataStep(Step next) {
       super(next);
     }
 
@@ -287,11 +233,9 @@ public class HttpClient {
       @SuppressWarnings("unchecked")
       Map<String, byte[]> secretData =
           (Map<String, byte[]>) packet.get(SecretHelper.SECRET_DATA_KEY);
-      byte[] username = null;
-      byte[] password = null;
       if (secretData != null) {
-        username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
-        password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
+        byte[] username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
+        byte[] password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
         packet.put(KEY, createAuthenticatedClient(username, password));
 
         clearCredential(username);
