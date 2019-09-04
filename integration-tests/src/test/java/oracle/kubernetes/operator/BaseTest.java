@@ -759,19 +759,20 @@ public class BaseTest {
 
     // create scripts dir under domain pv
     TestUtils.createDirUnderDomainPV(scriptsDir);
-    if (System.getenv("OPENSHIFT") != null) {
+    if (OPENSHIFT) {
       Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
         Paths.get(scriptsDir + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
+    } else {
+      // workaround for the issue with not allowing .. in the host-path in krun.sh
+      Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
+          Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
+      // copy script to pod
+      String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
+          + getResultDir() + ":/tmpdir -m " + pvDir
+          + ":/pvdir -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/domainonpvwdt/bin/scripts' -n "
+          + domainNS;
+      TestUtils.exec(cpUsingKrunCmd, true);
     }
-    // workaround for the issue with not allowing .. in the host-path in krun.sh
-    Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
-        Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
-    // copy script to pod
-    String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
-        + getResultDir() + ":/tmpdir -m " + pvDir
-        + ":/pvdir -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/domainonpvwdt/bin/scripts' -n "
-        + domainNS;
-    TestUtils.exec(cpUsingKrunCmd, true);
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
