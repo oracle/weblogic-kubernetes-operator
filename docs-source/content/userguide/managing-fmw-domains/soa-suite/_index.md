@@ -151,7 +151,7 @@ The following documentation and samples are for creating a container-based datab
 
 ##### Running the database inside Kubernetes
 
-Follow these instructions for a basic database setup inside Kubernetes that uses PV (persistent volume) and PVC (persistent volume claim) to persist the data. For more details about database setup and configuration, refer this [page](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/fmw-infra/#running-the-database-inside-kubernetes).
+Follow these instructions for a basic database setup inside Kubernetes that uses PV (persistent volume) and PVC (persistent volume claim) to persist the data. For more details about database setup and configuration, refer this [page](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/#running-the-database-inside-kubernetes).
 
 Pull the database image:
 
@@ -330,4 +330,4 @@ $
 
 Now that you have your Docker images and you have created your RCU schemas, you are ready
 to create your domain.  A [sample]({{< relref "/samples/simple/domains/soa-domain/_index.md" >}})
-is provided that demonstrates how to create a SOA Suite domain. 
+is provided that demonstrates how to create a SOA Suite domain.
