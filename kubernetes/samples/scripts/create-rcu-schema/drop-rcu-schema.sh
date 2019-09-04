@@ -33,7 +33,6 @@ done
 
 if [ -z ${schemaPrefix} ]; then
   echo "${script}: -s <schemaPrefix> must be specified."
-  missingRequiredOption="true"
   usage 1
 fi
 

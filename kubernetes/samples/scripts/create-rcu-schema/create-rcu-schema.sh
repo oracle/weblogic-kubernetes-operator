@@ -9,13 +9,13 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/common/utility.sh
 
 function usage {
-  echo "usage: ${script} -s <schemaPrefix> -d <dburl> -i <image> -s <docker-store> [-h]"
+  echo "usage: ${script} -s <schemaPrefix> -d <dburl> -i <image> -p <docker-store> [-h]"
   echo "  -s RCU Schema Prefix (needed)"
   echo "  -d RCU Oracle Database URL (optional) "
   echo "      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s) "
-  echo "  -p Fmw Infrastructure ImagePull Secret (optional) "
+  echo "  -p FMW Infrastructure ImagePull Secret (optional) "
   echo "      (default: docker-store) "
-  echo "  -i Fmw Infrastructure Image (optional) "
+  echo "  -i FMW Infrastructure Image (optional) "
   echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3) "
   echo "  -h Help"
   exit $1
@@ -40,7 +40,6 @@ done
 
 if [ -z ${schemaPrefix} ]; then
   echo "${script}: -s <schemaPrefix> must be specified."
-  missingRequiredOption="true"
   usage 1
 fi
 
