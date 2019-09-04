@@ -32,9 +32,11 @@ public class PersistentVolume {
     // retry logic for PV dir creation as sometimes krun.sh fails
     int cnt = 0, maxCnt = 10;
     while(cnt < maxCnt) {
-      if(TestUtils.exec(cmd, true).exitValue() ==0) {
+      logger.info("Executing command "+cmd);
+      if(ExecCommand.exec(cmd).exitValue() ==0) {
         break;
       } else {
+        logger.info("PV dir creation command failed");
         Thread.sleep(BaseTest.getWaitTimePod());
         cnt = cnt + 1;
       }
