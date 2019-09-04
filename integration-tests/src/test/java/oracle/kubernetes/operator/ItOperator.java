@@ -539,7 +539,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWlst() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -572,7 +572,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWdt() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assume.assumeTrue(QUICKTEST);
 
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
