@@ -13,7 +13,7 @@ function usage {
   echo "  -p Oracle Container Registry Password (needed)"
   echo "  -e email (needed)"
   echo "  -s Generated Secret (optional) "
-  echo "      (default: pullsecret) "
+  echo "      (default: docker-store) "
   echo "  -h Help"
   exit $1
 }
@@ -51,7 +51,7 @@ if [ -e ${email} ]; then
 fi
 
 if [ -z ${secret} ]; then
-  secret="pullsecret"
+  secret="docker-store"
 fi
 
 kubectl delete secret/${secret} --ignore-not-found

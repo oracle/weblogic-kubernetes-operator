@@ -14,4 +14,4 @@ spec:
     imagePullPolicy: IfNotPresent
     name: rcu
   imagePullSecrets:
-           - name: pullsecret
+           - name: docker-store
