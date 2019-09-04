@@ -9,13 +9,13 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/common/utility.sh
 
 function usage {
-  echo "usage: ${script} -p <nodeport> -i <image> -s <pullsecret> [-h]"
+  echo "usage: ${script} -p <nodeport> -i <image> -s <docker-store> [-h]"
   echo "  -i  Oracle DB Image (optional)"
   echo "      (default: container-registry.oracle.com/database/enterprise:12.2.0.1-slim ) "
   echo "  -p DB Service NodePort (optional)"
   echo "      (default: 30011) "
   echo "  -s DB Image PullSecret  (optional)"
-  echo "      (default: pullsecret) "
+  echo "      (default: docker-store) "
   echo "  -h Help"
   exit $1
 }
@@ -40,7 +40,7 @@ if [ -z ${nodeport} ]; then
 fi
 
 if [ -z ${pullsecret} ]; then
-  pullsecret="pullsecret"
+  pullsecret="docker-store"
 fi
 
 if [ -z ${cenodeport} ]; then
@@ -55,7 +55,7 @@ echo "NodePort[$nodeport] ImagePullSecret[$pullsecret] Image[${dbimage}]"
 
 # Modify the ImagePullSecret based on input 
 sed -i -e '$d' ${scriptDir}/common/oradb.yaml
-echo '           - name: pullsecret' >> ${scriptDir}/common/oradb.yaml
+echo '           - name: docker-store' >> ${scriptDir}/common/oradb.yaml
 sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/oradb.yaml
 sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/oradb.yaml
 sed -i -e "s?image:.*?image: ${dbimage}?g" ${scriptDir}/common/oradb.yaml

@@ -9,12 +9,12 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/common/utility.sh
 
 function usage {
-  echo "usage: ${script} -s <schemaPrefix> -d <dburl> -i <image> -s <pullsecret> [-h]"
+  echo "usage: ${script} -s <schemaPrefix> -d <dburl> -i <image> -s <docker-store> [-h]"
   echo "  -s RCU Schema Prefix (needed)"
   echo "  -d RCU Oracle Database URL (optional) "
   echo "      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s) "
   echo "  -p Fmw Infrastructure ImagePull Secret (optional) "
-  echo "      (default: pullsecret) "
+  echo "      (default: docker-store) "
   echo "  -i Fmw Infrastructure Image (optional) "
   echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3) "
   echo "  -h Help"
@@ -49,7 +49,7 @@ if [ -z ${dburl} ]; then
 fi
 
 if [ -z ${pullsecret} ]; then
-  pullsecret="pullsecret"
+  pullsecret="docker-store"
 fi
 
 if [ -z ${fmwimage} ]; then
@@ -72,7 +72,7 @@ checkPodState ${dbpod} default "1/1"
 #kubectl run rcu --generator=run-pod/v1 --image ${jrf_image} -- sleep infinity
 # Modify the ImagePullSecret based on input
 sed -i -e '$d' ${scriptDir}/common/rcu.yaml
-echo '           - name: pullsecret' >> ${scriptDir}/common/rcu.yaml
+echo '           - name: docker-store' >> ${scriptDir}/common/rcu.yaml
 sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/rcu.yaml
 sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/rcu.yaml
 sed -i -e "s?image:.*?image: ${fmwimage}?g" ${scriptDir}/common/rcu.yaml
