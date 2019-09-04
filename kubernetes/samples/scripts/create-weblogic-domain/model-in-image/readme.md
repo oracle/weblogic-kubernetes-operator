@@ -13,7 +13,8 @@ This sample demonstrates how to specify a domain model to use in an image for th
 | /u01/wdt/models| domain model yaml files |
 |                | model variable files |
 |                | deployment archive |
-
+| ---------------| -----------|
+| /u01/wdt/webloic-deploy |   unzip weblogic deploy installer location|
 
 4. Optionally create a config map
 
@@ -114,7 +115,7 @@ Prerequsite:
 5. Wait for it to finish
 
 
-6. Run ./k8sdomain.sh
+6. Create the Kubernetes resources by ```./k8sdomain.sh```
 7. At the end, you will see the message "Getting pod status - ctrl-c when all is running and ready to exit"
 8. Once all the pods are up, you can ctrl-c to exit the build script.
 
@@ -142,19 +143,23 @@ helm install --name acmecontroller stable/nginx-ingress \
 JRF domain requires an infrastructure database.  This example shows how to setup a sample database,
 modify the WebLogic Deploy Tool Model to provide database connection information, and steps to create the infrastructure schema.
 
+
 Since JRF domain creation take considerable time, you should increase the timeout for the introspection job.
 
 ```
 kubectl -n <operation namespace> edit configmap weblogic-operator-cm 
 ```
 
-and add the parameter ```introspectorJobActiveDeadlineSeconds```  default is 120s
+and add the parameter ```introspectorJobActiveDeadlineSeconds```  default is 120s.  Use 300s to start with.
 
 
-1. kubectl apply -f db-slim.yaml
-2. Repeat the above steps 1-5, make sure use the domain type ```JRF```  in step 4
-3. kubectl run rcu -i --tty  --image model-in-image:x0 --restart=Never -- sh
-4. Create the rcu schema
+1. Use the browser to login to https://container-registry.oracle.com, select ```database->enterprise`` and 
+accept the license agreement
+2. In command shell, ```docker login container-registry.oracle.com```
+3. kubectl apply -f db-slim.yaml
+4. Repeat the above steps 1-5, make sure use the domain type ```JRF```  in step 4
+5. Start a terminal by ```kubectl run rcu -i --tty  --image model-in-image:x0 --restart=Never -- sh```
+6. Create the rcu schema by the command.  ```Oradoc_db1 is the dba password and welcome1 is the schema password```
 
 ```
 /u01/oracle/oracle_common/bin/rcu \
@@ -178,11 +183,11 @@ Oradoc_db1
 welcome1
 EOF
 ```
-5. ctrl-d to exit the terminal
-6. kubectl delete pod rcu
-7. Repeat the above steps 6-8
+7. ctrl-d to exit the terminal
+8. Delete the terminal pod by ```kubectl delete pod rcu```
+9. Repeat the above steps 6-8 to create the Kubernetes resources
 
-Note:  If you need to drop the repository, you can use the command in step 4
+Note:  If you need to drop the repository, you can use this command in the terminal
 
 ```
 /u01/oracle/oracle_common/bin/rcu \
@@ -205,7 +210,14 @@ EOF
 ```
 
 
+## Cleanup 
 
+From the WebLogic Kubernetes Operator cloned root directory
+
+1.  ```kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d domain1```
+2.  ```kubectl delete configmap wdt-config-map -n sample-domain1-ns```
+3.  ```kubectl delete secret sample-domain1-weblogic-credentials -n sample-domain1-ns```
+4.  Drop the rcu schema
 
 
 
