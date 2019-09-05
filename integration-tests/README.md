@@ -199,7 +199,7 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
 		
 * Command to run the tests: This will run QUICKTEST. To run all the tests, `export QUICKTEST=false`
 ```
-mvn clean verify -P wl-integration-tests 2>&1 | tee log.txt
+mvn clean verify -P wls-integration-tests 2>&1 | tee log.txt
 ```
 
 The tests accepts optional env var overrides:
@@ -317,11 +317,11 @@ mvn clean verify -P jrf-integration-tests 2>&1 | tee log.txt
 
 # How to run a single test
 
-mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST" -DfailIfNoTests=false integration-test -P wl-integration-tests
+mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST" -DfailIfNoTests=false integration-test -P wls-integration-tests
 
 # How to run multiple tests
 
-mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST+testDomainOnPVUsingWDT" -DfailIfNoTests=false integration-test -P wl-integration-tests
+mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST+testDomainOnPVUsingWDT" -DfailIfNoTests=false integration-test -P wls-integration-tests
 
 # How to run cleanup script
 
@@ -356,7 +356,7 @@ The integration tests are not completely independent of the environment.
 
 You may run into one or more of the following errors when you attempt to execute the command:
 ```
-mvn clean verify -P wl-integration-tests 2>&1 | tee log.txt
+mvn clean verify -P wls-integration-tests 2>&1 | tee log.txt
 ```
 1. `[ERROR] No permision to create directory /scratch/...`  
 
