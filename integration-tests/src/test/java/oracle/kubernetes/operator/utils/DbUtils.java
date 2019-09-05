@@ -7,6 +7,8 @@ package oracle.kubernetes.operator.utils;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import oracle.kubernetes.operator.BaseTest;
+
 public class DbUtils {
   public static final String DEFAULT_FMWINFRA_DOCKER_IMAGENAME =
       "container-registry.oracle.com/middleware/fmw-infrastructure";
@@ -44,6 +46,30 @@ public class DbUtils {
     TestUtils.checkCmdInLoop(cmd, "The database is ready for use", podName);
 
     return oracledb;
+  }
+  
+  /**
+   * create oracle db pod and service in the k8s cluster default namespace.
+   *
+   * @throws Exception - if any error occurs when creating Oracle DB pod and service
+   */
+  public static void startOracleDB() throws Exception {
+  	String cmd = "sh " +
+        BaseTest.getResultDir()
+        + "/create-rcu-schema/start-db-service.sh";
+  	TestUtils.exec(cmd, true);	
+  }
+  
+  /**
+   * create oracle db pod and service in the k8s cluster default namespace.
+   *
+   * @throws Exception - if any error occurs when creating Oracle DB pod and service
+   */
+  public static void createRcuSchema(String rcuSchemaPrefix) throws Exception {
+  	String cmd = "sh " +
+        BaseTest.getResultDir()
+        + "/create-rcu-schema/create-rcu-schema.sh -s "+ rcuSchemaPrefix;
+  	TestUtils.exec(cmd, true);	
   }
 
   /**
