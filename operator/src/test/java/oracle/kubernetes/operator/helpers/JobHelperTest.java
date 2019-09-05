@@ -4,6 +4,19 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import io.kubernetes.client.models.V1Affinity;
+import io.kubernetes.client.models.V1Capabilities;
+import io.kubernetes.client.models.V1LabelSelector;
+import io.kubernetes.client.models.V1LabelSelectorRequirement;
+import io.kubernetes.client.models.V1PodAffinity;
+import io.kubernetes.client.models.V1PodAffinityTerm;
+import io.kubernetes.client.models.V1PodAntiAffinity;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1SELinuxOptions;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Sysctl;
+import io.kubernetes.client.models.V1WeightedPodAffinityTerm;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -34,6 +47,7 @@ import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Matcher;
+import static org.hamcrest.Matchers.nullValue;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.After;
 import org.junit.Before;
@@ -53,6 +67,9 @@ public class JobHelperTest {
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
   private Method getDomainSpec;
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+  private final V1PodSecurityContext podSecurityContext = createPodSecurityContext();
+  private final V1SecurityContext containerSecurityContext = createContainerSecurityContext();
+  private final V1Affinity podAffinity = createAffinity();
   protected List<Memento> mementos = new ArrayList<>();
 
   private static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
@@ -178,7 +195,7 @@ public class JobHelperTest {
         .getComponents()
         .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
     DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
-        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+        new DomainIntrospectorJobStepContext(packet);
     return domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
   }
 
@@ -322,6 +339,63 @@ public class JobHelperTest {
         .orElse(null);
   }
 
+  @Test
+  public void verify_introspectorPodContainer_hasSpecifiedSecurityContext() {
+    configureDomain(domainPresenceInfo).withContainerSecurityContext(containerSecurityContext);
+    V1JobSpec jobSpec = createJobSpec();
+
+    MatcherAssert.assertThat(
+        getMatchingContainer(domainPresenceInfo, jobSpec).get().getSecurityContext(),
+        is (containerSecurityContext));
+  }
+
+  @Test
+  public void verify_introspectorPodContainer_hasEmptySecurityContext() {
+    V1JobSpec jobSpec = createJobSpec();
+
+    MatcherAssert.assertThat(
+        getMatchingContainer(domainPresenceInfo, jobSpec).get().getSecurityContext(),
+        is (new V1SecurityContext()));
+  }
+
+  @Test
+  public void verify_introspectorPodSpec_hasSpecifiedSecurityContext() {
+    configureDomain(domainPresenceInfo).withPodSecurityContext(podSecurityContext);
+    V1JobSpec jobSpec = createJobSpec();
+
+    MatcherAssert.assertThat(
+        getPodSpec(jobSpec).getSecurityContext(),
+        is (podSecurityContext));
+  }
+
+  @Test
+  public void verify_introspectorPodSpec_hasEmptySecurityContext() {
+    V1JobSpec jobSpec = createJobSpec();
+
+    MatcherAssert.assertThat(
+        getPodSpec(jobSpec).getSecurityContext(),
+        is (new V1PodSecurityContext()));
+  }
+
+  @Test
+  public void verify_introspectorPodSpec_hasSpecifiedAffinity() {
+    configureDomain(domainPresenceInfo).withAffinity(podAffinity);
+    V1JobSpec jobSpec = createJobSpec();
+
+    MatcherAssert.assertThat(
+        getPodSpec(jobSpec).getAffinity(),
+        is (podAffinity));
+  }
+
+  @Test
+  public void verify_introspectorPodSpec_hasNullAffinity() {
+    V1JobSpec jobSpec = createJobSpec();
+
+    MatcherAssert.assertThat(
+        getPodSpec(jobSpec).getAffinity(),
+        nullValue());
+  }
+
   private DomainPresenceInfo createDomainPresenceInfo() {
     DomainPresenceInfo domainPresenceInfo =
         new DomainPresenceInfo(
@@ -336,6 +410,57 @@ public class JobHelperTest {
         .withDefaultServerStartPolicy(ConfigurationConstants.START_NEVER);
     return domainPresenceInfo;
   }
+
+  private V1PodSecurityContext createPodSecurityContext() {
+    final V1Sysctl DOMAIN_SYSCTL =
+        new V1Sysctl().name("net.ipv4.route.min_pmtu").value("552");
+    return new V1PodSecurityContext()
+        .runAsGroup(420L)
+        .addSysctlsItem(DOMAIN_SYSCTL)
+        .seLinuxOptions(
+            new V1SELinuxOptions().level("domain").role("admin").user("weblogic"))
+        .runAsNonRoot(true);
+  }
+
+  private V1SecurityContext createContainerSecurityContext() {
+    return new V1SecurityContext()
+        .runAsGroup(420L)
+        .allowPrivilegeEscalation(false)
+        .capabilities(new V1Capabilities().addAddItem("CHOWN").addAddItem("SYS_BOOT"))
+        .seLinuxOptions(
+            new V1SELinuxOptions().level("domain").role("admin").user("weblogic"))
+        .runAsNonRoot(true);
+  }
+
+  private V1Affinity createAffinity() {
+    V1PodAffinity podAffinity = new V1PodAffinity()
+        .addRequiredDuringSchedulingIgnoredDuringExecutionItem(
+            new V1PodAffinityTerm()
+                .labelSelector(
+                    new V1LabelSelector()
+                        .addMatchExpressionsItem(
+                            new V1LabelSelectorRequirement().key("security").operator("In").addValuesItem("S1")
+                        )
+                )
+                .topologyKey("failure-domain.beta.kubernetes.io/zone")
+        );
+    V1PodAntiAffinity podAntiAffinity = new V1PodAntiAffinity()
+        .addPreferredDuringSchedulingIgnoredDuringExecutionItem(
+            new V1WeightedPodAffinityTerm()
+            .weight(100)
+            .podAffinityTerm(
+                new V1PodAffinityTerm()
+                .labelSelector(
+                    new V1LabelSelector()
+                    .addMatchExpressionsItem(
+                        new V1LabelSelectorRequirement().key("security").operator("In").addValuesItem("S2")
+                    )
+                )
+                .topologyKey("failure-domain.beta.kubernetes.io/zon")
+            )
+        );
+    return new V1Affinity().podAffinity(podAffinity).podAntiAffinity(podAntiAffinity);
+  };
 
   private DomainConfigurator configureDomain(DomainPresenceInfo domainPresenceInfo) {
     return DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain());
@@ -353,11 +478,20 @@ public class JobHelperTest {
     return configureDomain(domainPresenceInfo).configureServer(serverName);
   }
 
-  private List<V1EnvVar> getMatchingContainerEnv(
+  private V1PodSpec getPodSpec(V1JobSpec jobSpec) {
+    return jobSpec.getTemplate().getSpec();
+  }
+
+  private Optional<V1Container> getMatchingContainer(
       DomainPresenceInfo domainPresenceInfo, V1JobSpec jobSpec) {
     return getContainerStream(jobSpec)
         .filter(c -> hasCreateJobName(c, domainPresenceInfo.getDomainUid()))
-        .findFirst()
+        .findFirst();
+  }
+
+  private List<V1EnvVar> getMatchingContainerEnv(
+      DomainPresenceInfo domainPresenceInfo, V1JobSpec jobSpec) {
+    return getMatchingContainer(domainPresenceInfo, jobSpec)
         .map(V1Container::getEnv)
         .orElse(Collections.emptyList());
   }

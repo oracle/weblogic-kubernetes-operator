@@ -7,6 +7,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
@@ -211,6 +212,13 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     Cluster cluster = new Cluster().withClusterName(clusterName);
     getDomainSpec().getClusters().add(cluster);
     return cluster;
+  }
+
+
+  @Override
+  public DomainConfigurator withAffinity(V1Affinity affinity) {
+    getDomainSpec().setAffinity(affinity);
+    return this;
   }
 
   @Override

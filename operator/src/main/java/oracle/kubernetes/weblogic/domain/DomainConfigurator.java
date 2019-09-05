@@ -7,6 +7,7 @@ package oracle.kubernetes.weblogic.domain;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -283,7 +284,7 @@ public abstract class DomainConfigurator {
       V1SecurityContext containerSecurityContext);
 
   /**
-   * Add security constraints at container level, if the same constraint is also defined at pod
+   * Add security constraints at pod level, if the same constraint is also defined at container
    * level then container constraint take precedence.
    *
    * @param podSecurityContext pod-level security attributes to be added to this DomainConfigurator
@@ -305,4 +306,13 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withRestartVersion(String restartVersion);
+
+  /**
+   * Add affinity to the pod configuration.
+   *
+   * @param affinity affinity to be added to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withAffinity(V1Affinity affinity);
+
 }

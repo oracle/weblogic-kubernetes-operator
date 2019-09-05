@@ -630,12 +630,12 @@ class ServerPod extends KubernetesResource {
     return priorityClassName;
   }
 
-  void setPriorityClassName(String priorityClassName) {
-    this.priorityClassName = priorityClassName;
-  }
-
   List<V1PodReadinessGate> getReadinessGates() {
     return readinessGates;
+  }
+
+  void setPriorityClassName(String priorityClassName) {
+    this.priorityClassName = priorityClassName;
   }
 
   void setReadinessGates(List<V1PodReadinessGate> readinessGates) {

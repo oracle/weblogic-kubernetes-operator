@@ -169,6 +169,10 @@ public abstract class BaseConfiguration {
     return serverPod.getAffinity();
   }
 
+  void setAffinity(V1Affinity affinity) {
+    serverPod.setAffinity(affinity);
+  }
+
   public String getPriorityClassName() {
     return serverPod.getPriorityClassName();
   }
