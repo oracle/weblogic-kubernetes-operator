@@ -94,6 +94,10 @@ export T3CHANNEL2_PORT=${T3CHANNEL2_PORT:-30013}
 export T3CHANNEL3_PORT=${T3CHANNEL3_PORT:-30014}
 export T3_PUBLIC_ADDRESS=${T3_PUBLIC_ADDRESS:-}
 export PRODUCTION_MODE_ENABLED=${PRODUCTION_MODE_ENABLED:-true}
+export ALLOW_DYNAMIC_CLUSTER_IN_FMW=${ALLOW_DYNAMIC_CLUSTER_IN_FMW:-false}
+
+# whether this test run is expecting a domain validation error
+export EXPECT_INVALID_DOMAIN=${EXPECT_INVALID_DOMAIN:-false}
 
 #############################################################################
 #
@@ -438,6 +442,25 @@ function deployIntrospectJobPod() {
   # put the outputfile in a cm
 
   createConfigMapFromDir $introspect_output_cm_name ${test_home}/jobfiles
+
+
+  # check domainValid value from domain introspector job output
+  domainValid=`cat ${test_home}/jobfiles/topology.yaml | awk '/domainValid:/{sub(/.*domainValid: /, ""); print}'`
+
+  if [ "$domainValid" = "false" ]; then
+    if [ "$EXPECT_INVALID_DOMAIN" = "true" ]; then
+      trace "Info: Success! domainValid is false as expected"
+    else
+      trace "Error: Exiting test due to domainValid from introspecting domain is false!"
+    fi
+    exit 1
+  fi
+
+  if [ "$EXPECT_INVALID_DOMAIN" = "true" ]; then
+    trace "Exiting test due to domainValid from introspecting domain not returning false for an invalid domain"
+    exit 1
+  fi
+
 }
 
 #############################################################################
@@ -580,7 +603,7 @@ function checkOverrides() {
   tracen "Info: Waiting for WLST checkBeans.py to complete."
   printdots_start
   # TBD weblogic/welcome1 should be deduced via a base64 of the admin secret
-  kubectl exec -it ${DOMAIN_UID}-${ADMIN_NAME} \
+  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} \
     wlst.sh /shared/checkBeans.py \
       weblogic welcome1 t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT} \
       /shared/checkBeans.input \
@@ -630,7 +653,7 @@ function checkWLVersionChecks() {
     || exit 1
 
   rm -f ${outfile}
-  kubectl exec -it ${DOMAIN_UID}-${ADMIN_NAME} \
+  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} \
       /shared/${testscript} \
       > ${outfile} 2>&1
   status=$?
@@ -666,7 +689,7 @@ function checkDataSource() {
 
   tracen "Info: Waiting for script to complete"
   printdots_start
-  kubectl exec -it ${pod_name} ${script_cmd} > ${out_file} 2>&1
+  kubectl exec -it -n ${NAMESPACE} ${pod_name} ${script_cmd} > ${out_file} 2>&1
   status=$?
   printdots_end
   if [ $status -ne 0 ]; then
