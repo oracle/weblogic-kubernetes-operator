@@ -54,6 +54,8 @@ spec:
               value: "%ADMIN_SERVER_NAME_SVC%"
             - name: ADMIN_PORT
               value: "%ADMIN_PORT%"
+            - name: ADMIN_SSL_PORT
+              value: "%ADMIN_SSL_PORT%"
             - name: CLUSTER_NAME
               value: "%CLUSTER_NAME%"
             - name: CLUSTER_TYPE
@@ -70,6 +72,10 @@ spec:
               value: "%CONFIGURED_MANAGED_SERVER_COUNT%"
             - name: MANAGED_SERVER_PORT
               value: "%MANAGED_SERVER_PORT%"
+            - name: MANAGED_SERVER_SSL_PORT
+              value: "%MANAGED_SERVER_SSL_PORT%"
+            - name: USE_KSS_FOR_DEMO
+              value: "%USE_KSS_FOR_DEMO%"
             - name: PRODUCTION_MODE_ENABLED
               value: "%PRODUCTION_MODE_ENABLED%"
             - name: CREATE_DOMAIN_SCRIPT_DIR

@@ -339,8 +339,11 @@ function createFiles {
     cp ${domainPropertiesInput} ${domainPropertiesOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
     sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%ADMIN_SSL_PORT%:${adminSslPort}:g" ${domainPropertiesOutput}
     sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${domainPropertiesOutput}
     sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%MANAGED_SERVER_SSL_PORT%:${managedServerSslPort}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%USE_KSS_FOR_DEMO%:${useKSSForDemo}:g" ${domainPropertiesOutput}
     sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${domainPropertiesOutput}
     sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${domainPropertiesOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${domainPropertiesOutput}
@@ -399,16 +402,19 @@ function createFiles {
     sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${createJobOutput}
     sed -i -e "s:%ADMIN_SERVER_NAME_SVC%:${adminServerNameSVC}:g" ${createJobOutput}
     sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${createJobOutput}
+    sed -i -e "s:%ADMIN_SSL_PORT%:${adminSslPort}:g" ${createJobOutput}
     sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${createJobOutput}
     sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${createJobOutput}
     sed -i -e "s:%MANAGED_SERVER_NAME_BASE_SVC%:${managedServerNameBaseSVC}:g" ${createJobOutput}
     sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${createJobOutput}
+    sed -i -e "s:%MANAGED_SERVER_SSL_PORT%:${managedServerSslPort}:g" ${createJobOutput}
     sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${createJobOutput}
     sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${createJobOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${createJobOutput}
     sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${createJobOutput}
     sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${createJobOutput}
     sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${createJobOutput}
+    sed -i -e "s:%USE_KSS_FOR_DEMO%:${useKSSForDemo}:g" ${createJobOutput}
     sed -i -e "s:%CREATE_DOMAIN_SCRIPT_DIR%:${createDomainScriptsMountPath}:g" ${createJobOutput}
     sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScriptName}:g" ${createJobOutput}
     # extra entries for FMW Infra domains
