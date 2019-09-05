@@ -1617,10 +1617,7 @@ public class Domain {
       
       domainMap.put("domainHomeImageBase", 
           BaseTest.getWeblogicImageName() + ":" + BaseTest.getWeblogicImageTag());
-      
     }
-    // domainMap.put("wdtVersion", BaseTest.WDT_VERSION);
-    
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
 
