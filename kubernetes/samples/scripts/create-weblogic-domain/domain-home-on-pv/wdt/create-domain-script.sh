@@ -60,7 +60,7 @@
 #                  $WDT_MODEL_FILE and $WDT_MODEL_VARS. Also the location
 #                  of WDT log files.
 #                  default:  /shared/wdt
-#   WDT_VERSION     WDT version to download.
+#   WDT_VERSION    WDT version to download.
 #                  default:  1.2.0
 #
 #   DOMAIN_HOME_DIR  Target location for generated domain. 
