@@ -176,7 +176,7 @@ ExecCommand - Class for executing shell commands from java <p>
 ExecResult - Class that holds the results of using java to exec a command (i.e. exit value, stdout and stderr) <p>
 K8sTestUtils - uses k8s java client api, this is used only for delete domain use cases for now. <p>
 
-# How to run the Java integration tests
+# How to run Operator integration tests using Weblogic image
 
 * Maven and latest Git should be in PATH
 * export JAVA_HOME
@@ -197,9 +197,9 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
     - Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
 		
 		
-* Command to run the tests: 
+* Command to run the tests: This will run QUICKTEST. To run all the tests, `export QUICKTEST=false`
 ```
-mvn clean verify -P java-integration-tests 2>&1 | tee log.txt
+mvn clean verify -P wls-integration-tests 2>&1 | tee log.txt
 ```
 
 The tests accepts optional env var overrides:
@@ -208,7 +208,7 @@ The tests accepts optional env var overrides:
 | --- | --- |
 | RESULT_ROOT | The root directory to use for the tests temporary files. See "Directory Configuration and Structure" for                  defaults and a detailed description of test directories. |
 | PV_ROOT    |  The root directory on the kubernetes cluster used for persistent volumes. See "Directory Configuration and Structure" for defaults and a detailed description of test directories. |
-| QUICKTEST  | When set to "true", limits testing to a subset of the tests. |
+| QUICKTEST  | When set to "false", runs all the integration tests. Default is true, which limits to a subset of tests |
 | LB_TYPE    | The default value is "TRAEFIK". Set to "VOYAGER" if you want to use it as LB. Using "VOYAGER" requires unique "voyagerWebPort"|
 | INGRESSPERDOMAIN  | The defult value is true. If you want to test creating TRAEFIK LB by kubectl yaml for multiple domains, set it to false. |
 | SHARED_CLUSTER    | Set to true if invoking on shared cluster, set to false or "" if running stand-alone or from Jenkins. Default is "". |
@@ -294,7 +294,7 @@ Failed run will have the output like
 ```
 JUnit test results can be seen at "integration-tests/target/failsafe-reports/TEST-oracle.kubernetes.operator.ItOperator.xml". This file shows how much time each test case took to run and the failed test results if any.
 
-# How to run JRF domain In Operator related tests
+# How to run Operator integration tests using FMW infra image
 * Setup docker access to FMW Infrastructure 12c Image and Oracle Database 12c Image
    * Method 1 
       - Setup a personal account on container-registry.oracle.com
@@ -317,11 +317,11 @@ mvn clean verify -P jrf-integration-tests 2>&1 | tee log.txt
 
 # How to run a single test
 
-mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST" -DfailIfNoTests=false integration-test -P java-integration-tests
+mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST" -DfailIfNoTests=false integration-test -P wls-integration-tests
 
 # How to run multiple tests
 
-mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST+testDomainOnPVUsingWDT" -DfailIfNoTests=false integration-test -P java-integration-tests
+mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST+testDomainOnPVUsingWDT" -DfailIfNoTests=false integration-test -P wls-integration-tests
 
 # How to run cleanup script
 
@@ -356,7 +356,7 @@ The integration tests are not completely independent of the environment.
 
 You may run into one or more of the following errors when you attempt to execute the command:
 ```
-mvn clean verify -P java-integration-tests 2>&1 | tee log.txt
+mvn clean verify -P wls-integration-tests 2>&1 | tee log.txt
 ```
 1. `[ERROR] No permision to create directory /scratch/...`  
 
