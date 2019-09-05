@@ -58,6 +58,7 @@ public class BaseTest {
   public static boolean SMOKETEST;
   public static boolean JENKINS;
   public static boolean SHARED_CLUSTER;
+  public static String WDT_VERSION;
   public static boolean INGRESSPERDOMAIN = true;
   protected static String appLocationInPod = "/u01/oracle/apps";
   private static String resultRoot = "";
@@ -133,6 +134,11 @@ public class BaseTest {
         System.getenv("DOMAIN_API_VERSION") != null
             ? System.getenv("DOMAIN_API_VERSION")
             : appProps.getProperty("DOMAIN_API_VERSION");
+    WDT_VERSION =
+        System.getenv("WDT_VERSION") != null
+            ? System.getenv("WDT_VERSION")
+            : appProps.getProperty("WDT_VERSION");            
+            
     maxIterationsPod =
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
     waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
