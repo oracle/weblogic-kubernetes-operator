@@ -42,6 +42,8 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -56,14 +58,15 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 @SuppressWarnings("deprecation")
 public abstract class PodStepContext extends BasePodStepContext {
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private static final String STOP_SERVER = "/weblogic-operator/scripts/stopServer.sh";
   private static final String START_SERVER = "/weblogic-operator/scripts/startServer.sh";
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
@@ -356,7 +359,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private boolean canUseCurrentPod(V1Pod currentPod) {
     boolean useCurrent =
         AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
-    if (!useCurrent && !isNullOrEmpty(AnnotationHelper.getDebugString(currentPod)))
+    if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0)
       LOGGER.info(
           MessageKeys.POD_DUMP,
           AnnotationHelper.getDebugString(currentPod),
@@ -918,7 +921,7 @@ public abstract class PodStepContext extends BasePodStepContext {
           new CallBuilder()
               .withLabelSelectors(forDomainUidSelector(domainUid))
               .listPersistentVolumeAsync(
-                  new DefaultResponseStep<>(getNext()) {
+                  new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
                     @Override
                     public NextAction onSuccess(
                         Packet packet,

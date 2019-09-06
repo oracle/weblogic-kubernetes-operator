@@ -15,9 +15,9 @@ import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1ServiceAccountList;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.apache.commons.codec.binary.Base64;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * This class provides helper methods for getting Service Accounts and Secrets for authentication
@@ -25,9 +25,9 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  */
 public class Helpers {
 
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @SuppressWarnings("unused")
   private final Authenticator authenticator;
-
   private final ApiClient apiClient;
   private final CoreV1Api coreApi;
 

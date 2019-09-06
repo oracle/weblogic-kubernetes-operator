@@ -45,6 +45,8 @@ import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
@@ -65,18 +67,16 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
-
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String DPI_MAP = "DPI_MAP";
-  private static final String THREAD_FACTORY_ID = "operator";
 
   private static final Container container = new Container();
   private static final ThreadFactory threadFactory = new WrappedThreadFactory();
   private static final ScheduledExecutorService wrappedExecutorService =
-      Engine.wrappedExecutorService(THREAD_FACTORY_ID, container);
+      Engine.wrappedExecutorService("operator", container);
   private static final TuningParameters tuningAndConfig;
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
   private static final Map<String, AtomicBoolean> isNamespaceStarted = new ConcurrentHashMap<>();

@@ -44,7 +44,7 @@ public class ItCoherenceTests extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       initialize(APP_PROPS_FILE);
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
@@ -57,7 +57,7 @@ public class ItCoherenceTests extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       operator1.destroy();
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
     }
@@ -65,7 +65,7 @@ public class ItCoherenceTests extends BaseTest {
 
   @Test
   public void testRollingRestart() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
 
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
