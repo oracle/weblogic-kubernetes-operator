@@ -66,7 +66,7 @@ public class JrfDomainOnPvWlst extends BaseTest {
    logger.info("Run once, release cluster lease");
    
    DbUtils.dropRcuSchema(rcuSchemaPrefix);
-   DbUtils.startOracleDB();
+   DbUtils.stopOracleDB();
    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
    logger.info("SUCCESS");
