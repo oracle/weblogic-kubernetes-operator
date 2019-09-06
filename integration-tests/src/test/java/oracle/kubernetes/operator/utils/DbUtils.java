@@ -49,7 +49,7 @@ public class DbUtils {
   }
   
   /**
-   * create oracle db pod and service in the k8s cluster default namespace.
+   * create Oracle DB pod and service in the k8s cluster default namespace.
    *
    * @throws Exception - if any error occurs when creating Oracle DB pod and service
    */
@@ -61,14 +61,39 @@ public class DbUtils {
   }
   
   /**
-   * create oracle db pod and service in the k8s cluster default namespace.
+   * stop oracle service
    *
-   * @throws Exception - if any error occurs when creating Oracle DB pod and service
+   * @throws Exception - if any error occurs when dropping Oracle DB service
+   */
+  public static void stopOracleDB() throws Exception {
+  	String cmd = "sh " +
+        BaseTest.getResultDir()
+        + "/create-rcu-schema/stop-db-service.sh";
+  	TestUtils.exec(cmd, true);	
+  }
+  
+  /**
+   * create Oracle rcu pod and load database schema in the k8s cluster default namespace.
+   * @param rcuSchemaPrefix - rcu SchemaPrefixe
+   * @throws Exception - if any error occurs when creating Oracle rcu pod
    */
   public static void createRcuSchema(String rcuSchemaPrefix) throws Exception {
+  	//dropRcuSchema(rcuSchemaPrefix);
   	String cmd = "sh " +
         BaseTest.getResultDir()
         + "/create-rcu-schema/create-rcu-schema.sh -s "+ rcuSchemaPrefix;
+  	TestUtils.exec(cmd, true);	
+  }
+  
+  /**
+   * drop Oracle rcu schema
+   * @param rcuSchemaPrefix - rcu SchemaPrefixe
+   * @throws Exception - if any error occurs when dropping rcu schema
+   */
+  public static void dropRcuSchema(String rcuSchemaPrefix) throws Exception {
+  	String cmd = "sh " +
+        BaseTest.getResultDir()
+        + "/create-rcu-schema/drop-rcu-schema.sh -s "+ rcuSchemaPrefix;
   	TestUtils.exec(cmd, true);	
   }
 

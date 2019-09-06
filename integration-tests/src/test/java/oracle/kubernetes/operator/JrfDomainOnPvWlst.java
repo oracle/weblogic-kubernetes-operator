@@ -64,7 +64,9 @@ public class JrfDomainOnPvWlst extends BaseTest {
    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
    logger.info("BEGIN");
    logger.info("Run once, release cluster lease");
-
+   
+   DbUtils.dropRcuSchema(rcuSchemaPrefix);
+   DbUtils.startOracleDB();
    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
    logger.info("SUCCESS");
@@ -101,9 +103,9 @@ public class JrfDomainOnPvWlst extends BaseTest {
 
      testCompletedSuccessfully = true;
    } finally {
-     /*if (jrfdomain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+     if (jrfdomain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
        jrfdomain.shutdownUsingServerStartPolicy();
-     }*/
+     }
    }
 
    logger.info("SUCCESS - " + testMethodName);
