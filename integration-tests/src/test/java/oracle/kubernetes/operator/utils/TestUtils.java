@@ -610,7 +610,7 @@ public class TestUtils {
         logger.info("Copy file: " + file.getAbsoluteFile().toString() + " to the pod: " + podName);
 
         String fileParent = file.getParentFile().getName();
-        logger.fine("file Parent: " + fileParent);
+        logger.info("file Parent: " + fileParent);
 
         StringBuffer copyFileCmd = new StringBuffer(" -- bash -c 'cat > ");
         copyFileCmd
@@ -1662,6 +1662,67 @@ public class TestUtils {
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     domain.callShellScriptToBuildDeployAppInPod(
         appName, scriptName, username, password, clusterUrl, wsServiceName);
+  }
+
+
+  /**
+   * Create dir to save coherence App files. Copy the shell script file and all App files over to
+   * the admin pod Run the shell script to build WAR/GAR/EAR files and deploy the GAR to the cluster 
+   * with storage Enabled and the EAR to the cluster with no storage
+   *
+   * @param domain - Domain where to build and deploy app
+   * @param appName - App name to be deployed
+   * @param scriptName - a shell script to build and deploy the App in the admin pod
+   * @param username - weblogic user name
+   * @param password - weblogc password
+   * @param args - by default it use TestWsApp name for webservices impl files, or add arg for
+   *     different name
+   * @throws Exception - exception reported as a failure to build or deploy ws
+   */
+  public static void buildDeployCoherenceAppInPod(
+      Domain domain,
+      String appName,
+      String scriptName,
+      String username,
+      String password,
+      String appToDeploy,
+      String... args)
+      throws Exception {
+    String adminServerPod = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    final String appLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + appName;
+    final String appLocationInPod = BaseTest.getAppLocationInPod() + "/" + appName;
+    final String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
+    final String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
+
+    // Default values to build archive file
+    final String initInfoDirName = "WEB-INF";
+    String archiveExt = "war";
+    String infoDirName = initInfoDirName;
+    String domainNS = domain.getDomainNs();
+    final String deployTargetForGar = (args.length == 0) ? "dataCluster" : args[0];
+    logger.info(
+        "Build and deploy Coherence App: "
+            + appName
+            + " to respective clusters ");
+
+    // Create app dir in the admin pod
+    StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
+    mkdirCmd.append(appLocationInPod + "'");
+
+    // Create app dir in the admin pod
+    kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
+
+    // Copy shell script to the admin pod
+    copyFileViaCat(scriptPathOnHost, scriptPathInPod, adminServerPod, domainNS);
+
+    // Copy all App files to the admin pod
+    copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
+
+    logger.info("Creating WebService and WebService Servlet Client Applications");
+
+    // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
+    domain.callShellScriptToBuildDeployAppInPod(
+        appName, scriptName, username, password, appToDeploy, deployTargetForGar);
   }
 
   public static ExecResult loginAndPushImageToOcir(String image) throws Exception {

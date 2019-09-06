@@ -33,7 +33,9 @@ import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
+import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 
 public class JobHelper {
 
@@ -215,14 +217,14 @@ public class JobHelper {
       List<V1EnvVar> vars =
             PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
 
-      addEnvVar(vars, "NAMESPACE", getNamespace());
-      addEnvVar(vars, "DOMAIN_UID", getDomainUid());
-      addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
-      addEnvVar(vars, "NODEMGR_HOME", getNodeManagerHome());
-      addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
-      addEnvVar(vars, "INTROSPECT_HOME", getIntrospectHome());
-      addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
-      addEnvVar(vars, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
+      addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
+      addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
+      addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
+      addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
+      addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, getIncludeServerOutInPodLog());
+      addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());
+      addEnvVar(vars, IntrospectorJobEnvVars.INTROSPECT_HOME, getIntrospectHome());
+      addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
 
       return vars;
     }
@@ -406,7 +408,7 @@ public class JobHelper {
     }
 
     private void updateStatus(DomainPresenceInfo domainPresenceInfo) {
-      KubernetesUtils.updateStatus(
+      DomainStatusPatch.updateDomainStatus(
             domainPresenceInfo.getDomain(), "ErrIntrospector", onSeparateLines(severeStatuses));
     }
 

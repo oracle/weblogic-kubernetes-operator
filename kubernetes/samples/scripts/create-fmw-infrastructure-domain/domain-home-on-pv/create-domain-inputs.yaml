@@ -135,6 +135,17 @@ createDomainScriptName: create-domain-job.sh
 # so that the Kubernetes pod can use the scripts and supporting files to create a domain home.
 createDomainFilesDir: wlst
 
+# Uncomment and edit value(s) below to specify the maximum amount of
+# compute resources allowed, and minimum amount of compute resources
+# required for each server pod.
+# These are optional.
+# Please refer to the kubernetes documentation on Managing Compute
+# Resources for Containers for details.
+#
+# serverPodMemoryRequest: "64Mi"
+# serverPodCpuRequest: "250m"
+# serverPodMemoryLimit: "1Gi"
+# serverPodCpuLimit: "1000m"
 
 #
 # RCU configuration details
@@ -149,3 +160,6 @@ rcuDatabaseURL: database:1521/service
 
 # The kubernetes secret containing the database credentials
 rcuCredentialsSecret: domain1-rcu-credentials
+
+# FMW Infrastructure Domain Type. Legal values are JRF or RestrictedJRF
+fmwDomainType: JRF

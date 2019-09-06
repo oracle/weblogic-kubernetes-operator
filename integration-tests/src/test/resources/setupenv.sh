@@ -101,7 +101,7 @@ export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
 
 if [ "$JRF_ENABLED" = true ] ; then
   export FMWINFRA_IMAGE_URI=/middleware/fmw-infrastructure
-  export IMAGE_TAG_FMWINFRA=12.2.1.3
+  export IMAGE_TAG_FMWINFRA="${IMAGE_TAG_FMWINFRA:-12.2.1.3}"
   export DB_IMAGE_URI=/database/enterprise
   export IMAGE_NAME_ORACLEDB="${IMAGE_NAME_ORACLEDB:-`echo ${OCR_SERVER}``echo ${DB_IMAGE_URI}`}"
   export IMAGE_TAG_ORACLEDB="${IMAGE_TAG_ORACLEDB:-12.2.0.1-slim}"

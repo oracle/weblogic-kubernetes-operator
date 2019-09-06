@@ -9,21 +9,22 @@ import java.util.List;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
-import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.LogMatcher.containsSevere;
-import static oracle.kubernetes.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.JobHelper.INTROSPECTOR_LOG_PREFIX;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -99,7 +100,7 @@ public class IntrospectionLoggingTest {
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
     logRecords.clear();
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo("ErrIntrospector"));
     assertThat(updatedDomain.getStatus().getMessage(), equalTo(SEVERE_PROBLEM_1));
   }
@@ -113,7 +114,7 @@ public class IntrospectionLoggingTest {
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
     logRecords.clear();
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo("ErrIntrospector"));
     assertThat(
         updatedDomain.getStatus().getMessage(),

@@ -2,12 +2,12 @@
 title: "FMW Infrastructure domain"
 date: 2019-04-18T07:32:31-05:00
 weight: 2
-description: "Sample for creating a FMW Infrastructure domain home on an existing PV or
+description: "Sample for creating an FMW Infrastructure domain home on an existing PV or
 PVC, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
 
-The sample scripts demonstrate the creation of a FMW Infrastructure domain home on an
+The sample scripts demonstrate the creation of an FMW Infrastructure domain home on an
 existing Kubernetes persistent volume (PV) and persistent volume claim (PVC). The scripts
 also generate the domain YAML file, which can then be used to start the Kubernetes
 artifacts of the corresponding domain. Optionally, the scripts start up the domain,
@@ -21,7 +21,7 @@ The following prerequisites must be handled prior to running the create domain s
 
 * Make sure the WebLogic operator is running.
 * The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied. For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}).
-* Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
+* Create a Kubernetes namespace for the domain unless you intend to use the default namespace.
 * In the same Kubernetes namespace, create the Kubernetes persistent volume (PV) where the domain
   home will be hosted, and the Kubernetes persistent volume claim (PVC) for the domain. For samples
   to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}).
@@ -43,13 +43,13 @@ your inputs file and an output directory:
 ```
 $ ./create-domain.sh \
   -i create-domain-inputs.yaml \
-  -o /path/to/output-directory
+  -o /<path to output-directory>
 ```
 
 The script will perform the following steps:
 
 * Create a directory for the generated Kubernetes YAML files for this domain if it does not
-  already exist.  The path name is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`.
+  already exist.  The path name is `/<path to output-directory>/weblogic-domains/<domainUID>`.
   If the directory already exists, its contents must be removed before using this script.
 * Create a Kubernetes job that will start up a utility FMW Infrastructure container and run
   offline WLST scripts to create the domain on the shared storage.
@@ -59,7 +59,7 @@ The script will perform the following steps:
   or `kubectl apply -f` command:
 
     ```
-    $ kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
+    $ kubectl apply -f /<path to output-directory>/weblogic-domains/<domainUID>/domain.yaml
     ```
 
 * Create a convenient utility script, `delete-domain-job.yaml`, to clean up the domain home
@@ -121,17 +121,18 @@ The following parameters can be provided in the inputs file.
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server .out to the pod's stdout. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration Server and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
-| `logHome` | The in-pod location for domain log, server logs, server out, and Node Manager log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
+| `logHome` | The in-pod location for the domain log, server logs, server out, and Node Manager log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `default` |
 | `persistentVolumeClaimName` | Name of the persistent volume claim. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-sample-pvc`. | `domain1-weblogic-sample-pvc` |
 | `productionModeEnabled` | Boolean indicating if production mode is enabled for the domain. | `true` |
-| `serverStartPolicy` | Determines which WebLogic Servers will be started up. Legal values are `NEVER`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
+| `serverStartPolicy` | Determines which WebLogic Server instances will be started. Legal values are `NEVER`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
 | `t3ChannelPort` | Port for the T3 channel of the NetworkAccessPoint. | `30012` |
-| `t3PublicAddress` | Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would normally be a load balancer address. <p/>For development environments only: In a single server (all-in-one) Kubernetes deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes. | If not provided, the script will attempt to set it to the IP address of the Kubernetes cluster |
+| `t3PublicAddress` | Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would typically be a load balancer address. <p/>For development environments only: In a single server (all-in-one) Kubernetes deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes. | If not provided, the script will attempt to set it to the IP address of the Kubernetes cluster |
 | `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's user name and password. If not specified, then the value is derived from the `domainUID` as `<domainUID>-weblogic-credentials`. | `domain1-weblogic-credentials` |
 | `weblogicImagePullSecretName` | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | `docker-store-secret` |
+| `serverPodCpuRequest`, `serverPodMemoryRequest`, `serverPodCpuCLimit`, `serverPodMemoryLimit` |  The maximum amount of compute resources allowed, and minimum amount of compute resources required, for each server pod. Please refer to the Kubernetes documentation on `Managing Compute Resources for Containers` for details. | Resource requests and resource limits are not specified. |
 | `rcuSchemaPrefix` | The schema prefix to use in the database, for example `SOA1`.  You may wish to make this the same as the domainUID in order to simplify matching domains to their RCU schemas. | `domain1` |
 | `rcuDatabaseURL` | The database URL. | `database:1521/service` |
 | `rcuCredentialsSecret` | The Kubernetes secret containing the database credentials. | `domain1-rcu-credentials` |
@@ -465,7 +466,7 @@ fmw-domain-managed-server4          ClusterIP   None             <none>        8
 
 Sometimes in production, but most likely in testing environments, you might want to remove the domain
 home that is generated using the `create-domain.sh` script. Do this by running the generated
-`delete domain job` script in the `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>` directory.
+`delete domain job` script in the `/<path to output-directory>/weblogic-domains/<domainUID>` directory.
 
 ```
 $ kubectl create -f delete-domain-job.yaml

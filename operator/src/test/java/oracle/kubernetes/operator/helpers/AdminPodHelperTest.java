@@ -26,14 +26,14 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.Test;
 
-import static oracle.kubernetes.LogMatcher.containsFine;
-import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_PATCHED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_REPLACED;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -216,6 +216,34 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         hasEnvVar(INTERNAL_OPERATOR_CERT_ENV_NAME, InMemoryCertificates.INTERNAL_CERT_DATA));
+  }
+
+  @Test
+  public void whenAdminPodCreatedWithAdminPortEnabled_adminServerPortSecureEnvVarIsTrue() {
+    final Integer adminPort = 9002;
+    getServerTopology().setAdminPort(adminPort);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true"));
+  }
+
+  @Test
+  public void whenAdminPodCreatedWithNullAdminPort_adminServerPortSecureEnvVarIsNotSet() {
+    final Integer adminPort = null;
+    getServerTopology().setAdminPort(adminPort);
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true")));
+  }
+
+  @Test
+  public void whenAdminPodCreatedWithAdminServerHasSslPortEnabled_adminServerPortSecureEnvVarIsTrue() {
+    final Integer adminServerSslPort = 9999;
+    getServerTopology().setSslListenPort(adminServerSslPort);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true"));
+  }
+
+  @Test
+  public void whenAdminPodCreatedWithAdminServerHasNullSslPort_adminServerPortSecureEnvVarIsNotSet() {
+    final Integer adminServerSslPort = null;
+    getServerTopology().setSslListenPort(adminServerSslPort);
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true")));
   }
 
   @Test

@@ -1534,7 +1534,11 @@ public class Domain {
     if (domainMap.containsKey("domainHomeImageBase")) {
       sampleDomainInputsFile =
           "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml";
+    } else if (domainMap.containsKey("rcuDatabaseURL")) {
+      sampleDomainInputsFile =
+          "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/create-domain-inputs.yaml";
     }
+    logger.info("For this domain sampleDomainInputsFile is: " + sampleDomainInputsFile);
     Yaml dyaml = new Yaml();
     InputStream sampleDomainInputStream =
         new FileInputStream(new File(BaseTest.getResultDir() + sampleDomainInputsFile));
@@ -1614,7 +1618,6 @@ public class Domain {
       domainMap.put("domainHomeImageBase", 
           BaseTest.getWeblogicImageName() + ":" + BaseTest.getWeblogicImageTag());
     }
-
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
 
@@ -1814,10 +1817,11 @@ public class Domain {
    */
   private String prepareCmdToCallCreateDomainScript(String outputDir) {
 
-    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
+    StringBuffer createDomainScriptCmd = new StringBuffer("export WDT_VERSION=");
+    createDomainScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
+            .append(BaseTest.getResultDir());
     // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
-
       createDomainScriptCmd
           .append(
               "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")

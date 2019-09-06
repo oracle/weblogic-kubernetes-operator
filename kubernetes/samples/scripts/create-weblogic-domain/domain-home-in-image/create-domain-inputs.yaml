@@ -134,3 +134,16 @@ domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.3
 # Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt",
 # which uses WDT, instead of WLST, to generate the domain configuration.
 domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image
+
+# Uncomment and edit value(s) below to specify the maximum amount of 
+# compute resources allowed, and minimum amount of compute resources 
+# required for each server pod.
+# These are optional.                
+# Please refer to the kubernetes documentation on Managing Compute
+# Resources for Containers for details.
+#
+# serverPodMemoryRequest: "64Mi"
+# serverPodCpuRequest: "250m"
+# serverPodMemoryLimit: "1Gi"
+# serverPodCpuLimit: "1000m"
+

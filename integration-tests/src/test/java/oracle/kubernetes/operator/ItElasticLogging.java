@@ -60,7 +60,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
 
@@ -129,7 +129,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -160,7 +160,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @Test
   public void testLogLevelSearch() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -180,7 +180,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @Test
   public void testOperatorLogSearch() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -200,7 +200,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @Test
   public void testWebLogicLogSearch() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -232,7 +232,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @Test
   public void testWlsLoggingExporter() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Map<String, Object> domainMap = domain.getDomainMap();
