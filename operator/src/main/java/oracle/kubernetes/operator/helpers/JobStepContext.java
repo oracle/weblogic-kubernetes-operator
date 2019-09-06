@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -271,16 +272,12 @@ public abstract class JobStepContext extends BasePodStepContext {
     return container;
   }
 
-  String getImagePullPolicy() {
-    String imagePullPolicy = getDomain().getSpec().getImagePullPolicy();
-    if (imagePullPolicy == null) {
-      imagePullPolicy = KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
-    }
-    return imagePullPolicy;
+  protected List<String> getContainerCommand() {
+    return Collections.singletonList(WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH);
   }
 
-  List<String> getContainerCommand() {
-    return Collections.singletonList(WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH);
+  protected List<V1Container> getContainers() {
+    return new ArrayList<>();
   }
 
   protected String getDomainHome() {

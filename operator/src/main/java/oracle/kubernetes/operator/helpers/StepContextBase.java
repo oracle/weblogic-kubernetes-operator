@@ -15,7 +15,6 @@ import java.util.Map;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Toleration;
 import oracle.kubernetes.operator.Pair;
@@ -29,6 +28,8 @@ public abstract class StepContextBase implements StepContextConstants {
 
   abstract List<String> getContainerCommand();
 
+  abstract List<V1Container> getContainers();
+
   protected V1Container createContainer(TuningParameters tuningParameters) {
     return new V1Container()
         .image(getServerSpec().getImage())
@@ -41,7 +42,7 @@ public abstract class StepContextBase implements StepContextConstants {
 
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
     return new V1PodSpec()
-        .containers(getServerSpec().getContainers())
+        .containers(getContainers())
         .addContainersItem(createContainer(tuningParameters))
         .affinity(getServerSpec().getAffinity())
         .nodeSelector(getServerSpec().getNodeSelectors())
@@ -50,7 +51,6 @@ public abstract class StepContextBase implements StepContextConstants {
         .priorityClassName(getServerSpec().getPriorityClassName())
         .runtimeClassName(getServerSpec().getRuntimeClassName())
         .tolerations(getTolerations())
-        .readinessGates(getReadinessGates())
         .restartPolicy(getServerSpec().getRestartPolicy())
         .securityContext(getServerSpec().getPodSecurityContext())
         .imagePullSecrets(getServerSpec().getImagePullSecrets());
@@ -59,11 +59,6 @@ public abstract class StepContextBase implements StepContextConstants {
   private List<V1Toleration> getTolerations() {
     List<V1Toleration> tolerations = getServerSpec().getTolerations();
     return tolerations.isEmpty() ? null : tolerations;
-  }
-
-  private List<V1PodReadinessGate> getReadinessGates() {
-    List<V1PodReadinessGate> readinessGates = getServerSpec().getReadinessGates();
-    return readinessGates.isEmpty() ? null : readinessGates;
   }
 
 

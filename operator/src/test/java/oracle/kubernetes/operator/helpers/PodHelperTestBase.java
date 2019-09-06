@@ -4,20 +4,23 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import io.kubernetes.client.models.V1Affinity;
+import io.kubernetes.client.models.V1LabelSelector;
+import io.kubernetes.client.models.V1LabelSelectorRequirement;
+import io.kubernetes.client.models.V1PodAffinity;
+import io.kubernetes.client.models.V1PodAffinityTerm;
+import io.kubernetes.client.models.V1PodAntiAffinity;
+import io.kubernetes.client.models.V1Toleration;
+import io.kubernetes.client.models.V1WeightedPodAffinityTerm;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Container;
@@ -26,7 +29,6 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ExecAction;
 import io.kubernetes.client.models.V1HTTPGetAction;
 import io.kubernetes.client.models.V1Handler;
-import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -45,6 +47,12 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.helpers.Matchers.PatchMatcher;
+import static oracle.kubernetes.operator.helpers.Matchers.ProbeMatcher.hasExpectedTuning;
+import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.readOnlyVolumeMount;
+import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.writableVolumeMount;
+import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -60,8 +68,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
+import static org.hamcrest.Matchers.is;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -76,9 +83,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEP
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.ProbeMatcher.hasExpectedTuning;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.readOnlyVolumeMount;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.writableVolumeMount;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_PERIOD;
@@ -120,7 +124,7 @@ public abstract class PodHelperTestBase {
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
-  private static final String INSTRUCTION = "{\"op\":\"%s\",\"path\":\"%s\",\"value\":\"%s\"}";
+  //private static final String INSTRUCTION = "{\"op\":\"%s\",\"path\":\"%s\",\"value\":\"%s\"}";
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -134,6 +138,9 @@ public abstract class PodHelperTestBase {
   private String serverName;
   private int listenPort;
   private WlsDomainConfig domainTopology;
+  protected final V1PodSecurityContext podSecurityContext = createPodSecurityContext(123L);
+  protected final V1SecurityContext containerSecurityContext = createSecurityContext(222L);
+  protected final V1Affinity affinity = createAffinity();
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;
@@ -148,25 +155,8 @@ public abstract class PodHelperTestBase {
     return LegalNames.toPodName(UID, getServerName());
   }
 
-  static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
-    return hasItem(new V1EnvVar().name(name).value(value));
-  }
-
-  static Matcher<Iterable<? super V1VolumeMount>> hasVolumeMount(String name, String path) {
-    return hasItem(new V1VolumeMount().name(name).mountPath(path));
-  }
-
-  static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
-    return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
-  }
-
   static V1Container createContainer(String name, String image, String... command) {
     return new V1Container().name(name).image(image).command(Arrays.asList(command));
-  }
-
-  static Matcher<Iterable<? super V1Container>> hasContainer(
-      String name, String image, String... command) {
-    return hasItem(createContainer(name, image, command));
   }
 
   private String getServerName() {
@@ -956,6 +946,48 @@ public abstract class PodHelperTestBase {
         .volumes(PodDefaults.getStandardVolumes(UID));
   }
 
+  static V1PodSecurityContext createPodSecurityContext(long runAsGroup) {
+    return new V1PodSecurityContext().runAsGroup(runAsGroup);
+  }
+
+  static V1SecurityContext createSecurityContext(long runAsGroup) {
+    return new V1SecurityContext().runAsGroup(runAsGroup);
+  }
+
+  static V1Affinity createAffinity() {
+    V1PodAffinity podAffinity = new V1PodAffinity()
+        .addRequiredDuringSchedulingIgnoredDuringExecutionItem(
+            new V1PodAffinityTerm()
+                .labelSelector(
+                    new V1LabelSelector()
+                        .addMatchExpressionsItem(
+                            new V1LabelSelectorRequirement().key("security").operator("In").addValuesItem("S1")
+                        )
+                )
+                .topologyKey("failure-domain.beta.kubernetes.io/zone")
+        );
+    V1PodAntiAffinity podAntiAffinity = new V1PodAntiAffinity()
+        .addPreferredDuringSchedulingIgnoredDuringExecutionItem(
+            new V1WeightedPodAffinityTerm()
+                .weight(100)
+                .podAffinityTerm(
+                    new V1PodAffinityTerm()
+                        .labelSelector(
+                            new V1LabelSelector()
+                                .addMatchExpressionsItem(
+                                    new V1LabelSelectorRequirement().key("security").operator("In").addValuesItem("S2")
+                                )
+                        )
+                        .topologyKey("failure-domain.beta.kubernetes.io/zon")
+                )
+        );
+    return new V1Affinity().podAffinity(podAffinity).podAntiAffinity(podAntiAffinity);
+  };
+
+  static V1Toleration createToleration(String key, String operator, String value, String effect) {
+    return new V1Toleration().key(key).operator(operator).value(value).effect(effect);
+  }
+
   abstract List<String> createStartCommand();
 
   @Test
@@ -963,6 +995,214 @@ public abstract class PodHelperTestBase {
     configureDomain().withDefaultImage(null);
 
     assertThat(getCreatedPodSpecContainer().getImage(), equalTo(DEFAULT_IMAGE));
+  }
+
+  @Test
+  public void whenDomainHasAffinity_createPodWithIt() {
+    getConfigurator()
+        .withAffinity(affinity);
+
+    assertThat(
+        getCreatedPod().getSpec().getAffinity(),
+        is(affinity));
+  }
+
+  @Test
+  public void whenServerHasAffinity_createPodWithIt() {
+    configureServer()
+        .withAffinity(affinity);
+
+    assertThat(
+        getCreatedPod().getSpec().getAffinity(),
+        is(affinity));
+  }
+
+  @Test
+  public void whenDomainHasNodeSelector_createPodWithIt() {
+    getConfigurator()
+        .withNodeSelector("os_arch", "x86_64");
+
+    assertThat(
+        getCreatedPod().getSpec().getNodeSelector(),
+        hasEntry("os_arch", "x86_64"));
+  }
+
+  @Test
+  public void whenServerHasNodeSelector_createPodWithIt() {
+    configureServer()
+        .withNodeSelector("os_arch", "x86_64");
+
+    assertThat(
+        getCreatedPod().getSpec().getNodeSelector(),
+        hasEntry("os_arch", "x86_64"));
+  }
+
+  @Test
+  public void whenDomainHasNodeName_createPodWithIt() {
+    getConfigurator()
+        .withNodeName("kube-01");
+
+    assertThat(
+        getCreatedPod().getSpec().getNodeName(),
+        is ("kube-01"));
+  }
+
+  @Test
+  public void whenServerHasNodeName_createPodWithIt() {
+    configureServer()
+        .withNodeName("kube-01");
+
+    assertThat(
+        getCreatedPod().getSpec().getNodeName(),
+        is ("kube-01"));
+  }
+
+  @Test
+  public void whenDomainHasSchedulerName_createPodWithIt() {
+    getConfigurator()
+        .withSchedulerName("my-scheduler");
+
+    assertThat(
+        getCreatedPod().getSpec().getSchedulerName(),
+        is ("my-scheduler"));
+  }
+
+  @Test
+  public void whenServerHasSchedulerName_createPodWithIt() {
+    configureServer()
+        .withSchedulerName("my-scheduler");
+
+    assertThat(
+        getCreatedPod().getSpec().getSchedulerName(),
+        is ("my-scheduler"));
+  }
+
+  @Test
+  public void whenDomainHasRuntimeClassName_createPodWithIt() {
+    getConfigurator()
+        .withRuntimeClassName("RuntimeClassName");
+
+    assertThat(
+        getCreatedPod().getSpec().getRuntimeClassName(),
+        is ("RuntimeClassName"));
+  }
+
+  @Test
+  public void whenServerHasRuntimeClassName_createPodWithIt() {
+    configureServer()
+        .withRuntimeClassName("RuntimeClassName");
+
+    assertThat(
+        getCreatedPod().getSpec().getRuntimeClassName(),
+        is ("RuntimeClassName"));
+  }
+
+  @Test
+  public void whenDomainHasPriorityClassName_createPodWithIt() {
+    getConfigurator()
+        .withPriorityClassName("PriorityClassName");
+
+    assertThat(
+        getCreatedPod().getSpec().getPriorityClassName(),
+        is ("PriorityClassName"));
+  }
+
+  @Test
+  public void whenServerHasPriorityClassName_createPodWithIt() {
+    configureServer()
+        .withPriorityClassName("PriorityClassName");
+
+    assertThat(
+        getCreatedPod().getSpec().getPriorityClassName(),
+        is ("PriorityClassName"));
+  }
+
+  @Test
+  public void whenDomainHasRestartPolicy_createPodWithIt() {
+    getConfigurator()
+        .withRestartPolicy("Always");
+
+    assertThat(
+        getCreatedPod().getSpec().getRestartPolicy(),
+        is("Always"));
+  }
+
+  @Test
+  public void whenServerHasRestartPolicy_createPodWithIt() {
+    configureServer()
+        .withRestartPolicy("Always");
+
+    assertThat(
+        getCreatedPod().getSpec().getRestartPolicy(),
+        is("Always"));
+  }
+
+  @Test
+  public void whenDomainHasPodSecurityContext_createPodWithIt() {
+    getConfigurator()
+        .withPodSecurityContext(podSecurityContext);
+
+    assertThat(
+        getCreatedPod().getSpec().getSecurityContext(),
+        is(podSecurityContext));
+  }
+
+  @Test
+  public void whenServerHasPodSecurityContext_createPodWithIt() {
+    configureServer()
+        .withPodSecurityContext(podSecurityContext);
+
+    assertThat(
+        getCreatedPod().getSpec().getSecurityContext(),
+        is(podSecurityContext));
+  }
+
+  @Test
+  public void whenDomainHasContainerSecurityContext_createContainersWithIt() {
+    getConfigurator()
+        .withContainerSecurityContext(containerSecurityContext);
+
+    getCreatedPodSpecContainers()
+        .forEach(c -> assertThat(
+            c.getSecurityContext(),
+            is(containerSecurityContext))
+        );
+  }
+
+  @Test
+  public void whenServerHasContainerSecurityContext_createContainersWithIt() {
+    configureServer()
+        .withContainerSecurityContext(containerSecurityContext);
+
+    getCreatedPodSpecContainers()
+        .forEach(c -> assertThat(
+            c.getSecurityContext(),
+            is(containerSecurityContext))
+        );
+  }
+
+  @Test
+  public void whenServerHasResources_createContainersWithThem() {
+    configureServer()
+        .withLimitRequirement("cpu", "1Gi")
+        .withRequestRequirement("memory", "250m");
+
+    List<V1Container> containers = getCreatedPodSpecContainers();
+
+    containers.forEach(c -> assertThat(c.getResources().getLimits(), hasResourceQuantity("cpu", "1Gi")));
+    containers.forEach(c -> assertThat(c.getResources().getRequests(), hasResourceQuantity("memory", "250m")));
+  }
+
+  @Test
+  public void whenDomainHasResources_createContainersWithThem() {
+    getConfigurator()
+        .withLimitRequirement("cpu", "1Gi")
+        .withRequestRequirement("memory", "250m");
+
+    List<V1Container> containers = getCreatedPodSpecContainers();
+
+    containers.forEach(c -> assertThat(c.getResources().getLimits(), hasResourceQuantity("cpu", "1Gi")));
+    containers.forEach(c -> assertThat(c.getResources().getRequests(), hasResourceQuantity("memory", "250m")));
   }
 
   // todo test that changing a label or annotation does not change the hash
@@ -995,135 +1235,6 @@ public abstract class PodHelperTestBase {
 
     private boolean isExpectedPod(Object body) {
       return body instanceof V1Pod && getPodName((V1Pod) body).equals(podName);
-    }
-  }
-
-  @SuppressWarnings("unused")
-  static class VolumeMountMatcher
-      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1VolumeMount> {
-    private String expectedName;
-    private String expectedPath;
-    private boolean readOnly;
-
-    private VolumeMountMatcher(String expectedName, String expectedPath, boolean readOnly) {
-      this.expectedName = expectedName;
-      this.expectedPath = expectedPath;
-      this.readOnly = readOnly;
-    }
-
-    static VolumeMountMatcher writableVolumeMount(String expectedName, String expectedPath) {
-      return new PodHelperTestBase.VolumeMountMatcher(expectedName, expectedPath, false);
-    }
-
-    static VolumeMountMatcher readOnlyVolumeMount(String expectedName, String expectedPath) {
-      return new PodHelperTestBase.VolumeMountMatcher(expectedName, expectedPath, true);
-    }
-
-    @Override
-    protected boolean matchesSafely(V1VolumeMount item, Description mismatchDescription) {
-      return expectedName.equals(item.getName())
-          && expectedPath.equals(item.getMountPath())
-          && readOnly == isReadOnly(item);
-    }
-
-    private Boolean isReadOnly(V1VolumeMount item) {
-      return item.isReadOnly() != null && item.isReadOnly();
-    }
-
-    @Override
-    public void describeTo(Description description) {
-      description
-          .appendText(getReadable())
-          .appendText(" V1VolumeMount ")
-          .appendValue(expectedName)
-          .appendText(" at ")
-          .appendValue(expectedPath);
-    }
-
-    private String getReadable() {
-      return readOnly ? "read-only" : "writable";
-    }
-  }
-
-  @SuppressWarnings("unused")
-  static class ProbeMatcher
-      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1Probe> {
-    private static final Integer EXPECTED_FAILURE_THRESHOLD = 1;
-    private Integer expectedInitialDelay;
-    private Integer expectedTimeout;
-    private Integer expectedPeriod;
-
-    private ProbeMatcher(int expectedInitialDelay, int expectedTimeout, int expectedPeriod) {
-      this.expectedInitialDelay = expectedInitialDelay;
-      this.expectedTimeout = expectedTimeout;
-      this.expectedPeriod = expectedPeriod;
-    }
-
-    static ProbeMatcher hasExpectedTuning(
-        int expectedInitialDelay, int expectedTimeout, int expectedPeriod) {
-      return new PodHelperTestBase.ProbeMatcher(
-          expectedInitialDelay, expectedTimeout, expectedPeriod);
-    }
-
-    @Override
-    protected boolean matchesSafely(V1Probe item, Description mismatchDescription) {
-      if (Objects.equals(expectedInitialDelay, item.getInitialDelaySeconds())
-          && Objects.equals(expectedTimeout, item.getTimeoutSeconds())
-          && Objects.equals(expectedPeriod, item.getPeriodSeconds())
-          && Objects.equals(EXPECTED_FAILURE_THRESHOLD, item.getFailureThreshold())) return true;
-      else {
-        mismatchDescription
-            .appendText("probe with initial delay ")
-            .appendValue(item.getInitialDelaySeconds())
-            .appendText(", timeout ")
-            .appendValue(item.getTimeoutSeconds())
-            .appendText(", period ")
-            .appendValue(item.getPeriodSeconds())
-            .appendText(" and failureThreshold ")
-            .appendValue(item.getFailureThreshold());
-
-        return false;
-      }
-    }
-
-    @Override
-    public void describeTo(Description description) {
-      description
-          .appendText("probe with initial delay ")
-          .appendValue(expectedInitialDelay)
-          .appendText(", timeout ")
-          .appendValue(expectedTimeout)
-          .appendText(", period ")
-          .appendValue(expectedPeriod)
-          .appendText(" and failureThreshold ")
-          .appendValue(EXPECTED_FAILURE_THRESHOLD);
-    }
-  }
-
-  protected static class PatchMatcher implements BodyMatcher {
-    private Set<String> expectedInstructions = new HashSet<>();
-    private int index = 0;
-
-    PatchMatcher(String[] patchInstructions) {
-      while (index < patchInstructions.length) addExpectedInstruction(patchInstructions);
-    }
-
-    private void addExpectedInstruction(String[] strings) {
-      expectedInstructions.add(
-          String.format(INSTRUCTION, strings[index], strings[index + 1], strings[index + 2]));
-      index += 3;
-    }
-
-    @Override
-    public boolean matches(Object actualBody) {
-      if (!(actualBody instanceof List)) return false;
-      List<?> instructions = (List<?>) actualBody;
-      Set<String> actualInstructions = new HashSet<>();
-
-      for (Object instruction : instructions)
-        actualInstructions.add(new Gson().toJson((JsonElement) instruction));
-
-      return actualInstructions.equals(expectedInstructions);
     }
   }
 

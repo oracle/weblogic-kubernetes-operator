@@ -500,7 +500,8 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected V1PodSpec createSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec = createPodSpec(tuningParameters)
-            .initContainers(getServerSpec().getInitContainers());
+        .readinessGates(getReadinessGates())
+        .initContainers(getServerSpec().getInitContainers());
 
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
@@ -510,6 +511,11 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   // ---------------------- model methods ------------------------------
+
+  private List<V1PodReadinessGate> getReadinessGates() {
+    List<V1PodReadinessGate> readinessGates = getServerSpec().getReadinessGates();
+    return readinessGates.isEmpty() ? null : readinessGates;
+  }
 
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid);
@@ -545,6 +551,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected List<String> getContainerCommand() {
     return Collections.singletonList(START_SERVER);
+  }
+
+  protected List<V1Container> getContainers() {
+    return getServerSpec().getContainers();
   }
 
   private List<V1VolumeMount> getVolumeMounts() {
