@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -175,9 +174,9 @@ public class CallTestSupport {
 
     CallResponse getCallResponse() {
       if (result == null)
-        return new CallResponse<>(null, new ApiException(), status, Collections.emptyMap());
+        return CallResponse.createFailure(new ApiException(), status);
       else
-        return new CallResponse<>(result, null, HttpURLConnection.HTTP_OK, Collections.emptyMap());
+        return CallResponse.createSuccess(result, HttpURLConnection.HTTP_OK);
     }
 
     boolean matches(@Nonnull RequestParams requestParams, AdditionalParams params) {

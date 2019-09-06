@@ -335,6 +335,17 @@ public class Domain {
    * DomainStatus represents information about the status of a domain. Status may trail the actual
    * state of a system.
    *
+   * @param status Status
+   */
+  public Domain withStatus(DomainStatus status) {
+    this.status = status;
+    return this;
+  }
+
+  /**
+   * DomainStatus represents information about the status of a domain. Status may trail the actual
+   * state of a system.
+   *
    * @return Status
    */
   public DomainStatus getOrCreateStatus() {
@@ -382,6 +393,10 @@ public class Domain {
 
   public boolean isIncludeServerOutInPodLog() {
     return spec.getIncludeServerOutInPodLog();
+  }
+
+  public boolean isPersistentVolumeRequired() {
+    return !isDomainHomeInImage();
   }
 
   boolean isDomainHomeInImage() {

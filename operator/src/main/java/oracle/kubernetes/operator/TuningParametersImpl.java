@@ -34,9 +34,8 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
       ScheduledExecutorService executorService, String mountPoint) throws IOException {
     if (INSTANCE == null) {
       INSTANCE = new TuningParametersImpl(executorService, mountPoint);
-      return INSTANCE;
     }
-    throw new IllegalStateException();
+    return INSTANCE;
   }
 
   public static synchronized TuningParameters getInstance() {

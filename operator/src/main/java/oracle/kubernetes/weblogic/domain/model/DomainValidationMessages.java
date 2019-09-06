@@ -15,7 +15,7 @@ import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.utils.OperatorUtils;
 
-class DomainValidationMessages {
+public class DomainValidationMessages {
 
   /**
    * Returns a validation message indicating that more than one managed server spec has the same effective name
@@ -75,6 +75,14 @@ class DomainValidationMessages {
         OperatorUtils.joinListGrammatically(reservedNames),
         prefix + ".serverPod.env",
         reservedNames.size()});
+  }
+
+  public static String noPersistentVolume(String uid) {
+    return getMessage(MessageKeys.NO_PERSISTENT_VOLUME, uid);
+  }
+
+  public static String readOnlyPersistentVolume(String name, String uid) {
+    return getMessage(MessageKeys.READ_ONLY_PERSISTENT_VOLUME, name, uid);
   }
 
   private static ChoiceFormat getEnvNoun() {

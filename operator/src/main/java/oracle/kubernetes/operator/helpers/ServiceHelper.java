@@ -611,7 +611,15 @@ public class ServiceHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
-        return onFailure(getConflictStep(), packet, callResponse);
+        if (DomainStatusPatch.isUnprocessableEntityFailure(callResponse))
+          return updateDomainStatus(packet, callResponse);
+        else
+          return onFailure(getConflictStep(), packet, callResponse);
+      }
+
+      private NextAction updateDomainStatus(Packet packet, CallResponse<V1Service> callResponse) {
+        DomainStatusPatch.updateDomainStatus(getDomain(), callResponse.getE());
+        return doTerminate(callResponse.getE(), packet);
       }
 
       @Override

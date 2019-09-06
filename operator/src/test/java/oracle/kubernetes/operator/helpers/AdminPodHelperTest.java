@@ -11,9 +11,11 @@ import java.util.Map;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PersistentVolume;
+import io.kubernetes.client.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Status;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -28,6 +30,8 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasNormalStatus;
+import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_PATCHED;
@@ -72,10 +76,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  void expectStepsAfterCreation() {
-  }
-
-  @Override
   String getExistsMessageKey() {
     return ADMIN_POD_EXISTS;
   }
@@ -111,9 +111,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         PodAwaiterStepFactory.class,
         new NullPodAwaiterStepFactory(terminalStep));
 
-    expectDeletePod(getPodName()).returning(new V1Status());
-    expectCreatePod(podWithName(getPodName())).returning(createTestPodModel());
-
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getReplacedMessageKey()));
@@ -140,14 +137,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     return new PodHelper.AdminPodStepContext(null, packet).getPodModel();
   }
 
-  private CallTestSupport.CannedResponse expectDeletePod(String podName) {
-    return testSupport
-        .createCannedResponse("deletePod")
-        .withNamespace(NS)
-        .ignoringBody()
-        .withName(podName);
-  }
-
   @Test
   public void whenDeleteReportsNotFound_replaceAdminPod() {
     testSupport.addComponent(
@@ -156,8 +145,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         new NullPodAwaiterStepFactory(terminalStep));
 
     initializeExistingPod(getIncompatiblePod());
-    expectDeletePod(getPodName()).failingWithStatus(CallBuilder.NOT_FOUND);
-    expectCreatePod(podWithName(getPodName())).returning(createTestPodModel());
+    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, CallBuilder.NOT_FOUND);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -174,8 +162,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   public void whenAdminPodDeletionFails_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
     initializeExistingPod(getIncompatiblePod());
-    expectDeletePod(getPodName()).failingWithStatus(401);
-    expectStepsAfterCreation();
+    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, 401);
 
     FiberTestSupport.StepFactory stepFactory = getStepFactory();
     Step initialStep = stepFactory.createStepList(terminalStep);
@@ -188,9 +175,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   public void whenAdminPodReplacementFails_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
     initializeExistingPod(getIncompatiblePod());
-    expectDeletePod(getPodName()).returning(new V1Status());
-    expectCreatePod(podWithName(getPodName())).failingWithStatus(401);
-    expectStepsAfterCreation();
+    testSupport.failOnCreate(KubernetesTestSupport.POD, getPodName(), NS, 401);
 
     FiberTestSupport.StepFactory stepFactory = getStepFactory();
     Step initialStep = stepFactory.createStepList(terminalStep);
@@ -602,9 +587,71 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(podLabels, hasKey(not(LabelConstants.CLUSTERRESTARTVERSION_LABEL)));
   }
 
-  @Override
-  protected void onAdminExpectListPersistentVolume() {
-    expectListPersistentVolume().returning(createPersistentVolumeList());
+  @Test
+  public void whenDomainInHomeAndNoPVDefined_ignoreIt() {
+    getConfigurator().withDomainHomeInImage(true);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(getDomain(), hasNormalStatus());
+  }
+
+  @Test
+  public void whenDomainInPVAndNoPVDefined_reportInDomainStatus() {
+    getConfigurator().withDomainHomeInImage(false);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(getDomain(), hasStatus("NoDomainHomePV", "No Persistent Volume defined for UID " + UID));
+  }
+
+  @Test
+  public void whenDomainInPVAndNoAccessModeDefinedForVolume_reportInDomainStatus() {
+    testSupport.defineResources(createPersistentVolumeForUid());
+    getConfigurator().withDomainHomeInImage(false);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(getDomain(),
+               hasStatus("ReadOnlyDomainHomePV", "Persistent Volume myPV, defined for UID " + UID + ", is read-only"));
+  }
+
+  @Test
+  public void whenDomainInPVAndReadOnlyAccessDefinedForVolume_reportInDomainStatus() {
+    testSupport.defineResources(withAccessModes(createPersistentVolumeForUid(), "ReadOnly"));
+    getConfigurator().withDomainHomeInImage(false);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(getDomain(),
+               hasStatus("ReadOnlyDomainHomePV", "Persistent Volume myPV, defined for UID " + UID + ", is read-only"));
+  }
+
+  @Test
+  public void whenDomainInPVAndWriteAccessDefinedForVolume_dontReport() {
+    testSupport.defineResources(withAccessModes(createPersistentVolumeForUid(), "ReadOnly", "ReadWriteMany"));
+    getConfigurator().withDomainHomeInImage(false);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(getDomain(), hasNormalStatus());
+  }
+
+  private V1PersistentVolume withAccessModes(V1PersistentVolume volume, String... accessModes) {
+    for (String accessMode : accessModes)
+      volume.getSpec().addAccessModesItem(accessMode);
+    return volume;
+  }
+
+  private V1PersistentVolume createPersistentVolumeForUid() {
+    return new V1PersistentVolume()
+        .metadata(new V1ObjectMeta().name("myPV").putLabelsItem(LabelConstants.DOMAINUID_LABEL, UID))
+        .spec(new V1PersistentVolumeSpec());
   }
 
   @Override
@@ -629,4 +676,5 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   // todo test that changing the cert in tuning parameters does not change the hash
+
 }

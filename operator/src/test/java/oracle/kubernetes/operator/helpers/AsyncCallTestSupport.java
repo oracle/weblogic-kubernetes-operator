@@ -5,7 +5,6 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.net.HttpURLConnection;
-import java.util.Collections;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
@@ -137,9 +136,7 @@ public class AsyncCallTestSupport extends FiberTestSupport {
           .getComponents()
           .put(
               RESPONSE_COMPONENT_NAME,
-              Component.createFor(
-                  new CallResponse<>(
-                      result, null, HttpURLConnection.HTTP_OK, Collections.emptyMap())));
+              Component.createFor(CallResponse.createSuccess(result, HttpURLConnection.HTTP_OK)));
 
       return doNext(packet);
     }
@@ -153,15 +150,13 @@ public class AsyncCallTestSupport extends FiberTestSupport {
       this.status = status;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public NextAction apply(Packet packet) {
       packet
           .getComponents()
           .put(
               RESPONSE_COMPONENT_NAME,
-              Component.createFor(
-                  new CallResponse(null, new ApiException(), status, Collections.emptyMap())));
+              Component.createFor(CallResponse.createFailure(new ApiException(), status)));
 
       return doNext(packet);
     }

@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EnvVar;
@@ -30,6 +31,7 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
@@ -280,7 +282,16 @@ public class PodHelper {
     public NextAction apply(Packet packet) {
       PodStepContext context = new AdminPodStepContext(this, packet);
 
-      return doNext(context.verifyPersistentVolume(context.verifyPod(getNext())), packet);
+      Step step = context.verifyPod(getNext());
+      if (isPersistentVolumeRequired(packet)) step = context.verifyPersistentVolume(step);
+      return doNext(step, packet);
+    }
+
+    private Boolean isPersistentVolumeRequired(Packet packet) {
+      return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::isPersistentVolumeRequired)
+          .orElse(false);
     }
   }
 

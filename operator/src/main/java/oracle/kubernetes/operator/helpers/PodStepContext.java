@@ -26,6 +26,7 @@ import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeList;
+import io.kubernetes.client.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSpec;
@@ -52,6 +53,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationMessages;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
@@ -61,7 +63,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTY
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
-@SuppressWarnings("deprecation")
 public abstract class PodStepContext extends BasePodStepContext {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -809,16 +810,24 @@ public abstract class PodStepContext extends BasePodStepContext {
     protected String getDetail() {
       return getServerName();
     }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
+      if (DomainStatusPatch.isUnprocessableEntityFailure(callResponse))
+        return updateDomainStatus(packet, callResponse);
+      else
+        return onFailure(getConflictStep(), packet, callResponse);
+    }
+
+    private NextAction updateDomainStatus(Packet packet, CallResponse<V1Pod> callResponse) {
+      DomainStatusPatch.updateDomainStatus(getDomain(), callResponse.getE());
+      return doTerminate(callResponse.getE(), packet);
+    }
   }
 
   private class CreateResponseStep extends BaseResponseStep {
     CreateResponseStep(Step next) {
       super(next);
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(getConflictStep(), packet, callResponse);
     }
 
     @Override
@@ -862,11 +871,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(getConflictStep(), packet, callResponse);
-    }
-
-    @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
 
       V1Pod newPod = callResponse.getResult();
@@ -886,11 +890,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     PatchPodResponseStep(Step next) {
       super(next);
       this.next = next;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(getConflictStep(), packet, callResponse);
     }
 
     @Override
@@ -918,46 +917,63 @@ public abstract class PodStepContext extends BasePodStepContext {
       Step list =
           new CallBuilder()
               .withLabelSelectors(forDomainUidSelector(domainUid))
-              .listPersistentVolumeAsync(
-                  new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
-                    @Override
-                    public NextAction onSuccess(
-                        Packet packet,
-                        V1PersistentVolumeList result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (result != null) {
-                        for (V1PersistentVolume pv : result.getItems()) {
-                          List<String> accessModes = pv.getSpec().getAccessModes();
-                          boolean foundAccessMode = false;
-                          for (String accessMode : accessModes) {
-                            if (accessMode.equals(READ_WRITE_MANY_ACCESS)) {
-                              foundAccessMode = true;
-                              break;
-                            }
-                          }
-
-                          // Persistent volume does not have ReadWriteMany access mode,
-                          if (!foundAccessMode) {
-                            LOGGER.warning(
-                                MessageKeys.PV_ACCESS_MODE_FAILED,
-                                pv.getMetadata().getName(),
-                                getDomainResourceName(),
-                                domainUid,
-                                READ_WRITE_MANY_ACCESS);
-                          }
-                        }
-                      } else {
-                        LOGGER.warning(
-                            MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID,
-                            getDomainResourceName(),
-                            domainUid);
-                      }
-                      return doNext(packet);
-                    }
-                  });
+              .listPersistentVolumeAsync(new PersistentVolumeListResponseStep(domainUid));
 
       return doNext(list, packet);
+    }
+
+    private void reportNoPersistentVolume(String domainUid) {
+      LOGGER.warning(MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID, getDomainResourceName(), domainUid);
+      DomainStatusPatch.updateDomainStatus(info.getDomain(),
+                  "NoDomainHomePV", DomainValidationMessages.noPersistentVolume(domainUid));
+    }
+
+    private class PersistentVolumeListResponseStep extends DefaultResponseStep<V1PersistentVolumeList> {
+      private final String domainUid;
+
+      PersistentVolumeListResponseStep(String domainUid) {
+        super(VerifyPersistentVolumeStep.this.getNext());
+        this.domainUid = domainUid;
+      }
+
+      public NextAction onSuccess(Packet packet, CallResponse<V1PersistentVolumeList> callResponse) {
+        if (callResponse.getResult().getItems().size() == 0) {
+          reportNoPersistentVolume(domainUid);
+        } else {
+          reportReadOnlyPersistentVolumes(callResponse.getResult().getItems());
+        }
+        return doNext(packet);
+      }
+
+
+      private void reportReadOnlyPersistentVolumes(List<V1PersistentVolume> items) {
+        items.stream().filter(this::isReadOnly).forEach(this::reportReadOnlyPersistentVolume);
+      }
+
+      private boolean isReadOnly(V1PersistentVolume volume) {
+        return Optional.ofNullable(volume.getSpec())
+            .map((V1PersistentVolumeSpec::getAccessModes))
+            .orElse(Collections.emptyList())
+            .stream()
+            .noneMatch(this::isReadWriteMany);
+      }
+
+      private boolean isReadWriteMany(String accessMode) {
+        return READ_WRITE_MANY_ACCESS.equals(accessMode);
+      }
+
+      private void reportReadOnlyPersistentVolume(V1PersistentVolume volume) {
+        LOGGER.warning(
+            MessageKeys.PV_ACCESS_MODE_FAILED,
+            volume.getMetadata().getName(),
+            getDomainResourceName(),
+            domainUid,
+            READ_WRITE_MANY_ACCESS);
+        DomainStatusPatch.updateDomainStatus(info.getDomain(),
+            "ReadOnlyDomainHomePV",
+            DomainValidationMessages.readOnlyPersistentVolume(volume.getMetadata().getName(), domainUid));
+      }
+
     }
   }
 }

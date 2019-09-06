@@ -162,6 +162,8 @@ public class MessageKeys {
   public static final String LOG_HOME_NOT_MOUNTED = "WLSDO-0003";
   public static final String BAD_VOLUME_MOUNT_PATH = "WLSDO-0004";
   public static final String RESERVED_ENVIRONMENT_VARIABLES = "WLSDO-0005";
+  public static final String NO_PERSISTENT_VOLUME = "WLSDO-0006";
+  public static final String READ_ONLY_PERSISTENT_VOLUME = "WLSDO-0007";
 
   private MessageKeys() {
   }
