@@ -10,7 +10,7 @@ connectString=${1:-oracle-db.default.svc.cluster.local:1521/devpdb.k8s}
 schemaPrefix=${2:-domain1}
 echo "DB Connection URL [$connectString] and schemaPrefix is [${schemaPrefix}]"
 
-max=40
+max=100
 counter=0
 while [ $counter -le ${max} ]
 do
