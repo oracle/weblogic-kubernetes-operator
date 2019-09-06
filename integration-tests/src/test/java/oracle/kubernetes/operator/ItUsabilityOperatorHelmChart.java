@@ -42,10 +42,10 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-      if(QUICKTEST) {
+    if (QUICKTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);    
-      }
+    }
   }
 
   /**
@@ -55,7 +55,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if(QUICKTEST) {
+    if (QUICKTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
