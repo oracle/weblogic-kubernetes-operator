@@ -54,7 +54,7 @@ public class ItElasticLogging extends BaseTest {
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes. It installs Elastic Stack, verifies Elastic
-   * Stack is ready to use, creates an operator and a Weblogic domain
+   * Stack is ready to use, creates an operator and a WebLogic domain
    *
    * @throws Exception exception
    */
@@ -65,7 +65,7 @@ public class ItElasticLogging extends BaseTest {
       initialize(APP_PROPS_FILE);
 
       //Adding filter to WebLogicLoggingExporter.yaml
-      addFilterToELKFile();
+      addFilterToElkFile();
       
       // Install Elastic Stack
       StringBuffer cmd =
@@ -116,7 +116,7 @@ public class ItElasticLogging extends BaseTest {
       verifyLoggingExpReady(logstashIndexKey);
       verifyLoggingExpReady(kibanaIndexKey);
       
-      // Create a dir to hold required Weblogic logging exporter archive files
+      // Create a dir to hold required WebLogic logging exporter archive files
       loggingExpArchiveLoc = BaseTest.getResultDir() + "/loggingExpArchDir";
       Files.createDirectories(Paths.get(loggingExpArchiveLoc));
     }
@@ -193,13 +193,13 @@ public class ItElasticLogging extends BaseTest {
   }
 
   /**
-   * Use Elasticsearch Search APIs to query Weblogic log info. Verify that log hits for 
-   * Weblogic servers are not empty
+   * Use Elasticsearch Search APIs to query WebLogic log info. Verify that log hits for
+   * WebLogic servers are not empty
    *
    * @throws Exception exception
    */
   @Test
-  public void testWeblogicLogSearch() throws Exception {
+  public void testWebLogicLogSearch() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -224,9 +224,9 @@ public class ItElasticLogging extends BaseTest {
   }
 
   /**
-   * Install Weblogic logging exporter in all Weblogic server pods to collect Weblogic logs. 
-   * Use Elasticsearch Search APIs to query Weblogic log info pushed to Elasticsearch repository 
-   * by Weblogic logging exporter . Verify that log hits for Weblogic servers are not empty
+   * Install WebLogic logging exporter in all WebLogic server pods to collect WebLogic logs.
+   * Use Elasticsearch Search APIs to query WebLogic log info pushed to Elasticsearch repository
+   * by WebLogic logging exporter . Verify that log hits for WebLogic servers are not empty
    *
    * @throws Exception exception
    */
@@ -236,18 +236,18 @@ public class ItElasticLogging extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Map<String, Object> domainMap = domain.getDomainMap();
-    String managedServerName = domainMap.get("managedServerNameBase").toString() + "1";
+    final String managedServerName = domainMap.get("managedServerNameBase").toString() + "1";
 
-    // Download Weblogic logging exporter 
+    // Download WebLogic logging exporter
     downloadWlsLoggingExporterJars();
     // Copy required resources to all wls server pods
     copyResourceFilesToAllPods();
 
-    // Rrestart Weblogic domain
+    // Rrestart WebLogic domain
     domain.shutdownUsingServerStartPolicy();
     domain.restartUsingServerStartPolicy();
     
-    // Verify that Weblogic logging exporter installed successfully
+    // Verify that WebLogic logging exporter installed successfully
     verifyLoggingExpReady(wlsIndexKey);
     
     // Verify that hits of log level = Notice are not empty
@@ -381,7 +381,7 @@ public class ItElasticLogging extends BaseTest {
     }
     
     logger.info("Total count of logs: " + count);
-    if(!checkExist.equalsIgnoreCase("notExist")) {
+    if (!checkExist.equalsIgnoreCase("notExist")) {
       Assume.assumeTrue("Total count of logs should be more than 0!", count > 0);
       if (checkCount) {
         Assume.assumeTrue("Total failed count should be 0!", failedCount == 0);
@@ -439,12 +439,12 @@ public class ItElasticLogging extends BaseTest {
     
     int i = 0;
     File wlsLoggingExpFile = 
-      new File(loggingExpArchiveLoc + "/" + wlsLoggingExpJar);
+        new File(loggingExpArchiveLoc + "/" + wlsLoggingExpJar);
     File snakeyamlFile = 
-      new File(loggingExpArchiveLoc + "/" + snakeyamlJar);
+        new File(loggingExpArchiveLoc + "/" + snakeyamlJar);
     // Make sure downloading completed
     while (i < BaseTest.getMaxIterationsPod()) {
-      if(wlsLoggingExpFile.exists() && snakeyamlFile.exists()) {
+      if (wlsLoggingExpFile.exists() && snakeyamlFile.exists()) {
         break;
       }
       
@@ -506,10 +506,10 @@ public class ItElasticLogging extends BaseTest {
   private void copyResourceFilesToOnePod(String serverName, String domainNS) 
       throws Exception {    
     final String resourceDir = 
-      BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
     final String testResourceDir = resourceDir + "/loggingexporter";
 
-    //Copy test files to Weblogic server pod
+    //Copy test files to WebLogic server pod
     TestUtils.kubectlcp(
         loggingExpArchiveLoc + "/" + wlsLoggingExpJar,
         "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar,
@@ -529,16 +529,16 @@ public class ItElasticLogging extends BaseTest {
         domainNS);
   }
   
-  private static void addFilterToELKFile() throws Exception {
+  private static void addFilterToElkFile() throws Exception {
     String managedServerName = "managed-server1";
 
     final String resourceDir = 
-      BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
     final String testResourceDir = resourceDir + "/loggingexporter";
     String filterStr = 
-      System.lineSeparator() + "weblogicLoggingExporterFilters:" + 
-      System.lineSeparator() + "- FilterExpression: NOT(SERVER = '" + 
-      managedServerName + "')";
+        System.lineSeparator() + "weblogicLoggingExporterFilters:"
+        + System.lineSeparator() + "- FilterExpression: NOT(SERVER = '"
+        + managedServerName + "')";
     
     TestUtils.copyFile(testResourceDir + "/" + loggingYamlFile, 
                        testResourceDir + "/" + loggingYamlFileBck);
@@ -549,7 +549,7 @@ public class ItElasticLogging extends BaseTest {
   
   private static void deleteTestFile() throws Exception {
     final String resourceDir = 
-      BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
     final String testResourceDir = resourceDir + "/loggingexporter";
     
     TestUtils.copyFile(testResourceDir + "/" + loggingYamlFileBck, 
