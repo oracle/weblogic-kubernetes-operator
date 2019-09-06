@@ -10,7 +10,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.function.Function;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 
 public class Certificates {
   private static final String OPERATOR_DIR = "/operator/";
@@ -20,6 +21,7 @@ public class Certificates {
   private static final String INTERNAL_ID_DIR = OPERATOR_DIR + "internal-identity/";
   static final String INTERNAL_CERTIFICATE_KEY = INTERNAL_ID_DIR + "internalOperatorKey";
   static final String INTERNAL_CERTIFICATE = INTERNAL_ID_DIR + "internalOperatorCert";
+  private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static Function<String, Path> GET_PATH = p -> Paths.get(p);
 
   public static String getOperatorExternalKeyFile() {

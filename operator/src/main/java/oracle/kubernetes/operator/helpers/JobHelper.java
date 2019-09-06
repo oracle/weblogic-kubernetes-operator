@@ -19,6 +19,8 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
@@ -35,11 +37,10 @@ import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
-
 public class JobHelper {
 
   static final String START_TIME = "WlsRetriever-startTime";
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   static final String INTROSPECTOR_LOG_PREFIX = "Introspector Job Log: ";
   private static final String EOL_PATTERN = "\\r?\\n";
 
@@ -95,15 +96,15 @@ public class JobHelper {
       int replicaCount = dom.getReplicaCount(cluster.getClusterName());
       String clusterServerStartPolicy = cluster.getServerStartPolicy();
       LOGGER.fine(
-          "Start Policy: "
-              + clusterServerStartPolicy
-              + ", replicaCount: "
-              + replicaCount
-              + " for cluster: "
-              + cluster);
+            "Start Policy: "
+                  + clusterServerStartPolicy
+                  + ", replicaCount: "
+                  + replicaCount
+                  + " for cluster: "
+                  + cluster);
       if ((clusterServerStartPolicy == null
-              || !clusterServerStartPolicy.equals(ConfigurationConstants.START_NEVER))
-          && replicaCount > 0) {
+            || !clusterServerStartPolicy.equals(ConfigurationConstants.START_NEVER))
+            && replicaCount > 0) {
         return true;
       }
     }
@@ -113,7 +114,7 @@ public class JobHelper {
     // NOTE: domainServerStartPolicy == null indicates default policy
     String domainServerStartPolicy = dom.getSpec().getServerStartPolicy();
     if (domainServerStartPolicy == null
-        || !domainServerStartPolicy.equals(ConfigurationConstants.START_NEVER)) {
+          || !domainServerStartPolicy.equals(ConfigurationConstants.START_NEVER)) {
       return true;
     }
 
@@ -122,7 +123,7 @@ public class JobHelper {
     for (ManagedServer server : servers) {
       String serverStartPolicy = server.getServerStartPolicy();
       if (serverStartPolicy == null
-          || !serverStartPolicy.equals(ConfigurationConstants.START_NEVER)) {
+            || !serverStartPolicy.equals(ConfigurationConstants.START_NEVER)) {
         return true;
       }
     }
@@ -152,7 +153,7 @@ public class JobHelper {
    */
   private static Step readDomainIntrospectorPodLogStep(Step next) {
     return createWatchDomainIntrospectorJobReadyStep(
-        readDomainIntrospectorPodStep(readDomainIntrospectorPodLog(next)));
+          readDomainIntrospectorPodStep(readDomainIntrospectorPodLog(next)));
   }
 
   /**
@@ -214,7 +215,7 @@ public class JobHelper {
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       // Pod for introspector job would use same environment variables as for admin server
       List<V1EnvVar> vars =
-          PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
+            PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
 
       addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
       addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
@@ -223,8 +224,7 @@ public class JobHelper {
       addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, getIncludeServerOutInPodLog());
       addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());
       addEnvVar(vars, IntrospectorJobEnvVars.INTROSPECT_HOME, getIntrospectHome());
-      addEnvVar(
-          vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
+      addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
 
       return vars;
     }
@@ -245,11 +245,11 @@ public class JobHelper {
         packet.putIfAbsent(START_TIME, System.currentTimeMillis());
 
         return doNext(
-            context.createNewJob(
-                readDomainIntrospectorPodLogStep(
-                    deleteDomainIntrospectorJobStep(
-                        ConfigMapHelper.createSitConfigMapStep(getNext())))),
-            packet);
+              context.createNewJob(
+                    readDomainIntrospectorPodLogStep(
+                          deleteDomainIntrospectorJobStep(
+                                ConfigMapHelper.createSitConfigMapStep(getNext())))),
+              packet);
       }
 
       return doNext(getNext(), packet);
@@ -282,11 +282,11 @@ public class JobHelper {
       String jobName = JobHelper.createJobName(domainUid);
       logJobDeleted(domainUid, namespace, jobName);
       return new CallBuilder()
-          .deleteJobAsync(
-              jobName,
-              namespace,
-              new V1DeleteOptions().propagationPolicy("Foreground"),
-              new DefaultResponseStep<>(next));
+            .deleteJobAsync(
+                  jobName,
+                  namespace,
+                  new V1DeleteOptions().propagationPolicy("Foreground"),
+                  new DefaultResponseStep<>(next));
     }
   }
 
@@ -312,8 +312,8 @@ public class JobHelper {
 
     private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, Step next) {
       return new CallBuilder()
-          .readPodLogAsync(
-              jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep(next));
+            .readPodLogAsync(
+                  jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep(next));
     }
   }
 
@@ -337,7 +337,7 @@ public class JobHelper {
       }
 
       V1Job domainIntrospectorJob =
-          (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+            (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
       if (isNotComplete(domainIntrospectorJob)) return onFailure(packet, callResponse);
 
       return doNext(packet);
@@ -409,7 +409,7 @@ public class JobHelper {
 
     private void updateStatus(DomainPresenceInfo domainPresenceInfo) {
       DomainStatusPatch.updateDomainStatus(
-          domainPresenceInfo.getDomain(), "ErrIntrospector", onSeparateLines(severeStatuses));
+            domainPresenceInfo.getDomain(), "ErrIntrospector", onSeparateLines(severeStatuses));
     }
 
     private String onSeparateLines(List<String> lines) {
@@ -434,8 +434,8 @@ public class JobHelper {
 
     private Step readDomainIntrospectorPod(String domainUid, String namespace, Step next) {
       return new CallBuilder()
-          .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
-          .listPodAsync(namespace, new PodListStep(domainUid, next));
+            .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
+            .listPodAsync(namespace, new PodListStep(domainUid, next));
     }
   }
 
