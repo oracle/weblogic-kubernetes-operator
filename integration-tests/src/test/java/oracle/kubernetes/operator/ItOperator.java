@@ -607,7 +607,7 @@ public class ItOperator extends BaseTest {
     domain.enablePrecreateService();
     testClusterScaling(operator, domain);
     domain.verifyServicesCreated(true);
-    if(FULLTEST) {
+    if (FULLTEST) {
       testDomainLifecyle(operator, domain);
       testOperatorLifecycle(operator, domain);
     }    

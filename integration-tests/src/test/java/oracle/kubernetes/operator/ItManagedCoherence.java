@@ -72,7 +72,7 @@ public class ItManagedCoherence extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if(FULLTEST) {
+    if (FULLTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");

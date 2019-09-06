@@ -45,10 +45,10 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if(System.getenv("IMAGE_NAME_OPERATOR") != null && 
-        System.getenv("IMAGE_TAG_OPERATOR") != null) {
-    OP_TARGET_RELEASE = System.getenv("IMAGE_NAME_OPERATOR")+":"+
-                  System.getenv("IMAGE_TAG_OPERATOR");
+    if (System.getenv("IMAGE_NAME_OPERATOR") != null
+        && System.getenv("IMAGE_TAG_OPERATOR") != null) {
+      OP_TARGET_RELEASE = System.getenv("IMAGE_NAME_OPERATOR") + ":"
+        + System.getenv("IMAGE_TAG_OPERATOR");
     }
   }
   
@@ -78,7 +78,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if(FULLTEST) {
+    if (FULLTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -221,7 +221,7 @@ public class ItOperatorUpgrade extends BaseTest {
     }
     checkOperatorVersion();
     testBasicUseCases(domain);
-    if(FULLTEST) {
+    if (FULLTEST) {
       testClusterScaling(operator, domain);
     }
   }

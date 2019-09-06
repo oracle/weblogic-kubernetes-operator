@@ -24,7 +24,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if(FULLTEST) {
+    if (FULLTEST) {
       SitConfig.staticPrepare(
           DOMAINONPV_WLST_YAML,
           "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
@@ -38,7 +38,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if(FULLTEST) {
+    if (FULLTEST) {
       SitConfig.staticUnPrepare();
     }
   }
