@@ -14,5 +14,7 @@ If you wish to view documentation for an older version, please see:
     * [Old Version 2.0.1](v2.0.1)
     * [New Version 2.0.1](https://oracle.github.io/weblogic-kubernetes-operator/2.0.1)
 * [Version 2.1](https://oracle.github.io/weblogic-kubernetes-operator/2.1)
+* [Version 2.2.0](https://oracle.github.io/weblogic-kubernetes-operator/2.2.0)
+* [Version 2.2.1](https://oracle.github.io/weblogic-kubernetes-operator/2.2.1)
 
 For a guide to the operator project, refer to this [README](../README.md).
