@@ -16,12 +16,13 @@ import io.kubernetes.client.models.V1SelfSubjectRulesReviewSpec;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1SubjectAccessReviewSpec;
 import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /** Delegate authorization decisions to Kubernetes ABAC and/or RBAC. */
 public class AuthorizationProxy {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
    * Check if the specified principal is allowed to perform the specified operation on the specified

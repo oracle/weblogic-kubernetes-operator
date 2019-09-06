@@ -227,7 +227,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenAdminPodCreatedWithNullAdminPort_adminServerPortSecureEnvVarIsNotSet() {
-    getServerTopology().setAdminPort(null);
+    final Integer adminPort = null;
+    getServerTopology().setAdminPort(adminPort);
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true")));
   }
 
@@ -240,7 +241,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenAdminPodCreatedWithAdminServerHasNullSslPort_adminServerPortSecureEnvVarIsNotSet() {
-    getServerTopology().setSslListenPort(null);
+    final Integer adminServerSslPort = null;
+    getServerTopology().setSslListenPort(adminServerSslPort);
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true")));
   }
 
@@ -288,7 +290,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfiguredDomainSpec().getAdminServer().getEnv();
     assertThat(
         getConfiguredDomainSpec().getAdminServer().getEnv(),
-        hasEnvVar("item1", itemRawValue));
+        allOf(hasEnvVar("item1", itemRawValue)));
   }
 
   @Test
@@ -379,7 +381,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator().withServerStartState(ADMIN_STATE);
 
     assertThat(
-        getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
   }
 
   @Test
@@ -387,7 +389,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator().configureAdminServer().withServerStartState(ADMIN_STATE);
 
     assertThat(
-        getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
   }
 
   @Test
@@ -398,7 +400,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withServerStartState(ADMIN_STATE);
 
     assertThat(
-        getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
   }
 
   @Test
@@ -409,7 +411,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withServerStartState(RUNNING_STATE);
 
     assertThat(
-        getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+        getCreatedPodSpecContainer().getEnv(), not(allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE))));
   }
 
   @Test
