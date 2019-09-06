@@ -20,13 +20,13 @@ import io.kubernetes.client.models.V1ListMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * A Step driven by an asynchronous call to the Kubernetes API, which results in a series of
@@ -39,6 +39,7 @@ public class AsyncRequestStep<T> extends Step {
   private static final int LOW = 10;
   private static final int SCALE = 100;
   private static final int MAX = 10000;
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final ClientPool helper;
   private final RequestParams requestParams;
@@ -147,7 +148,7 @@ public class AsyncRequestStep<T> extends Step {
     return doSuspend(
         (fiber) -> {
           ApiCallback<T> callback =
-              new BaseApiCallback<>() {
+              new BaseApiCallback<T>() {
                 @Override
                 public void onFailure(
                     ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {

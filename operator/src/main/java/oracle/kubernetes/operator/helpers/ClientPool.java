@@ -16,13 +16,14 @@ import com.squareup.okhttp.Dispatcher;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.Configuration;
 import io.kubernetes.client.util.Config;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
-
 public class ClientPool extends Pool<ApiClient> {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final ClientFactory FACTORY = new DefaultClientFactory();
   private static ClientPool SINGLETON = new ClientPool();
   private static ThreadFactory threadFactory;
