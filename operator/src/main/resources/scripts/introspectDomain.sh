@@ -284,10 +284,10 @@ function createWLDomain() {
                 # we can update the domain
 
                 rm -fr $DOMAIN_HOME
-                cd / && base64 -d /weblogic-operator/introspectormd5/domainzip.secure > /tmp/domain.zip && jar xvf \
+                cd / && base64 -d /weblogic-operator/introspectormd5/domainzip.secure > /tmp/domain.zip && unzip \
                 /tmp/domain.zip
                   # zip does not store external attributes - should we use find ?
-                chmod +x $DOMAIN_HOME/bin/*.sh $DOMAIN_HOME/*.sh
+                #chmod +x $DOMAIN_HOME/bin/*.sh $DOMAIN_HOME/*.sh
 
                 #Perform an offline update so that we can have a new domain zip later
 
