@@ -15,7 +15,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.squareup.okhttp.Dispatcher;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.Configuration;
-import io.kubernetes.client.util.Config;
+import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.util.ClientBuilder;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -97,7 +98,7 @@ public class ClientPool extends Pool<ApiClient> {
     public ApiClient get() {
       ApiClient client;
       try {
-        client = Config.defaultClient();
+        client = ClientBuilder.standard().setOverridePatchFormat(V1Patch.PATCH_FORMAT_JSON_PATCH).build();
         if (first.getAndSet(false)) {
           Configuration.setDefaultApiClient(client);
         }
