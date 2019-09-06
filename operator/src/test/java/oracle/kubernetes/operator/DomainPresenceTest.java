@@ -50,7 +50,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
   private static final String UID = "UID1";
-  private static final String OPERATOR_NAMESPACE = "operator";
 
   private List<Memento> mementos = new ArrayList<>();
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -101,7 +100,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   private void readExistingResources() {
-    testSupport.runStepsToCompletion(Main.readExistingResources(OPERATOR_NAMESPACE, NS));
+    testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
   }
 
   private void addDomainResource(String uid, String namespace) {

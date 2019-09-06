@@ -23,6 +23,8 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -30,11 +32,10 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
-
 /** Watches for Pods to become Ready or leave Ready state. */
 public class PodWatcher extends Watcher<V1Pod>
     implements WatchListener<V1Pod>, PodAwaiterStepFactory {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final String ns;
   private final WatchListener<V1Pod> listener;
@@ -80,8 +81,11 @@ public class PodWatcher extends Watcher<V1Pod>
 
   private void registerOnReady(String podName, Runnable onReady) {
     synchronized (readyCallbackRegistrations) {
-      Collection<Runnable> col =
-          readyCallbackRegistrations.computeIfAbsent(podName, k -> new ArrayList<>());
+      Collection<Runnable> col = readyCallbackRegistrations.get(podName);
+      if (col == null) {
+        col = new ArrayList<>();
+        readyCallbackRegistrations.put(podName, col);
+      }
       col.add(onReady);
     }
   }
@@ -103,8 +107,11 @@ public class PodWatcher extends Watcher<V1Pod>
 
   private void registerOnDelete(String podName, Runnable onReady) {
     synchronized (deletedCallbackRegistrations) {
-      Collection<Runnable> col =
-          deletedCallbackRegistrations.computeIfAbsent(podName, k -> new ArrayList<>());
+      Collection<Runnable> col = deletedCallbackRegistrations.get(podName);
+      if (col == null) {
+        col = new ArrayList<>();
+        deletedCallbackRegistrations.put(podName, col);
+      }
       col.add(onReady);
     }
   }
@@ -137,7 +144,7 @@ public class PodWatcher extends Watcher<V1Pod>
     listener.receivedResponse(item);
 
     V1Pod pod;
-    boolean isReady;
+    Boolean isReady;
     String podName;
     switch (item.type) {
       case "ADDED":
@@ -233,7 +240,7 @@ public class PodWatcher extends Watcher<V1Pod>
                         .readPodAsync(
                             metadata.getName(),
                             metadata.getNamespace(),
-                            new ResponseStep<>(null) {
+                            new ResponseStep<V1Pod>(null) {
                               @Override
                               public NextAction onFailure(
                                   Packet packet,
