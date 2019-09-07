@@ -9,7 +9,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 
 /**
  * ExceptionMapper converts non-WebApplicationExceptions into internal server errors and logs
@@ -17,6 +18,8 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  */
 @Provider
 public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exception> {
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /** Construct an ExceptionMapper. */
   public ExceptionMapper() {

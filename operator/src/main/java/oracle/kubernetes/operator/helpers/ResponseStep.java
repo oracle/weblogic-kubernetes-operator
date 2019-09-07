@@ -11,21 +11,22 @@ import io.kubernetes.client.ApiException;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RetryStrategy;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
-
 /**
  * Step to receive response of Kubernetes API server call.
  *
- * <p>Most implementations will only need to implement {@link #onSuccess(Packet, CallResponse)}.
+ * <p>Most implementations will only need to implement {@link #onSuccess(Packet, Object, int, Map)}.
  *
  * @param <T> Response type
  */
 public abstract class ResponseStep<T> extends Step {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final Step conflictStep;
   private Step previousStep = null;
 

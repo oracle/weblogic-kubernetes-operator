@@ -59,7 +59,7 @@ public class SitConfig extends BaseTest {
   protected static void staticPrepare(String domainInputYaml, String domainScript)
       throws Exception {
     // initialize test properties and create the directories
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
       if (operator1 == null) {
@@ -121,7 +121,7 @@ public class SitConfig extends BaseTest {
    * @throws Exception when domain destruction or MySQL container destruction fails
    */
   protected static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
       destroySitConfigDomain();
       if (operator1 != null) {
