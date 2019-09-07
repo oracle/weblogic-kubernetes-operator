@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1Affinity;
+import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1PodSpec;
@@ -50,6 +51,7 @@ import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -525,6 +527,25 @@ public class JobHelperTest {
     assertThat(
         getPodSpec(jobSpec).getRuntimeClassName(),
         nullValue() );
+  }
+
+  @Test
+  public void whenDomainHasImagePullSecretsConfigured_introspectorPodSpecStartupWithIt() {
+    V1LocalObjectReference imagePullSecret = new V1LocalObjectReference().name("secret");
+    configureDomain().withDefaultImagePullSecrets(imagePullSecret);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getPodSpec(jobSpec).getImagePullSecrets(), hasItem(imagePullSecret));
+  }
+
+  @Test
+  public void whenNotConfigured_introspectorPodSpec_hasEmptyImagePullSecrets() {
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getPodSpec(jobSpec).getImagePullSecrets(),
+        empty() );
   }
 
   @Test
