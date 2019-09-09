@@ -44,7 +44,7 @@ spec:
         - name: DB_PDB
           value: soapdb
         - name: DB_DOMAIN
-          value: us.oracle.com
+          value: my.domain.com
         - name: DB_BUNDLE
           value: basic
         readinessProbe:
