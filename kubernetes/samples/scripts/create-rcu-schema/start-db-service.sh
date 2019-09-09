@@ -68,6 +68,10 @@ dbpod=`kubectl get po | grep oracle-db | cut -f1 -d " " `
 checkPod ${dbpod} default
 checkPodState ${dbpod} default "1/1"
 kubectl get po
+sleep 120
+echo "######## start DB debugging ######"
+kubectl log ${dbpod}
+echo "######## end DB debugging ######"
 kubectl get service
 
 echo "Oracle DB service is RUNNING with NodePort [${nodeport}]"
