@@ -501,6 +501,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       Step.StepAndPacket plan,
       boolean isDeleting,
       boolean isWillInterrupt) {
+    
+    LOGGER.fine("Alan Test, starting runDomainPlan", domainUid);
     FiberGate gate = getMakeRightFiberGate(ns);
     CompletionCallback cc =
         new CompletionCallback() {
@@ -560,10 +562,15 @@ public class DomainProcessorImpl implements DomainProcessor {
           }
         };
 
+    LOGGER.fine("Alan Test, running runDomainPlan", domainUid);
     if (isWillInterrupt) {
+      LOGGER.fine("Alan Test, starting Fiber runDomainPlan", domainUid);
       gate.startFiber(domainUid, plan.step, plan.packet, cc);
+      LOGGER.fine("Alan Test, started Fiber runDomainPlan", domainUid);
     } else {
+      LOGGER.fine("Alan Test, starting startFiberIfNoCurrentFiber Fiber runDomainPlan", domainUid);
       gate.startFiberIfNoCurrentFiber(domainUid, plan.step, plan.packet, cc);
+      LOGGER.fine("Alan Test, started startFiberIfNoCurrentFiber Fiber runDomainPlan", domainUid);
     }
   }
 

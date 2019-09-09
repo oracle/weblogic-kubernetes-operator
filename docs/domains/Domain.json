@@ -500,7 +500,7 @@
           }
         },
         "serviceAccountName": {
-          "description": "ServiceAccountName is the name of the ServiceAccount to use to run this pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the pod is created.",
+          "description": "Name of the ServiceAccount to be used to run this pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the pod is created.",
           "type": "string"
         },
         "podSecurityContext": {

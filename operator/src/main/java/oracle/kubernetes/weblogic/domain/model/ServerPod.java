@@ -123,7 +123,7 @@ class ServerPod extends KubernetesResource {
   @Description("If specified, the pod's tolerations.")
   private List<V1Toleration> tolerations = new ArrayList<>();
 
-  @Description("ServiceAccountName is the name of the ServiceAccount to use to run this pod. If it is not set, default "
+  @Description("Name of the ServiceAccount to be used to run this pod. If it is not set, default "
       + "ServiceAccount will be used. The ServiceAccount has to exist at the time the pod is created.")
   private String serviceAccountName = null;
 
