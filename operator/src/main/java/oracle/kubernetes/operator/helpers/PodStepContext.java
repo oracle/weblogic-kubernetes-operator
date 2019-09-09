@@ -528,7 +528,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected V1Container createContainer(TuningParameters tuningParameters) {
     V1Container v1Container = super.createContainer(tuningParameters)
-            .name(KubernetesConstants.CONTAINER_NAME)
             .ports(getContainerPorts())
             .lifecycle(createLifecycle())
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
@@ -550,6 +549,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   String getImagePullPolicy() {
     return getServerSpec().getImagePullPolicy();
+  }
+
+  protected String getContainerName() {
+    return KubernetesConstants.CONTAINER_NAME;
   }
 
   protected List<String> getContainerCommand() {

@@ -124,7 +124,6 @@ public abstract class PodHelperTestBase {
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
-  //private static final String INSTRUCTION = "{\"op\":\"%s\",\"path\":\"%s\",\"value\":\"%s\"}";
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();

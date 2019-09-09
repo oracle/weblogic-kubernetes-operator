@@ -29,12 +29,15 @@ public abstract class StepContextBase implements StepContextConstants {
 
   abstract ServerSpec getServerSpec();
 
+  abstract String getContainerName();
+
   abstract List<String> getContainerCommand();
 
   abstract List<V1Container> getContainers();
 
   protected V1Container createContainer(TuningParameters tuningParameters) {
     return new V1Container()
+        .name(getContainerName())
         .image(getServerSpec().getImage())
         .imagePullPolicy(getServerSpec().getImagePullPolicy())
         .command(getContainerCommand())

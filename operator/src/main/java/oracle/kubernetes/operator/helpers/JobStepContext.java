@@ -34,7 +34,6 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 public abstract class JobStepContext extends BasePodStepContext {
-  static final long DEFAULT_ACTIVE_DEADLINE_SECONDS = 120L;
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
@@ -247,7 +246,6 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   protected V1Container createContainer(TuningParameters tuningParameters) {
     V1Container container = super.createContainer(tuningParameters)
-        .name(getJobName())
         .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
         .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
 
@@ -269,11 +267,17 @@ public abstract class JobStepContext extends BasePodStepContext {
     return container;
   }
 
+  protected String getContainerName() {
+    return getJobName();
+  }
+
   protected List<String> getContainerCommand() {
     return Collections.singletonList(WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH);
   }
 
   protected List<V1Container> getContainers() {
+    // Returning an empty array since introspector pod does not start with any additional containers
+    // configured in the ServerPod configuration
     return new ArrayList<>();
   }
 
