@@ -36,7 +36,8 @@ Copy provided `oci.props.template` file to `oci.props` and add all required valu
 * `vcn.cidr.prefix` - Prefix for VCN CIDR, used when creating subnets -- you should examine the target compartment find a CIDR that is available.
 * `vcn.cidr` - Full CIDR for the VCN, must be unique within the compartment, first 2 octets should match the vcn_cidr_prefix.
 * `nodepool.shape` - A valid OCI VM Shape for the cluster nodes.
-* `k8s.version` - SSH public key (key contents as a string).
+* `k8s.version` - Kubernetes version.
+* `nodepool.ssh.pubkey` - SSH public key (key contents as a string).
 * `nodepool.imagename` - A valid image name for Node Pool creation.
 * `terraform.installdir` - Location to install Terraform binaries.
 
