@@ -155,7 +155,7 @@ createDomainFilesDir: wlst
 rcuSchemaPrefix: SOA1
 
 # The database URL
-rcuDatabaseURL: soadb.soans:1521/soapdb.us.oracle.com
+rcuDatabaseURL: soadb.soans:1521/soapdb.my.domain.com
 
 # The kubernetes secret containing the database credentials
 rcuCredentialsSecret: soainfra-rcu-credentials
