@@ -54,10 +54,21 @@ public class DbUtils {
    * @throws Exception - if any error occurs when creating Oracle DB pod and service
    */
   public static void startOracleDB() throws Exception {
-  	String cmd = "sh " +
+  	String cmd1 = "sh " +
         BaseTest.getResultDir()
         + "/create-rcu-schema/start-db-service.sh";
-  	TestUtils.exec(cmd, true);	
+  	TestUtils.exec(cmd1, true);	
+  	String cmd2 = "kubectl get pod | grep oracle-db | cut -f1 -d \" \" ";
+  	ExecResult result = TestUtils.exec(cmd2);
+    String podName = result.stdout();
+
+    logger.info("DEBUG: DB podname=" + podName);
+    TestUtils.checkPodReady(podName, "default");
+
+    // check the db is ready to use
+    String cmd3 = "kubectl logs " + podName + " -n " + "default";
+    TestUtils.checkCmdInLoop(cmd3, "The database is ready for use", podName);
+  	
   }
   
   /**
