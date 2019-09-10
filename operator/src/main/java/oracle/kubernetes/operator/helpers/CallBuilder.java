@@ -161,7 +161,7 @@ public class CallBuilder {
           wrap(
               new CoreV1Api(client)
                   .createPersistentVolumeAsync(
-                      (V1PersistentVolume) requestParams.body, null, pretty, null, callback)));
+                      (V1PersistentVolume) requestParams.body, pretty, null, null, callback)));
   private final CallFactory<V1PersistentVolumeClaim> createPersistentvolumeclaim =
       (requestParams, client, cont, callback) ->
           wrap(
@@ -169,8 +169,8 @@ public class CallBuilder {
                   .createNamespacedPersistentVolumeClaimAsync(
                       requestParams.namespace,
                       (V1PersistentVolumeClaim) requestParams.body,
-                      null,
                       pretty,
+                      null,
                       null,
                       callback));
   private final CallFactory<V1SubjectAccessReview> createSubjectaccessreview =
@@ -361,7 +361,7 @@ public class CallBuilder {
   private SynchronousCallFactory<V1PersistentVolume> createPvCall =
       (client, requestParams) ->
           new CoreV1Api(client)
-              .createPersistentVolume((V1PersistentVolume) requestParams.body, null, pretty, null);
+              .createPersistentVolume((V1PersistentVolume) requestParams.body, pretty, null, null);
   private SynchronousCallFactory<V1Status> deletePvCall =
       (client, requestParams) ->
           new CoreV1Api(client)
@@ -379,8 +379,8 @@ public class CallBuilder {
               .createNamespacedPersistentVolumeClaim(
                   requestParams.namespace,
                   (V1PersistentVolumeClaim) requestParams.body,
-                  null,
                   pretty,
+                  null,
                   null);
   private SynchronousCallFactory<V1Status> deletePvcCall =
       (client, requestParams) ->
@@ -533,7 +533,7 @@ public class CallBuilder {
   public V1Namespace createNamespace(V1Namespace body) throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new CoreV1Api(client).createNamespace(body, null, pretty, null);
+      return new CoreV1Api(client).createNamespace(body, pretty, null, null);
     } finally {
       helper.recycle(client);
     }
@@ -729,7 +729,7 @@ public class CallBuilder {
       ApiCallback<V1beta1CustomResourceDefinition> callback)
       throws ApiException {
     return new ApiextensionsV1beta1Api(client)
-        .createCustomResourceDefinitionAsync(body, null, pretty, null, callback);
+        .createCustomResourceDefinitionAsync(body, pretty, null, null, callback);
   }
 
   /**
@@ -797,7 +797,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedConfigMapAsync(namespace, body, null, pretty, null, callback);
+        .createNamespacedConfigMapAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -937,7 +937,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1Pod body, ApiCallback<V1Pod> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedPodAsync(namespace, body, null, pretty, null, callback);
+        .createNamespacedPodAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -1052,7 +1052,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1Job body, ApiCallback<V1Job> callback)
       throws ApiException {
     return new BatchV1Api(client)
-        .createNamespacedJobAsync(namespace, body, null, pretty, null, callback);
+        .createNamespacedJobAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -1226,7 +1226,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1Service body, ApiCallback<V1Service> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedServiceAsync(namespace, body, null, pretty, null, callback);
+        .createNamespacedServiceAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -1538,7 +1538,7 @@ public class CallBuilder {
   public V1Secret createSecret(String namespace, V1Secret body) throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new CoreV1Api(client).createNamespacedSecret(namespace, body, null, pretty, null);
+      return new CoreV1Api(client).createNamespacedSecret(namespace, body, pretty, null, null);
     } finally {
       helper.recycle(client);
     }
