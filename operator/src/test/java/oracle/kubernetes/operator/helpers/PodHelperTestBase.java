@@ -16,10 +16,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1EnvVar;
@@ -1116,14 +1115,10 @@ public abstract class PodHelperTestBase {
 
     @Override
     public boolean matches(Object actualBody) {
-      if (!(actualBody instanceof List)) return false;
-      List<?> instructions = (List<?>) actualBody;
-      Set<String> actualInstructions = new HashSet<>();
+      if (!(actualBody instanceof V1Patch)) return false;
+      String actualInstructions = ((V1Patch) actualBody).getValue();
 
-      for (Object instruction : instructions)
-        actualInstructions.add(new Gson().toJson((JsonElement) instruction));
-
-      return actualInstructions.equals(expectedInstructions);
+      return actualInstructions.equals(expectedInstructions.toString());
     }
   }
 

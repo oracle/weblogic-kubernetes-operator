@@ -8,6 +8,7 @@ import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.custom.V1Patch;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class DomainStatusPatch {
@@ -41,7 +42,8 @@ public class DomainStatusPatch {
       }
       new CallBuilder()
             .patchDomain(
-                  domain.getDomainUid(), domain.getMetadata().getNamespace(), patchBuilder.build());
+                  domain.getDomainUid(), domain.getMetadata().getNamespace(),
+                new V1Patch(patchBuilder.build().toString()));
     } catch (ApiException ignored) {
       /* extraneous comment to fool checkstyle into thinking that this is not an empty catch block. */
     }

@@ -106,7 +106,6 @@ public class Helpers {
         coreApi.listServiceAccountForAllNamespaces(
             cont, // continue option
             "", // field selector
-            Boolean.FALSE, // includeUninitialized
             "", // labelSelector
             4096, // limit size for list
             "false", // pretty

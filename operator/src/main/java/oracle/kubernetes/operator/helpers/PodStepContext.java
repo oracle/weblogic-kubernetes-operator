@@ -14,6 +14,7 @@ import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
@@ -317,7 +318,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         getPodAnnotations());
 
     return new CallBuilder()
-        .patchPodAsync(getPodName(), getNamespace(), patchBuilder.build(), patchResponse(next));
+        .patchPodAsync(getPodName(), getNamespace(),
+            new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
   private void logPodCreated() {
