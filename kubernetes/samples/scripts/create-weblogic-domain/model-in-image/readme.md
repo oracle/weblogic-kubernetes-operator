@@ -1,8 +1,10 @@
 # Model in Image Sample
 
-This sample demonstrates specifying a Weblogic Deploy Tool (WDT) model for a domain resource so that, when the domain resourced is deployed, the model is used to generate a domain home. This is an alternative to pre-creating a WebLogic domain home prior to deploying your domain resource. WDT models are a convenient and succinct alternative to WebLogic configuration scripts, plus also allow you to bundle your applications in an application archive. The WDT model format is described in [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling).
+This sample demonstrates the WebLogic Kubernetes Operator "Model in Image" feature. This feature supports specifying a Weblogic Deploy Tool (WDT) model for a domain resource so that the operator generates a domain home directly from the model during runtime. The Model in Image feature is an alternative to pre-creating a WebLogic domain home prior to deploying your domain resource. 
 
-This sample demonstrates a basic `WLS` domain, a `JRF` domain with a database, or a `RestrictedJRF` domain with a database.  For the `JRF` and `RestrictedJRF` domains, 
+WDT models are a convenient and succinct alternative to WebLogic configuration scripts. WDT models compactly define a WebLogic domain via yaml files, plus they support bundlng your applications in an application archive. The WDT model format is described in [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling).
+
+This sample demonstrates deploying a WebLogic servlet application within basic `WLS` domain or a Oracle Fusion Middleware Infrastructure `JRF`/`RestrictedJRF` domain. The `JRF` and `RestrictedJRF` domain path through the sample includes additional steps for deploying a database and initializing the database using the rcu tool.
 
 # Contents
 
