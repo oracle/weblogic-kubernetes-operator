@@ -145,7 +145,13 @@ those schemas.  You must set up the database before you create your domain.
 There are no additional requirements added by running FMW Infrastructure in Kubernetes; the
 same existing requirements apply.
 
-You may choose to run your database inside Kubernetes or outside of Kubernetes.
+For testing and development, you may choose to run your database inside Kubernetes or outside of Kubernetes.
+
+{{% notice warning %}}
+The Oracle Database Docker images are only supported for non-production use. 
+For more details, see My Oracle Support note:
+Oracle Support for Database Running on Docker (Doc ID 2216342.1) 
+{{% /notice %}}
 
 ##### Running the database inside Kubernetes
 
