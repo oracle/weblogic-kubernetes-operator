@@ -227,10 +227,15 @@ like WLST.
 Inside this pod, you can use the following command to run RCU in command-line (no GUI) mode
 to create your schemas required for SOA domains.  You will need to provide the right prefix and connect string.
 You will be prompted to enter the password for the `sys` user, and then the password to use
-for the regular schema users:
+for the regular schema users.
+
+{{% notice note %}}If an ESS application is being deployed to the SOA domain cluster
+(for example, for domain types, `soaess` and `soaessosb`), you must append the components
+list with `-component ESS` for the `createRepository` and `dropRepository` RCU commands.
+{{% /notice %}}
 
 ```bash
-$export CONNECTION_STRING=soadb:1521/soapdb.us.oracle.com
+$export CONNECTION_STRING=soadb:1521/soapdb.my.domain.com
 $export RCUPREFIX=SOA1
 
 $echo -e Oradoc_db1"\n"Welcome1 > /tmp/pwd.txt
@@ -253,8 +258,7 @@ $/u01/oracle/oracle_common/bin/rcu \
 -component OPSS \
 -component WLS \
 -component STB \
--component SOAINFRA \
--component ESS -f < /tmp/pwd.txt
+-component SOAINFRA < /tmp/pwd.txt
 ```
 
 You need to make sure that you maintain the association between the database schemas and the
@@ -282,8 +286,7 @@ $/u01/oracle/oracle_common/bin/rcu \
 -component OPSS \
 -component WLS \
 -component STB \
--component SOAINFRA \
--component ESS  -f < /tmp/pwd.txt
+-component SOAINFRA < /tmp/pwd.txt
 ```
 
 Again, you will need to set the right prefix and connection string, and you will be prompted
