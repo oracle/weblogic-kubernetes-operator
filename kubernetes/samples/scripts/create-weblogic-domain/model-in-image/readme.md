@@ -1,14 +1,29 @@
-# Model in image sample
+# Model in Image Sample
 
 This sample demonstrates specifying a Weblogic Deploy Tool (WDT) model for a domain resource so that, when the domain resourced is deployed, the model is used to generate a domain home. This is an alternative to pre-creating a WebLogic domain home prior to deploying your domain resource. WDT models are a convenient and succinct alternative to WebLogic configuration scripts, plus also allow you to bundle your applications in an application archive. The WDT model format is described in [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling).
 
-## Overview of high level steps
+This sample demonstrates a basic `WLS` domain, a `JRF` domain with a database, or a `RestrictedJRF` domain with a database.  For the `JRF` and `RestrictedJRF` domains, 
+
+# Contents
+
+  - [Overview of High Level Steps](#overview-of-high-level-steps)
+  - [Model File Naming and Loading Order](#model-file-naming-and-loading-order)
+  - [Using Secrets in Model Files](#using-secrets-in-model-files)
+  - [Using this Sample](#using-this-sample)
+    - [Prerequisites for all domain types](#prerequisites-for-all-domain-types)
+    - [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image)
+    - [Setup prerequisites for JRF and RestrictedJRF domains](#setup-prerequisites-for-jrf-and-restrictedjrf-domains)
+    - [Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)
+    - [Optionally, install nginx to test the sample application](#optionally,-install-nginx-to-test-the-sample-application)
+    - [Cleanup](#cleanup)
+
+# Overview of High Level Steps
 
 1. Deploy the operator and ensure that it's monitoring the desired namespace.
 
 2. Define your WDT model files.
 
-   - You can use the `@@FILE` macro to reference your WebLogic credentials secret or other secrets. See [Using secrets in model files](#using-secrets-in-model-files).
+   - You can use the `@@FILE` macro to reference your WebLogic credentials secret or other secrets. See [Using Secrets in Model Files](#using-secrets-in-model-files).
 
 3. Create a deployable image with WebLogic Server and WDT installed, plus optionally, your model files.
    - Optionally include all of your WDT model files in the image using the directory structure described below.
@@ -23,7 +38,7 @@ This sample demonstrates specifying a Weblogic Deploy Tool (WDT) model for a dom
      | ---------------| -----------| ---------|
      | /u01/wdt/weblogic-deploy | unzipped weblogic deploy installer | |
 
-   - To control the model file loading order, see [Naming convention of model files](#naming-convention-of-model-files).
+   - To control the model file loading order, see [Model File Naming and Loading Order](#model-file-naming-and-loading-order).
 
 4. Create a WDT model config map (optional if step 3 fully defines your model).
 
@@ -40,7 +55,7 @@ This sample demonstrates specifying a Weblogic Deploy Tool (WDT) model for a dom
        weblogic.domainUID=sample-domain1
      ```
 
-   - To control the model file loading order, see [Naming convention of model files](#naming-convention-of-model-files).
+   - To control the model file loading order, see [Model File Naming and Loading Order](#model-file-naming-and-loading-order).
 
 5. Optionally create an encryption secret
 
@@ -82,7 +97,7 @@ This sample demonstrates specifying a Weblogic Deploy Tool (WDT) model for a dom
    TBD Should the encryption secret attribute be renamed `wdtEncryptionSecret`?  Reason for the rename:  it presumably can also be used to decrypt a wdt model that's stored in the image.
    TBD Move the settings for this POC to 'experimental'.
 
-## Naming convention of model files
+# Model File Naming and Loading Order
 
 During domain home creation, model and property files are first loaded from directory ```/u01/model_home/models``` within the image and are then loaded from the optional wdt config map.  
 
@@ -110,7 +125,7 @@ Then the combined model files list passed to the ```WebLogic Deploy Tool``` beco
 
 Property files (ending in `.properties`) use the same sorting algorithm, but they are appended together into a single file prior to passing them to the ```WebLogic Deploy Tool```.
 
-## Using secrets in model files
+# Using Secrets in Model Files
 
 You can use wdt model `@@FILE` macros to reference the WebLogic administrator username and password that's stored in a Kubernetes secret and to optionally reference additional secrets. 
 
@@ -130,9 +145,9 @@ TBD It looks like https://github.com/oracle/weblogic-deploy-tooling doesn't docu
 
 TBD Users will predictably want access to some env vars that are predefined in the introspector job, including DOMAIN_UID, LOG_HOME, DOMAIN_HOME, and DATA_HOME. Maybe WDT should be extended to handle them.
 
-## Using this sample
+# Using this Sample
 
-### Prerequisites for all domain types
+## Prerequisites for all domain types
 
 1. Deploy the Operator and setup the Operaator to managee namespace `sample-domain1-ns`. 
    - For example, see [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) up through the `PREPARE FOR A DOMAIN` step. Note that you can skip the Quick Start steps for obtaining a WebLogic image and for configuring Traefik load balancer - as instead we we will generate our own image and setup an nginx load balancer instead.
@@ -196,7 +211,7 @@ TBD Users will predictably want access to some env vars that are predefined in t
 
 7. Copy the installers to the working directory `${WORKDIR}` (V982783-01.zip, V886243-01.zip or V886246-01.zip).
 
-### Use the WebLogic Image Tool to create an image
+## Use the WebLogic Image Tool to create an image
 
 This image will contain a WebLogic and a WebLogic Deploy Tool install, as well as your WDT model files.
 
@@ -235,7 +250,7 @@ TBD There's a recent comprehensive RCU sample in  kubernetes/samples/scripts/cre
 so see if we can leverage it instead of rolling our own below.  It looks like Pani is a contact 
 per his pull https://github.com/oracle/weblogic-kubernetes-operator/pull/1238/files 
 
-0. Increase the introspection job timeout
+1. Increase the introspection job timeout
 
    Since JRF domain creation takes considerable time, you should increase the timeout for the introspection job.
 
@@ -249,7 +264,7 @@ TBD Describe how to tune the deadline via helm, follow example of logLevel, etc.
 TBD Should we modify operator to increase this timeout default?
 
 
-1. Ensure you have access to the database image:
+2. Ensure you have access to the database image:
    - Use a browser to login to `https://container-registry.oracle.com`, select `database->enterprise` and accept the license agreement.
    - In the local shell, `docker login container-registry.oracle.com`.
    - In the local shell, `docker pull container-registry.oracle.com/database/enterprise:12.2.0.1-slim`.
@@ -268,17 +283,17 @@ TBD Should we modify operator to increase this timeout default?
 
 TBD: Reference the 'database.md' 
       
-2. Deploy a database using:
+3. Deploy a database using:
    ```
    kubectl apply -f k8s-db-slim.yaml
    ```
 
-3. Start an interactive terminal inside a WebLogic pod by:
+4. Start an interactive terminal inside a WebLogic pod by:
    ```
    kubectl run rcu -i --tty  --image model-in-image:x0 --restart=Never -- sh
    ```
 
-4. Create the rcu schema using the following command. Note that `Oradoc_db1` is the dba password and `welcome1` is the schema password:
+5. Create the rcu schema using the following command. Note that `Oradoc_db1` is the dba password and `welcome1` is the schema password:
    ```
    /u01/oracle/oracle_common/bin/rcu \
      -silent \
@@ -302,13 +317,11 @@ TBD: Reference the 'database.md'
    EOF
    ```
 
-5. ctrl-d to exit the terminal pod
+6. Type ctrl-d to exit the terminal pod.
 
-6. Delete the terminal pod by ```kubectl delete pod rcu```
+7. Delete the terminal pod by `kubectl delete pod rcu`.
 
-7. Repeat the above steps 6-8 to create the Kubernetes resources
-
-   > __NOTE__:  If you need to drop the repository, you can use this command in the terminal:
+8. __NOTE__:  If you need to drop the repository, you can use this command in the terminal:
 
    ```
    /u01/oracle/oracle_common/bin/rcu \
@@ -330,7 +343,7 @@ TBD: Reference the 'database.md'
    EOF
    ```
 
-### Create and deploy your Kubernetes resources
+## Create and deploy your Kubernetes resources
 
 You can use this sample's `./run_domain.sh` script, which will perform the following steps for you:
 
@@ -350,7 +363,7 @@ To run the script:
 At the end, you will see the message `Getting pod status - ctrl-c when all is running and ready to exit`. Once all the pods are up, you can ctrl-c to exit the build script.
 
 
-### Optionally, install nginx to test the sample application
+## Optionally, install nginx to test the sample application
 
 1. Install the nginx ingress controller in your environment.  For example:
    ```
