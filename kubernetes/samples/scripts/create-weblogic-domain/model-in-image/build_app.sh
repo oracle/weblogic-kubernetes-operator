@@ -3,16 +3,20 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 
-cwd=`pwd`
-cd image/sample_app/wlsdeploy/applications
-if [ -f "sample_app.ear" ] ; then
-  rm sample_app.ear
-fi
+# This script creates a wdt model archive 'models/archive1.zip' containing the 
+# application located in 'models/sample_app/wlsdeploy/applications' and
+# its model mime mappings specifed in 'wlsdeploy/config/amimemappings.properties'.
+
+set -eu
+
+CURRENT_DIR=`pwd`
+
+mkdir -p models
+cd sample_app/wlsdeploy/applications
+rm -f sample_app.ear
 jar cvfM sample_app.ear *
-cd $cwd
-cd image/sample_app
-if [ -f "../archive1.zip" ] ; then
-    rm "../archive1.zip"
-fi
-zip ../archive1.zip wlsdeploy/applications/sample_app.ear wlsdeploy/config/amimemappings.properties
-cd $cwd
+cd $CURRENT_DIR
+cd sample_app
+rm -f ../models/archive1.zip
+zip ../models/archive1.zip wlsdeploy/applications/sample_app.ear wlsdeploy/config/amimemappings.properties
+cd $CURRENT_DIR

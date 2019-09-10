@@ -1,19 +1,16 @@
 domainInfo:
-    AdminUserName: 'weblogic'
-    AdminPassword: 'welcome1'
+    AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
+    AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
     ServerStartMode: 'prod'
     RCUDbInfo:
-        rcu_prefix: FMW1
-        rcu_schema_password: welcome1
-        rcu_admin_password: 'Oradoc_db1'
-        rcu_db_conn_string: 'oracle-db.sample-domain1-ns.svc.cluster.local:1521/pdb1.k8s'
+        rcu_prefix: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_prefix@@'
+        rcu_schema_password: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_schema_password@@'
+        rcu_admin_password: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_admin_password@@'
+        rcu_db_conn_string: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_db_conn_string@@'
 
 topology:
     Name: domain1
     AdminServerName: "admin-server"
-    SecurityConfiguration:
-        NodeManagerUsername : 'weblogic'
-        NodeManagerPasswordEncrypted : 'welcome1'
     Cluster:
         "cluster-1":
             DynamicServers:
