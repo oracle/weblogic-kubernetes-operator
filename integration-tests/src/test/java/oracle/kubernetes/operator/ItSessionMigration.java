@@ -47,7 +47,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if(FULLTEST) {
+    if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
   
@@ -91,7 +91,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if(FULLTEST) {
+    if (FULLTEST) {
       logger.info("++++++++++++++++++++++++++++++++++");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
