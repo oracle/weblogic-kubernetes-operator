@@ -121,7 +121,10 @@ Secret names are specified in your domain resource using the `weblogicCredential
   |webLogicCredentialsSecret|/weblogic-operator/secrets|
   |configOverridesSecrets|/weblogic-operator/config-overrides-secrets/SECRET_NAME|
 
-For example, you can reference the weblogic credentials secret via `@@FILE:/weblogic-operator/secrets/username@@` and `@@FILE:/weblogic-operator/secrets/password@@`.  You can reference a config overrides secret `mysecret` with value `myvalue` via `@@FILE:/weblogic-operator/config-overrides-secrets/mysecret/myvalue`.
+For example:
+  
+  - You can reference the weblogic credentials secret via `@@FILE:/weblogic-operator/secrets/username@@` and `@@FILE:/weblogic-operator/secrets/password@@`.  
+  - You can reference a config overrides secret `mysecret` with value `myvalue` via `@@FILE:/weblogic-operator/config-overrides-secrets/mysecret/myvalue@@`.
 
 TBD It looks like https://github.com/oracle/weblogic-deploy-tooling doesn't document ```@@FILE```.
 
@@ -251,17 +254,17 @@ TBD Should we modify operator to increase this timeout default?
    - In the local shell, `docker login container-registry.oracle.com`.
    - In the local shell, `docker pull container-registry.oracle.com/database/enterprise:12.2.0.1-slim`.
 
-   > _NOTE_: If a local docker login and manual pull of `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` is not sufficient (for example, if you are using a remote k8s cluster), then uncomment the imagePullSecrets stanza in '$WORKDIR/k8s-db-slim.yaml' and create the image pull secret:
-   >     ```
-   >     kubectl create secret docker-registry regsecret \
-   >         --docker-server=container-registry.oracle.com \
-   >         --docker-username=your.email@some.com \
-   >         --docker-password=your-password \
-   >         --docker-email=your.email@some.com \
-   >         -n sample-domain1-ns
-   >     ```
+   > __NOTE__: If a local docker login and manual pull of `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` is not sufficient (for example, if you are using a remote k8s cluster), then uncomment the imagePullSecrets stanza in '$WORKDIR/k8s-db-slim.yaml' and create the image pull secret:
+     ```
+     kubectl create secret docker-registry regsecret \
+       --docker-server=container-registry.oracle.com \
+       --docker-username=your.email@some.com \
+       --docker-password=your-password \
+       --docker-email=your.email@some.com \
+       -n sample-domain1-ns
+     ```
 
-   > _WARNING_: The Oracle Database Docker images are only supported for non-production use.  For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1) 
+   > __WARNING__: The Oracle Database Docker images are only supported for non-production use.  For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1) 
 
 TBD: Reference the 'database.md' 
       
@@ -305,7 +308,7 @@ TBD: Reference the 'database.md'
 
 7. Repeat the above steps 6-8 to create the Kubernetes resources
 
-   > Note:  If you need to drop the repository, you can use this command in the terminal:
+   > __NOTE__:  If you need to drop the repository, you can use this command in the terminal:
 
    ```
    /u01/oracle/oracle_common/bin/rcu \
