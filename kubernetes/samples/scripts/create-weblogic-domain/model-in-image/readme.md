@@ -6,82 +6,82 @@ This sample demonstrates specifying a Weblogic Deploy Tool (WDT) model for a dom
 
 1. Deploy the operator and ensure that it's monitoring the desired namespace.
 
-2. Define your WDT model files, including references to Kubernetes secrets.
+2. Define your WDT model files.
 
-You can use the `@@FILE` macro to reference your WebLogic credentials secret or other secrets. See [Using secrets in model files](#using-secrets-in-model-files).
+   - You can use the `@@FILE` macro to reference your WebLogic credentials secret or other secrets. See [Using secrets in model files](#using-secrets-in-model-files).
 
 3. Create a deployable image with WebLogic Server and WDT installed, plus optionally, your model files.
    - Optionally include all of your WDT model files in the image using the directory structure described below.
    - You can start with the image from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or create one using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). The WebLogic Image Tool has built-in options for embedding WDT model files, a WDT install, a WebLogic Install, and WebLogic patches in an image.
 
-In the image, create the following structures and place the `WebLogic Deploy Tool``` artifacts
+   In the image, create the following structures and place the `WebLogic Deploy Tool``` artifacts
 
-| directory | contents | extension |
-|-----------|----------|-----------|
-| /u01/wdt/models| optional domain model yaml files | yaml |
-|                | optional model variable files | properties |
-|                | optional application deployment archive | zip |
-| ---------------| -----------| ---------|
-| /u01/wdt/weblogic-deploy | unzipped weblogic deploy installer | |
+   | directory | contents | extension |
+   |-----------|----------|-----------|
+   | /u01/wdt/models| optional domain model yaml files | yaml |
+   |                | optional model variable files | properties |
+   |                | optional application deployment archive | zip |
+   | ---------------| -----------| ---------|
+   | /u01/wdt/weblogic-deploy | unzipped weblogic deploy installer | |
 
-To control the model file loading order, see [Naming convention of model files](#naming-convention-of-model-files).
+   To control the model file loading order, see [Naming convention of model files](#naming-convention-of-model-files).
 
 4. Create a WDT model config map (optional if step 3 fully defines your model).
 
-You can optionally create a config map containing additional model yaml and model variable property files. They will be applied during domain creation after the models found in the image directory `/u01/wdt/models`. Note that it's a best practice to label the configmap with its domainUID to help ensure that cleanup scripts can find and delete the resource. 
+   You can optionally create a config map containing additional model yaml and model variable property files. They will be applied during domain creation after the models found in the image directory `/u01/wdt/models`. Note that it's a best practice to label the configmap with its domainUID to help ensure that cleanup scripts can find and delete the resource. 
 
-For example, in a directory ```/home/acmeuser/wdtoverride```, place additional models and variables files in a directory called `/home/acmeuser/wdtoverride` and run the following commands:
+   For example, in a directory ```/home/acmeuser/wdtoverride```, place additional models and variables files in a directory called `/home/acmeuser/wdtoverride` and run the following commands:
 
-```
-kubectl -n sample-domain1-ns \
-  create configmap sample-domain1-wdt-config-map \
-  --from-file /home/acmeuser/wdtoverride
-kubectl -n sample-domain1-ns \
-  label configmap sample-domain1-wdt-config-map \
-  weblogic.domainUID=sample-domain1
-```
+   ```
+   kubectl -n sample-domain1-ns \
+     create configmap sample-domain1-wdt-config-map \
+     --from-file /home/acmeuser/wdtoverride
+   kubectl -n sample-domain1-ns \
+     label configmap sample-domain1-wdt-config-map \
+     weblogic.domainUID=sample-domain1
+   ```
 
-To control the model file loading order, see [Naming convention of model files](#naming-convention-of-model-files).
+   To control the model file loading order, see [Naming convention of model files](#naming-convention-of-model-files).
 
 5. Optionally create an encryption secret
 
-The ```WebLogic Deploy Tool``` encryption option is one of two options for encrypting sensitive informationthat's stored in a model. The alternative option is to store sensitive information in Kubernetes secrets.
+   The ```WebLogic Deploy Tool``` encryption option is one of two options for encrypting sensitive informationthat's stored in a model. The alternative option is to store sensitive information in Kubernetes secrets.
 
-__NOTE__: This is an advanced option. Many (most? TBD) models will prefer to store sensitive information using Kubernetes secrets instead of using the WDT encryption option.
+   __NOTE__: This is an advanced option. Many (most? TBD) models will prefer to store sensitive information using Kubernetes secrets instead of using the WDT encryption option.
 
-If you want to use the WDT encryption option, then you need to create a secret to store the encryption passphrase. The passphrase will be used to decrypt the model during domain creation. The secret can be named anything but it must contain a key named ```wdtpassword```.  Note that it's a best practice to label secrets with their domain UID to help ensure that cleanup scripts can find and delete them.
+   If you want to use the WDT encryption option, then you need to create a secret to store the encryption passphrase. The passphrase will be used to decrypt the model during domain creation. The secret can be named anything but it must contain a key named ```wdtpassword```.  Note that it's a best practice to label secrets with their domain UID to help ensure that cleanup scripts can find and delete them.
 
-```
-kubectl -n sample-domain1-ns \
-  create secret generic sample-domain1-wdt-secret \
-  --from-literal=wdtpassword=welcome1
-kubectl -n sample-domain1-ns \
-  label secret sample-domain1-wdt-secret \
-  weblogic.domainUID=sample-domain1
-```
+   ```
+   kubectl -n sample-domain1-ns \
+     create secret generic sample-domain1-wdt-secret \
+     --from-literal=wdtpassword=welcome1
+   kubectl -n sample-domain1-ns \
+     label secret sample-domain1-wdt-secret \
+     weblogic.domainUID=sample-domain1
+   ```
 
 6. Update the domain resource yaml file 
 
-If you have additional models stored in a config map, have encrypted your model(s) using WDT encryption, orthe models reference Kubernetes secrets, then include the following keys to the domain resource yaml file as needed:
+   If you have additional models stored in a config map, have encrypted your model(s) using WDT encryption, orthe models reference Kubernetes secrets, then include the following keys to the domain resource yaml file as needed:
+   
+   ```
+   wdtConfigMap : wdt-config-map
+   wdtConfigMapSecret : sample-domain1-wdt-secret
+   configOverrideSecrets: [my-secret, my-other-secret]
+   ```
 
-```
-wdtConfigMap : wdt-config-map
-wdtConfigMapSecret : sample-domain1-wdt-secret
-configOverrideSecrets: [my-secret, my-other-secret]
-```
+   In addition, define a `WDT_DOMAIN_TYPE` environment variable that specifies a domain type if it is not WLS. Valid values are `WLS`, `JRF`, and `RestrictedJRF`.
 
-In addition, define a `WDT_DOMAIN_TYPE` environment variable that specifies a domain type if it is not WLS. Valid values are `WLS`, `JRF`, and `RestrictedJRF`.
+   ```
+     serverPod:
+       env:
+       - name: WDT_DOMAIN_TYPE
+         value: "WLS|JRF|RestrictedJRF"
+   ```
 
-```
-  serverPod:
-    env:
-    - name: WDT_DOMAIN_TYPE
-      value: "WLS|JRF|RestrictedJRF"
-```
-
-TBD Should the domain type eventually be defined via a domain attribute instead of as a WDT_DOMAIN_TYPE env var?
-TBD Should the encryption secret attribute be renamed `wdtEncryptionSecret`?  Reason for the rename:  it presumably can also be used to decrypt a wdt model that's stored in the image.
-TBD Move the settings for this POC to 'experimental'.
+   TBD Should the domain type eventually be defined via a domain attribute instead of as a WDT_DOMAIN_TYPE env var?
+   TBD Should the encryption secret attribute be renamed `wdtEncryptionSecret`?  Reason for the rename:  it presumably can also be used to decrypt a wdt model that's stored in the image.
+   TBD Move the settings for this POC to 'experimental'.
 
 ## Naming convention of model files
 
