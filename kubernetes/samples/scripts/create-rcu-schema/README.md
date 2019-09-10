@@ -8,7 +8,7 @@ The sample scripts in this directory demonstrate how to:
 
 ## Start an Oracle database service in a Kubernetes cluster
 
-Use this script to create an Oracle DB service in the default namespace, with the default credentials in the Oracle Database Slim image.
+Use this script to create an Oracle DB service in the default namespace, with the default credentials, in the Oracle Database Slim image.
 
 The script assumes that either the image, `container-registry.oracle.com/database/enterprise:12.2.0.1-slim`, is available in the Docker repository, or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
 
@@ -46,15 +46,15 @@ For creating a Fusion Middleware domain, you can use the database connection str
 
 You can access the database through the NodePort outside of the Kubernetes cluster, using the URL  `<hostmachine>:30011/devpdb.k8s`.
 
-**Note**: The domain-in-image model needs a public database URL as an `rcuDatabaseURL` parameter to create a Fusion Middleware domain image.
+**Note**: To create a Fusion Middleware domain image, the domain-in-image model needs a public database URL as an `rcuDatabaseURL` parameter.
 
 
 
 ## Create the RCU schema in the Oracle database
 
-The script generates the RCU schema based `schemaPrefix` and `dburl`.
+This script generates the RCU schema based `schemaPrefix` and `dburl`.
 
-The script assumes that either the image `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
+The script assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
 
 ```
 $ ./create-rcu-schema.sh -h
@@ -149,7 +149,7 @@ Repository Creation Utility - Create : Operation Completed
 
 ## Drop the RCU schema from the Oracle database
 
-Use this script to drop the RCU schema-based `schemaPrefix` and `dburl`.
+Use this script to drop the RCU schema based `schemaPrefix` and `dburl`.
 
 ```
 $ ./drop-rcu-schema.sh -h
