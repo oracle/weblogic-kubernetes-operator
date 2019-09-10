@@ -214,11 +214,9 @@ The following parameters can be provided in the inputs file.
 | `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's user name and password. If not specified, then the value is derived from the `domainUID` as `<domainUID>-weblogic-credentials`. | `soainfra-domain-credentials` |
 | `weblogicImagePullSecretName` | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. |   |
 | `rcuSchemaPrefix` | The schema prefix to use in the database, for example `SOA1`.  You may wish to make this the same as the domainUID in order to simplify matching domains to their RCU schemas. | `SOA1` |
-| `rcuDatabaseURL` | The database URL. | `soadb.soans:1521/soapdb.us.oracle.com` |
+| `rcuDatabaseURL` | The database URL. | `soadb.soans:1521/soapdb.my.domain.com` |
 | `rcuCredentialsSecret` | The Kubernetes secret containing the database credentials. | `soainfra-rcu-credentials` |
 
-In addition, you should make a note of the environment variable `DOMAIN_TYPE` in the `create-domain-job-template.yaml` file, in the same directory as the `create-domain-inputs.yaml` file.
-For SOA domains, by default, the value is `soa` (lower case). You must update this to `osb` for OSB and `bpm` for BPM domain types.
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the
 value of some of the properties specified in the `create-inputs.yaml` file. Those properties include
