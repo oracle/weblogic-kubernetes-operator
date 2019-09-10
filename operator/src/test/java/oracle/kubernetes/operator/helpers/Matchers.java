@@ -4,9 +4,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
@@ -15,7 +14,6 @@ import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -172,14 +170,10 @@ public class Matchers {
 
     @Override
     public boolean matches(Object actualBody) {
-      if (!(actualBody instanceof List)) return false;
-      List<?> instructions = (List<?>) actualBody;
-      Set<String> actualInstructions = new HashSet<>();
+      if (!(actualBody instanceof V1Patch)) return false;
+      String actualInstructions = ((V1Patch) actualBody).getValue();
 
-      for (Object instruction : instructions)
-        actualInstructions.add(new Gson().toJson((JsonElement) instruction));
-
-      return actualInstructions.equals(expectedInstructions);
+      return actualInstructions.equals(expectedInstructions.toString());
     }
   }
 }
