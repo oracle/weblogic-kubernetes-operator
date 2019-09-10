@@ -501,7 +501,6 @@ public class DomainProcessorImpl implements DomainProcessor {
       Step.StepAndPacket plan,
       boolean isDeleting,
       boolean isWillInterrupt) {
-    
     FiberGate gate = getMakeRightFiberGate(ns);
     CompletionCallback cc =
         new CompletionCallback() {
