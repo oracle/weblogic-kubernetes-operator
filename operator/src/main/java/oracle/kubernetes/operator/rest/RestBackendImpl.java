@@ -22,6 +22,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1TokenReviewStatus;
 import io.kubernetes.client.models.V1UserInfo;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
@@ -252,7 +253,8 @@ public class RestBackendImpl implements RestBackend {
 
       new CallBuilder()
           .patchDomain(
-              domain.getDomainUid(), domain.getMetadata().getNamespace(), patchBuilder.build());
+              domain.getDomainUid(), domain.getMetadata().getNamespace(),
+              new V1Patch(patchBuilder.build().toString()));
     } catch (ApiException e) {
       throw handleApiException(e);
     }

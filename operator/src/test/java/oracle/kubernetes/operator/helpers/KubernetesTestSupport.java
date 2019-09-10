@@ -41,6 +41,7 @@ import com.google.gson.JsonSerializer;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ConfigMapList;
 import io.kubernetes.client.models.V1Event;
@@ -537,10 +538,14 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return data.get(name);
     }
 
-    public T patchResource(String name, String namespace, List<JsonObject> body) {
+    private JsonArray fromV1Patch(V1Patch patch) {
+      return Json.createReader(new StringReader(patch.getValue())).readArray();
+    }
+
+    public T patchResource(String name, String namespace, V1Patch body) {
       if (!data.containsKey(name)) throw new NotFoundException(getResourceName(), name, namespace);
 
-      JsonPatch patch = Json.createPatch(toJsonArray(body));
+      JsonPatch patch = Json.createPatch(fromV1Patch(body));
       JsonStructure result = patch.apply(toJsonStructure(data.get(name)));
       T resource = fromJsonStructure(result);
       data.put(name, resource);
@@ -678,7 +683,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @Override
-    public T patchResource(String name, String namespace, List<JsonObject> body) {
+    public T patchResource(String name, String namespace, V1Patch body) {
       return inNamespace(namespace).patchResource(name, namespace, body);
     }
 
@@ -767,7 +772,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private Object patchResource(DataRepository dataRepository) {
       return dataRepository.patchResource(
-          requestParams.name, requestParams.namespace, asJsonObject(requestParams.body));
+          requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
     }
 
     private Object listResources(DataRepository dataRepository) {
