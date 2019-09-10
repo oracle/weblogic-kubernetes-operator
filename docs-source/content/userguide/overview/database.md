@@ -13,7 +13,7 @@ sample to install the database.
 
 {{% notice warning %}}
 The Oracle Database Docker images are only supported for non-production use. 
-For more details please see My Oracle Support note:
+For more details, see My Oracle Support note:
 Oracle Support for Database Running on Docker (Doc ID 2216342.1) 
 {{% /notice %}}
 
