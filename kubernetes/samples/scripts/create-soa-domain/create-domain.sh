@@ -190,6 +190,33 @@ function createDomainHome {
   JOB_NAME="${domainUID}-${CONTAINER_NAME}"
   deleteK8sObj job $JOB_NAME ${createJobOutput}
 
+  # Below code updates domain.yaml file for SOASuite domains
+  # 1. Adds precreateService: true  to serverPod and cluster definitions
+  # 2. Adds osb_cluster if domainType is soaosb or soaessosb
+  # 3. Updates %DOMAIN_TYPE% with value in create-domain-job.yaml
+  cp ${dcrOutput} ${dcrOutput}.bak
+  export PRECREATE_SERVICE="\    \serverService:\n\
+      precreateService: true"
+  sed -i -e "/serverPod:/a ${PRECREATE_SERVICE}" ${dcrOutput}
+  
+  if [ -n "${domainType}" ]; then
+    sed -i -e "s:%DOMAIN_TYPE%:${domainType}:g" ${createJobOutput}
+
+    if [ "${domainType}" == "soaosb" ] || [ "${domainType}" == "soaessosb" ]; then
+      echo "domainType is: ${domainType}"
+      # Appends new cluster and rename it osb_cluster
+      sed -n '/- clusterName:/,/# replicas: /{p}' ${dcrOutput} >> ${dcrOutput}
+      sed -i "0,/- clusterName: ${clusterName}/s//- clusterName: osb_cluster/" ${dcrOutput}
+      sed -i -e "/- clusterName:/a ${PRECREATE_SERVICE}" ${dcrOutput}
+    else
+      sed -i -e "/- clusterName:/a ${PRECREATE_SERVICE}" ${dcrOutput}
+    fi
+  else
+    echo "domainType not defined. Setting it to soa by default"
+    sed -i -e "s:%DOMAIN_TYPE%:soa:g" ${createJobOutput}
+    sed -i -e "/- clusterName:/a ${PRECREATE_SERVICE}" ${dcrOutput}
+  fi
+  
   echo Creating the domain by creating the job ${createJobOutput}
   kubectl create -f ${createJobOutput}
 
