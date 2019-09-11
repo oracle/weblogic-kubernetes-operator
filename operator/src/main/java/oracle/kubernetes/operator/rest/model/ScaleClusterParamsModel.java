@@ -4,9 +4,12 @@
 
 package oracle.kubernetes.operator.rest.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * ScaleClusterParamsModel describes the input parameters to the WebLogic cluster scaling operation.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ScaleClusterParamsModel extends BaseModel {
 
   private int managedServerCount;
