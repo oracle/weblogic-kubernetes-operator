@@ -15,7 +15,6 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
@@ -31,7 +30,6 @@ import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,10 +40,10 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
+import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.AllOf.allOf;
@@ -79,10 +77,6 @@ public class DomainIntrospectorJobTest {
 
   private static String getJobName() {
     return LegalNames.toJobIntrospectorName(UID);
-  }
-
-  private static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
-    return hasItem(new V1EnvVar().name(name).value(value));
   }
 
   @Before

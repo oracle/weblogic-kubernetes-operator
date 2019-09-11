@@ -92,8 +92,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     return podModel;
   }
 
-  abstract ServerSpec getServerSpec();
-
   private Step getConflictStep() {
     return new ConflictStep();
   }
@@ -497,27 +495,9 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected V1PodSpec createSpec(TuningParameters tuningParameters) {
-    V1Container container =
-        createContainer(tuningParameters)
-            .resources(getServerSpec().getResources())
-            .securityContext(getServerSpec().getContainerSecurityContext());
-    V1PodSpec podSpec =
-        new V1PodSpec()
-            .containers(getServerSpec().getContainers())
-            .addContainersItem(container)
-            .affinity(getAffinity())
-            .nodeSelector(getServerSpec().getNodeSelectors())
-            .nodeName(getServerSpec().getNodeName())
-            .schedulerName(getServerSpec().getSchedulerName())
-            .priorityClassName(getServerSpec().getPriorityClassName())
-            .runtimeClassName(getServerSpec().getRuntimeClassName())
-            .tolerations(getTolerations())
-            .readinessGates(getReadinessGates())
-            .restartPolicy(getServerSpec().getRestartPolicy())
-            .securityContext(getServerSpec().getPodSecurityContext())
-            .initContainers(getServerSpec().getInitContainers());
-
-    podSpec.setImagePullSecrets(getServerSpec().getImagePullSecrets());
+    V1PodSpec podSpec = createPodSpec(tuningParameters)
+        .readinessGates(getReadinessGates())
+        .initContainers(getServerSpec().getInitContainers());
 
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
@@ -527,15 +507,6 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   // ---------------------- model methods ------------------------------
-
-  private V1Affinity getAffinity() {
-    return getServerSpec().getAffinity();
-  }
-
-  private List<V1Toleration> getTolerations() {
-    List<V1Toleration> tolerations = getServerSpec().getTolerations();
-    return tolerations.isEmpty() ? null : tolerations;
-  }
 
   private List<V1PodReadinessGate> getReadinessGates() {
     List<V1PodReadinessGate> readinessGates = getServerSpec().getReadinessGates();
@@ -548,14 +519,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     return volumes;
   }
 
-  private V1Container createContainer(TuningParameters tuningParameters) {
-    V1Container v1Container =
-        new V1Container()
-            .name(KubernetesConstants.CONTAINER_NAME)
-            .image(getImageName())
-            .imagePullPolicy(getImagePullPolicy())
-            .command(getContainerCommand())
-            .env(getEnvironmentVariables(tuningParameters))
+  protected V1Container createContainer(TuningParameters tuningParameters) {
+    V1Container v1Container = super.createContainer(tuningParameters)
             .ports(getContainerPorts())
             .lifecycle(createLifecycle())
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
@@ -579,8 +544,16 @@ public abstract class PodStepContext extends BasePodStepContext {
     return getServerSpec().getImagePullPolicy();
   }
 
+  protected String getContainerName() {
+    return KubernetesConstants.CONTAINER_NAME;
+  }
+
   protected List<String> getContainerCommand() {
     return Collections.singletonList(START_SERVER);
+  }
+
+  protected List<V1Container> getContainers() {
+    return getServerSpec().getContainers();
   }
 
   private List<V1VolumeMount> getVolumeMounts() {

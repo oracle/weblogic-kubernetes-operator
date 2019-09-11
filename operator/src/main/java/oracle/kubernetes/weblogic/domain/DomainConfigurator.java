@@ -7,10 +7,13 @@ package oracle.kubernetes.weblogic.domain;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
@@ -276,7 +279,7 @@ public abstract class DomainConfigurator {
       V1SecurityContext containerSecurityContext);
 
   /**
-   * Add security constraints at container level, if the same constraint is also defined at pod
+   * Add security constraints at pod level, if the same constraint is also defined at container
    * level then container constraint take precedence.
    *
    * @param podSecurityContext pod-level security attributes to be added to this DomainConfigurator
@@ -298,4 +301,68 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withRestartVersion(String restartVersion);
+
+  /**
+   * Set affinity for the pod configuration.
+   *
+   * @param affinity affinity to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withAffinity(V1Affinity affinity);
+
+  /**
+   * Set restart policy for the pod configuration.
+   *
+   * @param restartPolicy restart policy to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withRestartPolicy(String restartPolicy);
+
+  /**
+   * Add readiness gate to the pod configuration.
+   *
+   * @param readinessGate readiness gate to be added to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withReadinessGate(V1PodReadinessGate readinessGate);
+
+  /**
+   * Set node name for the pod configuration.
+   *
+   * @param nodeName node name to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withNodeName(String nodeName);
+
+  /**
+   * Set scheduler name for the pod configuration.
+   *
+   * @param schedulerName scheduler name to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withSchedulerName(String schedulerName);
+
+  /**
+   * Set runtime class name for the pod configuration.
+   *
+   * @param runtimeClassName runtime class name to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withRuntimeClassName(String runtimeClassName);
+
+  /**
+   * Set priority class name for the pod configuration.
+   *
+   * @param priorityClassName priority class name to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withPriorityClassName(String priorityClassName);
+
+  /**
+   * Add a toleration to the pod configuration.
+   *
+   * @param toleration toleration to be added to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withToleration(V1Toleration toleration);
 }
