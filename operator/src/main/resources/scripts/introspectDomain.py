@@ -83,10 +83,7 @@ import inspect
 import os
 import re
 import sys
-import tempfile
 import traceback
-import zipfile
-from java.util import Collections
 
 # Include this script's current directory in the import path (so we can import utils, etc.)
 # sys.path.append('/weblogic-operator/scripts')
@@ -109,6 +106,11 @@ class OfflineWlstEnv(object):
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
+    self.WDT_DOMAIN_TYPE          = self.getEnv('WDT_DOMAIN_TYPE')
+    self.KEEP_JRF_SCHEMA          = self.getEnv('KEEP_JRF_SCHEMA')
+
+    if self.KEEP_JRF_SCHEMA is None:
+      self.KEEP_JRF_SCHEMA = 1
 
     # initialize globals
 
@@ -130,6 +132,7 @@ class OfflineWlstEnv(object):
     self.INVENTORY_CM_MD5 = self.INTROSPECT_HOME + '/inventory_cm.md5'
     self.INVENTORY_PASSPHRASE_MD5 = self.INTROSPECT_HOME + '/inventory_passphrase.md5'
     self.MERGED_MODEL_FILE = self.INTROSPECT_HOME + '/merged_model.json'
+    self.EWALLET             = self.INTROSPECT_HOME + '/ewallet.p12'
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
@@ -168,6 +171,13 @@ class OfflineWlstEnv(object):
       cd('Application/em')
       em_attrs = ls(returnMap='true', returnType='a')
       self.empath = em_attrs['SourcePath']
+
+      if self.WDT_DOMAIN_TYPE == 'JRF' and self.KEEP_JRF_SCHEMA:
+        os.mkdir('/tmp/opsswallet')
+        #TODO need another secret
+        passphrase = self.getDomainHome() + "_welcome1"
+        exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml',\
+                                             keyFilePath='/tmp/opsswallet', keyFilePassword=passphrase)
     except:
       self.empath = None
       pass
@@ -786,10 +796,7 @@ class DomainSeedGenerator(Generator):
   def __init__(self, env):
     Generator.__init__(self, env, env.DOMAIN_ZIP)
     self.env = env
-    # self.domainzip = tempfile.mktemp(".zip")
-    # self.ziph = zipfile.ZipFile(self.domainzip, 'w', zipfile.ZIP_DEFLATED)
     self.domain_home = self.env.getDomainHome()
-    self.skiplist = [ os.path.join(self.domain_home, 'lib'), os.path.join(self.domain_home, 'wlsdeploy') ]
   def generate(self):
     self.open()
     try:
@@ -814,43 +821,31 @@ class DomainSeedGenerator(Generator):
       b64 = b64 + s
     self.writeln(b64)
     trace('done zipping up domain ')
-    # self.zipdir_base64out()
-
-  # def zipdir_base64out(self):
-  #   if self.domain_home:
-  #     trace('zipping up domain ' + self.domain_home)
-  #     os.path.walk(self.domain_home, self.dir_visit, self.ziph)
-  #     em_ear_path = self.env.getEmPath()
-  #     if em_ear_path is not None and os.path.exists(em_ear_path):
-  #       self.ziph.write(em_ear_path)
-  #     self.ziph.close()
-  #     trace("done zipping up domain repacking now size= " + str(os.path.getsize(self.domainzip)))
-  #     packcmd = "gzip %s " % str(self.domainzip)
-  #     trace("cmd is " + packcmd)
-  #     rc = os.system(packcmd)
-  #     trace("gzip " + str(rc))
-  #     domain_data = self.env.readBinaryFile(self.domainzip + ".gz")
-  #     b64 = ""
-  #     for s in base64.encodestring(domain_data).splitlines():
-  #       b64 = b64 + s
-  #     self.writeln(b64)
-  #     trace('done zipping up domain ')
 
 
-  # def dir_visit(self, ziph, dir, files):
-  #   for file in files:
-  #     file_name = os.path.join(dir,file)
-  #     if os.path.isfile(file_name):
-  #       fdir = os.path.dirname(file_name)
-  #       skip = false
-  #       for skipdir in self.skiplist:
-  #         if fdir.find(skipdir) == 0:
-  #           trace('skipping ' + file_name)
-  #           skip = true
-  #           break
-  #       if not skip:
-  #         ziph.write(file_name)
-  #         #trace('writing ' + file_name)
+class OpssKeyGenerator(Generator):
+
+  def __init__(self, env):
+    Generator.__init__(self, env, env.EWALLET)
+    self.env = env
+    self.domain_home = self.env.getDomainHome()
+  def generate(self):
+    self.open()
+    try:
+      self.addWallet()
+      self.close()
+      self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addWallet(self):
+    wallet_data = self.env.readBinaryFile("/tmp/opsswallet/ewallet.p12")
+    b64 = ""
+    for s in base64.encodestring(wallet_data).splitlines():
+      b64 = b64 + s
+    self.writeln(b64)
+    trace("done writing opss key")
+
 
 class InventoryMD5Generator(Generator):
 
@@ -1333,6 +1328,10 @@ class DomainIntrospector(SecretManager):
         InventoryMD5Generator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
         trace("md5 passphrase")
         InventoryMD5Generator(self.env, self.env.INVENTORY_PASSPHRASE_MD5, '/tmp/inventory_passphrase.md5').generate()
+
+        if self.env.WDT_DOMAIN_TYPE == 'JRF' and self.env.KEEP_JRF_SCHEMA:
+          OpssKeyGenerator(self.env).generate()
+
 
     CustomSitConfigIntrospector(self.env).generateAndValidate()
     #WDTConfigIntrospector(self.env).generateAndValidate()

@@ -216,15 +216,13 @@ function createWLDomain() {
     # check to see if any model including changed (or first model in image deploy)
     # if yes. then run create domain again
 
-    # if not (TODO) handle major upgrade ??
-
     checkExistInventory
     create_domain=$?
     # something changed in the wdt artifacts
     if  [ ${create_domain} -ne 0 ] ; then
 
         trace "Need to create domain " ${WDT_DOMAIN_TYPE}
-        export __WLSDEPLOY_STORE_MODEL__=1
+        export __WLSDEPLOY_STORE_MODEL__ = 1
 
         # We need to run wdt create to get a new merged model
         # otherwise for the update case we won't have one to compare with
@@ -234,12 +232,28 @@ function createWLDomain() {
         fi
         trace "Run wdt create domain " ${WDT_DOMAIN_TYPE}
 
+        #  We cannot strictly run create domain for JRF type because it's tied to a database schema
+        #  We shouldn't require user to drop the db first since it may have data in it
+        #  Can we safely switch to use WLS as type.
+        if [ -f "${opss_wallet}" ] ; then
+            if [ ! -z ${KEEP_JRF_SCHEMA} ] && [ ${KEEP_JRF_SCHEMA} -eq 1 ] ; then
+               trace "keeping rcu schema"
+               mkdir -p /tmp/opsswallet
+               base64 -d  ${opss_wallet} > /tmp/opsswallet/ewallet.p12
+               OPSS_FLAGS="-opss_wallet /tmp/opsswallet -opss_wallet_passphrase ${DOMAIN_HOME}_welcome1"
+            fi
+        else
+            OPSS_FLAGS=""
+        fi
+
+
         if [ $use_passphrase -eq 1 ]; then
             yes ${wdt_passphrase} | ${wdt_bin}/createDomain.sh -oracle_home $MW_HOME -domain_home \
-            $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption -domain_type ${WDT_DOMAIN_TYPE}
+            $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
+            ${OPSS_FLAGS}
         else
             ${wdt_bin}/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list \
-            $archive_list $variable_list  -domain_type ${WDT_DOMAIN_TYPE}
+            $archive_list $variable_list  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}
         fi
         ret=$?
         if [ $ret -ne 0 ]; then
@@ -251,9 +265,6 @@ function createWLDomain() {
         # if there is a merged model in the cm then it is an update case, try online update first
         if [ -f ${inventory_merged_model} ] && [ ${archive_zip_changed} -eq 0 ] ; then
 
-
-            # TODO: this needs to be tested and rework, the diff needs to filter out obvious case like new deployments
-            #  and other cases not supported by operator like shape changes
 
             ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${inventory_merged_model} $DOMAIN_HOME/wlsdeploy/domain_model.json || exit 1
             if [ $? -eq 0 ] ; then
@@ -332,6 +343,7 @@ inventory_image_md5="/weblogic-operator/introspectormd5/inventory_image.md5"
 inventory_cm_md5="/weblogic-operator/introspectormd5/inventory_cm.md5"
 inventory_passphrase_md5="/weblogic-operator/introspectormd5/inventory_passphrase.md5"
 inventory_merged_model="/weblogic-operator/introspectormd5/merged_model.json"
+opss_wallet="/weblogic-operator/introspectormd5/ewallet.p12"
 domain_zipped="/weblogic-operator/introspectormd5/domainzip.secure"
 wdt_config_root="/weblogic-operator/wdt-config-map"
 wdt_secret_path="/weblogic-operator/wdt-config-map-secrets"
