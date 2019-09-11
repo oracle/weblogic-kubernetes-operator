@@ -61,11 +61,11 @@ mkdir -p ./models
 
 ./build_app.sh # bundles the sample app into 'models/archive1.zip'
 
-if [ "${DOMAINTYPE}" == "WLS" ] ; then
+if [ "${DOMAINTYPE}" == "WLS" -o "${DOMAINTYPE}" == "RestrictedJRF" ] ; then
   cp model1.yaml.wls models/model1.yaml
 fi
 
-if [ "${DOMAINTYPE}" == "JRF" -o "${DOMAINTYPE}" == "RestrictedJRF" ] ; then
+if [ "${DOMAINTYPE}" == "JRF" ] ; then
   cp model1.yaml.jrf models/model1.yaml
 fi
 

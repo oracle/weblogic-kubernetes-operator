@@ -4,7 +4,7 @@ This sample demonstrates the WebLogic Kubernetes Operator "Model in Image" featu
 
 WDT models are a convenient and succinct alternative to WebLogic configuration scripts. WDT models compactly define a WebLogic domain via yaml files, plus they support bundlng your applications in an application archive. The WDT model format is described in [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling).
 
-This sample demonstrates deploying a WebLogic servlet application within basic `WLS` domain or a Oracle Fusion Middleware Infrastructure `JRF`/`RestrictedJRF` domain. The `JRF` and `RestrictedJRF` domain path through the sample includes additional steps for deploying a database and initializing the database using the rcu tool.
+This sample demonstrates deploying a WebLogic servlet application within basic `WLS` domain, a Oracle Fusion Middleware Infrastructure `JRF` domain, or a `RestrictedJRF` domain. The `JRF` domain path through the sample includes additional steps for deploying a database and initializing the database using the RCU tool. `JRF` domains are used by Oracle products that layer on top of WebLogic Server such as SOA, OSB, and FA. `RestrictedJRF` domains are used by other Oracle layered products such as CGBU.
 
 # Contents
 
@@ -14,12 +14,14 @@ This sample demonstrates deploying a WebLogic servlet application within basic `
   - [Using this Sample](#using-this-sample)
     - [Prerequisites for all domain types](#prerequisites-for-all-domain-types)
     - [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image)
-    - [Setup prerequisites for JRF and RestrictedJRF domains](#setup-prerequisites-for-jrf-and-restrictedjrf-domains)
+    - [Setup prerequisites for JRF domains](#setup-prerequisites-for-jrf-domains)
     - [Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)
     - [Optionally, install nginx to test the sample application](#optionally,-install-nginx-to-test-the-sample-application)
     - [Cleanup](#cleanup)
 
 # Overview of High Level Steps
+
+It's helpful to understand the following high level flow before running the sample described in [Using this Sample](#using-this-sample):
 
 1. Deploy the operator and ensure that it's monitoring the desired namespace.
 
@@ -27,18 +29,21 @@ This sample demonstrates deploying a WebLogic servlet application within basic `
 
    - You can use the `@@FILE` macro to reference your WebLogic credentials secret or other secrets. See [Using Secrets in Model Files](#using-secrets-in-model-files).
 
-3. Create a deployable image with WebLogic Server and WDT installed, plus optionally, your model files.
+3. Create a deployable image with WebLogic Server and WDT installed, plus optionally with your model files.
    - Optionally include all of your WDT model files in the image using the directory structure described below.
-   - You can start with the image from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or create one using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). The WebLogic Image Tool has built-in options for embedding WDT model files, a WDT install, a WebLogic Install, and WebLogic patches in an image.
-   - In the image, create the following structures and place the `WebLogic Deploy Tool``` artifacts
 
-     | directory | contents | extension |
-     |-----------|----------|-----------|
-     | /u01/wdt/models| optional domain model yaml files | yaml |
-     |                | optional model variable files | properties |
-     |                | optional application deployment archive | zip |
-     | ---------------| -----------| ---------|
-     | /u01/wdt/weblogic-deploy | unzipped weblogic deploy installer | |
+   - You can start with the image from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or create one using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). The WebLogic Image Tool has built-in options for embedding WDT model files, a WDT install, a WebLogic Install, and WebLogic patches in an image.
+
+   - In the image, create the following directories and place your `WebLogic Deploy Tool``` artifacts:
+
+     | Directory                | Contents                           | Extension   |
+     | ------------------------ | ---------------------------------- | ----------- |
+     | /u01/wdt/models          | optional domain model yaml files   | yaml        |
+     | /u01/wdt/models          | optional model variable files      | properties  |
+     | /u01/wdt/models          | optional application archive       | zip         |
+     | /u01/wdt/weblogic-deploy | unzipped weblogic deploy install   |             |
+
+     Note that the WebLogic Image Tool mentioned in the previous step can create and populate this directory structure for you.
 
    - To control the model file loading order, see [Model File Naming and Loading Order](#model-file-naming-and-loading-order).
 
@@ -63,7 +68,7 @@ This sample demonstrates deploying a WebLogic servlet application within basic `
 
    - The ```WebLogic Deploy Tool``` encryption option is one of two options for encrypting sensitive information that's stored in a model.
 
-     > __NOTE__: Many (most? TBD) models will prefer to store sensitive information using Kubernetes secrets instead of using the WDT encryption option.
+     > __NOTE__: Oracle recommends storing sensitive information using Kubernetes secrets when practical instead of relying on the WDT encryption option. See [Using Secrets in Model Files](#using-secrets-in-model-files).
 
    - If you want to use the WDT encryption option, then you need to create a secret to store the encryption passphrase. The passphrase will be used to decrypt the model during domain creation. The secret can be named anything but it must contain a key named ```wdtpassword```.  Note that it's a best practice to label secrets with their domain UID to help ensure that cleanup scripts can find and delete them.
 
@@ -95,19 +100,13 @@ This sample demonstrates deploying a WebLogic servlet application within basic `
            value: "WLS|JRF|RestrictedJRF"
      ```
 
-   TBD Should the domain type eventually be defined via a domain attribute instead of as a WDT_DOMAIN_TYPE env var?
-   TBD Should the encryption secret attribute be renamed `wdtEncryptionSecret`?  Reason for the rename:  it presumably can also be used to decrypt a wdt model that's stored in the image.
-   TBD Move the settings for this POC to 'experimental'.
-
 # Model File Naming and Loading Order
 
-During domain home creation, model and property files are first loaded from directory ```/u01/model_home/models``` within the image and are then loaded from the optional wdt config map.  
+During domain home creation, model and property files are first loaded from directory `/u01/model_home/models` within the image and are then loaded from the optional wdt config map.  
 
-The loading order within each of these locations is first determined using the convention ```filename.##.yaml``` and ```filename.##.properties```, where ```##``` is a numeric number that specifies the desired order, and then is determined alphabetically as a tie-breaker. File names that don't include ```.##.``` sort _before_ other files as if they implicitly have the lowest possible ```.##.```. If an image file and config map file both have the same name, then both files are loaded.
+The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` is a numeric number that specifies the desired order, and then is determined alphabetically as a tie-breaker. File names that don't include `.##.` sort _before_ other files as if they implicitly have the lowest possible `.##.`. If an image file and config map file both have the same name, then both files are loaded.
 
-TBD Verify with Johnny that file names without a ## sort first.
-
-For example, if you have these files in the image directory ```/u01/model_home/models```: 
+For example, if you have these files in the image directory `/u01/model_home/models`: 
 
   ```
   jdbc.20.yaml
@@ -142,10 +141,6 @@ For example:
   
   - You can reference the weblogic credentials secret via `@@FILE:/weblogic-operator/secrets/username@@` and `@@FILE:/weblogic-operator/secrets/password@@`.  
   - You can reference a config overrides secret `mysecret` with value `myvalue` via `@@FILE:/weblogic-operator/config-overrides-secrets/mysecret/myvalue@@`.
-
-TBD It looks like https://github.com/oracle/weblogic-deploy-tooling doesn't document ```@@FILE```.
-
-TBD Users will predictably want access to some env vars that are predefined in the introspector job, including DOMAIN_UID, LOG_HOME, DOMAIN_HOME, and DATA_HOME. Maybe WDT should be extended to handle them.
 
 # Using this Sample
 
@@ -186,7 +181,7 @@ TBD Users will predictably want access to some env vars that are predefined in t
    cp -R * ${WORKDIR}
    ```
 
-5. Choose the type of domain you're going to create. `WLS`, `JRF`, or `RestrictedJRF`. Note that a `JRF` and `RestrictedJRF` will require a different installer plus extra steps for database setup (we will describe these steps later).
+5. Choose the type of domain you're going to create: `WLS`, `JRF`, or `RestrictedJRF`. 
 
 6. Obtain JRE and the appropriate WebLogic installers from [edelivery.oracle.com](https://edelivery.oracle.com)
    - JRE
@@ -211,7 +206,7 @@ TBD Users will predictably want access to some env vars that are predefined in t
        - click `continue` and accept license agreement
        - click on `V886246-01.zip` to download the zip files
 
-7. Copy the installers to the working directory `${WORKDIR}` (V982783-01.zip, V886243-01.zip or V886246-01.zip).
+7. Copy the installers to the working directory `${WORKDIR}` (V982783-01.zip, plus V886243-01.zip or V886246-01.zip).
 
 ## Use the WebLogic Image Tool to create an image
 
@@ -223,13 +218,15 @@ You can use this sample's `./build.sh` script, which will perform the following 
   - Creates a base image named `model-in-image:x0` that contains a JRE, a WLS install, and required patch(es)
     - Uses the WebLogic Image Tool's 'create' option
     - Uses the JRE and WLS installers downloaded during the pre-requisites step
-  - Builds a simple servlet app and puts it in WDT model application archive `models/archive1.zip`
+  - Creates and populates directory `./models`
+    - Builds a simple servlet app and puts it in WDT model application archive `./models/archive1.zip`
+    - Copies sample model files from `./` to `./models`
+      - Uses a model file that's appropriate to the domain type (for example, the `JRF` domain model includes database access configuration)
   - Create a final image named `model-in-image:x1` that layers on the base image
     - Uses the WebLogic Image Tool's 'update' option
-    - Installs WDT using the installer you downloaded to image location TBD
-    - Copies the WDT application archive in `models/archive1.zip` to image location TBD
-    - Copies the WDT model and properties files location in `models/*` to image location TBD
-      - Uses the model file that's appropriate to the model type (for example, the `JRF` and `RestrictedJRF` domain model defines database access configuration)
+    - Installs WDT using the installer you downloaded to image location `/u01/wdt/weblogic-deploy`.
+    - Copies the WDT application archive in `models/archive1.zip` to image location `/u01/wdt/models`.
+    - Copies the WDT model and properties files location in `models/*` to image location `/u01/wdt/models`.
 
 Here's how to run the script:
 
@@ -238,19 +235,11 @@ Here's how to run the script:
   ./build.sh $(pwd) <oracle support id capable of downloading patches> <oracle support password> <domain type: WLS|RestrictedJRF|JRF>
   ```
 
-TBD: Imagine doing a live demo of this - you'd need to show everyone your SSO! The script should provide a way to prompt for the support id and password, and suppress console echo for the latter. Ideally, it should also provide a way to have these come from some sort of wallet.
+## Setup prerequisites for JRF domains
 
-TBD: The JRF/RestrictedJRF models contain hard-coded RCU login/URL information. This should be moved to a secret and accessed via the @@FILE macro instead.
+> __IMPORTANT__: This step is only required for demonstrating a `JRF` domain type. Skip to the next step [Create and deploy your Kubernetes resources](create-and-deploy-your-kubernetes-resources) if your domain type is simply a `WLS` or a `RestrictedJRF` domain.
 
-## Setup prerequisites for JRF and RestrictedJRF domains
-
-_This step is only required for demonstrating `JRF` and `RestrictedJRF` domains. Skip to the next step [Create and deploy your Kubernetes resources](create-and-deploy-your-kubernetes-resources) if your domain type is simply 'WLS'._
-
-A JRF domain requires an infrastructure database.  This example shows how to setup a sample database and use the RCU tool to create the infrastructure schema.  This example depends on the WebLogic base image that was created in the previous step.
-
-TBD There's a recent comprehensive RCU sample in  kubernetes/samples/scripts/create-rcu-schema, 
-so see if we can leverage it instead of rolling our own below.  It looks like Pani is a contact 
-per his pull https://github.com/oracle/weblogic-kubernetes-operator/pull/1238/files 
+A JRF domain requires an infrastructure database and also requires initalizing this database. This example shows how to setup a sample database and use the RCU tool to create the infrastructure schema. This step depends on the WebLogic base image that was created in the previous step.
 
 1. Increase the introspection job timeout
 
@@ -262,33 +251,32 @@ per his pull https://github.com/oracle/weblogic-kubernetes-operator/pull/1238/fi
 
    and add the parameter ```introspectorJobActiveDeadlineSeconds```  default is 120s.  Use 300s to start with.
 
-TBD Describe how to tune the deadline via helm, follow example of logLevel, etc.
-TBD Should we modify operator to increase this timeout default?
-
-
-2. Ensure you have access to the database image:
+2. Ensure you have access to the database image, and then deploy it:
    - Use a browser to login to `https://container-registry.oracle.com`, select `database->enterprise` and accept the license agreement.
-   - In the local shell, `docker login container-registry.oracle.com`.
-   - In the local shell, `docker pull container-registry.oracle.com/database/enterprise:12.2.0.1-slim`.
 
-   > __NOTE__: If a local docker login and manual pull of `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` is not sufficient (for example, if you are using a remote k8s cluster), then uncomment the imagePullSecrets stanza in '$WORKDIR/k8s-db-slim.yaml' and create the image pull secret:
+   - Get the database image
+     - In the local shell, `docker login container-registry.oracle.com`.
+     - In the local shell, `docker pull container-registry.oracle.com/database/enterprise:12.2.0.1-slim`.
+
+     > __NOTE__: If a local docker login and manual pull of `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` is not sufficient (for example, if you are using a remote k8s cluster), then uncomment the imagePullSecrets stanza in '$WORKDIR/k8s-db-slim.yaml' and create the image pull secret:
+       ```
+       kubectl create secret docker-registry regsecret \
+         --docker-server=container-registry.oracle.com \
+         --docker-username=your.email@some.com \
+         --docker-password=your-password \
+         --docker-email=your.email@some.com \
+         -n sample-domain1-ns
+       ```
+
+   - Deploy the database:
+
      ```
-     kubectl create secret docker-registry regsecret \
-       --docker-server=container-registry.oracle.com \
-       --docker-username=your.email@some.com \
-       --docker-password=your-password \
-       --docker-email=your.email@some.com \
-       -n sample-domain1-ns
+     kubectl apply -f k8s-db-slim.yaml
      ```
 
-   > __WARNING__: The Oracle Database Docker images are only supported for non-production use.  For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1) 
+   > __WARNING__: The Oracle Database Docker images are only supported for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1) 
 
-TBD: Reference the 'database.md' 
-      
-3. Deploy a database using:
-   ```
-   kubectl apply -f k8s-db-slim.yaml
-   ```
+   > __NOTE__: This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
 
 4. Start an interactive terminal inside a WebLogic pod by:
    ```
@@ -350,7 +338,7 @@ TBD: Reference the 'database.md'
 You can use this sample's `./run_domain.sh` script, which will perform the following steps for you:
 
   - Creates a secret containing your WebLogic administrator username and password
-  - Creates a secret containing your RCU access URL, credentials, and prefix (ignored unless domain type is JRF or RestrictedJRF)
+  - Creates a secret containing your RCU access URL, credentials, and prefix (these are unused unless the domain type is `JRF`)
   - Creates a config map containing an additional WDT model properties file './model1.20.properties'
   - Deploys a domain resource from `k8s-domain.yaml` 
   - Displays the status of the domain pods 
@@ -396,12 +384,11 @@ At the end, you will see the message `Getting pod status - ctrl-c when all is ru
 
 ## Cleanup 
 
-From the WebLogic Kubernetes Operator cloned root directory
-
-1. From the WebLogic Kubernetes Operator cloned root directory
+1. From the WebLogic Kubernetes Operator cloned root directory:
    ```
-   kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d domain1u
+   kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
    ```
+   This deletes the domain and any related resources that are labeled with Domain UID `sample-domain1`. It leaves the namespace intact.
 2. If you setup nginx:
    ```
    kubectl delete -f k8s-nginx.yaml
