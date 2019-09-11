@@ -22,7 +22,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
@@ -82,11 +81,6 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  void expectStepsAfterCreation() {
-    expectReplaceDomain();
-  }
-
-  @Override
   FiberTestSupport.StepFactory getStepFactory() {
     return PodHelper::createManagedPodStep;
   }
@@ -99,22 +93,6 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   @Override
   protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
     return configurator.configureServer(serverName);
-  }
-
-  private void expectReplaceDomainStatus() {
-    testSupport
-        .createCannedResponse("replaceDomainStatus")
-        .withNamespace(NS)
-        .ignoringBody()
-        .returning(new Domain());
-  }
-
-  private void expectReplaceDomain() {
-    testSupport
-        .createCannedResponse("replaceDomain")
-        .withNamespace(NS)
-        .ignoringBody()
-        .returning(new Domain());
   }
 
   @Override
@@ -178,7 +156,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenClusterHasLabelsWithVariables_createManagedPodWithSubstitutions() {
     V1EnvVar envVar = toEnvVar("TEST_ENV", "test-value");
-    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(envVar));
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
 
     V1Container container = new V1Container()
         .name("test")
@@ -202,19 +180,14 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
             hasEntry("logHome", "/shared/logs/" +  UID)));
     Optional<V1Container> o = pod.getSpec().getContainers()
         .stream().filter(c -> "test".equals(c.getName())).findFirst();
-    assertThat(
-        o.orElseThrow().getArgs(),
-        allOf(
-            hasItem("This server is " +  SERVER_NAME + " and has test-value")));
-    assertThat(
-        container.getArgs(),
-        allOf(hasItem("This server is $(SERVER_NAME) and has $(TEST_ENV)"))
+    assertThat(o.orElseThrow().getArgs(), hasItem("This server is " +  SERVER_NAME + " and has test-value"));
+    assertThat(container.getArgs(), hasItem("This server is $(SERVER_NAME) and has $(TEST_ENV)")
     );
   }
 
   @Test
   public void createManagedPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
-    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList());
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.emptyList());
 
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
@@ -224,7 +197,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenPacketHasEnvironmentItemsWithVariable_createManagedPodShouldNotChangeItsValue() {
     V1EnvVar envVar = toEnvVar(ITEM1, RAW_VALUE_1);
-    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(envVar));
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
 
     getCreatedPodSpecContainer();
 
@@ -363,16 +336,14 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   public void whenDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
     getConfigurator().withServerStartState(ADMIN_STATE);
 
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
   }
 
   @Test
   public void whenServerDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
     getConfigurator().configureServer(SERVER_NAME).withServerStartState(ADMIN_STATE);
 
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
   }
 
   @Test
@@ -382,8 +353,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
         .configureServer(SERVER_NAME)
         .withServerStartState(ADMIN_STATE);
 
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
   }
 
   @Test
@@ -393,8 +363,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
         .configureServer(SERVER_NAME)
         .withServerStartState(RUNNING_STATE);
 
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), not(allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE))));
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
   }
 
   @Test
@@ -404,8 +373,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator().configureCluster(CLUSTER_NAME).withServerStartState(ADMIN_STATE);
 
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
   }
 
   @Test
@@ -415,8 +383,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator().configureCluster(CLUSTER_NAME).withServerStartState(RUNNING_STATE);
 
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
   }
 
   @Test
@@ -427,7 +394,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     getConfigurator().configureCluster(CLUSTER_NAME).withServerStartState(ADMIN_STATE);
 
     assertThat(
-        getCreatedPodSpecContainer().getEnv(), not(allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE))));
+        getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
   }
 
   @Test
@@ -775,11 +742,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Override
   protected void verifyPodNotReplacedWhen(PodMutator mutator) {
-    /**/
     V1Pod existingPod = createPod(testSupport.getPacket());
-    /*/
-    V1Pod existingPod = createPodModel();
-    /**/
     mutator.mutate(existingPod);
     initializeExistingPod(existingPod);
 

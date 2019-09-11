@@ -41,16 +41,6 @@ public class PodHelper {
   }
 
   /**
-   * Creates an admin server pod resource, based on the specified packet.
-   *
-   * @param packet a packet describing the domain model and topology.
-   * @return an appropriate Kubernetes resource
-   */
-  public static V1Pod createAdminServerPodModel(Packet packet) {
-    return new AdminPodStepContext(null, packet).createPodModel();
-  }
-
-  /**
    * Creates a managed server pod resource, based on the specified packet.
    *
    * @param packet a packet describing the domain model and topology.
@@ -280,8 +270,9 @@ public class PodHelper {
     public NextAction apply(Packet packet) {
       PodStepContext context = new AdminPodStepContext(this, packet);
 
-      return doNext(context.verifyPersistentVolume(context.verifyPod(getNext())), packet);
+      return doNext(context.verifyPod(getNext()), packet);
     }
+
   }
 
   static class ManagedPodStepContext extends PodStepContext {

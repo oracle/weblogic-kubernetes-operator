@@ -40,7 +40,6 @@ public class DomainValidationStepTest {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
 
-    domain.setStatus(new DomainStatus());
     testSupport.defineResources(domain);
   }
 

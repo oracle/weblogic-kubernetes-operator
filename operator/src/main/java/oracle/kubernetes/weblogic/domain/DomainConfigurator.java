@@ -9,7 +9,6 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -30,12 +29,6 @@ public abstract class DomainConfigurator {
 
   protected DomainConfigurator(Domain domain) {
     this.domain = domain;
-    if (domain.getSpec() == null) {
-      domain.setSpec(new DomainSpec());
-    }
-    if (domain.getMetadata() == null) {
-      domain.setMetadata(new V1ObjectMeta());
-    }
   }
 
   public abstract DomainConfigurator createFor(Domain domain);
