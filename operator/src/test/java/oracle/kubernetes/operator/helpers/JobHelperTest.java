@@ -31,13 +31,6 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.JobHelper.DomainIntrospectorJobStepContext;
-import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
-import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAffinity;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createContainer;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecurityContext;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
@@ -47,6 +40,20 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
+import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAffinity;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createContainer;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecurityContext;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -55,13 +62,6 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.allOf;
 
 public class JobHelperTest {
 
