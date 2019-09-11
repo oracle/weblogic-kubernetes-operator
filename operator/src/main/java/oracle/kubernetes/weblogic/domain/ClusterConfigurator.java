@@ -4,9 +4,11 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
 
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -111,4 +113,18 @@ public interface ClusterConfigurator extends ServiceConfigurator {
    * @return this object
    */
   ClusterConfigurator withRestartVersion(String restartVersion);
+
+  ClusterConfigurator withRestartPolicy(String restartPolicy);
+
+  ClusterConfigurator withAffinity(V1Affinity affinity);
+
+  ClusterConfigurator withNodeName(String nodeName);
+
+  ClusterConfigurator withSchedulerName(String schedulerName);
+
+  ClusterConfigurator withRuntimeClassName(String runtimeClassName);
+
+  ClusterConfigurator withPriorityClassName(String priorityClassName);
+
+  ClusterConfigurator withToleration(V1Toleration toleration);
 }
