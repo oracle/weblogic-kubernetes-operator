@@ -323,7 +323,14 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Job> callResponse) {
-      return super.onFailure(packet, callResponse);
+      if (DomainStatusPatch.isUnprocessableEntityFailure(callResponse))
+        return updateDomainStatus(packet, callResponse);
+      else
+        return super.onFailure(packet, callResponse);
+    }
+
+    private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {
+      return doNext(DomainStatusPatch.createStep(getDomain(), callResponse.getE()), packet);
     }
 
     @Override

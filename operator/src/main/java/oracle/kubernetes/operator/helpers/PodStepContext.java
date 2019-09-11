@@ -25,8 +25,6 @@ import io.kubernetes.client.models.V1HTTPGetAction;
 import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSpec;
@@ -45,7 +43,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -59,10 +56,8 @@ import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
-import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
-@SuppressWarnings("deprecation")
 public abstract class PodStepContext extends BasePodStepContext {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -387,10 +382,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private ResponseStep<V1Pod> patchResponse(Step next) {
     return new PatchPodResponseStep(next);
-  }
-
-  Step verifyPersistentVolume(Step next) {
-    return new VerifyPersistentVolumeStep(next);
   }
 
   V1Pod createPodModel() {
@@ -811,16 +802,23 @@ public abstract class PodStepContext extends BasePodStepContext {
     protected String getDetail() {
       return getServerName();
     }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
+      if (DomainStatusPatch.isUnprocessableEntityFailure(callResponse))
+        return updateDomainStatus(packet, callResponse);
+      else
+        return onFailure(getConflictStep(), packet, callResponse);
+    }
+
+    private NextAction updateDomainStatus(Packet packet, CallResponse<V1Pod> callResponse) {
+      return doNext(DomainStatusPatch.createStep(getDomain(), callResponse.getE()), packet);
+    }
   }
 
   private class CreateResponseStep extends BaseResponseStep {
     CreateResponseStep(Step next) {
       super(next);
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(getConflictStep(), packet, callResponse);
     }
 
     @Override
@@ -864,11 +862,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(getConflictStep(), packet, callResponse);
-    }
-
-    @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
 
       V1Pod newPod = callResponse.getResult();
@@ -891,11 +884,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(getConflictStep(), packet, callResponse);
-    }
-
-    @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
 
       V1Pod newPod = callResponse.getResult();
@@ -908,58 +896,4 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
   }
 
-  private class VerifyPersistentVolumeStep extends Step {
-
-    VerifyPersistentVolumeStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      String domainUid = getDomainUid();
-      Step list =
-          new CallBuilder()
-              .withLabelSelectors(forDomainUidSelector(domainUid))
-              .listPersistentVolumeAsync(
-                  new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
-                    @Override
-                    public NextAction onSuccess(
-                        Packet packet,
-                        V1PersistentVolumeList result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (result != null) {
-                        for (V1PersistentVolume pv : result.getItems()) {
-                          List<String> accessModes = pv.getSpec().getAccessModes();
-                          boolean foundAccessMode = false;
-                          for (String accessMode : accessModes) {
-                            if (accessMode.equals(READ_WRITE_MANY_ACCESS)) {
-                              foundAccessMode = true;
-                              break;
-                            }
-                          }
-
-                          // Persistent volume does not have ReadWriteMany access mode,
-                          if (!foundAccessMode) {
-                            LOGGER.warning(
-                                MessageKeys.PV_ACCESS_MODE_FAILED,
-                                pv.getMetadata().getName(),
-                                getDomainResourceName(),
-                                domainUid,
-                                READ_WRITE_MANY_ACCESS);
-                          }
-                        }
-                      } else {
-                        LOGGER.warning(
-                            MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID,
-                            getDomainResourceName(),
-                            domainUid);
-                      }
-                      return doNext(packet);
-                    }
-                  });
-
-      return doNext(list, packet);
-    }
-  }
 }
