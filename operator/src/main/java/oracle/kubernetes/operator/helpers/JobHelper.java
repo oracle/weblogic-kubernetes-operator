@@ -167,11 +167,9 @@ public class JobHelper {
   }
 
   static class DomainIntrospectorJobStepContext extends JobStepContext {
-    private final DomainPresenceInfo info;
 
-    DomainIntrospectorJobStepContext(DomainPresenceInfo info, Packet packet) {
+    DomainIntrospectorJobStepContext(Packet packet) {
       super(packet);
-      this.info = info;
 
       init();
     }
@@ -195,10 +193,6 @@ public class JobHelper {
     @Override
     String getJobName() {
       return LegalNames.toJobIntrospectorName(getDomainUid());
-    }
-
-    Domain getDomain() {
-      return info.getDomain();
     }
 
     @Override
@@ -240,7 +234,7 @@ public class JobHelper {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       if (runIntrospector(packet, info)) {
-        JobStepContext context = new DomainIntrospectorJobStepContext(info, packet);
+        JobStepContext context = new DomainIntrospectorJobStepContext(packet);
 
         packet.putIfAbsent(START_TIME, System.currentTimeMillis());
 
