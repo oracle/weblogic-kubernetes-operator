@@ -17,13 +17,11 @@ IMGTOOL_BIN=${CURRENT_DIR}/imagetool/bin/imagetool.sh
 
 echo Creating deploy image with wdt models
 #
-cd models 
 ${IMGTOOL_BIN} update \
   --tag model-in-image:x1 \
   --fromImage model-in-image:x0 \
-  --wdtModel model1.yaml \
-  --wdtVariables model1.10.properties \
-  --wdtArchive archive1.zip \
+  --wdtModel models/model1.yaml \
+  --wdtVariables models/model1.10.properties \
+  --wdtArchive models/archive1.zip \
   --wdtModelOnly \
-  --wdtDomainType ${DOMAINTYPE}
-cd ..
+  --wdtDomainType ${WDT_DOMAIN_TYPE}

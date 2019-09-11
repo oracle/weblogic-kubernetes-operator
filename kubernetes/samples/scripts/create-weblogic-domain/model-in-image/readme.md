@@ -146,44 +146,54 @@ For example:
 
 ## Prerequisites for all domain types
 
-1. Deploy the Operator and setup the Operaator to managee namespace `sample-domain1-ns`. 
-   - For example, see [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) up through the `PREPARE FOR A DOMAIN` step. Note that you can skip the Quick Start steps for obtaining a WebLogic image and for configuring Traefik load balancer - as instead we we will generate our own image and setup an nginx load balancer instead.
-   - If you've already deployed the Operater, you can use `helm get values my-operator-release` to check if its managing namespace `sample-domain1-ns` and use helm upgrade to add this namespace if needed.  For example:
-   ```
-   # get the helm release name for the running operator
-   helm ls
+1. Setup a test directory, a source directory env variable, and a test directory environment variable.
 
-   # check if operator manages `sample-domain1-ns`
-   helm get values my-operator-release  # shows current managed namespaces
-
-   # Use helm upgrade to add `sample-domain1-ns`. Note that the 'set' should
-   # include all of the namespaces the operator is expected to manage.
-   cd OPERATOR_SRC_DIRECTORY
-   helm upgrade \
-     --reuse-values \
-     --set "domainNamespaces={default, my-other-ns, sample-domain1-ns}" \
-     --wait \
-     my-operator-release \
-     kubernetes/charts/weblogic-operator
-   ```
-
-2. Create a temporary directory with 10g of space. We will call this our 'working directory'. Store the working directory in an environment variable called WORKDIR:
+   - Store the location of the Operator source code in an environment variable `SRCDIR`.
+   
+   - Create an empty temporary working directory with 10g of space, and store its location in `WORKDIR`.
 
    ```
-   cd <location of temporary directory>
+   cd <top of source tree - should end with '/weblogic-kubernetes-operator'>
+   export SRCDIR=$(pwd)
+   cd <location of empty temporary directory with 10g of space>
    export WORKDIR=$(pwd)
    ```
 
-4. Copy all the files in this sample to the working directory (substitute your Operator source location for SRCDIR).
+2. Copy all the files in this sample to the working directory (substitute your Operator source location for SRCDIR).
 
    ```
-   cd SRCDIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image
-   cp -R * ${WORKDIR}
+   cp -R ${SRCDIR?}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* ${WORKDIR?}
    ```
 
-5. Choose the type of domain you're going to create: `WLS`, `JRF`, or `RestrictedJRF`. 
+3. Deploy the Operator and setup the Operaator to manage namespace `sample-domain1-ns`. 
+   - For example, see [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) up through the `PREPARE FOR A DOMAIN` step. Note that you can skip the Quick Start steps for obtaining a WebLogic image and for configuring Traefik load balancer - as instead we we will generate our own image and setup an nginx load balancer instead.
+   - If you've already deployed the Operater, you can use `helm get values my-operator-release` to check if it's managing namespace `sample-domain1-ns` and use helm upgrade to add this namespace if needed.  For example:
+     ```
+     # get the helm release name for the running operator
+     helm ls
+  
+     # check if operator manages `sample-domain1-ns`
+     helm get values my-operator-release  # shows current managed namespaces
+  
+     # Use helm upgrade to add `sample-domain1-ns` if needed. Note that the
+     # 'set' below should include all of the namespaces the operator is
+     # expected to manage.  Do not include any white-space in the namespace list.
+     cd ${SRCDIR?}
+     helm upgrade \
+       --reuse-values \
+       --set "domainNamespaces={default,my-other-ns,sample-domain1-ns}" \
+       --wait \
+       my-operator-release \
+       kubernetes/charts/weblogic-operator
+     ```
 
-6. Obtain JRE and the appropriate WebLogic installers from [edelivery.oracle.com](https://edelivery.oracle.com)
+4. Choose the type of domain you're going to create: `WLS`, `JRF`, or `RestrictedJRF`, and set 
+   environment variable WDT_DOMAIN_TYPE accordingly.
+   ```
+   export WDT_DOMAIN_TYPE=<one of WLS, JRF, or RestrictedJRF>
+   ```
+
+5. Obtain JRE and the appropriate WebLogic installers from [edelivery.oracle.com](https://edelivery.oracle.com)
    - JRE
      - Obtain `Oracle SERVER JRE 1.8.0.221 media upload for Linux x86-64`
        - search for `Oracle JRE`
@@ -196,7 +206,7 @@ For example:
        - click on `Oracle WebLogic Server 12.2.1.3.0 (Oracle WebLogic Server Enterprise Edition)`
        - click on `Checkout`
        - click `continue` and accept license agreement
-       - click on `V886243-01.zip` to download the zip files
+       - click on `V886423-01.zip` to download the zip files
    - WebLogic installer for domain type `JRF` or `RestrictedJRF`
      - Obtain `Oracle Fusion Middleware 12c (12.2.1.3.0) Infrastructure`
      - this is required for `JRF` and `RestrictedJRF` domains, and isn't recommended for `WLS` domains
@@ -204,9 +214,9 @@ For example:
        - click on `Oracle Fusion Middleware 12c Infrastructure 12.2.1.3.0)`
        - click on `Checkout`
        - click `continue` and accept license agreement
-       - click on `V886246-01.zip` to download the zip files
+       - click on `V886426-01.zip` to download the zip files
 
-7. Copy the installers to the working directory `${WORKDIR}` (V982783-01.zip, plus V886243-01.zip or V886246-01.zip).
+6. Copy the installers to the working directory `${WORKDIR}` (V982783-01.zip, plus V886423-01.zip or V886426-01.zip).
 
 ## Use the WebLogic Image Tool to create an image
 
@@ -214,25 +224,26 @@ This image will contain a WebLogic and a WebLogic Deploy Tool install, as well a
 
 You can use this sample's `./build.sh` script, which will perform the following steps for you:
 
+  - Expects WDT_DOMAIN_TYPE and WORKDIR to already be initialized (see [Prerequisites for all domain types](#prerequisites-for-all-domain-types))
   - Downloads the latest WebLogic Image Tool and WebLogic Deploy Tool
   - Creates a base image named `model-in-image:x0` that contains a JRE, a WLS install, and required patch(es)
     - Uses the WebLogic Image Tool's 'create' option
     - Uses the JRE and WLS installers downloaded during the pre-requisites step
-  - Creates and populates directory `./models`
+    - Determines the correct WLS installer based on WDT_DOMAIN_TYPE
+  - Creates and populates directory `$WORKDIR/models`
     - Builds a simple servlet app and puts it in WDT model application archive `./models/archive1.zip`
-    - Copies sample model files from `./` to `./models`
+    - Copies sample model files from `$WORKDIR/` to `$WORKDIR/models`
       - Uses a model file that's appropriate to the domain type (for example, the `JRF` domain model includes database access configuration)
   - Create a final image named `model-in-image:x1` that layers on the base image
     - Uses the WebLogic Image Tool's 'update' option
     - Installs WDT using the installer you downloaded to image location `/u01/wdt/weblogic-deploy`.
-    - Copies the WDT application archive in `models/archive1.zip` to image location `/u01/wdt/models`.
-    - Copies the WDT model and properties files location in `models/*` to image location `/u01/wdt/models`.
+    - Copies the WDT model, properties, and application archive in `$WORKDIR/models/archive1.zip` to image location `/u01/wdt/models`.
 
 Here's how to run the script:
 
   ```
-  cd $WORKDIR
-  ./build.sh $(pwd) <oracle support id capable of downloading patches> <oracle support password> <domain type: WLS|RestrictedJRF|JRF>
+  cd ${WORKDIR?}
+  ./build.sh
   ```
 
 ## Setup prerequisites for JRF domains
