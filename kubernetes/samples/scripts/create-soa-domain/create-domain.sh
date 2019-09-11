@@ -201,7 +201,6 @@ function createDomainHome {
   
   if [ -n "${domainType}" ]; then
     sed -i -e "s:%DOMAIN_TYPE%:${domainType}:g" ${createJobOutput}
-
     if [ "${domainType}" == "soaosb" ] || [ "${domainType}" == "soaessosb" ]; then
       echo "domainType is: ${domainType}"
       # Appends new cluster and rename it osb_cluster
