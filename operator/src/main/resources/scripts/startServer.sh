@@ -162,6 +162,29 @@ function copySitCfg() {
   fi
 }
 
+# Returns the count of the number of files in the specified directory
+function countFilesInDir() {
+  dir=${1}
+  cnt=`find ${dir} -type f | wc -l`
+  trace "file count in directory ${dir}: ${cnt}"
+  return ${cnt}
+}
+
+# Creates symbolic link from source directory to target directory
+function createSymbolicLink() {
+  targetDir=${1}
+  sourceDir=${2}
+  /bin/ln -sFf ${targetDir} ${sourceDir}
+  trace "Created symbolic link from ${sourceDir} to ${targetDir}"
+}
+
+# Forcefully deletes specified directory
+function deleteDir() {
+  targetDir=${1}
+  rm -rf ${targetDir}
+  trace "Deleted directory ${targetDir}"
+}
+
 #
 # Configure startup mode
 #
@@ -192,27 +215,91 @@ trace "DATA_HOME=${DATA_HOME}"
 trace "SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG}"
 trace "USER_MEM_ARGS=${USER_MEM_ARGS}"
 trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
+trace "KEEP_DEFAULT_DATA_HOME=${KEEP_DEFAULT_DATA_HOME}"
 
 #
-# DATA_HOME env variable exists implies override directory specified.  Attempt to create directory
-#
-if [ -n ${DATA_HOME} ]; then
-  if [ ! -d ${DATA_HOME} ]; then
-    createFolder ${DATA_HOME}
-    trace "Created data home directory: '${DATA_HOME}'"
+# If DATA_HOME env variable exists than this implies override directory (dataHome attribute of CRD) specified
+# so we need to try and link the server's 'data' directory to the centralized DATA_HOME directory
+# If 'KEEP_DEFAULT_DATA_HOME' env variable is defined then we will NOT link the server's 'data' directory to the
+# centralized DATA_HOME directory and instead keep the server's 'data' directory in its default location of
+# ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
+if [ -n ${DATA_HOME} ] &&
+     [ -z ${KEEP_DEFAULT_DATA_HOME} ]; then
+  # Create $DATA_HOME directory for server if doesn't exist
+  if [ ! -d ${DATA_HOME}/${SERVER_NAME}/data ]; then
+    trace "Creating directory ${DATA_HOME}/${SERVER_NAME}/data"
+    createFolder ${DATA_HOME}/${SERVER_NAME}/data
+  else
+    trace "Directory ${DATA_HOME}/${SERVER_NAME}/data exists"
   fi
 
-  # if server's default data directory does not exist than create symbolic link to location specified by DATA_HOME
+  # if server's default 'data' directory (${DOMAIN_HOME}/servers/${SERVER_NAME}/data) does not exist than create
+  # symbolic link to location specified by $DATA_HOME/${SERVER_NAME}/data
   if [ ! -d ${DOMAIN_HOME}/servers/${SERVER_NAME}/data ]; then
-    if [ ! -d ${DATA_HOME}/${SERVER_NAME}/data ]; then
-      trace "Creating directory ${DATA_HOME}/${SERVER_NAME}/data"
-      createFolder ${DATA_HOME}/${SERVER_NAME}/data
+    trace "${DOMAIN_HOME}/servers/${SERVER_NAME}/data does NOT exist as a directory"
+
+    # Create the server's directory in $DOMAIN_HOME/servers
+    if [ ! -d ${DOMAIN_HOME}/servers/${SERVER_NAME} ]; then
+      trace "Creating directory ${DOMAIN_HOME}/servers/${SERVER_NAME}"
+      createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME}
     else
-      trace "Directory ${DATA_HOME}/${SERVER_NAME}/data exists"
+      trace "${DOMAIN_HOME}/servers/${SERVER_NAME} already exists as a directory"
     fi
 
-    /bin/ln -sFf ${DATA_HOME}/${SERVER_NAME}/data ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
-    trace "Created symbolic link from ${DOMAIN_HOME}/servers/${SERVER_NAME}/data to ${DATA_HOME}/${SERVER_NAME}/data"
+    # If server's 'data' directory is not already a symbolic link than create the symbolic link to
+    # $DATA_HOME/${SERVER_NAME}/data
+    if [ ! -L ${DOMAIN_HOME}/servers/${SERVER_NAME}/data ]; then
+      createSymbolicLink ${DATA_HOME}/${SERVER_NAME}/data ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
+    else
+      trace "${DOMAIN_HOME}/servers/${SERVER_NAME}/data is already a symbolic link"
+    fi
+  else
+    trace "${DOMAIN_HOME}/servers/${SERVER_NAME}/data exists as a directory"
+
+    # server's default 'data' directory (${DOMAIN_HOME}/servers/${SERVER_NAME}/data) exists so first verify it's
+    # not a symbolic link.  If it's already a symbolic link than there is nothing to do.
+    if [ -L ${DOMAIN_HOME}/servers/${SERVER_NAME}/data ]; then
+      trace "${DOMAIN_HOME}/servers/${SERVER_NAME}/data is already a symbolic link"
+    else
+      # Server's default 'data' directory (${DOMAIN_HOME}/servers/${SERVER_NAME}/data) exists and is not
+      # a symbolic link so must be a directory.
+
+      # count number of files found under directory ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
+      countFilesInDir ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
+      fileCountServerDomainHomeDir=$?
+
+      # count number of files found under directory ${DATA_HOME}/${SERVER_NAME}/data
+      countFilesInDir ${DATA_HOME}/${SERVER_NAME}/data
+      fileCountServerDataDir=$?
+
+      # Use file counts to determine whether or not we can create a symbolic link to centralize
+      # data directory in specified ${DATA_HOME}/${SERVER_NAME}/data directory.
+      if [ ${fileCountServerDataDir} -eq 0 ]; then
+        if [ ${fileCountServerDomainHomeDir} -ne 0 ]; then
+          cp -rf ${DOMAIN_HOME}/servers/${SERVER_NAME}/data ${DATA_HOME}/${SERVER_NAME}
+          trace "Recursively copied directory/files from ${DOMAIN_HOME}/servers/${SERVER_NAME}/data to ${DATA_HOME}/${SERVER_NAME} directory"
+        else
+          trace "${DOMAIN_HOME}/servers/${SERVER_NAME}/data directory is empty"
+        fi
+
+        # forcefully delete the server's data directory so we can create symbolic link
+        deleteDir ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
+
+        # Create the symbolic link from server's data directory to $DATA_HOME
+        createSymbolicLink ${DATA_HOME}/${SERVER_NAME}/data ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
+      elif [ ${fileCountServerDataDir} -ne 0 ]; then
+        if [ ${fileCountServerDomainHomeDir} -ne 0 ]; then
+           trace SEVERE "Both ${DOMAIN_HOME}/servers/${SERVER_NAME}/data and ${DATA_HOME}/${SERVER_NAME}/data directories contain persistent files which WebLogic cannot resolve.  You must manually move any persistent files from ${DOMAIN_HOME}/servers/${SERVER_NAME}/data directory to ${DATA_HOME}/${SERVER_NAME}/data directory and then delete the ${DOMAIN_HOME}/servers/${SERVER_NAME}/data directory.  Once this is done you can then restart the Domain. Alternatively, you can avoid this validation by setting the 'KEEP_DEFAULT_DATA_HOME' environment variable."
+           exitOrLoop
+        else
+           # forcefully delete the server's data directory so we can create symbolic link
+           deleteDir ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
+
+           # Create the symbolic link from server's data directory to $DATA_HOME
+           createSymbolicLink ${DATA_HOME}/${SERVER_NAME}/data ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
+        fi
+      fi
+    fi
   fi
 fi
 
