@@ -47,8 +47,11 @@ import org.junit.Test;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAffinity;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createConfigMapKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createContainer;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createFieldRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecurityContext;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -75,7 +78,9 @@ public class JobHelperTest {
   private final V1SecurityContext containerSecurityContext = createSecurityContext(555L);
   private final V1Affinity podAffinity = createAffinity();
   private final V1Toleration toleration = createToleration("key","Eqauls", "value", "NoSchedule");
-  protected List<Memento> mementos = new ArrayList<>();
+  private final V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
+  private final V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
+  private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");  protected List<Memento> mementos = new ArrayList<>();
 
   @Before
   public void setup() throws Exception {
@@ -259,6 +264,41 @@ public class JobHelperTest {
             hasEnvVar("item1", "domain-value1"),
             hasEnvVar("item2", "admin-value2"),
             hasEnvVar("item3", "admin-value3")));
+  }
+
+  @Test
+  public void whenDomainHasValueFromEnvironmentItems_introspectorPodStartupWithThem() {
+    configureDomain()
+        .withEnvironmentVariable(configMapKeyRefEnvVar)
+        .withEnvironmentVariable(secretKeyRefEnvVar)
+        .withEnvironmentVariable(fieldRefEnvVar);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        allOf(
+            hasItem(configMapKeyRefEnvVar),
+            hasItem(secretKeyRefEnvVar),
+            hasItem(fieldRefEnvVar)));
+  }
+
+  @Test
+  public void whenAdminServerHasValueFromEnvironmentItems_introspectorPodStartupWithThem() {
+    configureDomain()
+        .configureAdminServer()
+        .withEnvironmentVariable(configMapKeyRefEnvVar)
+        .withEnvironmentVariable(secretKeyRefEnvVar)
+        .withEnvironmentVariable(fieldRefEnvVar);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        allOf(
+            hasItem(configMapKeyRefEnvVar),
+            hasItem(secretKeyRefEnvVar),
+            hasItem(fieldRefEnvVar)));
   }
 
   @Test

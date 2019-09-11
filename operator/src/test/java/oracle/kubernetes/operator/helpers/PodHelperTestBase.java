@@ -4,6 +4,10 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import io.kubernetes.client.models.V1ConfigMapKeySelector;
+import io.kubernetes.client.models.V1EnvVarSource;
+import io.kubernetes.client.models.V1ObjectFieldSelector;
+import io.kubernetes.client.models.V1SecretKeySelector;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -958,6 +962,18 @@ public abstract class PodHelperTestBase {
 
   static V1Toleration createToleration(String key, String operator, String value, String effect) {
     return new V1Toleration().key(key).operator(operator).value(value).effect(effect);
+  }
+
+  static V1EnvVar createFieldRefEnvVar(String name, String fieldPath) {
+    return new V1EnvVar().name(name).valueFrom(new V1EnvVarSource().fieldRef(new V1ObjectFieldSelector().fieldPath(fieldPath)));
+  }
+
+  static V1EnvVar createConfigMapKeyRefEnvVar(String name, String configMapName, String key) {
+    return new V1EnvVar().name(name).valueFrom(new V1EnvVarSource().configMapKeyRef(new V1ConfigMapKeySelector().name(configMapName).key(key)));
+  }
+
+  static V1EnvVar createSecretKeyRefEnvVar(String name, String secretName, String key) {
+    return new V1EnvVar().name(name).valueFrom(new V1EnvVarSource().secretKeyRef(new V1SecretKeySelector().name(secretName).key(key)));
   }
 
   abstract List<String> createStartCommand();
