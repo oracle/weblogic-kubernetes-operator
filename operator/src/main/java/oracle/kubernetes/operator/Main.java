@@ -222,6 +222,9 @@ public class Main {
       }
       isNamespaceStarted.remove(ns);
       domainWatchers.remove(ns);
+      eventWatchers.remove(ns);
+      podWatchers.remove(ns);
+      serviceWatchers.remove(ns);
     }
   }
 
