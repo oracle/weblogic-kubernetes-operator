@@ -5,7 +5,6 @@
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
@@ -13,18 +12,14 @@ import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 
 public class Matchers {
-
-  private static final String INSTRUCTION = "{\"op\":\"%s\",\"path\":\"%s\",\"value\":\"%s\"}";
 
   public static Matcher<Iterable<? super V1Container>> hasContainer(
       String name, String image, String... command) {
@@ -151,29 +146,6 @@ public class Matchers {
           .appendValue(expectedPeriod)
           .appendText(" and failureThreshold ")
           .appendValue(EXPECTED_FAILURE_THRESHOLD);
-    }
-  }
-
-  public static class PatchMatcher implements BodyMatcher {
-    private Set<String> expectedInstructions = new HashSet<>();
-    private int index = 0;
-
-    public PatchMatcher(String[] patchInstructions) {
-      while (index < patchInstructions.length) addExpectedInstruction(patchInstructions);
-    }
-
-    private void addExpectedInstruction(String[] strings) {
-      expectedInstructions.add(
-          String.format(INSTRUCTION, strings[index], strings[index + 1], strings[index + 2]));
-      index += 3;
-    }
-
-    @Override
-    public boolean matches(Object actualBody) {
-      if (!(actualBody instanceof V1Patch)) return false;
-      String actualInstructions = ((V1Patch) actualBody).getValue();
-
-      return actualInstructions.equals(expectedInstructions.toString());
     }
   }
 }

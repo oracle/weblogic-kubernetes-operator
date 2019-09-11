@@ -19,7 +19,7 @@ import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
-import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -37,10 +37,15 @@ import org.junit.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
+import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -58,7 +63,6 @@ public class DomainIntrospectorJobTest {
   private static final String MS_PREFIX = "managed-server";
   private static final String[] MANAGED_SERVER_NAMES =
       IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(n -> MS_PREFIX + n).toArray(String[]::new);
-  static final String ERROR_1 = "something bad happened";
 
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -84,6 +88,7 @@ public class DomainIntrospectorJobTest {
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.defineResources(domain);
   }
 
   private String[] getMessageKeys() {
@@ -207,6 +212,34 @@ public class DomainIntrospectorJobTest {
             hasEnvVar("INTROSPECT_HOME", getDomainHome()),
             hasEnvVar("SERVER_OUT_IN_POD_LOG", "true"),
             hasEnvVar("CREDENTIALS_SECRET_NAME", CREDENTIALS_SECRET_NAME)));
+  }
+
+  @Test
+  public void whenPodCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
+    testSupport.failOnResource(JOB, getJobName(), NS, new UnprocessableEntityBuilder()
+        .withReason("FieldValueNotFound")
+        .withMessage("Test this failure")
+        .build());
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(getDomain(), hasStatus("FieldValueNotFound", "Test this failure"));
+  }
+
+  Domain getDomain() {
+    return (Domain) testSupport.getResourceWithName(DOMAIN, UID);
+  }
+
+  @Test
+  public void whenPodCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
+    testSupport.failOnResource(JOB, getJobName(), NS, new UnprocessableEntityBuilder()
+        .withReason("FieldValueNotFound")
+        .withMessage("Test this failure")
+        .build());
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(terminalStep.wasRun(), is(false));
   }
 
   private String getDomainHome() {
