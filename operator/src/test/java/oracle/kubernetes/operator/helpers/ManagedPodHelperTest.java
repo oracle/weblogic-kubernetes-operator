@@ -27,6 +27,11 @@ import org.junit.Test;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
+import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_PATCHED;
@@ -721,6 +726,131 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
         hasEntry(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION));
     assertThat(podLabels, hasEntry(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }
+
+  @Test
+  public void whenClusterHasAffinity_createPodWithIt() {
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withAffinity(affinity);
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    assertThat(
+        getCreatedPod().getSpec().getAffinity(),
+        is(affinity));
+  }
+
+  @Test
+  public void whenClusterHasNodeSelector_createPodWithIt() {
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withNodeSelector("os_arch", "x86_64");
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    assertThat(
+        getCreatedPod().getSpec().getNodeSelector(),
+        hasEntry("os_arch", "x86_64"));
+  }
+
+  @Test
+  public void whenClusterHasNodeName_createPodWithIt() {
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withNodeName("kube-01");
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    assertThat(
+        getCreatedPod().getSpec().getNodeName(),
+        is ("kube-01"));
+  }
+
+  @Test
+  public void whenClusterHasSchedulerName_createPodWithIt() {
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withSchedulerName("my-scheduler");
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    assertThat(
+        getCreatedPod().getSpec().getSchedulerName(),
+        is ("my-scheduler"));
+  }
+
+  @Test
+  public void whenClusterHasRuntimeClassName_createPodWithIt() {
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withRuntimeClassName("RuntimeClassName");
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    assertThat(
+        getCreatedPod().getSpec().getRuntimeClassName(),
+        is ("RuntimeClassName"));
+  }
+
+  @Test
+  public void whenClusterHasPriorityClassName_createPodWithIt() {
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withPriorityClassName("PriorityClassName");
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    assertThat(
+        getCreatedPod().getSpec().getPriorityClassName(),
+        is ("PriorityClassName"));
+  }
+
+  @Test
+  public void whenClusterHasRestartPolicy_createPodWithIt() {
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withRestartPolicy("Always");
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    assertThat(
+        getCreatedPod().getSpec().getRestartPolicy(),
+        is("Always"));
+  }
+
+  @Test
+  public void whenClusterHasPodSecurityContext_createPodWithIt() {
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withPodSecurityContext(podSecurityContext);
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    assertThat(
+        getCreatedPod().getSpec().getSecurityContext(),
+        is(podSecurityContext));
+  }
+
+  @Test
+  public void whenClusterHasContainerSecurityContext_createContainersWithIt() {
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withContainerSecurityContext(containerSecurityContext);
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    getCreatedPodSpecContainers()
+        .forEach(c -> assertThat(
+            c.getSecurityContext(),
+            is(containerSecurityContext))
+        );
+  }
+
+  @Test
+  public void whenClusterHasResources_createContainersWithThem() {
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withLimitRequirement("cpu", "1Gi")
+        .withRequestRequirement("memory", "250m");
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    List<V1Container> containers = getCreatedPodSpecContainers();
+
+    containers.forEach(c -> assertThat(c.getResources().getLimits(), hasResourceQuantity("cpu", "1Gi")));
+    containers.forEach(c -> assertThat(c.getResources().getRequests(), hasResourceQuantity("memory", "250m")));
+  }
+
 
   @Override
   void setServerPort(int port) {
