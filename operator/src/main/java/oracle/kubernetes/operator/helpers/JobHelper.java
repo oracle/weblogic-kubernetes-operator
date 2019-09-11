@@ -408,8 +408,8 @@ public class JobHelper {
     }
 
     private void updateStatus(DomainPresenceInfo domainPresenceInfo) {
-      DomainStatusPatch.updateDomainStatus(
-            domainPresenceInfo.getDomain(), "ErrIntrospector", onSeparateLines(severeStatuses));
+      DomainStatusPatch.updateSynchronously(
+            domainPresenceInfo.getDomain(), DomainStatusPatch.ERR_INTROSPECTOR, onSeparateLines(severeStatuses));
     }
 
     private String onSeparateLines(List<String> lines) {
