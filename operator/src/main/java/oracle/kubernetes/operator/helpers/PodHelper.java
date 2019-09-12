@@ -161,8 +161,8 @@ public class PodHelper {
     ArrayList<V1EnvVar> copy = new ArrayList<>();
     if (envVars != null) {
       for (V1EnvVar envVar : envVars) {
-        // note that valueFrom is copied by value, which is ok as long as we are not modifying any
-        // values within the V1EnvVarSource object inside the valueFrom
+        // note that a deep copy of valueFrom is not needed here as, unlike with value, we are
+        // not doing any modifications or macro substitutions on the valueFrom fields
         copy.add(new V1EnvVar()
             .name(envVar.getName())
             .value(envVar.getValue())
