@@ -14,8 +14,14 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.bind.DatatypeConverter;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlFileInput;
@@ -46,7 +52,7 @@ public class ItMonitoringExporter extends BaseTest {
 
   private static int number = 5;
   private static Operator operator = null;
-  private static Operator operator1 = null;
+
   private static Domain domain = null;
   private static String myhost = "";
   private static String metricsUrl = "";
@@ -56,7 +62,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static String monitoringExporterScriptDir = "";
   private static String exporterUrl = "";
   private static String configPath = "";
-  private static String prometheusPort = "32000";
+  private static String prometheusPort = "30000";
   private static String wlsUser = "";
   private static String wlsPassword = "";
   // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
@@ -64,8 +70,8 @@ public class ItMonitoringExporter extends BaseTest {
       "heap_free_current%7Bname%3D%22managed-server1%22%7D%5B15s%5D";
   private static String prometheusSearchKey2 =
       "heap_free_current%7Bname%3D%22managed-server2%22%7D%5B15s%5D";
-  private static String testwsappPrometheusSearchKey =
-      "weblogic_servlet_invocation_total_count%7Bapp%3D%22testwsapp%22%7D%5B15s%5D";
+  private static String testappPrometheusSearchKey =
+      "weblogic_servlet_invocation_total_count%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
   String oprelease = "op" + number;
   private int waitTime = 5;
 
@@ -82,10 +88,15 @@ public class ItMonitoringExporter extends BaseTest {
       initialize(APP_PROPS_FILE);
       logger.info("Checking if operator and domain are running, if not creating");
       if (operator == null) {
+        /*
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
         operator = new Operator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
         operator.callHelmInstall();
+
+         */
+        operator = TestUtils.createOperator("operatorexp.yaml");
+
       }
       if (domain == null) {
         domain = createVerifyDomain(number, operator);
@@ -105,7 +116,11 @@ public class ItMonitoringExporter extends BaseTest {
       BaseTest.setWaitTimePod(10);
       upgradeTraefikHostName();
       deployRunMonitoringExporter(domain, operator);
-      buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
+
+      String testAppName = "httpsessionreptestapp";
+      String scriptName = "buildDeployAppInPod.sh";
+      domain.buildDeployJavaAppInPod(
+              testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
     }
   }
 
@@ -127,9 +142,14 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      if (operator1 != null) {
-        operator1.destroy();
-      }
+
+      String crdCmd =
+              " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
+      ExecCommand.exec(crdCmd);
+      crdCmd = "kubectl delete secret domain1-weblogic-credentials";
+      ExecCommand.exec(crdCmd);
+      uninstallWebHookPrometheusGrafanaViaChart();
+      uninstallMySql();
       deletePvDir();
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       logger.info("SUCCESS");
@@ -199,10 +219,6 @@ public class ItMonitoringExporter extends BaseTest {
       String exporterAppPath, Domain domain, Operator operator) throws Exception {
 
     String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
-    replaceStringInFile(
-        samplesDir + "prometheus-deployment.yaml",
-        "webapp=\"OpenSessionApp\"",
-        "app=\"httpsessionreptestapp\"");
 
     String domainNS = domain.getDomainNs();
     String operatorNS = operator.getOperatorNamespace();
@@ -212,10 +228,9 @@ public class ItMonitoringExporter extends BaseTest {
     executeShelScript(
         resourceExporterDir,
         monitoringExporterScriptDir,
-        "deployPromGrafana.sh",
+        "deployCoord.sh",
         monitoringExporterDir + " " + domainNS + " " + operatorNS);
-    // deploy webhook
-    createWebHookForScale();
+
     Map<String, Object> domainMap = domain.getDomainMap();
     // create the app directory in admin pod
     TestUtils.kubectlexec(
@@ -240,9 +255,8 @@ public class ItMonitoringExporter extends BaseTest {
     scaleCluster(1);
     // invoke the app to increase number of the opened sessions
     String testAppName = "httpsessionreptestapp";
-    String scriptName = "buildDeployAppInPod.sh";
-    domain.buildDeployJavaAppInPod(
-        testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
+
+
     domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
 
     String webhookPod = getPodName("name=webhook", "monitoring");
@@ -253,64 +267,19 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Redeploy Monitoring Exporter webapp with original configuration.
-   *
-   * @param domain - domain where monitoring exporter will be deployed
-   * @throws Exception if could not run the command successfully
-   */
-  private static void redeployMonitoringExporter(Domain domain) throws Exception {
-    String exporterAppPath = monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
-    domain.undeployWebAppViaWlst("wls-exporter", appLocationInPod, true);
-    domain.deployWebAppViaWlst(
-        "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true);
-    // check if exporter is up
-    domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
-  }
-
-  private static void resetMonitoringExporterToPreBuiltConfig() throws Exception {
-    redeployMonitoringExporter(domain);
-  }
-
-  /**
    * Delete Prometheus, Grafana, Coordinator.
    *
    * @throws Exception if could not run the command successfully
    */
-  private static void deletePrometheusGrafana() throws Exception {
+  private static void deleteCoordinator() throws Exception {
 
     final String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
-    String prompodName = getPodName("app=prometheus", "monitoring");
-    String grafanapodName = getPodName("name=grafana", "monitoring");
     executeShelScript(
         resourceExporterDir,
         monitoringExporterDir,
-        "deletePromGrafana.sh",
+        "deleteCoord.sh",
         monitoringExporterDir + " " + domain.getDomainNs());
-    TestUtils.checkPodDeleted(prompodName, "monitoring");
-    TestUtils.checkPodDeleted(grafanapodName, "monitoring");
-    String crdCmd = " kubectl delete -f " + samplesDir + "monitoring-namespace.yaml";
-    TestUtils.exec(crdCmd);
-    logger.info("Deleted Prometheus, Grafana, Coordinator");
-  }
-
-  /**
-   * Delete Webhook and AlertManager.
-   *
-   * @throws Exception if could not run the command successfully
-   */
-  private static void deleteWebHookAlertManager() throws Exception {
-
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
-    String ampodName = getPodName("name=alertmanager", "monitoring");
-    String webhookpodName = getPodName("name=webhook", "monitoring");
-    executeShelScript(
-        resourceExporterDir,
-        monitoringExporterDir,
-        "deleteWebHookAlertManager.sh",
-        monitoringExporterDir + " " + domain.getDomainNs());
-    TestUtils.checkPodDeleted(ampodName, "monitoring");
-    TestUtils.checkPodDeleted(webhookpodName, "monitoring");
-    logger.info("Deleted  Webhook, Alert Manager");
+    logger.info("Deleted Coordinator");
   }
 
   /**
@@ -435,28 +404,7 @@ public class ItMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
-    assertTrue(checkMetricsViaPrometheus(testwsappPrometheusSearchKey, "testwsapp"));
-    testCompletedSuccessfully = true;
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Check that configuration can be reviewed via Prometheus.
-   *
-   * @throws Exception if test fails
-   */
-  @Test
-  public void test01_1_VerifyScalingViaPrometheus() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    boolean testCompletedSuccessfully = false;
-    try {
-      verifyScalingViaPrometheus(domain, TESTWSSERVICE);
-    } finally {
-      deleteWebHookAlertManager();
-      scaleCluster(2);
-    }
+    assertTrue(checkMetricsViaPrometheus(testappPrometheusSearchKey, "httpsessionreptestapp"));
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -472,39 +420,8 @@ public class ItMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_jvm.yml");
-
-    boolean isFoundNewKey1 = false;
-    boolean isFoundNewKey2 = false;
-    isFoundNewKey1 = checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1");
-    isFoundNewKey2 = checkMetricsViaPrometheus(prometheusSearchKey2, "managed-server2");
-
-    boolean isFoundOldKey1 = true;
-    boolean isFoundOldKey2 = true;
-
-    isFoundOldKey1 = checkMetricsViaPrometheus(testwsappPrometheusSearchKey, "managed-server1");
-    isFoundOldKey2 = checkMetricsViaPrometheus(testwsappPrometheusSearchKey, "managed-server2");
-    String foundResults =
-        " server1: ( newMetrics:"
-            + isFoundNewKey1
-            + " oldMetrics: "
-            + isFoundOldKey1
-            + ") server2: ( newMetrics:"
-            + isFoundNewKey2
-            + " oldMetrics: "
-            + isFoundOldKey2
-            + ")";
-    if (isFoundNewKey1 && isFoundNewKey2) {
-      logger.info("Updated Metrics for both managed servers are found");
-      assertFalse(
-          "Old configuration still presented " + foundResults, isFoundOldKey1 && isFoundOldKey2);
-    } else {
-      if ((isFoundNewKey1 || isFoundNewKey2) || (!isFoundOldKey1 || !isFoundOldKey2)) {
-        throw new RuntimeException(
-            "FAILURE: coordinator does not update config for one of the managed-server:"
-                + foundResults);
-      }
-      throw new RuntimeException("FAILURE: configuration has not updated - " + foundResults);
-    }
+    assertTrue(checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1"));
+    assertTrue(checkMetricsViaPrometheus(prometheusSearchKey2, "managed-server2"));
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -537,7 +454,7 @@ public class ItMonitoringExporter extends BaseTest {
                 prometheusSearchKey1, "\"weblogic_serverName\":\"managed-server1\"")
             || checkMetricsViaPrometheus(
                 prometheusSearchKey2, "\"weblogic_serverName\":\"managed-server2\""));
-    assertTrue(checkMetricsViaPrometheus(testwsappPrometheusSearchKey, "testwsapp"));
+    assertTrue(checkMetricsViaPrometheus(testappPrometheusSearchKey, "httpsessionreptestapp"));
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -551,9 +468,6 @@ public class ItMonitoringExporter extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-
-    resetMonitoringExporterToPreBuiltConfig();
-
     HtmlPage page =
         submitConfigureForm(exporterUrl, "replace", configPath + "/rest_oneattribval.yml");
     assertTrue(page.asText().contains("values: invocationTotalCount"));
@@ -573,7 +487,6 @@ public class ItMonitoringExporter extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetMonitoringExporterToPreBuiltConfig();
     HtmlPage page =
         submitConfigureForm(exporterUrl, "replace", configPath + "/rest_oneattribval.yml");
     assertTrue(page.asText().contains("values: invocationTotalCount"));
@@ -592,7 +505,6 @@ public class ItMonitoringExporter extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetMonitoringExporterToPreBuiltConfig();
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_empty.yml");
     assertTrue(page.asText().contains("queries:") && !page.asText().contains("values"));
     logger.info("SUCCESS - " + testMethodName);
@@ -608,7 +520,6 @@ public class ItMonitoringExporter extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetMonitoringExporterToPreBuiltConfig();
     final WebClient webClient = new WebClient();
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
@@ -627,7 +538,6 @@ public class ItMonitoringExporter extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetMonitoringExporterToPreBuiltConfig();
     changeConfigNegative(
         "append", configPath + "/rest_notymlformat.yml", "Configuration is not in YAML format");
     logger.info("SUCCESS - " + testMethodName);
@@ -644,7 +554,6 @@ public class ItMonitoringExporter extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetMonitoringExporterToPreBuiltConfig();
     changeConfigNegative(
         "replace", configPath + "/rest_notymlformat.yml", "Configuration is not in YAML format");
   }
@@ -677,7 +586,6 @@ public class ItMonitoringExporter extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetMonitoringExporterToPreBuiltConfig();
     changeConfigNegative(
         "replace",
         configPath + "/rest_notyml.yml",
@@ -696,7 +604,6 @@ public class ItMonitoringExporter extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetMonitoringExporterToPreBuiltConfig();
     changeConfigNegative(
         "replace",
         configPath + "/rest_dublicatedval.yml",
@@ -714,7 +621,6 @@ public class ItMonitoringExporter extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetMonitoringExporterToPreBuiltConfig();
     changeConfigNegative(
         "append",
         configPath + "/rest_dublicatedval.yml",
@@ -733,7 +639,6 @@ public class ItMonitoringExporter extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetMonitoringExporterToPreBuiltConfig();
     final WebClient webClient = new WebClient();
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
@@ -741,8 +646,8 @@ public class ItMonitoringExporter extends BaseTest {
         submitConfigureForm(exporterUrl, "replace", configPath + "/rest_snakecasefalse.yml");
     assertNotNull(page);
     assertFalse(page.asText().contains("metricsNameSnakeCase"));
-    String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22testwsapp%22%7D%5B15s%5D";
-    assertTrue(checkMetricsViaPrometheus(searchKey, "testwsap"));
+    String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
+    assertTrue(checkMetricsViaPrometheus(searchKey, "httpsessionreptestapp"));
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -842,7 +747,6 @@ public class ItMonitoringExporter extends BaseTest {
         "401 Unauthorized for " + exporterUrl,
         wlsUser,
         "");
-    resetMonitoringExporterToPreBuiltConfig();
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -852,30 +756,19 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
-  public void test19_EndToEndViaChart() throws Exception {
+  public void test01_1_EndToEndViaChart() throws Exception {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
-    try {
 
-      setupPvMysql();
-      createWlsImageAndDeploy();
-      installWebHook();
-      installPrometheusGrafanaViaChart();
+    setupPvMysql();
+    createWlsImageAndDeploy();
+    installWebHook();
+    installPrometheusGrafanaViaChart();
+    fireAlert();
+    addMonitoringToExistedDomain();
 
-      fireAlert();
-      addMonitoringToExistedDomain();
-    } finally {
-      String crdCmd =
-          " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
-      ExecCommand.exec(crdCmd);
-      crdCmd = "kubectl delete secret domain1-weblogic-credentials";
-      ExecCommand.exec(crdCmd);
-      uninstallWebHookPrometheusGrafanaViaChart();
-      uninstallMySql();
-      deletePvDir();
-    }
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -898,9 +791,13 @@ public class ItMonitoringExporter extends BaseTest {
         command, "Some WLS cluster has only one running server for more than 1 minutes");
   }
 
-  private void addMonitoringToExistedDomain() throws Exception {
+  private static void addMonitoringToExistedDomain() throws Exception {
     logger.info("Add monitoring to the running domain");
-    resetMonitoringExporterToPreBuiltConfig();
+    String exporterAppPath = monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
+    domain.deployWebAppViaWlst(
+            "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true);
+    // check if exporter is up
+    domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
     // apply new domain yaml and verify pod restart
     String crdCmd =
         " kubectl -n monitoring get cm prometheus-server -oyaml > "
@@ -1123,7 +1020,8 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if could not run the command successfully to create WLSImage and deploy
    */
   private static void createWlsImageAndDeploy() throws Exception {
-    operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+    //operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+    addRestOptToYaml(monitoringExporterEndToEndDir + "/dashboard/exporter-config.yaml", "restPort", 8001);
 
     String command =
         "cd "
@@ -1182,14 +1080,11 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static void installPrometheusGrafanaViaChart() throws Exception {
     // delete any running pods
-    deletePrometheusGrafana();
-    prometheusPort = "30500";
-    String crdCmd = "kubectl create ns monitoring";
+    //deletePrometheusGrafana();
+    prometheusPort = "30000";
+
+    String crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
     TestUtils.exec(crdCmd);
-    crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
-    TestUtils.exec(crdCmd);
-    replaceStringInFile(
-        monitoringExporterEndToEndDir + "/prometheus/values.yaml", "30000", "30500");
 
     crdCmd =
         "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml";
@@ -1208,40 +1103,11 @@ public class ItMonitoringExporter extends BaseTest {
     ExecResult resultStatus = ExecCommand.exec(crdCmd);
     logger.info("Status of the pods " + resultStatus.stdout());
     result = ExecCommand.exec(crdCmd + "| grep prometheus-service");
-    podName = result.stdout().trim();
-    crdCmd = "kubectl -n monitoring describe pod " + podName;
-    result = ExecCommand.exec(crdCmd);
-    logger.info("Status of the prometheus service pod " + result.stdout());
-
-    crdCmd = "kubectl -n monitoring -c prometheus-server-configmap-reload logs  " + podName;
-    result = ExecCommand.exec(crdCmd);
-    logger.info(
-        "Log for prometheus service pod , container prometheus-server-configmap-reload"
-            + result.stdout());
-
-    crdCmd = "kubectl -n monitoring -c prometheus-server logs  " + podName;
-    result = ExecCommand.exec(crdCmd);
-    logger.info("Log for prometheus service pod , container prometheus-server" + result.stdout());
 
     assertFalse(
         "Can't create prometheus pods",
         resultStatus.stdout().contains("CrashLoopBackOff")
             || resultStatus.stdout().contains("Error"));
-
-    crdCmd = "kubectl -n monitoring get svc -l app=prometheus";
-    result = ExecCommand.exec(crdCmd);
-    assertTrue(
-        "Can't find prometheus-alertmanager service running",
-        result.stdout().contains("prometheus-alertmanager"));
-    assertTrue(
-        "Can't find prometheus-kube-state-metrics service running",
-        result.stdout().contains("prometheus-kube-state-metrics"));
-    assertTrue(
-        "Can't find prometheus-node-exporter service running",
-        result.stdout().contains("prometheus-node-exporter"));
-    assertTrue(
-        "Can't find prometheus-server service running",
-        result.stdout().contains("prometheus-server"));
 
     // install grafana
     crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
@@ -1408,6 +1274,7 @@ public class ItMonitoringExporter extends BaseTest {
         "kubectl delete -f "
             + monitoringExporterEndToEndDir
             + "/prometheus/alert-persistence.yaml --ignore-not-found");
+    deleteCoordinator();
   }
 
   /**
@@ -1429,28 +1296,7 @@ public class ItMonitoringExporter extends BaseTest {
         "kubectl delete -f "
             + monitoringExporterEndToEndDir
             + "/mysql/persistence.yaml --ignore-not-found");
-    /*
-    String podName = "";
-    String crdCmd = "";
-    try {
-        podName = getPodName("app=mysql", "default");
-        crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/mysql.yaml --ignore-not-found";
-        TestUtils.exec(crdCmd);
-        BaseTest.setWaitTimePod(10);
-        TestUtils.checkPodDeleted(podName, "default");
-    } catch (AssertionError assertError) {
-        //ignore, the pod may not be existed
-    } catch (Exception ex) {
-        //it take more time to terminate mysql
-        BaseTest.setWaitTimePod(10);
-        TestUtils.checkPodDeleted(podName, "default");
-    }
 
-
-    crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/persistence.yaml --ignore-not-found";
-    ExecCommand.exec(crdCmd);
-
-     */
   }
 
   /**
@@ -1545,5 +1391,30 @@ public class ItMonitoringExporter extends BaseTest {
       new RuntimeException("FAILURE: can't check metrics" + ex.getMessage());
     }
     return result;
+  }
+
+  /**
+   * Method to read the yaml file and add extra properties to the root
+   *
+   * @param yamlFile - Name of the yaml file to make changes.
+   * @throws IOException exception
+   */
+  private static void addRestOptToYaml (String yamlFile, String prop, int restPort ) throws IOException {
+    ObjectMapper objectMapper = new ObjectMapper();
+
+    ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+    Object obj = yamlReader.readValue(new File(yamlFile), Object.class);
+
+    ObjectMapper jsonWriter = new ObjectMapper();
+    String writeValueAsString = jsonWriter.writeValueAsString(obj);
+    JsonNode root = objectMapper.readTree(writeValueAsString);
+    ((ObjectNode) root).put(prop, restPort);
+    String jsonAsYaml = new YAMLMapper().writerWithDefaultPrettyPrinter().writeValueAsString(root);
+
+    // Write the modified yaml to the file
+    Path path = Paths.get(yamlFile);
+    Charset charset = StandardCharsets.UTF_8;
+    Files.write(path, jsonAsYaml.getBytes(charset));
+
   }
 }
