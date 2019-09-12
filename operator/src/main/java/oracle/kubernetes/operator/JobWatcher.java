@@ -23,6 +23,7 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -271,23 +272,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
                         .readJobAsync(
                             metadata.getName(),
                             metadata.getNamespace(),
-                            new ResponseStep<V1Job>(null) {
+                            new ResponseStep<>(null) {
                               @Override
-                              public NextAction onFailure(
-                                  Packet packet,
-                                  ApiException e,
-                                  int statusCode,
-                                  Map<String, List<String>> responseHeaders) {
-                                return super.onFailure(packet, e, statusCode, responseHeaders);
-                              }
-
-                              @Override
-                              public NextAction onSuccess(
-                                  Packet packet,
-                                  V1Job result,
-                                  int statusCode,
-                                  Map<String, List<String>> responseHeaders) {
-                                if (result != null && isComplete(result) /*isReady(result)*/) {
+                              public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
+                                if (callResponse.getResult() != null && isComplete(callResponse.getResult())) {
                                   if (didResume.compareAndSet(false, true)) {
                                     completeCallbackRegistrations.remove(
                                         metadata.getName(), complete);

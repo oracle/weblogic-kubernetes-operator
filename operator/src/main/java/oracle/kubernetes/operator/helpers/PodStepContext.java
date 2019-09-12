@@ -14,6 +14,7 @@ import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
@@ -24,8 +25,6 @@ import io.kubernetes.client.models.V1HTTPGetAction;
 import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSpec;
@@ -44,7 +43,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -58,10 +56,8 @@ import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
-import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
-@SuppressWarnings("deprecation")
 public abstract class PodStepContext extends BasePodStepContext {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -95,8 +91,6 @@ public abstract class PodStepContext extends BasePodStepContext {
   V1Pod getPodModel() {
     return podModel;
   }
-
-  abstract ServerSpec getServerSpec();
 
   private Step getConflictStep() {
     return new ConflictStep();
@@ -317,7 +311,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         getPodAnnotations());
 
     return new CallBuilder()
-        .patchPodAsync(getPodName(), getNamespace(), patchBuilder.build(), patchResponse(next));
+        .patchPodAsync(getPodName(), getNamespace(),
+            new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
   private void logPodCreated() {
@@ -385,10 +380,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private ResponseStep<V1Pod> patchResponse(Step next) {
     return new PatchPodResponseStep(next);
-  }
-
-  Step verifyPersistentVolume(Step next) {
-    return new VerifyPersistentVolumeStep(next);
   }
 
   V1Pod createPodModel() {
@@ -504,27 +495,9 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected V1PodSpec createSpec(TuningParameters tuningParameters) {
-    V1Container container =
-        createContainer(tuningParameters)
-            .resources(getServerSpec().getResources())
-            .securityContext(getServerSpec().getContainerSecurityContext());
-    V1PodSpec podSpec =
-        new V1PodSpec()
-            .containers(getServerSpec().getContainers())
-            .addContainersItem(container)
-            .affinity(getAffinity())
-            .nodeSelector(getServerSpec().getNodeSelectors())
-            .nodeName(getServerSpec().getNodeName())
-            .schedulerName(getServerSpec().getSchedulerName())
-            .priorityClassName(getServerSpec().getPriorityClassName())
-            .runtimeClassName(getServerSpec().getRuntimeClassName())
-            .tolerations(getTolerations())
-            .readinessGates(getReadinessGates())
-            .restartPolicy(getServerSpec().getRestartPolicy())
-            .securityContext(getServerSpec().getPodSecurityContext())
-            .initContainers(getServerSpec().getInitContainers());
-
-    podSpec.setImagePullSecrets(getServerSpec().getImagePullSecrets());
+    V1PodSpec podSpec = createPodSpec(tuningParameters)
+        .readinessGates(getReadinessGates())
+        .initContainers(getServerSpec().getInitContainers());
 
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
@@ -534,15 +507,6 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   // ---------------------- model methods ------------------------------
-
-  private V1Affinity getAffinity() {
-    return getServerSpec().getAffinity();
-  }
-
-  private List<V1Toleration> getTolerations() {
-    List<V1Toleration> tolerations = getServerSpec().getTolerations();
-    return tolerations.isEmpty() ? null : tolerations;
-  }
 
   private List<V1PodReadinessGate> getReadinessGates() {
     List<V1PodReadinessGate> readinessGates = getServerSpec().getReadinessGates();
@@ -555,14 +519,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     return volumes;
   }
 
-  private V1Container createContainer(TuningParameters tuningParameters) {
-    V1Container v1Container =
-        new V1Container()
-            .name(KubernetesConstants.CONTAINER_NAME)
-            .image(getImageName())
-            .imagePullPolicy(getImagePullPolicy())
-            .command(getContainerCommand())
-            .env(getEnvironmentVariables(tuningParameters))
+  protected V1Container createContainer(TuningParameters tuningParameters) {
+    V1Container v1Container = super.createContainer(tuningParameters)
             .ports(getContainerPorts())
             .lifecycle(createLifecycle())
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
@@ -586,8 +544,16 @@ public abstract class PodStepContext extends BasePodStepContext {
     return getServerSpec().getImagePullPolicy();
   }
 
+  protected String getContainerName() {
+    return KubernetesConstants.CONTAINER_NAME;
+  }
+
   protected List<String> getContainerCommand() {
     return Collections.singletonList(START_SERVER);
+  }
+
+  protected List<V1Container> getContainers() {
+    return getServerSpec().getContainers();
   }
 
   private List<V1VolumeMount> getVolumeMounts() {
@@ -809,16 +775,23 @@ public abstract class PodStepContext extends BasePodStepContext {
     protected String getDetail() {
       return getServerName();
     }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
+      if (DomainStatusPatch.isUnprocessableEntityFailure(callResponse))
+        return updateDomainStatus(packet, callResponse);
+      else
+        return onFailure(getConflictStep(), packet, callResponse);
+    }
+
+    private NextAction updateDomainStatus(Packet packet, CallResponse<V1Pod> callResponse) {
+      return doNext(DomainStatusPatch.createStep(getDomain(), callResponse.getE()), packet);
+    }
   }
 
   private class CreateResponseStep extends BaseResponseStep {
     CreateResponseStep(Step next) {
       super(next);
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(getConflictStep(), packet, callResponse);
     }
 
     @Override
@@ -862,11 +835,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(getConflictStep(), packet, callResponse);
-    }
-
-    @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
 
       V1Pod newPod = callResponse.getResult();
@@ -889,11 +857,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(getConflictStep(), packet, callResponse);
-    }
-
-    @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
 
       V1Pod newPod = callResponse.getResult();
@@ -906,58 +869,4 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
   }
 
-  private class VerifyPersistentVolumeStep extends Step {
-
-    VerifyPersistentVolumeStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      String domainUid = getDomainUid();
-      Step list =
-          new CallBuilder()
-              .withLabelSelectors(forDomainUidSelector(domainUid))
-              .listPersistentVolumeAsync(
-                  new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
-                    @Override
-                    public NextAction onSuccess(
-                        Packet packet,
-                        V1PersistentVolumeList result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (result != null) {
-                        for (V1PersistentVolume pv : result.getItems()) {
-                          List<String> accessModes = pv.getSpec().getAccessModes();
-                          boolean foundAccessMode = false;
-                          for (String accessMode : accessModes) {
-                            if (accessMode.equals(READ_WRITE_MANY_ACCESS)) {
-                              foundAccessMode = true;
-                              break;
-                            }
-                          }
-
-                          // Persistent volume does not have ReadWriteMany access mode,
-                          if (!foundAccessMode) {
-                            LOGGER.warning(
-                                MessageKeys.PV_ACCESS_MODE_FAILED,
-                                pv.getMetadata().getName(),
-                                getDomainResourceName(),
-                                domainUid,
-                                READ_WRITE_MANY_ACCESS);
-                          }
-                        }
-                      } else {
-                        LOGGER.warning(
-                            MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID,
-                            getDomainResourceName(),
-                            domainUid);
-                      }
-                      return doNext(packet);
-                    }
-                  });
-
-      return doNext(list, packet);
-    }
-  }
 }

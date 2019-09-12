@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,9 +31,9 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 public abstract class JobStepContext extends BasePodStepContext {
-  static final long DEFAULT_ACTIVE_DEADLINE_SECONDS = 120L;
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
@@ -72,6 +73,10 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   Domain getDomain() {
     return info.getDomain();
+  }
+
+  ServerSpec getServerSpec() {
+    return getDomain().getAdminServerSpec();
   }
 
   abstract String getJobName();
@@ -210,17 +215,13 @@ public abstract class JobStepContext extends BasePodStepContext {
     return metadata;
   }
 
-  private V1PodSpec createPodSpec(TuningParameters tuningParameters) {
-    V1PodSpec podSpec =
-          new V1PodSpec()
-                .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
-                .restartPolicy("Never")
-                .addContainersItem(createContainer(tuningParameters))
-                .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
-                .addVolumesItem(
-                      new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
-
-    podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
+  protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
+    V1PodSpec podSpec = super.createPodSpec(tuningParameters)
+            .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
+            .restartPolicy("Never")
+            .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
+            .addVolumesItem(
+                new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
 
     for (V1Volume additionalVolume : getAdditionalVolumes()) {
       podSpec.addVolumesItem(additionalVolume);
@@ -243,16 +244,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     return podSpec;
   }
 
-  private V1Container createContainer(TuningParameters tuningParameters) {
-    V1Container container =
-          new V1Container()
-                .name(getJobName())
-                .image(getImageName())
-                .imagePullPolicy(getImagePullPolicy())
-                .command(getContainerCommand())
-                .env(getEnvironmentVariables(tuningParameters))
-                .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-                .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+  protected V1Container createContainer(TuningParameters tuningParameters) {
+    V1Container container = super.createContainer(tuningParameters)
+        .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
+        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       container.addVolumeMountsItem(additionalVolumeMount);
@@ -272,24 +267,18 @@ public abstract class JobStepContext extends BasePodStepContext {
     return container;
   }
 
-  private String getImageName() {
-    String imageName = getDomain().getSpec().getImage();
-    if (imageName == null) {
-      imageName = KubernetesConstants.DEFAULT_IMAGE;
-    }
-    return imageName;
+  protected String getContainerName() {
+    return getJobName();
   }
 
-  String getImagePullPolicy() {
-    String imagePullPolicy = getDomain().getSpec().getImagePullPolicy();
-    if (imagePullPolicy == null) {
-      imagePullPolicy = KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
-    }
-    return imagePullPolicy;
-  }
-
-  private List<String> getContainerCommand() {
+  protected List<String> getContainerCommand() {
     return Collections.singletonList(WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH);
+  }
+
+  protected List<V1Container> getContainers() {
+    // Returning an empty array since introspector pod does not start with any additional containers
+    // configured in the ServerPod configuration
+    return new ArrayList<>();
   }
 
   protected String getDomainHome() {
@@ -323,7 +312,14 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Job> callResponse) {
-      return super.onFailure(packet, callResponse);
+      if (DomainStatusPatch.isUnprocessableEntityFailure(callResponse))
+        return updateDomainStatus(packet, callResponse);
+      else
+        return super.onFailure(packet, callResponse);
+    }
+
+    private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {
+      return doNext(DomainStatusPatch.createStep(getDomain(), callResponse.getE()), packet);
     }
 
     @Override
