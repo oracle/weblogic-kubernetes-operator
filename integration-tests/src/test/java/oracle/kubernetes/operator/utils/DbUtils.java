@@ -56,7 +56,7 @@ public class DbUtils {
   public static void startOracleDB() throws Exception {
   	String cmd1 = "sh " +
         BaseTest.getResultDir()
-        + "/create-rcu-schema/start-db-service.sh";
+        + "/create-rcu-schema/start-db-service.sh -i container-registry.oracle.com/database/enterprise:12.2.0.1";
   	TestUtils.exec(cmd1, true);	
   	String cmd2 = "kubectl get pod | grep oracle-db | cut -f1 -d \" \" ";
   	ExecResult result = TestUtils.exec(cmd2);
@@ -79,7 +79,7 @@ public class DbUtils {
   public static void stopOracleDB() throws Exception {
   	String cmd = "sh " +
         BaseTest.getResultDir()
-        + "/create-rcu-schema/stop-db-service.sh";
+        + "/create-rcu-schema/stop-db-service.sh -i container-registry.oracle.com/database/enterprise:12.2.0.1";
   	TestUtils.exec(cmd, true);	
   }
   
