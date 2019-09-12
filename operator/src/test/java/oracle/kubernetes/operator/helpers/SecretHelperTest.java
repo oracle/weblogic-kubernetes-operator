@@ -23,7 +23,7 @@ public class SecretHelperTest {
   }
 
   @After
-  public void tearDown(){
+  public void tearDown() {
     mementos.forEach(Memento::revert);
   }
 }

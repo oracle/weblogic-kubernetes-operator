@@ -18,6 +18,7 @@ import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.apis.RbacAuthorizationV1Api;
+import io.kubernetes.client.models.ExtensionsV1beta1IngressList;
 import io.kubernetes.client.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.models.V1ClusterRoleList;
 import io.kubernetes.client.models.V1ConfigMapList;
@@ -35,7 +36,6 @@ import io.kubernetes.client.models.V1SecretList;
 import io.kubernetes.client.models.V1ServiceAccountList;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import io.kubernetes.client.models.ExtensionsV1beta1IngressList;
 import io.kubernetes.client.util.ClientBuilder;
 
 import static org.junit.Assert.assertEquals;
