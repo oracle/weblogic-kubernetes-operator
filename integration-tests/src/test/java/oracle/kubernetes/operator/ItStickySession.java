@@ -49,16 +49,16 @@ public class ItStickySession extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
-
+  
       // Create operator1
       if (operator == null) {
         logger.info("Creating Operator & waiting for the script to complete execution");
         operator = TestUtils.createOperator(OPERATOR1_YAML);
       }
-
+  
       // create domain
       if (domain == null) {
         logger.info("Creating WLS Domain & waiting for the script to complete execution");
@@ -69,22 +69,23 @@ public class ItStickySession extends BaseTest {
         domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
       }
-
+  
       httpHeaderFile = BaseTest.getResultDir() + "/headers";
-
+  
       httpAttrMap = new HashMap<String, String>();
       httpAttrMap.put("sessioncreatetime", "(.*)sessioncreatetime>(.*)</sessioncreatetime(.*)");
       httpAttrMap.put("sessionid", "(.*)sessionid>(.*)</sessionid(.*)");
       httpAttrMap.put("servername", "(.*)connectedservername>(.*)</connectedservername(.*)");
       httpAttrMap.put("count", "(.*)countattribute>(.*)</countattribute(.*)");
-
+  
       // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-
+  
       // Wait some time for deployment gets ready
       Thread.sleep(10 * 1000);
     }
+    
   }
 
   /**
@@ -94,13 +95,15 @@ public class ItStickySession extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
-
-    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-
-    logger.info("SUCCESS");
+    if (FULLTEST) {
+      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
+  
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+  
+      logger.info("SUCCESS");
+    }
   }
 
   /**
@@ -113,7 +116,7 @@ public class ItStickySession extends BaseTest {
    */
   @Test
   public void testSameSessionStickiness() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -196,7 +199,7 @@ public class ItStickySession extends BaseTest {
    */
   @Test
   public void testDiffSessionsNoSharing() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
