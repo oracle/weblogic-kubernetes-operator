@@ -9,14 +9,21 @@
 
 set -eu
 
-CURRENT_DIR=`pwd`
+echo @@
+echo @@ Info: Creating sample app model archive models/archive1.zip
+echo @@
+
+cd $WORKDIR
 
 mkdir -p models
+
 cd sample_app/wlsdeploy/applications
 rm -f sample_app.ear
 jar cvfM sample_app.ear *
-cd $CURRENT_DIR
+
+cd $WORKDIR
 cd sample_app
 rm -f ../models/archive1.zip
 zip ../models/archive1.zip wlsdeploy/applications/sample_app.ear wlsdeploy/config/amimemappings.properties
-cd $CURRENT_DIR
+
+cd $WORKDIR

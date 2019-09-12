@@ -37,6 +37,8 @@ DomainSpec is a description of a domain.
 | `serverService` | [Server Service](#server-service) | Customization affecting ClusterIP Kubernetes services for WebLogic Server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. |
 | `serverStartState` | string | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
+| `wdtConfigMap` | string | The name of the wdt config map used for optional wdt tool. |
+| `wdtConfigMapSecret` | string | The name of the wdt model encryption passphrase  used for optional wdt tool. |
 | `webLogicCredentialsSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | The name of a pre-created Kubernetes secret, in the domain's namespace, that holds the username and password needed to boot WebLogic Server under the 'username' and 'password' fields. |
 
 ### Domain Status
