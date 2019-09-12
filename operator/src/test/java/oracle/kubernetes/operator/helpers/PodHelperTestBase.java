@@ -954,7 +954,7 @@ public abstract class PodHelperTestBase {
                 )
         );
     return new V1Affinity().podAffinity(podAffinity).podAntiAffinity(podAntiAffinity);
-  };
+  }
 
   static V1Toleration createToleration(String key, String operator, String value, String effect) {
     return new V1Toleration().key(key).operator(operator).value(value).effect(effect);
@@ -1016,7 +1016,7 @@ public abstract class PodHelperTestBase {
 
     assertThat(
         getCreatedPod().getSpec().getNodeName(),
-        is ("kube-01"));
+        is("kube-01"));
   }
 
   @Test
@@ -1026,7 +1026,7 @@ public abstract class PodHelperTestBase {
 
     assertThat(
         getCreatedPod().getSpec().getNodeName(),
-        is ("kube-01"));
+        is("kube-01"));
   }
 
   @Test
@@ -1036,7 +1036,7 @@ public abstract class PodHelperTestBase {
 
     assertThat(
         getCreatedPod().getSpec().getSchedulerName(),
-        is ("my-scheduler"));
+        is("my-scheduler"));
   }
 
   @Test
@@ -1046,7 +1046,7 @@ public abstract class PodHelperTestBase {
 
     assertThat(
         getCreatedPod().getSpec().getSchedulerName(),
-        is ("my-scheduler"));
+        is("my-scheduler"));
   }
 
   @Test
@@ -1056,7 +1056,7 @@ public abstract class PodHelperTestBase {
 
     assertThat(
         getCreatedPod().getSpec().getRuntimeClassName(),
-        is ("RuntimeClassName"));
+        is("RuntimeClassName"));
   }
 
   @Test
@@ -1066,7 +1066,7 @@ public abstract class PodHelperTestBase {
 
     assertThat(
         getCreatedPod().getSpec().getRuntimeClassName(),
-        is ("RuntimeClassName"));
+        is("RuntimeClassName"));
   }
 
   @Test
@@ -1076,7 +1076,7 @@ public abstract class PodHelperTestBase {
 
     assertThat(
         getCreatedPod().getSpec().getPriorityClassName(),
-        is ("PriorityClassName"));
+        is("PriorityClassName"));
   }
 
   @Test
@@ -1086,7 +1086,7 @@ public abstract class PodHelperTestBase {
 
     assertThat(
         getCreatedPod().getSpec().getPriorityClassName(),
-        is ("PriorityClassName"));
+        is("PriorityClassName"));
   }
 
   @Test
@@ -1137,8 +1137,7 @@ public abstract class PodHelperTestBase {
     getCreatedPodSpecContainers()
         .forEach(c -> assertThat(
             c.getSecurityContext(),
-            is(containerSecurityContext))
-        );
+            is(containerSecurityContext)));
   }
 
   @Test
@@ -1149,8 +1148,7 @@ public abstract class PodHelperTestBase {
     getCreatedPodSpecContainers()
         .forEach(c -> assertThat(
             c.getSecurityContext(),
-            is(containerSecurityContext))
-        );
+            is(containerSecurityContext)));
   }
 
   @Test
