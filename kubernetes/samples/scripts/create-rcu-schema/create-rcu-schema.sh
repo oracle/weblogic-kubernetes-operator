@@ -75,7 +75,7 @@ echo '           - name: docker-store' >> ${scriptDir}/common/rcu.yaml
 sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/rcu.yaml
 sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/rcu.yaml
 sed -i -e "s?image:.*?image: ${fmwimage}?g" ${scriptDir}/common/rcu.yaml
-kubectl apply -f ${scriptDir}/common/rcu.yaml
+kubectl create -f ${scriptDir}/common/rcu.yaml
 
 # Make sure the rcu deployment Pod is RUNNING
 checkPod rcu default

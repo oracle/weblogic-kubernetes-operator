@@ -59,7 +59,7 @@ echo '           - name: docker-store' >> ${scriptDir}/common/oradb.yaml
 sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/oradb.yaml
 sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/oradb.yaml
 sed -i -e "s?image:.*?image: ${dbimage}?g" ${scriptDir}/common/oradb.yaml
-kubectl apply -f ${scriptDir}/common/oradb.yaml
+kubectl create -f ${scriptDir}/common/oradb.yaml
 
 # Modify the NodePort based on input 
 sed -i -e "s?nodePort:.*?nodePort: ${nodeport}?g" ${scriptDir}/common/orasvc.yaml

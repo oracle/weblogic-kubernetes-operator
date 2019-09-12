@@ -47,8 +47,7 @@ public class JrfDomainOnPvWlst extends BaseTest {
    TestUtils.exec(
        "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/create-rcu-schema " + BaseTest.getResultDir(),
        true);
-   DbUtils.dropRcuSchema(rcuSchemaPrefix);
-   DbUtils.stopOracleDB();
+   
    DbUtils.startOracleDB();
    DbUtils.createRcuSchema(rcuSchemaPrefix);
 
