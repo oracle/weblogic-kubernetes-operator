@@ -213,6 +213,16 @@ function createWLDomain() {
         use_passphrase=1
     fi
 
+    found_opss_passphrase=$(find ${wdt_secret_path} -name opsspassphrase -type f)
+    if [ -f "${found_opss_passphrase}" ] ; then
+        export OPSS_PASSPHRASE=$(cat ${found_opss_passphrase})
+    fi
+
+    # just in case is not set
+    if [ -z "$OPSS_PASSPHRASE" ] ; then
+        export OPSS_PASSPHRASE=$DOMAIN_UID_welcome1
+    fi
+
     # check to see if any model including changed (or first model in image deploy)
     # if yes. then run create domain again
 
@@ -221,8 +231,8 @@ function createWLDomain() {
     # something changed in the wdt artifacts
     if  [ ${create_domain} -ne 0 ] ; then
 
-        trace "Need to create domain " ${WDT_DOMAIN_TYPE}
-        export __WLSDEPLOY_STORE_MODEL__ = 1
+        trace "Need to create domain ${WDT_DOMAIN_TYPE}"
+        export __WLSDEPLOY_STORE_MODEL__=1
 
         # We need to run wdt create to get a new merged model
         # otherwise for the update case we won't have one to compare with
@@ -230,7 +240,7 @@ function createWLDomain() {
         if [ -z "${WDT_DOMAIN_TYPE}" ] ; then
             WDT_DOMAIN_TYPE=WLS
         fi
-        trace "Run wdt create domain " ${WDT_DOMAIN_TYPE}
+        trace "Run wdt create domain ${WDT_DOMAIN_TYPE}"
 
         #  We cannot strictly run create domain for JRF type because it's tied to a database schema
         #  We shouldn't require user to drop the db first since it may have data in it
@@ -240,7 +250,7 @@ function createWLDomain() {
                trace "keeping rcu schema"
                mkdir -p /tmp/opsswallet
                base64 -d  ${opss_wallet} > /tmp/opsswallet/ewallet.p12
-               OPSS_FLAGS="-opss_wallet /tmp/opsswallet -opss_wallet_passphrase ${DOMAIN_HOME}_welcome1"
+               OPSS_FLAGS="-opss_wallet /tmp/opsswallet -opss_wallet_passphrase ${OPSS_PASSPHRASE}"
             fi
         else
             OPSS_FLAGS=""

@@ -162,6 +162,7 @@ class OfflineWlstEnv(object):
         os.unlink(the_file_path)
 
     # load domain home into WLST
+    opss_passphrase = self.getEnv('OPSS_PASSPHRASE')
 
     trace("About to load domain from "+self.getDomainHome())
     readDomain(self.getDomainHome())
@@ -174,10 +175,8 @@ class OfflineWlstEnv(object):
 
       if self.WDT_DOMAIN_TYPE == 'JRF' and self.KEEP_JRF_SCHEMA:
         os.mkdir('/tmp/opsswallet')
-        #TODO need another secret
-        passphrase = self.getDomainHome() + "_welcome1"
         exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml',\
-                                             keyFilePath='/tmp/opsswallet', keyFilePassword=passphrase)
+                                             keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
     except:
       self.empath = None
       pass
