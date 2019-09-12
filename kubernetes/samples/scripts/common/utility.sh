@@ -401,7 +401,6 @@ function createFiles {
   echo Generating ${dcrOutput}
 
   cp ${dcrInput} ${dcrOutput}
-  
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
