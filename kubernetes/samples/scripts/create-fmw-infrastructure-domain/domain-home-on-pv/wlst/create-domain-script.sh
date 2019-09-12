@@ -16,13 +16,14 @@ wlst.sh -skipWLSModuleScanning \
         -rcuDb ${CUSTOM_CONNECTION_STRING} \
         -rcuPrefix ${CUSTOM_RCUPREFIX} \
         -rcuSchemaPwd `cat /weblogic-operator/rcu-secrets/password` \
-        -adminListenPort ${CUSTOM_ADMIN_LISTEN_PORT} \
-        -adminListenSSLPort ${CUSTOM_ADMIN_LISTEN_SSL_PORT} \
+        -adminServerPort ${CUSTOM_ADMIN_SERVER_PORT} \
+        -adminServerSSLPort ${CUSTOM_ADMIN_SERVER_SSL_PORT} \
         -adminName ${CUSTOM_ADMIN_NAME} \
         -managedNameBase ${CUSTOM_MANAGED_BASE_NAME} \
         -managedServerPort ${CUSTOM_MANAGEDSERVER_PORT} \
         -managedServerSSLPort ${CUSTOM_MANAGEDSERVER_SSL_PORT} \
         -useKSSForDemo ${USE_KSS_FOR_DEMO} \
+        -sslEnabled ${SSL_ENABLED} \
         -prodMode ${CUSTOM_PRODUCTION_MODE} \
         -managedServerCount ${CUSTOM_MANAGED_SERVER_COUNT} \
         -clusterName ${CUSTOM_CLUSTER_NAME} \

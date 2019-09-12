@@ -28,22 +28,22 @@ class Infra12213Provisioner:
         'serverGroupsToTarget' : [ 'JRF-MAN-SVR', 'WSMPM-MAN-SVR' ]
     }
 
-    def __init__(self, oracleHome, javaHome, domainParentDir, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName):
+    def __init__(self, oracleHome, javaHome, domainParentDir, adminServerPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName):
         self.oracleHome = self.validateDirectory(oracleHome)
         self.javaHome = self.validateDirectory(javaHome)
         self.domainParentDir = self.validateDirectory(domainParentDir, create=True)
         return
 
-    def createInfraDomain(self, domainName, user, password, db, dbPrefix, dbPassword, adminListenPort, adminListenSSLPort, adminName,
-                          managedNameBase, managedServerPort, managedServerSSLPort, prodMode, managedCount, clusterName,
-                          exposeAdminT3Channel=None, t3ChannelPublicAddress=None, t3ChannelPort=None, useKSSForDemo='false'):
-        domainHome = self.createBaseDomain(domainName, user, password, adminListenPort, adminListenSSLPort, adminName, managedNameBase,
-                                           managedServerPort, managedServerSSLPort, prodMode, managedCount, clusterName
+    def createInfraDomain(self, domainName, user, password, db, dbPrefix, dbPassword, adminServerPort, adminServerSSLPort, adminName,
+                          managedNameBase, managedServerPort, managedServerSSLPort,  prodMode, managedCount, clusterName,
+                          exposeAdminT3Channel=None, t3ChannelPublicAddress=None, t3ChannelPort=None, sslEnabled='false', useKSSForDemo='false'):
+        domainHome = self.createBaseDomain(domainName, user, password, adminServerPort, adminServerSSLPort, adminName, managedNameBase,
+                                           managedServerPort, managedServerSSLPort, sslEnabled, prodMode, managedCount, clusterName
                                            )
         self.extendDomain(domainName, domainHome, db, dbPrefix, dbPassword, exposeAdminT3Channel, t3ChannelPublicAddress,
-                          t3ChannelPort, useKSSForDemo)
+                          t3ChannelPort, useKSSForDemo, sslEnabled)
 
-    def createBaseDomain(self, domainName, user, password, adminListenPort, adminListenSSLPort, adminName, managedNameBase, managedServerPort, managedServerSSLPort, prodMode, managedCount, clusterName):
+    def createBaseDomain(self, domainName, user, password, adminServerPort, adminServerSSLPort, adminName, managedNameBase, managedServerPort, managedServerSSLPort, sslEnabled, prodMode, managedCount, clusterName):
         baseTemplate = self.replaceTokens(self.JRF_12213_TEMPLATES['baseTemplate'])
 
         readTemplate(baseTemplate)
@@ -55,8 +55,8 @@ class Infra12213Provisioner:
             setOption('ServerStartMode', 'dev')
         set('Name', domainName)
 
-        admin_port = int(adminListenPort)
-        admin_ssl_port = int(adminListenSSLPort)
+        admin_port = int(adminServerPort)
+        admin_ssl_port = int(adminServerSSLPort)
         ms_ssl_port = int(managedServerSSLPort)
         ms_port    = int(managedServerPort)
         ms_count   = int(managedCount)
@@ -69,7 +69,8 @@ class Infra12213Provisioner:
         set('ListenPort', admin_port)
         set('Name', adminName)
 
-        if admin_ssl_port > 0:
+        if (sslEnabled == 'true'):
+            print 'Enabling SSL in the Admin server...'
             cd('/Servers/' + adminName)
             create(adminName, 'SSL')
             cd('/Servers/' + adminName + '/SSL/' + adminName)
@@ -103,7 +104,8 @@ class Infra12213Provisioner:
             set('NumOfRetriesBeforeMSIMode', 0)
             set('RetryIntervalBeforeMSIMode', 1)
             set('Cluster', clusterName)
-            if ms_ssl_port > 0:
+            if (sslEnabled == 'true'):
+                print 'Enabling SSL in the managed server...'
                 create(name, 'SSL')
                 cd('/Servers/' + name+ '/SSL/' + name)
                 set('HostnameVerificationIgnored', 'False')
@@ -136,7 +138,7 @@ class Infra12213Provisioner:
 
 
     def extendDomain(self, domainName, domainHome, db, dbPrefix, dbPassword, exposeAdminT3Channel, t3ChannelPublicAddress,
-                     t3ChannelPort, useKSSForDemo):
+                     t3ChannelPort, useKSSForDemo, sslEnabled):
         print 'Extending domain at ' + domainHome
         print 'Database  ' + db
         readDomain(domainHome)
@@ -152,7 +154,7 @@ class Infra12213Provisioner:
 
         print 'Extension Templates added'
 
-        if useKSSForDemo == 'true':
+        if sslEnabled == 'true' and useKSSForDemo == 'true':
             # Use KSS for demo
             print 'Enabling KSS for Demo...'
             cd('/SecurityConfiguration/' + domainName)
@@ -251,12 +253,11 @@ class Infra12213Provisioner:
 def usage():
     print sys.argv[0] + ' -oh <oracle_home> -jh <java_home> -parent <domain_parent_dir> -name <domain-name> ' + \
           '-user <domain-user> -password <domain-password> ' + \
-          '-rcuDb <rcu-database> -rcuPrefix <rcu-prefix> -rcuSchemaPwd <rcu-schema-password> ' \
-          '-adminListenPort <adminListenPort> [-adminListenSSLPort <adminListenSSLPort>] -adminName <adminName> ' \
-          '-managedNameBase <managedNameBase> -managedServerPort <managedServerPort> [-managedServerSSLPort <managedServerSSLPort>] [-useKSSForDemo <true or false>] '\
-          '-prodMode <prodMode> -managedServerCount <managedCount> -clusterName <clusterName> ' \
-          '-exposeAdminT3Channel <quoted true or false> -t3ChannelPublicAddress <address of the cluster> ' \
-          '-t3ChannelPort <t3 channel port> '
+          '-rcuDb <rcu-database> -rcuPrefix <rcu-prefix> -rcuSchemaPwd <rcu-schema-password> ' + \
+          '-adminServerPort <adminServerPort> -adminServerSSLPort <adminServerSSLPort> -adminName <adminName> ' + \
+          '-managedNameBase <managedNameBase> -managedServerPort <managedServerPort> -managedServerSSLPort <managedServerSSLPort> ' + \
+          '-useKSSForDemo <quoted true or false> -sslEnabled <quoted true or false> -prodMode <prodMode> -managedServerCount <managedCount> -clusterName <clusterName> ' + \
+          '-exposeAdminT3Channel <quoted true or false> -t3ChannelPublicAddress <address of the cluster> -t3ChannelPort <t3 channel port> '
     sys.exit(0)
 
 # Uncomment for Debug only
@@ -264,7 +265,7 @@ def usage():
 #for index, arg in enumerate(sys.argv):
 #    print "sys.argv[" + str(index) + "] = " + str(sys.argv[index])
 
-if len(sys.argv) < 16:
+if len(sys.argv) < 46:
     usage()
 
 #oracleHome will be passed by command line parameter -oh.
@@ -286,7 +287,7 @@ rcuSchemaPassword = None
 exposeAdminT3Channel = None
 t3ChannelPort = None
 t3ChannelPublicAddress = None
-adminListenSSLPort = 0
+adminServerSSLPort = 0
 managedServerSSLPort = 0
 useKSSForDemo = 'false'
 i = 1
@@ -321,11 +322,11 @@ while i < len(sys.argv):
     elif sys.argv[i] == '-rcuSchemaPwd':
         rcuSchemaPassword = sys.argv[i + 1]
         i += 2
-    elif sys.argv[i] == '-adminListenPort':
-        adminListenPort = sys.argv[i + 1]
+    elif sys.argv[i] == '-adminServerPort':
+        adminServerPort = sys.argv[i + 1]
         i += 2
-    elif sys.argv[i] == '-adminListenSSLPort':
-        adminListenSSLPort = sys.argv[i + 1]
+    elif sys.argv[i] == '-adminServerSSLPort':
+        adminServerSSLPort = sys.argv[i + 1]
         i += 2
     elif sys.argv[i] == '-adminName':
         adminName = sys.argv[i + 1]
@@ -338,6 +339,9 @@ while i < len(sys.argv):
         i += 2
     elif sys.argv[i] == '-managedServerSSLPort':
         managedServerSSLPort = sys.argv[i + 1]
+        i += 2
+    elif sys.argv[i] == '-sslEnabled':
+        sslEnabled = sys.argv[i + 1]
         i += 2
     elif sys.argv[i] == '-prodMode':
         prodMode = sys.argv[i + 1]
@@ -362,7 +366,7 @@ while i < len(sys.argv):
         usage()
         sys.exit(1)
 
-provisioner = Infra12213Provisioner(oracleHome, javaHome, domainParentDir, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName)
+provisioner = Infra12213Provisioner(oracleHome, javaHome, domainParentDir, adminServerPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName)
 provisioner.createInfraDomain(domainName, domainUser, domainPassword, rcuDb, rcuSchemaPrefix, rcuSchemaPassword,
-                              adminListenPort, adminListenSSLPort, adminName, managedNameBase, managedServerPort, managedServerSSLPort, prodMode, managedCount,
-                              clusterName, exposeAdminT3Channel, t3ChannelPublicAddress, t3ChannelPort, useKSSForDemo)
+                              adminServerPort, adminServerSSLPort, adminName, managedNameBase, managedServerPort, managedServerSSLPort, prodMode, managedCount,
+                              clusterName, exposeAdminT3Channel, t3ChannelPublicAddress, t3ChannelPort, sslEnabled, useKSSForDemo)

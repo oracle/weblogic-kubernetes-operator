@@ -4,8 +4,20 @@
 # The version of this inputs file.  Do not modify.
 version: create-weblogic-sample-domain-inputs-v1
 
+# Enable SSL in the admin and managed server(s).
+# If this is false, the SSL related parameters(useKSSForDemo, adminServerSSLPort, managedServerSSLPort) are ignored
+sslEnabled: false
+
+# By default the Demo identity & Demo trust are used if SSL is enabled.
+# In a WebLogic JRF domain, KSS is available so load the demo identity and demo trust from KSS.
+# If this parameter is false, file based Demo identity & Demo trust (i.e. JKS) will be used.
+useKSSForDemo: true
+
 # Port number for admin server
-adminPort: 7001
+adminServerPort: 7001
+
+# SSL port for the admin server
+adminServerSSLPort: 7002
 
 # Name of the Admin Server
 adminServerName: admin-server
@@ -36,6 +48,9 @@ managedServerNameBase: managed-server
 
 # Port number for each managed server
 managedServerPort: 8001
+
+# SSL Port number for each managed server
+managedServerSSLPort: 8002
 
 # WebLogic Server Docker image.
 # The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied.
@@ -90,7 +105,9 @@ exposeAdminNodePort: false
 # Name of the domain namespace
 namespace: default
 
-#Java Option for WebLogic Server
+# Java Option for WebLogic Server
+# Add -Dweblogic.ssl.AcceptKSSDemoCertsEnabled=true system property to the javaOptions if "sslEnabled:" is true and and "useKSSForDemo:" is true
+# If "useKSSForDemo:" is false, add -Dweblogic.security.SSL.ignoreHostnameVerification=true instead.
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim

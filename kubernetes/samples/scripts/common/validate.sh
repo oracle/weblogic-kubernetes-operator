@@ -367,7 +367,7 @@ function validateCommonInputs {
     version
 
   validateIntegerInputParamsSpecified \
-    adminPort \
+    adminServerPort \
     configuredManagedServerCount \
     initialManagedServerReplicas \
     managedServerPort \
