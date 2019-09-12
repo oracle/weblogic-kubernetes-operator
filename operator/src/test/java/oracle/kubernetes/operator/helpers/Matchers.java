@@ -4,6 +4,10 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
+
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
@@ -11,11 +15,9 @@ import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
+
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 
