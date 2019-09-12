@@ -53,10 +53,10 @@ spec:
               value: "%DOMAIN_ROOT_DIR%/logs/%DOMAIN_UID%"
             - name: CUSTOM_DOMAIN_NAME
               value: "%DOMAIN_NAME%"
-            - name: CUSTOM_ADMIN_LISTEN_PORT
-              value: "%ADMIN_PORT%"
-            - name: CUSTOM_ADMIN_LISTEN_SSL_PORT
-              value: "%ADMIN_SSL_PORT%"
+            - name: CUSTOM_ADMIN_SERVER_PORT
+              value: "%ADMIN_SERVER_PORT%"
+            - name: CUSTOM_ADMIN_SERVER_SSL_PORT
+              value: "%ADMIN_SERVER_SSL_PORT%"
             - name: CUSTOM_ADMIN_NAME
               value: "%ADMIN_SERVER_NAME%"
             - name: CUSTOM_ADMIN_HOST
@@ -75,6 +75,8 @@ spec:
               value: "%CUSTOM_RCUPREFIX%"
             - name: CUSTOM_PRODUCTION_MODE
               value: "%PRODUCTION_MODE_ENABLED%"
+            - name: SSL_ENABLED
+              value: "%SSL_ENABLED%"
             - name: CUSTOM_CONNECTION_STRING
               value: "%CUSTOM_CONNECTION_STRING%"
             - name: EXPOSE_T3_CHANNEL_PREFIX
