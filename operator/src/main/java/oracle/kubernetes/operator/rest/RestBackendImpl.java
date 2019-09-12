@@ -22,6 +22,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1TokenReviewStatus;
 import io.kubernetes.client.models.V1UserInfo;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
@@ -30,14 +31,14 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * RestBackendImpl implements the backend of the WebLogic operator REST api by making calls to
@@ -46,6 +47,7 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  */
 public class RestBackendImpl implements RestBackend {
 
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String NEW_CLUSTER =
       "{'clusterName':'%s','replicas':%d}".replaceAll("'", "\"");
   private static final TopologyRetriever INSTANCE =
@@ -251,7 +253,8 @@ public class RestBackendImpl implements RestBackend {
 
       new CallBuilder()
           .patchDomain(
-              domain.getDomainUid(), domain.getMetadata().getNamespace(), patchBuilder.build());
+              domain.getDomainUid(), domain.getMetadata().getNamespace(),
+              new V1Patch(patchBuilder.build().toString()));
     } catch (ApiException e) {
       throw handleApiException(e);
     }

@@ -45,7 +45,9 @@ public class ItPodTemplates extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE);
+    if (QUICKTEST) {
+      initialize(APP_PROPS_FILE);
+    }
   }
 
   /**
@@ -55,13 +57,15 @@ public class ItPodTemplates extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
-
-    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-
-    logger.info("SUCCESS");
+    if (QUICKTEST) {
+      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
+  
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+  
+      logger.info("SUCCESS");
+    }
   }
 
   /**
@@ -74,7 +78,7 @@ public class ItPodTemplates extends BaseTest {
    */
   @Test
   public void testPodTemplateUsingVariables() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");
@@ -138,7 +142,7 @@ public class ItPodTemplates extends BaseTest {
       domain.verifyDomainCreated();
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         domain.shutdownUsingServerStartPolicy();
       }
     }

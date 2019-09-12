@@ -44,6 +44,9 @@ public class ServerEnvVars {
   /** The location for the logs. */
   public static final String LOG_HOME = "LOG_HOME";
 
+  /** The location for the centralized data directory. */
+  public static final String DATA_HOME = "DATA_HOME";
+
   /** 'true' or 'false' to indicate whether the server output should be included in the pod log. */
   public static final String SERVER_OUT_IN_POD_LOG = "SERVER_OUT_IN_POD_LOG";
 

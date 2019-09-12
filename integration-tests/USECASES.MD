@@ -7,7 +7,7 @@ Java integration tests cover the below use cases:
 |  |  |
 | --- | --- |
 | Operator Configuration | operator1 deployed in `weblogic-operator1` namespace and manages domains in `default` and `test1` namespaces |
-| Domain Configuration | Domain on PV using WLST, Traefik load balancer |
+| Domain Configuration | Domain on PV using WLST, Traefik load balancer <p> Domain home in image using WLST |
 
 **Basic Use Cases**
 
@@ -22,14 +22,13 @@ Java integration tests cover the below use cases:
 6. set precreateService true and verify that the services are created for the managed servers that are not started
 7. Cluster scale up/down using operator REST endpoint, webapp load balancing should adjust accordingly.
 8. Verify that the services are created for the managed servers that are not started
-9. Verify domain life cycle (destroy and create) should not have any impact on operator managing the domain and web app load balancing and admin external service.
-10. Operator life cycle (destroy and create) should not impact the running domain.
 
 Also the below use cases are covered for Quick test:
 
-11. Verify the liveness probe by killing managed server 1 process 3 times to kick pod auto-restart.
-12. Shutdown the domain by changing domain `serverStartPolicy` to `NEVER`.
+9. Verify the liveness probe by killing managed server 1 process 3 times to kick pod auto-restart.
+10. Shutdown the domain by changing domain `serverStartPolicy` to `NEVER`.
 
+Some of the Operator upgrade, pod template, pod restart, operator helm chart usability tests are also run as part of QUICKTEST
 
 ## Full test Configuration & Use Cases - Runs Quick test Configuration & Use cases and the below
 
@@ -42,6 +41,7 @@ Basic Use Cases described above are verified in all the domain configurations. A
 
 | Domain | Use Case |
 | --- | --- |
+| Domain on PV using WLST | Verify domain life cycle (destroy and create) should not have any impact on operator managing the domain and web app load balancing and admin external service. Operator life cycle (destroy and create) should not impact the running domain |
 | Domain on PV using WDT | WLDF scaling |
 | Domain with ADMIN_ONLY | making sure only admin server is started and managed servers are not started. Make some changes in domain configuration by changing admin server tuning backlog configuration and restart domain. Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
 | Domain with situational config | create domain with listen address not set for admin server and t3 channel/NAP and incorrect file for admin server log location. Introspector should override these with sit-config automatically. Also, with some junk value for t3 channel public address and using custom situational config override replace with valid public address using secret. Also, on Jenkins this domain uses NFS instead of HOSTPATH PV storage |	
@@ -146,6 +146,7 @@ Configuration Overrides Usecases
 | Upgrade 2.1 operator to develop | Upgrade the 2.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
 | Upgrade 2.2.0 operator to develop | Upgrade the 2.2.0 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
 | Upgrade 2.2.1 operator to develop | Upgrade the 2.2.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.3.0 operator to develop | Upgrade the 2.3.0 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
 
 | Pod Templates | Use Case |
 | --- | --- |

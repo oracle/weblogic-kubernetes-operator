@@ -5,6 +5,8 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.io.File;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -25,17 +27,19 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 public abstract class JobStepContext extends BasePodStepContext {
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
-      "/weblogic-operator/scripts/introspectDomain.sh";
+        "/weblogic-operator/scripts/introspectDomain.sh";
   private final DomainPresenceInfo info;
   private V1Job jobModel;
 
@@ -73,6 +77,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     return info.getDomain();
   }
 
+  ServerSpec getServerSpec() {
+    return getDomain().getAdminServerSpec();
+  }
+
   abstract String getJobName();
 
   @Override
@@ -82,10 +90,8 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   @Override
   protected Map<String, String> augmentSubVars(Map<String, String> vars) {
-    // For other introspector job pod content, we use the values that would apply administration
-    // server; however,
-    // since we won't know the name of the administation server from the domain configuration until
-    // introspection
+    // For other introspector job pod content, we use the values that would apply administration server; however,
+    // since we won't know the name of the administation server from the domain configuration until introspection
     // has run, we will use the hardcoded value "introspector" as the server name.
     vars.put("SERVER_NAME", "introspector");
     return vars;
@@ -167,69 +173,63 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   private V1Job createJobModel() {
     return new V1Job()
-        .metadata(createMetadata())
-        .spec(createJobSpec(TuningParameters.getInstance()));
+          .metadata(createMetadata())
+          .spec(createJobSpec(TuningParameters.getInstance()));
   }
 
   V1ObjectMeta createMetadata() {
     return new V1ObjectMeta()
-        .name(getJobName())
-        .namespace(getNamespace())
-        .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
-        .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
-        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+          .name(getJobName())
+          .namespace(getNamespace())
+          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+          .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
+          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
 
   private long getActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
     return podTuning.introspectorJobActiveDeadlineSeconds
-        + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * info.getRetryCount());
+          + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * info.getRetryCount());
   }
 
   V1JobSpec createJobSpec(TuningParameters tuningParameters) {
     LOGGER.fine(
-        "Creating job "
-            + getJobName()
-            + " with activeDeadlineSeconds = "
-            + getActiveDeadlineSeconds(tuningParameters.getPodTuning()));
+          "Creating job "
+                + getJobName()
+                + " with activeDeadlineSeconds = "
+                + getActiveDeadlineSeconds(tuningParameters.getPodTuning()));
 
     return new V1JobSpec()
-        .backoffLimit(0)
-        .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
-        .template(createPodTemplateSpec(tuningParameters));
+          .backoffLimit(0)
+          .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
+          .template(createPodTemplateSpec(tuningParameters));
   }
 
   private V1PodTemplateSpec createPodTemplateSpec(TuningParameters tuningParameters) {
-    V1PodTemplateSpec podTemplateSpec =
-        new V1PodTemplateSpec()
-            .metadata(createPodTemplateMetadata())
-            .spec(createPodSpec(tuningParameters));
+    V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec()
+          .metadata(createPodTemplateMetadata())
+          .spec(createPodSpec(tuningParameters));
 
     return updateForDeepSubstitution(podTemplateSpec.getSpec(), podTemplateSpec);
   }
 
   private V1ObjectMeta createPodTemplateMetadata() {
-    V1ObjectMeta metadata =
-        new V1ObjectMeta()
-            .name(getJobName())
-            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
-            .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
-            .putLabelsItem(
+    V1ObjectMeta metadata = new V1ObjectMeta()
+          .name(getJobName())
+          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
+          .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
+          .putLabelsItem(
                 LabelConstants.JOBNAME_LABEL, LegalNames.toJobIntrospectorName(getDomainUid()));
     if (isIstioEnabled()) metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
     return metadata;
   }
 
-  private V1PodSpec createPodSpec(TuningParameters tuningParameters) {
-    V1PodSpec podSpec =
-        new V1PodSpec()
+  protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
+    V1PodSpec podSpec = super.createPodSpec(tuningParameters)
             .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
             .restartPolicy("Never")
-            .addContainersItem(createContainer(tuningParameters))
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
-
-    podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
     for (V1Volume additionalVolume : getAdditionalVolumes()) {
       podSpec.addVolumesItem(additionalVolume);
@@ -238,30 +238,24 @@ public abstract class JobStepContext extends BasePodStepContext {
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
       podSpec.addVolumesItem(
-          new V1Volume()
-              .name(secretName + "-volume")
-              .secret(getOverrideSecretVolumeSource(secretName)));
+            new V1Volume()
+                  .name(secretName + "-volume")
+                  .secret(getOverrideSecretVolumeSource(secretName)));
     }
     if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
       podSpec.addVolumesItem(
-          new V1Volume()
-              .name(getConfigOverrides() + "-volume")
-              .configMap(getOverridesVolumeSource(getConfigOverrides())));
+            new V1Volume()
+                  .name(getConfigOverrides() + "-volume")
+                  .configMap(getOverridesVolumeSource(getConfigOverrides())));
     }
 
     return podSpec;
   }
 
-  private V1Container createContainer(TuningParameters tuningParameters) {
-    V1Container container =
-        new V1Container()
-            .name(getJobName())
-            .image(getImageName())
-            .imagePullPolicy(getImagePullPolicy())
-            .command(getContainerCommand())
-            .env(getEnvironmentVariables(tuningParameters))
-            .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-            .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+  protected V1Container createContainer(TuningParameters tuningParameters) {
+    V1Container container = super.createContainer(tuningParameters)
+        .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
+        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       container.addVolumeMountsItem(additionalVolumeMount);
@@ -269,36 +263,30 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
       container.addVolumeMountsItem(
-          readOnlyVolumeMount(getConfigOverrides() + "-volume", OVERRIDES_CM_MOUNT_PATH));
+            readOnlyVolumeMount(getConfigOverrides() + "-volume", OVERRIDES_CM_MOUNT_PATH));
     }
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
       container.addVolumeMountsItem(
-          readOnlyVolumeMount(
-              secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
+            readOnlyVolumeMount(
+                  secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
     return container;
   }
 
-  private String getImageName() {
-    String imageName = getDomain().getSpec().getImage();
-    if (imageName == null) {
-      imageName = KubernetesConstants.DEFAULT_IMAGE;
-    }
-    return imageName;
+  protected String getContainerName() {
+    return getJobName();
   }
 
-  String getImagePullPolicy() {
-    String imagePullPolicy = getDomain().getSpec().getImagePullPolicy();
-    if (imagePullPolicy == null) {
-      imagePullPolicy = KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
-    }
-    return imagePullPolicy;
-  }
-
-  private List<String> getContainerCommand() {
+  protected List<String> getContainerCommand() {
     return Collections.singletonList(WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH);
+  }
+
+  protected List<V1Container> getContainers() {
+    // Returning an empty array since introspector pod does not start with any additional containers
+    // configured in the ServerPod configuration
+    return new ArrayList<>();
   }
 
   protected String getDomainHome() {
@@ -307,14 +295,14 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   private V1SecretVolumeSource getSecretsVolume() {
     return new V1SecretVolumeSource()
-        .secretName(getWebLogicCredentialsSecretName())
-        .defaultMode(420);
+          .secretName(getWebLogicCredentialsSecretName())
+          .defaultMode(420);
   }
 
   private V1ConfigMapVolumeSource getConfigMapVolumeSource() {
     return new V1ConfigMapVolumeSource()
-        .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
-        .defaultMode(ALL_READ_AND_EXECUTE);
+          .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
+          .defaultMode(ALL_READ_AND_EXECUTE);
   }
 
   private V1SecretVolumeSource getOverrideSecretVolumeSource(String name) {
@@ -332,7 +320,14 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Job> callResponse) {
-      return super.onFailure(packet, callResponse);
+      if (DomainStatusPatch.isUnprocessableEntityFailure(callResponse))
+        return updateDomainStatus(packet, callResponse);
+      else
+        return super.onFailure(packet, callResponse);
+    }
+
+    private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {
+      return doNext(DomainStatusPatch.createStep(getDomain(), callResponse.getE()), packet);
     }
 
     @Override

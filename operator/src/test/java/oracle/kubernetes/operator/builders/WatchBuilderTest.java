@@ -199,13 +199,11 @@ public class WatchBuilderTest extends HttpUserAgentTest {
         withResponses(createAddedResponse(pod))
             .andValidations(
                 parameter("fieldSelector").withValue("thisValue"),
-                parameter("includeUninitialized").withValue("false"),
                 parameter("limit").withValue("25")));
 
     WatchI<V1Pod> podWatch =
         new WatchBuilder()
             .withFieldSelector("thisValue")
-            .withIncludeUninitialized(false)
             .withLimit(25)
             .createPodWatch(NAMESPACE);
 

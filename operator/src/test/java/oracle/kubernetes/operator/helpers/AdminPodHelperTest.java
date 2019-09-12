@@ -13,7 +13,6 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Status;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -28,6 +27,10 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
+import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_PATCHED;
@@ -72,10 +75,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  void expectStepsAfterCreation() {
-  }
-
-  @Override
   String getExistsMessageKey() {
     return ADMIN_POD_EXISTS;
   }
@@ -111,9 +110,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         PodAwaiterStepFactory.class,
         new NullPodAwaiterStepFactory(terminalStep));
 
-    expectDeletePod(getPodName()).returning(new V1Status());
-    expectCreatePod(podWithName(getPodName())).returning(createTestPodModel());
-
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getReplacedMessageKey()));
@@ -140,14 +136,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     return new PodHelper.AdminPodStepContext(null, packet).getPodModel();
   }
 
-  private CallTestSupport.CannedResponse expectDeletePod(String podName) {
-    return testSupport
-        .createCannedResponse("deletePod")
-        .withNamespace(NS)
-        .ignoringBody()
-        .withName(podName);
-  }
-
   @Test
   public void whenDeleteReportsNotFound_replaceAdminPod() {
     testSupport.addComponent(
@@ -156,8 +144,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         new NullPodAwaiterStepFactory(terminalStep));
 
     initializeExistingPod(getIncompatiblePod());
-    expectDeletePod(getPodName()).failingWithStatus(CallBuilder.NOT_FOUND);
-    expectCreatePod(podWithName(getPodName())).returning(createTestPodModel());
+    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, CallBuilder.NOT_FOUND);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -174,8 +161,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   public void whenAdminPodDeletionFails_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
     initializeExistingPod(getIncompatiblePod());
-    expectDeletePod(getPodName()).failingWithStatus(401);
-    expectStepsAfterCreation();
+    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, 401);
 
     FiberTestSupport.StepFactory stepFactory = getStepFactory();
     Step initialStep = stepFactory.createStepList(terminalStep);
@@ -188,9 +174,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   public void whenAdminPodReplacementFails_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
     initializeExistingPod(getIncompatiblePod());
-    expectDeletePod(getPodName()).returning(new V1Status());
-    expectCreatePod(podWithName(getPodName())).failingWithStatus(401);
-    expectStepsAfterCreation();
+    testSupport.failOnCreate(KubernetesTestSupport.POD, getPodName(), NS, 401);
 
     FiberTestSupport.StepFactory stepFactory = getStepFactory();
     Step initialStep = stepFactory.createStepList(terminalStep);
@@ -220,8 +204,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenAdminPodCreatedWithAdminPortEnabled_adminServerPortSecureEnvVarIsTrue() {
-    final Integer adminPort = 9002;
-    getServerTopology().setAdminPort(adminPort);
+    getServerTopology().setAdminPort((Integer) 9002);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true"));
   }
 
@@ -233,8 +216,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenAdminPodCreatedWithAdminServerHasSslPortEnabled_adminServerPortSecureEnvVarIsTrue() {
-    final Integer adminServerSslPort = 9999;
-    getServerTopology().setSslListenPort(adminServerSslPort);
+    getServerTopology().setSslListenPort(9999);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true"));
   }
 
@@ -601,11 +583,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  protected void onAdminExpectListPersistentVolume() {
-    expectListPersistentVolume().returning(createPersistentVolumeList());
-  }
-
-  @Override
   V1Pod createTestPodModel() {
     return new V1Pod().metadata(createPodMetadata()).spec(createPodSpec());
   }
@@ -627,4 +604,5 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   // todo test that changing the cert in tuning parameters does not change the hash
+
 }
