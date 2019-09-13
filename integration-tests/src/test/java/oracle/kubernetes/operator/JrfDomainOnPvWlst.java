@@ -44,6 +44,8 @@ public class JrfDomainOnPvWlst extends BaseTest {
  public static void staticPrepare() throws Exception {
    // initialize test properties and create the directories
    initialize(APP_PROPS_FILE);
+   BaseTest.setWaitTimePod(5);
+   BaseTest.setMaxIterationsPod(50);
    TestUtils.exec(
        "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/create-rcu-schema " + BaseTest.getResultDir(),
        true);

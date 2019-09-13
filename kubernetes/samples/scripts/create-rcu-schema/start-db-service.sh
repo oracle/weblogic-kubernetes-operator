@@ -68,7 +68,7 @@ dbpod=`kubectl get po | grep oracle-db | cut -f1 -d " " `
 checkPod ${dbpod} default
 checkPodState ${dbpod} default "1/1"
 kubectl get po
-sleep 200
+sleep 300
 echo "######## start DB debugging ######"
 kubectl log ${dbpod}
 echo "######## end DB debugging ######"
