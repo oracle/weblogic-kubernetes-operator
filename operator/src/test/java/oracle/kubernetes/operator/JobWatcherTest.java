@@ -98,6 +98,10 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     return JobWatcher.create(this, ns, Integer.toString(rv), tuning, stopping);
   }
 
+  private JobWatcher createWatcher(AtomicBoolean stopping) {
+    return JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);
+  }
+
   @Test
   public void whenJobHasNoStatus_reportNotComplete() {
     assertThat(JobWatcher.isComplete(cachedJob), is(false));
@@ -201,10 +205,6 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     JobWatcher watcher = createWatcher(new AtomicBoolean(true));
 
     assertThat(watcher.waitForReady(cachedJob, null), instanceOf(Step.class));
-  }
-
-  private JobWatcher createWatcher(AtomicBoolean stopping) {
-    return JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);
   }
 
   @Test
