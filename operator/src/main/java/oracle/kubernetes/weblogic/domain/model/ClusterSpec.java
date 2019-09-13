@@ -95,6 +95,8 @@ public abstract class ClusterSpec {
 
   public abstract String getNodeName();
 
+  public abstract String getServiceAccountName();
+
   public abstract String getSchedulerName();
 
   public abstract List<V1Toleration> getTolerations();

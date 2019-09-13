@@ -151,6 +151,8 @@ public interface ServerSpec {
 
   String getNodeName();
 
+  String getServiceAccountName();
+
   String getSchedulerName();
 
   List<V1Toleration> getTolerations();
