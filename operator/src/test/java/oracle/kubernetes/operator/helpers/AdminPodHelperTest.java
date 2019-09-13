@@ -11,6 +11,7 @@ import java.util.Map;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import oracle.kubernetes.operator.LabelConstants;
@@ -23,6 +24,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+import static org.hamcrest.Matchers.hasItem;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
@@ -271,6 +273,22 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(
         getConfiguredDomainSpec().getAdminServer().getEnv(),
         hasEnvVar("item1", itemRawValue));
+  }
+
+  @Test
+  public void whenDomainHasValueFromEnvironmentItems_createAdminPodStartupWithThem() {
+    V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
+    V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
+    V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
+
+    configureAdminServer()
+        .withEnvironmentVariable(configMapKeyRefEnvVar)
+        .withEnvironmentVariable(secretKeyRefEnvVar)
+        .withEnvironmentVariable(fieldRefEnvVar);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(),
+        allOf(hasItem(configMapKeyRefEnvVar), hasItem(secretKeyRefEnvVar), hasItem(fieldRefEnvVar)));
   }
 
   @Test
