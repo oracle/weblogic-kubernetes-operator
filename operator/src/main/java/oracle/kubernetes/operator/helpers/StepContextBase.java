@@ -12,24 +12,70 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1Toleration;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 public abstract class StepContextBase implements StepContextConstants {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  abstract ServerSpec getServerSpec();
+
+  abstract String getContainerName();
+
+  abstract List<String> getContainerCommand();
+
+  abstract List<V1Container> getContainers();
+
+  protected V1Container createContainer(TuningParameters tuningParameters) {
+    return new V1Container()
+        .name(getContainerName())
+        .image(getServerSpec().getImage())
+        .imagePullPolicy(getServerSpec().getImagePullPolicy())
+        .command(getContainerCommand())
+        .env(getEnvironmentVariables(tuningParameters))
+        .resources(getServerSpec().getResources())
+        .securityContext(getServerSpec().getContainerSecurityContext());
+  }
+
+  protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
+    return new V1PodSpec()
+        .containers(getContainers())
+        .addContainersItem(createContainer(tuningParameters))
+        .affinity(getServerSpec().getAffinity())
+        .nodeSelector(getServerSpec().getNodeSelectors())
+        .serviceAccountName(getServerSpec().getServiceAccountName())
+        .nodeName(getServerSpec().getNodeName())
+        .schedulerName(getServerSpec().getSchedulerName())
+        .priorityClassName(getServerSpec().getPriorityClassName())
+        .runtimeClassName(getServerSpec().getRuntimeClassName())
+        .tolerations(getTolerations())
+        .restartPolicy(getServerSpec().getRestartPolicy())
+        .securityContext(getServerSpec().getPodSecurityContext())
+        .imagePullSecrets(getServerSpec().getImagePullSecrets());
+  }
+
+  private List<V1Toleration> getTolerations() {
+    List<V1Toleration> tolerations = getServerSpec().getTolerations();
+    return tolerations.isEmpty() ? null : tolerations;
+  }
+
+
   /**
-   * Abstract method to be implemented by subclasses to return a list of configured and additional
-   * environment variables to be set up in the pod.
-   *
-   * @param tuningParameters TuningParameters that can be used when obtaining
-   * @return A list of configured and additional environment variables
-   */
+     * Abstract method to be implemented by subclasses to return a list of configured and additional
+     * environment variables to be set up in the pod.
+     *
+     * @param tuningParameters TuningParameters that can be used when obtaining
+     * @return A list of configured and additional environment variables
+     */
   abstract List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters);
 
   /**

@@ -154,7 +154,7 @@ function createDomainConfigmap {
   echo domainName: $domainName >> ${externalFilesTmpDir}/create-domain-inputs.yaml
 
   if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
-   sh ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir}
+   bash ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir}
   fi
  
   # create the configmap and label it properly

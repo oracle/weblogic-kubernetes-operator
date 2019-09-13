@@ -98,7 +98,6 @@ public class DomainProcessorTest {
     mementos.add(UnitTestHash.install());
 
     domainConfigurator = DomainConfiguratorFactory.forDomain(domain);
-    domain.setStatus(new DomainStatus());
     testSupport.defineResources(domain);
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig());
   }

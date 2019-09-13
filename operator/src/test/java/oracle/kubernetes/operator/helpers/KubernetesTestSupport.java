@@ -41,6 +41,7 @@ import com.google.gson.JsonSerializer;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ConfigMapList;
 import io.kubernetes.client.models.V1Event;
@@ -80,7 +81,6 @@ import org.joda.time.format.ISODateTimeFormat;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
-import static java.util.Collections.emptyMap;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 
 @SuppressWarnings("WeakerAccess")
@@ -222,6 +222,32 @@ public class KubernetesTestSupport extends FiberTestSupport {
   }
 
   /**
+   * Specifies that a create operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnCreate(String resourceType, String name, String namespace, int httpStatus) {
+    failure = new Failure(Operation.create, resourceType, name, namespace, httpStatus);
+  }
+
+  /**
+   * Specifies that a delete operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnDelete(String resourceType, String name, String namespace, int httpStatus) {
+    failure = new Failure(Operation.delete, resourceType, name, namespace, httpStatus);
+  }
+
+  /**
    * Specifies that any operation should fail if it matches the specified conditions. Applies to
    * namespaced resources.
    *
@@ -236,21 +262,28 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that any operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param apiException the kubernetes failure to associate with the failure
+   */
+  public void failOnResource(@Nonnull String resourceType, String name, String namespace, ApiException apiException) {
+    failure = new Failure(resourceType, name, namespace, apiException);
+  }
+
+  /**
+   * Specifies that any operation should fail if it matches the specified conditions. Applies to
    * non-namespaced resources.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
    * @param httpStatus the status to associate with the failure
    */
-  public void failOnResource(String resourceType, String name, int httpStatus) {
+  public void failOnResource(@Nonnull String resourceType, String name, int httpStatus) {
     failOnResource(resourceType, name, null, httpStatus);
   }
-  /*
-
-    public void runOnOperation(String resourceType, String name, String namespace, Consumer<?> consumer) {
-      this.consumers.add(consumer)
-    }
-  */
 
   @SuppressWarnings({"unchecked", "unused"})
   private enum Operation {
@@ -313,31 +346,46 @@ public class KubernetesTestSupport extends FiberTestSupport {
     private String resourceType;
     private String name;
     private String namespace;
-    private int httpStatus;
+    private ApiException apiException;
+    private Operation operation;
 
     public Failure(String resourceType, String name, String namespace, int httpStatus) {
+      this(resourceType, name, namespace, new ApiException(httpStatus, "failure reported in test"));
+    }
+
+    Failure(@Nonnull String resourceType, String name, String namespace, ApiException apiException) {
       this.resourceType = resourceType;
       this.name = name;
       this.namespace = namespace;
-      this.httpStatus = httpStatus;
+      this.apiException = apiException;
     }
 
-    public boolean matches(String resourceType, RequestParams requestParams, Operation operation) {
+    Failure(Operation operation, String resourceType, String name, String namespace, int httpStatus) {
+      this(resourceType, name, namespace, httpStatus);
+      this.operation = operation;
+    }
+
+    boolean matches(String resourceType, RequestParams requestParams, Operation operation) {
       return this.resourceType.equals(resourceType)
+          && (this.operation == null || this.operation == operation)
           && Objects.equals(name, operation.getName(requestParams))
           && Objects.equals(namespace, requestParams.namespace);
     }
 
-    public HttpErrorException getException() {
-      return new HttpErrorException(httpStatus);
+    HttpErrorException getException() {
+      return new HttpErrorException(apiException);
     }
   }
 
   static class HttpErrorException extends RuntimeException {
-    private int status;
+    private ApiException apiException;
 
-    public HttpErrorException(int status) {
-      this.status = status;
+    HttpErrorException(ApiException apiException) {
+      this.apiException = apiException;
+    }
+
+    ApiException getApiException() {
+      return apiException;
     }
   }
 
@@ -387,7 +435,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       try {
         return (T) new CallContext(requestParams).execute();
       } catch (HttpErrorException e) {
-        throw new ApiException(e.status, "failure reported in test");
+        throw e.getApiException();
       }
     }
   }
@@ -537,10 +585,14 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return data.get(name);
     }
 
-    public T patchResource(String name, String namespace, List<JsonObject> body) {
+    private JsonArray fromV1Patch(V1Patch patch) {
+      return Json.createReader(new StringReader(patch.getValue())).readArray();
+    }
+
+    public T patchResource(String name, String namespace, V1Patch body) {
       if (!data.containsKey(name)) throw new NotFoundException(getResourceName(), name, namespace);
 
-      JsonPatch patch = Json.createPatch(toJsonArray(body));
+      JsonPatch patch = Json.createPatch(fromV1Patch(body));
       JsonStructure result = patch.apply(toJsonStructure(data.get(name)));
       T resource = fromJsonStructure(result);
       data.put(name, resource);
@@ -678,7 +730,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @Override
-    public T patchResource(String name, String namespace, List<JsonObject> body) {
+    public T patchResource(String name, String namespace, V1Patch body) {
       return inNamespace(namespace).patchResource(name, namespace, body);
     }
 
@@ -767,7 +819,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private Object patchResource(DataRepository dataRepository) {
       return dataRepository.patchResource(
-          requestParams.name, requestParams.namespace, asJsonObject(requestParams.body));
+          requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
     }
 
     private Object listResources(DataRepository dataRepository) {
@@ -811,19 +863,19 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private CallResponse createResponse(Object callResult) {
-      return new CallResponse<>(callResult, null, HTTP_OK, emptyMap());
+      return CallResponse.createSuccess(callResult, HTTP_OK);
     }
 
     private CallResponse createResponse(NotFoundException e) {
-      return new CallResponse<>(null, new ApiException(e), HTTP_NOT_FOUND, emptyMap());
+      return CallResponse.createFailure(new ApiException(e), HTTP_NOT_FOUND);
     }
 
     private CallResponse createResponse(HttpErrorException e) {
-      return new CallResponse<>(null, new ApiException(e), e.status, emptyMap());
+      return CallResponse.createFailure(e.getApiException(), e.getApiException().getCode());
     }
 
     private CallResponse createResponse(Throwable t) {
-      return new CallResponse<>(null, new ApiException(t), HTTP_UNAVAILABLE, emptyMap());
+      return CallResponse.createFailure(new ApiException(t), HTTP_UNAVAILABLE);
     }
   }
 

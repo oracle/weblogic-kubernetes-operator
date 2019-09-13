@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.Optional;
 import java.util.function.Consumer;
-import javax.json.JsonPatch;
 
 import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiCallback;
@@ -18,6 +17,7 @@ import io.kubernetes.client.apis.AuthorizationV1Api;
 import io.kubernetes.client.apis.BatchV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.VersionApi;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EventList;
@@ -48,7 +48,6 @@ import oracle.kubernetes.operator.calls.CancellableCall;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
-import oracle.kubernetes.operator.utils.PatchUtils;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -97,7 +96,7 @@ public class CallBuilder {
                   usage,
                   requestParams.name,
                   requestParams.namespace,
-                  requestParams.body,
+                  (V1Patch) requestParams.body,
                   callback));
   private final CallFactory<Domain> replaceDomainStatus =
       (requestParams, usage, cont, callback) ->
@@ -146,7 +145,7 @@ public class CallBuilder {
                   usage,
                   requestParams.name,
                   requestParams.namespace,
-                  requestParams.body,
+                  (V1Patch) requestParams.body,
                   callback));
   private final CallFactory<V1Job> createJob =
       (requestParams, usage, cont, callback) ->
@@ -162,7 +161,7 @@ public class CallBuilder {
           wrap(
               new CoreV1Api(client)
                   .createPersistentVolumeAsync(
-                      (V1PersistentVolume) requestParams.body, null, pretty, null, callback)));
+                      (V1PersistentVolume) requestParams.body, pretty, null, null, callback)));
   private final CallFactory<V1PersistentVolumeClaim> createPersistentvolumeclaim =
       (requestParams, client, cont, callback) ->
           wrap(
@@ -170,8 +169,8 @@ public class CallBuilder {
                   .createNamespacedPersistentVolumeClaimAsync(
                       requestParams.namespace,
                       (V1PersistentVolumeClaim) requestParams.body,
-                      null,
                       pretty,
+                      null,
                       null,
                       callback));
   private final CallFactory<V1SubjectAccessReview> createSubjectaccessreview =
@@ -206,7 +205,6 @@ public class CallBuilder {
                   null,
                   callback));
   private String fieldSelector;
-  private Boolean includeUninitialized = Boolean.FALSE;
 
   /* Version */
   private String labelSelector;
@@ -336,7 +334,6 @@ public class CallBuilder {
           new WeblogicApi(client)
               .listNamespacedDomain(
                   requestParams.namespace,
-                  includeUninitialized,
                   pretty,
                   "",
                   fieldSelector,
@@ -364,7 +361,7 @@ public class CallBuilder {
   private SynchronousCallFactory<V1PersistentVolume> createPvCall =
       (client, requestParams) ->
           new CoreV1Api(client)
-              .createPersistentVolume((V1PersistentVolume) requestParams.body, null, pretty, null);
+              .createPersistentVolume((V1PersistentVolume) requestParams.body, pretty, null, null);
   private SynchronousCallFactory<V1Status> deletePvCall =
       (client, requestParams) ->
           new CoreV1Api(client)
@@ -382,8 +379,8 @@ public class CallBuilder {
               .createNamespacedPersistentVolumeClaim(
                   requestParams.namespace,
                   (V1PersistentVolumeClaim) requestParams.body,
-                  null,
                   pretty,
+                  null,
                   null);
   private SynchronousCallFactory<V1Status> deletePvcCall =
       (client, requestParams) ->
@@ -536,7 +533,7 @@ public class CallBuilder {
   public V1Namespace createNamespace(V1Namespace body) throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new CoreV1Api(client).createNamespace(body, null, pretty, null);
+      return new CoreV1Api(client).createNamespace(body, pretty, null, null);
     } finally {
       helper.recycle(client);
     }
@@ -560,7 +557,6 @@ public class CallBuilder {
     return new WeblogicApi(client)
         .listNamespacedDomainAsync(
             namespace,
-            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
@@ -651,14 +647,14 @@ public class CallBuilder {
    * @return Updated domain
    * @throws ApiException APIException
    */
-  public Domain patchDomain(String uid, String namespace, JsonPatch patchBody) throws ApiException {
+  public Domain patchDomain(String uid, String namespace, V1Patch patchBody) throws ApiException {
     RequestParams requestParams =
-        new RequestParams("patchDomain", namespace, uid, PatchUtils.toKubernetesPatch(patchBody));
+        new RequestParams("patchDomain", namespace, uid, patchBody);
     return executeSynchronousCall(requestParams, patchDomainCall);
   }
 
   private com.squareup.okhttp.Call patchDomainAsync(
-      ApiClient client, String name, String namespace, Object patch, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<Domain> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .patchNamespacedDomainAsync(name, namespace, patch, pretty, null, callback);
@@ -674,10 +670,10 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step patchDomainAsync(
-      String name, String namespace, JsonPatch patchBody, ResponseStep<Domain> responseStep) {
+      String name, String namespace, V1Patch patchBody, ResponseStep<Domain> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("patchDomain", namespace, name, PatchUtils.toKubernetesPatch(patchBody)),
+        new RequestParams("patchDomain", namespace, name, patchBody),
         patchDomain);
   }
 
@@ -733,7 +729,7 @@ public class CallBuilder {
       ApiCallback<V1beta1CustomResourceDefinition> callback)
       throws ApiException {
     return new ApiextensionsV1beta1Api(client)
-        .createCustomResourceDefinitionAsync(body, null, pretty, null, callback);
+        .createCustomResourceDefinitionAsync(body, pretty, null, null, callback);
   }
 
   /**
@@ -757,7 +753,7 @@ public class CallBuilder {
       ApiCallback<V1beta1CustomResourceDefinition> callback)
       throws ApiException {
     return new ApiextensionsV1beta1Api(client)
-        .replaceCustomResourceDefinitionAsync(name, body, pretty, null, callback);
+        .replaceCustomResourceDefinitionAsync(name, body, pretty, null, null, callback);
   }
 
   /**
@@ -801,7 +797,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedConfigMapAsync(namespace, body, null, pretty, null, callback);
+        .createNamespacedConfigMapAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -866,7 +862,7 @@ public class CallBuilder {
       ApiCallback<V1ConfigMap> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .replaceNamespacedConfigMapAsync(name, namespace, body, pretty, null, callback);
+        .replaceNamespacedConfigMapAsync(name, namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -892,7 +888,6 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedPodAsync(
             namespace,
-            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
@@ -942,7 +937,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1Pod body, ApiCallback<V1Pod> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedPodAsync(namespace, body, null, pretty, null, callback);
+        .createNamespacedPodAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -999,10 +994,10 @@ public class CallBuilder {
   }
 
   private com.squareup.okhttp.Call patchPodAsync(
-      ApiClient client, String name, String namespace, Object patch, ApiCallback<V1Pod> callback)
+      ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1Pod> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .patchNamespacedPodAsync(name, namespace, patch, pretty, null, callback);
+        .patchNamespacedPodAsync(name, namespace, patch, pretty, null, null, false, callback);
   }
 
   /**
@@ -1015,10 +1010,10 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step patchPodAsync(
-      String name, String namespace, JsonPatch patchBody, ResponseStep<V1Pod> responseStep) {
+      String name, String namespace, V1Patch patchBody, ResponseStep<V1Pod> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("patchPod", namespace, name, PatchUtils.toKubernetesPatch(patchBody)),
+        new RequestParams("patchPod", namespace, name, patchBody),
         patchPod);
   }
 
@@ -1028,7 +1023,6 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .deleteCollectionNamespacedPodAsync(
             namespace,
-            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
@@ -1058,7 +1052,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1Job body, ApiCallback<V1Job> callback)
       throws ApiException {
     return new BatchV1Api(client)
-        .createNamespacedJobAsync(namespace, body, null, pretty, null, callback);
+        .createNamespacedJobAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -1148,7 +1142,6 @@ public class CallBuilder {
       return new CoreV1Api(client)
           .listNamespacedService(
               namespace,
-              includeUninitialized,
               pretty,
               cont,
               fieldSelector,
@@ -1168,7 +1161,6 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedServiceAsync(
             namespace,
-            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
@@ -1234,7 +1226,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1Service body, ApiCallback<V1Service> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedServiceAsync(namespace, body, null, pretty, null, callback);
+        .createNamespacedServiceAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -1327,7 +1319,6 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedEventAsync(
             namespace,
-            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
@@ -1356,7 +1347,6 @@ public class CallBuilder {
       throws ApiException {
     return new CoreV1Api(client)
         .listPersistentVolumeAsync(
-            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
@@ -1435,7 +1425,6 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedPersistentVolumeClaimAsync(
             namespace,
-            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
@@ -1549,7 +1538,7 @@ public class CallBuilder {
   public V1Secret createSecret(String namespace, V1Secret body) throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new CoreV1Api(client).createNamespacedSecret(namespace, body, null, pretty, null);
+      return new CoreV1Api(client).createNamespacedSecret(namespace, body, pretty, null, null);
     } finally {
       helper.recycle(client);
     }

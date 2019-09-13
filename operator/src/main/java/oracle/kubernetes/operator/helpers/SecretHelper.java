@@ -5,16 +5,14 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Secret;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -27,16 +25,13 @@ public class SecretHelper {
   public static final String ADMIN_SERVER_CREDENTIALS_USERNAME = "username";
   public static final String ADMIN_SERVER_CREDENTIALS_PASSWORD = "password";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private final String namespace;
 
   /**
    * Constructor.
    *
-   * @param namespace Scope for object names and authorization.
    */
-  public SecretHelper(String namespace) {
+  public SecretHelper() {
 
-    this.namespace = namespace;
   }
 
   /**
@@ -51,44 +46,6 @@ public class SecretHelper {
   public static Step getSecretData(
       SecretType secretType, String secretName, String namespace, Step next) {
     return new SecretDataStep(secretType, secretName, namespace, next);
-  }
-
-  /**
-   * Get Data for Specified Secret.
-   *
-   * @param secretType the secret to retrieve
-   * @param secretName the name of the secret.
-   * @return a Map containing the secret data fields and values
-   */
-  public Map<String, byte[]> getSecretData(SecretType secretType, String secretName) {
-
-    LOGGER.entering();
-    CallBuilderFactory factory =
-        ContainerResolver.getInstance().getContainer().getSpi(CallBuilderFactory.class);
-
-    try {
-      if (secretType != SecretType.AdminCredentials) {
-        throw new IllegalArgumentException("Invalid secret type");
-      } else if (secretName == null) {
-        throw new IllegalArgumentException("Invalid secret name");
-      }
-
-      LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
-
-      V1Secret secret = factory.create().readSecret(secretName, namespace);
-      if (secret == null || secret.getData() == null) {
-        LOGGER.warning(MessageKeys.SECRET_NOT_FOUND, secretName);
-        LOGGER.exiting(null);
-        return null;
-      }
-
-      return harvestAdminSecretData(secret, null);
-    } catch (Throwable e) {
-      LOGGER.severe(MessageKeys.EXCEPTION, e);
-      return null;
-    } finally {
-      LOGGER.exiting();
-    }
   }
 
   private static Map<String, byte[]> harvestAdminSecretData(
@@ -122,7 +79,7 @@ public class SecretHelper {
     private final String secretName;
     private final String namespace;
 
-    public SecretDataStep(SecretType secretType, String secretName, String namespace, Step next) {
+    SecretDataStep(SecretType secretType, String secretName, String namespace, Step next) {
       super(next);
       this.secretType = secretType;
       this.secretName = secretName;
@@ -138,41 +95,36 @@ public class SecretHelper {
       }
 
       LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
-      final LoggingFilter loggingFilter = packet.getValue(LoggingFilter.LOGGING_FILTER_PACKET_KEY);
-      CallBuilderFactory factory =
-          ContainerResolver.getInstance().getContainer().getSpi(CallBuilderFactory.class);
       Step read =
-          factory
-              .create()
-              .readSecretAsync(
-                  secretName,
-                  namespace,
-                  new ResponseStep<V1Secret>(getNext()) {
-                    @Override
-                    public NextAction onFailure(
-                        Packet packet,
-                        ApiException e,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (statusCode == CallBuilder.NOT_FOUND) {
-                        LOGGER.warning(loggingFilter, MessageKeys.SECRET_NOT_FOUND, secretName);
-                        return doNext(packet);
-                      }
-                      return super.onFailure(packet, e, statusCode, responseHeaders);
-                    }
-
-                    @Override
-                    public NextAction onSuccess(
-                        Packet packet,
-                        V1Secret result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      packet.put(SECRET_DATA_KEY, harvestAdminSecretData(result, loggingFilter));
-                      return doNext(packet);
-                    }
-                  });
+          new CallBuilder()
+              .readSecretAsync(secretName, namespace, new SecretResponseStep(packet, getNext()));
 
       return doNext(read, packet);
+    }
+
+    private class SecretResponseStep extends ResponseStep<V1Secret> {
+      private final LoggingFilter loggingFilter;
+
+      SecretResponseStep(Packet packet, Step next) {
+        super(next);
+        this.loggingFilter = packet.getValue(LoggingFilter.LOGGING_FILTER_PACKET_KEY);
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1Secret> callResponse) {
+        if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+          LOGGER.warning(loggingFilter, MessageKeys.SECRET_NOT_FOUND, secretName);
+          return doNext(packet);
+        }
+        return super.onFailure(packet, callResponse);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
+        packet.put(
+            SECRET_DATA_KEY, harvestAdminSecretData(callResponse.getResult(), loggingFilter));
+        return doNext(packet);
+      }
     }
   }
 }
