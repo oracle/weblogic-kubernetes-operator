@@ -125,6 +125,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | `restartPolicy` | string | Restart policy for all containers within the pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy |
 | `runtimeClassName` | string | RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, the "legacy" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an alpha feature and may change in the future. |
 | `schedulerName` | string | If specified, the pod will be dispatched by specified scheduler. If not specified, the pod will be dispatched by default scheduler. |
+| `serviceAccountName` | string | Name of the ServiceAccount to be used to run this pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the pod is created. |
 | `shutdown` | [Shutdown](#shutdown) | Configures how the operator should shutdown the server instance. |
 | `tolerations` | array of [Toleration](k8s1.13.5.md#toleration) | If specified, the pod's tolerations. |
 | `volumeMounts` | array of [Volume Mount](k8s1.13.5.md#volume-mount) | Additional volume mounts for the server pod. |
