@@ -193,6 +193,11 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   }
 
   @Override
+  public String getServiceAccountName() {
+    return server.getServiceAccountName();
+  }
+
+  @Override
   public String getSchedulerName() {
     return server.getSchedulerName();
   }
