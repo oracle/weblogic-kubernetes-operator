@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain;
 
 import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
 import io.kubernetes.client.models.V1Toleration;
@@ -16,6 +17,8 @@ public interface ServerConfigurator extends ServiceConfigurator {
   ServerConfigurator withDesiredState(String desiredState);
 
   ServerConfigurator withEnvironmentVariable(String name, String value);
+
+  ServerConfigurator withEnvironmentVariable(V1EnvVar envVar);
 
   ServerConfigurator withServerStartState(String state);
 

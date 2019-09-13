@@ -9,6 +9,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSecurityContext;
@@ -191,13 +192,20 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withServerStartState(String startState);
 
   /**
-   * Add an environment variable to the domain.
+   * Add an environment variable with the given name and value to the domain.
    *
    * @param name variable name
    * @param value value
    * @return this object
    */
   public abstract DomainConfigurator withEnvironmentVariable(String name, String value);
+
+  /**
+   * Add an environment variable to the domain.
+   * @param envVar V1EnvVar to be added to the domain
+   * @return this object
+   */
+  public abstract DomainConfigurator withEnvironmentVariable(V1EnvVar envVar);
 
   protected DomainSpec getDomainSpec() {
     return domain.getSpec();
