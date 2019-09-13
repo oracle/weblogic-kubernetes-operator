@@ -80,7 +80,8 @@ public class JobHelperTest {
   private final V1Toleration toleration = createToleration("key","Eqauls", "value", "NoSchedule");
   private final V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
   private final V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
-  private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");  protected List<Memento> mementos = new ArrayList<>();
+  private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
+  protected List<Memento> mementos = new ArrayList<>();
 
   @Before
   public void setup() throws Exception {

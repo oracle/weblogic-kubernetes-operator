@@ -4,10 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1ConfigMapKeySelector;
-import io.kubernetes.client.models.V1EnvVarSource;
-import io.kubernetes.client.models.V1ObjectFieldSelector;
-import io.kubernetes.client.models.V1SecretKeySelector;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -20,9 +16,11 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Affinity;
+import io.kubernetes.client.models.V1ConfigMapKeySelector;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1EnvVarSource;
 import io.kubernetes.client.models.V1ExecAction;
 import io.kubernetes.client.models.V1HTTPGetAction;
 import io.kubernetes.client.models.V1Handler;
@@ -30,6 +28,7 @@ import io.kubernetes.client.models.V1LabelSelector;
 import io.kubernetes.client.models.V1LabelSelectorRequirement;
 import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1ObjectFieldSelector;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodAffinity;
@@ -38,6 +37,7 @@ import io.kubernetes.client.models.V1PodAntiAffinity;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Probe;
+import io.kubernetes.client.models.V1SecretKeySelector;
 import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1SecurityContext;
 import io.kubernetes.client.models.V1Toleration;
@@ -965,15 +965,18 @@ public abstract class PodHelperTestBase {
   }
 
   static V1EnvVar createFieldRefEnvVar(String name, String fieldPath) {
-    return new V1EnvVar().name(name).valueFrom(new V1EnvVarSource().fieldRef(new V1ObjectFieldSelector().fieldPath(fieldPath)));
+    return new V1EnvVar().name(name).valueFrom(
+        new V1EnvVarSource().fieldRef(new V1ObjectFieldSelector().fieldPath(fieldPath)));
   }
 
   static V1EnvVar createConfigMapKeyRefEnvVar(String name, String configMapName, String key) {
-    return new V1EnvVar().name(name).valueFrom(new V1EnvVarSource().configMapKeyRef(new V1ConfigMapKeySelector().name(configMapName).key(key)));
+    return new V1EnvVar().name(name).valueFrom(
+        new V1EnvVarSource().configMapKeyRef(new V1ConfigMapKeySelector().name(configMapName).key(key)));
   }
 
   static V1EnvVar createSecretKeyRefEnvVar(String name, String secretName, String key) {
-    return new V1EnvVar().name(name).valueFrom(new V1EnvVarSource().secretKeyRef(new V1SecretKeySelector().name(secretName).key(key)));
+    return new V1EnvVar().name(name).valueFrom(
+        new V1EnvVarSource().secretKeyRef(new V1SecretKeySelector().name(secretName).key(key)));
   }
 
   abstract List<String> createStartCommand();
