@@ -19,7 +19,7 @@ import oracle.kubernetes.operator.work.Step;
 /**
  * Step to receive response of Kubernetes API server call.
  *
- * <p>Most implementations will only need to implement {@link #onSuccess(Packet, Object, int, Map)}.
+ * <p>Most implementations will only need to implement {@link #onSuccess(Packet, CallResponse)}.
  *
  * @param <T> Response type
  */

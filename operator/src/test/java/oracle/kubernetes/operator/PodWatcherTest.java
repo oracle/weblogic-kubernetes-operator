@@ -75,16 +75,16 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
     return PodWatcher.create(this, ns, Integer.toString(rv), tuning, this, stopping);
   }
 
+  private PodWatcher createWatcher(AtomicBoolean stopping) {
+    return PodWatcher.create(this, NS, Integer.toString(INITIAL_RESOURCE_VERSION), tuning, this, stopping);
+  }
+
   @Test
   public void waitForReady_returnsAStep() {
     AtomicBoolean stopping = new AtomicBoolean(true);
     PodWatcher watcher = createWatcher(stopping);
 
     assertThat(watcher.waitForReady(createPod(), null), Matchers.instanceOf(Step.class));
-  }
-
-  private PodWatcher createWatcher(AtomicBoolean stopping) {
-    return PodWatcher.create(this, NS, Integer.toString(INITIAL_RESOURCE_VERSION), tuning, this, stopping);
   }
 
   private V1Pod createPod() {
