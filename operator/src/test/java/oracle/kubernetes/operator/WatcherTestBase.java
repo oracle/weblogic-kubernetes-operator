@@ -69,16 +69,13 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     StubWatchFactory.setListener(this);
   }
 
-  final void addMemento(Memento memento) {
-    mementos.add(memento);
-  }
-
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     shutDownThreads();
     for (Memento memento : mementos) memento.revert();
   }
 
+  @SuppressWarnings("unchecked")
   void sendInitialRequest(int initialResourceVersion) {
     scheduleAddResponse(createObjectWithMetaData());
 
@@ -122,6 +119,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     return WatchEvent.createErrorEventWithoutStatus().toWatchResponse();
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void receivedEvents_areSentToListeners() {
     Object object1 = createObjectWithMetaData();
@@ -149,6 +147,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
         hasEntry("resourceVersion", String.valueOf(resourceVersion - 2)));
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void afterHttpGoneError_nextRequestSendsIncludedResourceVersion() {
     StubWatchFactory.addCallResponses(createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
@@ -161,6 +160,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
         hasEntry("resourceVersion", Integer.toString(NEXT_RESOURCE_VERSION)));
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void afterHttpGoneErrorWithoutResourceVersion_nextRequestSendsResourceVersionZero() {
     StubWatchFactory.addCallResponses(createHttpGoneErrorWithoutResourceVersionResponse());
@@ -171,6 +171,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     assertThat(StubWatchFactory.getRequestParameters().get(1), hasEntry("resourceVersion", "0"));
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void afterErrorWithoutStatus_nextRequestSendsResourceVersionZero() {
     StubWatchFactory.addCallResponses(createErrorWithoutStatusResponse());
@@ -181,7 +182,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     assertThat(StubWatchFactory.getRequestParameters().get(1), hasEntry("resourceVersion", "0"));
   }
 
-  @SuppressWarnings({"rawtypes"})
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void afterDelete_nextRequestSendsIncrementedResourceVersion() {
     scheduleDeleteResponse(createObjectWithMetaData());
@@ -194,6 +195,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
         hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION + 1)));
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void afterExceptionDuringNext_closeWatchAndTryAgain() {
     StubWatchFactory.throwExceptionOnNext(hasNextException);
@@ -204,11 +206,15 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     assertThat(StubWatchFactory.getNumCloseCalls(), equalTo(2));
   }
 
-  void scheduleAddResponse(Object object) {
+  protected void scheduleAddResponse(Object object) {
     StubWatchFactory.addCallResponses(createAddResponse(object));
   }
 
-  private void scheduleDeleteResponse(Object object) {
+  protected void scheduleModifyResponse(Object object) {
+    StubWatchFactory.addCallResponses(createModifyResponse(object));
+  }
+
+  protected void scheduleDeleteResponse(Object object) {
     StubWatchFactory.addCallResponses(createDeleteResponse(object));
   }
 
