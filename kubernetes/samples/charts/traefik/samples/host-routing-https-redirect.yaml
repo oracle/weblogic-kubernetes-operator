@@ -44,7 +44,7 @@ spec:
 ## Configuration in the traefik toml.yaml 
 ## while the subdomain and root domain must be replace specific to your organisation ### 
 
-
+---
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -65,3 +65,4 @@ data:
     [acme]
           [[acme.domains]]
             main = "*.subdomain.rootdomain.com"
+---
