@@ -1,0 +1,67 @@
+## Cluster Server for the HTTPs redirect from the traefik ##
+## while the subdomain and root domain must be replace specific to your organisation ###  
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: cluster-service
+  namespace: domain1-ns
+spec:
+  rules:
+  - host: cluster.subdomain.rootdomain.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: domain1-cluster-cluster-1
+          servicePort: 8001
+
+
+## Admin Service for the HTTPS redirection from the traefik ## 
+## while the subdomain and root domain must be replace specific to your organisation ## 
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    ingress.kubernetes.io/custom-request-headers: REFERER:http://subdomain.rootdomain.com/console/login/LoginForm.jsp
+  name: admin-external
+  namespace: domain1-ns
+spec:
+  rules:
+  - host: domain1.subdomain.rootdomain.com
+    http:
+      paths:
+      - path: /console
+        backend:
+          serviceName: domain1-admin-server-external
+          servicePort: 7001
+
+
+## Configuration in the traefik toml.yaml 
+## while the subdomain and root domain must be replace specific to your organisation ### 
+
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: traefik-config
+  namespace: kube-system
+data:
+  traefik.toml: |
+    InsecureSkipVerify = true
+    defaultEntryPoints = ["http", "https"]
+    [traefikLog]
+      format = "json"
+    [healthcheck]
+    [entryPoints]
+      [entryPoints.http]
+        address = ":80"
+        [entryPoints.http.redirect]
+        entryPoint = "https"
+    [acme]
+          [[acme.domains]]
+            main = "*.subdomain.rootdomain.com"
