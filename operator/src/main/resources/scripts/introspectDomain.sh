@@ -92,7 +92,7 @@ trace "DATA_HOME=${DATA_HOME}"
 #
 # DATA_HOME env variable exists implies override directory specified.  Attempt to create directory
 #
-if [ -n ${DATA_HOME} ] && [ ! -d ${DATA_HOME} ]; then
+if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
   createFolder ${DATA_HOME}
   trace "Created data home directory: '${DATA_HOME}'"
 fi
