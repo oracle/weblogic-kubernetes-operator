@@ -15,7 +15,7 @@ metadata:
 spec:
  rules:
  - host: www.acme.com
- -  http:
+ - http:
      paths:
      - path: /(.+)
        backend:

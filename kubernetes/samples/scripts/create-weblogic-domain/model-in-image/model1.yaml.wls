@@ -1,14 +1,11 @@
 domainInfo:
-    AdminUserName: 'weblogic'
-    AdminPassword: 'welcome1'
+    AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
+    AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
     ServerStartMode: 'prod'
 
 topology:
     Name: domain1
     AdminServerName: "admin-server"
-    SecurityConfiguration:
-        NodeManagerUsername : 'weblogic'
-        NodeManagerPasswordEncrypted : 'welcome1'
     Cluster:
         "cluster-1":
             DynamicServers:

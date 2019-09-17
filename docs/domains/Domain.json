@@ -244,6 +244,10 @@
           "description": "True if this domain\u0027s home is defined in the Docker image for the domain. Defaults to true.",
           "type": "boolean"
         },
+        "wdtConfigMapSecret": {
+          "description": "The name of the wdt model encryption passphrase  used for optional wdt tool.",
+          "type": "string"
+        },
         "domainUID": {
           "pattern": "^[a-z0-9-.]{1,253}$",
           "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name.",
@@ -296,6 +300,10 @@
         },
         "logHome": {
           "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files",
+          "type": "string"
+        },
+        "wdtConfigMap": {
+          "description": "The name of the wdt config map used for optional wdt tool.",
           "type": "string"
         },
         "includeServerOutInPodLog": {

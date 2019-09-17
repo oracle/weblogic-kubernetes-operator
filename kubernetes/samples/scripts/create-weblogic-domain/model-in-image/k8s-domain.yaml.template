@@ -29,6 +29,8 @@ spec:
   # how to create that Secret at the end of this file)
   webLogicCredentialsSecret: 
     name: sample-domain1-weblogic-credentials
+  # Secrets used by configuration overrides and/or WDT model yaml files
+  configOverrideSecrets : [ sample-domain1-rcu-access ]
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: true
   # Whether to enable log home
@@ -48,9 +50,12 @@ spec:
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
       value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+    # Valid WDT_DOMAIN_TYPE_VALUES are 'WLS', 'JRF', and 'RestrictedJRF'
     - name: WDT_DOMAIN_TYPE
       value: "@@DOMTYPE@@"
-    #   value: "WLS"
+    - name: KEEP_JRF_SCHEMA
+      value: "1"
+    #   value: "JRF"
     #   value: "RestrictedJRF"
     #
     # volumes:
@@ -82,5 +87,4 @@ spec:
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
   wdtConfigMap : wdt-config-map
-  #configOverrides: mycmtest
   #wdtConfigMapSecret : simple-domain1-wdt-secret
