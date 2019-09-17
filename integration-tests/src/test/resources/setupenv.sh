@@ -140,9 +140,9 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
   
   clean_shared_cluster
     
-  if [ "$JRF_ENABLED" = true ] ; then
-	pull_tag_images_jrf
-  else
+  #if [ "$JRF_ENABLED" = true ] ; then
+	#pull_tag_images_jrf
+  #else
   	export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
 	export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC  
   
@@ -174,7 +174,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	fi
     create_image_pull_secret_wl
 	
-  fi
+  #fi
   setup_shared_cluster
   docker images
     
