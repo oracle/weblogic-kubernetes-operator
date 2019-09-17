@@ -22,17 +22,21 @@ IMGTOOL_BIN=${WORKDIR}/imagetool/bin/imagetool.sh
 
 BASE_IMAGE_REPO=${BASE_IMAGE_REPO:-model-in-image}
 BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-x0}
+
 MODEL_IMAGE_REPO=${MODEL_IMAGE_REPO:-model-in-image}
 MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-x1}
+MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-missing}
 
-echo @@
-echo @@ Info: Starting model image build for '$MODEL_IMAGE_REPO:$MODEL_IMAGE_TAG'
-echo @@
+echo "@@"
+echo "@@ Info: Starting model image build for '$MODEL_IMAGE_REPO:$MODEL_IMAGE_TAG'"
+echo "@@"
 
-if [ "`docker images $MODEL_IMAGE_REPO:$MODEL_IMAGE_TAG | awk '{ print $1 ":" $2 }' | grep -c $MODEL_IMAGE_REPO:$MODEL_IMAGE_TAG`" = "1" ]; then
+if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && \
+   [ "`docker images $MODEL_IMAGE_REPO:$MODEL_IMAGE_TAG | awk '{ print $1 ":" $2 }' | grep -c $MODEL_IMAGE_REPO:$MODEL_IMAGE_TAG`" = "1" ]; then
   echo @@
   echo "@@ Info: --------------------------------------------------------------------------------------------------"
   echo "@@ Info: NOTE!!! Skipping model image build because image '$MODEL_IMAGE_REPO:$MODEL_IMAGE_TAG' already exists."
+  echo "@@ Info:         To always build the model image, 'export  MODEL_IMAGE_BUILD=always'.                      "
   echo "@@ Info: --------------------------------------------------------------------------------------------------"
   echo @@
   sleep 3
@@ -47,9 +51,9 @@ if [ ! "${WDT_DOMAIN_TYPE}" == "WLS" ] \
   echo @@
 fi
 
-echo @@
-echo @@ Info: Setting up wdt models in directory ./models
-echo @@
+echo "@@"
+echo "@@ Info: Setting up wdt models in directory ./models"
+echo "@@"
 
 mkdir -p ./models
 

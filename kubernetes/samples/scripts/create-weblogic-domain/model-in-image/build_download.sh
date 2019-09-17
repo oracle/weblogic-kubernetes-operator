@@ -8,38 +8,37 @@
 #
 set -eu
 
-echo @@ Downloading latest WebLogic Image Tool
-
 cd $WORKDIR
 
-ZIPFILE=weblogic-image-tool.zip
+DOWNLOAD_WIT=${DOWNLOAD_WIT:-when-missing}
 
-if [ -f $ZIPFILE ]; then
-  echo @@
-  echo @@ ------------------------------------------------------------------------
-  echo @@ Info: NOTE! Skipping download since local file $ZIPFILE already exists.
-  echo @@ ------------------------------------------------------------------------
-  echo @@
-  sleep 2
-else
-  downloadlink=$(curl -sL https://github.com/oracle/weblogic-image-tool/releases/latest | grep "/oracle/weblogic-image-tool/releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
-  echo @@ Info: Downloading $downloadlink to $ZIPFILE
+DOWNLOAD_WDT=${DOWNLOAD_WDT:-when-missing}
+
+download_zip() {
+  set -eu
+  local ZIPFILE=$1
+  local LOCATION=$2
+  local DOWNLOAD=$3
+  local DOWNLOAD_VAR_NAME=$4
+
+  if [ ! "$DOWNLOAD" = "always" ] && [ -f $ZIPFILE ]; then
+    echo "@@"
+    echo "@@ -----------------------------------------------------------------------"
+    echo "@@ Info: NOTE! Skipping '$LOCATION' download since local                  "
+    echo "@@             file '$ZIPFILE' already exists.                            "
+    echo "@@             To force a download, 'export $DOWNLOAD_VAR_NAME=always'.   "
+    echo "@@ -----------------------------------------------------------------------"
+    echo "@@"
+    sleep 2
+    return
+  fi
+
+  local downloadlink=$(curl -sL https://github.com/$LOCATION/releases/latest | grep "/$LOCATION/releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
+
+  echo "@@ Downloading latest '$LOCATION' to '$ZIPFILE' from 'https://github.com$downloadlink'."
+
   curl -L  https://github.com$downloadlink -o $ZIPFILE
-fi
+}
 
-echo @@ Downloading latest WebLogic Deploy Tool
-
-ZIPFILE=weblogic-deploy.zip
-
-if [ -f $ZIPFILE ]; then
-  echo @@
-  echo @@ ------------------------------------------------------------------------
-  echo @@ Info: NOTE! Skipping download since local file $ZIPFILE already exists.
-  echo @@ ------------------------------------------------------------------------
-  echo @@
-  sleep 2
-else
-  downloadlink=$(curl -sL https://github.com/oracle/weblogic-deploy-tooling/releases/latest | grep "/oracle/weblogic-deploy-tooling/releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
-  echo @@ Info: Downloading $downloadlink to $ZIPFILE
-  curl -L  https://github.com$downloadlink -o $ZIPFILE
-fi
+download_zip weblogic-deploy-tooling.zip oracle/weblogic-deploy-tooling $DOWNLOAD_WDT DOWNLOAD_WDT
+download_zip weblogic-image-tool.zip oracle/weblogic-image-tool $DOWNLOAD_WIT DOWNLOAD_WIT

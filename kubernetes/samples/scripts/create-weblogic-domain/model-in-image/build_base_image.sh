@@ -13,7 +13,7 @@
 #    The script expects:
 #
 #      WebLogic Image Tool is downloaded to the current directory and named weblogic-image-tool.zip
-#      WebLogic Deploy Tool is downloaded to the current directory and named weblogic-deploy.zip
+#      WebLogic Deploy Tool is downloaded to the current directory and named weblogic-deploy-tooling.zip
 #
 #    Environment used:
 #
@@ -34,6 +34,7 @@ cd ${WORKDIR}
 
 BASE_IMAGE_REPO=${BASE_IMAGE_REPO:-model-in-image}
 BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-x0}
+BASE_IMAGE_BUILD=${BASE_IMAGE_BUILD:-when-missing}
 
 SERVER_JRE=${SERVER_JRE:-V982783-01.zip}
 SERVER_JRE_VERSION=${SERVER_JRE_VERSION:-8u221}
@@ -48,10 +49,12 @@ echo @@
 echo "@@ Info: Starting base image build for '$BASE_IMAGE_REPO:$BASE_IMAGE_TAG'"
 echo @@
 
-if [ "`docker images $BASE_IMAGE_REPO:$BASE_IMAGE_TAG | awk '{ print $1 ":" $2 }' | grep -c $BASE_IMAGE_REPO:$BASE_IMAGE_TAG`" = "1" ]; then
+if [ ! "$BASE_IMAGE_BUILD" = "always" ] && \
+   [ "`docker images $BASE_IMAGE_REPO:$BASE_IMAGE_TAG | awk '{ print $1 ":" $2 }' | grep -c $BASE_IMAGE_REPO:$BASE_IMAGE_TAG`" = "1" ]; then
   echo @@
   echo "@@ Info: --------------------------------------------------------------------------------------------------"
   echo "@@ Info: NOTE!!! Skipping base image build because image '$BASE_IMAGE_REPO:$BASE_IMAGE_TAG' already exists."
+  echo "@@ Info:         To always build the base image, 'export  BASE_IMAGE_BUILD=always'.                        "
   echo "@@ Info: --------------------------------------------------------------------------------------------------"
   echo @@
   sleep 3
@@ -97,21 +100,21 @@ IMGTOOL_BIN=${WORKDIR}/imagetool/bin/imagetool.sh
 export WLSIMG_CACHEDIR=${WORKDIR}/cache
 export WLSIMG_BLDDIR=${WORKDIR}
 
-${IMGTOOL_BIN} cache addInstaller \
-  --type jdk --version ${SERVER_JRE_VERSION} --path ${SERVER_JRE_TGZ}
+function updateImageToolCache() {
+  ${IMGTOOL_BIN} cache deleteEntry --key $1_$2
+  ${IMGTOOL_BIN} cache addInstaller --type $1 --version $2 --path $3
+}
+
+updateImageToolCache jdk ${SERVER_JRE_VERSION} ${SERVER_JRE_TGZ}
+updateImageToolCache wdt latest ${WORKDIR}/weblogic-deploy-tooling.zip
 
 if [ "${WDT_DOMAIN_TYPE}" == "WLS" ] ; then
-  ${IMGTOOL_BIN} cache addInstaller \
-    --type wls --version ${WLS_VERSION} --path ${WLS_INSTALLER}
+  updateImageToolCache wls ${WLS_VERSION} ${WLS_INSTALLER}
   IMGTYPE=wls
 else 
-  ${IMGTOOL_BIN} cache addInstaller \
-    --type fmw --version ${WLS_VERSION} --path ${FMW_INSTALLER}
+  updateImageToolCache fmw ${WLS_VERSION} ${FMW_INSTALLER}
   IMGTYPE=fmw
 fi
-
-${IMGTOOL_BIN} cache addInstaller \
-  --type wdt --version latest --path ${WORKDIR}/weblogic-deploy.zip
 
 #
 echo @@ Creating base image with patches
@@ -120,11 +123,17 @@ echo @@ Creating base image with patches
 (
 set +x
 
-echo -n "Enter Your Oracle Support Username: "
-read USERID
-echo -n "Enter Your Oracle Support Password: "
-read -s USERPWD
-echo
+if [ -z "${USERID:-}" ]; then
+  echo -n "Enter an Oracle Support Username: "
+  read USERID
+  echo
+fi
+
+if [ -z "${USERPWD:-}" ]; then
+  echo -n "Enter Oracle Support Password for Username '$USERID': "
+  read -s USERPWD
+  echo
+fi
 
 ${IMGTOOL_BIN} create \
   --tag $BASE_IMAGE_REPO:$BASE_IMAGE_TAG \
