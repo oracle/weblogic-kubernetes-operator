@@ -225,6 +225,7 @@ public class Main {
       eventWatchers.remove(ns);
       podWatchers.remove(ns);
       serviceWatchers.remove(ns);
+      JobWatcher.removeNamespace(ns);
     }
   }
 
