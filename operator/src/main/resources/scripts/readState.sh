@@ -20,6 +20,8 @@ DH=${DOMAIN_HOME?}
 
 STATEFILE=/${DH}/servers/${SN}/data/nodemanager/${SN}.state
 
+adjustPath
+
 if [ `jps -v | grep -c " -Dweblogic.Name=${SERVER_NAME} "` -eq 0 ]; then
   trace "WebLogic server process not found"
   exit 1

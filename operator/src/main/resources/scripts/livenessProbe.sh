@@ -25,6 +25,8 @@ DH=${DOMAIN_HOME?}
 STATEFILE=${DH}/servers/${SN}/data/nodemanager/${SN}.state
 
 if [ "${MOCK_WLS}" != 'true' ]; then
+  adjustPath
+
   if [ `jps -l | grep -c " weblogic.NodeManager"` -eq 0 ]; then
     trace SEVERE "WebLogic NodeManager process not found."
     exit $RETVAL

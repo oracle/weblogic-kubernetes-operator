@@ -418,3 +418,14 @@ function getAdminServerUrl() {
   fi
   echo ${admin_protocol}://${AS_SERVICE_NAME}:${ADMIN_PORT}
 }
+
+#
+# adjustPath
+#   purpose: Prepend $PATH with $JAVA_HOME/bin if $JAVA_HOME is set
+#
+function adjustPath() {
+  if [ ! -z ${JAVA_HOME} ]; then
+    export PATH="${JAVA_HOME}/bin:$PATH"
+  fi
+}
+
