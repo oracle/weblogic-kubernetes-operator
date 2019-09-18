@@ -8,7 +8,7 @@ Each WebLogic operator deployment manages a list of Kubernetes namespaces, which
 configured via the `domainNamespaces` setting. In each namespace that the operator manages, 
 there are a couple of Kubernetes resources that have to be present before any WebLogic 
 domain custom resource can be successfully deployed in that namespace. Those resources are
-either created as part of the Operator helm chart installation, or created by the operator at runtime.
+either created as part of the operator helm chart installation, or created by the operator at runtime.
 
 There are a couple of things that you need to be aware if you need to do the following when the WebLogic  operator is running.
 * Add a namespace to the operator's managed namespace list,
@@ -54,7 +54,7 @@ NAME                 DATA      AGE
 weblogic-domain-cm   14        12m
 ```
 
-####  Deleting a Kubernetes namespace from the Operator
+####  Deleting a Kubernetes namespace from the operator
 When a namespace is not supposed to be managed by an operator any more, it needs to be removed from 
 the operator's `domainNamespaces` list so that the corresponding Kubernetes resources that are 
 associated with the namespace can be cleaned up. 
@@ -75,7 +75,7 @@ $ helm upgrade \
 #### Recreating a previously deleted Kubernetes namespace
 
 When you need to delete a namespace (and the resources in it) and then recreate the namespace for any reason, 
-remember to remove the namespace from the Operator's `domainNamespaces` list 
+remember to remove the namespace from the operator's `domainNamespaces` list 
 after you deleted the namespace, and add it back to the `domainNamespaces` list after you recreated the namespace.
 
 {{% notice note %}}
@@ -101,8 +101,15 @@ Events:
 
 If you run into situations where a new domain that is created after its namespace is deleted and recreated does not come up successfully, you can try to restart the operator pod using the following two approaches.
 
-* Killing the operator pod, and let Kubernetes restart it,
-* Scaling the Operator deployment to `0` and then back to `1` by changing the value of the `replicas`. Here are an example command to do the scaling, where `weblogic-operator` is the release name and the operator itself is running in the namespace `weblogic-operator-namespace`.
+* Killing the operator pod, and let Kubernetes restart it
+
+Here is an example commands to do this, where `weblogic-operator` is the release name and the operator itself is running in the namespace `weblogic-operator-namespace`.
+```
+$ kubectl delete pod/weblogic-operator-65b95bc5b5-jw4hh -n weblogic-operator-namespace
+```
+
+* Scaling the operator deployment to `0` and then back to `1` by changing the value of the `replicas`. 
+Here are example commands to do the scaling, where `weblogic-operator` is the release name and the operator itself is running in the namespace `weblogic-operator-namespace`.
 
 ```
 $ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas=0
