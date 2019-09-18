@@ -75,9 +75,10 @@ $ helm upgrade \
 
 #### Recreating a previously deleted Kubernetes namespace
 
-If, for some reason, you need to delete a namespace (and the resources in it) and then recreate the namespace,
+If you need to delete a namespace (and the resources in it) and then recreate the namespace,
 remember to remove the namespace from the operator's `domainNamespaces` list 
-after you deleted the namespace, and add it back to the `domainNamespaces` list after you recreated the namespace.
+after you deleted the namespace, and add it back to the `domainNamespaces` list after you recreated the namespace
+using the `helm upgrade` command that have been shown above.
 
 {{% notice note %}}
 Make sure that you wait a sufficient period of time between deleting and recreating the namespace because it takes time for the resources in a namespace to go way after the namespace is deleted.
