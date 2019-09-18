@@ -5,7 +5,7 @@ draft: false
 ---
 
 Each WebLogic operator deployment manages a list of Kubernetes namespaces, which is 
-configured via the domainNamespaces setting. In each namespace that the operator manages, 
+configured via the `domainNamespaces` setting. In each namespace that the operator manages, 
 there are a couple of Kubernetes resources that have to be present before any WebLogic 
 domain custom resource can be successfully deployed in that namespace. Those resources are
 either created as part of the Operator helm chart installation, or created by the operator at runtime.
@@ -16,12 +16,12 @@ There are a couple of things that you need to be aware if you need to do the fol
 * Delete and recreate a Kubernetes namespace that the WebLogic operator manages.
 
 #### Adding a Kubernetes namespace for the operator to manage
-When you want a WebLogic operator deployment to manage a namespace, you need to add a namespace to the domainNamespaces list of the operator. Note that the namespace has to be already created, say using the "kubectl create" command.
+When you want a WebLogic operator deployment to manage a namespace, you need to add a namespace to the domainNamespaces list of the operator. Note that the namespace has to be already created, say using the `kubectl create` command.
 
 By adding the namespace to the domainNamespaces list, it tells the operator deployment or runtime 
 to initialize the necessary Kubernetes resources for the namespace so that the operator is ready to host WebLogic domain resources.
 
-Given that the operator is running and managing the "default" namespace, the following example helm command adds namespace "ns1" to the domainNamespaces list, where "weblogic-operator" is the release name and "kubernetes/charts/weblogic-operator" is the location of the helm charts of the operator.
+Given that the operator is running and managing the `default` namespace, the following example helm command adds namespace `ns1` to the `domainNamespaces` list, where `weblogic-operator` is the release name and `kubernetes/charts/weblogic-operator` is the location of the helm charts of the operator.
 
 ```
 $ helm upgrade \
@@ -44,7 +44,7 @@ You can verify if the operator is ready to host domains resource in a namespace 
 $ kubetctl get cm -n <namespace>
 ```
 
-For example:
+For example, the following command returns the domain configmap in namespace `ns1`.
 
 ```
 bash-4.2$ kubectl get cm -n ns1
@@ -59,7 +59,7 @@ When a namespace is not supposed to be managed by an operator any more, it needs
 the operator's domainNamespaces list so that the corresponding Kubernetes resources that are 
 associated with the namespace can be cleaned up. 
 
-Given that the operator is running and managing the "default" and "ns1" namespaces, the following example helm command removes namespace "ns1" from the domainNamespaces list, where "weblogic-operator" is the release name and "kubernetes/charts/weblogic-operator" is the location of the helm charts of the operator.
+Given that the operator is running and managing the `default` and `ns1` namespaces, the following example helm command removes namespace `ns1` from the domainNamespaces list, where `weblogic-operator` is the release name and `kubernetes/charts/weblogic-operator` is the location of the helm charts of the operator.
 
 ```
 $ helm upgrade \
@@ -83,7 +83,7 @@ Make sure that you wait sufficient time between deleting and recreating the name
 In addition, as we mentioned above, changes to the domainNamespaces setting is checked by the operator periodically, and the operator becomes ready to host domain resources only after the required configmap (namely weblogic-domain-cm) is initialized.
 {{% /notice %}}
 
-If a domain custom resource is created in a newly recreated namespace before the namespace is ready, you may see that the introspector job pod fails to start. You may see a warning events like the following one when you check the description of the introspector pod. Note that the domain name is "domain1" in the following example output.
+If a domain custom resource is created in a newly recreated namespace before the namespace is ready, you may see that the introspector job pod fails to start. You may see a warning events like the following one when you check the description of the introspector pod. Note that the domain name is `domain1` in the following example output.
 
 ```
 Events:
@@ -99,7 +99,7 @@ Events:
 If you run into situations where a new domain that is created after its namespace is deleted and recreated does not come up successfully, you can try to restart the operator pod using the following two approaches.
 
 * Killing the operator pod, and let Kubernetes restart it,
-* Scaling the Operator deployment to 0 and then back to 1 by changing the value of the "replicas". Here are an example command to do the scaling, where "weblogic-operator" is the release name and the operator itself is running in the namespace "weblogic-operator-namespace".
+* Scaling the Operator deployment to `0` and then back to `1` by changing the value of the `replicas`. Here are an example command to do the scaling, where `weblogic-operator` is the release name and the operator itself is running in the namespace `weblogic-operator-namespace`.
 
 ```
 $ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas=0
