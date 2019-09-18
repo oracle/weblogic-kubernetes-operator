@@ -13,17 +13,13 @@ echo @@
 echo @@ Info: Creating sample app model archive models/archive1.zip
 echo @@
 
-cd $WORKDIR
-
-mkdir -p models
+mkdir -p ${WORKDIR}/models
 
 cd sample_app/wlsdeploy/applications
 rm -f sample_app.ear
 jar cvfM sample_app.ear *
 
-cd $WORKDIR
-cd sample_app
-rm -f ../models/archive1.zip
-zip ../models/archive1.zip wlsdeploy/applications/sample_app.ear wlsdeploy/config/amimemappings.properties
+rm -f ${WORKDIR}/models/archive1.zip
+cd ../..
+zip ${WORKDIR}/models/archive1.zip wlsdeploy/applications/sample_app.ear wlsdeploy/config/amimemappings.properties
 
-cd $WORKDIR

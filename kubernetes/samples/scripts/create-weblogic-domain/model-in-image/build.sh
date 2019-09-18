@@ -23,6 +23,10 @@ set -eu
 
 ./build_base_image.sh
 
+# This step builds the sample application
+
+./build_app.sh
+
 # This step builds a model image for deploying to the Kubernetes Cluster using the base
 # image and the model files in ./models
 

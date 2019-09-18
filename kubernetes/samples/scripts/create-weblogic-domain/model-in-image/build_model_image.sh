@@ -13,8 +13,8 @@
 
 set -eu
 
+CWD=`pwd`
 cd ${WORKDIR}
-
 export WLSIMG_CACHEDIR=${WORKDIR}/cache
 export WLSIMG_BLDDIR=${WORKDIR}
 
@@ -55,19 +55,15 @@ echo "@@"
 echo "@@ Info: Setting up wdt models in directory ./models"
 echo "@@"
 
-mkdir -p ./models
-
-./build_app.sh # bundles the sample app into 'models/archive1.zip'
-
 if [ "${WDT_DOMAIN_TYPE}" == "WLS" -o "${WDT_DOMAIN_TYPE}" == "RestrictedJRF" ] ; then
-  cp model1.yaml.wls models/model1.yaml
+  cp ${CWD}/model1.yaml.wls models/model1.yaml
 fi
 
 if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
-  cp model1.yaml.jrf models/model1.yaml
+  cp ${CWD}/model1.yaml.jrf models/model1.yaml
 fi
 
-cp model1.10.properties models/model1.10.properties
+cp ${CWD}/model1.10.properties models/model1.10.properties
 
 echo @@
 echo @@ Info: Creating deploy image with wdt models
