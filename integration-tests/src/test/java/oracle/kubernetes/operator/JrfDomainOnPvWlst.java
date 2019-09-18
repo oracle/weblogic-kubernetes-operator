@@ -44,14 +44,11 @@ public class JrfDomainOnPvWlst extends BaseTest {
  public static void staticPrepare() throws Exception {
    // initialize test properties and create the directories
    initialize(APP_PROPS_FILE);
-   //BaseTest.setWaitTimePod(5);
-   //BaseTest.setMaxIterationsPod(35);
+   setMaxIterationsPod(35);
    TestUtils.exec(
        "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/create-rcu-schema " + BaseTest.getResultDir(),
        true);
    
-   //DbUtils.deleteRcuPod();
-   //DbUtils.stopOracleDB();
    DbUtils.startOracleDB();
    DbUtils.createRcuSchema(rcuSchemaPrefix);
 
@@ -70,7 +67,6 @@ public class JrfDomainOnPvWlst extends BaseTest {
    logger.info("BEGIN");
    logger.info("Run once, release cluster lease");
    
-   //DbUtils.dropRcuSchema(rcuSchemaPrefix);
    DbUtils.deleteRcuPod();
    DbUtils.stopOracleDB();
    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
