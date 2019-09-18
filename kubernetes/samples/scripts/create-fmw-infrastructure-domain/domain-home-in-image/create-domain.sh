@@ -203,7 +203,18 @@ function createDomainHome {
   cp ${domainPropertiesOutput} ${dockerPropsDir}
   sed  -i  '$ a extract_env IMAGE_TAG ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
 
-  #exit -1000
+  if [ "${fmwDomainType}" == "RestrictedJRF" ];
+  then
+   if [ ! -f ${dockerDir}/container-scripts/createFMWDomain.py.bak ]; then
+    mv ${dockerDir}/container-scripts/createFMWDomain.py \
+       ${dockerDir}/container-scripts/createFMWDomain.py.bak
+   fi
+   echo "Replacing file ${dockerDir}/container-scripts/createFMWDomain.py for RestrictedJRF Domain creation" 
+   cp -f ${scriptDir}/common/createFMWRestrictedJRFDomain.py \
+         ${dockerDir}/container-scripts/createFMWDomain.py
+
+  fi
+
   bash ${dockerDir}/build.sh
 
   if [ "$?" != "0" ]; then
