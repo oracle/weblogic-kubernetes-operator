@@ -1282,10 +1282,15 @@ public class Domain {
   	if (secret == null) {
        secret = "docker-store";
   	}
-      
+    
+    String ocr_server = System.getenv("OCR_SERVER");
+    if (ocr_server == null) {
+    	ocr_server = "container-registry.oracle.com";
+    }
+    
   	TestUtils.createDockerRegistrySecret(
         secret,
-        System.getenv("OCR_SERVER"),
+        ocr_server,
         System.getenv("OCR_USERNAME"),
         System.getenv("OCR_PASSWORD"),
         null,

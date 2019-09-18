@@ -994,10 +994,11 @@ public class TestUtils {
               + dockerServer
               + " --docker-username="
               + dockerUser
-              + " --docker-password=\""
+              + " --docker-password="
               + dockerPassword
               + " -n "
-              + namespace;
+              + namespace
+              + " --dry-run -o yaml | kubectl apply -f -";
     } else {
     	  command =
         "kubectl create secret docker-registry "
@@ -1027,9 +1028,11 @@ public class TestUtils {
             + "********"
             + " -n "
             + namespace;
+    
+    //logger.info("Running command " + commandToLog);
+    logger.info("Running command " + command);
 
-    logger.info("Running command " + commandToLog);
-    ExecResult result = ExecCommand.exec(command);
+    ExecResult result = ExecCommand.exec(command, true);
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't create secret " + result.stderr());
     }
