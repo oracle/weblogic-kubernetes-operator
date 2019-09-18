@@ -3,12 +3,17 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
-#  This script downloads the latest WebLogic Deploy Tool and WebLogic Image Tool in the current directory
-#  If this is run behind a proxy.  Environment varibale http_proxy and https_proxy must be set
+# This script downloads the latest WebLogic Deploy Tool and WebLogic Image Tool in the current directory
+# If this is run behind a proxy.  Environment varibale http_proxy and https_proxy must be set
 #
+# Expects the following env vars to already be set:
+#    
+#    WORKDIR - working directory for the sample with at least 10g of space
+#
+
 set -eu
 
-cd $WORKDIR
+cd ${WORKDIR}
 
 DOWNLOAD_WIT=${DOWNLOAD_WIT:-when-missing}
 

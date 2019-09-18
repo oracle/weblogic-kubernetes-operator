@@ -2,20 +2,18 @@
 # Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
+#
 # This is an example of how to setup the WebLogic Kubernetes Cluster
+#
+# Expects the following env vars to already be set:
+#
+#   WORKDIR - working directory for the sample with at least 10g of space
+#   WDT_DOMAIN_TYPE - WLS, RestrictedJRF, or JRF
+#
 
 set -eu
 
-if [ ! "${WDT_DOMAIN_TYPE}" == "WLS" ] \
-   && [ ! "${WDT_DOMAIN_TYPE}" == "RestrictedJRF" ] \
-   && [ ! "${WDT_DOMAIN_TYPE}" == "JRF"]; then
-  echo "Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1
-fi
-
-echo "@@ Info: Setting Domain Type in k8s-domain.yaml"
-
-cp k8s-domain.yaml.template k8s-domain.yaml
-sed -i s/@@DOMTYPE@@/${WDT_DOMAIN_TYPE}/ k8s-domain.yaml
+cd ${WORKDIR}
 
 echo "@@ Info: Creating weblogic domain secret"
 
@@ -54,7 +52,18 @@ kubectl -n sample-domain1-ns \
   weblogic.domainUID=sample-domain1 \
   weblogic.domainName=sample-domain1
 
-echo "@@ Info: Applying domain resource yaml"
+echo "@@ Info: Creating 'k8s-domain.yaml' from 'k8s-domain.yaml.template' and setting its Domain Type"
+
+if [ ! "${WDT_DOMAIN_TYPE}" == "WLS" ] \
+   && [ ! "${WDT_DOMAIN_TYPE}" == "RestrictedJRF" ] \
+   && [ ! "${WDT_DOMAIN_TYPE}" == "JRF"]; then
+  echo "Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1
+fi
+
+cp k8s-domain.yaml.template k8s-domain.yaml
+sed -i s/@@DOMTYPE@@/${WDT_DOMAIN_TYPE}/ k8s-domain.yaml
+
+echo "@@ Info: Applying domain resource yaml 'k8s-domain.yaml'"
 
 kubectl apply -f k8s-domain.yaml
 

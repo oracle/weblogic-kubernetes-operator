@@ -2,30 +2,22 @@
 # Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-#  This script build a sample docker image for deploying to the Kubernetes cluster with the model in image
-#  artifacts. It is based on a base image built earlier with build_base_image.sh
+#  This script builds a sample docker image for deploying to the Kubernetes cluster with 
+#  model in image artifacts. It is based on a base image built earlier with build_image_base.sh
 #  
 #  Assumption:
 #    This script should be called by build.sh.  
 #
-#  Environment variables used:
-#    WORKDIR - working directory for the sample 
+#  Required environment variables:
+#    WORKDIR - working directory for the sample with at least 10g of space
+#    WDT_DOMAIN_TYPE - WLS, RestrictedJRF, or JRF
+#
 
 set -eu
 
-CWD=`pwd`
 cd ${WORKDIR}
-export WLSIMG_CACHEDIR=${WORKDIR}/cache
-export WLSIMG_BLDDIR=${WORKDIR}
 
-IMGTOOL_BIN=${WORKDIR}/imagetool/bin/imagetool.sh
-
-BASE_IMAGE_REPO=${BASE_IMAGE_REPO:-model-in-image}
-BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-x0}
-
-MODEL_IMAGE_REPO=${MODEL_IMAGE_REPO:-model-in-image}
-MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-x1}
-MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-missing}
+source build_image_init.sh
 
 echo "@@"
 echo "@@ Info: Starting model image build for '$MODEL_IMAGE_REPO:$MODEL_IMAGE_TAG'"
@@ -43,27 +35,19 @@ if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && \
   exit 0
 fi
 
-if [ ! "${WDT_DOMAIN_TYPE}" == "WLS" ] \
-   && [ ! "${WDT_DOMAIN_TYPE}" == "RestrictedJRF" ] \
-   && [ ! "${WDT_DOMAIN_TYPE}" == "JRF"]; then
-  echo @@
-  echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit
-  echo @@
-fi
-
 echo "@@"
 echo "@@ Info: Setting up wdt models in directory ./models"
 echo "@@"
 
 if [ "${WDT_DOMAIN_TYPE}" == "WLS" -o "${WDT_DOMAIN_TYPE}" == "RestrictedJRF" ] ; then
-  cp ${CWD}/model1.yaml.wls models/model1.yaml
+  cp model1.yaml.wls models/model1.yaml
 fi
 
 if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
-  cp ${CWD}/model1.yaml.jrf models/model1.yaml
+  cp model1.yaml.jrf models/model1.yaml
 fi
 
-cp ${CWD}/model1.10.properties models/model1.10.properties
+cp model1.10.properties models/model1.10.properties
 
 echo @@
 echo @@ Info: Creating deploy image with wdt models

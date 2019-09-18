@@ -7,8 +7,8 @@
 #
 # Expects the following env vars to already be set:
 #
-#   WORKDIR
-#   WDT_DOMAIN_TYPE
+#    WORKDIR - working directory for the sample with at least 10g of space
+#    WDT_DOMAIN_TYPE - WLS, RestrictedJRF, or JRF
 #
 
 set -eu
@@ -21,7 +21,7 @@ set -eu
 # This step builds a base image (WebLogic Installer with patches) using the WebLogic Image Tool
 # If you are using your own image, you can skip this step
 
-./build_base_image.sh
+./build_image_base.sh
 
 # This step builds the sample application
 
@@ -30,4 +30,4 @@ set -eu
 # This step builds a model image for deploying to the Kubernetes Cluster using the base
 # image and the model files in ./models
 
-./build_model_image.sh
+./build_image_model.sh

@@ -6,12 +6,20 @@
 # This script creates a wdt model archive 'models/archive1.zip' containing the 
 # application located in 'models/sample_app/wlsdeploy/applications' and
 # its model mime mappings specifed in 'wlsdeploy/config/amimemappings.properties'.
+#
+# Expects the following env vars to already be set:
+#    
+#    WORKDIR - working directory for the sample with at least 10g of space
+#
+
 
 set -eu
 
 echo @@
 echo @@ Info: Creating sample app model archive models/archive1.zip
 echo @@
+
+cd ${WORKDIR}
 
 mkdir -p ${WORKDIR}/models
 
