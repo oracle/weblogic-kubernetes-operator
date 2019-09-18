@@ -217,10 +217,9 @@ function createWLDomain() {
     if [ -f "${found_opss_passphrase}" ] ; then
         export OPSS_PASSPHRASE=$(cat ${found_opss_passphrase})
     fi
-
     # just in case is not set
-    if [ -z "$OPSS_PASSPHRASE" ] ; then
-        export OPSS_PASSPHRASE=$DOMAIN_UID_welcome1
+    if [ -z "${OPSS_PASSPHRASE}" ] ; then
+        export OPSS_PASSPHRASE=${DOMAIN_UID}_welcome1
     fi
 
     # check to see if any model including changed (or first model in image deploy)

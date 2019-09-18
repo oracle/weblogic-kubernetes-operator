@@ -296,7 +296,7 @@ A JRF domain requires an infrastructure database and also requires initalizing t
 
 5. Create the rcu schema using the following command. Note that `Oradoc_db1` is the dba password and `welcome1` is the schema password:
    ```
-   /u01/oracle/oracle_common/bin/rcu \
+/u01/oracle/oracle_common/bin/rcu \
      -silent \
      -createRepository \
      -databaseType ORACLE \
@@ -313,19 +313,19 @@ A JRF domain requires an infrastructure database and also requires initalizing t
      -component OPSS  \
      -component WLS  \
      -component STB <<EOF
-   Oradoc_db1
-   welcome1
-   EOF
+Oradoc_db1
+welcome1
+EOF
    ```
 
 6. Type ctrl-d to exit the terminal pod.
 
-7. Delete the terminal pod by `kubectl delete pod rcu`.
+7. Delete the terminal pod by ```kubectl delete pod rcu```.
 
 8. __NOTE__:  If you need to drop the repository, you can use this command in the terminal:
 
    ```
-   /u01/oracle/oracle_common/bin/rcu \
+/u01/oracle/oracle_common/bin/rcu \
      -silent \
      -dropRepository \
      -databaseType ORACLE \
@@ -340,8 +340,8 @@ A JRF domain requires an infrastructure database and also requires initalizing t
      -component OPSS  \
      -component WLS  \
      -component STB <<EOF
-   Oradoc_db1
-   EOF
+Oradoc_db1
+EOF
    ```
 
 ## Create and deploy your Kubernetes resources
