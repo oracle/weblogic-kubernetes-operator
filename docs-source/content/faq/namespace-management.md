@@ -47,13 +47,12 @@ $ kubetctl get cm -n <namespace>
 For example:
 
 ```
-
 bash-4.2$ kubectl get cm -n ns1
 
 NAME                 DATA      AGE
 
 weblogic-domain-cm   14        12m
-
+```
 
 ####  Deleting a Kubernetes namespace from the Operator
 When a namespace is not supposed to be managed by an operator any more, it needs to be removed from 
