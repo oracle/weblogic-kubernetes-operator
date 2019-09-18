@@ -89,10 +89,13 @@ If a domain custom resource is created in a newly recreated namespace before the
 Events:
   Type     Reason                 Age               From               Message
   ----     ------                 ----              ----               -------
-  Normal   Scheduled              1m                default-scheduler  Successfully assigned domain1-introspect-domain-job-57hjq to slc16ffk
-  Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume "weblogic-domain-cm-volume"
-  Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume "default-token-445xw"
-  Warning  FailedMount            20s (x8 over 1m)  kubelet, slc16ffk  MountVolume.SetUp failed for volume "weblogic-credentials-volume" : secrets "domain1-weblogic-credentials" not found
+  Normal   Scheduled              1m                default-scheduler  Successfully assigned domain1-introspect-domain-job-bz6rw to slc16ffk
+
+  Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume "weblogic-credentials-volume"
+
+  Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume "default-token-jzblm"
+
+  Warning  FailedMount            27s (x8 over 1m)  kubelet, slc16ffk  MountVolume.SetUp failed for volume "weblogic-domain-cm-volume" : configmaps "weblogic-domain-cm" not found
 
 ```
 
