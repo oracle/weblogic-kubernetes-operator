@@ -55,27 +55,6 @@ function create_image_pull_secret_wl {
 	    exit 1
 	  fi
 	  
-	  echo "Creating Docker Secret for namespace: jrfdomains"
-	  NAMESPACE="`kubectl get namespaces | grep jrfdomains | wc | awk ' { print $1; }'`"
-	  if [ "$NAMESPACE" != "1" ]; then
-	    echo "creating namespace jrfdomains"
-	    kubectl create namespace jrfdomains
-	  fi
-	  
-	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=${OCR_SERVER}/ \
-	    --docker-username=$OCR_USERNAME \
-	    --docker-password=$OCR_PASSWORD \
-	    --namespace=jrfdomains
-            --dry-run -o yaml | kubectl apply -f -
-	  
-	  echo "Checking Secret for jrfdomains"
-	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC -n jrfdomains | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
-	  if [ "$SECRET" != "1" ]; then
-	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created for jrfdomains successfully"
-	    exit 1
-	  fi
-	  
 	  # below docker pull is needed to for domain home in image tests the base image should be in local repo
 	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}
 	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC

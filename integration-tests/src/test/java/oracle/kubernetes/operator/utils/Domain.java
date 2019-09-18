@@ -1271,6 +1271,26 @@ public class Domain {
             secret.getSecretName(), domainUid, domainNS);
     TestUtils.exec(labelCmd);
   }
+  
+  /**
+   * Create Docker Registry Secret for the domain namespace.
+   *
+   * @throws Exception when the kubectl create secret command fails
+   */
+  protected void createDockerRegistrySecret() throws Exception {
+  	String secret = System.getenv("IMAGE_PULL_SECRET_WEBLOGIC");
+  	if (secret == null) {
+       secret = "docker-store";
+  	}
+      
+  	TestUtils.createDockerRegistrySecret(
+        secret,
+        System.getenv("OCR_SERVER"),
+        System.getenv("OCR_USERNAME"),
+        System.getenv("OCR_PASSWORD"),
+        null,
+        domainNS);
+  }
 
   /**
    * Creates a directory using domainUid under userProjects weblogic-domains location. Creates
@@ -1340,6 +1360,7 @@ public class Domain {
 
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
       // image
+      
       TestUtils.createDockerRegistrySecret(
           "ocir-domain",
           System.getenv("REPO_REGISTRY"),
@@ -1624,6 +1645,10 @@ public class Domain {
 
     // create config map and secret for custom sit config
     createConfigMapAndSecretForSitConfig();
+    
+    if (BaseTest.SHARED_CLUSTER) {
+    	createDockerRegistrySecret();
+    }
   }
 
   private void copyDomainTemplate(Map<String, Object> inputDomainMap) throws IOException {

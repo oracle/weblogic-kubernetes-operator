@@ -985,7 +985,21 @@ public class TestUtils {
       throws Exception {
 
     ExecCommand.exec("kubectl delete secret " + secretName + " -n " + namespace);
-    String command =
+    String command = null;
+    if (dockerEmail == null) {
+    	command =
+          "kubectl create secret docker-registry "
+              + secretName
+              + " --docker-server="
+              + dockerServer
+              + " --docker-username="
+              + dockerUser
+              + " --docker-password=\""
+              + dockerPassword
+              + " -n "
+              + namespace;
+    } else {
+    	  command =
         "kubectl create secret docker-registry "
             + secretName
             + " --docker-server="
@@ -998,6 +1012,7 @@ public class TestUtils {
             + dockerEmail
             + " -n "
             + namespace;
+    }	  
 
     String commandToLog =
         "kubectl create secret docker-registry "
