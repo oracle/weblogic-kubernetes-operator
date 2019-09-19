@@ -18,7 +18,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 * Kubernetes 1.11.5+, 1.12.3+, 1.13.0+, and 1.14.0+  (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`).
-* Docker 18.03.1.ce (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
+* Docker 18.9.1 (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
 * Helm 2.14.3+ (check with `helm version`).
 * Oracle WebLogic Server 12.2.1.3.0 with patch 29135930.
    * The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3 `,
