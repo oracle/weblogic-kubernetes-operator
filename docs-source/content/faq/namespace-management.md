@@ -1,27 +1,27 @@
 ---
 title: "Managing Domain Namespaces"
-date: 2019-09-16
+date: 2019-09-19
 draft: false
 ---
 
-Each WebLogic operator deployment manages a list of Kubernetes namespaces, which is 
-configured via the `domainNamespaces` setting. In each namespace that the operator manages, 
-a couple of Kubernetes resources have to be present before any WebLogic 
-domain custom resource can be successfully deployed in that namespace. Those Kubernetes resources are
-either created as part of the operator helm chart installation, or created by the operator at runtime.
+Each WebLogic operator deployment manages a number of Kubernetes namespaces. A couple of Kubernetes resources
+have to be present in a namespace before any WebLogic domain custom resources can be successfully 
+deployed into it.
+Those Kubernetes resources are either created as part of the installation
+of the operator's helm chart, or created by the operator at runtime.
 
-There are a couple of things that you need to be aware if you need to do the following when the WebLogic operator is running.
-* Add a namespace to the operator's `domainNamespaces` list,
-* Delete a namespace from the operator's `domainNamespaces` list, or 
+This documentation describes a couple of things that you need to be aware when you manage the namespaces while the WebLogic operator is running. For example,
+* Add a namespace for the operator to manage,
+* Delete a namespace from the operator's domain namespace list, or 
 * Delete and recreate a Kubernetes namespace that the WebLogic operator manages.
 
 #### Adding a Kubernetes namespace to the operator
-If you want a WebLogic operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be already created, say using the `kubectl create` command, before it can be added.
+If you want a WebLogic operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be pre-created, say using the `kubectl create` command.
 
-By adding the namespace to the `domainNamespaces` list, it tells the operator deployment or runtime 
-to initialize the necessary Kubernetes resources for the namespace so that the operator is ready to host WebLogic domain resources.
+By adding a namespace to the `domainNamespaces` list, it tells the operator deployment or runtime 
+to initialize the necessary Kubernetes resources for the namespace so that the namespace is ready to host WebLogic domain resources.
 
-Given that the operator is running and managing the `default` namespace, the following example helm command adds namespace `ns1` to the `domainNamespaces` list, where `weblogic-operator` is the release name, and `kubernetes/charts/weblogic-operator` is the location of the operator's helm charts.
+When the operator is running and managing the `default` namespace, the following example helm command adds namespace `ns1` to the `domainNamespaces` list, where `weblogic-operator` is the release name of the operator, and `kubernetes/charts/weblogic-operator` is the location of the operator's helm charts.
 
 ```
 $ helm upgrade \
@@ -34,9 +34,9 @@ $ helm upgrade \
 ```
 
 {{% notice note %}}
-Changes to the `domainNamespaces` list may not be picked up by the operator right away since the operator 
-checks the changes periodically. The operator becomes ready to host domain resources only 
-after the required `configmap` (namely `weblogic-domain-cm`) is initialized.
+Changes to the `domainNamespaces` list may not be picked up by the operator right away because the operator 
+checks the changes to its deployment periodically. The operator becomes ready to host domain resources in 
+a namespace only after the required `configmap` (namely `weblogic-domain-cm`) is initialized in the namespace.
 {{% /notice %}}
  
 You can verify if the operator is ready to host domain resources in a namespace by checking the existence of the required `configmap` resource.
@@ -45,7 +45,7 @@ You can verify if the operator is ready to host domain resources in a namespace 
 $ kubetctl get cm -n <namespace>
 ```
 
-For example, the following command returns the domain `configmap` in namespace `ns1`.
+For example, the following example shows that the domain `configmap` resource exists in namespace `ns1`.
 
 ```
 bash-4.2$ kubectl get cm -n ns1
@@ -60,7 +60,9 @@ When a namespace is not supposed to be managed by an operator any more, it needs
 the operator's `domainNamespaces` list so that the corresponding Kubernetes resources that are 
 associated with the namespace can be cleaned up. 
 
-Given that the operator is running and managing the `default` and `ns1` namespaces, the following example helm command removes namespace `ns1` from the `domainNamespaces` list, where `weblogic-operator` is the release name, and `kubernetes/charts/weblogic-operator` is the location of the helm charts of the operator.
+While the operator is running and managing the `default` and `ns1` namespaces, the following example helm 
+command removes namespace `ns1` from the `domainNamespaces` list, where `weblogic-operator` is the release 
+name of the operator, and `kubernetes/charts/weblogic-operator` is the location of the helm charts of the operator.
 
 ```
 $ helm upgrade \
@@ -75,17 +77,22 @@ $ helm upgrade \
 
 #### Recreating a previously deleted Kubernetes namespace
 
-If you need to delete a namespace (and the resources in it) and then recreate the namespace,
+If you need to delete a namespace (and the resources in it) and then recreate it,
 remember to remove the namespace from the operator's `domainNamespaces` list 
 after you deleted the namespace, and add it back to the `domainNamespaces` list after you recreated the namespace
-using the `helm upgrade` command that have been shown above.
+using the `helm upgrade` commands that have been illustrated above.
 
 {{% notice note %}}
-Make sure that you wait a sufficient period of time between deleting and recreating the namespace because it takes time for the resources in a namespace to go way after the namespace is deleted.
-In addition, as we mentioned above, changes to the `domainNamespaces` setting is checked by the operator periodically, and the operator becomes ready to host domain resources only after the required `configmap` (namely `weblogic-domain-cm`) is initialized.
+Make sure that you wait a sufficient period of time between deleting and recreating the 
+namespace because it takes time for the resources in a namespace to go way after the namespace is deleted.
+In addition, as we have mentioned above, changes to the `domainNamespaces` setting is checked by the operator 
+periodically, and the operator becomes ready to host domain resources only after the required domain 
+`configmap` (namely `weblogic-domain-cm`) is initialized in the namespace.
 {{% /notice %}}
 
-If a domain custom resource is created in a newly recreated namespace before the namespace is ready, you may see that the introspector job pod fails to start, and you may see a warning event like the following when you check the description of the introspector pod. Note that `domain1` is the name of the domain in the following example output.
+If a domain custom resource is created before the namespace is ready, you may see that the introspector job pod 
+fails to start with a warning event like the following when you check the description of the introspector pod. 
+Note that `domain1` is the name of the domain in the following example output.
 
 ```
 Events:
@@ -101,17 +108,18 @@ Events:
 
 ```
 
-If you run into situations where a new domain that is created after its namespace is deleted and recreated does not come up successfully, you can restart the operator pod using the following two approaches.
+If you run into situations where a new domain that is created after its namespace is deleted and recreated 
+does not come up successfully, you can restart the operator pod as shown in the following examples, where 
+the operator itself is running in the namespace `weblogic-operator-namespace` with a release name
+of `weblogic-operator`.
 
 * Killing the operator pod, and let Kubernetes restart it
 
-Here is an example command of killing an introspector pod, where `weblogic-operator` is the release name, and the operator itself is running in the namespace `weblogic-operator-namespace`.
 ```
 $ kubectl delete pod/weblogic-operator-65b95bc5b5-jw4hh -n weblogic-operator-namespace
 ```
 
 * Scaling the operator deployment to `0` and then back to `1` by changing the value of the `replicas`. 
-Here are example commands to do the scaling, where `weblogic-operator` is the release name, and the operator itself is running in the namespace `weblogic-operator-namespace`.
 
 ```
 $ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas=0
@@ -122,5 +130,6 @@ $ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace
 ```
 
 {{% notice note %}}
-Restarting an operator pod will interrupt not just the domain resources in the namespace that is re-initialized, but all domain resources managed by the operator deployment. Therefore, this can only be used as the last resort.
+Restarting an operator pod interrupts not just the domain resources in the namespace that is to be re-initialized, 
+but all domain resources managed by the operator deployment. Therefore, this can only be used as the last resort.
 {{% /notice %}}
