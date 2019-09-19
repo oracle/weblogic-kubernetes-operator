@@ -138,7 +138,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   protected String getDataHome() {
     String dataHome = getDomain().getDataHome();
-    return dataHome != null ? dataHome + File.separator + getDomainUid() : null;
+    return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
   }
 
   private boolean isIstioEnabled() {

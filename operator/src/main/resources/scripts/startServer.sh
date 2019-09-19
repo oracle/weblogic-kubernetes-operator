@@ -166,6 +166,7 @@ function copySitCfg() {
 function countFilesInDir() {
   dir=${1}
   cnt=`find ${dir} -type f | wc -l`
+  [ $? -ne 0 ] && trace SEVERE "failed determining number of files in '${dir}'" && exitOrLoop
   trace "file count in directory '${dir}': ${cnt}"
   return ${cnt}
 }
@@ -175,6 +176,7 @@ function createSymbolicLink() {
   targetDir=${1}
   sourceDir=${2}
   /bin/ln -sFf ${targetDir} ${sourceDir}
+  [ $? -ne 0 ] && trace SEVERE "failed to create symbolic link from '${sourceDir}' to '${targetDir}'" && exitOrLoop
   trace "Created symbolic link from '${sourceDir}' to '${targetDir}'"
 }
 
@@ -209,6 +211,7 @@ trace "SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG}"
 trace "USER_MEM_ARGS=${USER_MEM_ARGS}"
 trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
 trace "KEEP_DEFAULT_DATA_HOME=${KEEP_DEFAULT_DATA_HOME}"
+trace "LINK_SERVER_DATA_DIR=${LINK_SERVER_DATA_DIR}"
 
 #
 # If DATA_HOME env variable exists than this implies override directory (dataHome attribute of CRD) specified
@@ -225,9 +228,9 @@ if [ ! -z ${DATA_HOME} ]; then
     trace "Directory '${DATA_HOME}/${SERVER_NAME}/data' exists"
   fi
 
-  # Try to link server's default 'data' directory (${DOMAIN_HOME}/servers/${SERVER_NAME}/data) to $DATA_HOME/${SERVER_NAME}/data
-  # if 'KEEP_DEFAULT_DATA_HOME' environment variable is not defined
-  if [ -z ${KEEP_DEFAULT_DATA_HOME} ]; then
+  # If 'LINK_SERVER_DATA_DIR' env is defined and 'KEEP_DEFAULT_DATA_HOME' environment variable is not defined then
+  # try to link server's default 'data' directory (${DOMAIN_HOME}/servers/${SERVER_NAME}/data) to $DATA_HOME/${SERVER_NAME}/data.
+  if [ ! -z ${LINK_SERVER_DATA_DIR} ] && [ -z ${KEEP_DEFAULT_DATA_HOME} ]; then
     # if server's default 'data' directory (${DOMAIN_HOME}/servers/${SERVER_NAME}/data) does not exist than create
     # symbolic link to location specified by $DATA_HOME/${SERVER_NAME}/data
     if [ ! -d ${DOMAIN_HOME}/servers/${SERVER_NAME}/data ]; then
@@ -272,13 +275,15 @@ if [ ! -z ${DATA_HOME} ]; then
         if [ ${fileCountServerDataDir} -eq 0 ]; then
           if [ ${fileCountServerDomainHomeDir} -ne 0 ]; then
             cp -rf ${DOMAIN_HOME}/servers/${SERVER_NAME}/data ${DATA_HOME}/${SERVER_NAME}
+            [ $? -ne 0 ] && trace SEVERE "failed to copy directory/files from '${DOMAIN_HOME}/servers/${SERVER_NAME}/data' to '${DATA_HOME}/${SERVER_NAME}' directory" && exitOrLoop
             trace "Recursively copied directory/files from '${DOMAIN_HOME}/servers/${SERVER_NAME}/data' to '${DATA_HOME}/${SERVER_NAME}' directory"
           else
             trace "'${DOMAIN_HOME}/servers/${SERVER_NAME}/data' directory is empty"
           fi
 
           # forcefully delete the server's data directory so we can create symbolic link
-          frm -rf ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
+          rm -rf ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
+          [ $? -ne 0 ] && trace SEVERE "failed to delete '${DOMAIN_HOME}/servers/${SERVER_NAME}/data' directory" && exitOrLoop
           trace "Deleted directory '${DOMAIN_HOME}/servers/${SERVER_NAME}/data'"
 
           # Create the symbolic link from server's data directory to $DATA_HOME
@@ -290,6 +295,7 @@ if [ ! -z ${DATA_HOME} ]; then
           else
             # forcefully delete the server's data directory so we can create symbolic link
             rm -rf ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
+            [ $? -ne 0 ] && trace SEVERE "failed to delete '${DOMAIN_HOME}/servers/${SERVER_NAME}/data' directory" && exitOrLoop
             trace "Deleted directory '${DOMAIN_HOME}/servers/${SERVER_NAME}/data'"
 
             # Create the symbolic link from server's data directory to $DATA_HOME

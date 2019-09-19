@@ -252,8 +252,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvNotDefined()
-          throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvNotDefined() {
     final String EMPTY_DATA_HOME = "";
 
     DomainConfigurator domainConfigurator = configureDomain();
@@ -265,8 +264,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvDefined()
-          throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvDefined() {
     final String OVERRIDE_DATA_DIR = "/u01/data";
     final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + DOMAIN_UID;
 
@@ -279,8 +277,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyEmptyDataHome()
-          throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyEmptyDataHome() {
     final String EMPTY_DATA_HOME = "";
 
     DomainConfigurator domainConfigurator =
@@ -293,8 +290,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyNullDataHome()
-          throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyNullDataHome() {
     final String NULL_DATA_HOME = null;
 
     DomainConfigurator domainConfigurator =
