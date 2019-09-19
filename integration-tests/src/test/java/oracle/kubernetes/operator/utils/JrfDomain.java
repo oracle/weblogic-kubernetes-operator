@@ -96,7 +96,7 @@ public class JrfDomain extends Domain {
         String.format(
             "kubectl label secret %s -n %s weblogic.domainUID=%s weblogic.domainName=%s",
             rucSecret.getSecretName(), domainNS, domainUid, domainUid);
-    LoggerHelper.getLocal().info("running command " + labelCmd);
+    log(Level.INFO, "running command " + labelCmd);
     TestUtils.exec(labelCmd);
   }
 }

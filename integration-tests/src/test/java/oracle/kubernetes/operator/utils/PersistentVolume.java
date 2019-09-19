@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import oracle.kubernetes.operator.BaseTest;
@@ -33,12 +34,12 @@ public class PersistentVolume {
     int cnt = 0;
     int maxCnt = 10;
     while (cnt < maxCnt) {
-      LoggerHelper.getLocal().info("Executing command " + cmd);
+      log(Level.INFO, "Executing command " + cmd);
       ExecResult result = ExecCommand.exec(cmd);
       if (result.exitValue() == 0) {
         break;
       } else {
-        LoggerHelper.getLocal().info("PV dir creation command failed with exitValue= "+result.exitValue() +
+        log(Level.INFO, "PV dir creation command failed with exitValue= "+result.exitValue() +
                       "stderr= " + result.stderr() +" stdout="+result.stdout());
         Thread.sleep(BaseTest.getWaitTimePod());
         cnt = cnt + 1;
@@ -68,7 +69,7 @@ public class PersistentVolume {
             + pvMap.get("baseName")
             + "-pv-inputs.yaml -e -o "
             + BaseTest.getUserProjectsDir();
-    LoggerHelper.getLocal().info("Executing cmd " + cmdPvPvc);
+    log(Level.INFO, "Executing cmd " + cmdPvPvc);
 
     TestUtils.exec(cmdPvPvc, true);
   }
@@ -79,5 +80,9 @@ public class PersistentVolume {
 
   public Map getPvMap() {
     return pvMap;
+  }
+  private void log(Level logLevel, String message) {
+    LoggerHelper.getLocal().log(logLevel, message);
+    LoggerHelper.getGlobal().log(logLevel, message);
   }
 }
