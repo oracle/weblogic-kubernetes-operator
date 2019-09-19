@@ -18,8 +18,8 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 * Kubernetes 1.11.5+, 1.12.3+, 1.13.0+, and 1.14.0+  (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`).
-* Docker 18.03.1.ce (check with `docker version`).
-* Helm 2.8.2+ (check with `helm version`).
+* Docker 18.9.1 (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
+* Helm 2.14.3+ (check with `helm version`).
 * Oracle WebLogic Server 12.2.1.3.0 with patch 29135930.
    * The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3 `,
    has all the necessary patches applied.
@@ -30,7 +30,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### OpenShift
 
-Operator 2.0.1+ is certified for use on OpenShift 3.11.43+, with Kubernetes 1.11.5+.
+Operator 2.0.1+ is certified for use on OpenShift 3.11.43+, with Kubernetes 1.11.5+.  OpenShift 4 certification is currently in progress.
 
 When using the operator in OpenShift, the anyuid security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain filesystem.
 
