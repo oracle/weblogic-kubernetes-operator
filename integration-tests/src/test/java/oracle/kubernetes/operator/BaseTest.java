@@ -821,4 +821,8 @@ public class BaseTest {
   public static int getNumber(){
      return number;
   }
+  public static void log(Level logLevel, String message) {
+    LoggerHelper.getLocal().log(logLevel, message);
+    LoggerHelper.getGlobal().log(logLevel, message);
+  }
 }
