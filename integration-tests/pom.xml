@@ -259,7 +259,7 @@
                             ${includes-failsafe}
                         </include>
                     </includes>
-                    <parallel>methods</parallel>
+                    <parallel>classesAndMethods</parallel>
           			<threadCount>4</threadCount>
             		
                 </configuration>
