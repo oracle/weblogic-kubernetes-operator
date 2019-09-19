@@ -43,7 +43,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class K8sTestUtils {
-  public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+  
 
   static {
     try {
@@ -373,9 +373,9 @@ public class K8sTestUtils {
               Boolean.FALSE);
 
     } catch (ApiException ex) {
-      Logger.getLogger(K8sTestUtils.class.getName()).log(Level.SEVERE, null, ex);
+      LoggerHelper.getLocal().getLogger(K8sTestUtils.class.getName()).log(Level.SEVERE, null, ex);
     }
-    logger.log(
+    LoggerHelper.getLocal().log(
         Level.INFO,
         "Pods in namespace :{0} and label :{1} :{2}",
         new Object[] {namespace, labelSelectors, v1PodList.getItems().size()});
@@ -397,7 +397,7 @@ public class K8sTestUtils {
         return pod;
       }
     }
-    logger.info("POD NOT FOUND");
+    LoggerHelper.getLocal().info("POD NOT FOUND");
     return null;
   }
 
@@ -419,9 +419,9 @@ public class K8sTestUtils {
       return false;
     }
     if (metadata.getDeletionTimestamp() != null) {
-      logger.info(metadata.getDeletionTimestamp().toString());
+      LoggerHelper.getLocal().info(metadata.getDeletionTimestamp().toString());
     } else {
-      logger.info("DeletionTimestamp is null, which means pod is Running");
+      LoggerHelper.getLocal().info("DeletionTimestamp is null, which means pod is Running");
     }
     return metadata.getDeletionTimestamp() != null;
   }

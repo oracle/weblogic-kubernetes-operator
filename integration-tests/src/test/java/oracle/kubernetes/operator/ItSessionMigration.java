@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -53,13 +54,13 @@ public class ItSessionMigration extends BaseTest {
   
       // Create operator1
       if (operator == null) {
-        logger.info("Creating Operator & waiting for the script to complete execution");
+        LoggerHelper.getLocal().info("Creating Operator & waiting for the script to complete execution");
         operator = TestUtils.createOperator(OPERATOR1_YAML);
       }
   
       // create domain
       if (domain == null) {
-        logger.info("Creating WLS Domain & waiting for the script to complete execution");
+        LoggerHelper.getLocal().info("Creating WLS Domain & waiting for the script to complete execution");
         Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
         wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
         domain = TestUtils.createDomain(wlstDomainMap);
@@ -92,13 +93,13 @@ public class ItSessionMigration extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      logger.info("++++++++++++++++++++++++++++++++++");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
+      LoggerHelper.getLocal().info("++++++++++++++++++++++++++++++++++");
+      LoggerHelper.getLocal().info("BEGIN");
+      LoggerHelper.getLocal().info("Run once, release cluster lease");
   
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
   
-      logger.info("SUCCESS");    
+      LoggerHelper.getLocal().info("SUCCESS");    
     }
   }
 
@@ -151,7 +152,7 @@ public class ItSessionMigration extends BaseTest {
     domain.restartManagedServerUsingServerStartPolicy(primaryServName1);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
-    logger.info(
+    LoggerHelper.getLocal().info(
         "SUCCESS - " + testMethodName + ". ms <" + primaryServName2 + "> is new primary server.");
   }
 
@@ -210,7 +211,7 @@ public class ItSessionMigration extends BaseTest {
     domain.restartManagedServerUsingServerStartPolicy(primaryServName1);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
-    logger.info("SUCCESS - " + testMethodName + ". HTTP session state is migrated!");
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName + ". HTTP session state is migrated!");
   }
 
   /**
@@ -223,7 +224,7 @@ public class ItSessionMigration extends BaseTest {
   private ExecResult getHttpResponse(String webServiceUrl, String headerOption) throws Exception {
     // Send a HTTP request
     String curlCmd = buildWebServiceUrl(webServiceUrl, headerOption + httpHeaderFile);
-    logger.info("Send a HTTP request: " + curlCmd);
+    LoggerHelper.getLocal().info("Send a HTTP request: " + curlCmd);
 
     ExecResult result = TestUtils.exec(curlCmd);
 

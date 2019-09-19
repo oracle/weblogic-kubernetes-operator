@@ -24,7 +24,7 @@ function fail {
 function archive {
   local SOURCE_DIR="${1?}"
   local ARCHIVE_DIR="${2?}"
-  local ARCHIVE_FILE="IntSuite.${IT_CLASS}.TMP.`date '+%Y%m%d%H%M%S'`.jar"
+  local ARCHIVE_FILE="IntSuite.TMP.`date '+%Y%m%d%H%M%S'`.jar"
   local ARCHIVE="$ARCHIVE_DIR/$ARCHIVE_FILE"
   local OUTFILE="/tmp/$ARCHIVE_FILE"
 
@@ -40,8 +40,7 @@ function archive {
 
   # Jenkins log cleanup is managed on Jenkins job config
   if [ ! "$JENKINS" = "true" ]; then
-	  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite.${IT_CLASS}.PV.*jar" | sort -r | awk '{ if (NR>5) print $NF }' | xargs rm -f
-	  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite.${IT_CLASS}.TMP.*jar" | sort -r | awk '{ if (NR>5) print $NF }' | xargs rm -f
+	  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite.*jar" | sort -r | awk '{ if (NR>10) print $NF }' | xargs rm -f
   fi
  
    

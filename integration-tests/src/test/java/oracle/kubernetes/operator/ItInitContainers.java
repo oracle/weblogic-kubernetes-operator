@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
 import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -44,12 +45,12 @@ public class ItInitContainers extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    logger.info("staticPrepare------Begin");
-    // initialize test properties and create the directories
     if (FULLTEST) {
+      LoggerHelper.getLocal().info("staticPrepare------Begin");
+      // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
 
-      logger.info("Checking if operator and domain are running, if not creating");
+      LoggerHelper.getLocal().info("Checking if operator and domain are running, if not creating");
       if (operator == null) {
         operator = TestUtils.createOperator(OPERATOR1_YAML);
       }
@@ -63,8 +64,9 @@ public class ItInitContainers extends BaseTest {
               + domain.getDomainUid()
               + "/domain.yaml";
       Assert.assertNotNull(domain);
+      LoggerHelper.getLocal().info("staticPrepare------End");
     }
-    logger.info("staticPrepare------End");
+    
   }
 
   /**
@@ -75,7 +77,7 @@ public class ItInitContainers extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      logger.info("staticUnPrepare------Begin");
+      LoggerHelper.getLocal().info("staticUnPrepare------Begin");
       if (domain != null) {
         destroyInitContdomain();
       }
@@ -83,7 +85,7 @@ public class ItInitContainers extends BaseTest {
         operator.destroy();
       }
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-      logger.info("staticUnPrepare------End");
+      LoggerHelper.getLocal().info("staticUnPrepare------End");
     }
   }
 
@@ -97,7 +99,7 @@ public class ItInitContainers extends BaseTest {
     Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
     domainMap.put("domainUID", domainUid);
     domainUid = (String) domainMap.get("domainUID");
-    logger.info("Creating and verifying the domain creation with domainUid: " + domainUid);
+    LoggerHelper.getLocal().info("Creating and verifying the domain creation with domainUid: " + domainUid);
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
     return domain;
@@ -132,13 +134,13 @@ public class ItInitContainers extends BaseTest {
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("spec", null, null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().info(modYaml);
     testInitContainer(modYaml);
     for (String pod : pods) {
-      logger.info("Verifying if the pods are recreated with initialization");
+      LoggerHelper.getLocal().info("Verifying if the pods are recreated with initialization");
       verifyPodInitialized(pod);
     }
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -159,11 +161,11 @@ public class ItInitContainers extends BaseTest {
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("adminServer", null, null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().info(modYaml);
     testInitContainer(modYaml);
-    logger.info("Verifying if the admin server pod is recreated with initialization");
+    LoggerHelper.getLocal().info("Verifying if the admin server pod is recreated with initialization");
     verifyPodInitialized(adminPodName);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -185,12 +187,12 @@ public class ItInitContainers extends BaseTest {
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("clusters", "cluster-1", null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().info(modYaml);
     testInitContainer(modYaml);
     TestUtils.checkPodReady(adminPodName, domain.getDomainNs());
-    logger.info("Verifying if the managed server pods are recreated with initialization");
+    LoggerHelper.getLocal().info("Verifying if the managed server pods are recreated with initialization");
     verifyPodInitialized(ms2PodName);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -212,12 +214,12 @@ public class ItInitContainers extends BaseTest {
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("managedServers", "cluster-1", "managed-server1", "busybox", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().info(modYaml);
     testInitContainer(modYaml);
     TestUtils.checkPodReady(adminPodName, domain.getDomainNs());
-    logger.info("Verifying if the managed server pod is recreated with initialization");
+    LoggerHelper.getLocal().info("Verifying if the managed server pod is recreated with initialization");
     verifyPodInitialized(ms1PodName);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -239,11 +241,11 @@ public class ItInitContainers extends BaseTest {
     crd.addInitContNode("spec", null, null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
     modYaml = modYaml.replaceAll("sleep", "foo");
-    logger.info(modYaml);
+    LoggerHelper.getLocal().info(modYaml);
     testInitContainer(modYaml);
     String cmd = "kubectl get pod " + adminPodName + " -n " + domain.getDomainNs();
     TestUtils.checkCmdInLoop(cmd, "Init:CrashLoopBackOff", adminPodName);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -265,7 +267,7 @@ public class ItInitContainers extends BaseTest {
     crd.addInitContNode("spec", null, null, "busybox1", "sleep");
     crd.addInitContNode("adminServer", null, null, "busybox2", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().info(modYaml);
     testInitContainer(modYaml);
     String cmd = "kubectl get pod " + pods[0] + " -n " + domain.getDomainNs();
 
@@ -273,9 +275,9 @@ public class ItInitContainers extends BaseTest {
     TestUtils.checkCmdInLoop(cmd, "Init:1/2", pods[0]);
     TestUtils.checkPodReady(pods[0], domain.getDomainNs());
 
-    logger.info("Verifying if the pods are recreated with initialization");
+    LoggerHelper.getLocal().info("Verifying if the pods are recreated with initialization");
     verifyPodInitialized(pods[1]);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -298,13 +300,13 @@ public class ItInitContainers extends BaseTest {
     crd.addInitContNode("adminServer", null, null, "busybox", "sleep");
     crd.addInitContNode("clusters", "cluster-1", null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().info(modYaml);
     testInitContainer(modYaml);
     for (String pod : pods) {
-      logger.info("Verifying if the pods are recreated with initialization");
+      LoggerHelper.getLocal().info("Verifying if the pods are recreated with initialization");
       verifyPodInitialized(pod);
     }
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -325,7 +327,7 @@ public class ItInitContainers extends BaseTest {
     crd.addInitContNode("spec", null, null, "busybox1", "sleep");
     crd.addInitContNode("spec", null, null, "busybox2", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().info(modYaml);
     testInitContainer(modYaml);
     String cmd;
     for (String pod : pods) {
@@ -334,7 +336,7 @@ public class ItInitContainers extends BaseTest {
       TestUtils.checkCmdInLoop(cmd, "Init:1/2", pod);
       TestUtils.checkPodReady(pod, domain.getDomainNs());
     }
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -347,16 +349,16 @@ public class ItInitContainers extends BaseTest {
   private void testInitContainer(String modYaml) throws Exception {
     // Write the modified yaml to a new file
     Path path = Paths.get(initContainerTmpDir, "domain.yaml");
-    logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
     Charset charset = StandardCharsets.UTF_8;
     Files.write(path, modYaml.getBytes(charset));
 
     destroyInitContdomain();
 
     // Apply the new yaml to update the domain
-    logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
     ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-    logger.info(exec.stdout());
+    LoggerHelper.getLocal().info(exec.stdout());
   }
 
   /**

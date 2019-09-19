@@ -144,9 +144,9 @@ function state_dump {
  # fi
 
   # remove docker-images project before archiving
-  rm -rf ${RESULT_DIR}/docker-images
+  rm -rf ${RESULT_DIR}/**/docker-images
   
-  rm -rf ${RESULT_DIR}/samples
+  rm -rf ${RESULT_DIR}/**/samples
   
   # now archive all the local test files
   if [ "$JENKINS" = "true" ] || [ "$SHARED_CLUSTER" = "true" ]; then

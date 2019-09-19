@@ -18,6 +18,7 @@ import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.Assert;
@@ -125,7 +126,7 @@ public class SitConfig extends BaseTest {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
       destroySitConfigDomain();
       if (operator1 != null) {
-        logger.log(Level.INFO, "Destroying operator...");
+        LoggerHelper.getLocal().log(Level.INFO, "Destroying operator...");
         operator1.destroy();
         operator1 = null;
       }
@@ -166,7 +167,7 @@ public class SitConfig extends BaseTest {
    */
   private static void destroySitConfigDomain() throws Exception {
     if (domain != null) {
-      logger.log(Level.INFO, "Destroying domain...");
+      LoggerHelper.getLocal().log(Level.INFO, "Destroying domain...");
       domain.destroy();
     }
   }
@@ -184,7 +185,7 @@ public class SitConfig extends BaseTest {
     Charset charset = StandardCharsets.UTF_8;
     for (String file : files) {
       Path path = Paths.get(srcDir, file);
-      logger.log(Level.INFO, "Copying {0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "Copying {0}", path.toString());
       String content = new String(Files.readAllBytes(path), charset);
       content = content.replaceAll("JDBC_URL", JDBC_URL);
       content = content.replaceAll(oldSecret, secretName);
@@ -192,7 +193,7 @@ public class SitConfig extends BaseTest {
         content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
       }
       path = Paths.get(dstDir, file);
-      logger.log(Level.INFO, "to {0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "to {0}", path.toString());
       if (path.toFile().exists()) {
         Files.write(path, content.getBytes(charset), StandardOpenOption.TRUNCATE_EXISTING);
       } else {
@@ -204,8 +205,8 @@ public class SitConfig extends BaseTest {
 
   private static void display(String dir) throws IOException {
     for (File file : new File(dir).listFiles()) {
-      logger.log(Level.INFO, file.getAbsolutePath());
-      logger.log(Level.INFO, new String(Files.readAllBytes(file.toPath())));
+      LoggerHelper.getLocal().log(Level.INFO, file.getAbsolutePath());
+      LoggerHelper.getLocal().log(Level.INFO, new String(Files.readAllBytes(file.toPath())));
     }
   }
 
@@ -217,12 +218,12 @@ public class SitConfig extends BaseTest {
   private static void copyMySqlFile() throws IOException {
     final Path src = Paths.get(TEST_RES_DIR + "/mysql/mysql-dbservices.ymlt");
     final Path dst = Paths.get(mysqlYamlFile);
-    logger.log(Level.INFO, "Copying {0}", src.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Copying {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
     String content = new String(Files.readAllBytes(src), charset);
     content = content.replaceAll("@NAMESPACE@", "default");
     content = content.replaceAll("@DOMAIN_UID@", DOMAINUID);
-    logger.log(Level.INFO, "to {0}", dst.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "to {0}", dst.toString());
     Files.write(dst, content.getBytes(charset));
   }
 
@@ -565,7 +566,7 @@ public class SitConfig extends BaseTest {
    * @param result - ExecResult object containing result of the test run
    */
   private void assertResult(ExecResult result) {
-    logger.log(Level.INFO, result.stdout().trim());
+    LoggerHelper.getLocal().log(Level.INFO, result.stdout().trim());
     Assert.assertFalse(result.stdout().toLowerCase().contains("error"));
     Assert.assertFalse(result.stderr().toLowerCase().contains("error"));
     Assert.assertEquals(0, result.exitValue());

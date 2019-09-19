@@ -7,7 +7,7 @@ package oracle.kubernetes.operator.utils;
 import java.util.logging.Logger;
 
 public class Secret {
-  protected static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+  
   protected String secretName;
   protected String namespace;
   protected String username;
@@ -25,7 +25,7 @@ public class Secret {
     this.password = password;
 
     String command = "kubectl -n " + namespace + " delete secret " + secretName;
-    logger.info("Running " + command);
+    LoggerHelper.getLocal().info("Running " + command);
     ExecCommand.exec(command);
     command =
         "kubectl -n "
@@ -37,7 +37,7 @@ public class Secret {
             + this.username
             + " --from-literal=password="
             + this.password;
-    logger.info("Running " + command);
+    LoggerHelper.getLocal().info("Running " + command);
     ExecResult result = ExecCommand.exec(command);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -48,7 +48,7 @@ public class Secret {
               + "\n"
               + result.stderr());
     }
-    logger.info("command result " + result.stdout().trim());
+    LoggerHelper.getLocal().info("command result " + result.stdout().trim());
   }
 
   public String getSecretName() {

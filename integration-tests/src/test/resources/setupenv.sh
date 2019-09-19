@@ -133,6 +133,10 @@ export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "
 echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPERATOR JAR_VERSION $JAR_VERSION
 
 #docker_login
+
+if [ "$JENKINS" != "true" ]; then
+	${PROJECT_ROOT}/src/integration-tests/bash/cleanup.sh
+fi
   
 if [ "$SHARED_CLUSTER" = "true" ]; then
   

@@ -9,14 +9,17 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -34,13 +37,14 @@ import org.junit.runners.MethodSorters;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItPodsRestart extends BaseTest {
-
   private static Domain domain = null;
   private static Operator operator1;
   private static String domainUid = "";
   private static String restartTmpDir = "";
   private static String originalYaml;
-
+  private static String domainNS ;
+  private static boolean testCompletedSuccessfully;
+  private static String testClassName ;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -53,11 +57,16 @@ public class ItPodsRestart extends BaseTest {
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     if (QUICKTEST) {
-      initialize(APP_PROPS_FILE);
+      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      // initialize test properties and create the directories
+      initialize(APP_PROPS_FILE, testClassName);
 
-      logger.info("Checking if operator1 and domain are running, if not creating");
+      LoggerHelper.getLocal().info("Checking if operator1 and domain are running, if not creating");
       if (operator1 == null) {
-        operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assert.assertNotNull(operator1);
+        domainNS = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
       }
       restartTmpDir = BaseTest.getResultDir() + "/restarttemp";
       Files.createDirectories(Paths.get(restartTmpDir));
@@ -80,25 +89,26 @@ public class ItPodsRestart extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (QUICKTEST) {
-      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
-
-      destroyPodsRestartdomain();
+      LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      LoggerHelper.getLocal().info("BEGIN");
+      LoggerHelper.getLocal().info("Run once, release cluster lease");
+      if(testCompletedSuccessfully) {
+        destroyPodsRestartdomain();
+      }
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
-      logger.info("SUCCESS");
+      LoggerHelper.getLocal().info("SUCCESS");
     }
   }
 
   private static Domain createPodsRestartdomain() throws Exception {
 
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
-    domainMap.put("domainUID", "domainpodsrestart");
+    Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+    // domainMap.put("domainUID", "domainpodsrestart");
     domainMap.put("initialManagedServerReplicas", new Integer("1"));
-
+    domainMap.put("namespace", domainNS);
     domainUid = (String) domainMap.get("domainUID");
-    logger.info("Creating and verifying the domain creation with domainUid: " + domainUid);
+    LoggerHelper.getLocal().info("Creating and verifying the domain creation with domainUid: " + domainUid);
 
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
@@ -108,7 +118,8 @@ public class ItPodsRestart extends BaseTest {
 
   private static void destroyPodsRestartdomain() throws Exception {
     if (domain != null) {
-      domain.destroy();
+      TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      TestUtils.verifyAfterDeletion(domain);
     }
   }
 
@@ -125,14 +136,14 @@ public class ItPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    logger.info(
+    LoggerHelper.getLocal().info(
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  env property: StdoutDebugEnabled=false to StdoutDebugEnabled=true");
     domain.verifyDomainServerPodRestart(
         "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -148,13 +159,13 @@ public class ItPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    logger.info(
+    LoggerHelper.getLocal().info(
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  logHomeEnabled: true -->  logHomeEnabled: false");
     domain.verifyDomainServerPodRestart("logHomeEnabled: true", "logHomeEnabled: false");
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -170,14 +181,14 @@ public class ItPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    logger.info(
+    LoggerHelper.getLocal().info(
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " imagePullPolicy: IfNotPresent -->  imagePullPolicy: Never ");
     domain.verifyDomainServerPodRestart(
         "imagePullPolicy: \"IfNotPresent\"", "imagePullPolicy: \"Never\" ");
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -193,14 +204,14 @@ public class ItPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    logger.info(
+    LoggerHelper.getLocal().info(
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  includeServerOutInPodLog: true -->  includeServerOutInPodLog: false");
     domain.verifyDomainServerPodRestart(
         "includeServerOutInPodLog: true", "includeServerOutInPodLog: false");
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -216,10 +227,10 @@ public class ItPodsRestart extends BaseTest {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-
+    testCompletedSuccessfully = false;
     
     TestUtils.exec("docker images", true);
-    logger.info(
+    LoggerHelper.getLocal().info(
         "About to verifyDomainServerPodRestart for Domain: "
          + domain.getDomainUid()
          + "  Image property: "
@@ -237,8 +248,8 @@ public class ItPodsRestart extends BaseTest {
     domain.verifyDomainServerPodRestart(
         "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
         "\"" + newImage + "\"");
-
-    logger.info("SUCCESS - " + testMethodName);
+    testCompletedSuccessfully = true;
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -265,7 +276,7 @@ public class ItPodsRestart extends BaseTest {
 
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "cont.security.context.domain.yaml";
-    logger.info(
+    LoggerHelper.getLocal().info(
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " change container securityContext:\n"
@@ -275,7 +286,7 @@ public class ItPodsRestart extends BaseTest {
     domain.findServerPropertyChange("securityContext", "admin-server");
     domain.findServerPropertyChange("securityContext", "managed-server1");
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -303,7 +314,7 @@ public class ItPodsRestart extends BaseTest {
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "pod.security.context.domain.yaml";
 
-    logger.info(
+    LoggerHelper.getLocal().info(
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " change securityContext:\n"
@@ -313,7 +324,7 @@ public class ItPodsRestart extends BaseTest {
     domain.findServerPropertyChange("fsGroup: 2000", "admin-server");
     domain.findServerPropertyChange("fsGroup: 2000", "managed-server1");
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -341,7 +352,7 @@ public class ItPodsRestart extends BaseTest {
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "resource.domain.yaml";
 
-    logger.info(
+    LoggerHelper.getLocal().info(
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " change resource:\n"
@@ -350,7 +361,7 @@ public class ItPodsRestart extends BaseTest {
     domain.findServerPropertyChange("cpu: 500m", "admin-server");
     domain.findServerPropertyChange("cpu: 500m", "managed-server1");
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -374,29 +385,29 @@ public class ItPodsRestart extends BaseTest {
       admin.put("restartVersion", "v1.1");
       crd.addObjectNodeToAdminServer(admin);
       String modYaml = crd.getYamlTree();
-      logger.info(modYaml);
+      LoggerHelper.getLocal().info(modYaml);
 
       // Write the modified yaml to a new file
       Path path = Paths.get(restartTmpDir, "restart.admin.yaml");
-      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, modYaml.getBytes(charset));
 
       // Apply the new yaml to update the domain
-      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-      logger.info(exec.stdout());
+      LoggerHelper.getLocal().info(exec.stdout());
 
-      logger.info("Verifying if the admin server pod is recreated");
+      LoggerHelper.getLocal().info("Verifying if the admin server pod is recreated");
       domain.verifyAdminServerRestarted();
     } finally {
-      logger.log(
+      LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      logger.info("Verifying if the admin server pod is recreated");
+      LoggerHelper.getLocal().info("Verifying if the admin server pod is recreated");
       domain.verifyAdminServerRestarted();
     }
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -411,6 +422,7 @@ public class ItPodsRestart extends BaseTest {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
+    testCompletedSuccessfully = false;
     String podName = domainUid + "-managed-server1";
 
     try {
@@ -420,28 +432,29 @@ public class ItPodsRestart extends BaseTest {
       cluster.put("restartVersion", "v1.1");
       crd.addObjectNodeToCluster("cluster-1", cluster);
       String modYaml = crd.getYamlTree();
-      logger.info(modYaml);
+      LoggerHelper.getLocal().info(modYaml);
 
       // Write the modified yaml to a new file
       Path path = Paths.get(restartTmpDir, "restart.cluster.yaml");
-      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, modYaml.getBytes(charset));
 
       // Apply the new yaml to update the domain crd
-      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-      logger.info(exec.stdout());
-      logger.info("Verifying if the cluster is restarted");
+      LoggerHelper.getLocal().info(exec.stdout());
+      LoggerHelper.getLocal().info("Verifying if the cluster is restarted");
       domain.verifyManagedServersRestarted();
     } finally {
-      logger.log(
+      LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      logger.info("Verifying if the cluster is restarted");
+      LoggerHelper.getLocal().info("Verifying if the cluster is restarted");
       domain.verifyManagedServersRestarted();
     }
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    testCompletedSuccessfully = true;
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -469,28 +482,28 @@ public class ItPodsRestart extends BaseTest {
       ms.put("serverStartState", "RUNNING");
       crd.addObjectNodeToMS("managed-server1", ms);
       String modYaml = crd.getYamlTree();
-      logger.info(modYaml);
+      LoggerHelper.getLocal().info(modYaml);
 
       // Write the modified yaml to a new file
       Path path = Paths.get(restartTmpDir, "restart.managed.yaml");
-      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, modYaml.getBytes(charset));
 
       // Apply the new yaml to update the domain crd
-      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-      logger.info(exec.stdout());
-      logger.info("Verifying if the managed server is restarted");
+      LoggerHelper.getLocal().info(exec.stdout());
+      LoggerHelper.getLocal().info("Verifying if the managed server is restarted");
       domain.verifyManagedServersRestarted();
     } finally {
-      logger.log(
+      LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      logger.info("Verifying if the managed server is restarted");
+      LoggerHelper.getLocal().info("Verifying if the managed server is restarted");
       domain.verifyManagedServersRestarted();
     }
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -515,30 +528,30 @@ public class ItPodsRestart extends BaseTest {
       domain.put("restartVersion", "v1.1");
       crd.addObjectNodeToDomain(domain);
       String modYaml = crd.getYamlTree();
-      logger.info(modYaml);
+      LoggerHelper.getLocal().info(modYaml);
 
       // Write the modified yaml to a new file
       Path path = Paths.get(restartTmpDir, "restart.domain.yaml");
-      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, modYaml.getBytes(charset));
 
       // Apply the new yaml to update the domain crd
-      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-      logger.info(exec.stdout());
-      logger.info("Verifying if the domain is restarted");
+      LoggerHelper.getLocal().info(exec.stdout());
+      LoggerHelper.getLocal().info("Verifying if the domain is restarted");
       this.domain.verifyAdminServerRestarted();
       this.domain.verifyManagedServersRestarted();
     } finally {
-      logger.log(
+      LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      logger.info("Verifying if the domain is restarted");
+      LoggerHelper.getLocal().info("Verifying if the domain is restarted");
       this.domain.verifyAdminServerRestarted();
       this.domain.verifyManagedServersRestarted();
     }
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**

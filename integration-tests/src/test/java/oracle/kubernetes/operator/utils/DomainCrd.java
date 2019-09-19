@@ -26,7 +26,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 /** A Domain CRD utility class to manipulate domain yaml files. */
 public class DomainCrd {
 
-  public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+  
   private final ObjectMapper objectMapper;
   private final JsonNode root;
 
@@ -93,7 +93,7 @@ public class DomainCrd {
     JsonNode envNodes = (ArrayNode) specNode.path("serverPod").path("env");
 
     if (specNode.path("serverPod").isMissingNode()) {
-      logger.info("Missing serverPod Node");
+      LoggerHelper.getLocal().info("Missing serverPod Node");
       podOptions = objectMapper.createObjectNode();
       envNodes = objectMapper.createArrayNode();
       ((ObjectNode) podOptions).set("env", envNodes);
@@ -108,7 +108,7 @@ public class DomainCrd {
       if (envNodes.size() != 0) {
         for (JsonNode envNode1 : envNodes) {
 
-          logger.info(" checking node " + envNode1.get("name"));
+          LoggerHelper.getLocal().info(" checking node " + envNode1.get("name"));
           if (envNode1.get("name").equals(entry.getKey())) {
             ((ObjectNode) envNode1).put("value", entry.getValue());
           }
@@ -298,7 +298,7 @@ public class DomainCrd {
     for (int i = 0; i < propNames.length; i++) {
       if (myNode.path(propNames[i]).isMissingNode()) {
 
-        logger.info("  property " + propNames[i] + " is not present, adding it  crd ");
+        LoggerHelper.getLocal().info("  property " + propNames[i] + " is not present, adding it  crd ");
 
         ObjectNode someSubNode = objectMapper.createObjectNode();
         ((ObjectNode) myNode).put(propNames[i], someSubNode);
@@ -313,17 +313,17 @@ public class DomainCrd {
       String dataType = entry.getValue().getClass().getSimpleName();
 
       if (dataType.equalsIgnoreCase("Integer")) {
-        logger.info(
+        LoggerHelper.getLocal().info(
             "Read Json Key :" + entry.getKey() + " | type :int | value:" + entry.getValue());
         ((ObjectNode) myNode).put(entry.getKey(), (int) entry.getValue());
 
       } else if (dataType.equalsIgnoreCase("Boolean")) {
-        logger.info(
+        LoggerHelper.getLocal().info(
             "Read Json Key :" + entry.getKey() + " | type :boolean | value:" + entry.getValue());
         ((ObjectNode) myNode).put(entry.getKey(), (boolean) entry.getValue());
 
       } else if (dataType.equalsIgnoreCase("String")) {
-        logger.info(
+        LoggerHelper.getLocal().info(
             "Read Json Key :" + entry.getKey() + " | type :string | value:" + entry.getValue());
         ((ObjectNode) myNode).put(entry.getKey(), (String) entry.getValue());
       }
@@ -373,7 +373,7 @@ public class DomainCrd {
     JsonNode clusterNode = null;
     for (JsonNode cluster : clusters) {
       if (cluster.get("clusterName").asText().equals(clusterName)) {
-        logger.info("Got the cluster");
+        LoggerHelper.getLocal().info("Got the cluster");
         clusterNode = cluster;
       }
     }
@@ -392,7 +392,7 @@ public class DomainCrd {
     JsonNode managedserverNode = null;
     JsonNode specNode = getSpecNode();
     if (root.path("spec").path("managedServers").isMissingNode()) {
-      logger.info("Missing MS Node");
+      LoggerHelper.getLocal().info("Missing MS Node");
       managedservers = objectMapper.createArrayNode();
       ObjectNode managedserver = objectMapper.createObjectNode();
       managedserver.put("serverName", managedServerName);
@@ -405,12 +405,12 @@ public class DomainCrd {
       if (managedservers.size() != 0) {
         for (JsonNode managedserver : managedservers) {
           if (managedserver.get("serverName").asText().equals(managedServerName)) {
-            logger.info("Found managedServer with name " + managedServerName);
+            LoggerHelper.getLocal().info("Found managedServer with name " + managedServerName);
             managedserverNode = managedserver;
           }
         }
       } else {
-        logger.info("Creating node for managedServer with name " + managedServerName);
+        LoggerHelper.getLocal().info("Creating node for managedServer with name " + managedServerName);
         ObjectNode managedserver = objectMapper.createObjectNode();
         managedserver.put("serverName", managedServerName);
         managedservers.add(managedserver);
@@ -431,7 +431,7 @@ public class DomainCrd {
     JsonNode serverPodNode = null;
     JsonNode objectNode = null;
     if (serverPodsParentNode.path("serverPod").isMissingNode()) {
-      logger.info("Missing serverPod Node");
+      LoggerHelper.getLocal().info("Missing serverPod Node");
       serverPodNode = objectMapper.createObjectNode();
       ((ObjectNode) serverPodsParentNode).set("serverPod", serverPodNode);
       objectNode = objectMapper.createObjectNode();
@@ -440,7 +440,7 @@ public class DomainCrd {
     } else {
       serverPodNode = serverPodsParentNode.path("serverPod");
       if (serverPodNode.path(objectName).isMissingNode()) {
-        logger.info("Creating node with name " + objectName);
+        LoggerHelper.getLocal().info("Creating node with name " + objectName);
         objectNode = objectMapper.createObjectNode();
         ((ObjectNode) serverPodNode).set(objectName, objectNode);
       } else {
@@ -462,7 +462,7 @@ public class DomainCrd {
     JsonNode serverPodNode = null;
     ArrayNode arrayNode = null;
     if (serverPodsParentNode.path("serverPod").isMissingNode()) {
-      logger.info("Missing serverPod Node");
+      LoggerHelper.getLocal().info("Missing serverPod Node");
       serverPodNode = objectMapper.createObjectNode();
       ((ObjectNode) serverPodsParentNode).set("serverPod", serverPodNode);
       arrayNode = objectMapper.createArrayNode();
@@ -470,7 +470,7 @@ public class DomainCrd {
     } else {
       serverPodNode = serverPodsParentNode.path("serverPod");
       if (serverPodNode.path(arrayNodeName).isMissingNode()) {
-        logger.log(Level.INFO, "Creating node with name {0}", arrayNodeName);
+        LoggerHelper.getLocal().log(Level.INFO, "Creating node with name {0}", arrayNodeName);
         arrayNode = objectMapper.createArrayNode();
         ((ObjectNode) serverPodNode).set(arrayNodeName, arrayNode);
       } else {

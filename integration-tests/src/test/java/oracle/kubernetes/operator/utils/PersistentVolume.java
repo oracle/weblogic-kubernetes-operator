@@ -14,7 +14,7 @@ import oracle.kubernetes.operator.BaseTest;
 
 public class PersistentVolume {
 
-  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+  private static final Logger logger = LoggerHelper.getLocal().getLogger("OperatorIT", "OperatorIT");
   private Map<String, Object> pvMap;
   private String dirPath;
 
@@ -25,24 +25,29 @@ public class PersistentVolume {
     String cmd =
             BaseTest.getProjectRoot()
         + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot()
-        + ":/sharedparent -t 120 -c 'mkdir -m 777 -p "
-        + dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/")
+        + ":/shareddir-"+pvMap.get("domainUID")+" -t 120 -p pod-"+pvMap.get("domainUID")+" -c 'mkdir -m 777 -p "
+        + dirPath.replace(BaseTest.getPvRoot(), "/shareddir-"+pvMap.get("domainUID")+"/")
         + "'"; 
     
     // retry logic for PV dir creation as sometimes krun.sh fails
     int cnt = 0;
     int maxCnt = 10;
     while (cnt < maxCnt) {
-      logger.info("Executing command " + cmd);
-      if (ExecCommand.exec(cmd).exitValue() == 0) {
+      LoggerHelper.getLocal().info("Executing command " + cmd);
+      ExecResult result = ExecCommand.exec(cmd);
+      if (result.exitValue() == 0) {
         break;
       } else {
-        logger.info("PV dir creation command failed");
+        LoggerHelper.getLocal().info("PV dir creation command failed with exitValue= "+result.exitValue() +
+                      "stderr= " + result.stderr() +" stdout="+result.stdout());
         Thread.sleep(BaseTest.getWaitTimePod());
         cnt = cnt + 1;
       }
+      if(cnt == maxCnt) {
+        throw new RuntimeException("FAILED: Failed to create PV directory");
+      }
     }
-
+   
     Path parentDir =
         pvMap.get("domainUID") != null
             ? Files.createDirectories(
@@ -55,6 +60,7 @@ public class PersistentVolume {
     // create PV/PVC
     String cmdPvPvc =
         BaseTest.getResultDir()
+            +"/"+ pvMap.get("domainUID")
             + "/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh "
             + " -i "
             + parentDir
@@ -62,7 +68,7 @@ public class PersistentVolume {
             + pvMap.get("baseName")
             + "-pv-inputs.yaml -e -o "
             + BaseTest.getUserProjectsDir();
-    logger.info("Executing cmd " + cmdPvPvc);
+    LoggerHelper.getLocal().info("Executing cmd " + cmdPvPvc);
 
     TestUtils.exec(cmdPvPvc, true);
   }

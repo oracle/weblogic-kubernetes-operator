@@ -11,6 +11,8 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import oracle.kubernetes.operator.utils.LoggerHelper;
+
 /** JUnit test class used for testing configuration override use cases for Domain In Image. */
 public class ItSitConfigDomainInImage extends SitConfig {
 
@@ -25,7 +27,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      SitConfig.staticPrepare(
+      staticPrepare(
           DOMAININIMAGE_WLST_YAML,
           "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config-inimage.py");
     }
@@ -39,7 +41,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      SitConfig.staticUnPrepare();
+      staticUnPrepare();
     }
   }
 
@@ -60,7 +62,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForDomain(testMethod);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -79,7 +81,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForDomainMS(testMethod);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -102,7 +104,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForJdbc(testMethod);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -121,7 +123,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForJms(testMethod);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -142,6 +144,6 @@ public class ItSitConfigDomainInImage extends SitConfig {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForWldf(testMethod);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 }

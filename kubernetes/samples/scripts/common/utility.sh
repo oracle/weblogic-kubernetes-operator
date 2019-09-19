@@ -54,8 +54,8 @@ function removeFileIfExists {
 # Function to parse the common parameter inputs file
 #
 function parseCommonInputs {
-  exportValuesFile="/tmp/export-values.sh"
-  tmpFile="/tmp/javaoptions_tmp.dat"
+  exportValuesFile=$(mktemp /tmp/export-values-XXXXXXXXX.sh)  
+  tmpFile=$(mktemp /tmp/javaoptions_tmp-XXXXXXXXX.dat)  
   parseYaml ${valuesInputFile} ${exportValuesFile}
 
   if [ ! -f ${exportValuesFile} ]; then

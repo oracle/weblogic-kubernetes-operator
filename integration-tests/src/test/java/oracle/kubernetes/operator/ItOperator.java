@@ -4,13 +4,18 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.logging.Logger;
+
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -25,13 +30,12 @@ import org.junit.runners.MethodSorters;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItOperator extends BaseTest {
-
   private static Operator operator1;
   private static Operator operator2;
-
   private static Operator operatorForBackwardCompatibility;
   private static Operator operatorForRESTCertChain;
-
+  private static String domainNS ;
+  private static String testClassName ;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -41,8 +45,17 @@ public class ItOperator extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+    
     // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE);
+    initialize(APP_PROPS_FILE, testClassName);
+    // create operator1
+    if(operator1 == null ) {
+      Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+      operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+      Assert.assertNotNull(operator1);
+      domainNS = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+    }
   }
 
   /**
@@ -52,13 +65,13 @@ public class ItOperator extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
+    LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
+    LoggerHelper.getLocal().info("BEGIN");
+    LoggerHelper.getLocal().info("Run once, release cluster lease");
 
     tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
-    logger.info("SUCCESS");
+    LoggerHelper.getLocal().info("SUCCESS");
   }
 
   /**
@@ -79,15 +92,15 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Creating Operator & waiting for the script to complete execution");
-    // create operator1
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
+    LoggerHelper.getLocal().info("Creating Operator & waiting for the script to complete execution");
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      // domainMap.put("domainUID", "domainonpvwlst");
+      domainMap.put("namespace", domainNS);
+      domainMap.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
+      domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
@@ -96,10 +109,14 @@ public class ItOperator extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully))
-        domain.shutdownUsingServerStartPolicy();
+        // domain.shutdownUsingServerStartPolicy();
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        /* if(domain != null) {
+          TestUtils.verifyAfterDeletion(domain);
+        } */
     } 
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -117,7 +134,7 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Creating Domain using DomainOnPVUsingWDT & verifing the domain creation");
+    LoggerHelper.getLocal().info("Creating Domain using DomainOnPVUsingWDT & verifing the domain creation");
 
     if (operator2 == null) {
       operator2 = TestUtils.createOperator(OPERATOR2_YAML);
@@ -135,13 +152,13 @@ public class ItOperator extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        logger.info("About to delete domain: " + domain.getDomainUid());
+        LoggerHelper.getLocal().info("About to delete domain: " + domain.getDomainUid());
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
       }
     } 
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -161,9 +178,9 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Creating Domain domain1 & verifing the domain creation");
+    LoggerHelper.getLocal().info("Creating Domain domain1 & verifing the domain creation");
 
-    logger.info("Checking if operator1 and domain1 are running, if not creating");
+    LoggerHelper.getLocal().info("Checking if operator1 and domain1 are running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
@@ -181,7 +198,7 @@ public class ItOperator extends BaseTest {
       domain1 = TestUtils.createDomain(wlstDomainMap);
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1);
-      logger.info("Checking if operator2 is running, if not creating");
+      LoggerHelper.getLocal().info("Checking if operator2 is running, if not creating");
       if (operator2 == null) {
         operator2 = TestUtils.createOperator(OPERATOR2_YAML);
       }
@@ -197,19 +214,19 @@ public class ItOperator extends BaseTest {
       domain2 = TestUtils.createDomain(wdtDomainMap);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2);
-      logger.info("Verify the only remaining running domain domain1 is unaffected");
+      LoggerHelper.getLocal().info("Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
-      testClusterScaling(operator2, domain2);
+      testClusterScaling(operator2, domain2, false);
 
-      logger.info("Verify the only remaining running domain domain1 is unaffected");
+      LoggerHelper.getLocal().info("Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
-      logger.info("Destroy and create domain1 and verify no impact on domain2");
+      LoggerHelper.getLocal().info("Destroy and create domain1 and verify no impact on domain2");
       domain1.destroy();
       domain1.create();
 
-      logger.info("Verify no impact on domain2");
+      LoggerHelper.getLocal().info("Verify no impact on domain2");
       domain2.verifyDomainCreated();
       testCompletedSuccessfully = true;
 
@@ -223,7 +240,7 @@ public class ItOperator extends BaseTest {
         domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
       }
       if (!domainUidsToBeDeleted.equals("")) {
-        logger.info("About to delete domains: " + domainUidsToBeDeleted);
+        LoggerHelper.getLocal().info("About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
         if (domain1 != null) {
           TestUtils.verifyAfterDeletion(domain1);
@@ -233,7 +250,7 @@ public class ItOperator extends BaseTest {
         }
       }
     } 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
 
@@ -253,9 +270,9 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Creating Domain domain1 & verifing the domain creation");
+    LoggerHelper.getLocal().info("Creating Domain domain1 & verifing the domain creation");
 
-    logger.info("Checking if operator1 and domain1 are running, if not creating");
+    LoggerHelper.getLocal().info("Checking if operator1 and domain1 are running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
@@ -283,19 +300,19 @@ public class ItOperator extends BaseTest {
       domain2 = TestUtils.createDomain(domain2Map);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2);
-      logger.info("Verify the only remaining running domain domain1 is unaffected");
+      LoggerHelper.getLocal().info("Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
-      testClusterScaling(operator1, domain2);
+      testClusterScaling(operator1, domain2, false);
 
-      logger.info("Verify the only remaining running domain domain1 is unaffected");
+      LoggerHelper.getLocal().info("Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
-      logger.info("Destroy and create domain1 and verify no impact on domain2");
+      LoggerHelper.getLocal().info("Destroy and create domain1 and verify no impact on domain2");
       domain1.destroy();
       domain1.create();
 
-      logger.info("Verify no impact on domain2");
+      LoggerHelper.getLocal().info("Verify no impact on domain2");
       domain2.verifyDomainCreated();
       testCompletedSuccessfully = true;
 
@@ -309,7 +326,7 @@ public class ItOperator extends BaseTest {
         domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
       }
       if (!domainUidsToBeDeleted.equals("")) {
-        logger.info("About to delete domains: " + domainUidsToBeDeleted);
+        LoggerHelper.getLocal().info("About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
         if (domain1 != null) {
           TestUtils.verifyAfterDeletion(domain1);
@@ -319,7 +336,7 @@ public class ItOperator extends BaseTest {
         }
       }
     } 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
 
@@ -336,11 +353,11 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Checking if operator1 is running, if not creating");
+    LoggerHelper.getLocal().info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
-    logger.info("Creating Domain domain6 & verifing the domain creation");
+    LoggerHelper.getLocal().info("Creating Domain domain6 & verifing the domain creation");
     // create domain
     Domain domain = null;
     try {
@@ -359,7 +376,7 @@ public class ItOperator extends BaseTest {
 
     domain.createDomainOnExistingDirectory(); 
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -373,11 +390,11 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Checking if operator1 is running, if not creating");
+    LoggerHelper.getLocal().info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
-    logger.info("Creating Domain domain & verifing the domain creation");
+    LoggerHelper.getLocal().info("Creating Domain domain & verifing the domain creation");
     // create domain
     Domain domain = null;
 
@@ -388,7 +405,7 @@ public class ItOperator extends BaseTest {
       if (domain != null) domain.shutdown();
     }
     domain.deletePvcAndCheckPvReleased(); 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -406,7 +423,7 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Creating Domain domain10 & verifing the domain creation");
+    LoggerHelper.getLocal().info("Creating Domain domain10 & verifing the domain creation");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
@@ -426,7 +443,7 @@ public class ItOperator extends BaseTest {
       }
     } 
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -485,7 +502,7 @@ public class ItOperator extends BaseTest {
         domain11.destroy();
       }
     } 
-    logger.info("SUCCESS - " + testMethod);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
   }
 
   /**
@@ -500,15 +517,15 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
+    LoggerHelper.getLocal().info("Checking if operatorForBackwardCompatibility is running, if not creating");
     if (operatorForBackwardCompatibility == null) {
       operatorForBackwardCompatibility =
           TestUtils.createOperator(OPERATORBC_YAML, RestCertType.LEGACY);
     }
     operatorForBackwardCompatibility.verifyOperatorExternalRestEndpoint();
-    logger.info("Operator using legacy REST identity created successfully");
+    LoggerHelper.getLocal().info("Operator using legacy REST identity created successfully");
     operatorForBackwardCompatibility.destroy(); 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -522,13 +539,13 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
 
     logTestBegin("testOperatorRestUsingCertificateChain");
-    logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
+    LoggerHelper.getLocal().info("Checking if operatorForBackwardCompatibility is running, if not creating");
     if (operatorForRESTCertChain == null) {
       operatorForRESTCertChain = TestUtils.createOperator(OPERATOR_CHAIN_YAML, RestCertType.CHAIN);
     }
     operatorForRESTCertChain.verifyOperatorExternalRestEndpoint();
-    logger.info("Operator using legacy REST identity created successfully"); 
-    logger.info("SUCCESS - testOperatorRestUsingCertificateChain");
+    LoggerHelper.getLocal().info("Operator using legacy REST identity created successfully"); 
+    LoggerHelper.getLocal().info("SUCCESS - testOperatorRestUsingCertificateChain");
   }
 
   /**
@@ -543,11 +560,11 @@ public class ItOperator extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    logger.info("Checking if operator1 is running, if not creating");
+    LoggerHelper.getLocal().info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
-    logger.info("Creating Domain & verifing the domain creation");
+    LoggerHelper.getLocal().info("Creating Domain & verifing the domain creation");
     // create domain
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
@@ -556,12 +573,12 @@ public class ItOperator extends BaseTest {
       domain.verifyDomainCreated();
 
       testBasicUseCases(domain);
-      testClusterScaling(operator1, domain);
+      testClusterScaling(operator1, domain, false);
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
     } 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -577,35 +594,37 @@ public class ItOperator extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    logger.info("Checking if operator1 is running, if not creating");
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
-    logger.info("Creating Domain & verifing the domain creation");
+    LoggerHelper.getLocal().info("Creating Domain & verifing the domain creation");
     // create domain
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
+      Map<String, Object> domainMap = TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
+      domainMap.put("namespace", domainNS);
+      // domainMap.put("domainUID", "domaininimagewdt");
       domainMap.put(
           "customWdtTemplate",
           BaseTest.getProjectRoot()
               + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml");
+      domainMap.put("createDomainFilesDir", "wdt");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
 
       testBasicUseCases(domain);
-      testClusterScaling(operator1, domain);
+      testClusterScaling(operator1, domain, true);
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        TestUtils.verifyAfterDeletion(domain);
+      }
     } 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
     domain.enablePrecreateService();
-    testClusterScaling(operator, domain);
+    testClusterScaling(operator, domain, true);
     domain.verifyServicesCreated(true);
     if (FULLTEST) {
       testDomainLifecyle(operator, domain);

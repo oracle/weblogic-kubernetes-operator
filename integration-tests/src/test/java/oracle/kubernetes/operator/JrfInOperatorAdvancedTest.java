@@ -17,6 +17,7 @@ import oracle.kubernetes.operator.utils.DbUtils;
 import oracle.kubernetes.operator.utils.DomainCrd;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.JrfDomain;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -63,7 +64,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
   
       // TODO: reconsider the logic to check the db readiness
       // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
-      logger.info("waiting for the db to be visible to rcu script ...");
+      LoggerHelper.getLocal().info("waiting for the db to be visible to rcu script ...");
       Thread.sleep(20000);
     }
   }
@@ -77,13 +78,13 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
+      LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      LoggerHelper.getLocal().info("BEGIN");
+      LoggerHelper.getLocal().info("Run once, release cluster lease");
   
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
   
-      logger.info("SUCCESS");
+      LoggerHelper.getLocal().info("SUCCESS");
     }
   }
 
@@ -119,7 +120,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       DbUtils.runRcu(rcuPodName, domain1Map);
 
       // create domain
-      logger.info("Creating Domain & verifying the domain creation");
+      LoggerHelper.getLocal().info("Creating Domain & verifying the domain creation");
       domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
@@ -134,29 +135,29 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       clusterRestartVersion.put("maxUnavailable", new Integer(2));
       crd.addObjectNodeToCluster(domain1.getClusterName(), clusterRestartVersion);
       String modYaml = crd.getYamlTree();
-      logger.info(modYaml);
+      LoggerHelper.getLocal().info(modYaml);
 
       // Write the modified yaml to a new file
       String restartTmpDir = getResultDir() + "/restarttemp";
       Files.createDirectories(Paths.get(restartTmpDir));
       Path path = Paths.get(restartTmpDir, "restart.cluster.yaml");
-      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, modYaml.getBytes(charset));
 
       // Apply the new yaml to update the domain crd
-      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-      logger.info(exec.stdout());
+      LoggerHelper.getLocal().info(exec.stdout());
 
       int expectedMsPodsCount =
           (Integer) domain1.getDomainMap().get("initialManagedServerReplicas");
       // TODO: this verification will fail due to bug 29678557
-      logger.info("Verifying the number of not ready MS pods can not exceed maxUnavailable value");
+      LoggerHelper.getLocal().info("Verifying the number of not ready MS pods can not exceed maxUnavailable value");
       verifyMsPodsNotReadyCountNotExceedMaxUnAvailable(domain1, expectedMsPodsCount, 2);
 
       // TODO: this verification will fail due to bug 29720185
-      logger.info("Verifying the number of MS pods");
+      LoggerHelper.getLocal().info("Verifying the number of MS pods");
       if (getMsPodsCount(domain1) != expectedMsPodsCount) {
         throw new Exception(
             "The number of MS pods is not right, expect: "
@@ -172,7 +173,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
         domain1.destroy();
       }
     }
-    logger.info("SUCCESS - " + testMethod);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
   }
 
   /**
@@ -208,7 +209,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       DbUtils.runRcu(rcuPodName, domain1Map);
 
       // create domain
-      logger.info("Creating Domain & verifying the domain creation");
+      LoggerHelper.getLocal().info("Creating Domain & verifying the domain creation");
       domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
@@ -219,7 +220,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
         domain1.destroy();
       }
     }
-    logger.info("SUCCESS - " + testMethod);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
   }
 
   /**
@@ -255,7 +256,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       DbUtils.runRcu(rcuPodName, domain1Map);
 
       // create domain
-      logger.info("Creating Domain & verifying the domain creation");
+      LoggerHelper.getLocal().info("Creating Domain & verifying the domain creation");
       domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
@@ -266,7 +267,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
         domain1.destroy();
       }
     }
-    logger.info("SUCCESS - " + testMethod);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
   }
 
   /**
@@ -310,7 +311,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       DbUtils.runRcu(rcuPodName, domain1Map);
 
       // create domain
-      logger.info("Creating Domain & verifying the domain creation");
+      LoggerHelper.getLocal().info("Creating Domain & verifying the domain creation");
       domain1 = new JrfDomain(domain1Map, true);
       domain1.verifyDomainCreated();
 
@@ -321,7 +322,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
         domain1.destroy();
       }
     }
-    logger.info("SUCCESS - " + testMethod);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
   }
 
   /**
@@ -354,7 +355,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       DbUtils.runRcu(rcuPodName, domain1Map);
 
       // create domain
-      logger.info("Creating Domain & verifying the domain creation");
+      LoggerHelper.getLocal().info("Creating Domain & verifying the domain creation");
       domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
@@ -368,7 +369,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
         domain1.destroy();
       }
     }
-    logger.info("SUCCESS - " + testMethod);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
   }
 
   /**
@@ -397,7 +398,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
     int msPodRunningAndReadyCount = getMsPodsRunningAndReadyCount(domain);
     while (i < getMaxIterationsPod() * 8 && msPodRunningAndReadyCount != expectedMsPodsCount) {
       int msPodsNotReadyCount = getMsPodsNotReadyCount(domain);
-      logger.info(
+      LoggerHelper.getLocal().info(
           "Iter ["
               + i
               + "/"

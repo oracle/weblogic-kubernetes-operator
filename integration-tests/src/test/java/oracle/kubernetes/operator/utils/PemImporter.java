@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 import javax.xml.bind.DatatypeConverter;
 
 public class PemImporter {
-  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+  
 
   /**
    * Create a KeyStore from standard PEM files.

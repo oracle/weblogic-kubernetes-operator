@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -55,13 +56,13 @@ public class ItStickySession extends BaseTest {
   
       // Create operator1
       if (operator == null) {
-        logger.info("Creating Operator & waiting for the script to complete execution");
+        LoggerHelper.getLocal().info("Creating Operator & waiting for the script to complete execution");
         operator = TestUtils.createOperator(OPERATOR1_YAML);
       }
   
       // create domain
       if (domain == null) {
-        logger.info("Creating WLS Domain & waiting for the script to complete execution");
+        LoggerHelper.getLocal().info("Creating WLS Domain & waiting for the script to complete execution");
         Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
         // Treafik doesn't work due to the bug 28050300. Use Voyager instead
         domainMap.put("loadBalancer", "VOYAGER");
@@ -96,13 +97,13 @@ public class ItStickySession extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
+      LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      LoggerHelper.getLocal().info("BEGIN");
+      LoggerHelper.getLocal().info("Run once, release cluster lease");
   
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
   
-      logger.info("SUCCESS");
+      LoggerHelper.getLocal().info("SUCCESS");
     }
   }
 
@@ -142,7 +143,7 @@ public class ItStickySession extends BaseTest {
     Assume.assumeNotNull(serverName1);
     Assume.assumeNotNull(serverID1);
 
-    logger.info(
+    LoggerHelper.getLocal().info(
         "The first HTTP request established a connection with server <"
             + serverName1
             + ">, HTTP session id is <"
@@ -161,7 +162,7 @@ public class ItStickySession extends BaseTest {
     Assume.assumeNotNull(serverID2);
     Assume.assumeNotNull(count);
 
-    logger.info(
+    LoggerHelper.getLocal().info(
         "The second HTTP request connected to server <"
             + serverName2
             + "> with HTTP session id <"
@@ -170,15 +171,15 @@ public class ItStickySession extends BaseTest {
 
     // Verify that the same session info is used
     Assume.assumeTrue("HTTP session should NOT change!", serverID1.equals(serverID2));
-    logger.info("Same HTTP session id <" + serverID1 + "> is used");
+    LoggerHelper.getLocal().info("Same HTTP session id <" + serverID1 + "> is used");
 
     // Verify server-affinity
     Assume.assumeTrue("Weblogic server name should NOT change!", serverName1.equals(serverName2));
-    logger.info("Two HTTP requests are directed to same Weblogic server <" + serverName1 + ">");
+    LoggerHelper.getLocal().info("Two HTTP requests are directed to same Weblogic server <" + serverName1 + ">");
 
     // Verify that count numbers from two HTTP responses match
     Assume.assumeTrue("Count number does not match", Integer.parseInt(count) == counterNum);
-    logger.info(
+    LoggerHelper.getLocal().info(
         "Count number <"
             + count
             + "> got from HTTP response matches "
@@ -186,7 +187,7 @@ public class ItStickySession extends BaseTest {
             + counterNum
             + ">");
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -221,7 +222,7 @@ public class ItStickySession extends BaseTest {
     String serverIdClient1 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
     Assume.assumeNotNull(serverIdClient1);
 
-    logger.info(
+    LoggerHelper.getLocal().info(
         "Client1 created a connection with HTTP session id <"
             + serverIdClient1
             + "> and set a count number to <"
@@ -238,7 +239,7 @@ public class ItStickySession extends BaseTest {
     Assume.assumeNotNull(serverIdClient2);
     Assume.assumeNotNull(count);
 
-    logger.info(
+    LoggerHelper.getLocal().info(
         "Client2 created a connection with HTTP session id <"
             + serverIdClient2
             + "> and retrieved a count number <"
@@ -253,7 +254,7 @@ public class ItStickySession extends BaseTest {
         "Count number <" + counterNum + "> set by client1 should be invisible to client2",
         count.equals("0"));
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   private String getHttpResponseAttribute(String httpResponseString, String attribute)
@@ -278,7 +279,7 @@ public class ItStickySession extends BaseTest {
 
     // Send a HTTP request
     String curlCmd = buildWebServiceUrl(webServiceUrl, headerOption);
-    logger.info("Send a HTTP request: " + curlCmd);
+    LoggerHelper.getLocal().info("Send a HTTP request: " + curlCmd);
     ExecResult result = TestUtils.exec(curlCmd);
 
     return result;
