@@ -31,6 +31,8 @@ spec:
       value: "${LOG_HOME}"
     - name: CREDENTIALS_SECRET_NAME
       value: "${WEBLOGIC_CREDENTIALS_SECRET_NAME}"
+    - name: ALLOW_DYNAMIC_CLUSTER_IN_FMW
+      value: "${ALLOW_DYNAMIC_CLUSTER_IN_FMW}"
     image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
     imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
     name: weblogic-server

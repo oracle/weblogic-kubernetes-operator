@@ -6,13 +6,15 @@ package oracle.kubernetes.operator.rest;
 
 import java.util.Collection;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.utils.Certificates;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
-
 /** RestConfigImpl provides the WebLogic Operator REST api configuration. */
 public class RestConfigImpl implements RestConfig {
+
+  private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final String principal;
   private final Collection<String> targetNamespaces;

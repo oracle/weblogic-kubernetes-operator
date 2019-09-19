@@ -15,12 +15,12 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.net.HttpURLConnection.HTTP_GONE;
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * This class handles the Watching interface and drives the watch support for a specific type of
@@ -30,6 +30,7 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  */
 abstract class Watcher<T> {
   static final String HAS_NEXT_EXCEPTION_MESSAGE = "IO Exception during hasNext method.";
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final long IGNORED_RESOURCE_VERSION = 0;
 
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
@@ -49,7 +50,8 @@ abstract class Watcher<T> {
    * @param stopping an atomic boolean to watch to determine when to stop the watcher
    */
   Watcher(String resourceVersion, WatchTuning tuning, AtomicBoolean stopping) {
-    this.resourceVersion = isNullOrEmpty(resourceVersion) ? 0 : Long.parseLong(resourceVersion);
+    this.resourceVersion =
+        !isNullOrEmptyString(resourceVersion) ? Long.parseLong(resourceVersion) : 0;
     this.tuning = tuning;
     this.stopping = stopping;
   }
@@ -69,6 +71,10 @@ abstract class Watcher<T> {
       WatchListener<T> listener) {
     this(resourceVersion, tuning, stopping);
     this.listener = listener;
+  }
+
+  private static boolean isNullOrEmptyString(String s) {
+    return s == null || s.equals("");
   }
 
   /** Waits for this watcher's thread to exit. For unit testing only. */
@@ -213,7 +219,7 @@ abstract class Watcher<T> {
         int index2 = message.indexOf(')', index1 + 1);
         if (index2 > 0) {
           String val = message.substring(index1 + 1, index2);
-          if (!isNullOrEmpty(val)) {
+          if (!isNullOrEmptyString(val)) {
             return Long.parseLong(val);
           }
         }
@@ -248,7 +254,7 @@ abstract class Watcher<T> {
       Method getMetadata = object.getClass().getDeclaredMethod("getMetadata");
       V1ObjectMeta metadata = (V1ObjectMeta) getMetadata.invoke(object);
       String val = metadata.getResourceVersion();
-      return isNullOrEmpty(val) ? 0 : Long.parseLong(val);
+      return !isNullOrEmptyString(val) ? Long.parseLong(val) : 0;
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       return IGNORED_RESOURCE_VERSION;

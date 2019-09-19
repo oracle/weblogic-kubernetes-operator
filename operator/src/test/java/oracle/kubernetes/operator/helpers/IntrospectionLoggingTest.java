@@ -13,7 +13,6 @@ import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,7 +34,6 @@ public class IntrospectionLoggingTest {
   private List<Memento> mementos = new ArrayList<>();
   private List<LogRecord> logRecords = new ArrayList<>();
   private String jobPodName = LegalNames.toJobIntrospectorName(UID);
-  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private TerminalStep terminalStep = new TerminalStep();
 
   @Before
@@ -46,8 +44,6 @@ public class IntrospectionLoggingTest {
     testSupport.addDomainPresenceInfo(info);
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.defineResources(domain);
-
-    domain.setStatus(new DomainStatus());
   }
 
   @After

@@ -48,7 +48,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
       String template =
@@ -73,7 +73,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -90,7 +90,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoConfiguredCluster() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
 
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -128,12 +128,10 @@ public class ItMultipleClusters extends BaseTest {
       };
       verifyServersStatus(domain, pods);
       testBasicUseCases(domain);
-      if (!SMOKETEST) {
-        domain.testWlsLivenessProbe();
-      }
+      domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         domain.destroy();
       }
     }
@@ -148,7 +146,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoMixedCluster() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String domainuid = "twomixedclusterdomain";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -185,12 +183,10 @@ public class ItMultipleClusters extends BaseTest {
       verifyServersStatus(domain, pods);
 
       testBasicUseCases(domain);
-      if (!SMOKETEST) {
-        domain.testWlsLivenessProbe();
-      }
+      domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         domain.destroy();
       }
     }
@@ -205,7 +201,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoClusterWdtInImage() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String domainuid = "twoclusterdomainwdt";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -239,12 +235,10 @@ public class ItMultipleClusters extends BaseTest {
       };
       verifyServersStatus(domain, pods);
       testBasicUseCases(domain);
-      if (!SMOKETEST) {
-        domain.testWlsLivenessProbe();
-      }
+      domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         domain.destroy();
       }
     }

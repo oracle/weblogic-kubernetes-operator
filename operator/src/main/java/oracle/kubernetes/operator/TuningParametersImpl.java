@@ -10,11 +10,12 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import oracle.kubernetes.operator.helpers.ConfigMapConsumer;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
-
 public class TuningParametersImpl extends ConfigMapConsumer implements TuningParameters {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static TuningParameters INSTANCE = null;
 
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -33,9 +34,8 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
       ScheduledExecutorService executorService, String mountPoint) throws IOException {
     if (INSTANCE == null) {
       INSTANCE = new TuningParametersImpl(executorService, mountPoint);
-      return INSTANCE;
     }
-    throw new IllegalStateException();
+    return INSTANCE;
   }
 
   public static synchronized TuningParameters getInstance() {

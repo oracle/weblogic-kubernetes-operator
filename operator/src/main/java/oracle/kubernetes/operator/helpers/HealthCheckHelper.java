@@ -13,12 +13,15 @@ import io.kubernetes.client.models.V1ResourceRule;
 import io.kubernetes.client.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.models.VersionInfo;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /** A Helper Class for checking the health of the WebLogic Operator. */
 public final class HealthCheckHelper {
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private static final Map<AuthorizationProxy.Resource, AuthorizationProxy.Operation[]>
       namespaceAccessChecks = new HashMap<>();
   private static final Map<AuthorizationProxy.Resource, AuthorizationProxy.Operation[]>
@@ -115,7 +118,7 @@ public final class HealthCheckHelper {
 
     // Validate RBAC or ABAC policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
-    LOGGER.info(MessageKeys.VERIFY_ACCESS_START);
+    LOGGER.info(MessageKeys.VERIFY_ACCESS_START, ns);
 
     if (version.isRulesReviewSupported()) {
       boolean rulesReviewSuccessful = true;
@@ -147,7 +150,7 @@ public final class HealthCheckHelper {
       for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
 
         if (!ap.check(op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource(), ns);
         }
       }
     }
@@ -156,7 +159,7 @@ public final class HealthCheckHelper {
       for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
 
         if (!ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource(), ns);
         }
       }
     }

@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 function prop {
-    grep "${1}" ${propsFile}|cut -d'=' -f2
+    grep "${1}" ${propsFile}| grep -v "#" | cut -d'=' -f2
 }
 
 function generateTFVarFile {

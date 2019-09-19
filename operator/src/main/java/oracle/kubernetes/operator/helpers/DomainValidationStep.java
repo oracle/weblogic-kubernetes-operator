@@ -12,6 +12,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.helpers.DomainStatusPatch.BAD_DOMAIN;
 
 public class DomainValidationStep extends Step {
   private Domain domain;
@@ -27,7 +28,11 @@ public class DomainValidationStep extends Step {
 
     if (validationFailures.isEmpty()) return doNext(packet);
 
-    DomainStatusPatch.updateDomainStatus(domain, "ErrBadDomain", String.join(lineSeparator(), validationFailures));
-    return doEnd(packet);
+    Step step = DomainStatusPatch.createStep(domain, BAD_DOMAIN, perLine(validationFailures));
+    return doNext(step, packet);
+  }
+
+  private String perLine(List<String> validationFailures) {
+    return String.join(lineSeparator(), validationFailures);
   }
 }

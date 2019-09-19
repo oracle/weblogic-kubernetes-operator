@@ -7,10 +7,13 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 
 /** General-purpose object pool. */
 public abstract class Pool<T> {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private final Queue<T> queue = new ConcurrentLinkedQueue<>();
 
   /**

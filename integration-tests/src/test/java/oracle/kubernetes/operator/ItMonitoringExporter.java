@@ -78,7 +78,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       initialize(APP_PROPS_FILE);
       logger.info("Checking if operator and domain are running, if not creating");
       if (operator == null) {
@@ -116,7 +116,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -431,7 +431,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test01_CheckMetricsViaPrometheus() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
@@ -447,7 +447,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test01_1_VerifyScalingViaPrometheus() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
@@ -468,7 +468,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test02_ReplaceConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_jvm.yml");
@@ -515,7 +515,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test03_AppendConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     // scale cluster to 1 managed server only to test functionality of the exporter without
@@ -548,7 +548,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test04_ReplaceOneAttributeValueAsArrayConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -570,7 +570,7 @@ public class ItMonitoringExporter extends BaseTest {
   @Test
   public void test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration()
       throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     resetMonitoringExporterToPreBuiltConfig();
@@ -589,7 +589,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test06_ReplaceWithEmptyConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     resetMonitoringExporterToPreBuiltConfig();
@@ -605,7 +605,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test07_AppendWithEmptyConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     resetMonitoringExporterToPreBuiltConfig();
@@ -624,7 +624,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test08_1AppendWithNotYmlConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     resetMonitoringExporterToPreBuiltConfig();
@@ -641,7 +641,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test08_2ReplaceWithNotYmlConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     resetMonitoringExporterToPreBuiltConfig();
@@ -656,7 +656,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   public void test09_AppendWithCorruptedYmlConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     changeConfigNegative(
@@ -674,7 +674,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test10_ReplaceWithCorruptedYmlConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     resetMonitoringExporterToPreBuiltConfig();
@@ -693,7 +693,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test11_ReplaceWithDublicatedValuesConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     resetMonitoringExporterToPreBuiltConfig();
@@ -711,7 +711,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test12_AppendWithDuplicatedValuesConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     resetMonitoringExporterToPreBuiltConfig();
@@ -730,7 +730,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test13_ReplaceMetricsNameSnakeCaseFalseConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     resetMonitoringExporterToPreBuiltConfig();
@@ -754,7 +754,7 @@ public class ItMonitoringExporter extends BaseTest {
   // verify that change configuration fails without authentication
   @Test
   public void test14_ChangeConfigNoCredentials() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     WebClient webClient = new WebClient();
@@ -777,7 +777,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test15_ChangeConfigInvalidUser() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     changeConfigNegativeAuth(
@@ -796,7 +796,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test16_ChangeConfigInvalidPass() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     changeConfigNegativeAuth(
@@ -814,7 +814,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test17_ChangeConfigEmptyUser() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     changeConfigNegativeAuth(
@@ -833,7 +833,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test18_ChangeConfigEmptyPass() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     changeConfigNegativeAuth(
@@ -853,7 +853,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test19_EndToEndViaChart() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;

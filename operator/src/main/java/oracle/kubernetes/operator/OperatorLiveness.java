@@ -8,9 +8,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * This task maintains the "liveness" indicator so that Kubernetes knows the Operator is still
@@ -18,9 +18,9 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  */
 public class OperatorLiveness implements Runnable {
 
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final File livenessFile = new File("/operator/.alive");
 
-  @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
   public void run() {
     if (!livenessFile.exists()) {

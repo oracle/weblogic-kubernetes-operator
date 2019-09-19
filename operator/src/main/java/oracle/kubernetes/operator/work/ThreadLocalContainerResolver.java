@@ -15,11 +15,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * ContainerResolver based on {@link ThreadLocal}.
@@ -40,8 +39,15 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  * </pre>
  */
 public class ThreadLocalContainerResolver extends ContainerResolver {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private ThreadLocal<Container> containerThreadLocal =
-      ThreadLocal.withInitial(() -> Container.NONE);
+      new ThreadLocal<Container>() {
+        @Override
+        protected Container initialValue() {
+          return Container.NONE;
+        }
+      };
 
   public Container getContainer() {
     return containerThreadLocal.get();
@@ -64,7 +70,7 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
    *
    * @param old Container returned from enterContainer
    */
-  void exitContainer(Container old) {
+  public void exitContainer(Container old) {
     containerThreadLocal.set(old);
   }
 
@@ -75,79 +81,84 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
     }
 
     Function<Runnable, Runnable> wrap =
-        (x) ->
-            () -> {
-              Container old = enterContainer(container);
-              try {
-                x.run();
-              } catch (RuntimeException | Error e) {
-                LOGGER.severe(MessageKeys.EXCEPTION, e);
-                throw e;
-              } catch (Throwable throwable) {
-                LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                throw new RuntimeException(throwable);
-              } finally {
-                exitContainer(old);
-              }
-            };
+        (x) -> {
+          return () -> {
+            Container old = enterContainer(container);
+            try {
+              x.run();
+            } catch (RuntimeException runtime) {
+              LOGGER.severe(MessageKeys.EXCEPTION, runtime);
+              throw runtime;
+            } catch (Error error) {
+              LOGGER.severe(MessageKeys.EXCEPTION, error);
+              throw error;
+            } catch (Throwable throwable) {
+              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+              throw new RuntimeException(throwable);
+            } finally {
+              exitContainer(old);
+            }
+          };
+        };
 
     Function<Callable<?>, Callable<?>> wrap2 =
-        (x) ->
-            () -> {
-              Container old = enterContainer(container);
-              try {
-                return x.call();
-              } catch (RuntimeException | Error e) {
-                LOGGER.severe(MessageKeys.EXCEPTION, e);
-                throw e;
-              } catch (Throwable throwable) {
-                LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                throw new RuntimeException(throwable);
-              } finally {
-                exitContainer(old);
-              }
-            };
+        (x) -> {
+          return () -> {
+            Container old = enterContainer(container);
+            try {
+              return x.call();
+            } catch (RuntimeException runtime) {
+              LOGGER.severe(MessageKeys.EXCEPTION, runtime);
+              throw runtime;
+            } catch (Error error) {
+              LOGGER.severe(MessageKeys.EXCEPTION, error);
+              throw error;
+            } catch (Throwable throwable) {
+              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+              throw new RuntimeException(throwable);
+            } finally {
+              exitContainer(old);
+            }
+          };
+        };
 
     Function<Collection<? extends Callable<?>>, Collection<? extends Callable<?>>> wrap2c =
-        (x) -> x.stream().map(wrap2).collect(Collectors.toList());
+        (x) -> {
+          return x.stream().map(wrap2).collect(Collectors.toList());
+        };
 
     return new ScheduledExecutorService() {
 
       @Override
-      public boolean awaitTermination(long timeout, @Nonnull TimeUnit unit)
-          throws InterruptedException {
+      public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         return ex.awaitTermination(timeout, unit);
       }
 
       @SuppressWarnings({"rawtypes", "unchecked"})
       @Override
-      @Nonnull
-      public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks)
+      public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
           throws InterruptedException {
         return ex.invokeAll((List) wrap2c.apply(tasks));
       }
 
       @SuppressWarnings({"rawtypes", "unchecked"})
       @Override
-      @Nonnull
       public <T> List<Future<T>> invokeAll(
-          @Nonnull Collection<? extends Callable<T>> tasks, long timeout, @Nonnull TimeUnit unit)
+          Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
           throws InterruptedException {
         return ex.invokeAll((List) wrap2c.apply(tasks), timeout, unit);
       }
 
       @SuppressWarnings({"rawtypes", "unchecked"})
       @Override
-      @Nonnull
-      public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks)
+      public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
           throws InterruptedException, ExecutionException {
         return (T) ex.invokeAny((List) wrap2c.apply(tasks));
       }
 
       @SuppressWarnings({"rawtypes", "unchecked"})
       @Override
-      public <T> T invokeAny(
-          @Nonnull Collection<? extends Callable<T>> tasks, long timeout, @Nonnull TimeUnit unit)
+      public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
           throws InterruptedException, ExecutionException, TimeoutException {
         return (T) ex.invokeAny((List) wrap2c.apply(tasks), timeout, unit);
       }
@@ -168,63 +179,53 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
       }
 
       @Override
-      @Nonnull
       public List<Runnable> shutdownNow() {
         return ex.shutdownNow();
       }
 
       @SuppressWarnings({"rawtypes", "unchecked"})
       @Override
-      @Nonnull
-      public <T> Future<T> submit(@Nonnull Callable<T> task) {
+      public <T> Future<T> submit(Callable<T> task) {
         return (Future) ex.submit(wrap2.apply(task));
       }
 
       @SuppressWarnings({"rawtypes"})
       @Override
-      @Nonnull
-      public Future<?> submit(@Nonnull Runnable task) {
-        return ex.submit(wrap.apply(task));
+      public Future<?> submit(Runnable task) {
+        return (Future) ex.submit(wrap.apply(task));
       }
 
-      @SuppressWarnings("rawtypes")
+      @SuppressWarnings({"rawtypes", "unchecked"})
       @Override
-      @Nonnull
-      public <T> Future<T> submit(@Nonnull Runnable task, T result) {
-        return ex.submit(wrap.apply(task), result);
+      public <T> Future<T> submit(Runnable task, T result) {
+        return (Future) ex.submit(wrap.apply(task), result);
       }
 
       @Override
-      public void execute(@Nonnull Runnable command) {
+      public void execute(Runnable command) {
         ex.execute(wrap.apply(command));
       }
 
       @Override
-      @Nonnull
-      public ScheduledFuture<?> schedule(
-          @Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
+      public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
         return ex.schedule(wrap.apply(command), delay, unit);
       }
 
       @SuppressWarnings({"rawtypes", "unchecked"})
       @Override
-      @Nonnull
-      public <V> ScheduledFuture<V> schedule(
-          @Nonnull Callable<V> callable, long delay, @Nonnull TimeUnit unit) {
+      public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
         return ex.schedule((Callable) wrap2.apply(callable), delay, unit);
       }
 
       @Override
-      @Nonnull
       public ScheduledFuture<?> scheduleAtFixedRate(
-          @Nonnull Runnable command, long initialDelay, long period, @Nonnull TimeUnit unit) {
+          Runnable command, long initialDelay, long period, TimeUnit unit) {
         return ex.scheduleAtFixedRate(wrap.apply(command), initialDelay, period, unit);
       }
 
       @Override
-      @Nonnull
       public ScheduledFuture<?> scheduleWithFixedDelay(
-          @Nonnull Runnable command, long initialDelay, long delay, @Nonnull TimeUnit unit) {
+          Runnable command, long initialDelay, long delay, TimeUnit unit) {
         return ex.scheduleWithFixedDelay(wrap.apply(command), initialDelay, delay, unit);
       }
     };

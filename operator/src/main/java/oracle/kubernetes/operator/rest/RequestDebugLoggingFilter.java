@@ -14,15 +14,17 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.ext.Provider;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.glassfish.jersey.message.MessageUtils;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /** RequestDebugLoggingFilter debug logs all the REST Requests. */
 @Provider
 @Priority(FilterPriorities.REQUEST_DEBUG_LOGGING_FILTER_PRIORITY)
 public class RequestDebugLoggingFilter extends BaseDebugLoggingFilter
     implements ContainerRequestFilter {
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /** Construct a RequestDebugLoggingFilter. */
   public RequestDebugLoggingFilter() {

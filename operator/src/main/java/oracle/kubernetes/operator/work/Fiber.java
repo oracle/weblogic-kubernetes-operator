@@ -20,10 +20,10 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction.Kind;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * User-level thread&#x2E; Represents the execution of one processing flow. The {@link Engine} is
@@ -47,15 +47,16 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  *
  * <h2>Debugging Aid</h2>
  *
- * <p>Setting the logger to FINE would give you basic start/stop/resume/suspend level logging. Using
- * FINER would cause more detailed logging, which includes what steps are executed in what order and
- * how they behaved.
+ * <p>Setting the {@link #LOGGER} for FINE would give you basic start/stop/resume/suspend level
+ * logging. Using FINER would cause more detailed logging, which includes what steps are executed in
+ * what order and how they behaved.
  */
 public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int NOT_COMPLETE = 0;
   private static final int DONE = 1;
   private static final int CANCELLED = 2;
-  private static final ThreadLocal<Fiber> CURRENT_FIBER = new ThreadLocal<>();
+  private static final ThreadLocal<Fiber> CURRENT_FIBER = new ThreadLocal<Fiber>();
   /** Used to allocate unique number for each fiber. */
   private static final AtomicInteger iotaGen = new AtomicInteger();
   public final Engine owner;

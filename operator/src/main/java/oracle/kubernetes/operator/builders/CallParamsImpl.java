@@ -12,7 +12,6 @@ class CallParamsImpl implements CallParams {
   private static final int DEFAULT_LIMIT = 500;
   private static final int DEFAULT_TIMEOUT = 30;
 
-  private Boolean includeUninitialized;
   private Integer limit = CallParamsImpl.DEFAULT_LIMIT;
   private Integer timeoutSeconds = CallParamsImpl.DEFAULT_TIMEOUT;
   private String fieldSelector;
@@ -21,15 +20,6 @@ class CallParamsImpl implements CallParams {
   private String resourceVersion;
   private ProgressResponseBody.ProgressListener progressListener;
   private ProgressRequestBody.ProgressRequestListener progressRequestListener;
-
-  @Override
-  public Boolean getIncludeUninitialized() {
-    return includeUninitialized;
-  }
-
-  void setIncludeUninitialized(Boolean includeUninitialized) {
-    this.includeUninitialized = includeUninitialized;
-  }
 
   @Override
   public Integer getLimit() {

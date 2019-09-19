@@ -124,6 +124,10 @@ public abstract class BaseConfiguration {
     serverPod.addEnvVar(new V1EnvVar().name(name).value(value));
   }
 
+  void addEnvironmentVariable(V1EnvVar envVar) {
+    serverPod.addEnvVar(envVar);
+  }
+
   public abstract String getServerStartPolicy();
 
   /**
@@ -169,32 +173,68 @@ public abstract class BaseConfiguration {
     return serverPod.getAffinity();
   }
 
+  void setAffinity(V1Affinity affinity) {
+    serverPod.setAffinity(affinity);
+  }
+
   public String getPriorityClassName() {
     return serverPod.getPriorityClassName();
+  }
+
+  void setPriorityClassName(String priorityClassName) {
+    serverPod.setPriorityClassName(priorityClassName);
   }
 
   public List<V1PodReadinessGate> getReadinessGates() {
     return serverPod.getReadinessGates();
   }
 
+  void addReadinessGate(V1PodReadinessGate readinessGate) {
+    serverPod.addReadinessGate(readinessGate);
+  }
+
   public String getRestartPolicy() {
     return serverPod.getRestartPolicy();
+  }
+
+  void setRestartPolicy(String restartPolicy) {
+    serverPod.setRestartPolicy(restartPolicy);
   }
 
   public String getRuntimeClassName() {
     return serverPod.getRuntimeClassName();
   }
 
+  void setRuntimeClassName(String runtimeClassName) {
+    serverPod.setRuntimeClassName(runtimeClassName);
+  }
+
   public String getNodeName() {
     return serverPod.getNodeName();
+  }
+
+  public String getServiceAccountName() {
+    return serverPod.getServiceAccountName();
+  }
+
+  void setNodeName(String nodeName) {
+    serverPod.setNodeName(nodeName);
   }
 
   public String getSchedulerName() {
     return serverPod.getSchedulerName();
   }
 
+  void setSchedulerName(String schedulerName) {
+    serverPod.setSchedulerName(schedulerName);
+  }
+
   public List<V1Toleration> getTolerations() {
     return serverPod.getTolerations();
+  }
+
+  void addToleration(V1Toleration toleration) {
+    serverPod.addToleration(toleration);
   }
 
   public V1ResourceRequirements getResources() {

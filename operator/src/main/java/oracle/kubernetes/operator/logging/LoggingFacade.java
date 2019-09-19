@@ -12,17 +12,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /** Centralized logging for the operator. */
-@SuppressWarnings({"unused", "WeakerAccess"})
 public class LoggingFacade {
 
-  public static final String RESOURCE_BUNDLE_NAME = "Operator";
-
-  private static final String LOGGER_NAME = "Operator";
-  public static final LoggingFacade LOGGER =
-      LoggingFactory.getLogger(LOGGER_NAME, RESOURCE_BUNDLE_NAME);
-
-  private static final String TRACE = "OWLS-KO-TRACE: ";
-  private static final String CLASS = LoggingFacade.class.getName();
+  public static final String TRACE = "OWLS-KO-TRACE: ";
+  protected static final String CLASS = LoggingFacade.class.getName();
   private final Logger logger;
 
   public LoggingFacade(Logger logger) {
@@ -58,7 +51,7 @@ public class LoggingFacade {
     if (value != null) {
       // Convert any object arrays such as String arrays.
       if (Object[].class.isAssignableFrom(value.getClass())) {
-        Object[] array = (Object[]) value;
+        Object[] array = Object[].class.cast(value);
         result = Arrays.toString(array);
       } else if (value.getClass().isArray()) {
         // Any other arrays are primitive arrays which must be cast to

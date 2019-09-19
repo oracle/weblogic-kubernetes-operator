@@ -7,9 +7,13 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
@@ -74,6 +78,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withEnvironmentVariable(String name, String value) {
     getDomainSpec().addEnvironmentVariable(name, value);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withEnvironmentVariable(V1EnvVar envVar) {
+    getDomainSpec().addEnvironmentVariable(envVar);
     return this;
   }
 
@@ -213,6 +223,55 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return cluster;
   }
 
+
+  @Override
+  public DomainConfigurator withAffinity(V1Affinity affinity) {
+    getDomainSpec().setAffinity(affinity);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withRestartPolicy(String restartPolicy) {
+    getDomainSpec().setRestartPolicy(restartPolicy);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withReadinessGate(V1PodReadinessGate readinessGate) {
+    getDomainSpec().addReadinessGate(readinessGate);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withNodeName(String nodeName) {
+    getDomainSpec().setNodeName(nodeName);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withSchedulerName(String schedulerName) {
+    getDomainSpec().setSchedulerName(schedulerName);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withRuntimeClassName(String runtimeClassName) {
+    getDomainSpec().setRuntimeClassName(runtimeClassName);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withPriorityClassName(String priorityClassName) {
+    getDomainSpec().setPriorityClassName(priorityClassName);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withToleration(V1Toleration toleration) {
+    getDomainSpec().addToleration(toleration);
+    return this;
+  }
+
   @Override
   public void setShuttingDown(boolean shuttingDown) {
     configureAdminServer().withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
@@ -249,6 +308,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ServerConfigurator withEnvironmentVariable(String name, String value) {
       server.addEnvironmentVariable(name, value);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withEnvironmentVariable(V1EnvVar envVar) {
+      server.addEnvironmentVariable(envVar);
       return this;
     }
 
@@ -359,6 +424,48 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ServerConfigurator withRestartVersion(String restartVersion) {
       server.setRestartVersion(restartVersion);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withRestartPolicy(String restartPolicy) {
+      server.setRestartPolicy(restartPolicy);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withAffinity(V1Affinity affinity) {
+      server.setAffinity(affinity);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withNodeName(String nodeName) {
+      server.setNodeName(nodeName);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withSchedulerName(String schedulerName) {
+      getDomainSpec().setSchedulerName(schedulerName);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withRuntimeClassName(String runtimeClassName) {
+      getDomainSpec().setRuntimeClassName(runtimeClassName);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withPriorityClassName(String priorityClassName) {
+      getDomainSpec().setPriorityClassName(priorityClassName);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withToleration(V1Toleration toleration) {
+      getDomainSpec().addToleration(toleration);
       return this;
     }
   }
@@ -501,6 +608,48 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withRestartVersion(String restartVersion) {
       cluster.setRestartVersion(restartVersion);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withRestartPolicy(String restartPolicy) {
+      cluster.setRestartPolicy(restartPolicy);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withAffinity(V1Affinity affinity) {
+      cluster.setAffinity(affinity);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withNodeName(String nodeName) {
+      cluster.setNodeName(nodeName);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withSchedulerName(String schedulerName) {
+      getDomainSpec().setSchedulerName(schedulerName);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withRuntimeClassName(String runtimeClassName) {
+      getDomainSpec().setRuntimeClassName(runtimeClassName);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withPriorityClassName(String priorityClassName) {
+      getDomainSpec().setPriorityClassName(priorityClassName);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withToleration(V1Toleration toleration) {
+      getDomainSpec().addToleration(toleration);
       return this;
     }
   }

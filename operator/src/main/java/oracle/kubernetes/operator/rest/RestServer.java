@@ -17,6 +17,8 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 
 import io.kubernetes.client.util.SSLUtils;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.resource.VersionsResource;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -30,8 +32,6 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.CsrfProtectionFilter;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * The RestServer runs the WebLogic operator's REST api.
@@ -47,6 +47,7 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  * </ul>
  */
 public class RestServer {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int CORE_POOL_SIZE = 3;
   private static final String SSL_PROTOCOL = "TLSv1.2";
   private static final String[] SSL_PROTOCOLS = {
@@ -165,7 +166,7 @@ public class RestServer {
    *
    * @return the uri
    */
-  private String getExternalHttpsUri() {
+  String getExternalHttpsUri() {
     return baseExternalHttpsUri;
   }
 
@@ -174,7 +175,7 @@ public class RestServer {
    *
    * @return the uri
    */
-  private String getInternalHttpsUri() {
+  String getInternalHttpsUri() {
     return baseInternalHttpsUri;
   }
 

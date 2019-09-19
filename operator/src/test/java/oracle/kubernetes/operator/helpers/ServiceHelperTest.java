@@ -23,6 +23,7 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -34,6 +35,7 @@ import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServiceConfigurator;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.After;
@@ -49,6 +51,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
+import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.NodePortMatcher.nodePort;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.PortMatcher.containsPort;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.ServiceNameMatcher.serviceWithName;
@@ -83,7 +87,6 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   private static final int NAP1_NODE_PORT = 30012;
   private static final int TEST_PORT = 7000;
   private static final int ADMIN_PORT = 8000;
-  private static final String DOMAIN_NAME = "domain1";
   private static final String TEST_SERVER = "server1";
   private static final String ADMIN_SERVER = "ADMIN_SERVER";
   private static final String[] MESSAGE_KEYS = {
@@ -290,11 +293,41 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   @Test
   public void onFailedRun_reportFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnResource(null, NS, 401);
+    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, 401);
 
     runServiceHelper();
 
     testSupport.verifyCompletionThrowable(ApiException.class);
+  }
+
+  @Test
+  public void whenServiceCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
+    testSupport.defineResources(domainPresenceInfo.getDomain());
+    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnprocessableEntityBuilder()
+        .withReason("FieldValueNotFound")
+        .withMessage("Test this failure")
+        .build());
+
+    runServiceHelper();
+
+    assertThat(getDomain(), hasStatus("FieldValueNotFound", "Test this failure"));
+  }
+
+  @Test
+  public void whenServiceCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
+    testSupport.defineResources(domainPresenceInfo.getDomain());
+    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnprocessableEntityBuilder()
+        .withReason("FieldValueNotFound")
+        .withMessage("Test this failure")
+        .build());
+
+    runServiceHelper();
+
+    assertThat(terminalStep.wasRun(), is(false));
+  }
+
+  private Domain getDomain() {
+    return (Domain) testSupport.getResources(KubernetesTestSupport.DOMAIN).get(0);
   }
 
   @Test
@@ -444,7 +477,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   private List<V1Service> getCreatedServices() {
-    return testSupport.getResources(KubernetesTestSupport.SERVICE);
+    return testSupport.getResources(SERVICE);
   }
 
   enum ServiceType {

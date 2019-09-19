@@ -11,10 +11,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.ClusterModel;
 import oracle.kubernetes.operator.rest.model.CollectionModel;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * ClustersResource is a jaxrs resource that implements the REST api for the
@@ -23,13 +23,15 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  */
 public class ClustersResource extends BaseResource {
 
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   /**
    * Construct a ClustersResource.
    *
    * @param parent - the jaxrs resource that parents this resource.
    * @param pathSegment - the last path segment in the url to this resource.
    */
-  ClustersResource(BaseResource parent, String pathSegment) {
+  public ClustersResource(BaseResource parent, String pathSegment) {
     super(parent, pathSegment);
   }
 

@@ -32,6 +32,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
 
   private static final int INITIAL_RESOURCE_VERSION = 234;
+  private static final String NS = "ns";
   private Packet packet;
   private V1Pod pod = new V1Pod().metadata(new V1ObjectMeta().name("test"));
 
@@ -68,6 +69,10 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   @Override
   protected PodWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
     return PodWatcher.create(this, ns, Integer.toString(rv), tuning, this, stopping);
+  }
+
+  private PodWatcher createWatcher(AtomicBoolean stopping) {
+    return PodWatcher.create(this, NS, Integer.toString(INITIAL_RESOURCE_VERSION), tuning, this, stopping);
   }
 
   @Test

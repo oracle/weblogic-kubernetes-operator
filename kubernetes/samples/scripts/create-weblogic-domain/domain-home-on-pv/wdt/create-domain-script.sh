@@ -60,6 +60,8 @@
 #                  $WDT_MODEL_FILE and $WDT_MODEL_VARS. Also the location
 #                  of WDT log files.
 #                  default:  /shared/wdt
+#   WDT_VERSION    WDT version to download.
+#                  default:  1.2.0
 #
 #   DOMAIN_HOME_DIR  Target location for generated domain. 
 #
@@ -73,9 +75,10 @@ WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
 WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
+WDT_VERSION=${WDT_VERSION:-1.2.0}
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
-WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.2.0/$WDT_INSTALL_ZIP_FILE"}
+WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
 
 # using "-" instead of ":-" in case proxy vars are explicitly set to "".
 https_proxy=${https_proxy-""}

@@ -15,6 +15,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -25,8 +27,6 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
-
 /**
  * After the {@link PodHelper} identifies servers that are presently running, but that are using an
  * out-of-date specification, it defers the processing of these servers to the RollingHelper. This
@@ -34,6 +34,8 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  * rolling process.
  */
 public class RollingHelper {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private RollingHelper() {
   }
 
@@ -147,7 +149,8 @@ public class RollingHelper {
   private static class ServersThatCanRestartNowStep extends Step {
     private final Collection<StepAndPacket> serversThatCanRestartNow;
 
-    ServersThatCanRestartNowStep(Collection<StepAndPacket> serversThatCanRestartNow, Step next) {
+    public ServersThatCanRestartNowStep(
+        Collection<StepAndPacket> serversThatCanRestartNow, Step next) {
       super(next);
       this.serversThatCanRestartNow = serversThatCanRestartNow;
     }
@@ -162,7 +165,7 @@ public class RollingHelper {
     private final String clusterName;
     private final Queue<StepAndPacket> servers;
 
-    RollSpecificClusterStep(
+    public RollSpecificClusterStep(
         String clusterName, Queue<StepAndPacket> clusteredServerRestarts, Step next) {
       super(next);
       this.clusterName = clusterName;
@@ -216,7 +219,7 @@ public class RollingHelper {
   private static class RestartOneClusteredServerStep extends Step {
     private final Queue<StepAndPacket> servers;
 
-    RestartOneClusteredServerStep(Queue<StepAndPacket> servers, Step next) {
+    public RestartOneClusteredServerStep(Queue<StepAndPacket> servers, Step next) {
       super(next);
       this.servers = servers;
     }

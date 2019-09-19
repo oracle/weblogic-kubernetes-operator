@@ -86,6 +86,7 @@ public class PodPresenceTest {
     domains.put(NS, new HashMap<>(ImmutableMap.of(UID, info)));
     disableDomainProcessing();
     Domain domain = DomainProcessorTestSetup.createTestDomain();
+    testSupport.defineResources(domain);
     info.setDomain(domain);
 
     WlsDomainConfigSupport configSupport =

@@ -4,9 +4,12 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
 
 /** An interface for an object to configure a server in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -14,6 +17,8 @@ public interface ServerConfigurator extends ServiceConfigurator {
   ServerConfigurator withDesiredState(String desiredState);
 
   ServerConfigurator withEnvironmentVariable(String name, String value);
+
+  ServerConfigurator withEnvironmentVariable(V1EnvVar envVar);
 
   ServerConfigurator withServerStartState(String state);
 
@@ -107,4 +112,18 @@ public interface ServerConfigurator extends ServiceConfigurator {
    * @return this object
    */
   ServerConfigurator withRestartVersion(String restartVersion);
+
+  ServerConfigurator withRestartPolicy(String restartPolicy);
+
+  ServerConfigurator withAffinity(V1Affinity affinity);
+
+  ServerConfigurator withNodeName(String nodeName);
+
+  ServerConfigurator withSchedulerName(String schedulerName);
+
+  ServerConfigurator withRuntimeClassName(String runtimeClassName);
+
+  ServerConfigurator withPriorityClassName(String priorityClassName);
+
+  ServerConfigurator withToleration(V1Toleration toleration);
 }

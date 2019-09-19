@@ -50,21 +50,23 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE);
-
-    // create DB used for jrf domain
-    DbUtils.createOracleDB(DB_PROP_FILE);
-
-    // run RCU first
-    DbUtils.deleteNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
-    DbUtils.createNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
-    rcuPodName = DbUtils.createRcuPod(DbUtils.DEFAULT_RCU_NAMESPACE);
-
-    // TODO: reconsider the logic to check the db readiness
-    // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
-    logger.info("waiting for the db to be visible to rcu script ...");
-    Thread.sleep(20000);
+    if (FULLTEST) {
+      // initialize test properties and create the directories
+      initialize(APP_PROPS_FILE);
+  
+      // create DB used for jrf domain
+      DbUtils.createOracleDB(DB_PROP_FILE);
+  
+      // run RCU first
+      DbUtils.deleteNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
+      DbUtils.createNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
+      rcuPodName = DbUtils.createRcuPod(DbUtils.DEFAULT_RCU_NAMESPACE);
+  
+      // TODO: reconsider the logic to check the db readiness
+      // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
+      logger.info("waiting for the db to be visible to rcu script ...");
+      Thread.sleep(20000);
+    }
   }
 
   /**
@@ -75,13 +77,15 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
-
-    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-
-    logger.info("SUCCESS");
+    if (FULLTEST) {
+      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
+  
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+  
+      logger.info("SUCCESS");
+    }
   }
 
   /**
@@ -93,7 +97,7 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @Test
   public void testJrfDomainOnPvUsingWlst() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");
@@ -108,27 +112,21 @@ public class JrfInOperatorTest extends BaseTest {
     try {
       // run RCU script to load db schema
       DbUtils.runRcu(rcuPodName, JRF_DOMAIN_ON_PV_WLST_FILE);
-
       // create JRF domain
       jrfdomain = new JrfDomain(JRF_DOMAIN_ON_PV_WLST_FILE);
-
       // verify JRF domain created, servers up and running
       jrfdomain.verifyDomainCreated();
-
       // basic test cases
       testBasicUseCases(jrfdomain);
-
       // more advanced use cases
-      if (!SMOKETEST) {
+      if (FULLTEST) {
         testAdvancedUseCasesForADomain(operator1, jrfdomain);
-
-        logger.info("testing WlsLivenessProbe ...");
-        jrfdomain.testWlsLivenessProbe();
       }
-
+      logger.info("testing WlsLivenessProbe ...");
+      jrfdomain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
-      if (jrfdomain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+      if (jrfdomain != null && (JENKINS || testCompletedSuccessfully)) {
         jrfdomain.shutdownUsingServerStartPolicy();
       }
     }
@@ -641,11 +639,10 @@ public class JrfInOperatorTest extends BaseTest {
    */
   private void testAdvancedUseCasesForADomain(Operator operator, JrfDomain domain)
       throws Exception {
-    if (!SMOKETEST) {
-      testClusterScaling(operator, domain);
-      int port = (Integer) domain.getDomainMap().get("managedServerPort");
-      testDomainLifecyle(operator, domain, port);
-      testOperatorLifecycle(operator, domain);
-    }
+    testClusterScaling(operator, domain);
+    int port = (Integer) domain.getDomainMap().get("managedServerPort");
+    testDomainLifecyle(operator, domain, port);
+    testOperatorLifecycle(operator, domain);
+    
   }
 }

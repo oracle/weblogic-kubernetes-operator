@@ -130,6 +130,14 @@ class OfflineWlstEnv(object):
     self.CUSTOM_SITCFG_PATH      = self.getEnvOrDef('CUSTOM_SITCFG_PATH', '/weblogic-operator/config-overrides')
     self.NM_HOST                 = self.getEnvOrDef('NM_HOST', 'localhost')
 
+    # Set IS_FMW_INFRA to True if the image contains a FMW infrastructure domain
+    # (dectected by checking the RCUPREFIX environment variable)
+    self.IS_FMW_INFRA_DOMAIN = self.isEnvSet('RCUPREFIX')
+
+    # Check environment variable that allows dynamic clusters in FMW infrastructure
+    # domains
+    self.ALLOW_DYNAMIC_CLUSTER_IN_FMW = self.getEnvOrDef('ALLOW_DYNAMIC_CLUSTER_IN_FMW', "False")
+
     # maintain a list of errors that we include in topology.yaml on completion, if any
 
     self.errors             = []
@@ -170,6 +178,12 @@ class OfflineWlstEnv(object):
 
   def getDomainLogHome(self):
     return self.LOG_HOME
+
+  def isFMWInfraDomain(self):
+    return self.IS_FMW_INFRA_DOMAIN
+
+  def allowDynamicClusterInFMWInfraDomain(self):
+    return self.ALLOW_DYNAMIC_CLUSTER_IN_FMW.lower() == 'true'
 
   def addError(self, error):
     self.errors.append(error)
@@ -227,6 +241,12 @@ class OfflineWlstEnv(object):
     if val is None or val == "null":
       return deflt
     return val
+
+  def isEnvSet(self, name):
+    val = os.getenv(name)
+    if val is None or val == "null":
+      return False
+    return True
 
   def toDNS1123Legal(self, address):
     return address.lower().replace('_','-')
@@ -351,7 +371,10 @@ class TopologyGenerator(Generator):
     if self.getDynamicServersOrNone(cluster) is None:
       self.validateNonDynamicCluster(cluster)
     else:
-      self.validateDynamicCluster(cluster)
+      if self.env.isFMWInfraDomain() and not self.env.allowDynamicClusterInFMWInfraDomain():
+        self.addError("Dynamic clusters are not supported in FMW Infrastructure domains. Set ALLOW_DYNAMIC_CLUSTER_IN_FMW environment variable to true to bypass this validation.")
+      else:
+        self.validateDynamicCluster(cluster)
 
   def validateNonDynamicCluster(self, cluster):
     self.validateNonDynamicClusterReferencedByAtLeastOneServer(cluster)

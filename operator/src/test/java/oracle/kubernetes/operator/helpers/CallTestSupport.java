@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +41,7 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
  *
  * <p>will return the specified custom resource definition.
  */
-public class CallTestSupport {
+class CallTestSupport {
 
   private Map<CallTestSupport.CannedResponse, Boolean> cannedResponses = new HashMap<>();
 
@@ -86,7 +85,7 @@ public class CallTestSupport {
    * @return a canned response which may be qualified by parameters and defines how CallBuilder
    *     should react.
    */
-  public CannedResponse createCannedResponse(String forMethod) {
+  CannedResponse createCannedResponse(String forMethod) {
     CannedResponse cannedResponse = new CannedResponse(forMethod);
     this.cannedResponses.put(cannedResponse, false);
     return cannedResponse;
@@ -99,14 +98,14 @@ public class CallTestSupport {
    * @return a canned response which may be qualified by parameters and defines how CallBuilder
    *     should react.
    */
-  public CannedResponse createOptionalCannedResponse(String forMethod) {
+  CannedResponse createOptionalCannedResponse(String forMethod) {
     CannedResponse cannedResponse = new CannedResponse(forMethod).optional();
     this.cannedResponses.put(cannedResponse, false);
     return cannedResponse;
   }
 
   /** Throws an exception if any of the canned responses were not used. */
-  public void verifyAllDefinedResponsesInvoked() {
+  void verifyAllDefinedResponsesInvoked() {
     List<CannedResponse> unusedResponses = new ArrayList<>();
     for (CannedResponse cannedResponse : this.cannedResponses.keySet())
       if (isUnused(cannedResponse)) unusedResponses.add(cannedResponse);
@@ -175,9 +174,9 @@ public class CallTestSupport {
 
     CallResponse getCallResponse() {
       if (result == null)
-        return new CallResponse<>(null, new ApiException(), status, Collections.emptyMap());
+        return CallResponse.createFailure(new ApiException(), status);
       else
-        return new CallResponse<>(result, null, HttpURLConnection.HTTP_OK, Collections.emptyMap());
+        return CallResponse.createSuccess(result, HttpURLConnection.HTTP_OK);
     }
 
     boolean matches(@Nonnull RequestParams requestParams, AdditionalParams params) {
@@ -224,17 +223,6 @@ public class CallTestSupport {
       return this;
     }
 
-    /**
-     * Qualifies the canned response to be used only if the UID matches the value specified.
-     *
-     * @param uid the expected domain uid
-     * @return the updated response
-     */
-    public CannedResponse withUid(String uid) {
-      requestParamExpectations.put(NAME, uid);
-      return this;
-    }
-
     private CannedResponse optional() {
       optional = true;
       return this;
@@ -245,7 +233,7 @@ public class CallTestSupport {
      *
      * @return the updated response
      */
-    public CannedResponse ignoringBody() {
+    CannedResponse ignoringBody() {
       requestParamExpectations.put(BODY, WILD_CARD);
       return this;
     }
@@ -258,16 +246,6 @@ public class CallTestSupport {
      */
     public CannedResponse withBody(Object body) {
       requestParamExpectations.put(BODY, body);
-      return this;
-    }
-
-    public CannedResponse withLabelSelectors(String... selectors) {
-      requestParamExpectations.put(LABEL_SELECTOR, String.join(",", selectors));
-      return this;
-    }
-
-    public CannedResponse withFieldSelector(String fieldSelector) {
-      requestParamExpectations.put(FIELD_SELECTOR, fieldSelector);
       return this;
     }
 
@@ -294,7 +272,7 @@ public class CallTestSupport {
      *
      * @param status the failure status
      */
-    public void failingWithStatus(int status) {
+    void failingWithStatus(int status) {
       this.status = status;
     }
 

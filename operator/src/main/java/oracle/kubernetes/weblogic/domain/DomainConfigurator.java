@@ -7,11 +7,14 @@ package oracle.kubernetes.weblogic.domain;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
@@ -30,12 +33,6 @@ public abstract class DomainConfigurator {
 
   protected DomainConfigurator(Domain domain) {
     this.domain = domain;
-    if (domain.getSpec() == null) {
-      domain.setSpec(new DomainSpec());
-    }
-    if (domain.getMetadata() == null) {
-      domain.setMetadata(new V1ObjectMeta());
-    }
   }
 
   public abstract DomainConfigurator createFor(Domain domain);
@@ -195,13 +192,20 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withServerStartState(String startState);
 
   /**
-   * Add an environment variable to the domain.
+   * Add an environment variable with the given name and value to the domain.
    *
    * @param name variable name
    * @param value value
    * @return this object
    */
   public abstract DomainConfigurator withEnvironmentVariable(String name, String value);
+
+  /**
+   * Add an environment variable to the domain.
+   * @param envVar V1EnvVar to be added to the domain
+   * @return this object
+   */
+  public abstract DomainConfigurator withEnvironmentVariable(V1EnvVar envVar);
 
   protected DomainSpec getDomainSpec() {
     return domain.getSpec();
@@ -283,7 +287,7 @@ public abstract class DomainConfigurator {
       V1SecurityContext containerSecurityContext);
 
   /**
-   * Add security constraints at container level, if the same constraint is also defined at pod
+   * Add security constraints at pod level, if the same constraint is also defined at container
    * level then container constraint take precedence.
    *
    * @param podSecurityContext pod-level security attributes to be added to this DomainConfigurator
@@ -305,4 +309,68 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withRestartVersion(String restartVersion);
+
+  /**
+   * Set affinity for the pod configuration.
+   *
+   * @param affinity affinity to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withAffinity(V1Affinity affinity);
+
+  /**
+   * Set restart policy for the pod configuration.
+   *
+   * @param restartPolicy restart policy to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withRestartPolicy(String restartPolicy);
+
+  /**
+   * Add readiness gate to the pod configuration.
+   *
+   * @param readinessGate readiness gate to be added to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withReadinessGate(V1PodReadinessGate readinessGate);
+
+  /**
+   * Set node name for the pod configuration.
+   *
+   * @param nodeName node name to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withNodeName(String nodeName);
+
+  /**
+   * Set scheduler name for the pod configuration.
+   *
+   * @param schedulerName scheduler name to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withSchedulerName(String schedulerName);
+
+  /**
+   * Set runtime class name for the pod configuration.
+   *
+   * @param runtimeClassName runtime class name to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withRuntimeClassName(String runtimeClassName);
+
+  /**
+   * Set priority class name for the pod configuration.
+   *
+   * @param priorityClassName priority class name to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withPriorityClassName(String priorityClassName);
+
+  /**
+   * Add a toleration to the pod configuration.
+   *
+   * @param toleration toleration to be added to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withToleration(V1Toleration toleration);
 }

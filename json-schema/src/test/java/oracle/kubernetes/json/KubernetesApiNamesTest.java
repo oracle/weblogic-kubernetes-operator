@@ -6,7 +6,6 @@ package oracle.kubernetes.json;
 
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1EnvVarSource;
-import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.proto.V1;
 import org.junit.Test;
 
@@ -18,17 +17,11 @@ public class KubernetesApiNamesTest {
   @Test
   public void matchTopLevelClass() {
     assertThat(KubernetesApiNames.matches("io.k8s.api.core.v1.EnvVar", V1EnvVar.class), is(true));
-    assertThat(
-        KubernetesApiNames.matches("io.k8s.api.extensions.v1beta1.Ingress", V1beta1Ingress.class),
-        is(true));
   }
 
   @Test
   public void matchNestedClass() {
     assertThat(KubernetesApiNames.matches("io.k8s.api.core.v1.EnvVar", V1.EnvVar.class), is(true));
-    assertThat(
-        KubernetesApiNames.matches("io.k8s.api.extensions.v1beta1.Ingress", V1beta1Ingress.class),
-        is(true));
   }
 
   @Test

@@ -1644,7 +1644,6 @@ public class Domain {
       domainMap.put("domainHomeImageBase", 
           BaseTest.getWeblogicImageName() + ":" + BaseTest.getWeblogicImageTag());
     }
-
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
 
@@ -1848,7 +1847,9 @@ public class Domain {
    */
   private String prepareCmdToCallCreateDomainScript(String outputDir) {
 
-    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
+    StringBuffer createDomainScriptCmd = new StringBuffer("export WDT_VERSION=");
+    createDomainScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
+            .append(BaseTest.getResultDir());
     // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
       createDomainScriptCmd
