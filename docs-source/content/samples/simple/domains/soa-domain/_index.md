@@ -10,8 +10,7 @@ PVC, and the domain resource YAML file for deploying the generated SOA domain."
 The sample scripts demonstrate the creation of a SOA Suite domain home on an
 existing Kubernetes persistent volume (PV) and persistent volume claim (PVC). The scripts
 also generate the domain YAML file, which can then be used to start the Kubernetes
-artifacts of the corresponding domain. Optionally, the scripts start up the domain,
-and SOA server pods and services based on the domain type (for example, soa, osb, soaosb, soaess and soaessosb).
+artifacts of the corresponding domain.
 
 #### Prerequisites
 
@@ -19,83 +18,24 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 
 The following prerequisites must be handled prior to running the create domain script:
 
-* Make sure that Kubernetes is set up in the environment. For details, see [Set Up Kubernetes]({{< relref "/userguide/overview/k8s-setup.md" >}}).
+* Make sure that Kubernetes is set up in the environment. For details, see the [Kubernetes setup guide]({{< relref "/userguide/overview/k8s-setup.md" >}}).
 * Make sure that the WebLogic operator is running. See [Manage operators]({{< relref "/userguide/managing-operators/_index.md" >}}) for operator infrastructure setup and [Install the operator]({{< relref "/userguide/managing-operators/installation/_index.md" >}}) for operator installation.
 * The operator requires SOA Suite 12.2.1.3.0 with patch 29135930 applied. For details on how to obtain or create the image, see [SOA domains]({{< relref "/userguide/managing-domains/soa-suite/_index.md#obtaining-the-soa-suite-docker-image" >}}).
-* Create a Kubernetes namespace (for example, `soans`) for the domain unless you intend to use the default namespace. Use the same namespace in all the other steps.
+* Create a Kubernetes namespace (for example, `soans`) for the domain unless you intend to use the default namespace. Use the newly created namespace in all the other steps.
 For details, see [Prepare to run a domain]({{< relref "/userguide/managing-domains/prepare.md" >}}).
 
   ```
 $ kubectl create namespace soans
   ```
 
-* In the same Kubernetes namespace, follow these instructions to create the Kubernetes persistent volume (PV) where the domain home will be hosted,
-and the Kubernetes persistent volume claim (PVC) for the domain. For more information on creating a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}).
+* In the Kubernetes namespace created above, create the PV and PVC for the database
+by running the [create-pv-pvc.sh]({{< relref "/samples/simple/storage/_index.md" >}}) script.
+Follow the instructions for using the scripts to create a PV and PVC.
 
-    a. For this SOA sample, the scripts for creating a PV and PVC contain these properties in the `create-pv-pvc-inputs.yaml` file with the following default values:
+    * Change the values in the [create-pv-pvc-inputs.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml) file based on your requirements.
 
-    * `basename` : `domain`
-    * `domainUID`: `soainfra`
-    * `namespace`: `soans`
-    * `weblogicDomainStoragePath`: `/scratch/k8s_dir`
-
-    We recommend that you change these values in the inputs file, `kubernetes/samples/scripts/create-soa-domain-pv-pvc/create-pv-pvc-inputs.yaml`, based on your requirements.
-    Also, ensure that the path in the `weblogicDomainStoragePath` property exists (if not, you need to create it), and has full access permissions for the user and is empty.
-
-    b. Execute the `create-pv-pvc.sh` script to create the PV and PVC configuration files.
-
-    ```
-    $ cd  kubernetes/samples/scripts/create-soa-domain-pv-pvc/
-    $ ./create-pv-pvc.sh -i create-pv-pvc-inputs.yaml -o output
-    ```
-    This script creates the PV and PVC configuration files in the output directory, `output/pv-pvcs`.
-
-    c. Use the `kubectl create` command to create the PV and PVC. For example:
-
-    ```
-    $ kubectl create -f output/pv-pvcs/soainfra-domain-pv.yaml
-    $ kubectl create -f output/pv-pvcs/soainfra-domain-pvc.yaml
-    ```
-
-    d. Verify that the PV and PVC that have been created. For example:
-
-    ```bash
-    kubectl describe pv soainfra-domain-pv -n soans
-    Name:            soainfra-domain-pv
-    Labels:          weblogic.domainUID=soainfra
-                     weblogic.resourceVersion=domain-v2
-    Annotations:     pv.kubernetes.io/bound-by-controller=yes
-    StorageClass:    soainfra-domain-storage-class
-    Status:          Bound
-    Claim:           soans/soainfra-domain-pvc
-    Reclaim Policy:  Retain
-    Access Modes:    RWX
-    Capacity:        10Gi
-    Message:
-    Source:
-        Type:          HostPath (bare host directory volume)
-        Path:          /scratch/k8s_dir
-        HostPathType:
-    Events:            <none>
-    ```
-
-    ```bash
-    kubectl describe pvc soainfra-domain-pvc -n soans
-    Name:          soainfra-domain-pvc
-    Namespace:     soans
-    StorageClass:  soainfra-domain-storage-class
-    Status:        Bound
-    Volume:        soainfra-domain-pv
-    Labels:        weblogic.domainUID=soainfra
-                   weblogic.resourceVersion=domain-v2
-    Annotations:   pv.kubernetes.io/bind-completed=yes
-                   pv.kubernetes.io/bound-by-controller=yes
-    Finalizers:    []
-    Capacity:      10Gi
-    Access Modes:  RWX
-    Events:        <none>
-    ```
-
+    * Ensure that the path for the `weblogicDomainStoragePath` property exists (if not, you need to create it),
+    has full access permissions, and that the folder is empty.
 
 * Create the Kubernetes secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain. For details, see this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/README.md).
@@ -193,7 +133,7 @@ The following parameters can be provided in the inputs file.
 | `domainHome` | Home directory of the SOA domain. If not specified, the value is derived from the `domainUID` as `/shared/domains/<domainUID>`. | `/u01/oracle/user_projects/domains/soainfra` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. | `/u01/oracle/user_projects/domains` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `soainfra` |
-| `domainType` | Type of the domain. Mandatory input for SOA Suite domains. You must provide one of the supported domain type values: `soa`,`osb`,`soaess`,`soaosb`, and `soaessosb`. | `soa`
+| `domainType` | Type of the domain. Mandatory input for SOA Suite domains. You must provide one of the supported domain type values: `soa` (deploys a SOA domain),`osb` (deploys an OSB (Oracle Service Bus) domain),`soaess` (deploys a SOA domain with Enterprise Scheduler (ESS)),`soaosb` (deploys a domain with SOA and OSB), and `soaessosb` (deploys a domain with SOA, OSB, and ESS). | `soa`
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `true` |
 | `image` | SOA Suite Docker image. The operator requires SOA Suite 12.2.1.3.0 with patch 29135930 applied. Refer to [SOA domains]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md#obtaining-the-soa-suite-docker-image" >}}) for details on how to obtain or create the image. | `container-registry.oracle.com/middleware/soasuite:12.2.1.3` |
@@ -206,7 +146,7 @@ The following parameters can be provided in the inputs file.
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `soa-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `soans` |
-| `persistentVolumeClaimName` | Name of the persistent volume claim. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-sample-pvc`. | `soainfra-domain-pvc` |
+| `persistentVolumeClaimName` | Name of the persistent volume claim created to host the domain home. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-sample-pvc`. | `soainfra-domain-pvc` |
 | `productionModeEnabled` | Boolean indicating if production mode is enabled for the domain. | `true` |
 | `serverStartPolicy` | Determines which WebLogic Server instances will be started. Legal values are `NEVER`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
 | `t3ChannelPort` | Port for the T3 channel of the NetworkAccessPoint. | `30012` |
@@ -233,35 +173,11 @@ In addition, you should update the generated `domain.yaml` file by performing th
 
 ##### Mandatory Configurations
 
- In the generated `domain.yaml` file, update the `serverPod` definitions to set `precreateService` to `true`. You must apply this mandatory change.  See the sample `domain.yaml` file below.
+None.
 
- ```
- serverService:
-   precreateService: true
- ```
 ##### Optional Configurations
 
-Similarly, you can edit the `domain.yaml` file to add the resources section to the `serverPod` definition,
-to control the amount of system resources that a pod can use. For more information, see [Managing Compute Resources for Containers](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/).
-
-##### Resources definition:
-
-```bash
-    clusters:
-     - clusterName: cluster-1
-       serverStartState: "RUNNING"
-       replicas: 2
-       serverPod:
-         resources:
-           requests:
-             memory: "2Gi"
-                       cpu: "500m"
-                   limits:
-             memory: "4Gi"
-             cpu: "250m"
-```
-
-You could also assign pods to a given node. For more information, see [Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/).
+You can assign pods to a given node. For more information, see [Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/).
 
 Before using the `nodeSelector` option, make sure that the nodes are already labelled; then use those labels in the `nodeSelector` definition.
 
