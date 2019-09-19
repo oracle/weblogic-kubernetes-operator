@@ -219,7 +219,7 @@ public class BaseTest {
     } */
     
     // for manual/local run, create file handler, create PVROOT
-    if (!JENKINS && !SHARED_CLUSTER) {
+    if (!SHARED_CLUSTER) {
       LoggerHelper.getLocal().info("Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
       ExecResult result = ExecCommand.exec("/usr/local/packages/aime/ias/run_as_root \"chmod 777 " + pvRoot +"\"");
