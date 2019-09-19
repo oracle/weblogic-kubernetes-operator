@@ -105,7 +105,7 @@ public class JrfDomainOnPvWlst extends BaseTest {
 
      testCompletedSuccessfully = true;
    } finally {
-     if (jrfdomain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+     if (jrfdomain != null  && (JENKINS || testCompletedSuccessfully)) {
        jrfdomain.shutdownUsingServerStartPolicy();
      }
    }
