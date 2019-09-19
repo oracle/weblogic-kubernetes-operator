@@ -7,6 +7,7 @@ description: "SOA domains include the deployment of various Oracle Service-Orien
 
 #### Contents
 
+* [Introduction](#introduction)
 * [Limitations](#limitations)
 * [Obtaining the SOA Suite Docker image](#obtaining-the-soa-suite-docker-image)
 * [Creating a SOA Suite Docker image](#creating-a-soa-suite-docker-image)
@@ -16,17 +17,18 @@ description: "SOA domains include the deployment of various Oracle Service-Orien
 * [Creating a SOA domain](#creating-a-soa-domain)
 
 
+#### Introduction
+
 Starting with the 2.2.1 release, the operator supports deployment of SOA Suite components such as Oracle Service-Oriented Architecture (SOA), Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS). Currently the operator supports these different domain types:
 
-* SOA
-* OSB
-* SOAESS
-* SOAOSB
-* SOAESSOSB
+* soa: Deploys a SOA domain
+* osb: Deploys an OSB (Oracle Service Bus) domain
+* soaess: Deploys a SOA domain with Enterprise Scheduler (ESS)
+* soaosb: Deploys a domain with SOA and OSB
+* soaessosb: Deploys a domain with SOA, OSB, and ESS
 
-This document provides details about the special considerations for running SOA Suite domains with the operator.
+This document provides details about the special considerations for deploying and running SOA Suite domains with the operator.
 Other than those considerations listed here, SOA Suite domains work in the same way as FMW Infrastructure domains and WebLogic Server domains.
-That is, the remainder of the documentation applies equally to SOA Suite domains.
 
 In this release, SOA Suite domains are supported using the “domain on a persistent volume”
 [model]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) only, where the domain home is located in a persistent volume (PV).
@@ -41,9 +43,7 @@ following limitations currently exist for SOA Suite domains:
 * Only configured clusters are supported.  Dynamic clusters are not supported for
   SOA Suite domains.  Note that you can still use all of the scaling features,
   you just need to define the maximum size of your cluster at domain creation time.
-  The maximum server size currently supported is 5.
-* SOA Suite domains are not supported with any version of the operator
-  before version 2.2.1.
+* Deploying and running SOA Suite domains is supported only in operator versions 2.2.1 and later.
 * The [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
   currently supports WebLogic Server logs only.  Other logs will not be sent to
   Elasticsearch.  Note, however, that you can use a sidecar with a log handling tool
@@ -55,7 +55,7 @@ following limitations currently exist for SOA Suite domains:
 
 #### Obtaining the SOA Suite Docker Image
 
-The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
+The Oracle WebLogic Server Kubernetes Operator requires a SOA Suite 12.2.1.3.0 image with patch 29135930 applied.
 The standard pre-built SOA Suite image, `container-registry.oracle.com/middleware/soasuite:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
@@ -139,19 +139,24 @@ Before creating a domain, you will need to set up the necessary schemas in your 
 #### Configuring access to your database
 
 SOA Suite domains require a database with the necessary schemas installed in them.
-A utility called Repository Creation Utility (RCU) is provided which allows you to create
+The Repository Creation Utility (RCU) allows you to create
 those schemas.  You must set up the database before you create your domain.
 There are no additional requirements added by running SOA in Kubernetes; the
 same existing requirements apply.
 
-For development or test environments, you may use the container-based database,
-whereas for production environments, it is recommended that you use the standalone database.
+For testing and development, you may choose to run your database inside Kubernetes or outside of Kubernetes.
+
+{{% notice warning %}}
+The Oracle Database Docker images are supported only for non-production use.
+For more details, see My Oracle Support note:
+Oracle Support for Database Running on Docker (Doc ID 2216342.1)
+{{% /notice %}}
 
 The following documentation and samples are for creating a container-based database on a persistent volume.
 
 ##### Running the database inside Kubernetes
 
-Follow these instructions for a basic database setup inside Kubernetes that uses PV (persistent volume) and PVC (persistent volume claim) to persist the data. For more details about database setup and configuration, refer this [page](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/#running-the-database-inside-kubernetes).
+Follow these instructions for a basic database setup inside Kubernetes that uses PV (persistent volume) and PVC (persistent volume claim) to persist the data. For more details about database setup and configuration, refer to this [page](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/#running-the-database-inside-kubernetes).
 
 Pull the database image:
 
@@ -159,25 +164,17 @@ Pull the database image:
 $ docker pull container-registry.oracle.com/database/enterprise:12.2.0.1
 $ docker tag  container-registry.oracle.com/database/enterprise:12.2.0.1  oracle/database:12.2.0.1
 ```
-Create the PV and PVC for the database:
+Create the PV and PVC for the database
+by running the [create-pv-pvc.sh]({{< relref "/samples/simple/storage/_index.md" >}}) script.
+Follow the instructions for using the scripts to create a PV and PVC.
 
-```bash
-$ mkdir /scratch/DockerVolume/DB
-$ chmod 777 /scratch/DockerVolume/DB
-```
-Update the appropriate host/storage path in `db-pv.yaml`.
 
-Create the PV/PVC using these commands:
-
-```bash
-$ cd  weblogic-kubernetes-operator/kubernetes/samples/scripts/create-database-pv-pvc
-$ kubectl create -f db-pv.yaml
-$ kubectl create -f db-pvc.yaml
-```
 Bring up the database and database service using the following commands:
 
+**NOTE**: Make sure you update the above created PVC name in `db-with-pv.yaml`.
+
 ```bash
-$ cd soa-kubernetes-operator/kubernetes/samples/scripts/create-soa-domain
+$ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-soa-domain/create-database
 $ kubectl create -f db-with-pv.yaml
 ```
 Verify that the database service status is Ready.
