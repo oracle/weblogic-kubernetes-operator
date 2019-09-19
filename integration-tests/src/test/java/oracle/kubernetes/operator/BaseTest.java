@@ -217,6 +217,17 @@ public class BaseTest {
               + pvRoot
               + "/acceptance_test_pv\"");
     } */
+    
+    // for manual/local run, create file handler, create PVROOT
+    if (!JENKINS && !SHARED_CLUSTER) {
+      LoggerHelper.getLocal().info("Creating PVROOT " + pvRoot);
+      Files.createDirectories(Paths.get(pvRoot));
+      ExecResult result = ExecCommand.exec("/usr/local/packages/aime/ias/run_as_root \"chmod 777 " + pvRoot +"\"");
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
+      }
+    }
 
     // create resultRoot, PVRoot, etc
     Files.createDirectories(Paths.get(resultRoot));
@@ -232,16 +243,7 @@ public class BaseTest {
     LoggerHelper.getGlobal().log(Level.INFO, "Adding file handler, logging to file at " + getResultDir() + "/"+testClassName+".out" );
     
 
-    // for manual/local run, create file handler, create PVROOT
-    if (!JENKINS && !SHARED_CLUSTER) {
-      LoggerHelper.getLocal().info("Creating PVROOT " + pvRoot);
-      Files.createDirectories(Paths.get(pvRoot));
-      ExecResult result = ExecCommand.exec("chmod 777 " + pvRoot);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
-      }
-    }
+
 
     appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
 
