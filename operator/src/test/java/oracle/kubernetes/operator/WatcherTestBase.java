@@ -22,6 +22,7 @@ import org.junit.Test;
 import static java.net.HttpURLConnection.HTTP_GONE;
 import static oracle.kubernetes.operator.builders.EventMatcher.addEvent;
 import static oracle.kubernetes.operator.builders.EventMatcher.modifyEvent;
+import static oracle.kubernetes.operator.builders.StubWatchFactory.AllWatchesClosedListener;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -29,14 +30,12 @@ import static org.hamcrest.Matchers.hasEntry;
 
 /** Tests behavior of the Watcher class. */
 @SuppressWarnings("SameParameterValue")
-public abstract class WatcherTestBase extends ThreadFactoryTestBase
-    implements StubWatchFactory.AllWatchesClosedListener {
+public abstract class WatcherTestBase extends ThreadFactoryTestBase implements AllWatchesClosedListener {
   private static final int NEXT_RESOURCE_VERSION = 123456;
   private static final int INITIAL_RESOURCE_VERSION = 123;
   private static final String NAMESPACE = "testspace";
-  private final RuntimeException hasNextException =
-      new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE);
-  protected WatchTuning tuning = new WatchTuning(30, 0);
+  private final RuntimeException hasNextException = new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE);
+  protected final WatchTuning tuning = new WatchTuning(30, 0);
   private List<Memento> mementos = new ArrayList<>();
   private List<Watch.Response<?>> callBacks = new ArrayList<>();
   private int resourceVersion = INITIAL_RESOURCE_VERSION;

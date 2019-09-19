@@ -4,13 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1Affinity;
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1PodReadinessGate;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Toleration;
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -21,15 +15,20 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1JobSpec;
+import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PodReadinessGate;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1PodTemplateSpec;
 import io.kubernetes.client.models.V1SecretReference;
 
-import java.io.File;
-
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -51,8 +50,11 @@ import org.junit.Test;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAffinity;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createConfigMapKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createContainer;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createFieldRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecurityContext;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -79,6 +81,9 @@ public class JobHelperTest {
   private final V1SecurityContext containerSecurityContext = createSecurityContext(555L);
   private final V1Affinity podAffinity = createAffinity();
   private final V1Toleration toleration = createToleration("key","Eqauls", "value", "NoSchedule");
+  private final V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
+  private final V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
+  private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
   protected List<Memento> mementos = new ArrayList<>();
 
   @Before
@@ -93,14 +98,14 @@ public class JobHelperTest {
 
   @Test
   public void creatingServers_true_whenClusterReplicas_gt_0() {
-    configureCluster( "cluster1").withReplicas(1);
+    configureCluster("cluster1").withReplicas(1);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
 
   @Test
   public void creatingServers_false_whenClusterReplicas_is_0() {
-    configureCluster( "cluster1").withReplicas(0);
+    configureCluster("cluster1").withReplicas(0);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));
   }
@@ -109,7 +114,7 @@ public class JobHelperTest {
   public void creatingServers_true_whenDomainReplicas_gt_0_and_cluster_has_no_replicas() {
     configureDomain().withDefaultReplicaCount(1);
 
-    configureCluster( "cluster1");
+    configureCluster("cluster1");
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -118,14 +123,14 @@ public class JobHelperTest {
   public void creatingServers_false_whenDomainReplicas_is_0_and_cluster_has_no_replicas() {
     configureDomain().withDefaultReplicaCount(0);
 
-    configureCluster( "cluster1");
+    configureCluster("cluster1");
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));
   }
 
   @Test
   public void creatingServers_false_when_no_domain_nor_cluster_replicas() {
-    configureCluster( "cluster1");
+    configureCluster("cluster1");
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));
   }
@@ -321,6 +326,41 @@ public class JobHelperTest {
   }
 
   @Test
+  public void whenDomainHasValueFromEnvironmentItems_introspectorPodStartupWithThem() {
+    configureDomain()
+        .withEnvironmentVariable(configMapKeyRefEnvVar)
+        .withEnvironmentVariable(secretKeyRefEnvVar)
+        .withEnvironmentVariable(fieldRefEnvVar);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        allOf(
+            hasItem(configMapKeyRefEnvVar),
+            hasItem(secretKeyRefEnvVar),
+            hasItem(fieldRefEnvVar)));
+  }
+
+  @Test
+  public void whenAdminServerHasValueFromEnvironmentItems_introspectorPodStartupWithThem() {
+    configureDomain()
+        .configureAdminServer()
+        .withEnvironmentVariable(configMapKeyRefEnvVar)
+        .withEnvironmentVariable(secretKeyRefEnvVar)
+        .withEnvironmentVariable(fieldRefEnvVar);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        allOf(
+            hasItem(configMapKeyRefEnvVar),
+            hasItem(secretKeyRefEnvVar),
+            hasItem(fieldRefEnvVar)));
+  }
+
+  @Test
   public void introspectorPodStartupWithNullAdminUsernamePasswordEnvVarValues() {
     V1JobSpec jobSpec = createJobSpec();
 
@@ -407,7 +447,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getRestartPolicy(),
-        is ("Never"));
+        is("Never"));
   }
 
   @Test
@@ -418,7 +458,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getReadinessGates(),
-        nullValue() );
+        nullValue());
   }
 
   @Test
@@ -432,7 +472,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getInitContainers(),
-        nullValue() );
+        nullValue());
   }
 
   @Test
@@ -456,7 +496,7 @@ public class JobHelperTest {
 
     assertThat(
         getMatchingContainer(domainPresenceInfo, jobSpec).get().getName(),
-        is (JobHelper.createJobName(DOMAIN_UID)));
+        is(JobHelper.createJobName(DOMAIN_UID)));
   }
 
   @Test
@@ -481,7 +521,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getSecurityContext(),
-        is (podSecurityContext));
+        is(podSecurityContext));
   }
 
   @Test
@@ -490,7 +530,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getSecurityContext(),
-        is (new V1PodSecurityContext()));
+        is(new V1PodSecurityContext()));
   }
 
   @Test
@@ -500,7 +540,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getAffinity(),
-        is (podAffinity));
+        is(podAffinity));
   }
 
   @Test
@@ -519,7 +559,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getNodeSelector(),
-        hasEntry ("os", "linux"));
+        hasEntry("os", "linux"));
   }
 
   @Test
@@ -528,7 +568,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getNodeSelector(),
-        is( anEmptyMap() ));
+        is(anEmptyMap()));
   }
 
   @Test
@@ -538,7 +578,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getNodeName(),
-        is ("kube-02"));
+        is("kube-02"));
   }
 
   @Test
@@ -547,7 +587,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getNodeName(),
-        nullValue() );
+        nullValue());
   }
 
   @Test
@@ -557,7 +597,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getSchedulerName(),
-        is ("my-scheduler"));
+        is("my-scheduler"));
   }
 
   @Test
@@ -566,7 +606,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getSchedulerName(),
-        nullValue() );
+        nullValue());
   }
 
   @Test
@@ -576,7 +616,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getRuntimeClassName(),
-        is ("MyRuntimeClass"));
+        is("MyRuntimeClass"));
   }
 
   @Test
@@ -585,7 +625,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getRuntimeClassName(),
-        nullValue() );
+        nullValue());
   }
 
   @Test
@@ -604,7 +644,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getImagePullSecrets(),
-        empty() );
+        empty());
   }
 
   @Test
@@ -614,7 +654,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getPriorityClassName(),
-        is ("MyPriorityClass"));
+        is("MyPriorityClass"));
   }
 
   @Test
@@ -623,7 +663,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getPriorityClassName(),
-        nullValue() );
+        nullValue());
   }
 
   @Test
@@ -633,7 +673,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getTolerations(),
-        contains (toleration));
+        contains(toleration));
   }
 
   @Test
@@ -642,7 +682,7 @@ public class JobHelperTest {
 
     assertThat(
         getPodSpec(jobSpec).getTolerations(),
-        nullValue() );
+        nullValue());
   }
 
   private DomainPresenceInfo createDomainPresenceInfo() {

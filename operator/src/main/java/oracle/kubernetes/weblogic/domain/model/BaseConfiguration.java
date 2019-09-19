@@ -124,6 +124,10 @@ public abstract class BaseConfiguration {
     serverPod.addEnvVar(new V1EnvVar().name(name).value(value));
   }
 
+  void addEnvironmentVariable(V1EnvVar envVar) {
+    serverPod.addEnvVar(envVar);
+  }
+
   public abstract String getServerStartPolicy();
 
   /**
@@ -207,6 +211,10 @@ public abstract class BaseConfiguration {
 
   public String getNodeName() {
     return serverPod.getNodeName();
+  }
+
+  public String getServiceAccountName() {
+    return serverPod.getServiceAccountName();
   }
 
   void setNodeName(String nodeName) {

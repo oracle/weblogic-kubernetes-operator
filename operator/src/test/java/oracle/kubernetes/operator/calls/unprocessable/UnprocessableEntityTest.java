@@ -28,11 +28,11 @@ public class UnprocessableEntityTest {
                               + ",\"field\":" + quoted(FIELD);
   private static final String MESSAGE_1 = KIND + " " + quoted(NAME) + " is invalid: " + FIELD + ": " + CAUSE_MESSAGE;
   private static final String SAMPLE_MESSAGE_BODY
-      = "{\"kind\":\"Status\",\"apiVersion\":\"v1\",\"metadata\":{},\"status\":\"Failure\"," +
-         "\"message\":" + quoted(MESSAGE_1) + "," +
-         "\"reason\":\"Invalid\",\"details\":{\"name\":" + quoted(NAME) + ",\"kind\":" + quoted(KIND) + "," +
-         "\"causes\":[{" + CAUSE + "}]}," +
-         "\"code\":422}\n";
+      = "{\"kind\":\"Status\",\"apiVersion\":\"v1\",\"metadata\":{},\"status\":\"Failure\","
+         + "\"message\":" + quoted(MESSAGE_1) + ","
+         + "\"reason\":\"Invalid\",\"details\":{\"name\":" + quoted(NAME) + ",\"kind\":" + quoted(KIND) + ","
+         + "\"causes\":[{" + CAUSE + "}]},"
+         + "\"code\":422}\n";
 
   private static String escape(String s) {
     return s.replaceAll("\"", "\\\\\"");

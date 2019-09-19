@@ -95,6 +95,11 @@ public class ClusterSpecCommonImpl extends ClusterSpec {
   }
 
   @Override
+  public String getServiceAccountName() {
+    return cluster.getServiceAccountName();
+  }
+
+  @Override
   public String getSchedulerName() {
     return cluster.getSchedulerName();
   }
