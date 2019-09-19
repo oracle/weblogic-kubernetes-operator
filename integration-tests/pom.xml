@@ -260,7 +260,7 @@
                         </include>
                     </includes>
                     <parallel>classesAndMethods</parallel>
-          			<threadCount>4</threadCount>
+          			<threadCount>10</threadCount>
             		
                 </configuration>
 

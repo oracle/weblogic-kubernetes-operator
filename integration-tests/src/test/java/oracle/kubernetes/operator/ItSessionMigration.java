@@ -54,13 +54,13 @@ public class ItSessionMigration extends BaseTest {
   
       // Create operator1
       if (operator == null) {
-        LoggerHelper.getLocal().info("Creating Operator & waiting for the script to complete execution");
+        log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
         operator = TestUtils.createOperator(OPERATOR1_YAML);
       }
   
       // create domain
       if (domain == null) {
-        LoggerHelper.getLocal().info("Creating WLS Domain & waiting for the script to complete execution");
+        log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
         Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
         wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
         domain = TestUtils.createDomain(wlstDomainMap);
@@ -93,13 +93,13 @@ public class ItSessionMigration extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().info("++++++++++++++++++++++++++++++++++");
-      LoggerHelper.getLocal().info("BEGIN");
-      LoggerHelper.getLocal().info("Run once, release cluster lease");
+      log(Level.INFO, "++++++++++++++++++++++++++++++++++");
+      log(Level.INFO, "BEGIN");
+      log(Level.INFO, "Run once, release cluster lease");
   
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
   
-      LoggerHelper.getLocal().info("SUCCESS");    
+      log(Level.INFO, "SUCCESS");    
     }
   }
 
@@ -152,7 +152,7 @@ public class ItSessionMigration extends BaseTest {
     domain.restartManagedServerUsingServerStartPolicy(primaryServName1);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
-    LoggerHelper.getLocal().info(
+    log(Level.INFO, 
         "SUCCESS - " + testMethodName + ". ms <" + primaryServName2 + "> is new primary server.");
   }
 
@@ -211,7 +211,7 @@ public class ItSessionMigration extends BaseTest {
     domain.restartManagedServerUsingServerStartPolicy(primaryServName1);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName + ". HTTP session state is migrated!");
+    log(Level.INFO, "SUCCESS - " + testMethodName + ". HTTP session state is migrated!");
   }
 
   /**
@@ -224,7 +224,7 @@ public class ItSessionMigration extends BaseTest {
   private ExecResult getHttpResponse(String webServiceUrl, String headerOption) throws Exception {
     // Send a HTTP request
     String curlCmd = buildWebServiceUrl(webServiceUrl, headerOption + httpHeaderFile);
-    LoggerHelper.getLocal().info("Send a HTTP request: " + curlCmd);
+    log(Level.INFO, "Send a HTTP request: " + curlCmd);
 
     ExecResult result = TestUtils.exec(curlCmd);
 

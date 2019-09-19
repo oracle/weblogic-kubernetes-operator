@@ -87,11 +87,11 @@ public class ItOperatorUpgrade extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().info("BEGIN");
-      LoggerHelper.getLocal().info("Run once, release cluster lease");
+      log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
+      log(Level.INFO, "BEGIN");
+      log(Level.INFO, "Run once, release cluster lease");
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-      LoggerHelper.getLocal().info("SUCCESS");
+      log(Level.INFO, "SUCCESS");
     }
   
   }
@@ -115,7 +115,7 @@ public class ItOperatorUpgrade extends BaseTest {
     setupOperatorAndDomain("2.0", "2.0");
     upgradeOperator(true);
     testCompletedSuccessfully = true;
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
+    log(Level.INFO, "SUCCESS - " + testMethod);
   }
 
   /**
@@ -137,7 +137,7 @@ public class ItOperatorUpgrade extends BaseTest {
     setupOperatorAndDomain("release/2.0.1", "2.0.1");
     upgradeOperator(true);
     testCompletedSuccessfully = true;
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
+    log(Level.INFO, "SUCCESS - " + testMethod);
   }
 
   /**
@@ -159,7 +159,7 @@ public class ItOperatorUpgrade extends BaseTest {
     setupOperatorAndDomain("release/2.1", "2.1");
     upgradeOperator(false);
     testCompletedSuccessfully = true;
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
+    log(Level.INFO, "SUCCESS - " + testMethod);
   }
 
   /**
@@ -181,7 +181,7 @@ public class ItOperatorUpgrade extends BaseTest {
     setupOperatorAndDomain("release/2.2", "2.2.0");
     upgradeOperator(false);
     testCompletedSuccessfully = true;
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
+    log(Level.INFO, "SUCCESS - " + testMethod);
   }
 
   /**
@@ -203,7 +203,7 @@ public class ItOperatorUpgrade extends BaseTest {
     setupOperatorAndDomain("release/2.2.1", "2.2.1");
     upgradeOperator(false);
     testCompletedSuccessfully = true;
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
+    log(Level.INFO, "SUCCESS - " + testMethod);
   }
 
   /**
@@ -225,7 +225,7 @@ public class ItOperatorUpgrade extends BaseTest {
     setupOperatorAndDomain("release/2.3.0", "2.3.0");
     upgradeOperator(false);
     testCompletedSuccessfully = true;
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
+    log(Level.INFO, "SUCCESS - " + testMethod);
   }
   
   /**
@@ -284,7 +284,7 @@ public class ItOperatorUpgrade extends BaseTest {
     domain.verifyAdminServerRestarted();
     TestUtils.checkPodReady(DUID + "-" + domain.getAdminServerName(), DOM_NS);
     for (int i = 2; i >= 1; i--) {
-      LoggerHelper.getLocal().info(
+      log(Level.INFO, 
           "Checking if managed server pod(" + DUID + "--managed-server" + i + ") is restarted");
       TestUtils.checkPodTerminating(DUID + "-managed-server" + i, DOM_NS);
       TestUtils.checkPodCreated(DUID + "-managed-server" + i, DOM_NS);

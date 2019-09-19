@@ -74,18 +74,18 @@ public class ItElasticLogging extends BaseTest {
               .append(getProjectRoot())
               .append("/")
               .append(elasticStackYamlLoc);
-      LoggerHelper.getLocal().info("Command to Install Elastic Stack: " + cmd.toString());
+      log(Level.INFO, "Command to Install Elastic Stack: " + cmd.toString());
       TestUtils.exec(cmd.toString());
 
       // Create operator-elk
       if (operator == null) {
-        LoggerHelper.getLocal().info("Creating Operator & waiting for the script to complete execution");
+        log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
         operator = TestUtils.createOperator(OPERATOR1_ELK_YAML, "2/2");
       }
 
       // create domain
       if (domain == null) {
-        LoggerHelper.getLocal().info("Creating WLS Domain & waiting for the script to complete execution");
+        log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
         domain = TestUtils.createDomain(DOMAINONPV_LOGGINGEXPORTER_YAML);
         domain.verifyDomainCreated();
       }
@@ -131,9 +131,9 @@ public class ItElasticLogging extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().info("BEGIN");
-      LoggerHelper.getLocal().info("Run once, release cluster lease");
+      log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
+      log(Level.INFO, "BEGIN");
+      log(Level.INFO, "Run once, release cluster lease");
 
       // Uninstall Elastic Stack
       StringBuffer cmd =
@@ -141,7 +141,7 @@ public class ItElasticLogging extends BaseTest {
               .append(getProjectRoot())
               .append("/")
               .append(elasticStackYamlLoc);
-      LoggerHelper.getLocal().info("Command to uninstall Elastic Stack: " + cmd.toString());
+      log(Level.INFO, "Command to uninstall Elastic Stack: " + cmd.toString());
       TestUtils.exec(cmd.toString());
 
       // Restore the test env
@@ -149,7 +149,7 @@ public class ItElasticLogging extends BaseTest {
       
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
-      LoggerHelper.getLocal().info("SUCCESS");
+      log(Level.INFO, "SUCCESS");
     }
   }
 
@@ -170,7 +170,7 @@ public class ItElasticLogging extends BaseTest {
     String queryCriteria = "/_count?q=level:INFO";
     verifySearchResults(queryCriteria, regex, logstashIndexKey,true);
     
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
+    log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -190,7 +190,7 @@ public class ItElasticLogging extends BaseTest {
     String queryCriteria = "/_search?q=type:weblogic-operator";
     verifySearchResults(queryCriteria, regex, logstashIndexKey, false);
     
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
+    log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -221,7 +221,7 @@ public class ItElasticLogging extends BaseTest {
     queryCriteria = "/_search?q=log:" + managedServerPodName + " | grep RUNNING";
     verifySearchResults(queryCriteria, regex, logstashIndexKey, false);
 
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
+    log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -266,7 +266,7 @@ public class ItElasticLogging extends BaseTest {
     queryCriteria = "/_count?q=serverName:" + managedServerName;
     verifySearchResults(queryCriteria, regex, wlsIndexKey, true, "notExist");
  
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
+    log(Level.INFO, "SUCCESS - " + testMethodName);
   }
   
   private static void verifyLoggingExpReady(String index) throws Exception {
@@ -293,8 +293,8 @@ public class ItElasticLogging extends BaseTest {
       indexName.split(System.getProperty("line.separator"));
     
     for (int i = 0; i < indexStatusArr.length; i++) {
-      LoggerHelper.getLocal().info("Health status of " + indexNameArr[i] + " is: " + healthStatusArr[i]);
-      LoggerHelper.getLocal().info("Index status of " + indexNameArr[i] + " is: " + indexStatusArr[i]);
+      log(Level.INFO, "Health status of " + indexNameArr[i] + " is: " + healthStatusArr[i]);
+      log(Level.INFO, "Index status of " + indexNameArr[i] + " is: " + indexStatusArr[i]);
       // Verify that the health status of index
       Assume.assumeTrue(
           index + " is not ready!",
@@ -305,7 +305,7 @@ public class ItElasticLogging extends BaseTest {
                         indexStatusArr[i].trim().equalsIgnoreCase("open"));
     }
     
-    LoggerHelper.getLocal().info("ELK Stack is up and running and ready to use!");
+    log(Level.INFO, "ELK Stack is up and running and ready to use!");
   }
 
   private static String execLoggingExpStatusCheck(String indexName, String varLoc)
@@ -320,17 +320,17 @@ public class ItElasticLogging extends BaseTest {
             .append(varLoc)
             .append(" }'\\'")
             .toString();
-    LoggerHelper.getLocal().info("Command to exec Elastic Stack status check: " + cmd);
+    log(Level.INFO, "Command to exec Elastic Stack status check: " + cmd);
     
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
       result = TestUtils.exec(cmd);
-      LoggerHelper.getLocal().info("Result: " + result.stdout());
+      log(Level.INFO, "Result: " + result.stdout());
       if (null != result.stdout()) {
         break;
       }
       
-      LoggerHelper.getLocal().info(
+      log(Level.INFO, 
           "ELK Stack is not ready Ite ["
               + i
               + "/"
@@ -369,7 +369,7 @@ public class ItElasticLogging extends BaseTest {
         break;
       }
       
-      LoggerHelper.getLocal().info(
+      log(Level.INFO, 
           "Logs are not pushed to ELK Stack Ite ["
               + i
               + "/"
@@ -381,12 +381,12 @@ public class ItElasticLogging extends BaseTest {
       i++;
     }
     
-    LoggerHelper.getLocal().info("Total count of logs: " + count);
+    log(Level.INFO, "Total count of logs: " + count);
     if (!checkExist.equalsIgnoreCase("notExist")) {
       Assume.assumeTrue("Total count of logs should be more than 0!", count > 0);
       if (checkCount) {
         Assume.assumeTrue("Total failed count should be 0!", failedCount == 0);
-        LoggerHelper.getLocal().info("Total failed count: " + failedCount);
+        log(Level.INFO, "Total failed count: " + failedCount);
       } else {
         Assume.assumeFalse("Total hits of search is empty!", hits.isEmpty());
       }
@@ -408,7 +408,7 @@ public class ItElasticLogging extends BaseTest {
             .append(queryCriteria)
             .append("'")
             .toString();
-    LoggerHelper.getLocal().info("Command to search: " + cmd);
+    log(Level.INFO, "Command to search: " + cmd);
     ExecResult result = TestUtils.exec(cmd);
 
     return result.stdout();
@@ -433,9 +433,9 @@ public class ItElasticLogging extends BaseTest {
           .append(snakeyamlJarRepos)
           .append("/")
           .append(snakeyamlJar);
-      LoggerHelper.getLocal().info("Executing cmd " + getJars.toString());
+      log(Level.INFO, "Executing cmd " + getJars.toString());
       ExecResult result = TestUtils.exec(getJars.toString());
-      LoggerHelper.getLocal().info("Result: " + result.stdout());
+      log(Level.INFO, "Result: " + result.stdout());
     }
     
     int i = 0;
@@ -449,7 +449,7 @@ public class ItElasticLogging extends BaseTest {
         break;
       }
       
-      LoggerHelper.getLocal().info(
+      log(Level.INFO, 
           "Downloading wls logging exporter jar files not done ["
               + i
               + "/"
@@ -467,7 +467,7 @@ public class ItElasticLogging extends BaseTest {
                       snakeyamlFile.exists());
     File[] jarFiles = loggingJatReposDir.listFiles();
     for (File jarFile : jarFiles) {
-      LoggerHelper.getLocal().info("Downloaded jar file : " + jarFile.getName());
+      log(Level.INFO, "Downloaded jar file : " + jarFile.getName());
     }
   }
   
@@ -483,7 +483,7 @@ public class ItElasticLogging extends BaseTest {
         ((Integer) domainMap.get("initialManagedServerReplicas")).intValue();
 
     //Copy test files to admin pod
-    LoggerHelper.getLocal().info(
+    log(Level.INFO, 
         "Copying the resources to admin pod("
             + domainUid
             + "-"
@@ -493,7 +493,7 @@ public class ItElasticLogging extends BaseTest {
 
     //Copy test files to all managed server pods
     for (int i = 1; i <= initialManagedServerReplicas; i++) {
-      LoggerHelper.getLocal().info(
+      log(Level.INFO, 
           "Copying the resources to managed pod("
               + domainUid
               + "-"

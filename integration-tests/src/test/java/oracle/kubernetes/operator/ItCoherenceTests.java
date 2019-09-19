@@ -86,7 +86,7 @@ public class ItCoherenceTests extends BaseTest {
     } finally {
       destroyDomain();
     }
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
+    log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -112,7 +112,7 @@ public class ItCoherenceTests extends BaseTest {
       final String cohScriptPathInPod = cohAppLocationInPod + "/" + PROXY_CLIENT_SCRIPT;
       final String successMarker = "CACHE-SUCCESS";
 
-      LoggerHelper.getLocal().info("Copying files to admin pod for App " + PROXY_CLIENT_APP_NAME);
+      log(Level.INFO, "Copying files to admin pod for App " + PROXY_CLIENT_APP_NAME);
 
       // Create app dir in the admin pod
       StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
@@ -126,7 +126,7 @@ public class ItCoherenceTests extends BaseTest {
       TestUtils.copyAppFilesToPod(
           cohAppLocationOnHost, cohAppLocationInPod, adminServerPod, domainNS);
 
-      LoggerHelper.getLocal().info(
+      log(Level.INFO, 
           "Executing script "
               + PROXY_CLIENT_SCRIPT
               + " for App "

@@ -75,11 +75,11 @@ public class ItMultipleClusters extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().info("BEGIN");
-      LoggerHelper.getLocal().info("Run once, release cluster lease");
+      log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
+      log(Level.INFO, "BEGIN");
+      log(Level.INFO, "Run once, release cluster lease");
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-      LoggerHelper.getLocal().info("SUCCESS");
+      log(Level.INFO, "SUCCESS");
     }
   }
 
@@ -96,7 +96,7 @@ public class ItMultipleClusters extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    LoggerHelper.getLocal().info("Creating Operator & waiting for the script to complete execution");
+    log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
     // create operator1
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
@@ -136,7 +136,7 @@ public class ItMultipleClusters extends BaseTest {
         domain.destroy();
       }
     }
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
+    log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -153,7 +153,7 @@ public class ItMultipleClusters extends BaseTest {
     logTestBegin(testMethodName);
     String template =
         BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
-    LoggerHelper.getLocal().info("Creating Operator & waiting for the script to complete execution");
+    log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
@@ -191,7 +191,7 @@ public class ItMultipleClusters extends BaseTest {
         domain.destroy();
       }
     }
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
+    log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -206,7 +206,7 @@ public class ItMultipleClusters extends BaseTest {
     String domainuid = "twoclusterdomainwdt";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().info("Creating Operator & waiting for the script to complete execution");
+    log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }

@@ -184,7 +184,7 @@ public class BaseTest {
 
       // delete k8s artifacts created if any, delete PV directories
       ExecResult clnResult = cleanup();
-      LoggerHelper.getLocal().info(
+      log(Level.INFO, 
           "Command to call cleanup script returned "
               + clnResult.stdout()
               + "\n"
@@ -192,7 +192,7 @@ public class BaseTest {
     } */
 
     /* if (JENKINS) {
-      LoggerHelper.getLocal().info("Deleting and creating " + resultRoot + "/acceptance_test_tmp");
+      log(Level.INFO, "Deleting and creating " + resultRoot + "/acceptance_test_tmp");
       TestUtils.exec(
           "/usr/local/packages/aime/ias/run_as_root \"rm -rf "
               + resultRoot
@@ -204,7 +204,7 @@ public class BaseTest {
           "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
               + resultRoot
               + "/acceptance_test_tmp\"");
-      LoggerHelper.getLocal().info("Deleting and Creating " + pvRoot + "/acceptance_test_pv");
+      log(Level.INFO, "Deleting and Creating " + pvRoot + "/acceptance_test_pv");
       TestUtils.exec(
           "/usr/local/packages/aime/ias/run_as_root \"rm -rf "
               + pvRoot
@@ -220,7 +220,7 @@ public class BaseTest {
     
     // for manual/local run, create file handler, create PVROOT
     if (!SHARED_CLUSTER) {
-      LoggerHelper.getLocal().info("Creating PVROOT " + pvRoot);
+      log(Level.INFO, "Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
       ExecResult result = ExecCommand.exec("/usr/local/packages/aime/ias/run_as_root \"chmod 777 " + pvRoot +"\"");
       if (result.exitValue() != 0) {
@@ -239,7 +239,7 @@ public class BaseTest {
     SimpleFormatter formatter = new SimpleFormatter();
     fh.setFormatter(formatter);
     LoggerHelper.getLocal().addHandler(fh);
-    LoggerHelper.getLocal().info("Adding file handler, logging to file at " + getResultDir() + "/"+testClassName+".out");
+    log(Level.INFO, "Adding file handler, logging to file at " + getResultDir() + "/"+testClassName+".out");
     LoggerHelper.getGlobal().log(Level.INFO, "Adding file handler, logging to file at " + getResultDir() + "/"+testClassName+".out" );
     
 
@@ -247,32 +247,32 @@ public class BaseTest {
 
     appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
 
-    LoggerHelper.getLocal().info("appProps = " + appProps);
-    LoggerHelper.getLocal().info("maxIterationPod = " + appProps.getProperty("maxIterationsPod"));
-    LoggerHelper.getLocal().info(
+    log(Level.INFO, "appProps = " + appProps);
+    log(Level.INFO, "maxIterationPod = " + appProps.getProperty("maxIterationsPod"));
+    log(Level.INFO, 
         "maxIterationPod with default= "
             + appProps.getProperty("maxIterationsPod", "" + maxIterationsPod));
-    LoggerHelper.getLocal().info("RESULT_ROOT =" + resultRoot);
-    LoggerHelper.getLocal().info("PV_ROOT =" + pvRoot);
-    LoggerHelper.getLocal().info("userProjectsDir =" + userProjectsDir);
-    LoggerHelper.getLocal().info("projectRoot =" + projectRoot);
-    LoggerHelper.getLocal().info("branchName =" + branchName);
+    log(Level.INFO, "RESULT_ROOT =" + resultRoot);
+    log(Level.INFO, "PV_ROOT =" + pvRoot);
+    log(Level.INFO, "userProjectsDir =" + userProjectsDir);
+    log(Level.INFO, "projectRoot =" + projectRoot);
+    log(Level.INFO, "branchName =" + branchName);
 
-    LoggerHelper.getLocal().info("Env var RESULT_ROOT " + System.getenv("RESULT_ROOT"));
-    LoggerHelper.getLocal().info("Env var PV_ROOT " + System.getenv("PV_ROOT"));
-    LoggerHelper.getLocal().info("Env var K8S_NODEPORT_HOST " + System.getenv("K8S_NODEPORT_HOST"));
-    LoggerHelper.getLocal().info("Env var IMAGE_NAME_OPERATOR= " + System.getenv("IMAGE_NAME_OPERATOR"));
-    LoggerHelper.getLocal().info("Env var IMAGE_TAG_OPERATOR " + System.getenv("IMAGE_TAG_OPERATOR"));
-    LoggerHelper.getLocal().info(
+    log(Level.INFO, "Env var RESULT_ROOT " + System.getenv("RESULT_ROOT"));
+    log(Level.INFO, "Env var PV_ROOT " + System.getenv("PV_ROOT"));
+    log(Level.INFO, "Env var K8S_NODEPORT_HOST " + System.getenv("K8S_NODEPORT_HOST"));
+    log(Level.INFO, "Env var IMAGE_NAME_OPERATOR= " + System.getenv("IMAGE_NAME_OPERATOR"));
+    log(Level.INFO, "Env var IMAGE_TAG_OPERATOR " + System.getenv("IMAGE_TAG_OPERATOR"));
+    log(Level.INFO, 
         "Env var IMAGE_PULL_POLICY_OPERATOR " + System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
-    LoggerHelper.getLocal().info(
+    log(Level.INFO, 
         "Env var IMAGE_PULL_SECRET_OPERATOR " + System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
-    LoggerHelper.getLocal().info(
+    log(Level.INFO, 
         "Env var IMAGE_PULL_SECRET_WEBLOGIC " + System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
-    LoggerHelper.getLocal().info("Env var IMAGE_NAME_WEBLOGIC " + System.getenv("IMAGE_NAME_WEBLOGIC"));
-    LoggerHelper.getLocal().info("Env var IMAGE_TAG_WEBLOGIC " + System.getenv("IMAGE_TAG_WEBLOGIC"));
+    log(Level.INFO, "Env var IMAGE_NAME_WEBLOGIC " + System.getenv("IMAGE_NAME_WEBLOGIC"));
+    log(Level.INFO, "Env var IMAGE_TAG_WEBLOGIC " + System.getenv("IMAGE_TAG_WEBLOGIC"));
 
-    LoggerHelper.getLocal().info("Env var BRANCH_NAME " + System.getenv("BRANCH_NAME"));
+    log(Level.INFO, "Env var BRANCH_NAME " + System.getenv("BRANCH_NAME"));
   }
 
   /**
@@ -324,7 +324,7 @@ public class BaseTest {
             + " export SHARED_CLUSTER=false && "
             + getProjectRoot()
             + "/src/integration-tests/bash/cleanup.sh";
-    LoggerHelper.getLocal().info("Command to call cleanup script " + cmd);
+    log(Level.INFO, "Command to call cleanup script " + cmd);
     return ExecCommand.exec(cmd);
   }
 
@@ -398,7 +398,7 @@ public class BaseTest {
     // Build WS and WS client WARs in the admin pod and deploy it from the admin pod to a weblogic
     // target
     TestUtils.buildDeployWebServiceAppInPod(
-        domain, testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(), wsName);
+        domain, testAppName, scriptName, getUsername(), getPassword(), wsName);
   }
 
   /**
@@ -424,18 +424,18 @@ public class BaseTest {
             "export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && export IT_CLASS=");
     cmd.append(itClassName)
         .append(" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} && ")
-        .append(BaseTest.getProjectRoot())
+        .append(getProjectRoot())
         .append("/integration-tests/src/test/resources/statedump.sh");
-    LoggerHelper.getLocal().info("Running " + cmd);
+    log(Level.INFO, "Running " + cmd);
 
     // renew lease before callin statedump.sh
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) {
-      LoggerHelper.getLocal().info("Executed statedump.sh " + result.stdout());
+      log(Level.INFO, "Executed statedump.sh " + result.stdout());
     } else {
-      LoggerHelper.getLocal().info("Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
+      log(Level.INFO, "Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
     }
 
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
@@ -443,12 +443,12 @@ public class BaseTest {
     if (JENKINS || SHARED_CLUSTER) {
       result = cleanup();
       if (result.exitValue() != 0) {
-        LoggerHelper.getLocal().info("cleanup result =" + result.stdout() + "\n " + result.stderr());
+        log(Level.INFO, "cleanup result =" + result.stdout() + "\n " + result.stderr());
       }
     }
 
     if (getLeaseId() != "") {
-      LoggerHelper.getLocal().info("Release the k8s cluster lease");
+      log(Level.INFO, "Release the k8s cluster lease");
       TestUtils.releaseLease(getProjectRoot(), getLeaseId());
     } */
   }
@@ -470,10 +470,10 @@ public class BaseTest {
    * @throws Exception exception
    */
   public void testAdminServerExternalService(Domain domain) throws Exception {
-    LoggerHelper.getLocal().info("Inside testAdminServerExternalService");
+    log(Level.INFO, "Inside testAdminServerExternalService");
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
-    LoggerHelper.getLocal().info("Done - testAdminServerExternalService");
+    log(Level.INFO, "Done - testAdminServerExternalService");
   }
 
   /**
@@ -482,7 +482,7 @@ public class BaseTest {
    * @throws Exception exception
    */
   public void testAdminT3Channel(Domain domain) throws Exception {
-    LoggerHelper.getLocal().info("Inside testAdminT3Channel");
+    log(Level.INFO, "Inside testAdminT3Channel");
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     Map<String, Object> domainMap = domain.getDomainMap();
     // check if the property is set to true
@@ -550,10 +550,10 @@ public class BaseTest {
       }
 
     } else {
-      LoggerHelper.getLocal().info("exposeAdminT3Channel is false, can not test t3ChannelPort");
+      log(Level.INFO, "exposeAdminT3Channel is false, can not test t3ChannelPort");
     }
 
-    LoggerHelper.getLocal().info("Done - testAdminT3Channel");
+    log(Level.INFO, "Done - testAdminT3Channel");
   }
 
   /**
@@ -562,16 +562,16 @@ public class BaseTest {
    * @throws Exception exception
    */
   public void testAdminT3ChannelWithJms(Domain domain) throws Exception {
-    LoggerHelper.getLocal().info("Inside testAdminT3ChannelWithJms");
+    log(Level.INFO, "Inside testAdminT3ChannelWithJms");
     ConnectionFactory cf = domain.createJmsConnectionFactory();
     final Connection c = cf.createConnection();
-    LoggerHelper.getLocal().info("Connection created successfully before cycle.");
+    log(Level.INFO, "Connection created successfully before cycle.");
     domain.shutdownUsingServerStartPolicy();
     domain.restartUsingServerStartPolicy();
     Connection d = cf.createConnection();
-    LoggerHelper.getLocal().info("Connection created successfully after cycle");
+    log(Level.INFO, "Connection created successfully after cycle");
     d.close();
-    LoggerHelper.getLocal().info("Done - testAdminT3ChannelWithJms");
+    log(Level.INFO, "Done - testAdminT3ChannelWithJms");
   }
 
   /**
@@ -582,13 +582,13 @@ public class BaseTest {
    *     Web Service app
    */
   public void testWsLoadBalancing(Domain domain) throws Exception {
-    LoggerHelper.getLocal().info("Inside testWsLoadBalancing");
+    log(Level.INFO, "Inside testWsLoadBalancing");
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
 
     // invoke webservice via servlet client
     domain.verifyWebAppLoadBalancing(TESTWSSERVICE + "Servlet");
-    LoggerHelper.getLocal().info("Done - testWsLoadBalancing");
+    log(Level.INFO, "Done - testWsLoadBalancing");
   }
 
   /**
@@ -609,7 +609,7 @@ public class BaseTest {
    * @throws Exception exception
    */
   public void testDomainLifecyle(Operator operator, Domain domain, int port) throws Exception {
-    LoggerHelper.getLocal().info("Inside testDomainLifecyle");
+    log(Level.INFO, "Inside testDomainLifecyle");
     domain.destroy();
     domain.create();
     operator.verifyExternalRestService();
@@ -626,7 +626,7 @@ public class BaseTest {
     // testWsLoadBalancing(domain);
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
     domain.verifyHasClusterServiceChannelPort("TCP", port, TESTWEBAPP + "/");
-    LoggerHelper.getLocal().info("Done - testDomainLifecyle");
+    log(Level.INFO, "Done - testDomainLifecyle");
   }
 
   /**
@@ -636,7 +636,7 @@ public class BaseTest {
    * @throws Exception exception
    */
   public void testClusterScaling(Operator operator, Domain domain, boolean verifyLoadBalancing) throws Exception {
-    LoggerHelper.getLocal().info("Inside testClusterScaling");
+    log(Level.INFO, "Inside testClusterScaling");
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
@@ -646,17 +646,17 @@ public class BaseTest {
     String podName = domain.getDomainUid() + "-" + managedServerNameBase + replicas;
     final String clusterName = domainMap.get("clusterName").toString();
 
-    LoggerHelper.getLocal().info(
+    log(Level.INFO, 
         "Scale domain " + domain.getDomainUid() + " Up to " + replicas + " managed servers");
     operator.scale(domainUid, domainMap.get("clusterName").toString(), replicas);
 
-    LoggerHelper.getLocal().info("Checking if managed pod(" + podName + ") is Running");
+    log(Level.INFO, "Checking if managed pod(" + podName + ") is Running");
     TestUtils.checkPodCreated(podName, domainNS);
 
-    LoggerHelper.getLocal().info("Checking if managed server (" + podName + ") is Running");
+    log(Level.INFO, "Checking if managed server (" + podName + ") is Running");
     TestUtils.checkPodReady(podName, domainNS);
 
-    LoggerHelper.getLocal().info("Checking if managed service(" + podName + ") is created");
+    log(Level.INFO, "Checking if managed service(" + podName + ") is created");
     TestUtils.checkServiceCreated(podName, domainNS);
 
     int replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
@@ -673,10 +673,10 @@ public class BaseTest {
 
     replicas = 2;
     podName = domainUid + "-" + managedServerNameBase + (replicas + 1);
-    LoggerHelper.getLocal().info("Scale down to " + replicas + " managed servers");
+    log(Level.INFO, "Scale down to " + replicas + " managed servers");
     operator.scale(domainUid, clusterName, replicas);
 
-    LoggerHelper.getLocal().info("Checking if managed pod(" + podName + ") is deleted");
+    log(Level.INFO, "Checking if managed pod(" + podName + ") is deleted");
     TestUtils.checkPodDeleted(podName, domainNS);
 
     replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
@@ -691,7 +691,7 @@ public class BaseTest {
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     }
 
-    LoggerHelper.getLocal().info("Done - testClusterScaling");
+    log(Level.INFO, "Done - testClusterScaling");
   }
 
   /**
@@ -700,7 +700,7 @@ public class BaseTest {
    * @throws Exception exception
    */
   public void testWldfScaling(Operator operator, Domain domain) throws Exception {
-    LoggerHelper.getLocal().info("Inside testWldfScaling");
+    log(Level.INFO, "Inside testWldfScaling");
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
     Map<String, Object> domainMap = domain.getDomainMap();
@@ -726,9 +726,9 @@ public class BaseTest {
 
     String clusterName = domainMap.get("clusterName").toString();
     int replicaCntBeforeScaleup = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-    LoggerHelper.getLocal().info("replica count before scaleup " + replicaCntBeforeScaleup);
+    log(Level.INFO, "replica count before scaleup " + replicaCntBeforeScaleup);
 
-    LoggerHelper.getLocal().info("Scale domain " + domainUid + " by calling the webapp");
+    log(Level.INFO, "Scale domain " + domainUid + " by calling the webapp");
 
     int replicas = 3;
     callWebAppAndVerifyScaling(domain, replicas);
@@ -743,7 +743,7 @@ public class BaseTest {
               + replicaCntAfterScaleup);
     }
 
-    LoggerHelper.getLocal().info("Done - testWldfScaling");
+    log(Level.INFO, "Done - testWldfScaling");
   }
 
   /**
@@ -752,18 +752,18 @@ public class BaseTest {
    * @throws Exception exception
    */
   public void testOperatorLifecycle(Operator operator, Domain domain) throws Exception {
-    LoggerHelper.getLocal().info("Inside testOperatorLifecycle");
+    log(Level.INFO, "Inside testOperatorLifecycle");
     operator.destroy();
     operator.create();
     operator.verifyExternalRestService();
     operator.verifyDomainExists(domain.getDomainUid());
     domain.verifyDomainCreated();
-    LoggerHelper.getLocal().info("Done - testOperatorLifecycle");
+    log(Level.INFO, "Done - testOperatorLifecycle");
   }
 
   protected void logTestBegin(String testName) throws Exception {
-    LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    LoggerHelper.getLocal().info("BEGIN " + testName);
+    log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
+    log(Level.INFO, "BEGIN " + testName);
     // renew lease at the beginning for every test method, leaseId is set only for shared cluster
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
   }
@@ -771,7 +771,7 @@ public class BaseTest {
   private void copyScalingScriptToPod(String domainUid, String podName, String domainNS)
       throws Exception {
 
-    String pvDir = BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid;
+    String pvDir = getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid;
     String scriptsDir = pvDir + "/domains/" + domainUid + "/bin/scripts";
 
     // create scripts dir under domain pv
@@ -795,7 +795,7 @@ public class BaseTest {
 
     // call opensessionapp
     domain.callWebAppAndVerifyLoadBalancing("opensessionapp", false);
-    LoggerHelper.getLocal().info("Sleeping for 30 seconds for scaleup");
+    log(Level.INFO, "Sleeping for 30 seconds for scaleup");
     Thread.sleep(30 * 1000);
 
     int replicaCntAfterScaleup = TestUtils.getClusterReplicas(domainUid, clusterName, domainNs);
@@ -803,13 +803,13 @@ public class BaseTest {
     for (int i = replicas; i <= replicaCntAfterScaleup; i++) {
       String podName = domain.getDomainUid() + "-" + managedServerNameBase + i;
 
-      LoggerHelper.getLocal().info("Checking if managed pod(" + podName + ") is Running");
+      log(Level.INFO, "Checking if managed pod(" + podName + ") is Running");
       TestUtils.checkPodCreated(podName, domainNs);
 
-      LoggerHelper.getLocal().info("Checking if managed server (" + podName + ") is Running");
+      log(Level.INFO, "Checking if managed server (" + podName + ") is Running");
       TestUtils.checkPodReady(podName, domainNs);
 
-      LoggerHelper.getLocal().info("Checking if managed service(" + podName + ") is created");
+      log(Level.INFO, "Checking if managed service(" + podName + ") is created");
       TestUtils.checkServiceCreated(podName, domainNs);
     }
   }
@@ -821,7 +821,7 @@ public class BaseTest {
   public static int getNumber(){
      return number;
   }
-  public static void log(Level logLevel, String message) {
+  public void log(Level logLevel, String message) {
     LoggerHelper.getLocal().log(logLevel, message);
     LoggerHelper.getGlobal().log(logLevel, message);
   }

@@ -74,13 +74,13 @@ public class ItPodTemplates extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (QUICKTEST) {
-      LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().info("BEGIN");
-      LoggerHelper.getLocal().info("Run once, release cluster lease");
+      log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
+      log(Level.INFO, "BEGIN");
+      log(Level.INFO, "Run once, release cluster lease");
   
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
   
-      LoggerHelper.getLocal().info("SUCCESS");
+      log(Level.INFO, "SUCCESS");
     }
   }
 
@@ -97,7 +97,7 @@ public class ItPodTemplates extends BaseTest {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().info("Creating Operator & waiting for the script to complete execution");
+    log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
@@ -136,7 +136,7 @@ public class ItPodTemplates extends BaseTest {
       crd.addObjectNodeToClusterServerPod(domain.getClusterName(), "labels", clusterLabelKeyValue);
 
       String modYaml = crd.getYamlTree();
-      LoggerHelper.getLocal().info(modYaml);
+      log(Level.INFO, modYaml);
 
       // Write the modified yaml to a new file
       Path path =
@@ -150,7 +150,7 @@ public class ItPodTemplates extends BaseTest {
       // Apply the new yaml to update the domain
       LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-      LoggerHelper.getLocal().info(exec.stdout());
+      log(Level.INFO, exec.stdout());
 
       domain.verifyDomainCreated();
       testCompletedSuccessfully = true;
@@ -162,6 +162,6 @@ public class ItPodTemplates extends BaseTest {
       }
     }
 
-    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
+    log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 }
