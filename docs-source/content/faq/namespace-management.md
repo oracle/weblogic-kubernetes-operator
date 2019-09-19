@@ -19,7 +19,7 @@ This documentation describes a couple of things that you need to be aware when y
 If you want a WebLogic operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be pre-created, say using the `kubectl create` command.
 
 By adding a namespace to the `domainNamespaces` list, it tells the operator deployment or runtime 
-to initialize the necessary Kubernetes resources for the namespace so that the namespace is ready to host WebLogic domain resources.
+to initialize the necessary Kubernetes resources for the namespace so that the operator is ready to host WebLogic domain resources in that namespace.
 
 When the operator is running and managing the `default` namespace, the following example helm command adds namespace `ns1` to the `domainNamespaces` list, where `weblogic-operator` is the release name of the operator, and `kubernetes/charts/weblogic-operator` is the location of the operator's helm charts.
 
@@ -35,7 +35,7 @@ $ helm upgrade \
 
 {{% notice note %}}
 Changes to the `domainNamespaces` list may not be picked up by the operator right away because the operator 
-checks the changes to its deployment periodically. The operator becomes ready to host domain resources in 
+checks the changes to the setting periodically. The operator becomes ready to host domain resources in 
 a namespace only after the required `configmap` (namely `weblogic-domain-cm`) is initialized in the namespace.
 {{% /notice %}}
  
