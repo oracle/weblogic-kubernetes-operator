@@ -39,6 +39,10 @@ spec:
       value: "${LOG_HOME}"
     - name: DATA_HOME
       value: "${DATA_HOME}"
+    - name: LINK_SERVER_DATA_DIR
+      value: "${LINK_SERVER_DATA_DIR}"
+    - name: KEEP_DEFAULT_DATA_HOME
+      value: "${KEEP_DEFAULT_DATA_HOME}"
     - name: SERVER_OUT_IN_POD_LOG
       value: "${SERVER_OUT_IN_POD_LOG}"
     - name: SERVICE_NAME
