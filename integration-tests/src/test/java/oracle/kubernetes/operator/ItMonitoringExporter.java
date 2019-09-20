@@ -77,8 +77,10 @@ public class ItMonitoringExporter extends BaseTest {
   //currently certified chart versions of Prometheus and Grafana
   private static String promChartVer = "9.1.1";
   private static String grafanaChartVer = "3.8.14";
+
+  private static String monitoringExporterVer = "1.1.0";
   //update with specific branch name if not master
-  private static String monitoringExporterVer = "";
+  private static String monitoringExporterBranchVer = "master";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -164,7 +166,7 @@ public class ItMonitoringExporter extends BaseTest {
         resourceExporterDir,
         monitoringExporterScriptDir,
         "buildMonitoringExporter.sh",
-        monitoringExporterDir + " " + resourceExporterDir + " " + monitoringExporterVer);
+        monitoringExporterDir + " " + resourceExporterDir + " " + monitoringExporterBranchVer + " " + monitoringExporterVer);
   }
 
   /**
@@ -212,12 +214,6 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static void deployMonitoringExporter(
       String exporterAppPath, Domain domain, Operator operator) throws Exception {
-
-    executeShelScript(
-        resourceExporterDir,
-        monitoringExporterScriptDir,
-        "deployCoord.sh",
-        monitoringExporterDir + " " + resourceExporterDir);
 
     Map<String, Object> domainMap = domain.getDomainMap();
     // create the app directory in admin pod
