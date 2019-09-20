@@ -88,15 +88,7 @@ public class ItMonitoringExporter extends BaseTest {
       initialize(APP_PROPS_FILE);
       logger.info("Checking if operator and domain are running, if not creating");
       if (operator == null) {
-        /*
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
-        operator = new Operator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator);
-        operator.callHelmInstall();
-
-         */
         operator = TestUtils.createOperator("operatorexp.yaml");
-
       }
       if (domain == null) {
         domain = createVerifyDomain(number, operator);
@@ -139,18 +131,16 @@ public class ItMonitoringExporter extends BaseTest {
         domain.destroy();
         TestUtils.deleteWeblogicDomainResources("test5");
       }
-      if (operator != null) {
-        operator.destroy();
-      }
 
       String crdCmd =
               " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
       ExecCommand.exec(crdCmd);
       crdCmd = "kubectl delete secret domain1-weblogic-credentials";
       ExecCommand.exec(crdCmd);
-      uninstallWebHookPrometheusGrafanaViaChart();
-      uninstallMySql();
-      deletePvDir();
+      if (operator != null) {
+        operator.destroy();
+      }
+      uninstallWebHookPrometheusGrafanaMySql();
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       logger.info("SUCCESS");
     }
@@ -215,21 +205,14 @@ public class ItMonitoringExporter extends BaseTest {
    * @param operator operator object managing the domain
    * @throws Exception if could not run the command successfully to clone from github
    */
-  private static void deployMonitoringExporterPrometethusGrafana(
+  private static void deployMonitoringExporter(
       String exporterAppPath, Domain domain, Operator operator) throws Exception {
 
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
-
-    String domainNS = domain.getDomainNs();
-    String operatorNS = operator.getOperatorNamespace();
-    createCrossNsRbacFile(domainNS, operatorNS);
-    // create coordinator
-    createCoordinatorFile(domainNS);
     executeShelScript(
         resourceExporterDir,
         monitoringExporterScriptDir,
         "deployCoord.sh",
-        monitoringExporterDir + " " + domainNS + " " + operatorNS);
+        monitoringExporterDir + " " + resourceExporterDir);
 
     Map<String, Object> domainMap = domain.getDomainMap();
     // create the app directory in admin pod
@@ -251,6 +234,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static void verifyScalingViaPrometheus(Domain domain, String webappName)
       throws Exception {
 
+    createWebHookForScale();
     // scale cluster to only one replica
     scaleCluster(1);
     // invoke the app to increase number of the opened sessions
@@ -267,63 +251,6 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Delete Prometheus, Grafana, Coordinator.
-   *
-   * @throws Exception if could not run the command successfully
-   */
-  private static void deleteCoordinator() throws Exception {
-
-    final String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
-    executeShelScript(
-        resourceExporterDir,
-        monitoringExporterDir,
-        "deleteCoord.sh",
-        monitoringExporterDir + " " + domain.getDomainNs());
-    logger.info("Deleted Coordinator");
-  }
-
-  /**
-   * A utility method to add desired domain namespace to coordinator yaml template file replacing
-   * the DOMAIN_NS.
-   *
-   * @throws IOException when copying files from source location to staging area fails
-   */
-  private static void createCoordinatorFile(String domainNS) throws IOException {
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
-    Path src = Paths.get(resourceExporterDir + "/coordinator.yml");
-    Path dst = Paths.get(samplesDir + "/coordinator_" + domainNS + ".yaml");
-    if (!dst.toFile().exists()) {
-      logger.log(Level.INFO, "Copying {0}", src.toString());
-      Charset charset = StandardCharsets.UTF_8;
-      String content = new String(Files.readAllBytes(src), charset);
-      content = content.replaceAll("default", domainNS);
-      logger.log(Level.INFO, "to {0}", dst.toString());
-      Files.write(dst, content.getBytes(charset));
-    }
-  }
-
-  /**
-   * A utility method to copy Cross Namespaces RBAC yaml template file replacing the DOMAIN_NS,
-   * OPERATOR_NS.
-   *
-   * @throws IOException when copying files from source location to staging area fails
-   */
-  private static void createCrossNsRbacFile(String domainNS, String operatorNS) throws IOException {
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
-    Path src = Paths.get(samplesDir + "/crossnsrbac.yaml");
-    Path dst = Paths.get(samplesDir + "/crossnsrbac_" + domainNS + "_" + operatorNS + ".yaml");
-    if (!dst.toFile().exists()) {
-      logger.log(Level.INFO, "Copying {0}", src.toString());
-      Charset charset = StandardCharsets.UTF_8;
-      String content = new String(Files.readAllBytes(src), charset);
-      content = content.replaceAll("weblogic-domain", domainNS);
-      content = content.replaceAll("weblogic-operator", operatorNS);
-      logger.log(Level.INFO, "to {0}", dst.toString());
-      Files.write(dst, content.getBytes(charset));
-    }
-  }
-
-  /**
    * clone, build , deploy monitoring exporter on specified domain, operator.
    *
    * @throws Exception exception
@@ -333,7 +260,7 @@ public class ItMonitoringExporter extends BaseTest {
     gitCloneBuildMonitoringExporter();
     logger.info("Creating Operator & waiting for the script to complete execution");
     boolean testCompletedSuccessfully = false;
-    startExporterPrometheusGrafana(domain, operator);
+    startExporter(domain, operator);
     // check if exporter is up
     domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
     testCompletedSuccessfully = true;
@@ -355,10 +282,10 @@ public class ItMonitoringExporter extends BaseTest {
     return domain;
   }
 
-  private static void startExporterPrometheusGrafana(Domain domain, Operator operator)
+  private static void startExporter(Domain domain, Operator operator)
       throws Exception {
-    logger.info("deploy exporter, prometheus, grafana ");
-    deployMonitoringExporterPrometethusGrafana(
+    logger.info("deploy exporter ");
+    deployMonitoringExporter(
         monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war", domain, operator);
   }
 
@@ -449,11 +376,7 @@ public class ItMonitoringExporter extends BaseTest {
     assertTrue(page.asText().contains("WebAppComponentRuntime"));
     // check previous config is there
     assertTrue(page.asText().contains("JVMRuntime"));
-    assertTrue(
-        checkMetricsViaPrometheus(
-                prometheusSearchKey1, "\"weblogic_serverName\":\"managed-server1\"")
-            || checkMetricsViaPrometheus(
-                prometheusSearchKey2, "\"weblogic_serverName\":\"managed-server2\""));
+
     assertTrue(checkMetricsViaPrometheus(testappPrometheusSearchKey, "httpsessionreptestapp"));
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -762,10 +685,9 @@ public class ItMonitoringExporter extends BaseTest {
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
 
-    setupPvMysql();
-    createWlsImageAndDeploy();
-    installWebHook();
-    installPrometheusGrafanaViaChart();
+    setupPv();
+    //installWebHook();
+    installPrometheusGrafanaWebHookMySQLCoordinatorWLSImage();
     fireAlert();
     addMonitoringToExistedDomain();
 
@@ -929,7 +851,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if could not run the command successfully to install database
    */
-  private static void setupPvMysql() throws Exception {
+  private static void setupPv() throws Exception {
     String pvDir = monitoringExporterEndToEndDir + "pvDir";
     if (new File(pvDir).exists()) {
       logger.info(" PV dir already exists , cleaning ");
@@ -940,28 +862,29 @@ public class ItMonitoringExporter extends BaseTest {
       Files.createDirectories(Paths.get(pvDir));
     }
     replaceStringInFile(
-        monitoringExporterEndToEndDir + "/mysql/persistence.yaml", "%PV_ROOT%", pvDir);
+            monitoringExporterEndToEndDir + "/mysql/persistence.yaml", "%PV_ROOT%", pvDir);
     replaceStringInFile(
-        monitoringExporterEndToEndDir + "/prometheus/persistence.yaml", "%PV_ROOT%", pvDir);
+            monitoringExporterEndToEndDir + "/prometheus/persistence.yaml", "%PV_ROOT%", pvDir);
     replaceStringInFile(
-        monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "%PV_ROOT%", pvDir);
+            monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "%PV_ROOT%", pvDir);
     replaceStringInFile(
-        monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "%PV_ROOT%", pvDir);
+            monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "%PV_ROOT%", pvDir);
     // deploy PV and PVC
     // clean mysql processes
+    /*
     String crdCmd = "sudo pkill mysql";
     ExecCommand.exec("crdCmd");
     crdCmd = "sudo pkill mysqlp";
     ExecCommand.exec("crdCmd");
-    crdCmd = " kubectl apply -f " + monitoringExporterEndToEndDir + "/mysql/persistence.yaml";
-    TestUtils.exec(crdCmd);
-    crdCmd = " kubectl apply -f " + monitoringExporterEndToEndDir + "/mysql/mysql.yaml";
-    TestUtils.exec(crdCmd);
+
+     */
+  }
+  static void setupMySQL() throws Exception {
 
     logger.fine("getSQL pod name ");
     String sqlPod = getPodName("app=mysql", "default");
     TestUtils.checkPodReady(sqlPod, "default");
-    Thread.sleep(15000);
+
     ExecResult result =
         TestUtils.kubectlexecNoCheck(
             sqlPod, "default", " -- mysql -p123456 -e \"CREATE DATABASE domain1;\"");
@@ -1032,7 +955,7 @@ public class ItMonitoringExporter extends BaseTest {
             + wlsPassword
             + " wluser1 wlpwd123";
     TestUtils.exec(command);
-    String newImage = "domain1-image:1.0";
+
     command =
         "kubectl -n default create secret generic domain1-weblogic-credentials "
             + "  --from-literal=username="
@@ -1074,59 +997,40 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Install Prometheus and Grafana using helm chart.
+   * Install Prometheus and Grafana using helm chart, MySql, webhook, coordinator, create WLS image and deploy.
    *
    * @throws Exception if could not run the command successfully to install Prometheus and Grafana
    */
-  private static void installPrometheusGrafanaViaChart() throws Exception {
-    // delete any running pods
-    //deletePrometheusGrafana();
+  private static void installPrometheusGrafanaWebHookMySQLCoordinatorWLSImage() throws Exception {
     prometheusPort = "30000";
 
-    String crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
-    TestUtils.exec(crdCmd);
+    executeShelScript(
+            resourceExporterDir,
+            monitoringExporterScriptDir,
+            "createPromGrafanaMySqlCoordWebhook.sh",
+            monitoringExporterDir + " " + resourceExporterDir);
 
-    crdCmd =
-        "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml";
-    TestUtils.exec(crdCmd);
-    // install prometheus
-    crdCmd =
-        "helm install --wait --name prometheus --namespace monitoring --values  "
-            + monitoringExporterEndToEndDir
-            + "/prometheus/values.yaml stable/prometheus --version 8.14.3";
-    ExecResult result = ExecCommand.exec(crdCmd);
-    logger.info(" Result from helm install " + result.stdout() + " erros : " + result.stderr());
+    String webhookPod = getPodName("app=webhook", "webhook");
+    TestUtils.checkPodReady(webhookPod, "webhook");
+    setupMySQL();
+    createWlsImageAndDeploy();
+
     String podName = getPodName("app=prometheus", "monitoring");
     TestUtils.checkPodReady(podName, "monitoring", "2/2");
 
-    crdCmd = "kubectl -n monitoring get pods -l app=prometheus";
+    String crdCmd = "kubectl -n monitoring get pods -l app=prometheus";
     ExecResult resultStatus = ExecCommand.exec(crdCmd);
     logger.info("Status of the pods " + resultStatus.stdout());
-    result = ExecCommand.exec(crdCmd + "| grep prometheus-service");
+
 
     assertFalse(
         "Can't create prometheus pods",
         resultStatus.stdout().contains("CrashLoopBackOff")
             || resultStatus.stdout().contains("Error"));
 
-    // install grafana
-    crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
-    TestUtils.exec(crdCmd);
-
-    crdCmd =
-        "kubectl --namespace monitoring create secret generic grafana-secret"
-            + " --from-literal=username=admin --from-literal=password=12345678";
-    TestUtils.exec(crdCmd);
-    logger.info("calling helm install for grafana");
-    crdCmd =
-        "helm install --wait --name grafana --namespace monitoring --values  "
-            + monitoringExporterEndToEndDir
-            + "/grafana/values.yaml stable/grafana";
-    TestUtils.exec(crdCmd);
-
     podName = getPodName("app=grafana", "monitoring");
     TestUtils.checkPodReady(podName, "monitoring");
-    Thread.sleep(10000);
+
 
     logger.info("installing grafana dashboard");
 
@@ -1145,34 +1049,17 @@ public class ItMonitoringExporter extends BaseTest {
             + "  -X POST http://admin:12345678@$HOSTNAME:31000/api/dashboards/db/"
             + "  --data-binary @grafana/dashboard.json";
     TestUtils.exec(crdCmd);
+    crdCmd = " cd "
+            + monitoringExporterEndToEndDir
+            + " && " +
+            "curl -v  -H 'Content-Type: application/json' -X GET http://admin:12345678@$HOSTNAME:31000/api/dashboards/db/weblogic-server-dashboard";
+    ExecResult result = ExecCommand.exec(crdCmd);
+    assertTrue(result.stdout().contains("wls_jvm_uptime"));
     assertTrue(
         "Can't find expected metrics",
         checkMetricsViaPrometheus("wls_servlet_execution_time_average", "test-webapp"));
   }
 
-  /**
-   * Install WebHook.
-   *
-   * @throws Exception if could not run the command successfully to install webhook and alert
-   *     manager
-   */
-  private static void installWebHook() throws Exception {
-
-    logger.info("building webhook image");
-    String crdCmd =
-        "cd " + monitoringExporterEndToEndDir + " && docker build ./webhook -t webhook-log:1.0";
-    TestUtils.exec(crdCmd);
-
-    // install webhook
-    logger.info("installing webhook ");
-    crdCmd = "kubectl create ns webhook ";
-    ExecCommand.exec(crdCmd);
-
-    crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/webhook/server.yaml";
-    TestUtils.exec(crdCmd);
-    String webhookPod = getPodName("app=webhook", "webhook");
-    TestUtils.checkPodReady(webhookPod, "webhook");
-  }
 
   /**
    * Install WebHook for performing scaling via prometheus.
@@ -1196,107 +1083,19 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Uninstall deployments in specified namespace and with list of commands to execute.
-   *
-   * @param depName - name of deployment to uninstall
-   * @param namespace - namespace where deployment is installed
-   * @param cmdLines - list of command lines to execute
-   * @throws Exception if could not run the command successfully to uninstall deployments
-   */
-  private static boolean uninstallDeployments(String depName, String namespace, String... cmdLines)
-      throws Exception {
-    String podName = "";
-    boolean depUninstall = false;
-    ExecResult result;
-    logger.info("Uninstalling " + depName);
-    try {
-      podName = getPodName("app=" + depName, namespace);
-    } catch (AssertionError assertionError) {
-      // ignore, pod may not be created
-      if (cmdLines.length > 1) {
-        for (int i = 1; i < cmdLines.length; i++) {
-          logger.info(" Executing command: " + cmdLines[i]);
-          result = ExecCommand.exec(cmdLines[i]);
-          logger.info(" Command output : " + result.stdout() + " errors out: " + result.stderr());
-        }
-      }
-      return true;
-    }
-
-    try {
-      logger.info(" Executing command: " + cmdLines[0]);
-      result = ExecCommand.exec(cmdLines[0]);
-      logger.info(" Command output : " + result.stdout() + " errors out: " + result.stderr());
-      TestUtils.checkPodDeleted(podName, namespace);
-      logger.info("Pod " + podName + "was deleted");
-    } catch (Exception ex) {
-      // pod was not deleted
-      depUninstall = false;
-    }
-    if (cmdLines.length > 1) {
-      for (int i = 1; i < cmdLines.length; i++) {
-        logger.info(" Executing command: " + cmdLines[i]);
-        result = ExecCommand.exec(cmdLines[i]);
-        logger.info(" Command output : " + result.stdout() + " errors out: " + result.stderr());
-      }
-    }
-    return depUninstall;
-  }
-
-  /**
    * Uninstall Prometheus and Grafana using helm chart.
    *
    * @throws Exception if could not run the command successfully to uninstall deployments
    */
-  private static void uninstallWebHookPrometheusGrafanaViaChart() throws Exception {
-    uninstallDeployments(
-        "webhook",
-        "webhook",
-        "kubectl delete -f "
-            + monitoringExporterEndToEndDir
-            + "/webhook/server.yaml --ignore-not-found",
-        "kubectl delete ns webhook");
-    uninstallDeployments(
-        "grafana",
-        "monitoring",
-        "helm delete --purge grafana",
-        "kubectl -n monitoring delete secret grafana-secret --ignore-not-found",
-        "kubectl delete -f "
-            + monitoringExporterEndToEndDir
-            + "/grafana/persistence.yaml --ignore-not-found");
-    uninstallDeployments(
-        "prometheus",
-        "monitoring",
-        "helm delete --purge prometheus",
-        "kubectl delete -f "
-            + monitoringExporterEndToEndDir
-            + "/prometheus/persistence.yaml --ignore-not-found",
-        "kubectl delete -f "
-            + monitoringExporterEndToEndDir
-            + "/prometheus/alert-persistence.yaml --ignore-not-found");
-    deleteCoordinator();
-  }
+  private static void uninstallWebHookPrometheusGrafanaMySql() throws Exception {
 
-  /**
-   * Uninstall MYSQL.
-   *
-   * @throws Exception if could not run the command successfully to uninstall MySQL
-   */
-  private static void uninstallMySql() throws Exception {
-    String monitoringExporterEndToEndDir =
-        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
-    // unnstall mysql
-    logger.info("Uninstalling mysql");
-    uninstallDeployments(
-        "mysql",
-        "default",
-        "kubectl delete -f "
-            + monitoringExporterEndToEndDir
-            + "mysql/mysql.yaml --ignore-not-found",
-        "kubectl delete -f "
-            + monitoringExporterEndToEndDir
-            + "/mysql/persistence.yaml --ignore-not-found");
+    executeShelScript(
+            resourceExporterDir,
+            monitoringExporterScriptDir,
+            "deletePromGrafanaMySqlCoordWebhook.sh",
+            monitoringExporterDir + " " + resourceExporterDir);
 
+    deletePvDir();
   }
 
   /**
