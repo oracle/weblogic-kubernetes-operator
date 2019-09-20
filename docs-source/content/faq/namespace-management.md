@@ -15,6 +15,8 @@ This documentation describes a couple of things that you need to be aware when y
 * Delete a namespace from the operator's domain namespace list, or 
 * Delete and recreate a Kubernetes namespace that the WebLogic operator manages.
 
+See more in [Common Mistakes and Solutions]({{<relref "/userguide/managing-operators/using-the-operator/using-helm.md#common-mistakes-and-solutions">}}).
+
 #### Adding a Kubernetes namespace to the operator
 If you want a WebLogic operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be pre-created, say using the `kubectl create` command.
 
@@ -132,4 +134,4 @@ $ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace
 {{% notice note %}}
 Restarting an operator pod interrupts not just the domain resources in the namespace that is to be re-initialized, 
 but all domain resources managed by the operator deployment. Therefore, this can only be used as the last resort.
-{{% /notice %}}
+{{% /notice %}}:
