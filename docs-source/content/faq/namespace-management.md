@@ -4,7 +4,7 @@ date: 2019-09-19
 draft: false
 ---
 
-Each WebLogic operator deployment manages a number of Kubernetes namespaces. A couple of Kubernetes resources
+Each WebLogic operator deployment manages a number of Kubernetes namespaces (for more information about setting domain namespaces, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values">}}). A couple of Kubernetes resources
 have to be present in a namespace before any WebLogic domain custom resources can be successfully 
 deployed into it.
 Those Kubernetes resources are either created as part of the installation

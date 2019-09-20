@@ -77,6 +77,8 @@ $ helm upgrade \
   kubernetes/charts/weblogic-operator
 ```
 
+Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about managing `domainNamespaces`.
+
 ### Operator Helm configuration values
 
 This section describes the details of the operator Helm chart's available configuration values.
