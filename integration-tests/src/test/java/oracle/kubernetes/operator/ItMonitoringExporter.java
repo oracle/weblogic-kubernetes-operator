@@ -75,11 +75,6 @@ public class ItMonitoringExporter extends BaseTest {
       "weblogic_servlet_invocation_total_count%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
   String oprelease = "op" + number;
   private int waitTime = 5;
-  //currently certified chart versions of Prometheus and Grafana
-  private static String PROMETHEUS_CHART_VERSION;
-  private static String GRAFANA_CHART_VERSION;
-
-  private static String MONITORING_EXPORTER_VERSION;
   //update with specific branch name if not master
   private static String monitoringExporterBranchVer = "master";
 
@@ -121,22 +116,6 @@ public class ItMonitoringExporter extends BaseTest {
       String scriptName = "buildDeployAppInPod.sh";
       domain.buildDeployJavaAppInPod(
               testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-
-      Properties appProps = TestUtils.loadProps(APP_PROPS_FILE);
-
-      PROMETHEUS_CHART_VERSION =
-              System.getenv("PROMETHEUS_CHART_VERSION") != null
-                      ? System.getenv("PROMETHEUS_CHART_VERSION")
-                      : appProps.getProperty("PROMETHEUS_CHART_VERSION");
-      GRAFANA_CHART_VERSION =
-              System.getenv("GRAFANA_CHART_VERSION") != null
-                      ? System.getenv("GRAFANA_CHART_VERSION")
-                      : appProps.getProperty("GRAFANA_CHART_VERSION");
-      MONITORING_EXPORTER_VERSION =
-              System.getenv("MONITORING_EXPORTER_VERSION") != null
-                      ? System.getenv("MONITORING_EXPORTER_VERSION")
-                      : appProps.getProperty("MONITORING_EXPORTER_VERSION");
-
     }
   }
 
@@ -178,7 +157,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static void gitCloneBuildMonitoringExporter() throws Exception {
 
-    logger.info("installing monitoring exporter ");
+    logger.info("installing monitoring exporter version: " + MONITORING_EXPORTER_VERSION);
     executeShelScript(
         resourceExporterDir,
         monitoringExporterScriptDir,

@@ -18,7 +18,8 @@ cd ${monitoringExporterDir}
 git clone  -b ${monitoringExporterBranch} https://github.com/oracle/weblogic-monitoring-exporter.git $monitoringExporterSrcDir
 
 echo "Building monitoring exporter files to ${monitoringExporterDir}..."
-cd ${monitoringExporterSrcDir}
+cd ${monitoringExporterDir}
+echo "Download webapp from ://github.com/oracle/weblogic-monitoring-exporter/releases/download/v${monitoringExporterVersion}/get${monitoringExporterVersion}.sh..."
 wget https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v${monitoringExporterVersion}/get${monitoringExporterVersion}.sh
 bash get${monitoringExporterVersion}.sh ${resourceExporterDir}/rest_webapp.yml
 #mvn clean install --log-file output.txt
@@ -28,5 +29,5 @@ cd ${monitoringExporterSrcDir}/config_coordinator
 docker build -t config_coordinator .
 mkdir ${monitoringExporterDir}/apps
 mkdir ${monitoringExporterDir}/apps/monitoringexporter
-cp ${monitoringExporterSrcDir}/wls-exporter.war ${monitoringExporterWar}
+cp ${monitoringExporterDir}/wls-exporter.war ${monitoringExporterWar}
 echo "Run the script [buildMonitoringExporter.sh] ..."
