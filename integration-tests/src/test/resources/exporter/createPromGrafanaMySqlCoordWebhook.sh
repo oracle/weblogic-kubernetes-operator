@@ -4,20 +4,20 @@
 monitoringExporterDir=$1
 domainNS=test5
 resourceExporterDir=$2
-promVersionArgs=${3:-""}
-grafanaVersionArgs=${4:-""}
+promVersionArgs=$3
+grafanaVersionArgs=$4
 monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/end2end
 
 kubectl apply -f ${monitoringExporterEndToEndDir}/prometheus/persistence.yaml
 kubectl apply -f ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.yaml
 
-helm install --wait --name prometheus --namespace monitoring --values  ${resourceExporterDir}/promvalues.yaml stable/prometheus  ${promVersionArgs}
+helm install --wait --name prometheus --namespace monitoring --values  ${resourceExporterDir}/promvalues.yaml stable/prometheus  --version ${promVersionArgs}
 
 kubectl --namespace monitoring create secret generic grafana-secret --from-literal=username=admin --from-literal=password=12345678
 
 
 kubectl apply -f ${monitoringExporterEndToEndDir}/grafana/persistence.yaml
-helm install --wait --name grafana --namespace monitoring --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana ${grafanaVersionArgs}
+helm install --wait --name grafana --namespace monitoring --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version ${grafanaVersionArgs}
 
 cd ${monitoringExporterEndToEndDir}
 docker build ./webhook -t webhook-log:1.0;

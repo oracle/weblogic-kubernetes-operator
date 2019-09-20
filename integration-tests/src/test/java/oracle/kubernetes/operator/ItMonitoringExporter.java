@@ -74,6 +74,8 @@ public class ItMonitoringExporter extends BaseTest {
       "weblogic_servlet_invocation_total_count%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
   String oprelease = "op" + number;
   private int waitTime = 5;
+  private static String promChartVer = "6.11.0";
+  private static String grafanaChartVer = "3.8.14";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -674,6 +676,26 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
+   * Try to change monitoring exporter configuration with empty pass.
+   *
+   * @throws Exception if test fails
+   */
+  @Test
+  public void test19_CheckPromGrafanaLatestVersion() throws Exception {
+    Assume.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    executeShelScript(
+            resourceExporterDir,
+            monitoringExporterScriptDir,
+            "redeployPromGrafanaLatestChart.sh",
+            monitoringExporterDir + " " + resourceExporterDir);
+    checkPromGrafana();
+
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
    * Test End to End example from MonitoringExporter github project.
    *
    * @throws Exception if test fails
@@ -686,7 +708,6 @@ public class ItMonitoringExporter extends BaseTest {
     boolean testCompletedSuccessfully = false;
 
     setupPv();
-    //installWebHook();
     installPrometheusGrafanaWebHookMySQLCoordinatorWLSImage();
     fireAlert();
     addMonitoringToExistedDomain();
@@ -885,6 +906,8 @@ public class ItMonitoringExporter extends BaseTest {
     String sqlPod = getPodName("app=mysql", "default");
     TestUtils.checkPodReady(sqlPod, "default");
 
+    Thread.sleep(15000);
+
     ExecResult result =
         TestUtils.kubectlexecNoCheck(
             sqlPod, "default", " -- mysql -p123456 -e \"CREATE DATABASE domain1;\"");
@@ -1008,13 +1031,18 @@ public class ItMonitoringExporter extends BaseTest {
             resourceExporterDir,
             monitoringExporterScriptDir,
             "createPromGrafanaMySqlCoordWebhook.sh",
-            monitoringExporterDir + " " + resourceExporterDir);
+            monitoringExporterDir + " " + resourceExporterDir + " " + promChartVer + " " + grafanaChartVer);
 
     String webhookPod = getPodName("app=webhook", "webhook");
     TestUtils.checkPodReady(webhookPod, "webhook");
     setupMySQL();
+    //update with current WDT version
+    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domainBuilder/build.sh", "0.24", WDT_VERSION);
     createWlsImageAndDeploy();
+    checkPromGrafana();
+  }
 
+  static void checkPromGrafana() throws Exception {
     String podName = getPodName("app=prometheus", "monitoring");
     TestUtils.checkPodReady(podName, "monitoring", "2/2");
 
