@@ -33,4 +33,11 @@ kubectl apply -f ${resourceExporterDir}/coordinator_${domainNS}.yaml
 kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/persistence.yaml 
 kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/mysql.yaml
 
+sleep 15
+
+POD_NAME=$(kubectl get pod -l app=mysql -o jsonpath="{.items[0].metadata.name}")
+kubectl exec -it $POD_NAME -- mysql -p123456 -e "CREATE DATABASE domain1;"
+kubectl exec -it $POD_NAME -- mysql -p123456 -e "CREATE USER 'wluser1' IDENTIFIED BY 'wlpwd123';"
+kubectl exec -it $POD_NAME -- mysql -p123456 -e "GRANT ALL ON domain1.* TO 'wluser1';"
+kubectl exec -it $POD_NAME -- mysql -u wluser1 -pwlpwd123 -D domain1 -e "show tables;"
 echo "Run the script [createPromGrafanaMySqlCoordWebhook.sh] ..."

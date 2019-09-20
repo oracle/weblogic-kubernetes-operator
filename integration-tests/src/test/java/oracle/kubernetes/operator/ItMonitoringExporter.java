@@ -893,74 +893,7 @@ public class ItMonitoringExporter extends BaseTest {
             monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "%PV_ROOT%", pvDir);
     replaceStringInFile(
             monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "%PV_ROOT%", pvDir);
-    // deploy PV and PVC
-    // clean mysql processes
-    /*
-    String crdCmd = "sudo pkill mysql";
-    ExecCommand.exec("crdCmd");
-    crdCmd = "sudo pkill mysqlp";
-    ExecCommand.exec("crdCmd");
 
-     */
-  }
-  static void setupMySQL() throws Exception {
-
-    logger.fine("getSQL pod name ");
-    String sqlPod = getPodName("app=mysql", "default");
-    TestUtils.checkPodReady(sqlPod, "default");
-
-    Thread.sleep(15000);
-
-    ExecResult result =
-        TestUtils.kubectlexecNoCheck(
-            sqlPod, "default", " -- mysql -p123456 -e \"CREATE DATABASE domain1;\"");
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to create database domain1 "
-              + sqlPod
-              + " in the pod failed, returned "
-              + result.stderr()
-              + " "
-              + result.stdout());
-    }
-    result =
-        TestUtils.kubectlexecNoCheck(
-            sqlPod,
-            "default",
-            " -- mysql -p123456 -e \"CREATE USER 'wluser1' IDENTIFIED BY 'wlpwd123';\"");
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to create user wluser1 "
-              + sqlPod
-              + " in the pod failed, returned "
-              + result.stderr()
-              + " "
-              + result.stdout());
-    }
-    result =
-        TestUtils.kubectlexecNoCheck(
-            sqlPod, "default", " -- mysql -p123456 -e \"GRANT ALL ON domain1.* TO 'wluser1';\"");
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to grant all to user wluser1 "
-              + sqlPod
-              + " in the pod failed, returned "
-              + result.stderr()
-              + " "
-              + result.stdout());
-    }
-    // verify all
-    result =
-        TestUtils.kubectlexecNoCheck(
-            sqlPod, "default", " -- mysql -u wluser1 -pwlpwd123 -D domain1 -e \"show tables;\"");
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: failed to setup user and database "
-              + " in the pod failed, returned "
-              + result.stderr()
-              + " "
-              + result.stdout());
-    }
   }
 
   /**
@@ -1038,7 +971,7 @@ public class ItMonitoringExporter extends BaseTest {
 
     String webhookPod = getPodName("app=webhook", "webhook");
     TestUtils.checkPodReady(webhookPod, "webhook");
-    setupMySQL();
+
     //update with current WDT version
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domainBuilder/build.sh", "0.24", WDT_VERSION);
     createWlsImageAndDeploy();
@@ -1114,7 +1047,7 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Uninstall Prometheus and Grafana using helm chart.
+   * Uninstall Prometheus and Grafana using helm chart, uninstall Webhook, MySql.
    *
    * @throws Exception if could not run the command successfully to uninstall deployments
    */
