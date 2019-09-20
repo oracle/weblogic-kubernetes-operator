@@ -130,7 +130,7 @@ public class ItMonitoringExporter extends BaseTest {
                       : appProps.getProperty("PROMETHEUS_CHART_VERSION");
       GRAFANA_CHART_VERSION =
               System.getenv("GRAFANA_CHART_VERSION") != null
-                      ? System.getenv("PGRAFANA_CHART_VERSION")
+                      ? System.getenv("GRAFANA_CHART_VERSION")
                       : appProps.getProperty("GRAFANA_CHART_VERSION");
       MONITORING_EXPORTER_VERSION =
               System.getenv("MONITORING_EXPORTER_VERSION") != null
