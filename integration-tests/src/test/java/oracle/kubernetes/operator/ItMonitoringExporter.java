@@ -74,7 +74,7 @@ public class ItMonitoringExporter extends BaseTest {
       "weblogic_servlet_invocation_total_count%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
   String oprelease = "op" + number;
   private int waitTime = 5;
-  private static String promChartVer = "6.11.0";
+  private static String promChartVer = "9.1.1";
   private static String grafanaChartVer = "3.8.14";
 
   /**
