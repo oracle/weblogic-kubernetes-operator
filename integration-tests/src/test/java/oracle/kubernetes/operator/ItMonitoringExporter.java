@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.bind.DatatypeConverter;
@@ -75,10 +76,10 @@ public class ItMonitoringExporter extends BaseTest {
   String oprelease = "op" + number;
   private int waitTime = 5;
   //currently certified chart versions of Prometheus and Grafana
-  private static String promChartVer = "9.1.1";
-  private static String grafanaChartVer = "3.8.14";
+  private static String PROMETHEUS_CHART_VERSION;
+  private static String GRAFANA_CHART_VERSION;
 
-  private static String monitoringExporterVer = "1.1.0";
+  private static String MONITORING_EXPORTER_VERSION;
   //update with specific branch name if not master
   private static String monitoringExporterBranchVer = "master";
 
@@ -120,6 +121,22 @@ public class ItMonitoringExporter extends BaseTest {
       String scriptName = "buildDeployAppInPod.sh";
       domain.buildDeployJavaAppInPod(
               testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
+
+      Properties appProps = TestUtils.loadProps(APP_PROPS_FILE);
+
+      PROMETHEUS_CHART_VERSION =
+              System.getenv("PROMETHEUS_CHART_VERSION") != null
+                      ? System.getenv("PROMETHEUS_CHART_VERSION")
+                      : appProps.getProperty("PROMETHEUS_CHART_VERSION");
+      GRAFANA_CHART_VERSION =
+              System.getenv("GRAFANA_CHART_VERSION") != null
+                      ? System.getenv("PGRAFANA_CHART_VERSION")
+                      : appProps.getProperty("GRAFANA_CHART_VERSION");
+      MONITORING_EXPORTER_VERSION =
+              System.getenv("MONITORING_EXPORTER_VERSION") != null
+                      ? System.getenv("MONITORING_EXPORTER_VERSION")
+                      : appProps.getProperty("MONITORING_EXPORTER_VERSION");
+
     }
   }
 
@@ -166,7 +183,7 @@ public class ItMonitoringExporter extends BaseTest {
         resourceExporterDir,
         monitoringExporterScriptDir,
         "buildMonitoringExporter.sh",
-        monitoringExporterDir + " " + resourceExporterDir + " " + monitoringExporterBranchVer + " " + monitoringExporterVer);
+        monitoringExporterDir + " " + resourceExporterDir + " " + monitoringExporterBranchVer + " " + MONITORING_EXPORTER_VERSION);
   }
 
   /**
@@ -963,7 +980,7 @@ public class ItMonitoringExporter extends BaseTest {
             resourceExporterDir,
             monitoringExporterScriptDir,
             "createPromGrafanaMySqlCoordWebhook.sh",
-            monitoringExporterDir + " " + resourceExporterDir + " " + promChartVer + " " + grafanaChartVer);
+            monitoringExporterDir + " " + resourceExporterDir + " " + PROMETHEUS_CHART_VERSION + " " + GRAFANA_CHART_VERSION);
 
     String webhookPod = getPodName("app=webhook", "webhook");
     TestUtils.checkPodReady(webhookPod, "webhook");
