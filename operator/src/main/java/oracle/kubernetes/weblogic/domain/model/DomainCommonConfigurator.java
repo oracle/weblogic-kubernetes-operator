@@ -9,6 +9,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
@@ -77,6 +78,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withEnvironmentVariable(String name, String value) {
     getDomainSpec().addEnvironmentVariable(name, value);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withEnvironmentVariable(V1EnvVar envVar) {
+    getDomainSpec().addEnvironmentVariable(envVar);
     return this;
   }
 
@@ -301,6 +308,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ServerConfigurator withEnvironmentVariable(String name, String value) {
       server.addEnvironmentVariable(name, value);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withEnvironmentVariable(V1EnvVar envVar) {
+      server.addEnvironmentVariable(envVar);
       return this;
     }
 

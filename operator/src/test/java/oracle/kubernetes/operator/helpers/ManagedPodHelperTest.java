@@ -144,6 +144,22 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenPacketHasValueFromEnvironmentItems_createManagedPodStartupWithThem() {
+    V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
+    V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
+    V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
+
+
+    testSupport.addToPacket(
+        ProcessingConstants.ENVVARS,
+        Arrays.asList(configMapKeyRefEnvVar, secretKeyRefEnvVar, fieldRefEnvVar));
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(),
+        allOf(hasItem(configMapKeyRefEnvVar), hasItem(secretKeyRefEnvVar), hasItem(fieldRefEnvVar)));
+  }
+
+  @Test
   public void whenClusterHasAdditionalVolumesWithVariables_createManagedPodWithSubstitutions() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()

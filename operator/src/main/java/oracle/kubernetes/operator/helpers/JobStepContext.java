@@ -219,6 +219,7 @@ public abstract class JobStepContext extends BasePodStepContext {
     V1PodSpec podSpec = super.createPodSpec(tuningParameters)
             .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
             .restartPolicy("Never")
+            .serviceAccountName(info.getDomain().getSpec().getServiceAccountName())
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));

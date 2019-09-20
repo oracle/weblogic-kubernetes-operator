@@ -52,6 +52,7 @@ public abstract class StepContextBase implements StepContextConstants {
         .addContainersItem(createContainer(tuningParameters))
         .affinity(getServerSpec().getAffinity())
         .nodeSelector(getServerSpec().getNodeSelectors())
+        .serviceAccountName(getServerSpec().getServiceAccountName())
         .nodeName(getServerSpec().getNodeName())
         .schedulerName(getServerSpec().getSchedulerName())
         .priorityClassName(getServerSpec().getPriorityClassName())

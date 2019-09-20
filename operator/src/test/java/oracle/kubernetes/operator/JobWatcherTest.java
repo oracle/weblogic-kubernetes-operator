@@ -80,6 +80,10 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     return JobWatcher.create(this, ns, Integer.toString(rv), tuning, stopping);
   }
 
+  private JobWatcher createWatcher(AtomicBoolean stopping) {
+    return JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);
+  }
+
   @Test
   public void whenJobHasNoStatus_reportNotComplete() {
     assertThat(JobWatcher.isComplete(job), is(false));
