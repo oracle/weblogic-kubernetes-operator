@@ -3,6 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upload
 monitoringExporterDir=$1
 resourceExporterDir=$2
+monitoringExporterBranch=${3:-master}
 monitoringExporterSrcDir=${monitoringExporterDir}/src
 monitoringExporterWar=${monitoringExporterDir}/apps/monitoringexporter/wls-exporter.war
 
@@ -13,7 +14,7 @@ fi
 mkdir $monitoringExporterDir
 echo "Installing monitoring exporter files to ${monitoringExporterDir}..."
 cd ${monitoringExporterDir}
-git clone  https://github.com/oracle/weblogic-monitoring-exporter.git $monitoringExporterSrcDir
+git clone  -b ${monitoringExporterBranch} https://github.com/oracle/weblogic-monitoring-exporter.git $monitoringExporterSrcDir
 
 echo "Building monitoring exporter files to ${monitoringExporterDir}..."
 cd ${monitoringExporterSrcDir}

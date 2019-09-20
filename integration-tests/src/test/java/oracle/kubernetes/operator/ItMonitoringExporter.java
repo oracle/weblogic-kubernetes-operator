@@ -74,8 +74,11 @@ public class ItMonitoringExporter extends BaseTest {
       "weblogic_servlet_invocation_total_count%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
   String oprelease = "op" + number;
   private int waitTime = 5;
+  //currently certified chart versions of Prometheus and Grafana
   private static String promChartVer = "9.1.1";
   private static String grafanaChartVer = "3.8.14";
+  //update with specific branch name if not master
+  private static String monitoringExporterVer = "";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -161,7 +164,7 @@ public class ItMonitoringExporter extends BaseTest {
         resourceExporterDir,
         monitoringExporterScriptDir,
         "buildMonitoringExporter.sh",
-        monitoringExporterDir + " " + resourceExporterDir);
+        monitoringExporterDir + " " + resourceExporterDir + " " + monitoringExporterVer);
   }
 
   /**
@@ -676,7 +679,7 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Try to change monitoring exporter configuration with empty pass.
+   * Install prometheus and grafana with latest version of chart.
    *
    * @throws Exception if test fails
    */
