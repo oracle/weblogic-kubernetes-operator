@@ -52,14 +52,14 @@ spec:
               value: "%ADMIN_SERVER_NAME%"
             - name: ADMIN_SERVER_NAME_SVC
               value: "%ADMIN_SERVER_NAME_SVC%"
-            - name: ADMIN_PORT
-              value: "%ADMIN_PORT%"
-            - name: ADMIN_SSL_PORT
-              value: "%ADMIN_SSL_PORT%"
+            - name: ADMIN_SERVER_PORT
+              value: "%ADMIN_SERVER_PORT%"
+            - name: ADMIN_SERVER_SSL_PORT
+              value: "%ADMIN_SERVER_SSL_PORT%"
             - name: CLUSTER_NAME
               value: "%CLUSTER_NAME%"
             - name: CLUSTER_TYPE
-              value: "DYNAMIC"
+              value: "%CLUSTER_TYPE%"
             - name: T3_CHANNEL_PORT
               value: "%T3_CHANNEL_PORT%"
             - name: T3_PUBLIC_ADDRESS
@@ -78,6 +78,8 @@ spec:
               value: "%USE_KSS_FOR_DEMO%"
             - name: PRODUCTION_MODE_ENABLED
               value: "%PRODUCTION_MODE_ENABLED%"
+            - name: SSL_ENABLED
+              value: "%SSL_ENABLED%"
             - name: CREATE_DOMAIN_SCRIPT_DIR
               value: "%CREATE_DOMAIN_SCRIPT_DIR%"
             - name: DOMAIN_ROOT_DIR

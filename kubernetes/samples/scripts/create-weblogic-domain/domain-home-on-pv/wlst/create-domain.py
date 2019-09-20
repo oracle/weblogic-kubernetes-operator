@@ -11,12 +11,14 @@ def getEnvVar(var):
 # This python script is used to create a WebLogic domain
 
 domain_uid                   = getEnvVar("DOMAIN_UID")
-server_port                  = int(getEnvVar("MANAGED_SERVER_PORT"))
+managed_server_port          = int(getEnvVar("MANAGED_SERVER_PORT"))
+managed_server_ssl_port      = int(getEnvVar("MANAGED_SERVER_SSL_PORT"))
 domain_path                  = getEnvVar("DOMAIN_HOME")
 cluster_name                 = getEnvVar("CLUSTER_NAME")
 admin_server_name            = getEnvVar("ADMIN_SERVER_NAME")
 admin_server_name_svc        = getEnvVar("ADMIN_SERVER_NAME_SVC")
-admin_port                   = int(getEnvVar("ADMIN_PORT"))
+admin_server_port            = int(getEnvVar("ADMIN_SERVER_PORT"))
+admin_server_ssl_port        = int(getEnvVar("ADMIN_SERVER_SSL_PORT"))
 domain_name                  = getEnvVar("DOMAIN_NAME")
 t3_channel_port              = int(getEnvVar("T3_CHANNEL_PORT"))
 t3_public_address            = getEnvVar("T3_PUBLIC_ADDRESS")
@@ -27,6 +29,7 @@ managed_server_name_base_svc = getEnvVar("MANAGED_SERVER_NAME_BASE_SVC")
 domain_logs                  = getEnvVar("DOMAIN_LOGS_DIR")
 script_dir                   = getEnvVar("CREATE_DOMAIN_SCRIPT_DIR")
 production_mode_enabled      = getEnvVar("PRODUCTION_MODE_ENABLED")
+ssl_enabled                  = getEnvVar("SSL_ENABLED")
 
 # Read the domain secrets from the common python file
 execfile('%s/read-domain-secret.py' % script_dir)
@@ -35,9 +38,9 @@ print('domain_path        : [%s]' % domain_path);
 print('domain_name        : [%s]' % domain_name);
 print('admin_server_name  : [%s]' % admin_server_name);
 print('admin_username     : [%s]' % admin_username);
-print('admin_port         : [%s]' % admin_port);
+print('admin_server_port         : [%s]' % admin_server_port);
 print('cluster_name       : [%s]' % cluster_name);
-print('server_port        : [%s]' % server_port);
+print('managed_server_port: [%s]' % managed_server_port);
 # Open default domain template
 # ============================
 readTemplate("/u01/oracle/wlserver/common/templates/wls/wls.jar")
@@ -48,7 +51,7 @@ setOption('DomainName', domain_name)
 # Configure the Administration Server
 # ===================================
 cd('/Servers/AdminServer')
-set('ListenPort', admin_port)
+set('ListenPort', admin_server_port)
 set('Name', admin_server_name)
 
 create('T3Channel', 'NetworkAccessPoint')
@@ -56,6 +59,16 @@ cd('/Servers/%s/NetworkAccessPoints/T3Channel' % admin_server_name)
 set('PublicPort', t3_channel_port)
 set('PublicAddress', t3_public_address)
 set('ListenPort', t3_channel_port)
+
+if (ssl_enabled == 'true'):
+  print 'Enabling SSL in the Admin server...'
+  cd('/Servers/' + admin_server_name)
+  create(admin_server_name, 'SSL')
+  cd('/Servers/' + admin_server_name + '/SSL/' + admin_server_name)
+  set('HostnameVerificationIgnored', 'False')
+  set('ClientCertificateEnforced', 'False')
+  set('ListenPort', admin_server_ssl_port)
+  set('Enabled', 'True')
 
 # Set the admin user's username and password
 # ==========================================
@@ -85,10 +98,18 @@ if cluster_type == "CONFIGURED":
     create(name, 'Server')
     cd('/Servers/%s/' % name )
     print('managed server name is %s' % name);
-    set('ListenPort', server_port)
+    set('ListenPort', managed_server_port)
     set('NumOfRetriesBeforeMSIMode', 0)
     set('RetryIntervalBeforeMSIMode', 1)
     set('Cluster', cluster_name)
+    if (ssl_enabled == 'true'):
+      print 'Enabling SSL in the managed server...'
+      create(name, 'SSL')
+      cd('/Servers/' + name+ '/SSL/' + name)
+      set('HostnameVerificationIgnored', 'False')
+      set('ClientCertificateEnforced', 'False')
+      set('ListenPort', managed_server_ssl_port)
+      set('Enabled', 'True')
 
 else:
   print('Configuring Dynamic Cluster %s' % cluster_name)
@@ -98,8 +119,14 @@ else:
   st1=create(templateName, 'ServerTemplate')
   print('Done creating Server Template: %s' % templateName)
   cd('/ServerTemplates/%s' % templateName)
-  cmo.setListenPort(server_port)
+  cmo.setListenPort(managed_server_port)
   cmo.setCluster(cl)
+  if (ssl_enabled == 'true'):
+    print "Enabling SSL in the dynamic cluster's server template..."
+    ssl=cmo.getSSL()
+    ssl.setEnabled(true)
+    ssl.setListenPort(managed_server_ssl_port)
+  
   print('Done setting attributes for Server Template: %s' % templateName);
 
 

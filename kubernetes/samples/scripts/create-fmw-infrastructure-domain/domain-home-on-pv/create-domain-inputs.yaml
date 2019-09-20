@@ -106,8 +106,6 @@ exposeAdminNodePort: false
 namespace: default
 
 # Java Option for WebLogic Server
-# Add -Dweblogic.ssl.AcceptKSSDemoCertsEnabled=true system property to the javaOptions if "sslEnabled:" is true and and "useKSSForDemo:" is true
-# If "useKSSForDemo:" is false, add -Dweblogic.security.SSL.ignoreHostnameVerification=true instead.
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim
