@@ -261,6 +261,11 @@ public class ItElasticLogging extends BaseTest {
     queryCriteria = "/_search?q=_type:doc";
     verifySearchResults(queryCriteria, regex, wlsIndexKey, false);
     // Verify that serverName:managed-server1 is filtered out
+    // by checking the count of logs from serverName:managed-server1 is zero and no failures
+    // e.g. when running the query:
+    // curl -X GET http://elasticsearch.default.svc.cluster.local:9200/wls/_count?q=serverName:managed-server1 
+    // Expected return result is:
+    // {"count":0,"_shards":{"total":5,"successful":5,"skipped":0,"failed":0}}
     regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     queryCriteria = "/_count?q=serverName:" + managedServerName;
     verifySearchResults(queryCriteria, regex, wlsIndexKey, true, "notExist");
@@ -421,19 +426,27 @@ public class ItElasticLogging extends BaseTest {
       getJars
           .append(" wget -P ")
           .append(loggingExpArchiveLoc)
-          .append(" ")
+          .append(" --server-response --waitretry=20 --retry-connrefused ")
           .append(loggingJarRepos)
           .append("/")
-          .append(wlsLoggingExpJar)
-          .append(" ; ")
+          .append(wlsLoggingExpJar);
+      logger.info("Executing cmd " + getJars.toString());
+      ExecResult result = TestUtils.exec(getJars.toString());
+      logger.info("exit code: " + result.exitValue());
+      logger.info("Result: " + result.stdout());
+      
+      //Delete the content of StringBuffer
+      getJars.setLength(0);
+      getJars
           .append("wget -P ")
           .append(loggingExpArchiveLoc)
-          .append(" ")
+          .append(" --server-response --waitretry=20 --retry-connrefused ")
           .append(snakeyamlJarRepos)
           .append("/")
           .append(snakeyamlJar);
       logger.info("Executing cmd " + getJars.toString());
-      ExecResult result = TestUtils.exec(getJars.toString());
+      result = TestUtils.exec(getJars.toString());
+      logger.info("exit code: " + result.exitValue());
       logger.info("Result: " + result.stdout());
     }
     
