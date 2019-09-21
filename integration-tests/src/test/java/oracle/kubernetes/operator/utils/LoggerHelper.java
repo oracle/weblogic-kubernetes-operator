@@ -17,7 +17,7 @@ public class LoggerHelper {
   }
   
   public static void initLocal(Logger cl) {
-    cl.setUseParentHandlers(false);
+    //cl.setUseParentHandlers(false);
     localLogger.set(cl);
   }
   

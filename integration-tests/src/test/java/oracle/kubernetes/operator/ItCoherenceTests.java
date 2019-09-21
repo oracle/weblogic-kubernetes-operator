@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.LoggerHelper;
@@ -86,7 +87,7 @@ public class ItCoherenceTests extends BaseTest {
     } finally {
       destroyDomain();
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -112,7 +113,7 @@ public class ItCoherenceTests extends BaseTest {
       final String cohScriptPathInPod = cohAppLocationInPod + "/" + PROXY_CLIENT_SCRIPT;
       final String successMarker = "CACHE-SUCCESS";
 
-      log(Level.INFO, "Copying files to admin pod for App " + PROXY_CLIENT_APP_NAME);
+      LoggerHelper.getLocal().log(Level.INFO, "Copying files to admin pod for App " + PROXY_CLIENT_APP_NAME);
 
       // Create app dir in the admin pod
       StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
@@ -126,7 +127,7 @@ public class ItCoherenceTests extends BaseTest {
       TestUtils.copyAppFilesToPod(
           cohAppLocationOnHost, cohAppLocationInPod, adminServerPod, domainNS);
 
-      log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO, 
           "Executing script "
               + PROXY_CLIENT_SCRIPT
               + " for App "

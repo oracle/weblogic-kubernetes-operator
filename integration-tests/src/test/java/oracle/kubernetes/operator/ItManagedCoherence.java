@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
+import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -74,13 +75,13 @@ public class ItManagedCoherence extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      log(Level.INFO, "BEGIN");
-      log(Level.INFO, "Run once, release cluster lease");
+      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
+      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
+      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
   
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
   
-      log(Level.INFO, "SUCCESS");
+      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
 
@@ -115,7 +116,7 @@ public class ItManagedCoherence extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
 
     logTestBegin(testMethodName);
-    log(Level.INFO, "Creating coeherence domain on pv using wlst and testing the cache");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating coeherence domain on pv using wlst and testing the cache");
 
     boolean testCompletedSuccessfully = false;
     domain = null;
@@ -170,7 +171,7 @@ public class ItManagedCoherence extends BaseTest {
         domain.destroy();
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -187,7 +188,7 @@ public class ItManagedCoherence extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
 
     logTestBegin(testMethodName);
-    log(Level.INFO, "Creating coeherence domain in image using wlst and testing the cache");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating coeherence domain in image using wlst and testing the cache");
 
     boolean testCompletedSuccessfully = false;
     domain = null;
@@ -242,7 +243,7 @@ public class ItManagedCoherence extends BaseTest {
         domain.destroy();
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   private void coherenceCacheTest() throws Exception {
@@ -253,26 +254,26 @@ public class ItManagedCoherence extends BaseTest {
 
     for (int i = 0; i < firstNameList.length; i++) {
       result = addDataToCache(firstNameList[i], secondNameList[i]);
-      log(Level.INFO, "addDataToCache returned" + result.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, "addDataToCache returned" + result.stdout());
     }
     // check if cache size is 6
     result = getCacheSize();
-    log(Level.INFO, "number of records in cache = " + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "number of records in cache = " + result.stdout());
     if (!(result.stdout().equals("6"))) {
-      log(Level.INFO, "number of records in cache = " + result.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, "number of records in cache = " + result.stdout());
       assertFalse("Expected 6 records", "6".equals(result.stdout()));
     }
     // get the data from cache
     result = getCacheContents();
-    log(Level.INFO, "Cache contains the following entries \n" + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "Cache contains the following entries \n" + result.stdout());
 
     // Now clear the cache
     result = clearCache();
-    log(Level.INFO, "Cache is cleared and should be empty" + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "Cache is cleared and should be empty" + result.stdout());
   }
 
   private ExecResult addDataToCache(String firstName, String secondName) throws Exception {
-    log(Level.INFO, "Add initial data to cache");
+    LoggerHelper.getLocal().log(Level.INFO, "Add initial data to cache");
 
     StringBuffer curlCmd = new StringBuffer("curl --silent ");
     curlCmd
@@ -292,12 +293,12 @@ public class ItManagedCoherence extends BaseTest {
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
-    log(Level.INFO, "curlCmd is " + curlCmd.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "curlCmd is " + curlCmd.toString());
     return TestUtils.exec(curlCmd.toString());
   }
 
   private ExecResult getCacheSize() throws Exception {
-    log(Level.INFO, "get the number of records in cache");
+    LoggerHelper.getLocal().log(Level.INFO, "get the number of records in cache");
 
     StringBuffer curlCmd = new StringBuffer("curl --silent ");
     curlCmd
@@ -317,7 +318,7 @@ public class ItManagedCoherence extends BaseTest {
   }
 
   private ExecResult getCacheContents() throws Exception {
-    log(Level.INFO, "get the records from cache");
+    LoggerHelper.getLocal().log(Level.INFO, "get the records from cache");
 
     StringBuffer curlCmd = new StringBuffer("curl --silent ");
     curlCmd
@@ -337,7 +338,7 @@ public class ItManagedCoherence extends BaseTest {
   }
 
   private ExecResult clearCache() throws Exception {
-    log(Level.INFO, "clear the cache");
+    LoggerHelper.getLocal().log(Level.INFO, "clear the cache");
 
     StringBuffer curlCmd = new StringBuffer("curl --silent ");
     curlCmd

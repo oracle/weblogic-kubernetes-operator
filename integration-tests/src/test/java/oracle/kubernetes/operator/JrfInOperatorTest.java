@@ -65,7 +65,7 @@ public class JrfInOperatorTest extends BaseTest {
   
       // TODO: reconsider the logic to check the db readiness
       // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
-      log(Level.INFO, "waiting for the db to be visible to rcu script ...");
+      LoggerHelper.getLocal().info("waiting for the db to be visible to rcu script ...");
       Thread.sleep(20000);
     }
   }
@@ -79,13 +79,13 @@ public class JrfInOperatorTest extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      log(Level.INFO, "BEGIN");
-      log(Level.INFO, "Run once, release cluster lease");
+      LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      LoggerHelper.getLocal().info("BEGIN");
+      LoggerHelper.getLocal().info("Run once, release cluster lease");
   
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
   
-      log(Level.INFO, "SUCCESS");
+      LoggerHelper.getLocal().info("SUCCESS");
     }
   }
 
@@ -101,7 +101,7 @@ public class JrfInOperatorTest extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
+    LoggerHelper.getLocal().info("Creating Operator & waiting for the script to complete execution");
     // create operator1
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
@@ -123,7 +123,7 @@ public class JrfInOperatorTest extends BaseTest {
       if (FULLTEST) {
         testAdvancedUseCasesForADomain(operator1, jrfdomain);
       }
-      log(Level.INFO, "testing WlsLivenessProbe ...");
+      LoggerHelper.getLocal().info("testing WlsLivenessProbe ...");
       jrfdomain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
@@ -132,7 +132,7 @@ public class JrfInOperatorTest extends BaseTest {
       }
     }
 
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -150,7 +150,7 @@ public class JrfInOperatorTest extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    log(Level.INFO, "Checking if operator1 and domain1 are running, if not creating");
+    LoggerHelper.getLocal().info("Checking if operator1 and domain1 are running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
@@ -181,13 +181,13 @@ public class JrfInOperatorTest extends BaseTest {
       DbUtils.runRcu(rcuPodName, domain2Map);
 
       // create domain1
-      log(Level.INFO, "Creating Domain domain1 & verifying the domain creation");
+      LoggerHelper.getLocal().info("Creating Domain domain1 & verifying the domain creation");
       domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
       testBasicUseCases(domain1);
 
-      log(Level.INFO, "Checking if operator2 is running, if not creating");
+      LoggerHelper.getLocal().info("Checking if operator2 is running, if not creating");
       if (operator2 == null) {
         operator2 = TestUtils.createOperator(OPERATOR2_YAML);
       }
@@ -198,19 +198,19 @@ public class JrfInOperatorTest extends BaseTest {
 
       testBasicUseCases(domain2);
 
-      log(Level.INFO, "Verify the running domain domain1 is unaffected");
+      LoggerHelper.getLocal().info("Verify the running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
       testClusterScaling(operator2, domain2, false);
 
-      log(Level.INFO, "Verify the running domain domain1 is unaffected");
+      LoggerHelper.getLocal().info("Verify the running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
-      log(Level.INFO, "Destroy and create domain1 and verify no impact on domain2");
+      LoggerHelper.getLocal().info("Destroy and create domain1 and verify no impact on domain2");
       domain1.destroy();
       domain1.create();
 
-      log(Level.INFO, "Verify no impact on domain2");
+      LoggerHelper.getLocal().info("Verify no impact on domain2");
       domain2.verifyDomainCreated();
       testCompletedSuccessfully = true;
 
@@ -224,13 +224,13 @@ public class JrfInOperatorTest extends BaseTest {
         domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
       }
       if (!domainUidsToBeDeleted.equals("")) {
-        log(Level.INFO, "About to delete domains: " + domainUidsToBeDeleted);
+        LoggerHelper.getLocal().info("About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
         TestUtils.verifyAfterDeletion(domain1);
         TestUtils.verifyAfterDeletion(domain2);
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -247,7 +247,7 @@ public class JrfInOperatorTest extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    log(Level.INFO, "Checking if operator1 and domain1 are running, if not creating");
+    LoggerHelper.getLocal().info("Checking if operator1 and domain1 are running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
@@ -278,7 +278,7 @@ public class JrfInOperatorTest extends BaseTest {
       DbUtils.runRcu(rcuPodName, domain2Map);
 
       // create domain1
-      log(Level.INFO, "Creating Domain domain1 & verifying the domain creation");
+      LoggerHelper.getLocal().info("Creating Domain domain1 & verifying the domain creation");
       domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
@@ -290,19 +290,19 @@ public class JrfInOperatorTest extends BaseTest {
 
       testBasicUseCases(domain2);
 
-      log(Level.INFO, "Verify the running domain domain1 is unaffected");
+      LoggerHelper.getLocal().info("Verify the running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
       testClusterScaling(operator1, domain1, false);
 
-      log(Level.INFO, "Verify the running domain domain2 is unaffected");
+      LoggerHelper.getLocal().info("Verify the running domain domain2 is unaffected");
       domain2.verifyDomainCreated();
 
-      log(Level.INFO, "Destroy and create domain2 and verify no impact on domain1");
+      LoggerHelper.getLocal().info("Destroy and create domain2 and verify no impact on domain1");
       domain2.destroy();
       domain2.create();
 
-      log(Level.INFO, "Verify no impact on domain1");
+      LoggerHelper.getLocal().info("Verify no impact on domain1");
       domain1.verifyDomainCreated();
       testCompletedSuccessfully = true;
 
@@ -316,13 +316,13 @@ public class JrfInOperatorTest extends BaseTest {
         domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
       }
       if (!domainUidsToBeDeleted.equals("")) {
-        log(Level.INFO, "About to delete domains: " + domainUidsToBeDeleted);
+        LoggerHelper.getLocal().info("About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
         TestUtils.verifyAfterDeletion(domain1);
         TestUtils.verifyAfterDeletion(domain2);
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -339,7 +339,7 @@ public class JrfInOperatorTest extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    log(Level.INFO, "Checking if operator1 and domain1 are running, if not creating");
+    LoggerHelper.getLocal().info("Checking if operator1 and domain1 are running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
@@ -372,7 +372,7 @@ public class JrfInOperatorTest extends BaseTest {
       DbUtils.runRcu(rcuPodName, domain2Map);
 
       // create domain1
-      log(Level.INFO, "Creating Domain domain1 & verifying the domain creation");
+      LoggerHelper.getLocal().info("Creating Domain domain1 & verifying the domain creation");
       domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
@@ -384,19 +384,19 @@ public class JrfInOperatorTest extends BaseTest {
 
       testBasicUseCases(domain2);
 
-      log(Level.INFO, "Verify the running domain domain1 is unaffected");
+      LoggerHelper.getLocal().info("Verify the running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
       testClusterScaling(operator1, domain1, false);
 
-      log(Level.INFO, "Verify the running domain domain2 is unaffected");
+      LoggerHelper.getLocal().info("Verify the running domain domain2 is unaffected");
       domain2.verifyDomainCreated();
 
-      log(Level.INFO, "Destroy and create domain2 and verify no impact on domain1");
+      LoggerHelper.getLocal().info("Destroy and create domain2 and verify no impact on domain1");
       domain2.destroy();
       domain2.create();
 
-      log(Level.INFO, "Verify no impact on domain1");
+      LoggerHelper.getLocal().info("Verify no impact on domain1");
       domain1.verifyDomainCreated();
       testCompletedSuccessfully = true;
 
@@ -410,13 +410,13 @@ public class JrfInOperatorTest extends BaseTest {
         domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
       }
       if (!domainUidsToBeDeleted.equals("")) {
-        log(Level.INFO, "About to delete domains: " + domainUidsToBeDeleted);
+        LoggerHelper.getLocal().info("About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
         TestUtils.verifyAfterDeletion(domain1);
         TestUtils.verifyAfterDeletion(domain2);
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -431,11 +431,11 @@ public class JrfInOperatorTest extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    log(Level.INFO, "Checking if operator1 is running, if not creating");
+    LoggerHelper.getLocal().info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
-    log(Level.INFO, "Creating Domain & verifying the domain creation");
+    LoggerHelper.getLocal().info("Creating Domain & verifying the domain creation");
     // create domain
     JrfDomain domain = null;
     try {
@@ -453,7 +453,7 @@ public class JrfInOperatorTest extends BaseTest {
 
     domain.createDomainOnExistingDirectory();
 
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -467,11 +467,11 @@ public class JrfInOperatorTest extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    log(Level.INFO, "Checking if operator1 is running, if not creating");
+    LoggerHelper.getLocal().info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
-    log(Level.INFO, "Creating Domain domain & verifying the domain creation");
+    LoggerHelper.getLocal().info("Creating Domain domain & verifying the domain creation");
     // create domain
     JrfDomain domain = null;
 
@@ -485,7 +485,7 @@ public class JrfInOperatorTest extends BaseTest {
       if (domain != null) domain.shutdown();
     }
     domain.deletePvcAndCheckPvReleased("create-fmw-infra-sample-domain-job");
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -503,7 +503,7 @@ public class JrfInOperatorTest extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    log(Level.INFO, "Creating Domain domain10 & verifing the domain creation");
+    LoggerHelper.getLocal().info("Creating Domain domain10 & verifing the domain creation");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
@@ -525,7 +525,7 @@ public class JrfInOperatorTest extends BaseTest {
       }
     }
 
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethodName);
   }
 
   /**
@@ -589,7 +589,7 @@ public class JrfInOperatorTest extends BaseTest {
         domain11.destroy();
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethod);
+    LoggerHelper.getLocal().info("SUCCESS - " + testMethod);
   }
 
   /**

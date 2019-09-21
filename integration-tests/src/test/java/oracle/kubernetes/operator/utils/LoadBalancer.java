@@ -28,7 +28,7 @@ public class LoadBalancer {
 
     if (lbMap.get("loadBalancer").equals("TRAEFIK")) {
       String cmdLb = "helm list traefik-operator | grep DEPLOYED";
-      log(Level.INFO, "Executing cmd " + cmdLb);
+      LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         createTraefikLoadBalancer();
@@ -37,10 +37,10 @@ public class LoadBalancer {
       // String cmdTraefikLb = "helm list | grep "+lbMap.get("name") +" | grep DEPLOYED";
       // if (ExecCommand.exec(cmdTraefikLb, true).exitValue() != 0) {
         if (!((Boolean) lbMap.get("ingressPerDomain")).booleanValue()) {
-          log(Level.INFO, "Is going to createTraefikHostRouting");
+          LoggerHelper.getLocal().log(Level.INFO, "Is going to createTraefikHostRouting");
           createTraefikHostRouting();
         } else {
-          log(Level.INFO, "Is going to createTraefikIngressPerDomain");
+          LoggerHelper.getLocal().log(Level.INFO, "Is going to createTraefikIngressPerDomain");
           createTraefikIngressPerDomain();
         }
       }
@@ -48,16 +48,16 @@ public class LoadBalancer {
 
     if (lbMap.get("loadBalancer").equals("VOYAGER")) {
       String cmdLb = "helm list voyager-operator | grep DEPLOYED";
-      log(Level.INFO, "Executing cmd " + cmdLb);
+      LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         createVoyagerLoadBalancer();
-        log(Level.INFO, "Sleeping for 30 seconds to ensure voyager to be ready");
+        LoggerHelper.getLocal().log(Level.INFO, "Sleeping for 30 seconds to ensure voyager to be ready");
         Thread.sleep(30 * 1000);
       }
 
       if (((Boolean) lbMap.get("ingressPerDomain")).booleanValue()) {
-        log(Level.INFO, "Is going to createVoyagerIngressPerDomain");
+        LoggerHelper.getLocal().log(Level.INFO, "Is going to createVoyagerIngressPerDomain");
         createVoyagerIngressPerDomain();
       }
     }
@@ -68,16 +68,18 @@ public class LoadBalancer {
         "helm install --name traefik-operator --namespace traefik --values "
             + BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/charts/traefik/values.yaml stable/traefik";
-    log(Level.INFO, "Executing cmd " + cmdLb);
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
 
     ExecResult result = ExecCommand.exec(cmdLb);
     if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to create load balancer "
-              + cmdLb
-              + " failed, returned "
-              + result.stdout()
-              + result.stderr());
+      if(!result.stderr().contains("release named traefik-operator already exists")) {
+        throw new RuntimeException(
+            "FAILURE: command to create load balancer "
+                + cmdLb
+                + " failed, returned "
+                + result.stdout()
+                + result.stderr());
+      }
     }
   }
 
@@ -97,7 +99,7 @@ public class LoadBalancer {
             + "/load-balancers/"
             + lbMap.get("domainUID")
             + "/host-routing.yaml";
-    log(Level.INFO, "Executing cmd " + cmdLb);
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
 
     ExecResult result = ExecCommand.exec(cmdLb);
     if (result.exitValue() != 0) {
@@ -128,13 +130,13 @@ public class LoadBalancer {
         .append(" traefik-operator")
         .append(" stable/traefik ");
 
-    log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
+    LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       reportHelmInstallFailure(cmd.toString(), result);
     }
     String outputStr = result.stdout().trim();
-    log(Level.INFO, "Command returned " + outputStr);
+    LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
 
   private void createTraefikIngress() throws Exception {
@@ -158,41 +160,41 @@ public class LoadBalancer {
         .append(lbMap.get("domainUID"))
         .append(".org");
 
-    log(Level.INFO, "createTraefikIngress() Running " + cmd.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "createTraefikIngress() Running " + cmd.toString());
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       reportHelmInstallFailure(cmd.toString(), result);
     }
     String outputStr = result.stdout().trim();
-    log(Level.INFO, "Command returned " + outputStr);
+    LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
 
   public void createVoyagerLoadBalancer() throws Exception {
 
     String cmd1 = "helm repo add appscode https://charts.appscode.com/stable/";
-    log(Level.INFO, "Executing Add Appscode Chart Repository cmd " + cmd1);
+    LoggerHelper.getLocal().log(Level.INFO, "Executing Add Appscode Chart Repository cmd " + cmd1);
 
     executeHelmCommand(cmd1);
 
     String cmd2 = "helm repo update";
-    log(Level.INFO, "Executing Appscode Chart Repository upgrade cmd " + cmd2);
+    LoggerHelper.getLocal().log(Level.INFO, "Executing Appscode Chart Repository upgrade cmd " + cmd2);
 
     executeHelmCommand(cmd2);
 
     String cmd3 =
         "helm install appscode/voyager --name voyager-operator --version 7.4.0 --namespace voyage "
             + "--set cloudProvider=baremetal --set apiserver.enableValidatingWebhook=false";
-    log(Level.INFO, "Executing Install voyager operator cmd " + cmd3);
+    LoggerHelper.getLocal().log(Level.INFO, "Executing Install voyager operator cmd " + cmd3);
 
     executeHelmCommand(cmd3);
   }
 
   private void createVoyagerIngressPerDomain() throws Exception {
     upgradeVoyagerNamespace();
-    log(Level.INFO, "Sleeping for 20 seconds after upgradeVoyagerNamespace ");
+    LoggerHelper.getLocal().log(Level.INFO, "Sleeping for 20 seconds after upgradeVoyagerNamespace ");
     Thread.sleep(20 * 1000);
     createVoyagerIngress();
-    log(Level.INFO, "Sleeping for 20 seconds after createVoyagerIngress ");
+    LoggerHelper.getLocal().log(Level.INFO, "Sleeping for 20 seconds after createVoyagerIngress ");
     Thread.sleep(20 * 1000);
   }
 
@@ -212,7 +214,7 @@ public class LoadBalancer {
         .append(" voyager-operator")
         .append(" appscode/voyager");
 
-    log(Level.INFO, " upgradeVoyagerNamespace() Running " + cmd.toString());
+    LoggerHelper.getLocal().log(Level.INFO, " upgradeVoyagerNamespace() Running " + cmd.toString());
     executeHelmCommand(cmd.toString());
   }
 
@@ -237,18 +239,18 @@ public class LoadBalancer {
         .append("voyager.webPort=")
         .append(lbMap.get("loadBalancerWebPort"));
 
-    log(Level.INFO, "createVoyagerIngress() Running " + cmd.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "createVoyagerIngress() Running " + cmd.toString());
     executeHelmCommand(cmd.toString());
   }
 
   private void executeHelmCommand(String cmd) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
-      log(Level.INFO, "executeHelmCommand failed with " + cmd);
+      LoggerHelper.getLocal().log(Level.INFO, "executeHelmCommand failed with " + cmd);
       reportHelmInstallFailure(cmd, result);
     }
     String outputStr = result.stdout().trim();
-    log(Level.INFO, "Command returned " + outputStr);
+    LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
 
   private void reportHelmInstallFailure(String cmd, ExecResult result) throws Exception {
@@ -270,7 +272,7 @@ public class LoadBalancer {
 
   private void createInputFile(String inputFileTemplate, String generatedYamlFile)
       throws Exception {
-    log(Level.INFO, "Creating input yaml file at " + generatedYamlFile);
+    LoggerHelper.getLocal().log(Level.INFO, "Creating input yaml file at " + generatedYamlFile);
 
     // copy input template file and modify it
     Files.copy(
@@ -306,8 +308,5 @@ public class LoadBalancer {
     // writing to the file
     Files.write(Paths.get(generatedYamlFile), changedLines.toString().getBytes());
   }
-  private void log(Level logLevel, String message) {
-    LoggerHelper.getLocal().log(logLevel, message);
-    LoggerHelper.getGlobal().log(logLevel, message);
-  }
+
 }

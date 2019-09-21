@@ -43,9 +43,9 @@ public class RcuSecret extends Secret {
             + this.sysUsername
             + " --from-literal=sys_password="
             + this.sysPassword;
-    log(Level.INFO, "Running " + command);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
     ExecResult result = TestUtils.exec(command);
-    log(Level.INFO, "command result " + result.stdout().trim());
+    LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
   }
 
   public String getSysUsername() {
@@ -58,11 +58,8 @@ public class RcuSecret extends Secret {
 
   private void deleteSecret() throws Exception {
     String command = "kubectl -n " + namespace + " delete secret " + secretName;
-    log(Level.INFO, "Running " + command);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
     ExecCommand.exec(command);
   }
-  private void log(Level logLevel, String message) {
-    LoggerHelper.getLocal().log(logLevel, message);
-    LoggerHelper.getGlobal().log(logLevel, message);
-  }
+
 }

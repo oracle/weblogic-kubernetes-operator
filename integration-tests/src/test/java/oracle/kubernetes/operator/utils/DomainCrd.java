@@ -93,7 +93,7 @@ public class DomainCrd {
     JsonNode envNodes = (ArrayNode) specNode.path("serverPod").path("env");
 
     if (specNode.path("serverPod").isMissingNode()) {
-      log(Level.INFO, "Missing serverPod Node");
+      LoggerHelper.getLocal().log(Level.INFO, "Missing serverPod Node");
       podOptions = objectMapper.createObjectNode();
       envNodes = objectMapper.createArrayNode();
       ((ObjectNode) podOptions).set("env", envNodes);
@@ -108,7 +108,7 @@ public class DomainCrd {
       if (envNodes.size() != 0) {
         for (JsonNode envNode1 : envNodes) {
 
-          log(Level.INFO, " checking node " + envNode1.get("name"));
+          LoggerHelper.getLocal().log(Level.INFO, " checking node " + envNode1.get("name"));
           if (envNode1.get("name").equals(entry.getKey())) {
             ((ObjectNode) envNode1).put("value", entry.getValue());
           }
@@ -298,7 +298,7 @@ public class DomainCrd {
     for (int i = 0; i < propNames.length; i++) {
       if (myNode.path(propNames[i]).isMissingNode()) {
 
-        log(Level.INFO, "  property " + propNames[i] + " is not present, adding it  crd ");
+        LoggerHelper.getLocal().log(Level.INFO, "  property " + propNames[i] + " is not present, adding it  crd ");
 
         ObjectNode someSubNode = objectMapper.createObjectNode();
         ((ObjectNode) myNode).put(propNames[i], someSubNode);
@@ -313,17 +313,17 @@ public class DomainCrd {
       String dataType = entry.getValue().getClass().getSimpleName();
 
       if (dataType.equalsIgnoreCase("Integer")) {
-        log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO, 
             "Read Json Key :" + entry.getKey() + " | type :int | value:" + entry.getValue());
         ((ObjectNode) myNode).put(entry.getKey(), (int) entry.getValue());
 
       } else if (dataType.equalsIgnoreCase("Boolean")) {
-        log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO, 
             "Read Json Key :" + entry.getKey() + " | type :boolean | value:" + entry.getValue());
         ((ObjectNode) myNode).put(entry.getKey(), (boolean) entry.getValue());
 
       } else if (dataType.equalsIgnoreCase("String")) {
-        log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO, 
             "Read Json Key :" + entry.getKey() + " | type :string | value:" + entry.getValue());
         ((ObjectNode) myNode).put(entry.getKey(), (String) entry.getValue());
       }
@@ -373,7 +373,7 @@ public class DomainCrd {
     JsonNode clusterNode = null;
     for (JsonNode cluster : clusters) {
       if (cluster.get("clusterName").asText().equals(clusterName)) {
-        log(Level.INFO, "Got the cluster");
+        LoggerHelper.getLocal().log(Level.INFO, "Got the cluster");
         clusterNode = cluster;
       }
     }
@@ -392,7 +392,7 @@ public class DomainCrd {
     JsonNode managedserverNode = null;
     JsonNode specNode = getSpecNode();
     if (root.path("spec").path("managedServers").isMissingNode()) {
-      log(Level.INFO, "Missing MS Node");
+      LoggerHelper.getLocal().log(Level.INFO, "Missing MS Node");
       managedservers = objectMapper.createArrayNode();
       ObjectNode managedserver = objectMapper.createObjectNode();
       managedserver.put("serverName", managedServerName);
@@ -405,12 +405,12 @@ public class DomainCrd {
       if (managedservers.size() != 0) {
         for (JsonNode managedserver : managedservers) {
           if (managedserver.get("serverName").asText().equals(managedServerName)) {
-            log(Level.INFO, "Found managedServer with name " + managedServerName);
+            LoggerHelper.getLocal().log(Level.INFO, "Found managedServer with name " + managedServerName);
             managedserverNode = managedserver;
           }
         }
       } else {
-        log(Level.INFO, "Creating node for managedServer with name " + managedServerName);
+        LoggerHelper.getLocal().log(Level.INFO, "Creating node for managedServer with name " + managedServerName);
         ObjectNode managedserver = objectMapper.createObjectNode();
         managedserver.put("serverName", managedServerName);
         managedservers.add(managedserver);
@@ -431,7 +431,7 @@ public class DomainCrd {
     JsonNode serverPodNode = null;
     JsonNode objectNode = null;
     if (serverPodsParentNode.path("serverPod").isMissingNode()) {
-      log(Level.INFO, "Missing serverPod Node");
+      LoggerHelper.getLocal().log(Level.INFO, "Missing serverPod Node");
       serverPodNode = objectMapper.createObjectNode();
       ((ObjectNode) serverPodsParentNode).set("serverPod", serverPodNode);
       objectNode = objectMapper.createObjectNode();
@@ -440,7 +440,7 @@ public class DomainCrd {
     } else {
       serverPodNode = serverPodsParentNode.path("serverPod");
       if (serverPodNode.path(objectName).isMissingNode()) {
-        log(Level.INFO, "Creating node with name " + objectName);
+        LoggerHelper.getLocal().log(Level.INFO, "Creating node with name " + objectName);
         objectNode = objectMapper.createObjectNode();
         ((ObjectNode) serverPodNode).set(objectName, objectNode);
       } else {
@@ -462,7 +462,7 @@ public class DomainCrd {
     JsonNode serverPodNode = null;
     ArrayNode arrayNode = null;
     if (serverPodsParentNode.path("serverPod").isMissingNode()) {
-      log(Level.INFO, "Missing serverPod Node");
+      LoggerHelper.getLocal().log(Level.INFO, "Missing serverPod Node");
       serverPodNode = objectMapper.createObjectNode();
       ((ObjectNode) serverPodsParentNode).set("serverPod", serverPodNode);
       arrayNode = objectMapper.createArrayNode();
@@ -470,7 +470,7 @@ public class DomainCrd {
     } else {
       serverPodNode = serverPodsParentNode.path("serverPod");
       if (serverPodNode.path(arrayNodeName).isMissingNode()) {
-        log(Level.INFO, "Creating node with name {0}", arrayNodeName);
+        LoggerHelper.getLocal().log(Level.INFO, "Creating node with name {0}", arrayNodeName);
         arrayNode = objectMapper.createArrayNode();
         ((ObjectNode) serverPodNode).set(arrayNodeName, arrayNode);
       } else {
@@ -493,8 +493,5 @@ public class DomainCrd {
     Charset charset = StandardCharsets.UTF_8;
     Files.write(path, content.getBytes(charset));
   }
-  private void log(Level logLevel, String message) {
-    LoggerHelper.getLocal().log(logLevel, message);
-    LoggerHelper.getGlobal().log(logLevel, message);
-  }
+
 }

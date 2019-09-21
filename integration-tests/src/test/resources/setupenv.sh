@@ -46,6 +46,7 @@ function create_image_pull_secret_wl {
 	    --docker-server=${OCR_SERVER}/ \
 	    --docker-username=$OCR_USERNAME \
 	    --docker-password=$OCR_PASSWORD \
+	    --docker-email=$OCR_USERNAME@oracle.com \
             --dry-run -o yaml | kubectl apply -f -
 	  
 	  echo "Checking Secret"

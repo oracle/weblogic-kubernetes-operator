@@ -63,7 +63,7 @@ public class ItPodsShutdown extends BaseTest {
     if (FULLTEST) {
       initialize(APP_PROPS_FILE);
 
-      log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
+      LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
       if (operator1 == null) {
         operator1 = TestUtils.createOperator(OPERATOR1_YAML);
       }
@@ -92,14 +92,14 @@ public class ItPodsShutdown extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      log(Level.INFO, "BEGIN");
-      log(Level.INFO, "Run once, release cluster lease");
+      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
+      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
+      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
 
       destroyDomain();
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
-      log(Level.INFO, "SUCCESS");
+      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
 
@@ -110,7 +110,7 @@ public class ItPodsShutdown extends BaseTest {
     domainMap.put("initialManagedServerReplicas", new Integer("1"));
 
     domainUid = (String) domainMap.get("domainUID");
-    log(Level.INFO, "Creating and verifying the domain creation with domainUid: " + domainUid);
+    LoggerHelper.getLocal().log(Level.INFO, "Creating and verifying the domain creation with domainUid: " + domainUid);
 
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
@@ -120,7 +120,7 @@ public class ItPodsShutdown extends BaseTest {
 
   private static void getDefaultShutdownTime() throws Exception {
     terminationDefaultOptionsTime = shutdownServer("managed-server1");
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         " termination pod's time with default shutdown options is: "
             + terminationDefaultOptionsTime);
   }
@@ -131,8 +131,8 @@ public class ItPodsShutdown extends BaseTest {
     domain.shutdown();
     LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f ", originalYaml);
     ExecResult exec = TestUtils.exec("kubectl apply -f " + originalYaml);
-    log(Level.INFO, exec.stdout());
-    log(Level.INFO, "Verifying if the domain is restarted");
+    LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
     Thread.sleep(10 * 1000);
     // should restart domain
     TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
@@ -185,13 +185,13 @@ public class ItPodsShutdown extends BaseTest {
 
     // Send a HTTP request to keep open session
     String curlCmd = webServiceUrl.toString();
-    // log(Level.INFO, "Send a HTTP request: " + curlCmd);
+    // LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
 
     ExecResult result = ExecCommand.exec(curlCmd);
     if (result.exitValue() != 0) {
       throw new Exception("FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
     }
-    // log(Level.INFO, result.stdout());
+    // LoggerHelper.getLocal().log(Level.INFO, result.stdout());
   }
 
   /**
@@ -202,7 +202,7 @@ public class ItPodsShutdown extends BaseTest {
   private static long shutdownServer(String serverName) throws Exception {
     long startTime = System.currentTimeMillis();
     String cmd = "kubectl delete pod " + domainUid + "-" + serverName + " -n " + domainNS;
-    log(Level.INFO, "command to shutdown server <" + serverName + "> is: " + cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "command to shutdown server <" + serverName + "> is: " + cmd);
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       terminationTime = 0;
@@ -223,16 +223,16 @@ public class ItPodsShutdown extends BaseTest {
     cmd.append(" -n ").append(domainNS);
     cmd.append(" | grep SHUTDOWN -A 1 ");
 
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         " Get SHUTDOWN props for " + podName + " in namespace " + " with command: '" + cmd + "'");
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     String stdout = result.stdout();
-    log(Level.INFO, "Output " + stdout);
+    LoggerHelper.getLocal().log(Level.INFO, "Output " + stdout);
     boolean found = false;
     for (String prop : props) {
       if (stdout.contains(prop)) {
-        log(Level.INFO, "Property with value " + prop + " has found");
+        LoggerHelper.getLocal().log(Level.INFO, "Property with value " + prop + " has found");
         propFound.put(prop, new Boolean(true));
       }
     }
@@ -369,11 +369,11 @@ public class ItPodsShutdown extends BaseTest {
     Assert.assertTrue(
         checkShutdownUpdatedProp(domainUid + "-managed-server1", "160", "false", "Graceful"));
     if (terminationTime < delayTime) {
-      log(Level.INFO, "FAILURE: ignored opened session during shutdown");
+      LoggerHelper.getLocal().log(Level.INFO, "FAILURE: ignored opened session during shutdown");
       throw new Exception("FAILURE: ignored opened session during shutdown");
     }
     long terminationTimeWithIgnoreSessionFalse = terminationTime;
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         " Termination time with ignoreSession=false :" + terminationTimeWithIgnoreSessionFalse);
 
     shutdownProps = new HashMap();
@@ -387,12 +387,12 @@ public class ItPodsShutdown extends BaseTest {
           checkShutdownUpdatedProp(domainUid + "-managed-server1", "160", "true", "Graceful"));
 
       long terminationTimeWithIgnoreSessionTrue = terminationTime;
-      log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO, 
           " Termination time with ignoreSessions=true :" + terminationTimeWithIgnoreSessionTrue);
 
       if (terminationTimeWithIgnoreSessionFalse - (50 * 1000)
           < terminationTimeWithIgnoreSessionTrue) {
-        log(Level.INFO, "FAILURE: did not ignore opened sessions during shutdown");
+        LoggerHelper.getLocal().log(Level.INFO, "FAILURE: did not ignore opened sessions during shutdown");
         throw new Exception("FAILURE: did not ignore opened sessions during shutdown");
       }
     } finally {
@@ -431,7 +431,7 @@ public class ItPodsShutdown extends BaseTest {
       Assert.assertTrue(
           checkShutdownUpdatedProp(domainUid + "-managed-server1", "20", "false", "Graceful"));
       if (terminationTime > (3 * 20 * 1000)) {
-        log(Level.INFO, "\"FAILURE: ignored timeoutValue during shutdown");
+        LoggerHelper.getLocal().log(Level.INFO, "\"FAILURE: ignored timeoutValue during shutdown");
         throw new Exception("FAILURE: ignored timeoutValue during shutdown");
       }
     } finally {
@@ -472,7 +472,7 @@ public class ItPodsShutdown extends BaseTest {
 
       Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
       if ((2 * terminationDefaultOptionsTime < terminationTime)) {
-        log(Level.INFO, "\"FAILURE: ignored timeout Forced value during shutdown");
+        LoggerHelper.getLocal().log(Level.INFO, "\"FAILURE: ignored timeout Forced value during shutdown");
         throw new Exception("FAILURE: ignored timeout Forced during shutdown");
       }
     } finally {
@@ -595,7 +595,7 @@ public class ItPodsShutdown extends BaseTest {
 
   private void updateCrdYamlVerifyShutdown(DomainCrd crd, long delayTime) throws Exception {
     String modYaml = crd.getYamlTree();
-    log(Level.INFO, modYaml);
+    LoggerHelper.getLocal().log(Level.INFO, modYaml);
     terminationTime = 0;
     // change version to restart domain
     Map<String, String> domain = new HashMap();
@@ -612,9 +612,9 @@ public class ItPodsShutdown extends BaseTest {
     this.domain.shutdown();
     LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
     ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-    log(Level.INFO, exec.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
 
-    log(Level.INFO, "Verifying if the domain is restarted");
+    LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
     TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
     TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
 
@@ -628,7 +628,7 @@ public class ItPodsShutdown extends BaseTest {
       Thread.sleep(5 * 1000);
     }
     terminationTime = shutdownServer("managed-server1");
-    log(Level.INFO, " termination time: " + terminationTime);
+    LoggerHelper.getLocal().log(Level.INFO, " termination time: " + terminationTime);
     TestUtils.checkPodCreated(domainUid + "-admin-server", domainNS);
     TestUtils.checkPodCreated(domainUid + "-managed-server1", domainNS);
   }
@@ -640,7 +640,7 @@ public class ItPodsShutdown extends BaseTest {
    * @throws Exception exception
    */
   private void scaleCluster(int replicas) throws Exception {
-    log(Level.INFO, "Scale up/down to " + replicas + " managed servers");
+    LoggerHelper.getLocal().log(Level.INFO, "Scale up/down to " + replicas + " managed servers");
     operator1.scale(domain.getDomainUid(), domain.getClusterName(), replicas);
   }
 }

@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
@@ -60,13 +61,13 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (QUICKTEST) {
-      log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      log(Level.INFO, "BEGIN");
-      log(Level.INFO, "Run once, release cluster lease");
+      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
+      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
+      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
   
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
   
-      log(Level.INFO, "SUCCESS");    
+      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");    
     }
   }
 
@@ -83,24 +84,24 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Operator firstoperator = null;
     Operator secondoperator = null;
     try {
-      log(Level.INFO, "Checking if first operator is running, if not creating");
+      LoggerHelper.getLocal().log(Level.INFO, "Checking if first operator is running, if not creating");
       firstoperator =
           new Operator(TestUtils.createOperatorMap(number, true, testClassName), RestCertType.SELF_SIGNED);
       firstoperator.callHelmInstall();
       number = number + 1;
       oprelease = "op" + number;
-      log(Level.INFO, " new value for oprelease " + oprelease);
+      LoggerHelper.getLocal().log(Level.INFO, " new value for oprelease " + oprelease);
       secondoperator =
           new Operator((TestUtils.createOperatorMap(number, true, testClassName)), RestCertType.SELF_SIGNED);
       secondoperator.callHelmInstall();
 
-      log(Level.INFO, "Delete second operator and verify the first operator pod still running");
+      LoggerHelper.getLocal().log(Level.INFO, "Delete second operator and verify the first operator pod still running");
       secondoperator.destroy();
       Thread.sleep(BaseTest.getWaitTimePod() * 1000);
 
-      log(Level.INFO, "Verify first perator pod is running");
+      LoggerHelper.getLocal().log(Level.INFO, "Verify first perator pod is running");
       firstoperator.verifyOperatorReady();
-      log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO, 
           "Create again second operator pod and verify it is started again after create - delete -create steps");
       secondoperator =
           new Operator(
@@ -120,7 +121,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     if (secondoperator != null) {
       secondoperator.destroy();
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -134,13 +135,13 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    log(Level.INFO, "Creating first operator");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating first operator");
     Operator firstoperator =
         new Operator(TestUtils.createOperatorMap(number, true, testClassName), RestCertType.SELF_SIGNED);
     firstoperator.callHelmInstall();
     number = number + 1;
     oprelease = "op" + number;
-    log(Level.INFO, " new value for oprelease" + oprelease);
+    LoggerHelper.getLocal().log(Level.INFO, " new value for oprelease" + oprelease);
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true, testClassName);
     operatorMap.replace("namespace", firstoperator.getOperatorMap().get("namespace"));
     Operator secondoperator = new Operator(operatorMap, false, true, true, RestCertType.SELF_SIGNED);
@@ -161,7 +162,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 + ex.getMessage());
       }
       String cmdLb = "helm list --failed " + "  | grep " + oprelease;
-      log(Level.INFO, "Executing cmd " + cmdLb);
+      LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
@@ -176,7 +177,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         secondoperator.destroy();
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -205,11 +206,11 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       throw new RuntimeException("FAILURE: Helm install operator with not preexisted namespace ");
 
     } catch (Exception ex) {
-      log(Level.INFO, "Helm install operator with not preexisted ns failed as expected");
+      LoggerHelper.getLocal().log(Level.INFO, "Helm install operator with not preexisted ns failed as expected");
     } finally {
       number++;
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -239,7 +240,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
 
     } catch (Exception ex) {
       String cmdLb = "helm list --failed " + "  | grep " + oprelease;
-      log(Level.INFO, "Executing cmd " + cmdLb);
+      LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         throw new RuntimeException("FAILURE: failed helm is not showed in the failed list ");
@@ -270,7 +271,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         operator.destroy();
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -285,7 +286,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    log(Level.INFO, "Creating first operator");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating first operator");
     Operator firstoperator =
         new Operator(TestUtils.createOperatorMap(number, true, testClassName), RestCertType.SELF_SIGNED);
     firstoperator.callHelmInstall();
@@ -302,7 +303,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
           "FAILURE: Helm installs second operator with same as first operator's target domains namespaces ");
 
     } catch (Exception ex) {
-      log(Level.INFO, "Caught exception " + ex.getMessage() + ex.getStackTrace());
+      LoggerHelper.getLocal().log(Level.INFO, "Caught exception " + ex.getMessage() + ex.getStackTrace());
       if (!ex.getMessage()
           .contains(
               "Error: release "
@@ -316,7 +317,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       }
       ;
       String cmdLb = "helm list --failed " + "  | grep " + oprelease;
-      log(Level.INFO, "Executing cmd " + cmdLb);
+      LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
@@ -332,7 +333,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         secondoperator.destroy();
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -373,7 +374,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       }
       ;
       String cmdLb = "helm list --failed " + "  | grep " + oprelease;
-      log(Level.INFO, "Executing cmd " + cmdLb);
+      LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
@@ -386,7 +387,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         operator.destroy();
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -406,7 +407,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     operator1.callHelmInstall();
 
     httpsRestPort = new Integer(operator1.getOperatorMap().get("externalRestHttpsPort").toString()).intValue();
-    log(Level.INFO, "Creating second operator with externalRestHttpPort " + httpsRestPort);
+    LoggerHelper.getLocal().log(Level.INFO, "Creating second operator with externalRestHttpPort " + httpsRestPort);
     number = number + 1;
     oprelease = "op" + number;
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true, testClassName);
@@ -420,7 +421,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
           "FAILURE: Helm install operator with dublicated Rest Port number ");
 
     } catch (Exception ex) {
-      log(Level.INFO, "Error message " + ex.getMessage());
+      LoggerHelper.getLocal().log(Level.INFO, "Error message " + ex.getMessage());
       if (!ex.getMessage()
           .contains(
               "Service \"external-weblogic-operator-svc\" is invalid: spec.ports[0].nodePort: Invalid value:")) {
@@ -430,7 +431,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       }
       ;
       String cmdLb = "helm list --failed " + "  | grep " + oprelease;
-      log(Level.INFO, "Executing cmd " + cmdLb);
+      LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
@@ -446,7 +447,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         operator2.destroy();
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -481,7 +482,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       }
       ;
       String cmdLb = "helm list --failed " + "  | grep " + oprelease;
-      log(Level.INFO, "Executing cmd " + cmdLb);
+      LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
@@ -494,7 +495,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         operator.destroy();
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -548,7 +549,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     } finally {
       number++;
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -580,7 +581,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         operator.destroy();
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -611,7 +612,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         operator.destroy();
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -640,7 +641,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         operator.destroy();
       }
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -656,7 +657,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
     // create operator
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true, testClassName);
     Operator operator = new Operator(operatorMap, RestCertType.SELF_SIGNED);
@@ -665,7 +666,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Domain domainnew = null;
     boolean testCompletedSuccessfully = false;
     try {
-      log(Level.INFO, "kubectl create namespace test" + (number + 1));
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl create namespace test" + (number + 1));
       ExecCommand.exec("kubectl create namespace test" + (number + 1));
       domain = createVerifyDomain(number, operator);
       ArrayList<String> targetDomainsNS =
@@ -673,15 +674,15 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       targetDomainsNS.add("test" + (number + 1));
       upgradeOperatorDomainNamespaces(operator, targetDomainsNS);
       domainnew = createVerifyDomain(number + 1, operator);
-      log(Level.INFO, "verify that old domain is managed by operator after upgrade");
+      LoggerHelper.getLocal().log(Level.INFO, "verify that old domain is managed by operator after upgrade");
       verifyOperatorDomainManagement(operator, domain, true);
-      log(Level.INFO, "Upgrade to remove first domain");
+      LoggerHelper.getLocal().log(Level.INFO, "Upgrade to remove first domain");
       targetDomainsNS.remove("test" + (number));
       upgradeOperatorDomainNamespaces(operator, targetDomainsNS);
-      log(Level.INFO, "verify that old domain is not managed by operator");
+      LoggerHelper.getLocal().log(Level.INFO, "verify that old domain is not managed by operator");
       verifyOperatorDomainManagement(operator, domain, false);
       verifyOperatorDomainManagement(operator, domainnew, true);
-      log(Level.INFO, "Upgrade to add first domain namespace in target domains");
+      LoggerHelper.getLocal().log(Level.INFO, "Upgrade to add first domain namespace in target domains");
       targetDomainsNS.add("test" + (number));
       upgradeOperatorDomainNamespaces(operator, targetDomainsNS);
       verifyOperatorDomainManagement(operator, domain, true);
@@ -698,7 +699,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       }
       number++;
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -712,7 +713,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
     // create operator
     Operator operator = null;
     Domain domain = null;
@@ -722,7 +723,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       operator = new Operator(operatorMap, RestCertType.SELF_SIGNED);
       operator.callHelmInstall();
       domain = createVerifyDomain(number, operator);
-      log(Level.INFO, "Deleting operator to check that domain functionality is not effected");
+      LoggerHelper.getLocal().log(Level.INFO, "Deleting operator to check that domain functionality is not effected");
       operator.destroy();
       operator = null;
       domain.testWlsLivenessProbe();
@@ -736,7 +737,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       }
       number++;
     }
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   private void verifyOperatorDomainManagement(
@@ -756,7 +757,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                   "Response {\"status\":404,\"detail\":\"/operator/latest/domains/test" + number)) {
             // no-op
           } else {
-            log(Level.INFO, "Got 404, Operator can not access the domain " + domain.getDomainUid());
+            LoggerHelper.getLocal().log(Level.INFO, "Got 404, Operator can not access the domain " + domain.getDomainUid());
             break;
           }
         }
@@ -768,25 +769,25 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         }
         throw new RuntimeException(errorMsg);
       }
-      log(Level.INFO, "iteration " + i + " of " + maxIterations);
+      LoggerHelper.getLocal().log(Level.INFO, "iteration " + i + " of " + maxIterations);
       Thread.sleep(waitTime * 1000);
     }
   }
 
   private Domain createVerifyDomain(int number, Operator operator) throws Exception {
-    log(Level.INFO, "create domain with UID : test" + number);
+    LoggerHelper.getLocal().log(Level.INFO, "create domain with UID : test" + number);
     Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number, testClassName));
     domain.verifyDomainCreated();
     testAdminT3Channel(domain);
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-    log(Level.INFO, "verify that domain is managed by operator");
+    LoggerHelper.getLocal().log(Level.INFO, "verify that domain is managed by operator");
     operator.verifyDomainExists(domain.getDomainUid());
     return domain;
   }
 
   private void upgradeOperatorDomainNamespaces(
       Operator operator, ArrayList<String> targetNamespaces) throws Exception {
-    log(Level.INFO, "update operator with new target domain");
+    LoggerHelper.getLocal().log(Level.INFO, "update operator with new target domain");
     String upgradeSet =
         "domainNamespaces="
             + targetNamespaces
@@ -794,7 +795,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 .replaceAll("\\[", "{")
                 .replaceAll("\\]", "}")
                 .replaceAll(" ", "");
-    log(Level.INFO, "update operator with new target domain " + upgradeSet);
+    LoggerHelper.getLocal().log(Level.INFO, "update operator with new target domain " + upgradeSet);
     operator.callHelmUpgrade(upgradeSet);
     operator.getOperatorMap().replace("domainNamespaces", targetNamespaces);
   }

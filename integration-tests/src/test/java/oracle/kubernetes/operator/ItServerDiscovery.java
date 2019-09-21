@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
+import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.LoggerHelper;
@@ -51,13 +52,13 @@ public class ItServerDiscovery extends BaseTest {
   
       // Create operator1
       if (operator == null) {
-        log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
+        LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
         operator = TestUtils.createOperator(OPERATOR1_YAML);
       }
   
       // create domain
       if (domain == null) {
-        log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
+        LoggerHelper.getLocal().log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
         domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
         domain.verifyDomainCreated();
       }
@@ -92,13 +93,13 @@ public class ItServerDiscovery extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      log(Level.INFO, "++++++++++++++++++++++++++++++++++");
-      log(Level.INFO, "BEGIN");
-      log(Level.INFO, "Run once, release cluster lease");
+      LoggerHelper.getLocal().log(Level.INFO, "++++++++++++++++++++++++++++++++++");
+      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
+      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
   
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
   
-      log(Level.INFO, "SUCCESS");
+      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }    
   }
 
@@ -114,17 +115,17 @@ public class ItServerDiscovery extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    log(Level.INFO, "Stop the Operator");
+    LoggerHelper.getLocal().log(Level.INFO, "Stop the Operator");
     operator.stopUsingReplicas();
 
     String cmd = "kubectl apply -f " + testDomainYamlFile;
-    log(Level.INFO, "Start a new managed server, managed-server3 using command:\n" + cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Start a new managed server, managed-server3 using command:\n" + cmd);
     TestUtils.exec(cmd);
 
-    log(Level.INFO, "Restart the Operator");
+    LoggerHelper.getLocal().log(Level.INFO, "Restart the Operator");
     operator.startUsingReplicas();
 
-    log(Level.INFO, "Check if the newly created managed-server3 is running");
+    LoggerHelper.getLocal().log(Level.INFO, "Check if the newly created managed-server3 is running");
     int replicas = 3;
     verifyPodReady(replicas);
 
@@ -132,7 +133,7 @@ public class ItServerDiscovery extends BaseTest {
     int msDecrNum = 1;
     scaleDownAndverify(msDecrNum);
 
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -155,15 +156,15 @@ public class ItServerDiscovery extends BaseTest {
     String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
     final String clusterName = domainMap.get("clusterName").toString();
 
-    log(Level.INFO, "Stop the Operator");
+    LoggerHelper.getLocal().log(Level.INFO, "Stop the Operator");
     operator.stopUsingReplicas();
 
     // Stop admin server
     String cmd = "kubectl delete po/" + adminServerPodName + " -n " + domainNS;
-    log(Level.INFO, "Stop admin server <" + adminServerPodName + "> using command:\n" + cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Stop admin server <" + adminServerPodName + "> using command:\n" + cmd);
     TestUtils.exec(cmd);
 
-    log(Level.INFO, "Check if admin pod <" + adminServerPodName + "> is deleted");
+    LoggerHelper.getLocal().log(Level.INFO, "Check if admin pod <" + adminServerPodName + "> is deleted");
     TestUtils.checkPodDeleted(adminServerPodName, domainNS);
 
     // Stop all managed servers in the cluster
@@ -172,26 +173,26 @@ public class ItServerDiscovery extends BaseTest {
     for (int i = 1; i <= replicaCnt; i++) {
       String msPodName = domainUid + "-" + managedServerNameBase + i;
       cmd = "kubectl delete po/" + msPodName + " -n " + domainNS;
-      log(Level.INFO, "Stop managed server <" + msPodName + "> using command:\n" + cmd);
+      LoggerHelper.getLocal().log(Level.INFO, "Stop managed server <" + msPodName + "> using command:\n" + cmd);
       TestUtils.exec(cmd);
 
-      log(Level.INFO, "Checking if ms pod <" + msPodName + "> is deleted");
+      LoggerHelper.getLocal().log(Level.INFO, "Checking if ms pod <" + msPodName + "> is deleted");
       TestUtils.checkPodDeleted(msPodName, domainNS);
     }
 
-    log(Level.INFO, "Restart the Operator");
+    LoggerHelper.getLocal().log(Level.INFO, "Restart the Operator");
     operator.startUsingReplicas();
 
-    log(Level.INFO, "Check if admin pod <" + adminServerPodName + "> is running");
+    LoggerHelper.getLocal().log(Level.INFO, "Check if admin pod <" + adminServerPodName + "> is running");
     TestUtils.checkPodReady(adminServerPodName, domainNS);
 
     for (int i = 1; i <= replicaCnt; i++) {
       String msPodName = domainUid + "-" + managedServerNameBase + i;
-      log(Level.INFO, "Checking if ms pod <" + msPodName + "> is running");
+      LoggerHelper.getLocal().log(Level.INFO, "Checking if ms pod <" + msPodName + "> is running");
       TestUtils.checkPodReady(msPodName, domainNS);
     }
 
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   private void scaleDownAndverify(int decrNum) throws Exception {
@@ -206,10 +207,10 @@ public class ItServerDiscovery extends BaseTest {
     int replicas = replicaCnt - decrNum;
     String podName = domainUid + "-" + managedServerNameBase + replicaCnt;
 
-    log(Level.INFO, "Scale domain " + domainUid + " down to " + replicas + " managed servers");
+    LoggerHelper.getLocal().log(Level.INFO, "Scale domain " + domainUid + " down to " + replicas + " managed servers");
     operator.scale(domainUid, clusterName, replicas);
 
-    log(Level.INFO, "Checking if managed pod <" + podName + "> is deleted");
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if managed pod <" + podName + "> is deleted");
     TestUtils.checkPodDeleted(podName, domainNS);
 
     replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
@@ -231,13 +232,13 @@ public class ItServerDiscovery extends BaseTest {
 
     String podName = domainUid + "-" + managedServerNameBase + replicas;
 
-    log(Level.INFO, "Checking if managed pod <" + podName + "> is created");
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if managed pod <" + podName + "> is created");
     TestUtils.checkPodCreated(podName, domainNS);
 
-    log(Level.INFO, "Checking if managed server <" + podName + "> is running");
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if managed server <" + podName + "> is running");
     TestUtils.checkPodReady(podName, domainNS);
 
-    log(Level.INFO, "Checking if managed service <" + podName + "> is created");
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if managed service <" + podName + "> is created");
     TestUtils.checkServiceCreated(podName, domainNS);
 
     int replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);

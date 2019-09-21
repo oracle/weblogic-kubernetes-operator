@@ -172,13 +172,13 @@ public class TestUtils {
       // service might not have been created
       if (result.exitValue() != 0
           || (result.exitValue() == 0 && !result.stdout().contains(serviceName))) {
-        log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
+        LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
 
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException("FAILURE: service is not created, exiting!");
         }
-        log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO, 
             "Service is not created Ite ["
                 + i
                 + "/"
@@ -189,7 +189,7 @@ public class TestUtils {
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {
-        log(Level.INFO, "Service " + serviceName + " is Created");
+        LoggerHelper.getLocal().log(Level.INFO, "Service " + serviceName + " is Created");
         break;
       }
     }
@@ -204,7 +204,7 @@ public class TestUtils {
    */
   public static void createInputFile(Map<String, Object> map, String generatedInputYamlFile)
       throws Exception {
-    log(Level.INFO, "Creating input yaml file at " + generatedInputYamlFile);
+    LoggerHelper.getLocal().log(Level.INFO, "Creating input yaml file at " + generatedInputYamlFile);
 
     DumperOptions options = new DumperOptions();
     options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
@@ -288,12 +288,12 @@ public class TestUtils {
       throws Exception {
     StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
     cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
-    log(Level.INFO, "Deleting job " + cmdDelJob);
+    LoggerHelper.getLocal().log(Level.INFO, "Deleting job " + cmdDelJob);
     exec(cmdDelJob.toString());
 
     StringBuffer cmdDelPvc = new StringBuffer("kubectl delete pvc ");
     cmdDelPvc.append(pvcName).append(" -n ").append(namespace);
-    log(Level.INFO, "Deleting PVC " + cmdDelPvc);
+    LoggerHelper.getLocal().log(Level.INFO, "Deleting PVC " + cmdDelPvc);
     exec(cmdDelPvc.toString());
   }
 
@@ -304,7 +304,7 @@ public class TestUtils {
   public static ExecResult exec(String cmd, boolean debug) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0 || debug) {
-      log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO, 
           "\nCommand "
               + cmd
               + "\nreturn value: "
@@ -333,19 +333,19 @@ public class TestUtils {
 
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
-      log(Level.INFO, "Iteration " + i + " Checking if PV is Released " + cmd);
+      LoggerHelper.getLocal().log(Level.INFO, "Iteration " + i + " Checking if PV is Released " + cmd);
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() != 0
           || result.exitValue() == 0 && !result.stdout().contains("Released")) {
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException("FAILURE: PV is not in Released status, exiting!");
         }
-        log(Level.INFO, "PV is not in Released status," + result.stdout() + "\n " + result.stderr());
+        LoggerHelper.getLocal().log(Level.INFO, "PV is not in Released status," + result.stdout() + "\n " + result.stderr());
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
 
       } else {
-        log(Level.INFO, "PV is in Released status," + result.stdout());
+        LoggerHelper.getLocal().log(Level.INFO, "PV is in Released status," + result.stdout());
         break;
       }
     }
@@ -367,12 +367,12 @@ public class TestUtils {
       String service, String namespace, String protocol, int port) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get services ");
     cmd.append(" -n ").append(namespace);
-    log(Level.INFO, " Find services in namespage " + namespace + " with command: '" + cmd + "'");
+    LoggerHelper.getLocal().log(Level.INFO, " Find services in namespage " + namespace + " with command: '" + cmd + "'");
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     String stdout = result.stdout();
-    log(Level.INFO, " Services found: ");
-    log(Level.INFO, stdout);
+    LoggerHelper.getLocal().log(Level.INFO, " Services found: ");
+    LoggerHelper.getLocal().log(Level.INFO, stdout);
     String[] stdoutlines = stdout.split("\\r?\\n");
     if (result.exitValue() == 0 && stdoutlines.length > 0) {
       for (String stdoutline : stdoutlines) {
@@ -396,7 +396,7 @@ public class TestUtils {
     StringBuffer cmd = new StringBuffer("kubectl describe service ");
     cmd.append(serviceName);
     cmd.append(" -n ").append(namespace);
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         " Describe service "
             + serviceName
             + " in namespage "
@@ -407,8 +407,8 @@ public class TestUtils {
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     String stdout = result.stdout();
-    log(Level.INFO, " Service " + serviceName + " found: ");
-    log(Level.INFO, stdout);
+    LoggerHelper.getLocal().log(Level.INFO, " Service " + serviceName + " found: ");
+    LoggerHelper.getLocal().log(Level.INFO, stdout);
     return stdout;
   }
 
@@ -422,12 +422,12 @@ public class TestUtils {
   public static String getPods(String namespace) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pods -o wide ");
     cmd.append(" -n ").append(namespace);
-    log(Level.INFO, " Get pods in namespage " + namespace + " with command: '" + cmd + "'");
+    LoggerHelper.getLocal().log(Level.INFO, " Get pods in namespage " + namespace + " with command: '" + cmd + "'");
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     String stdout = result.stdout();
-    log(Level.INFO, " Pods found: ");
-    log(Level.INFO, stdout);
+    LoggerHelper.getLocal().log(Level.INFO, " Pods found: ");
+    LoggerHelper.getLocal().log(Level.INFO, stdout);
     return stdout;
   }
 
@@ -489,8 +489,8 @@ public class TestUtils {
               podName,
               namespace,
               "-- bash -c 'chmod +x /shared/killserver.sh && /shared/killserver.sh'");
-      log(Level.INFO, "kill server process command exitValue " + result.exitValue());
-      log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO, "kill server process command exitValue " + result.exitValue());
+      LoggerHelper.getLocal().log(Level.INFO, 
           "kill server process command result " + result.stdout() + " stderr " + result.stderr());
       Thread.sleep(2 * 1000);
     }
@@ -502,12 +502,12 @@ public class TestUtils {
     while (true) {
       final long currentTime = System.currentTimeMillis();
       int finalRestartCnt = getPodRestartCount(podName, namespace);
-      log(Level.INFO, "initialRestartCnt " + initialRestartCnt + " finalRestartCnt " + finalRestartCnt);
+      LoggerHelper.getLocal().log(Level.INFO, "initialRestartCnt " + initialRestartCnt + " finalRestartCnt " + finalRestartCnt);
       if ((finalRestartCnt - initialRestartCnt) == 1) {
-        log(Level.INFO, "WLS liveness probe test is successful.");
+        LoggerHelper.getLocal().log(Level.INFO, "WLS liveness probe test is successful.");
         break;
       }
-      log(Level.INFO, "Waiting for liveness probe to restart the pod");
+      LoggerHelper.getLocal().log(Level.INFO, "Waiting for liveness probe to restart the pod");
       if ((currentTime - startTime) > maxWaitMillis) {
         throw new RuntimeException(
             "WLS liveness probe is not working within " + maxWaitMillis / 1000 + " seconds");
@@ -544,7 +544,7 @@ public class TestUtils {
         .append(":")
         .append(destLocationInPod);
 
-    log(Level.INFO, "Command to copy file " + cmdTocp);
+    LoggerHelper.getLocal().log(Level.INFO, "Command to copy file " + cmdTocp);
     ExecResult result = ExecCommand.exec(cmdTocp.toString());
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -572,9 +572,9 @@ public class TestUtils {
         .append(scriptPath);
 
     // ExecResult result = ExecCommand.exec("kubectl get pods -n " + namespace);
-    // log(Level.INFO, "get pods before killing the server " + result.stdout() + "\n " +
+    // LoggerHelper.getLocal().log(Level.INFO, "get pods before killing the server " + result.stdout() + "\n " +
     // result.stderr());
-    log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
+    LoggerHelper.getLocal().log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
     return ExecCommand.exec(cmdKubectlSh.toString());
   }
 
@@ -606,10 +606,10 @@ public class TestUtils {
         // Find dir recursively
         copyAppFilesToPod(file.getAbsolutePath(), nestedDirOnPod, podName, namespace);
       } else {
-        log(Level.INFO, "Copy file: " + file.getAbsoluteFile().toString() + " to the pod: " + podName);
+        LoggerHelper.getLocal().log(Level.INFO, "Copy file: " + file.getAbsoluteFile().toString() + " to the pod: " + podName);
 
         String fileParent = file.getParentFile().getName();
-        log(Level.INFO, "file Parent: " + fileParent);
+        LoggerHelper.getLocal().log(Level.INFO, "file Parent: " + fileParent);
 
         StringBuffer copyFileCmd = new StringBuffer(" -- bash -c 'cat > ");
         copyFileCmd
@@ -646,7 +646,7 @@ public class TestUtils {
       throws Exception {
     // get access token
     String token = getAccessToken(operator);
-    log(Level.INFO, "token =" + token);
+    LoggerHelper.getLocal().log(Level.INFO, "token =" + token);
 
     KeyStore myKeyStore = createKeyStore(operator);
 
@@ -663,13 +663,13 @@ public class TestUtils {
           response = request.get();
         }
       } catch (Exception ex) {
-        log(Level.INFO, "Got exception, iteration " + i + " " + ex.getMessage());
+        LoggerHelper.getLocal().log(Level.INFO, "Got exception, iteration " + i + " " + ex.getMessage());
         i++;
         if (ex.getMessage().contains("java.net.ConnectException: Connection refused")) {
           if (i == (BaseTest.getMaxIterationsPod() - 1)) {
             throw ex;
           }
-          log(Level.INFO, "Sleeping 5 more seconds and try again");
+          LoggerHelper.getLocal().log(Level.INFO, "Sleeping 5 more seconds and try again");
           Thread.sleep(5 * 1000);
           continue;
         } else {
@@ -678,13 +678,13 @@ public class TestUtils {
       }
       break;
     }
-    log(Level.INFO, "response: " + response);
+    LoggerHelper.getLocal().log(Level.INFO, "response: " + response);
 
     int returnCode = response.getStatus();
     // Verify
     if (returnCode == 204 || returnCode == 200) {
-      log(Level.INFO, "response code is " + returnCode);
-      log(Level.INFO, "Response is " + response.readEntity(String.class));
+      LoggerHelper.getLocal().log(Level.INFO, "response code is " + returnCode);
+      LoggerHelper.getLocal().log(Level.INFO, "Response is " + response.readEntity(String.class));
     } else {
       throw new RuntimeException("Response " + response.readEntity(String.class));
     }
@@ -756,9 +756,9 @@ public class TestUtils {
           "FAILED: command to get externalOperatorCert " + opCertCmd + " failed.");
     }
 
-    // log(Level.INFO, "opCertCmd ="+opCertCmd);
+    // LoggerHelper.getLocal().log(Level.INFO, "opCertCmd ="+opCertCmd);
     String opCert = result.stdout().trim();
-    // log(Level.INFO, "opCert ="+opCert);
+    // LoggerHelper.getLocal().log(Level.INFO, "opCert ="+opCert);
 
     StringBuffer opCertDecodeCmd = new StringBuffer("echo ");
     opCertDecodeCmd
@@ -790,7 +790,7 @@ public class TestUtils {
           "FAILED: command to get externalOperatorKey " + opKeyCmd + " failed.");
     }
     String opKey = result.stdout().trim();
-    // log(Level.INFO, "opKey ="+opKey);
+    // LoggerHelper.getLocal().log(Level.INFO, "opKey ="+opKey);
 
     StringBuffer opKeyDecodeCmd = new StringBuffer("echo ");
     opKeyDecodeCmd.append(opKey).append(" | base64 --decode > ").append(keyFile.getAbsolutePath());
@@ -813,7 +813,7 @@ public class TestUtils {
     // create op
     Operator operator = new Operator(opYamlFile, restCertType);
 
-    log(Level.INFO, "Check Operator status");
+    LoggerHelper.getLocal().log(Level.INFO, "Check Operator status");
     operator.verifyPodCreated();
     operator.verifyOperatorReady();
     operator.verifyExternalRestService();
@@ -827,7 +827,7 @@ public class TestUtils {
     Operator operator = new Operator(inputMap, restCertType);
     operator.callHelmInstall();
 
-    log(Level.INFO, "Check Operator status");
+    LoggerHelper.getLocal().log(Level.INFO, "Check Operator status");
     operator.verifyPodCreated();
     operator.verifyOperatorReady();
     operator.verifyExternalRestService();
@@ -850,7 +850,7 @@ public class TestUtils {
     // create op
     Operator operator = new Operator(opYamlFile, RestCertType.SELF_SIGNED);
 
-    log(Level.INFO, "Check Operator status");
+    LoggerHelper.getLocal().log(Level.INFO, "Check Operator status");
     operator.verifyPodCreated();
     operator.verifyOperatorReady(containerNum);
     operator.verifyExternalRestService();
@@ -859,24 +859,24 @@ public class TestUtils {
   }
 
   public static Domain createDomain(String inputYaml) throws Exception {
-    log(Level.INFO, "Creating domain with yaml, waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
   }
 
   public static Domain createDomain(String inputYaml, boolean createDomainResource)
       throws Exception {
-    log(Level.INFO, "Creating domain with yaml, waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml, createDomainResource);
   }
 
   public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
-    log(Level.INFO, "Creating domain with Map, waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap);
   }
 
   public static Domain createDomain(
       Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
-    log(Level.INFO, "Creating domain with Map, waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap, createDomainResource);
   }
 
@@ -908,11 +908,11 @@ public class TestUtils {
 
   public static void renewK8sClusterLease(String projectRoot, String leaseId) throws Exception {
     if (leaseId != "") {
-      log(Level.INFO, "Renewing lease for leaseId " + leaseId);
+      LoggerHelper.getLocal().log(Level.INFO, "Renewing lease for leaseId " + leaseId);
       String command = projectRoot + "/src/integration-tests/bash/lease.sh -r " + leaseId;
       ExecResult execResult = ExecCommand.exec(command);
       if (execResult.exitValue() != 0) {
-        log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO, 
             "ERROR: Could not renew lease on k8s cluster for LEASE_ID="
                 + leaseId
                 + "Used "
@@ -933,7 +933,7 @@ public class TestUtils {
 
         throw new RuntimeException("Could not renew lease on k8s cluster " + execResult.stderr());
       } else {
-        log(Level.INFO, "Renewed lease for leaseId " + leaseId);
+        LoggerHelper.getLocal().log(Level.INFO, "Renewed lease for leaseId " + leaseId);
       }
     }
   }
@@ -942,9 +942,9 @@ public class TestUtils {
     String cmd = projectRoot + "/src/integration-tests/bash/lease.sh -d " + leaseId;
     ExecResult leaseResult = ExecCommand.exec(cmd);
     if (leaseResult.exitValue() != 0) {
-      log(Level.INFO, "FAILED: command to release lease " + cmd + " failed " + leaseResult.stderr());
+      LoggerHelper.getLocal().log(Level.INFO, "FAILED: command to release lease " + cmd + " failed " + leaseResult.stderr());
     }
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         "Command " + cmd + " returned " + leaseResult.stdout() + "\n" + leaseResult.stderr());
   }
 
@@ -962,7 +962,7 @@ public class TestUtils {
 
     // Create a resource target identified by Operator ext REST API URL
     WebTarget target = javaClient.target(url.toString());
-    log(Level.INFO, "Invoking OP REST API URL: " + target.getUri().toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Invoking OP REST API URL: " + target.getUri().toString());
 
     // Obtain a client request invocation builder
     Builder request = target.request(MediaType.APPLICATION_JSON);
@@ -1012,7 +1012,7 @@ public class TestUtils {
             + " -n "
             + namespace;
 
-    log(Level.INFO, "Running command " + commandToLog);
+    LoggerHelper.getLocal().log(Level.INFO, "Running command " + commandToLog);
     ExecResult result = ExecCommand.exec(command);
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't create secret " + result.stderr());
@@ -1046,7 +1046,7 @@ public class TestUtils {
     domainMap.put("t3ChannelPort", 31000 + number);
     if (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
       domainMap.put("voyagerWebPort", 30344 + number);
-      log(Level.INFO, "For this domain voyagerWebPort is set to: "+domainMap.get("voyagerWebPort"));
+      LoggerHelper.getLocal().log(Level.INFO, "For this domain voyagerWebPort is set to: "+domainMap.get("voyagerWebPort"));
     }
     return domainMap;
   }
@@ -1075,7 +1075,7 @@ public class TestUtils {
         .append(" ")
         .append(arguments)
         .append("'");
-    log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
+    LoggerHelper.getLocal().log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
     ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -1112,7 +1112,7 @@ public class TestUtils {
         .append(String.join(" ", args).toString())
         .append("'");
 
-    log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
+    LoggerHelper.getLocal().log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
     TestUtils.exec(cmdKubectlSh.toString());
   }
 
@@ -1133,7 +1133,7 @@ public class TestUtils {
           .append(srcDir)
           .append(" . ")
       ;
-      log(Level.INFO, "Command to call build a jar file " + cmd);
+      LoggerHelper.getLocal().log(Level.INFO, "Command to call build a jar file " + cmd);
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() != 0) {
         throw new RuntimeException(
@@ -1162,7 +1162,7 @@ public class TestUtils {
           .append(zipPath)
           .append(" . ")
       ;
-      log(Level.INFO, "Command to call build a zip file " + cmd);
+      LoggerHelper.getLocal().log(Level.INFO, "Command to call build a zip file " + cmd);
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() != 0) {
         throw new RuntimeException(
@@ -1223,7 +1223,7 @@ public class TestUtils {
               + result.stdout()
               + result.stderr());
     }
-    log(Level.INFO, "command result " + result.stdout().trim());
+    LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
   }
 
   public static void createWldfModule(String adminPodName, String domainNS, int t3ChannelPort)
@@ -1266,7 +1266,7 @@ public class TestUtils {
     StringBuffer cmd = new StringBuffer("kubectl apply -f ");
     cmd.append(BaseTest.getProjectRoot())
         .append("/integration-tests/src/test/resources/wldf/wldf-policy.yaml");
-    log(Level.INFO, "Running " + cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -1279,7 +1279,7 @@ public class TestUtils {
               + result.stderr());
     }
     String outputStr = result.stdout().trim();
-    log(Level.INFO, "Command returned " + outputStr);
+    LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
 
   public static void deleteWeblogicDomainResources(String domainUid) throws Exception {
@@ -1299,7 +1299,7 @@ public class TestUtils {
     final String credentialsName =
         String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
 
-    log(Level.INFO, "Before deletion of domain: " + domainUid);
+    LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: " + domainUid);
 
     k8sTestUtils.verifyDomainCrd();
     k8sTestUtils.verifyDomain(domainNs, domainUid, true);
@@ -1326,7 +1326,7 @@ public class TestUtils {
     final String credentialsName =
         String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
 
-    log(Level.INFO, "After deletion of domain: " + domainUid);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: " + domainUid);
     k8sTestUtils.verifyDomainCrd();
     k8sTestUtils.verifyDomain(domainNs, domainUid, false);
     k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 0);
@@ -1365,13 +1365,13 @@ public class TestUtils {
   private static KeyStore createKeyStore(Operator operator) throws Exception {
     // get operator external certificate from weblogic-operator.yaml
     String opExtCertFile = getExternalOperatorCertificate(operator);
-    // log(Level.INFO, "opExtCertFile =" + opExtCertFile);
+    // LoggerHelper.getLocal().log(Level.INFO, "opExtCertFile =" + opExtCertFile);
 
     // NOTE: Operator's private key should not be added to a keystore
     // used for the client connection
     // get operator external key from weblogic-operator.yaml
     //    String opExtKeyFile = getExternalOperatorKey(operator);
-    // log(Level.INFO, "opExternalKeyFile =" + opExtKeyFile);
+    // LoggerHelper.getLocal().log(Level.INFO, "opExternalKeyFile =" + opExtKeyFile);
 
     if (!new File(opExtCertFile).exists()) {
       throw new RuntimeException("File " + opExtCertFile + " doesn't exist");
@@ -1379,7 +1379,7 @@ public class TestUtils {
     //    if (!new File(opExtKeyFile).exists()) {
     //      throw new RuntimeException("File " + opExtKeyFile + " doesn't exist");
     //    }
-    log(Level.INFO, "opExtCertFile " + opExtCertFile);
+    LoggerHelper.getLocal().log(Level.INFO, "opExtCertFile " + opExtCertFile);
     // Create a java Keystore obj and verify it's not null
     KeyStore myKeyStore = PemImporter.createKeyStore(new File(opExtCertFile), "temp_password");
     if (myKeyStore == null) {
@@ -1408,13 +1408,13 @@ public class TestUtils {
       // loop command till condition
       if (result.exitValue() != 0
           || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
-        log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
+        LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException(
               "FAILURE: Timeout - pod " + k8sObjName + " output does not contain '" + matchStr + "'");
         }
-        log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO, 
             "Pod "
                 + k8sObjName
                 + "  output does not contain '" + matchStr + "'  Iteration ["
@@ -1428,7 +1428,7 @@ public class TestUtils {
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {
-        log(Level.INFO, "SUCCESS: Pod " + k8sObjName + " output contains '" + matchStr + "'");
+        LoggerHelper.getLocal().log(Level.INFO, "SUCCESS: Pod " + k8sObjName + " output contains '" + matchStr + "'");
         break;
       }
     }
@@ -1450,7 +1450,7 @@ public class TestUtils {
     if (result.exitValue() != 0 || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
       return false;
     } else {
-      log(Level.INFO, "Pod " + k8sObjName + " match found for " + matchStr);
+      LoggerHelper.getLocal().log(Level.INFO, "Pod " + k8sObjName + " match found for " + matchStr);
       return true;
     }
   }
@@ -1462,20 +1462,20 @@ public class TestUtils {
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() != 0) {
         if (result.stderr().contains(matchStr)) {
-          log(Level.INFO, "DEBUG: " + result.stderr());
+          LoggerHelper.getLocal().log(Level.INFO, "DEBUG: " + result.stderr());
           break;
         } else {
           throw new RuntimeException("FAILURE: Command " + cmd + " failed " + result.stderr());
         }
       }
       if (result.exitValue() == 0 && !result.stdout().trim().equals("0")) {
-        log(Level.INFO, "Command " + cmd + " returned " + result.stdout());
+        LoggerHelper.getLocal().log(Level.INFO, "Command " + cmd + " returned " + result.stdout());
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException(
               "FAILURE: K8s Object " + k8sObjName + " is not deleted, exiting!");
         }
-        log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO, 
             "K8s object "
                 + k8sObjName
                 + " still exists, Ite ["
@@ -1507,7 +1507,7 @@ public class TestUtils {
   public static void createNewYamlFile(
       String inputYamlFile, String generatedYamlFile, String oldString, String newString)
       throws Exception {
-    log(Level.INFO, "Creating new  " + generatedYamlFile);
+    LoggerHelper.getLocal().log(Level.INFO, "Creating new  " + generatedYamlFile);
 
     Files.copy(
         new File(inputYamlFile).toPath(),
@@ -1534,7 +1534,7 @@ public class TestUtils {
     reader.close();
     // writing to the file
     Files.write(Paths.get(generatedYamlFile), changedLines.toString().getBytes());
-    log(Level.INFO, "Done - generate the new yaml file ");
+    LoggerHelper.getLocal().log(Level.INFO, "Done - generate the new yaml file ");
   }
 
   /**
@@ -1545,7 +1545,7 @@ public class TestUtils {
    * @throws Exception exception
    */
   public static void copyFile(String fromFile, String toFile) throws Exception {
-    log(Level.INFO, "Copying file from  " + fromFile + " to " + toFile);
+    LoggerHelper.getLocal().log(Level.INFO, "Copying file from  " + fromFile + " to " + toFile);
     Files.copy(new File(fromFile).toPath(), Paths.get(toFile), StandardCopyOption.REPLACE_EXISTING);
   }
 
@@ -1566,7 +1566,7 @@ public class TestUtils {
     cmd.append(clusterName);
     cmd.append(" -n ").append(domainNS);
     cmd.append(" | grep ClusterIP | awk '{print $3}' ");
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         " Get ClusterIP for "
             + clusterName
             + " in namespace "
@@ -1577,8 +1577,8 @@ public class TestUtils {
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     String stdout = result.stdout();
-    log(Level.INFO, " ClusterIP for cluster: " + clusterName + " found: ");
-    log(Level.INFO, stdout);
+    LoggerHelper.getLocal().log(Level.INFO, " ClusterIP for cluster: " + clusterName + " found: ");
+    LoggerHelper.getLocal().log(Level.INFO, stdout);
     return stdout;
   }
 
@@ -1621,7 +1621,7 @@ public class TestUtils {
         retrieveClusterIP(domain.getDomainUid(), domain.getClusterName(), domainNS)
             + ":"
             + managedServerPort;
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         "Build and deploy WebService App: "
             + appName
             + "."
@@ -1651,7 +1651,7 @@ public class TestUtils {
     copyAppFilesToPod(
         appLocationOnHost + "/WEB-INF", appLocationInPod + "/WEB-INF", adminServerPod, domainNS);
 
-    log(Level.INFO, "Creating WebService and WebService Servlet Client Applications");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating WebService and WebService Servlet Client Applications");
 
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     domain.callShellScriptToBuildDeployAppInPod(
@@ -1694,7 +1694,7 @@ public class TestUtils {
     String infoDirName = initInfoDirName;
     String domainNS = domain.getDomainNs();
     final String deployTargetForGar = (args.length == 0) ? "dataCluster" : args[0];
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         "Build and deploy Coherence App: "
             + appName
             + " to respective clusters ");
@@ -1712,7 +1712,7 @@ public class TestUtils {
     // Copy all App files to the admin pod
     copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
 
-    log(Level.INFO, "Creating WebService and WebService Servlet Client Applications");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating WebService and WebService Servlet Client Applications");
 
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     domain.callShellScriptToBuildDeployAppInPod(
@@ -1730,7 +1730,7 @@ public class TestUtils {
             + "\" && docker push "
             + image;
     ExecResult result = TestUtils.exec(dockerLoginAndPushCmd);
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         "cmd "
             + dockerLoginAndPushCmd
             + "\n result "
@@ -1752,8 +1752,5 @@ public class TestUtils {
             + " --type merge";
     return exec(cmd, true);
   }
-  private void log(Level logLevel, String message) {
-    LoggerHelper.getLocal().log(logLevel, message);
-    LoggerHelper.getGlobal().log(logLevel, message);
-  }
+
 }

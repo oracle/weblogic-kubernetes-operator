@@ -34,12 +34,12 @@ public class PersistentVolume {
     int cnt = 0;
     int maxCnt = 10;
     while (cnt < maxCnt) {
-      log(Level.INFO, "Executing command " + cmd);
+      LoggerHelper.getLocal().log(Level.INFO, "Executing command " + cmd);
       ExecResult result = ExecCommand.exec(cmd);
       if (result.exitValue() == 0) {
         break;
       } else {
-        log(Level.INFO, "PV dir creation command failed with exitValue= "+result.exitValue() +
+        LoggerHelper.getLocal().log(Level.INFO, "PV dir creation command failed with exitValue= "+result.exitValue() +
                       "stderr= " + result.stderr() +" stdout="+result.stdout());
         Thread.sleep(BaseTest.getWaitTimePod());
         cnt = cnt + 1;
@@ -69,7 +69,7 @@ public class PersistentVolume {
             + pvMap.get("baseName")
             + "-pv-inputs.yaml -e -o "
             + BaseTest.getUserProjectsDir();
-    log(Level.INFO, "Executing cmd " + cmdPvPvc);
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdPvPvc);
 
     TestUtils.exec(cmdPvPvc, true);
   }
@@ -81,8 +81,5 @@ public class PersistentVolume {
   public Map getPvMap() {
     return pvMap;
   }
-  private void log(Level logLevel, String message) {
-    LoggerHelper.getLocal().log(logLevel, message);
-    LoggerHelper.getGlobal().log(logLevel, message);
-  }
+
 }

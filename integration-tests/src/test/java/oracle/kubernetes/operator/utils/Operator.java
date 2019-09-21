@@ -102,7 +102,7 @@ public class Operator {
    * @throws Exception exception
    */
   public void verifyPodCreated() throws Exception {
-    log(Level.INFO, "Checking if Operator pod is Running");
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if Operator pod is Running");
     // empty string for pod name as there is only one pod
     TestUtils.checkPodCreated("", operatorNS);
   }
@@ -113,7 +113,7 @@ public class Operator {
    * @throws Exception exception
    */
   public void verifyPodDeleted() throws Exception {
-    log(Level.INFO, "Checking if Operator pod is deleted");
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if Operator pod is deleted");
     // empty string for pod name as there is only one pod
     TestUtils.checkPodDeleted("", operatorNS);
   }
@@ -124,7 +124,7 @@ public class Operator {
    * @throws Exception exception
    */
   public void verifyOperatorReady() throws Exception {
-    log(Level.INFO, "Checking if Operator pod is Ready");
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if Operator pod is Ready");
     // empty string for pod name as there is only one pod
     TestUtils.checkPodReady("", operatorNS);
   }
@@ -136,7 +136,7 @@ public class Operator {
    * @throws Exception exception
    */
   public void verifyOperatorReady(String containerNum) throws Exception {
-    log(Level.INFO, "Checking if Operator pod is Ready");
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if Operator pod is Ready");
     // empty string for pod name as there is only one pod
     TestUtils.checkPodReady("", operatorNS, containerNum);
   }
@@ -147,10 +147,10 @@ public class Operator {
    * @throws Exception exception
    */
   public void create() throws Exception {
-    log(Level.INFO, "Starting Operator");
+    LoggerHelper.getLocal().log(Level.INFO, "Starting Operator");
     callHelmInstall();
 
-    log(Level.INFO, "Checking Operator deployment");
+    LoggerHelper.getLocal().log(Level.INFO, "Checking Operator deployment");
 
     String availableReplicaCmd =
         "kubectl get deploy weblogic-operator -n "
@@ -171,7 +171,7 @@ public class Operator {
           throw new RuntimeException(
               "FAILURE: The WebLogic operator deployment is not available, after waiting 300 seconds");
         }
-        log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO, 
             "status is " + availableReplica + ", iteration " + i + " of " + maxIterationsOp);
         Thread.sleep(waitTimeOp * 1000);
 
@@ -192,24 +192,24 @@ public class Operator {
    */
   public void verifyExternalRestService() throws Exception {
     if (externalRestEnabled) {
-      log(Level.INFO, "Checking REST service is running");
+      LoggerHelper.getLocal().log(Level.INFO, "Checking REST service is running");
       String restCmd =
           "kubectl get services -n "
               + operatorNS
               + " -o jsonpath='{.items[?(@.metadata.name == \"external-weblogic-operator-svc\")]}'";
-      log(Level.INFO, "Cmd to check REST service " + restCmd);
+      LoggerHelper.getLocal().log(Level.INFO, "Cmd to check REST service " + restCmd);
       ExecResult result = ExecCommand.exec(restCmd);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
             "FAILURE: command " + restCmd + " failed, returned " + result.stderr());
       }
       String restService = result.stdout().trim();
-      log(Level.INFO, "cmd result for REST service " + restService);
+      LoggerHelper.getLocal().log(Level.INFO, "cmd result for REST service " + restService);
       if (!restService.contains("name:external-weblogic-operator-svc")) {
         throw new RuntimeException("FAILURE: operator rest service was not created");
       }
     } else {
-      log(Level.INFO, "External REST service is not enabled");
+      LoggerHelper.getLocal().log(Level.INFO, "External REST service is not enabled");
     }
   }
 
@@ -225,7 +225,7 @@ public class Operator {
       throw new RuntimeException(
           "FAILURE: command " + cmd + " failed, returned " + result.stderr());
     }
-    log(Level.INFO, "Checking REST service is deleted");
+    LoggerHelper.getLocal().log(Level.INFO, "Checking REST service is deleted");
     runCommandInLoop("kubectl get services -n " + operatorNS + " | egrep weblogic-operator-svc ");
   }
 
@@ -254,7 +254,7 @@ public class Operator {
 
     TestUtils.makeOperatorPostRestCall(this, myOpRestApiUrl.toString(), myJsonObjStr);
     // give sometime to complete
-    log(Level.INFO, "Wait 30 sec for scaling to complete...");
+    LoggerHelper.getLocal().log(Level.INFO, "Wait 30 sec for scaling to complete...");
     Thread.sleep(30 * 1000);
   }
 
@@ -328,13 +328,13 @@ public class Operator {
         .append(" --set \"imagePullPolicy=")
         .append(imagePullPolicy)
         .append("\" --wait --timeout 120");
-    log(Level.INFO, "Running " + cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       reportHelmFailure(cmd.toString(), result);
     }
     String outputStr = result.stdout().trim();
-    log(Level.INFO, "Command returned " + outputStr);
+    LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
 
   public void callHelmUpgrade(String upgradeSet) throws Exception {
@@ -347,13 +347,13 @@ public class Operator {
         .append(upgradeSet)
         .append("\" --reuse-values ")
         .append(" --wait --timeout 120");
-    log(Level.INFO, "Running " + cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       reportHelmFailure(cmd.toString(), result);
     }
     String outputStr = result.stdout().trim();
-    log(Level.INFO, "Command returned " + outputStr);
+    LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
 
   public String getHelmValues() throws Exception {
@@ -362,18 +362,18 @@ public class Operator {
         .append(" && helm get values ")
         .append(operatorMap.get("releaseName"));
 
-    log(Level.INFO, "Running " + cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       reportHelmFailure(cmd.toString(), result);
     }
     String outputStr = result.stdout().trim();
-    log(Level.INFO, "Command returned " + outputStr);
+    LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
     return outputStr;
   }
 
   private void reportHelmFailure(String cmd, ExecResult result) throws Exception {
-    log(Level.INFO, "reportHelmFailure " + result);
+    LoggerHelper.getLocal().log(Level.INFO, "reportHelmFailure " + result);
     throw new RuntimeException(getExecFailure(cmd, result));
   }
 
@@ -422,11 +422,11 @@ public class Operator {
     sb.append(TestUtils.getHostName());
     sb.append(" >> ");
     sb.append(generatedInputYamlFile);
-    log(Level.INFO, "Invoking " + sb.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Invoking " + sb.toString());
     ExecCommand.exec(sb.toString());
 
     /* String content = new String(Files.readAllBytes(Paths.get(generatedInputYamlFile)));
-    log(Level.INFO, "Content of weblogic-operator-values.yaml \n" + content); */
+    LoggerHelper.getLocal().log(Level.INFO, "Content of weblogic-operator-values.yaml \n" + content); */
   }
 
   private void runCommandInLoop(String command) throws Exception {
@@ -438,7 +438,7 @@ public class Operator {
         if (i == maxIterationsOp - 1) {
           throw new RuntimeException("FAILURE: Operator fail to be deleted");
         }
-        log(Level.INFO, "status is " + result.stdout() + ", iteration " + i + " of " + maxIterationsOp);
+        LoggerHelper.getLocal().log(Level.INFO, "status is " + result.stdout() + ", iteration " + i + " of " + maxIterationsOp);
         Thread.sleep(waitTimeOp * 1000);
       } else {
         break;
@@ -491,9 +491,9 @@ public class Operator {
       if (domainNamespaces != null) {
         for (int i = 0; i < domainNamespaces.size(); i++) {
           String domainNS = domainNamespaces.get(i);
-          log(Level.INFO, "domainNamespace " + domainNS);
+          LoggerHelper.getLocal().log(Level.INFO, "domainNamespace " + domainNS);
           if (!domainNS.equals("default")) {
-            log(Level.INFO, "Creating domain namespace " + domainNS);
+            LoggerHelper.getLocal().log(Level.INFO, "Creating domain namespace " + domainNS);
             ExecCommand.exec("kubectl create namespace " + domainNS);
           }
         }
@@ -558,13 +558,13 @@ public class Operator {
    */
   public void stopUsingReplicas() throws Exception {
     String cmd = "kubectl scale --replicas=0 deployment/weblogic-operator" + " -n " + operatorNS;
-    log(Level.INFO, "Undeploy Operator using command:\n" + cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Undeploy Operator using command:\n" + cmd);
 
     ExecResult result = TestUtils.exec(cmd);
 
-    log(Level.INFO, "stdout : \n" + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "stdout : \n" + result.stdout());
 
-    log(Level.INFO, "Checking if operator pod is deleted");
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if operator pod is deleted");
     verifyPodDeleted();
   }
 
@@ -575,11 +575,11 @@ public class Operator {
    */
   public void startUsingReplicas() throws Exception {
     String cmd = "kubectl scale --replicas=1 deployment/weblogic-operator" + " -n " + operatorNS;
-    log(Level.INFO, "Deploy Operator using command:\n" + cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Deploy Operator using command:\n" + cmd);
 
     ExecResult result = TestUtils.exec(cmd);
 
-    log(Level.INFO, "Checking if operator pod is running");
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if operator pod is running");
     verifyPodCreated();
     verifyOperatorReady();
   }
@@ -607,7 +607,7 @@ public class Operator {
         "kubectl get pod -n "
             + getOperatorNamespace()
             + " -o jsonpath=\"{.items[0].metadata.name}\"";
-    log(Level.INFO, "Command to query Operator pod name: " + cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Command to query Operator pod name: " + cmd);
     ExecResult result = TestUtils.exec(cmd);
 
     return result.stdout();
@@ -624,8 +624,5 @@ public class Operator {
     /* no Rest Support */
     NONE
   }
-  private void log(Level logLevel, String message) {
-    LoggerHelper.getLocal().log(logLevel, message);
-    LoggerHelper.getGlobal().log(logLevel, message);
-  }
+
 }

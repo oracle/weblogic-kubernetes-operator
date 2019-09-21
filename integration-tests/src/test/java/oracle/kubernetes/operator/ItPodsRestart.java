@@ -61,7 +61,7 @@ public class ItPodsRestart extends BaseTest {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
 
-      log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
+      LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
       if (operator1 == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
@@ -89,15 +89,15 @@ public class ItPodsRestart extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (QUICKTEST) {
-      log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      log(Level.INFO, "BEGIN");
-      log(Level.INFO, "Run once, release cluster lease");
+      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
+      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
+      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
       if(testCompletedSuccessfully) {
         destroyPodsRestartdomain();
       }
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
-      log(Level.INFO, "SUCCESS");
+      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
 
@@ -108,7 +108,7 @@ public class ItPodsRestart extends BaseTest {
     domainMap.put("initialManagedServerReplicas", new Integer("1"));
     domainMap.put("namespace", domainNS);
     domainUid = (String) domainMap.get("domainUID");
-    log(Level.INFO, "Creating and verifying the domain creation with domainUid: " + domainUid);
+    LoggerHelper.getLocal().log(Level.INFO, "Creating and verifying the domain creation with domainUid: " + domainUid);
 
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
@@ -136,14 +136,14 @@ public class ItPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  env property: StdoutDebugEnabled=false to StdoutDebugEnabled=true");
     domain.verifyDomainServerPodRestart(
         "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
 
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -159,13 +159,13 @@ public class ItPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  logHomeEnabled: true -->  logHomeEnabled: false");
     domain.verifyDomainServerPodRestart("logHomeEnabled: true", "logHomeEnabled: false");
 
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -181,14 +181,14 @@ public class ItPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " imagePullPolicy: IfNotPresent -->  imagePullPolicy: Never ");
     domain.verifyDomainServerPodRestart(
         "imagePullPolicy: \"IfNotPresent\"", "imagePullPolicy: \"Never\" ");
 
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -204,14 +204,14 @@ public class ItPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  includeServerOutInPodLog: true -->  includeServerOutInPodLog: false");
     domain.verifyDomainServerPodRestart(
         "includeServerOutInPodLog: true", "includeServerOutInPodLog: false");
 
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -230,7 +230,7 @@ public class ItPodsRestart extends BaseTest {
     testCompletedSuccessfully = false;
     
     TestUtils.exec("docker images", true);
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         "About to verifyDomainServerPodRestart for Domain: "
          + domain.getDomainUid()
          + "  Image property: "
@@ -249,7 +249,7 @@ public class ItPodsRestart extends BaseTest {
         "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
         "\"" + newImage + "\"");
     testCompletedSuccessfully = true;
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -276,7 +276,7 @@ public class ItPodsRestart extends BaseTest {
 
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "cont.security.context.domain.yaml";
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " change container securityContext:\n"
@@ -286,7 +286,7 @@ public class ItPodsRestart extends BaseTest {
     domain.findServerPropertyChange("securityContext", "admin-server");
     domain.findServerPropertyChange("securityContext", "managed-server1");
 
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -314,7 +314,7 @@ public class ItPodsRestart extends BaseTest {
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "pod.security.context.domain.yaml";
 
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " change securityContext:\n"
@@ -324,7 +324,7 @@ public class ItPodsRestart extends BaseTest {
     domain.findServerPropertyChange("fsGroup: 2000", "admin-server");
     domain.findServerPropertyChange("fsGroup: 2000", "managed-server1");
 
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -352,7 +352,7 @@ public class ItPodsRestart extends BaseTest {
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "resource.domain.yaml";
 
-    log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO, 
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " change resource:\n"
@@ -361,7 +361,7 @@ public class ItPodsRestart extends BaseTest {
     domain.findServerPropertyChange("cpu: 500m", "admin-server");
     domain.findServerPropertyChange("cpu: 500m", "managed-server1");
 
-    log(Level.INFO, "SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -385,7 +385,7 @@ public class ItPodsRestart extends BaseTest {
       admin.put("restartVersion", "v1.1");
       crd.addObjectNodeToAdminServer(admin);
       String modYaml = crd.getYamlTree();
-      log(Level.INFO, modYaml);
+      LoggerHelper.getLocal().log(Level.INFO, modYaml);
 
       // Write the modified yaml to a new file
       Path path = Paths.get(restartTmpDir, "restart.admin.yaml");
@@ -396,15 +396,15 @@ public class ItPodsRestart extends BaseTest {
       // Apply the new yaml to update the domain
       LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-      log(Level.INFO, exec.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
 
-      log(Level.INFO, "Verifying if the admin server pod is recreated");
+      LoggerHelper.getLocal().log(Level.INFO, "Verifying if the admin server pod is recreated");
       domain.verifyAdminServerRestarted();
     } finally {
       LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      log(Level.INFO, "Verifying if the admin server pod is recreated");
+      LoggerHelper.getLocal().log(Level.INFO, "Verifying if the admin server pod is recreated");
       domain.verifyAdminServerRestarted();
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
@@ -432,7 +432,7 @@ public class ItPodsRestart extends BaseTest {
       cluster.put("restartVersion", "v1.1");
       crd.addObjectNodeToCluster("cluster-1", cluster);
       String modYaml = crd.getYamlTree();
-      log(Level.INFO, modYaml);
+      LoggerHelper.getLocal().log(Level.INFO, modYaml);
 
       // Write the modified yaml to a new file
       Path path = Paths.get(restartTmpDir, "restart.cluster.yaml");
@@ -443,14 +443,14 @@ public class ItPodsRestart extends BaseTest {
       // Apply the new yaml to update the domain crd
       LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-      log(Level.INFO, exec.stdout());
-      log(Level.INFO, "Verifying if the cluster is restarted");
+      LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, "Verifying if the cluster is restarted");
       domain.verifyManagedServersRestarted();
     } finally {
       LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      log(Level.INFO, "Verifying if the cluster is restarted");
+      LoggerHelper.getLocal().log(Level.INFO, "Verifying if the cluster is restarted");
       domain.verifyManagedServersRestarted();
     }
     testCompletedSuccessfully = true;
@@ -482,7 +482,7 @@ public class ItPodsRestart extends BaseTest {
       ms.put("serverStartState", "RUNNING");
       crd.addObjectNodeToMS("managed-server1", ms);
       String modYaml = crd.getYamlTree();
-      log(Level.INFO, modYaml);
+      LoggerHelper.getLocal().log(Level.INFO, modYaml);
 
       // Write the modified yaml to a new file
       Path path = Paths.get(restartTmpDir, "restart.managed.yaml");
@@ -493,14 +493,14 @@ public class ItPodsRestart extends BaseTest {
       // Apply the new yaml to update the domain crd
       LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-      log(Level.INFO, exec.stdout());
-      log(Level.INFO, "Verifying if the managed server is restarted");
+      LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, "Verifying if the managed server is restarted");
       domain.verifyManagedServersRestarted();
     } finally {
       LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      log(Level.INFO, "Verifying if the managed server is restarted");
+      LoggerHelper.getLocal().log(Level.INFO, "Verifying if the managed server is restarted");
       domain.verifyManagedServersRestarted();
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
@@ -528,7 +528,7 @@ public class ItPodsRestart extends BaseTest {
       domain.put("restartVersion", "v1.1");
       crd.addObjectNodeToDomain(domain);
       String modYaml = crd.getYamlTree();
-      log(Level.INFO, modYaml);
+      LoggerHelper.getLocal().log(Level.INFO, modYaml);
 
       // Write the modified yaml to a new file
       Path path = Paths.get(restartTmpDir, "restart.domain.yaml");
@@ -539,15 +539,15 @@ public class ItPodsRestart extends BaseTest {
       // Apply the new yaml to update the domain crd
       LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-      log(Level.INFO, exec.stdout());
-      log(Level.INFO, "Verifying if the domain is restarted");
+      LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
       this.domain.verifyAdminServerRestarted();
       this.domain.verifyManagedServersRestarted();
     } finally {
       LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      log(Level.INFO, "Verifying if the domain is restarted");
+      LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
       this.domain.verifyAdminServerRestarted();
       this.domain.verifyManagedServersRestarted();
     }

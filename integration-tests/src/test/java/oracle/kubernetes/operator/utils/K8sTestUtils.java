@@ -373,7 +373,7 @@ public class K8sTestUtils {
               Boolean.FALSE);
 
     } catch (ApiException ex) {
-      LoggerHelper.getLocal().getLogger(K8sTestUtils.class.getName()).log(Level.SEVERE, null, ex);
+      LoggerHelper.getLocal().log(Level.SEVERE, null, ex);
     }
     LoggerHelper.getLocal().log(
         Level.INFO,
@@ -397,7 +397,7 @@ public class K8sTestUtils {
         return pod;
       }
     }
-    log(Level.INFO, "POD NOT FOUND");
+    LoggerHelper.getLocal().log(Level.INFO, "POD NOT FOUND");
     return null;
   }
 
@@ -419,9 +419,9 @@ public class K8sTestUtils {
       return false;
     }
     if (metadata.getDeletionTimestamp() != null) {
-      log(Level.INFO, metadata.getDeletionTimestamp().toString());
+      LoggerHelper.getLocal().log(Level.INFO, metadata.getDeletionTimestamp().toString());
     } else {
-      log(Level.INFO, "DeletionTimestamp is null, which means pod is Running");
+      LoggerHelper.getLocal().log(Level.INFO, "DeletionTimestamp is null, which means pod is Running");
     }
     return metadata.getDeletionTimestamp() != null;
   }
@@ -438,8 +438,5 @@ public class K8sTestUtils {
   public boolean isPodRunning(String namespace, String labelSelectors, String podName) {
     return !isPodTerminating(namespace, labelSelectors, podName);
   }
-  private void log(Level logLevel, String message) {
-    LoggerHelper.getLocal().log(logLevel, message);
-    LoggerHelper.getGlobal().log(logLevel, message);
-  }
+
 }
