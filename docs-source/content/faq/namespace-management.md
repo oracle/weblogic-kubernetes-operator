@@ -11,13 +11,43 @@ Those Kubernetes resources are either created as part of the installation
 of the operator's helm chart, or created by the operator at runtime.
 
 This documentation describes a couple of things that you need to be aware when you manage the namespaces while the WebLogic operator is running. For example,
-* Add a namespace for the operator to manage,
-* Delete a namespace from the operator's domain namespace list, or 
-* Delete and recreate a Kubernetes namespace that the WebLogic operator manages.
+* [Check the namespaces that an operator manages](#checking-the-namespaces-that-an-operator-manages)
+* [Add a namespace for an operator to manage](#adding-a-kubernetes-namespaces-to-an-operator)
+* [Delete a namespace from an operator's domain namespace list](#deleting-a-kubernetes-namespace-from-an-operator)
+* [Delete and recreate a Kubernetes namespace that an operator manages](#recreating-a-previously-deleted-kubernetes-namespace).
 
 See more in [Common Mistakes and Solutions]({{<relref "/userguide/managing-operators/using-the-operator/using-helm.md#common-mistakes-and-solutions">}}).
 
-#### Adding a Kubernetes namespace to the operator
+#### Checking the namespaces that an operator manages
+You can find out the list of the namespaces that an operator manages using the `helm get values` command.
+For example, the following command shows all values of the operator release `weblogic-operator`, and the `domainNamespaces" list contains `default` and `ns1`. 
+.
+```
+$ helm get values weblogic-operator
+domainNamespaces:
+- default
+- ns1
+elasticSearchHost: elasticsearch.default.svc.cluster.local
+elasticSearchPort: 9200
+elkIntegrationEnabled: false
+externalDebugHttpPort: 30999
+externalRestEnabled: false
+externalRestHttpsPort: 31001
+image: oracle/weblogic-kubernetes-operator:2.3.1
+imagePullPolicy: IfNotPresent
+internalDebugHttpPort: 30999
+istioEnabled: false
+javaLoggingLevel: INFO
+logStashImage: logstash:6.6.0
+remoteDebugNodePortEnabled: false
+serviceAccount: default
+suspendOnDebugStartup: false
+
+```
+
+If you don't know the release name of the operator, you can use `helm ls` to list all releases.
+
+#### Adding a Kubernetes namespace to an operator
 If you want a WebLogic operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be pre-created, say using the `kubectl create` command.
 
 By adding a namespace to the `domainNamespaces` list, it tells the operator deployment or runtime 
@@ -57,7 +87,7 @@ NAME                 DATA      AGE
 weblogic-domain-cm   14        12m
 ```
 
-####  Deleting a Kubernetes namespace from the operator
+####  Deleting a Kubernetes namespace from an operator
 When a namespace is not supposed to be managed by an operator any more, it needs to be removed from 
 the operator's `domainNamespaces` list so that the corresponding Kubernetes resources that are 
 associated with the namespace can be cleaned up. 
