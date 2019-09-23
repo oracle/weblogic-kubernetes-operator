@@ -12,7 +12,7 @@ of the operator's helm chart, or created by the operator at runtime.
 
 This documentation describes a couple of things that you need to be aware when you manage the namespaces while the WebLogic operator is running. For example,
 * [Check the namespaces that an operator manages](#checking-the-namespaces-that-an-operator-manages)
-* [Add a namespace for an operator to manage](#adding-a-kubernetes-namespaces-to-an-operator)
+* [Add a namespace for an operator to manage](#adding-a-kubernetes-namespace-to-an-operator)
 * [Delete a namespace from an operator's domain namespace list](#deleting-a-kubernetes-namespace-from-an-operator)
 * [Delete and recreate a Kubernetes namespace that an operator manages](#recreating-a-previously-deleted-kubernetes-namespace).
 
