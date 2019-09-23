@@ -521,11 +521,11 @@ function deployPod() {
     if [ "${SERVER_NAME}" = "${ADMIN_NAME}" ]; then
       export LOCAL_SERVER_DEFAULT_PORT=$ADMIN_PORT
       export KEEP_DEFAULT_DATA_HOME="true"
-      export LINK_SERVER_DATA_DIR=""
+      export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR=""
     else
       export LOCAL_SERVER_DEFAULT_PORT=$MANAGED_SERVER_PORT
       export KEEP_DEFAULT_DATA_HOME=""
-      export LINK_SERVER_DATA_DIR="true"
+      export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR="true"
     fi
     ${SCRIPTPATH}/util_subst.sh -g wl-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
