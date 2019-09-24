@@ -195,6 +195,9 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
+                            <environmentVariables>
+                                <JENKINS_RESULTS_DIR>${JENKINS_RESULTS_DIR}</JENKINS_RESULTS_DIR>
+                            </environmentVariables>
                             <executable>${resource-integration-test}/statedump.sh</executable>
                         </configuration>
                     </execution>
