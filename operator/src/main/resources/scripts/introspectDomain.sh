@@ -48,18 +48,6 @@ trace "Introspecting the domain"
 
 env | tracePipe "Current environment:"
 
-#
-# Define helper fn to create a folder
-#
-
-function createFolder {
-  mkdir -m 750 -p $1
-  if [ ! -d $1 ]; then
-    trace "Unable to create folder $1"
-    exit 1
-  fi
-}
-
 # set defaults
 # set ORACLE_HOME/WL_HOME/MW_HOME to defaults if needed
 

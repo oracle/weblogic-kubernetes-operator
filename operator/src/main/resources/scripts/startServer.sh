@@ -154,16 +154,8 @@ trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
 trace "KEEP_DEFAULT_DATA_HOME=${KEEP_DEFAULT_DATA_HOME}"
 trace "EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR=${EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR}"
 
-# The following is experimental code that handles the specific case of services that don't provide a configurable way to
-# control the location of their persistent file data.  For example, web applications can configure file-based
-# session persistence where the default persistent file store location is automatically created in the
-# <server-name>\data\store\default directory.
-#
 # If DATA_HOME env variable exists than this implies override directory (dataHome attribute of CRD) specified
 # so we need to try and link the server's 'data' directory to the centralized DATA_HOME directory
-# If 'KEEP_DEFAULT_DATA_HOME' env variable is defined then we will NOT link the server's 'data' directory to the
-# centralized DATA_HOME directory and instead keep the server's 'data' directory in its default location of
-# ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
 if [ ! -z ${DATA_HOME} ]; then
   # Create $DATA_HOME directory for server if doesn't exist
   if [ ! -d ${DATA_HOME}/${SERVER_NAME}/data ]; then
@@ -173,8 +165,15 @@ if [ ! -z ${DATA_HOME} ]; then
     trace "Directory '${DATA_HOME}/${SERVER_NAME}/data' exists"
   fi
 
+  # The following is experimental code that handles the specific case of services that don't provide a configurable way to
+  # control the location of their persistent file data.  For example, web applications can configure file-based
+  # session persistence where the default persistent file store location is automatically created in the
+  # <server-name>\data\store\default directory.
   # If 'EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR' env is defined and 'KEEP_DEFAULT_DATA_HOME' environment variable is not defined then
   # try to link server's default 'data' directory (${DOMAIN_HOME}/servers/${SERVER_NAME}/data) to $DATA_HOME/${SERVER_NAME}/data.
+  # If 'EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR' env is defined and 'KEEP_DEFAULT_DATA_HOME' env variable is defined then
+  # we will NOT link the server's 'data' directory to the centralized DATA_HOME directory and instead keep the server's
+  # 'data' directory in its default location of ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
   if [ ! -z ${EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR} ] && [ -z ${KEEP_DEFAULT_DATA_HOME} ]; then
     linkServerDefaultDir
   fi
