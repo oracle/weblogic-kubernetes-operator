@@ -559,3 +559,16 @@ function linkServerDefaultDir() {
     fi
   fi
 }
+
+#
+# adjustPath
+#   purpose: Prepend $PATH with $JAVA_HOME/bin if $JAVA_HOME is set
+#            and if $JAVA_HOME/bin is not already in $PATH
+#
+function adjustPath() {
+  if [ ! -z ${JAVA_HOME} ]; then
+    if [[ ":$PATH:" != *":${JAVA_HOME}/bin:"* ]]; then
+      export PATH="${JAVA_HOME}/bin:$PATH"
+    fi
+  fi
+}
