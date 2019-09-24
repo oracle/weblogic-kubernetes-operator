@@ -253,17 +253,17 @@
                     <systemPropertyVariables>
                         <maxThreads>3</maxThreads>
                     </systemPropertyVariables>
-                    <additionalClasspathElements>
+                    <!-- additionalClasspathElements>
                         <additionalClasspathElement>${project.basedir}/src/test/resources/wlthint3client.jar
                         </additionalClasspathElement>
-                    </additionalClasspathElements>
+                    </additionalClasspathElements -->
                     <includes>
                         <include>
                             ${includes-failsafe}
                         </include>
                     </includes>
                     <parallel>classes</parallel>
-          			<threadCount>10</threadCount>
+          			<useUnlimitedThreads>true</useUnlimitedThreads>
             		
                 </configuration>
 

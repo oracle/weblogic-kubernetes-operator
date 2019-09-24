@@ -461,10 +461,10 @@ public class Operator {
       throw new RuntimeException("FAILURE: releaseName cann't be null");
     }
     if (opNS) {
-      ExecCommand.exec("kubectl delete namespace " + operatorNS);
-
+      ExecCommand.exec("kubectl --grace-period=1 --timeout=1s delete namespace " + operatorNS + " --ignore-not-found");
+      Thread.sleep(10000);
       // create operator namespace
-      ExecCommand.exec("kubectl create namespace " + operatorNS);
+      TestUtils.exec("kubectl create namespace " + operatorNS, true);
     }
     if (opSA) {
       // create operator service account
