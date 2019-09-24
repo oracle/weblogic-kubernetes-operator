@@ -40,7 +40,7 @@ spec:
         resources:
           limits:
             cpu: "2"
-            memory: "8Gi"
+            memory: "6Gi"
           requests:
             cpu: 500m
         terminationMessagePath: /dev/termination-log
