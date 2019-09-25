@@ -106,11 +106,6 @@ class OfflineWlstEnv(object):
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
-    self.WDT_DOMAIN_TYPE          = self.getEnv('WDT_DOMAIN_TYPE')
-    self.KEEP_JRF_SCHEMA          = self.getEnvOrDef('KEEP_JRF_SCHEMA', None)
-
-    if self.KEEP_JRF_SCHEMA is None:
-      self.KEEP_JRF_SCHEMA = 1
 
     # initialize globals
 
@@ -166,20 +161,30 @@ class OfflineWlstEnv(object):
     readDomain(self.getDomainHome())
     self.domain = cmo
     self.DOMAIN_NAME = self.getDomain().getName()
-    try:
-      cd('Application/em')
-      em_attrs = ls(returnMap='true', returnType='a')
-      self.empath = em_attrs['SourcePath']
 
-      if self.WDT_DOMAIN_TYPE == 'JRF' and self.KEEP_JRF_SCHEMA:
-        # load domain home into WLST
-        opss_passphrase = self.getEnvOrDef('OPSS_PASSPHRASE', self.DOMAIN_NAME + "_welcome1")
-        os.mkdir('/tmp/opsswallet')
-        exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml',\
-                                             keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
-    except:
-      self.empath = None
-      pass
+    # this should only be done for model in image case
+
+    if os.path.exists('/u01/wdt/models'):
+      self.WDT_DOMAIN_TYPE          = self.getEnvOrDef('WDT_DOMAIN_TYPE', 'WLS')
+      self.KEEP_JRF_SCHEMA          = self.getEnvOrDef('KEEP_JRF_SCHEMA', None)
+
+      if self.KEEP_JRF_SCHEMA is None:
+        self.KEEP_JRF_SCHEMA = 1
+
+      try:
+        cd('Application/em')
+        em_attrs = ls(returnMap='true', returnType='a')
+        self.empath = em_attrs['SourcePath']
+
+        if self.WDT_DOMAIN_TYPE == 'JRF' and self.KEEP_JRF_SCHEMA:
+          # load domain home into WLST
+          opss_passphrase = self.getEnvOrDef('OPSS_PASSPHRASE', self.DOMAIN_NAME + "_welcome1")
+          os.mkdir('/tmp/opsswallet')
+          exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml',\
+                                               keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
+      except:
+        self.empath = None
+        pass
 
   def getEmPath(self):
     return self.empath
