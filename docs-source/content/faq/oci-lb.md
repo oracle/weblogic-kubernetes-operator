@@ -36,7 +36,7 @@ exposes traffic on port `31111`.
 
 The Kubernetes YAML file below defines a new `Service` in the same
 namespace.  The `selector` targets all of the pods in this namespace
-which are part of the cluster `cluster-1` using the annotations that 
+which are part of the cluster `cluster-1`, using the annotations that 
 are placed on those pods by the operator.  It also defines the port and 
 protocol.
 
