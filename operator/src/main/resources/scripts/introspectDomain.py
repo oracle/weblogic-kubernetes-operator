@@ -107,7 +107,7 @@ class OfflineWlstEnv(object):
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
     self.WDT_DOMAIN_TYPE          = self.getEnv('WDT_DOMAIN_TYPE')
-    self.KEEP_JRF_SCHEMA          = self.getEnv('KEEP_JRF_SCHEMA')
+    self.KEEP_JRF_SCHEMA          = self.getEnvOrDef('KEEP_JRF_SCHEMA', None)
 
     if self.KEEP_JRF_SCHEMA is None:
       self.KEEP_JRF_SCHEMA = 1
