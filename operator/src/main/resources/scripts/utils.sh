@@ -1,6 +1,8 @@
 # Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
+set -o pipefail
+
 #
 # Purpose:
 #   Defines various shared utility functions, including a trace function.
@@ -462,7 +464,6 @@ function createFolder {
 
 # Returns the count of the number of files in the specified directory
 function countFilesInDir() {
-  set -o pipefail
   dir=${1}
   cnt=`find ${dir} -type f | wc -l`
   [ $? -ne 0 ] && trace SEVERE "failed determining number of files in '${dir}'" && exitOrLoop

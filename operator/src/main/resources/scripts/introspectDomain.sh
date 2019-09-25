@@ -42,7 +42,17 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 # setup tracing
 
 source ${SCRIPTPATH}/utils.sh
-[ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1 
+[ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
+
+# Local createFolder method which does an 'exit 1' instead of exitOrLoop for
+# immediate failure during introspection
+function createFolder {
+  mkdir -m 750 -p $1
+  if [ ! -d $1 ]; then
+    trace SEVERE "Unable to create folder $1"
+    exit 1
+  fi
+}
 
 trace "Introspecting the domain"
 
