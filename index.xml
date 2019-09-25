@@ -511,6 +511,16 @@ git checkout master git pull origin master git checkout -b your-branch  Make you
     </item>
     
     <item>
+      <title>Using an OCI Load Balancer</title>
+      <link>/weblogic-kubernetes-operator/faq/oci-lb/</link>
+      <pubDate>Wed, 25 Sep 2019 12:41:38 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/oci-lb/</guid>
+      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), you can have OCI automatically provision load balancers for you by creating a Service of type LoadBalancer instead of (or in addition to) installing an ingress controller like Traefik or Voyager.
+OKE Kubernetes worker nodes normally do not have public IP addresses. This means that the NodePort services created by the operator are not usable, because they would expose ports on the worker node&amp;rsquo;s private IP addresses only, which are not reachable from outside the cluster.</description>
+    </item>
+    
+    <item>
       <title>Coherence Requirements</title>
       <link>/weblogic-kubernetes-operator/faq/coherence-requirements/</link>
       <pubDate>Mon, 12 Aug 2019 12:41:38 -0400</pubDate>
