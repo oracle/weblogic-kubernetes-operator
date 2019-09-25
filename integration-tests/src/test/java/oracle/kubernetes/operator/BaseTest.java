@@ -782,8 +782,7 @@ public class BaseTest {
     // copy script to pod
     String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
         + getResultDir() + ":/tmpdir -m " + pvDir
-        + ":/pvdir -n "+domainNS  +"-c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/domainonpvwdt/bin/scripts' -n "
-        + domainNS;
+        + ":/pvdir -n "+domainNS  +" -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/domainonpvwdt/bin/scripts' ";
     TestUtils.exec(cpUsingKrunCmd, true);
   }
 

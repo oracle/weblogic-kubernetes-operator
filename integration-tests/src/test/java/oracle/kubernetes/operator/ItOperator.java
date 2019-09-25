@@ -32,10 +32,7 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItOperator extends BaseTest {
   private static Operator operator1;
-  private static Operator operator2;
-  private static Operator operatorForBackwardCompatibility;
-  private static Operator operatorForRESTCertChain;
-  private static String domainNS ;
+  private static String domainNS1 ;
   private static String testClassName ;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -55,7 +52,7 @@ public class ItOperator extends BaseTest {
       Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
       operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       Assert.assertNotNull(operator1);
-      domainNS = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+      domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
     }
   }
 
@@ -84,7 +81,7 @@ public class ItOperator extends BaseTest {
     try {
       Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
       // domainMap.put("domainUID", "domainonpvwlst");
-      domainMap.put("namespace", domainNS);
+      domainMap.put("namespace", domainNS1);
       domainMap.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
@@ -122,17 +119,17 @@ public class ItOperator extends BaseTest {
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating Domain using DomainOnPVUsingWDT & verifing the domain creation");
 
-    if (operator2 == null) {
-      operator2 = TestUtils.createOperator(OPERATOR2_YAML);
-    }
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
       // create domain
-      domain = TestUtils.createDomain(DOMAINONPV_WDT_YAML);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      domainMap.put("namespace", domainNS1);
+      domainMap.put("createDomainFilesDir", "wdt");
+      domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
-      testWldfScaling(operator2, domain);
+      testWldfScaling(operator1, domain);
       // TODO: Test Apache LB
       // domain.verifyAdminConsoleViaLB();
       testCompletedSuccessfully = true;
@@ -166,37 +163,31 @@ public class ItOperator extends BaseTest {
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating Domain domain1 & verifing the domain creation");
 
-    LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain1 are running, if not creating");
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
-
     Domain domain1 = null;
     Domain domain2 = null;
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
-      Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
-      wlstDomainMap.put("domainUID", "domain1onpvwlst");
-      wlstDomainMap.put("adminNodePort", new Integer("30702"));
-      wlstDomainMap.put("t3ChannelPort", new Integer("30031"));
-      wlstDomainMap.put("voyagerWebPort", new Integer("30307"));
+      Map<String, Object> wlstDomainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      wlstDomainMap.put("namespace", domainNS1);
+      wlstDomainMap.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
       domain1 = TestUtils.createDomain(wlstDomainMap);
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1);
-      LoggerHelper.getLocal().log(Level.INFO, "Checking if operator2 is running, if not creating");
+      /* LoggerHelper.getLocal().log(Level.INFO, "Checking if operator2 is running, if not creating");
       if (operator2 == null) {
         operator2 = TestUtils.createOperator(OPERATOR2_YAML);
-      }
+      } */
+      Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+      Operator operator2 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+      String domainNS2 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+      
       // create domain2 with configured cluster
       // ToDo: configured cluster support is removed from samples, modify the test to create
       // configured cluster
-      Map<String, Object> wdtDomainMap = TestUtils.loadYaml(DOMAINONPV_WDT_YAML);
-      wdtDomainMap.put("domainUID", "domain2onpvwdt");
-      wdtDomainMap.put("adminNodePort", new Integer("30703"));
-      wdtDomainMap.put("t3ChannelPort", new Integer("30041"));
-      // wdtDomainMap.put("clusterType", "Configured");
-      wdtDomainMap.put("voyagerWebPort", new Integer("30308"));
+      Map<String, Object> wdtDomainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      wdtDomainMap.put("namespace", domainNS2);
+      wdtDomainMap.put("createDomainFilesDir", "wdt");
       domain2 = TestUtils.createDomain(wdtDomainMap);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2);
@@ -258,31 +249,26 @@ public class ItOperator extends BaseTest {
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating Domain domain1 & verifing the domain creation");
 
-    LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain1 are running, if not creating");
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
 
     Domain domain1 = null;
     Domain domain2 = null;
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
-      Map<String, Object> domain1Map = TestUtils.loadYaml(DOMAINONSHARINGPV_WLST_YAML);
+      Map<String, Object> domain1Map = TestUtils.createDomainMap(getNewNumber(), testClassName);
       domain1Map.put("domainUID", "d1onpv");
-      domain1Map.put("adminNodePort", new Integer("30711"));
-      domain1Map.put("t3ChannelPort", new Integer("30011"));
-      domain1Map.put("voyagerWebPort", new Integer("30388"));
+      domain1Map.put("namespace", domainNS1);
+      domain1Map.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
+      domain1Map.put("pvSharing", new Boolean("true"));
       domain1 = TestUtils.createDomain(domain1Map);
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1);
 
-      Map<String, Object> domain2Map = TestUtils.loadYaml(DOMAINONSHARINGPV_WLST_YAML);
+      Map<String, Object> domain2Map = TestUtils.createDomainMap(getNewNumber(), testClassName);
       domain2Map.put("domainUID", "d2onpv");
-      domain2Map.put("adminNodePort", new Integer("30712"));
-      domain2Map.put("t3ChannelPort", new Integer("30021"));
-      // wdtDomainMap.put("clusterType", "Configured");
-      domain2Map.put("voyagerWebPort", new Integer("30399"));
+      domain1Map.put("namespace", domainNS1);
+      domain1Map.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
+      domain1Map.put("pvSharing", "true");
       domain2 = TestUtils.createDomain(domain2Map);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2);
@@ -339,15 +325,14 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 is running, if not creating");
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain domain6 & verifing the domain creation");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain domain & verifing the domain creation");
     // create domain
     Domain domain = null;
     try {
-      domain = TestUtils.createDomain(DOMAIN_ADMINONLY_YAML);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      domainMap.put("serverStartPolicy", "ADMIN_ONLY");
+      domainMap.put("namespace", domainNS1);
+      domain = TestUtils.createDomain(domainMap, false);
       domain.verifyDomainCreated();
       // change domain config by modifying accept backlog on adminserver tuning
       modifyDomainConfig(domain);
@@ -376,16 +361,18 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 is running, if not creating");
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
+
     LoggerHelper.getLocal().log(Level.INFO, "Creating Domain domain & verifing the domain creation");
     // create domain
     Domain domain = null;
 
     try {
-      domain = TestUtils.createDomain(DOMAIN_RECYCLEPOLICY_YAML);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      domainMap.put("weblogicDomainStorageReclaimPolicy", "Recycle");
+      domainMap.put("clusterType", "CONFIGURED");
+      domainMap.put("namespace", domainNS1);
+      domain = TestUtils.createDomain(domainMap, false);
+
       domain.verifyDomainCreated();
     } finally {
       if (domain != null) domain.shutdown();
@@ -410,14 +397,14 @@ public class ItOperator extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating Domain domain10 & verifing the domain creation");
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
 
     // create domain10
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
+      Map<String, Object> domainMap = new HashMap<String, Object>();
+      domainMap.put("domainUID", "domainsampledefaults");
+      domainMap.put("configuredManagedServerCount", "4");
       domain = TestUtils.createDomain(DOMAIN_SAMPLE_DEFAULTS_YAML);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
@@ -433,65 +420,6 @@ public class ItOperator extends BaseTest {
   }
 
   /**
-   * This test covers both auto and custom situational configuration use cases for config.xml.
-   * Create Operator and create domain with listen address not set for admin server and t3
-   * channel/NAP and incorrect file for admin server log location. Introspector should override
-   * these with sit-config automatically. Also, with some junk value for t3 channel public address
-   * and using custom situational config override replace with valid public address using secret.
-   * Verify the domain is started successfully and web application can be deployed and accessed.
-   * Verify that the JMS client can actually use the overridden values. Use NFS storage on Jenkins
-   *
-   * @throws Exception exception
-   */
-  @Test
-  public void testAutoAndCustomSitConfigOverrides() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
-
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
-    Domain domain11 = null;
-    boolean testCompletedSuccessfully = false;
-    try {
-      // load input yaml to map and add configOverrides
-      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
-      domainMap.put("configOverrides", "sitconfigcm");
-      domainMap.put(
-          "configOverridesFile",
-          BaseTest.getProjectRoot()
-              + "/integration-tests/src/test/resources/domain-home-on-pv/customsitconfig");
-      domainMap.put("domainUID", "customsitdomain");
-      domainMap.put("adminNodePort", new Integer("30704"));
-      domainMap.put("t3ChannelPort", new Integer("30051"));
-      domainMap.put(
-          "createDomainPyScript",
-          "integration-tests/src/test/resources/domain-home-on-pv/create-domain-auto-custom-sit-config.py");
-      domainMap.put("voyagerWebPort", new Integer("30312"));
-
-      // use NFS for this domain on Jenkins, defaultis HOST_PATH
-      if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
-        domainMap.put("weblogicDomainStorageType", "NFS");
-      }
-
-      domain11 = TestUtils.createDomain(domainMap);
-      domain11.verifyDomainCreated();
-      testBasicUseCases(domain11);
-      // OWLS-76081 - commenting the below check as its not a generic use case that works for all images,
-      // it needs wlthint3client.jar
-      // testAdminT3ChannelWithJms(domain11);
-      testCompletedSuccessfully = true;
-
-    } finally {
-      if (domain11 != null && (JENKINS || testCompletedSuccessfully)) {
-        domain11.destroy();
-      }
-    } 
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
-  }
-
-  /**
    * Create operator and enable external rest endpoint using the externalOperatorCert and
    * externalOperatorKey defined in the helm chart values instead of the tls secret. This test is
    * for backward compatibility
@@ -503,11 +431,9 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, "Checking if operatorForBackwardCompatibility is running, if not creating");
-    if (operatorForBackwardCompatibility == null) {
-      operatorForBackwardCompatibility =
-          TestUtils.createOperator(OPERATORBC_YAML, RestCertType.LEGACY);
-    }
+    LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility ");
+    Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+    Operator operatorForBackwardCompatibility = TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
     operatorForBackwardCompatibility.verifyOperatorExternalRestEndpoint();
     LoggerHelper.getLocal().log(Level.INFO, "Operator using legacy REST identity created successfully");
     operatorForBackwardCompatibility.destroy(); 
@@ -525,11 +451,11 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
 
     logTestBegin("testOperatorRestUsingCertificateChain");
-    LoggerHelper.getLocal().log(Level.INFO, "Checking if operatorForBackwardCompatibility is running, if not creating");
-    if (operatorForRESTCertChain == null) {
-      operatorForRESTCertChain = TestUtils.createOperator(OPERATOR_CHAIN_YAML, RestCertType.CHAIN);
-    }
+    LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility");
+    Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+    Operator  operatorForRESTCertChain = TestUtils.createOperator(operatorMap, RestCertType.CHAIN);
     operatorForRESTCertChain.verifyOperatorExternalRestEndpoint();
+    operatorForRESTCertChain.destroy();
     LoggerHelper.getLocal().log(Level.INFO, "Operator using legacy REST identity created successfully"); 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - testOperatorRestUsingCertificateChain");
   }
@@ -546,23 +472,23 @@ public class ItOperator extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 is running, if not creating");
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
     LoggerHelper.getLocal().log(Level.INFO, "Creating Domain & verifing the domain creation");
     // create domain
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(DOMAININIMAGE_WLST_YAML);
+      Map<String, Object> domainMap = TestUtils.createDomainInImageMap(getNewNumber(), false, testClassName);
+      domainMap.put("namespace", domainNS1);
+      domainMap.remove("clusterType");
+      domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-
       testBasicUseCases(domain);
       testClusterScaling(operator1, domain, false);
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
     } 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -586,8 +512,7 @@ public class ItOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domainMap = TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
-      domainMap.put("namespace", domainNS);
-      // domainMap.put("domainUID", "domaininimagewdt");
+      domainMap.put("namespace", domainNS1);
       domainMap.put(
           "customWdtTemplate",
           BaseTest.getProjectRoot()

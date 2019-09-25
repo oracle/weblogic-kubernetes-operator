@@ -88,21 +88,26 @@ public class Domain {
 
   public Domain(String inputYaml, boolean createDomainResource) throws Exception {
     // read input domain yaml to test
-    this(TestUtils.loadYaml(inputYaml), createDomainResource);
+    this(TestUtils.loadYaml(inputYaml), createDomainResource, true);
   }
   
   public Domain(Map<String, Object> inputDomainMap) throws Exception {
-    this(inputDomainMap, true);
+    this(inputDomainMap, true, true);
   }
-
-  public Domain(Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
+  public Domain(Map<String, Object> inputDomainMap, boolean createLoadBalancer) throws Exception {
+    this(inputDomainMap, true, createLoadBalancer);
+  }
+  public Domain(Map<String, Object> inputDomainMap, boolean createDomainResource, 
+                    boolean createLoadBalancer) throws Exception {
     initialize(inputDomainMap);
     this.createDomainResource = createDomainResource;
     createPv();
     createSecret();
     generateInputYaml();
     callCreateDomainScript(userProjectsDir);
-    createLoadBalancer();
+    if(createLoadBalancer) {
+      createLoadBalancer();
+    }
   }
 
   /**
