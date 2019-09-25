@@ -268,7 +268,7 @@ public class ItOperator extends BaseTest {
       domain2Map.put("domainUID", "d2onpv");
       domain1Map.put("namespace", domainNS1);
       domain1Map.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
-      domain1Map.put("pvSharing", "true");
+      domain1Map.put("pvSharing", new Boolean("true"));
       domain2 = TestUtils.createDomain(domain2Map);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2);
