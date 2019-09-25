@@ -420,6 +420,11 @@ public class ItElasticLogging extends BaseTest {
   
   private void downloadWlsLoggingExporterJars() throws Exception {
     File loggingJatReposDir = new File(loggingExpArchiveLoc);
+    File wlsLoggingExpFile = 
+        new File(loggingExpArchiveLoc + "/" + wlsLoggingExpJar);
+    File snakeyamlFile = 
+        new File(loggingExpArchiveLoc + "/" + snakeyamlJar);
+    int i = 0;
 
     if (loggingJatReposDir.list().length == 0) {
       StringBuffer getJars = new StringBuffer();
@@ -431,10 +436,30 @@ public class ItElasticLogging extends BaseTest {
           .append("/")
           .append(wlsLoggingExpJar);
       logger.info("Executing cmd " + getJars.toString());
-      ExecResult result = TestUtils.exec(getJars.toString());
-      logger.info("exit code: " + result.exitValue());
-      logger.info("Result: " + result.stdout());
       
+      // Make sure downloading completed
+      while (i < BaseTest.getMaxIterationsPod()) {
+        ExecResult result = TestUtils.exec(getJars.toString());
+        logger.info("exit code: " + result.exitValue());
+        logger.info("Result: " + result.stdout());
+        
+        if (wlsLoggingExpFile.exists()) {
+          break;
+        }
+        
+        logger.info(
+            "Downloading " + wlsLoggingExpJar + " not done ["
+                + i
+                + "/"
+                + BaseTest.getMaxIterationsPod()
+                + "], sleeping "
+                + BaseTest.getWaitTimePod()
+                + " seconds more");
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+        i++;
+      }
+      
+      i = 0;
       //Delete the content of StringBuffer
       getJars.setLength(0);
       getJars
@@ -445,32 +470,28 @@ public class ItElasticLogging extends BaseTest {
           .append("/")
           .append(snakeyamlJar);
       logger.info("Executing cmd " + getJars.toString());
-      result = TestUtils.exec(getJars.toString());
-      logger.info("exit code: " + result.exitValue());
-      logger.info("Result: " + result.stdout());
-    }
-    
-    int i = 0;
-    File wlsLoggingExpFile = 
-        new File(loggingExpArchiveLoc + "/" + wlsLoggingExpJar);
-    File snakeyamlFile = 
-        new File(loggingExpArchiveLoc + "/" + snakeyamlJar);
-    // Make sure downloading completed
-    while (i < BaseTest.getMaxIterationsPod()) {
-      if (wlsLoggingExpFile.exists() && snakeyamlFile.exists()) {
-        break;
-      }
       
-      logger.info(
-          "Downloading wls logging exporter jar files not done ["
-              + i
-              + "/"
-              + BaseTest.getMaxIterationsPod()
-              + "], sleeping "
-              + BaseTest.getWaitTimePod()
-              + " seconds more");
-      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
-      i++;
+      // Make sure downloading completed
+      while (i < BaseTest.getMaxIterationsPod()) {
+        ExecResult result = TestUtils.exec(getJars.toString());
+        logger.info("exit code: " + result.exitValue());
+        logger.info("Result: " + result.stdout());
+  
+        if (snakeyamlFile.exists()) {
+          break;
+        }
+        
+        logger.info(
+            "Downloading " + snakeyamlJar + " not done ["
+                + i
+                + "/"
+                + BaseTest.getMaxIterationsPod()
+                + "], sleeping "
+                + BaseTest.getWaitTimePod()
+                + " seconds more");
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+        i++;
+      }
     }
     
     Assume.assumeTrue("Failed to download <" + wlsLoggingExpFile + ">", 
@@ -516,29 +537,47 @@ public class ItElasticLogging extends BaseTest {
     }
   }
   
-  private void copyResourceFilesToOnePod(String serverName, String domainNS) 
+  private void copyResourceFilesToOnePod(String podName, String domainNS) 
       throws Exception {    
     final String resourceDir = 
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
     final String testResourceDir = resourceDir + "/loggingexporter";
+    
+    StringBuffer cmdLisDir= new StringBuffer("kubectl -n ");
+    cmdLisDir
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(podName)
+        .append(" -- bash -c 'ls -l /shared/domains/domainonpvwlst/lib/")
+        .append("'");
+    logger.info("Executing cmd " + cmdLisDir.toString());
+    ExecResult result = TestUtils.exec(cmdLisDir.toString());
+    logger.info("exit code: " + result.exitValue());
+    logger.info("Result: " + result.stdout());
+    
+    //kubectl -n default exec -it domainonpvwlst-admin-server  -- bash -c 'ls -l /shared/domains/domainonpvwlst/lib'
 
+    
     //Copy test files to WebLogic server pod
     TestUtils.kubectlcp(
         loggingExpArchiveLoc + "/" + wlsLoggingExpJar,
-        "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar,
-        serverName,
+        "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar +
+        " --no-preserve=true ",
+        podName,
         domainNS);
 
     TestUtils.kubectlcp(
         loggingExpArchiveLoc + "/" + snakeyamlJar,
-        "/shared/domains/domainonpvwlst/lib/" + snakeyamlJar,
-        serverName,
+        "/shared/domains/domainonpvwlst/lib/" + snakeyamlJar +
+        " --no-preserve=true ",
+        podName,
         domainNS);
 
     TestUtils.kubectlcp(
         testResourceDir + "/" + loggingYamlFile,
-        "/shared/domains/domainonpvwlst/config/" + loggingYamlFile,
-        serverName,
+        "/shared/domains/domainonpvwlst/config/" + loggingYamlFile +
+        " --no-preserve=true ",
+        podName,
         domainNS);
   }
   
