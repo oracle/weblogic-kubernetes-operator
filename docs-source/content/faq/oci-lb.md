@@ -12,8 +12,8 @@ ingress controller like Traefik or Voyager.
 
 OKE Kubernetes worker nodes normally do not have public IP addresses.
 This means that the `NodePort` services created by the operator are 
-not usable, because they would expose ports on the worker node's public IP
-address.  Instead, you can use an OCI Load Balancer to provide access
+not usable, because they would expose ports on the worker node's (non-existent) 
+public IP addresses.  Instead, you can use an OCI Load Balancer to provide access
 to services running in OKE.
 
 {{% notice note %}}
