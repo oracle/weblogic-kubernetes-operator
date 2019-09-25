@@ -1,5 +1,8 @@
-# Copyright 2014, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+# Copyright (c) 2014, 2019 Oracle and/or its affiliates. All rights reserved.
+#
+#Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
 
 import os
 import sys
@@ -19,11 +22,23 @@ class Infra12213Provisioner:
     JRF_12213_TEMPLATES = {
         'baseTemplate' : '@@ORACLE_HOME@@/wlserver/common/templates/wls/wls.jar',
         'extensionTemplates' : [
+            '@@ORACLE_HOME@@/oracle_common/common/templates/wls/oracle.jrf_template.jar',
+            '@@ORACLE_HOME@@/oracle_common/common/templates/wls/oracle.jrf.ws.async_template.jar',
+            '@@ORACLE_HOME@@/oracle_common/common/templates/wls/oracle.wsmpm_template.jar',
+            '@@ORACLE_HOME@@/oracle_common/common/templates/wls/oracle.ums_template.jar',
+            '@@ORACLE_HOME@@/em/common/templates/wls/oracle.em_wls_template.jar'
+        ],
+        'serverGroupsToTarget' : [ 'JRF-MAN-SVR', 'WSMPM-MAN-SVR' ]
+    }
+
+    Restricted_JRF_12213_TEMPLATES = {
+        'baseTemplate' : '@@ORACLE_HOME@@/wlserver/common/templates/wls/wls.jar',
+        'extensionTemplates' : [
             '@@ORACLE_HOME@@/oracle_common/common/templates/wls/oracle.jrf_restricted_template.jar',
             '@@ORACLE_HOME@@/em/common/templates/wls/oracle.em_wls_restricted_template.jar'
         ],
         'serverGroupsToTarget' : [ 'JRF-MAN-SVR', 'WSMPM-MAN-SVR' ]
-    }
+    }  
 
     def __init__(self, oracleHome, javaHome, domainParentDir, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName):
         self.oracleHome = self.validateDirectory(oracleHome)
@@ -31,13 +46,9 @@ class Infra12213Provisioner:
         self.domainParentDir = self.validateDirectory(domainParentDir, create=True)
         return
 
-    def createInfraDomain(self, domainName, user, password, adminListenPort, adminName,
-                          managedNameBase, managedServerPort, prodMode, managedCount, clusterName,
-                          exposeAdminT3Channel=None, t3ChannelPublicAddress=None, t3ChannelPort=None):
-        domainHome = self.createBaseDomain(domainName, user, password, adminListenPort, adminName, managedNameBase,
-                                           managedServerPort, prodMode, managedCount, clusterName
-                                           )
-        self.extendDomain(domainHome, exposeAdminT3Channel, t3ChannelPublicAddress, t3ChannelPort)
+    def createInfraDomain(self, domainName, user, password, db, dbPrefix, dbPassword, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName):
+        domainHome = self.createBaseDomain(domainName, user, password, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName)
+        self.extendDomain(domainHome, db, dbPrefix, dbPassword)
 
     def createBaseDomain(self, domainName, user, password, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName):
         baseTemplate = self.replaceTokens(self.JRF_12213_TEMPLATES['baseTemplate'])
@@ -45,10 +56,7 @@ class Infra12213Provisioner:
         readTemplate(baseTemplate)
         setOption('DomainName', domainName)
         setOption('JavaHome', self.javaHome)
-        if (prodMode == 'true'):
-            setOption('ServerStartMode', 'prod')
-        else:
-            setOption('ServerStartMode', 'dev')
+        setOption('ServerStartMode', prodMode)
         set('Name', domainName)
 
         admin_port = int(adminListenPort)
@@ -112,10 +120,10 @@ class Infra12213Provisioner:
         print 'Base domain created at ' + domainHome
         return domainHome
 
-
-    def extendDomain(self, domainHome, exposeAdminT3Channel, t3ChannelPublicAddress,
-                     t3ChannelPort):
+    def extendDomain(self, domainHome, db, dbPrefix, dbPassword):
         print 'Extending domain at ' + domainHome
+        print 'Database  ' + db 
+        print 'FMWDomainType  ' + fmwDomainType 
         readDomain(domainHome)
         setOption('AppDir', self.domainParentDir + '/applications')
 
@@ -123,11 +131,51 @@ class Infra12213Provisioner:
         if 'true' == exposeAdminT3Channel:
             self.enable_admin_channel(t3ChannelPublicAddress, t3ChannelPort)
 
-        print 'Applying JRF templates...'
-        for extensionTemplate in self.JRF_12213_TEMPLATES['extensionTemplates']:
-            addTemplate(self.replaceTokens(extensionTemplate))
+        if fmwDomainType == 'RestrictedJRF':
+            print 'Applying Restricted JRF Extension templates...'
+            for extensionTemplate in self.Restricted_JRF_12213_TEMPLATES['extensionTemplates']:
+               addTemplate(self.replaceTokens(extensionTemplate))
+            print 'Restricted JRF Extension Templates applied'
+            print 'Restricted JRF Domain, No need to configure DB.'
+        else:
+            print 'Applying JRF Extension templates...'
+            for extensionTemplate in self.JRF_12213_TEMPLATES['extensionTemplates']:
+                addTemplate(self.replaceTokens(extensionTemplate))
+            print 'JRF Extension Templates applied'
+            print 'Configuring Service Table DataSource and Coherence Cluster'
+            fmwDb = 'jdbc:oracle:thin:@' + db
+            print 'fmwDatabase  ' + fmwDb 
+            cd('/JDBCSystemResource/LocalSvcTblDataSource/JdbcResource/LocalSvcTblDataSource')
+            cd('JDBCDriverParams/NO_NAME_0')
+            set('DriverName', 'oracle.jdbc.OracleDriver')
+            set('URL', fmwDb)
+            set('PasswordEncrypted', dbPassword)
 
-        print 'Extension Templates added'
+            stbUser = dbPrefix + '_STB'
+            cd('Properties/NO_NAME_0/Property/user')
+            set('Value', stbUser)
+
+            print 'Getting Database Defaults...'
+            getDatabaseDefaults()
+
+            print 'Targeting Server Groups...'
+            managedName= '%s%s' % (managedNameBase, 1)
+	    print "Set CoherenceClusterSystemResource to defaultCoherenceCluster for server:" + managedName
+            serverGroupsToTarget = list(self.JRF_12213_TEMPLATES['serverGroupsToTarget'])
+            cd('/')
+            setServerGroups(managedName, serverGroupsToTarget)
+	    print "Set CoherenceClusterSystemResource to defaultCoherenceCluster for server:" + managedName
+            cd('/Servers/' + managedName)
+            set('CoherenceClusterSystemResource', 'defaultCoherenceCluster')
+
+            print 'Targeting Cluster ...'
+            cd('/')
+            print "Set CoherenceClusterSystemResource to defaultCoherenceCluster for cluster:" + clusterName
+            cd('/Cluster/' + clusterName)
+            set('CoherenceClusterSystemResource', 'defaultCoherenceCluster')
+            print "Set WLS clusters as target of defaultCoherenceCluster:" + clusterName
+            cd('/CoherenceClusterSystemResource/defaultCoherenceCluster')
+            set('Target', clusterName)
 
         print 'Preparing to update domain...'
         updateDomain()
@@ -180,6 +228,7 @@ class Infra12213Provisioner:
         set('PublicPort', int(admin_channel_port))
         set('PublicAddress', admin_channel_address)
 
+
 #############################
 # Entry point to the script #
 #############################
@@ -190,9 +239,7 @@ def usage():
           '-rcuDb <rcu-database> -rcuPrefix <rcu-prefix> -rcuSchemaPwd <rcu-schema-password> ' \
           '-adminListenPort <adminListenPort> -adminName <adminName> ' \
           '-managedNameBase <managedNameBase> -managedServerPort <managedServerPort> -prodMode <prodMode> ' \
-          '-managedServerCount <managedCount> -clusterName <clusterName> ' \
-          '-exposeAdminT3Channel <quoted true or false> -t3ChannelPublicAddress <address of the cluster> ' \
-          '-t3ChannelPort <t3 channel port> '
+          '-managedCount <managedCount> -clusterName <clusterName>'
     sys.exit(0)
 
 # Uncomment for Debug only
@@ -212,16 +259,20 @@ domainParentDir = None
 #domainUser is hard-coded to weblogic. You can change to other name of your choice. Command line paramter -user.
 domainUser = 'weblogic'
 #domainPassword will be passed by Command line parameter -password.
+#domainPassword = 'welcome1'
 domainPassword = None
 #rcuDb will be passed by command line parameter -rcuDb.
 rcuDb = None
 #change rcuSchemaPrefix to your infra schema prefix. Command line parameter -rcuPrefix.
 rcuSchemaPrefix = 'DEV12'
 #change rcuSchemaPassword to your infra schema password. Command line parameter -rcuSchemaPwd.
+#rcuSchemaPassword = 'welcome1'
 rcuSchemaPassword = None
+
 exposeAdminT3Channel = None
 t3ChannelPort = None
 t3ChannelPublicAddress = None
+
 i = 1
 while i < len(sys.argv):
     if sys.argv[i] == '-oh':
@@ -281,11 +332,13 @@ while i < len(sys.argv):
     elif sys.argv[i] == '-exposeAdminT3Channel':
         exposeAdminT3Channel = sys.argv[i + 1]
         i += 2
+    elif sys.argv[i] == '-fmwDomainType':
+        fmwDomainType = sys.argv[i + 1]
+        i += 2
     else:
         print 'Unexpected argument switch at position ' + str(i) + ': ' + str(sys.argv[i])
         usage()
         sys.exit(1)
 
-provisioner = Infra12213Provisioner(oracleHome, javaHome, domainParentDir, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName)
-provisioner.createInfraDomain(domainName, domainUser, domainPassword, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount,
-                              clusterName, exposeAdminT3Channel, t3ChannelPublicAddress, t3ChannelPort)
+provisioner = Infra12213Provisioner(oracleHome, javaHome, domainParentDir, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName) 
+provisioner.createInfraDomain(domainName, domainUser, domainPassword, rcuDb, rcuSchemaPrefix, rcuSchemaPassword, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName)
