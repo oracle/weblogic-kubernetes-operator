@@ -49,6 +49,16 @@ echo -e "calling ant to build GAR file and application EAR file"
 
 #ant build -Dhost=${HOST}  -DclusterUrl=${CLUSTER_URL} -DappLocationInPod=${PWD} -DwsName=${WS_NAME} -DappName=${APP_NAME}
 ant build 
+antReturnCode=$?
+ 
+echo "ANT: Return code is: \""$antReturnCode"\""
+ 
+if [ $antReturnCode -ne 0 ];then
+    echo "BUILD ERROR: ..."
+    exit 1;
+else
+    echo "GREAT SUCCESS: !"
+fi
 cp ${APP_DIR_INPOD}/builddir/${APP_NAME}.gar ${APP_DIR_INPOD}/.
 cp ${APP_DIR_INPOD}/builddir/${APP_NAME}.ear ${APP_DIR_INPOD}/.
 

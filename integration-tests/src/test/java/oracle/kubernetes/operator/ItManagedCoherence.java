@@ -139,28 +139,7 @@ public class ItManagedCoherence extends BaseTest {
               && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
         domainMap.put("voyagerWebPort", new Integer("30366"));
       }
-      domain = TestUtils.createDomain(domainMap);
-      domain.verifyDomainCreated();
-      String[] pods = {
-        DOMAINUID + "-" + domain.getAdminServerName(),
-        DOMAINUID + "-managed-server",
-        DOMAINUID + "-managed-server1",
-        DOMAINUID + "-managed-server2",
-        DOMAINUID + "-new-managed-server1",
-        DOMAINUID + "-new-managed-server2",
-      };
-      verifyServersStatus(domain, pods, DOMAINUID);
-
-      // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
-      TestUtils.buildDeployCoherenceAppInPod(
-          domain,
-          testAppName,
-          scriptName,
-          BaseTest.getUsername(),
-          BaseTest.getPassword(),
-          appToDeploy,
-          "dataCluster");
-
+      createDomainAndDeployApp(domainMap, DOMAINUID);
       coherenceCacheTest();
 
       testCompletedSuccessfully = true;
@@ -186,7 +165,7 @@ public class ItManagedCoherence extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
 
     logTestBegin(testMethodName);
-    logger.info("Creating coeherence domain in image using wlst and testing the cache");
+    logger.info("Creating coherence domain in image using wlst and testing the cache");
 
     boolean testCompletedSuccessfully = false;
     domain = null;
@@ -211,30 +190,8 @@ public class ItManagedCoherence extends BaseTest {
               && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
         domainMap.put("voyagerWebPort", new Integer("30366"));
       }
-      domain = TestUtils.createDomain(domainMap);
-      domain.verifyDomainCreated();
-      String[] pods = {
-        DOMAINUID1 + "-" + domain.getAdminServerName(),
-        DOMAINUID1 + "-managed-server",
-        DOMAINUID1 + "-managed-server1",
-        DOMAINUID1 + "-managed-server2",
-        DOMAINUID1 + "-new-managed-server1",
-        DOMAINUID1 + "-new-managed-server2",
-      };
-      verifyServersStatus(domain, pods, DOMAINUID1);
-
-      // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
-      TestUtils.buildDeployCoherenceAppInPod(
-          domain,
-          testAppName,
-          scriptName,
-          BaseTest.getUsername(),
-          BaseTest.getPassword(),
-          appToDeploy,
-          "dataCluster");
-
+      createDomainAndDeployApp(domainMap, DOMAINUID1);
       coherenceCacheTest();
-
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
@@ -242,6 +199,31 @@ public class ItManagedCoherence extends BaseTest {
       }
     }
     logger.info("SUCCESS - " + testMethodName);
+  }
+
+  private void createDomainAndDeployApp(Map <String, Object> domainMap, String domainUID) throws Exception {
+    domain = null;
+    domain = TestUtils.createDomain(domainMap);
+    domain.verifyDomainCreated();
+
+    String[] pods = {
+      domainUID + "-" + domain.getAdminServerName(),
+      domainUID + "-managed-server",
+      domainUID + "-managed-server1",
+      domainUID + "-managed-server2",
+      domainUID + "-new-managed-server1",
+      domainUID + "-new-managed-server2",
+    };
+    verifyServersStatus(domain, pods, domainUID);
+    // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
+    TestUtils.buildDeployCoherenceAppInPod(
+        domain,
+        testAppName,
+        scriptName,
+        BaseTest.getUsername(),
+        BaseTest.getPassword(),
+        appToDeploy,
+        "dataCluster");
   }
 
   private void coherenceCacheTest() throws Exception {
@@ -253,6 +235,7 @@ public class ItManagedCoherence extends BaseTest {
     for (int i = 0; i < firstNameList.length; i++) {
       result = addDataToCache(firstNameList[i], secondNameList[i]);
       logger.info("addDataToCache returned" + result.stdout());
+      assertTrue("Did not add the expected record", result.stdout().contains(firstNameList[i]));
     }
     // check if cache size is 6
     result = getCacheSize();
@@ -267,13 +250,18 @@ public class ItManagedCoherence extends BaseTest {
 
     // Now clear the cache
     result = clearCache();
-    logger.info("Cache is cleared and should be empty" + result.stdout());
+    logger.info("Cache is cleared and should be empty " + result.stdout());
+    if (!(result.stdout().equals("0"))) {
+      logger.info("number of records in cache = " + result.stdout());
+      assertFalse("Expected 0 records", "0".equals(result.stdout()));
+    }
+    
   }
 
   private ExecResult addDataToCache(String firstName, String secondName) throws Exception {
     logger.info("Add initial data to cache");
 
-    StringBuffer curlCmd = new StringBuffer("curl --silent ");
+    StringBuffer curlCmd = new StringBuffer("curl -v ");
     curlCmd
         .append("-d 'action=add&first=")
         .append(firstName)
@@ -292,7 +280,8 @@ public class ItManagedCoherence extends BaseTest {
         .append("/")
         .append(appToDeploy);
     logger.info("curlCmd is " + curlCmd.toString());
-    return TestUtils.exec(curlCmd.toString());
+    ExecResult result = execCacheCmd(curlCmd.toString());
+    return result;
   }
 
   private ExecResult getCacheSize() throws Exception {
@@ -312,7 +301,8 @@ public class ItManagedCoherence extends BaseTest {
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
-    return TestUtils.exec(curlCmd.toString());
+    ExecResult result = execCacheCmd(curlCmd.toString());
+    return result;
   }
 
   private ExecResult getCacheContents() throws Exception {
@@ -332,7 +322,8 @@ public class ItManagedCoherence extends BaseTest {
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
-    return TestUtils.exec(curlCmd.toString());
+    ExecResult result = execCacheCmd(curlCmd.toString());
+    return result;
   }
 
   private ExecResult clearCache() throws Exception {
@@ -352,6 +343,14 @@ public class ItManagedCoherence extends BaseTest {
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
-    return TestUtils.exec(curlCmd.toString());
+    ExecResult result = execCacheCmd(curlCmd.toString());
+    return result;
+  }
+
+  private ExecResult execCacheCmd(String cmdToExec) throws Exception {
+    ExecResult result = TestUtils.exec(cmdToExec);
+    String output = result.stdout().trim();
+    logger.info("output " + output);
+    return result;
   }
 }

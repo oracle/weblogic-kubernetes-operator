@@ -4,6 +4,7 @@
 
 package com.examples.pof;
 
+import java.io.IOException;
 import com.tangosol.io.pof.PofReader;
 import com.tangosol.io.pof.PofWriter;
 import com.tangosol.io.pof.PortableObject;
