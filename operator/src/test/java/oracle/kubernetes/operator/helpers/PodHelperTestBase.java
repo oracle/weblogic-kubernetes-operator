@@ -49,6 +49,9 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
+import static oracle.kubernetes.operator.helpers.Matchers.hasPVClaimVolume;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -986,6 +989,39 @@ public abstract class PodHelperTestBase {
     configureDomain().withDefaultImage(null);
 
     assertThat(getCreatedPodSpecContainer().getImage(), equalTo(DEFAULT_IMAGE));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumes_createPodWithThem() {
+    getConfigurator()
+        .withAdditionalVolume("volume1", "/source-path1")
+        .withAdditionalVolume("volume2", "/source-path2");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalPVClaimVolume_createPodWithIt() {
+    getConfigurator()
+        .withAdditionalPVClaimVolume("volume1", "myPersistentVolumeClaim");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasPVClaimVolume("volume1", "myPersistentVolumeClaim")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMounts_createAdminPodWithThem() {
+    getConfigurator()
+        .withAdditionalVolumeMount("volume1", "/destination-path1")
+        .withAdditionalVolumeMount("volume2", "/destination-path2");
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", "/destination-path1"),
+            hasVolumeMount("volume2", "/destination-path2")));
   }
 
   @Test

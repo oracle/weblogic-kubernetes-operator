@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -43,6 +44,10 @@ public class Matchers {
 
   static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
     return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
+  }
+
+  static Matcher<Iterable<? super V1Volume>> hasPVClaimVolume(String name, String claimName) {
+    return hasItem(new V1Volume().name(name).persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource().claimName(claimName)));
   }
 
   private static V1Container createContainer(String name, String image, String... command) {

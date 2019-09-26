@@ -213,6 +213,8 @@ public abstract class DomainConfigurator {
 
   public abstract DomainConfigurator withAdditionalVolume(String name, String path);
 
+  public abstract DomainConfigurator withAdditionalPVClaimVolume(String name, String claimName);
+
   public abstract DomainConfigurator withAdditionalVolumeMount(String name, String path);
 
   public abstract DomainConfigurator withInitContainer(V1Container initContainer);
