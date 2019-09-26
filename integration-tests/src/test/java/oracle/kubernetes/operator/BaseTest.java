@@ -459,8 +459,8 @@ public class BaseTest {
    * @param domain domain
    * @throws Exception exception
    */
-  protected void testBasicUseCases(Domain domain) throws Exception {
-    testAdminT3Channel(domain);
+  protected void testBasicUseCases(Domain domain, boolean verifyLoadBalancing) throws Exception {
+    testAdminT3Channel(domain, verifyLoadBalancing);
     testAdminServerExternalService(domain);
   }
 
@@ -481,7 +481,7 @@ public class BaseTest {
    *
    * @throws Exception exception
    */
-  public void testAdminT3Channel(Domain domain) throws Exception {
+  public void testAdminT3Channel(Domain domain, boolean verifyLoadBalancing) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Inside testAdminT3Channel");
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     Map<String, Object> domainMap = domain.getDomainMap();
@@ -510,7 +510,7 @@ public class BaseTest {
           appLocationInPod,
           getUsername(),
           getPassword());
-      domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+      domain.callWebAppAndVerifyLoadBalancing(TESTWEBAPP, verifyLoadBalancing);
 
       /* The below check is done for domain-home-in-image domains, it needs 12.2.1.3 patched image
        * otherwise managed servers will see unicast errors after app deployment and run as standalone servers,
@@ -617,7 +617,7 @@ public class BaseTest {
     domain.verifyDomainCreated();
     // if domain created with domain home in image, re-deploy the webapp and verify load balancing
     if (domain.getDomainMap().containsKey("domainHomeImageBase")) {
-      testAdminT3Channel(domain);
+      testAdminT3Channel(domain, true);
     } else {
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     }
@@ -782,7 +782,7 @@ public class BaseTest {
     // copy script to pod
     String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
         + getResultDir() + ":/tmpdir -m " + pvDir
-        + ":/pvdir -n "+domainNS  +" -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/domainonpvwdt/bin/scripts' ";
+        + ":/pvdir -n "+domainNS  +" -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/"+domainUid+"/bin/scripts' ";
     TestUtils.exec(cpUsingKrunCmd, true);
   }
 

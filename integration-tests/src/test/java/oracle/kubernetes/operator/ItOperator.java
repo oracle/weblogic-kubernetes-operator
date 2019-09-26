@@ -86,7 +86,7 @@ public class ItOperator extends BaseTest {
       domainMap.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      testBasicUseCases(domain);
+      testBasicUseCases(domain, true);
       TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
       testAdvancedUseCasesForADomain(operator1, domain);
       domain.testWlsLivenessProbe();
@@ -121,16 +121,26 @@ public class ItOperator extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Creating Domain using DomainOnPVUsingWDT & verifing the domain creation");
 
     Domain domain = null;
+    Operator operator = null;
     boolean testCompletedSuccessfully = false;
     try {
+      //create operator just for this test to match the namespaces with wldf-policy.yaml
+      Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+      ArrayList<String> targetDomainsNS = new ArrayList<String>();
+      targetDomainsNS.add("test2" );
+      operatorMap.put("domainNamespaces", targetDomainsNS);
+      operatorMap.put("namespace", "weblogic-operator2");
+      operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+      
       // create domain
       Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
-      domainMap.put("namespace", domainNS1);
+      domainMap.put("namespace", "test2");
       domainMap.put("createDomainFilesDir", "wdt");
+      domainMap.put("domainUID", "domainonpvwdt");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      testBasicUseCases(domain);
-      testWldfScaling(operator1, domain);
+      testBasicUseCases(domain, false);
+      testWldfScaling(operator, domain);
       // TODO: Test Apache LB
       // domain.verifyAdminConsoleViaLB();
       testCompletedSuccessfully = true;
@@ -139,6 +149,9 @@ public class ItOperator extends BaseTest {
         LoggerHelper.getLocal().log(Level.INFO, "About to delete domain: " + domain.getDomainUid());
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
+      }
+      if(operator != null && (JENKINS || testCompletedSuccessfully) ){
+        operator.destroy();
       }
     } 
 
@@ -174,7 +187,7 @@ public class ItOperator extends BaseTest {
       wlstDomainMap.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
       domain1 = TestUtils.createDomain(wlstDomainMap);
       domain1.verifyDomainCreated();
-      testBasicUseCases(domain1);
+      testBasicUseCases(domain1, false);
       /* LoggerHelper.getLocal().log(Level.INFO, "Checking if operator2 is running, if not creating");
       if (operator2 == null) {
         operator2 = TestUtils.createOperator(OPERATOR2_YAML);
@@ -191,7 +204,7 @@ public class ItOperator extends BaseTest {
       wdtDomainMap.put("createDomainFilesDir", "wdt");
       domain2 = TestUtils.createDomain(wdtDomainMap);
       domain2.verifyDomainCreated();
-      testBasicUseCases(domain2);
+      testBasicUseCases(domain2, false);
       LoggerHelper.getLocal().log(Level.INFO, "Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
@@ -263,7 +276,7 @@ public class ItOperator extends BaseTest {
       domain1Map.put("pvSharing", new Boolean("true"));
       domain1 = TestUtils.createDomain(domain1Map);
       domain1.verifyDomainCreated();
-      testBasicUseCases(domain1);
+      testBasicUseCases(domain1, false);
 
       Map<String, Object> domain2Map = TestUtils.createDomainMap(getNewNumber(), testClassName);
       domain2Map.put("domainUID", "d2onpv");
@@ -272,7 +285,7 @@ public class ItOperator extends BaseTest {
       domain1Map.put("pvSharing", new Boolean("true"));
       domain2 = TestUtils.createDomain(domain2Map);
       domain2.verifyDomainCreated();
-      testBasicUseCases(domain2);
+      testBasicUseCases(domain2, false);
       LoggerHelper.getLocal().log(Level.INFO, "Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
@@ -405,15 +418,15 @@ public class ItOperator extends BaseTest {
     try {
       Map<String, Object> domainMap = new HashMap<String, Object>();
       domainMap.put("domainUID", "domainsampledefaults");
-      domainMap.put("configuredManagedServerCount", "4");
-      domain = TestUtils.createDomain(DOMAIN_SAMPLE_DEFAULTS_YAML);
+      domainMap.put("namespace", domainNS1);
+      domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      testBasicUseCases(domain);
+      testBasicUseCases(domain, false);
       // testAdvancedUseCasesForADomain(operator1, domain10);
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        domain.destroy();
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
     } 
 
@@ -483,7 +496,7 @@ public class ItOperator extends BaseTest {
       domainMap.remove("clusterType");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      testBasicUseCases(domain);
+      testBasicUseCases(domain, true);
       testClusterScaling(operator1, domain, false);
       testCompletedSuccessfully = true;
     } finally {
@@ -522,7 +535,7 @@ public class ItOperator extends BaseTest {
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
 
-      testBasicUseCases(domain);
+      testBasicUseCases(domain, false);
       testClusterScaling(operator1, domain, true);
       testCompletedSuccessfully = true;
     } finally {

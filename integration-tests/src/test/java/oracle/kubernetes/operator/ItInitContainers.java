@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -35,7 +36,8 @@ public class ItInitContainers extends BaseTest {
   private static String domainUid = "domaininitcont";
   private static String initContainerTmpDir = "";
   private static String originalYaml;
-
+  private static String testClassName ;
+  private static String domainNS ;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -46,13 +48,17 @@ public class ItInitContainers extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "staticPrepare------Begin");
+      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE);
-
+      initialize(APP_PROPS_FILE, testClassName);
+      LoggerHelper.getLocal().log(Level.INFO, "staticPrepare------Begin");
+      
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
-        operator = TestUtils.createOperator(OPERATOR1_YAML);
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assert.assertNotNull(operator);
+        domainNS = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
       }
       initContainerTmpDir = BaseTest.getResultDir() + "/initconttemp";
       Files.createDirectories(Paths.get(initContainerTmpDir));
@@ -96,9 +102,9 @@ public class ItInitContainers extends BaseTest {
    * @throws Exception when domain creation fails
    */
   private static Domain createInitContdomain() throws Exception {
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+    Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+    domainMap.put("namespace", domainNS);
     domainMap.put("domainUID", domainUid);
-    domainUid = (String) domainMap.get("domainUID");
     LoggerHelper.getLocal().log(Level.INFO, "Creating and verifying the domain creation with domainUid: " + domainUid);
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
@@ -112,7 +118,8 @@ public class ItInitContainers extends BaseTest {
    */
   private static void destroyInitContdomain() throws Exception {
     if (domain != null) {
-      domain.destroy();
+      TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      TestUtils.verifyAfterDeletion(domain);
     }
   }
 

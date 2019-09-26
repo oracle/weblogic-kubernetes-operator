@@ -781,7 +781,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "create domain with UID : test" + number);
     Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number, testClassName));
     domain.verifyDomainCreated();
-    testAdminT3Channel(domain);
+    testAdminT3Channel(domain, false);
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     LoggerHelper.getLocal().log(Level.INFO, "verify that domain is managed by operator");
     operator.verifyDomainExists(domain.getDomainUid());

@@ -1022,11 +1022,11 @@ public class TestUtils {
   public static Map<String, Object> createOperatorMap(int number, boolean restEnabled, String prefix) {
     Map<String, Object> operatorMap = new HashMap<String, Object>();
     ArrayList<String> targetDomainsNS = new ArrayList<String>();
-    targetDomainsNS.add(prefix.toLowerCase()+"-domain-" + number);
+    targetDomainsNS.add(prefix.toLowerCase()+"-domainns-" + number);
     operatorMap.put("releaseName", prefix.toLowerCase()+"-op-"  + number);
     operatorMap.put("domainNamespaces", targetDomainsNS);
     operatorMap.put("serviceAccount", prefix.toLowerCase()+"-sa-" + number);
-    operatorMap.put("namespace", prefix.toLowerCase()+"-op-" + number);
+    operatorMap.put("namespace", prefix.toLowerCase()+"-opns-" + number);
     if (restEnabled) {
       operatorMap.put("externalRestHttpsPort", 32000 + number);
       operatorMap.put("externalRestEnabled", restEnabled);

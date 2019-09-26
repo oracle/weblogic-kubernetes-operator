@@ -360,7 +360,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       domain1.verifyDomainCreated();
 
       // verify the Admin T3Channel is exposed
-      testAdminT3Channel(domain1);
+      testAdminT3Channel(domain1, false);
 
       testCompletedSuccessfully = true;
 

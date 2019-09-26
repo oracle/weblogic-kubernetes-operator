@@ -579,7 +579,7 @@ public class JrfInOperatorTest extends BaseTest {
       domain11 = new JrfDomain(domainMap);
       domain11.verifyDomainCreated();
 
-      testAdminT3Channel(domain11);
+      testAdminT3Channel(domain11, false);
       testAdminServerExternalService(domain11);
 
       testCompletedSuccessfully = true;

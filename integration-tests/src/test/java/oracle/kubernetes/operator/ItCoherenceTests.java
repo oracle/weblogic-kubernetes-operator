@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -35,7 +36,9 @@ public class ItCoherenceTests extends BaseTest {
   private static final String OP_CACHE_LOAD = "load";
   private static final String OP_CACHE_VALIDATE = "validate";
   private static final String PROXY_PORT = "9000";
-
+  private static String domainNS1 ;
+  private static String testClassName ;
+  
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -47,8 +50,16 @@ public class ItCoherenceTests extends BaseTest {
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     if (FULLTEST) {
-      initialize(APP_PROPS_FILE);
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      initialize(APP_PROPS_FILE, testClassName);
+      // create operator1
+      if(operator1 == null ) {
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assert.assertNotNull(operator1);
+        domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+      }
+      
     }
   }
 
@@ -61,7 +72,7 @@ public class ItCoherenceTests extends BaseTest {
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       operator1.destroy();
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      // tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
     }
   }
 
@@ -156,16 +167,15 @@ public class ItCoherenceTests extends BaseTest {
     envMap.put("CUSTOM_WDT_ARCHIVE", buildProxyServerWdtZip());
 
     // create domain
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
-    domainMap.put("namespace", "test1");
-    domainMap.put("domainUID", "coh");
+    Map<String, Object> domainMap = TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
+    domainMap.put("namespace", domainNS1);
+    domainMap.put("createDomainFilesDir", "wdt");
     domainMap.put("additionalEnvMap", envMap);
-
     domainMap.put(
         "customWdtTemplate",
         BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/wdt/coh-wdt-config.yaml");
-    Domain domain = TestUtils.createDomain(domainMap);
+    Domain domain = TestUtils.createDomain(domainMap, false);
     domain.verifyDomainCreated();
     return domain;
   }
@@ -177,7 +187,8 @@ public class ItCoherenceTests extends BaseTest {
    */
   private static void destroyDomain() throws Exception {
     if (domain != null) {
-      domain.destroy();
+      TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      TestUtils.verifyAfterDeletion(domain);
     }
   }
 

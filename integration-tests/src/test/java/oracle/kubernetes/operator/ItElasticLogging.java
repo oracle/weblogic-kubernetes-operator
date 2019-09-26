@@ -51,7 +51,7 @@ public class ItElasticLogging extends BaseTest {
   private static String elasticSearchURL;
   private static Map<String, Object> testVarMap;
   private static String loggingExpArchiveLoc;
-
+  private static String testClassName ;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -63,8 +63,9 @@ public class ItElasticLogging extends BaseTest {
   @BeforeClass
   public static  void staticPrepare() throws Exception {
     if (FULLTEST) {
+      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE);
+      initialize(APP_PROPS_FILE, testClassName);
 
       //Adding filter to WebLogicLoggingExporter.yaml
       addFilterToElkFile();
@@ -147,8 +148,12 @@ public class ItElasticLogging extends BaseTest {
 
       // Restore the test env
       deleteTestFile();
+      if (domain != null) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        TestUtils.verifyAfterDeletion(domain);
+      }
       
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      // tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }

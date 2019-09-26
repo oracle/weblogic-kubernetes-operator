@@ -128,7 +128,7 @@ public class ItMultipleClusters extends BaseTest {
         DOMAINUID + "-new-managed-server2",
       };
       verifyServersStatus(domain, pods);
-      testBasicUseCases(domain);
+      testBasicUseCases(domain, false);
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
@@ -183,7 +183,7 @@ public class ItMultipleClusters extends BaseTest {
       };
       verifyServersStatus(domain, pods);
 
-      testBasicUseCases(domain);
+      testBasicUseCases(domain, false);
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
@@ -235,7 +235,7 @@ public class ItMultipleClusters extends BaseTest {
         domainuid + "-managed-server-22",
       };
       verifyServersStatus(domain, pods);
-      testBasicUseCases(domain);
+      testBasicUseCases(domain, false);
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {

@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -18,6 +19,7 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -38,6 +40,9 @@ public class ItManagedCoherence extends BaseTest {
   private static String customDomainTemplate;
   private static Operator operator1;
   Domain domain = null;
+  private static String testClassName ;
+  private static String domainNS1 ;
+  static boolean testCompletedSuccessfully = false;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -49,8 +54,9 @@ public class ItManagedCoherence extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE);
+      initialize(APP_PROPS_FILE, testClassName);
       String template =
           BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
       String add =
@@ -65,6 +71,14 @@ public class ItManagedCoherence extends BaseTest {
           StandardCopyOption.REPLACE_EXISTING);
       Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
     }
+    
+    // create operator1
+    if(operator1 == null ) {
+      Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+      operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+      Assert.assertNotNull(operator1);
+      domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+    }
   }
 
   /**
@@ -75,13 +89,9 @@ public class ItManagedCoherence extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-  
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-  
-      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
+      if (operator1 != null && (JENKINS || testCompletedSuccessfully)) {
+        operator1.destroy();
+      }
     }
   }
 
@@ -118,29 +128,17 @@ public class ItManagedCoherence extends BaseTest {
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating coeherence domain on pv using wlst and testing the cache");
 
-    boolean testCompletedSuccessfully = false;
+    testCompletedSuccessfully = false;
     domain = null;
-
-    // create operator1
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
-
     try {
-      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
-      domainMap.put("domainUID", DOMAINUID);
-      domainMap.put("clusterType", "DYNAMIC");
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
       domainMap.put("clusterName", "appCluster");
-      domainMap.put("initialManagedServerReplicas", new Integer("2"));
+      domainMap.put("domainUID", DOMAINUID);
       domainMap.put("customDomainTemplate", customDomainTemplate);
+      domainMap.put("namespace", domainNS1);
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/" + COHERENCE_CLUSTER_SCRIPT);
-      if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
-          || (domainMap.containsKey("loadBalancer")
-              && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
-        domainMap.put("voyagerWebPort", new Integer("30366"));
-      }
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
@@ -152,7 +150,7 @@ public class ItManagedCoherence extends BaseTest {
         DOMAINUID + "-new-managed-server2",
       };
       verifyServersStatus(domain, pods, DOMAINUID);
-
+  
       // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
       TestUtils.buildDeployCoherenceAppInPod(
           domain,
@@ -162,15 +160,14 @@ public class ItManagedCoherence extends BaseTest {
           BaseTest.getPassword(),
           appToDeploy,
           "dataCluster");
-
+  
       coherenceCacheTest();
-
       testCompletedSuccessfully = true;
-    } finally {
-      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        domain.destroy();
+      } finally {
+        if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+          TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        }
       }
-    }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -190,29 +187,17 @@ public class ItManagedCoherence extends BaseTest {
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating coeherence domain in image using wlst and testing the cache");
 
-    boolean testCompletedSuccessfully = false;
+    testCompletedSuccessfully = false;
     domain = null;
-
-    // create operator1
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
-
     try {
-      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
-      domainMap.put("domainUID", DOMAINUID1);
-      domainMap.put("clusterType", "DYNAMIC");
+      Map<String, Object> domainMap = TestUtils.createDomainInImageMap(getNewNumber(), false, testClassName);
       domainMap.put("clusterName", "appCluster");
-      domainMap.put("initialManagedServerReplicas", new Integer("2"));
+      domainMap.put("domainUID", DOMAINUID1);
       domainMap.put("customDomainTemplate", customDomainTemplate);
+      domainMap.put("namespace", domainNS1);
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/" + COHERENCE_CLUSTER_IN_IMAGE_SCRIPT);
-      if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
-          || (domainMap.containsKey("loadBalancer")
-              && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
-        domainMap.put("voyagerWebPort", new Integer("30366"));
-      }
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
@@ -224,7 +209,7 @@ public class ItManagedCoherence extends BaseTest {
         DOMAINUID1 + "-new-managed-server2",
       };
       verifyServersStatus(domain, pods, DOMAINUID1);
-
+  
       // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
       TestUtils.buildDeployCoherenceAppInPod(
           domain,
@@ -234,13 +219,13 @@ public class ItManagedCoherence extends BaseTest {
           BaseTest.getPassword(),
           appToDeploy,
           "dataCluster");
-
+  
       coherenceCacheTest();
-
+  
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        domain.destroy();
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);

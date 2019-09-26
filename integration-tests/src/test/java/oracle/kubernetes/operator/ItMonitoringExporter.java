@@ -45,7 +45,7 @@ import static org.junit.Assert.assertTrue;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItMonitoringExporter extends BaseTest {
 
-  private static int number = 5;
+  private static int number = 50;
   private static Operator operator = null;
   private static Operator operator1 = null;
   private static Domain domain = null;
@@ -69,6 +69,8 @@ public class ItMonitoringExporter extends BaseTest {
       "weblogic_servlet_invocation_total_count%7Bapp%3D%22testwsapp%22%7D%5B15s%5D";
   String oprelease = "op" + number;
   private int waitTime = 5;
+  private static String testClassName ;
+  static boolean testCompletedSuccessfully = false;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -80,10 +82,11 @@ public class ItMonitoringExporter extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      initialize(APP_PROPS_FILE);
+      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      initialize(APP_PROPS_FILE, testClassName);
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true, null);
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true, testClassName);
         operator = new Operator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
         operator.callHelmInstall();
@@ -122,7 +125,7 @@ public class ItMonitoringExporter extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
       LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
       if (domain != null) {
-        domain.destroy();
+        //domain.destroy();
         TestUtils.deleteWeblogicDomainResources("test5");
       }
       if (operator != null) {
@@ -379,7 +382,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static Domain createVerifyDomain(int number, Operator operator) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "create domain with UID : test" + number);
-    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number, null));
+    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number, testClassName));
     domain.verifyDomainCreated();
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     LoggerHelper.getLocal().log(Level.INFO, "verify that domain is managed by operator");
@@ -1124,7 +1127,9 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if could not run the command successfully to create WLSImage and deploy
    */
   private static void createWlsImageAndDeploy() throws Exception {
-    operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+    // operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+    operator1 = TestUtils.createOperator(
+        TestUtils.createOperatorMap(getNewNumber(), true, testClassName), Operator.RestCertType.SELF_SIGNED);
 
     String command =
         "cd "
