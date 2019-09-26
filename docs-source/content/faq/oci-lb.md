@@ -96,6 +96,6 @@ bobs-bookstore-oci-lb-service          LoadBalancer   10.96.121.216   132.145.23
 
 You can now use the external IP address and port to access your pods.  There are several
 options that can be used to configure more advanced load balancing behavior.  Please 
-refer to the OCI documentation](https://docs.cloud.oracle.com/iaas/Content/ContEng/Tasks/contengcreatingloadbalancer.htm)
+refer to the [OCI documentation](https://docs.cloud.oracle.com/iaas/Content/ContEng/Tasks/contengcreatingloadbalancer.htm)
 for more information, including how to configure SSL support, supporting internal and external subnets, and so on.
 
