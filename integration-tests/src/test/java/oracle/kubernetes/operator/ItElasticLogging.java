@@ -431,7 +431,7 @@ public class ItElasticLogging extends BaseTest {
       getJars
           .append(" wget -P ")
           .append(loggingExpArchiveLoc)
-          .append(" --server-response --waitretry=20 --retry-connrefused ")
+          .append(" --server-response --waitretry=5 --retry-connrefused ")
           .append(loggingJarRepos)
           .append("/")
           .append(wlsLoggingExpJar);
@@ -465,7 +465,7 @@ public class ItElasticLogging extends BaseTest {
       getJars
           .append("wget -P ")
           .append(loggingExpArchiveLoc)
-          .append(" --server-response --waitretry=20 --retry-connrefused ")
+          .append(" --server-response --waitretry=5 --retry-connrefused ")
           .append(snakeyamlJarRepos)
           .append("/")
           .append(snakeyamlJar);
