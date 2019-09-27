@@ -110,8 +110,8 @@ Prior to creating a pod, the operator replaces variable references allowing the 
 This example domain YAML specifies that pods for WebLogic Server instances in the "cluster-1" cluster will have a per-managed server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled as much as possible on different nodes:
 
 ```
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 apiVersion: "weblogic.oracle/v5"
 kind: Domain
