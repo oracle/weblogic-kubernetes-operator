@@ -200,7 +200,7 @@ public class ItManagedCoherence extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
-  private void createDomainAndDeployApp(Map <String, Object> domainMap, String domainUID) throws Exception {
+  private void createDomainAndDeployApp(Map<String, Object> domainMap, String domainUID) throws Exception {
     domain = null;
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
