@@ -118,8 +118,7 @@ public class ItInitContainers extends BaseTest {
    */
   private static void destroyInitContdomain() throws Exception {
     if (domain != null) {
-      TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-      TestUtils.verifyAfterDeletion(domain);
+      domain.destroy();
     }
   }
 

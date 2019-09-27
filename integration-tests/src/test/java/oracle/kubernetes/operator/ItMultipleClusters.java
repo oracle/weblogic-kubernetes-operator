@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -17,6 +18,7 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -39,7 +41,8 @@ public class ItMultipleClusters extends BaseTest {
   private static final String DOMAINUID = "twoconfigclustdomain";
   private static Operator operator1;
   private static String customDomainTemplate;
-
+  private static String testClassName ;
+  private static String domainNS1 ;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -50,8 +53,9 @@ public class ItMultipleClusters extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE);
+      initialize(APP_PROPS_FILE, testClassName);
       String template =
           BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
       String add =
@@ -64,6 +68,15 @@ public class ItMultipleClusters extends BaseTest {
           Paths.get(customDomainTemplate),
           StandardCopyOption.REPLACE_EXISTING);
       Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
+      
+      // create operator1
+      if(operator1 == null ) {
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assert.assertNotNull(operator1);
+        domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+      }
+      
     }
   }
 
@@ -96,27 +109,18 @@ public class ItMultipleClusters extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
-    // create operator1
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
       domainMap.put("domainUID", DOMAINUID);
       domainMap.put("clusterType", "CONFIGURED");
       domainMap.put("customDomainTemplate", customDomainTemplate);
+      domainMap.put("namespace", domainNS1);
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/"
               + TWO_CONFIGURED_CLUSTER_SCRIPT);
-      if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
-          || (domainMap.containsKey("loadBalancer")
-              && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
-        domainMap.put("voyagerWebPort", new Integer("30366"));
-      }
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
@@ -133,7 +137,7 @@ public class ItMultipleClusters extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        domain.destroy();
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
@@ -153,24 +157,16 @@ public class ItMultipleClusters extends BaseTest {
     logTestBegin(testMethodName);
     String template =
         BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
       domainMap.put("domainUID", domainuid);
       domainMap.put("customDomainTemplate", customDomainTemplate);
+      domainMap.put("namespace", domainNS1);
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/" + TWO_MIXED_CLUSTER_SCRIPT);
-      if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
-          || (domainMap.containsKey("loadBalancer")
-              && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
-        domainMap.put("voyagerWebPort", new Integer("30377"));
-      }
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
@@ -188,7 +184,7 @@ public class ItMultipleClusters extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        domain.destroy();
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
@@ -206,21 +202,14 @@ public class ItMultipleClusters extends BaseTest {
     String domainuid = "twoclusterdomainwdt";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
+
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
+      Map<String, Object> domainMap = TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
       domainMap.put("domainUID", domainuid);
       domainMap.put("customDomainTemplate", customDomainTemplate);
-      if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
-          || (domainMap.containsKey("loadBalancer")
-              && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
-        domainMap.put("voyagerWebPort", new Integer("30377"));
-      }
+      domainMap.put("namespace", domainNS1);
       domainMap.put(
           "customWdtTemplate",
           BaseTest.getProjectRoot()
@@ -240,7 +229,7 @@ public class ItMultipleClusters extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        domain.destroy();
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
     }
 LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
