@@ -1987,7 +1987,7 @@ public class Domain {
             + ", stderr='"
             + result.stderr()
             + "'";
-    if (!resultStr.contains("Unable to use a TTY") || result.exitValue() != 0) {
+    if (!resultStr.contains("Unable to use a TTY") && result.exitValue() != 0) {
       throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
     }
   }
