@@ -112,10 +112,5 @@ public class JrfDomainOnPvWlst extends BaseTest {
 
    logger.info("SUCCESS - " + testMethodName);
  }
-
-
  
- 
-
-
 }
