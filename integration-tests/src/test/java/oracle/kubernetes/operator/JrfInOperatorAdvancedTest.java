@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -49,21 +48,23 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE);
-
-    // create DB used for jrf domain
-    DbUtils.createOracleDB(DB_PROP_FILE);
-
-    // run RCU first
-    DbUtils.deleteNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
-    DbUtils.createNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
-    rcuPodName = DbUtils.createRcuPod(DbUtils.DEFAULT_RCU_NAMESPACE);
-
-    // TODO: reconsider the logic to check the db readiness
-    // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
-    logger.info("waiting for the db to be visible to rcu script ...");
-    Thread.sleep(20000);
+    if (FULLTEST) {
+      // initialize test properties and create the directories
+      initialize(APP_PROPS_FILE);
+  
+      // create DB used for jrf domain
+      DbUtils.createOracleDB(DB_PROP_FILE);
+  
+      // run RCU first
+      DbUtils.deleteNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
+      DbUtils.createNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
+      rcuPodName = DbUtils.createRcuPod(DbUtils.DEFAULT_RCU_NAMESPACE);
+  
+      // TODO: reconsider the logic to check the db readiness
+      // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
+      logger.info("waiting for the db to be visible to rcu script ...");
+      Thread.sleep(20000);
+    }
   }
 
   /**
@@ -74,13 +75,15 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
-
-    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-
-    logger.info("SUCCESS");
+    if (FULLTEST) {
+      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
+  
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+  
+      logger.info("SUCCESS");
+    }
   }
 
   /**

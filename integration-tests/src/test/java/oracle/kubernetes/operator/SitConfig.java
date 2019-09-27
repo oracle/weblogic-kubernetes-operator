@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -59,7 +58,7 @@ public class SitConfig extends BaseTest {
   protected static void staticPrepare(String domainInputYaml, String domainScript)
       throws Exception {
     // initialize test properties and create the directories
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
       if (operator1 == null) {
@@ -126,7 +125,7 @@ public class SitConfig extends BaseTest {
    * @throws Exception when domain destruction or MySQL container destruction fails
    */
   protected static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
       destroySitConfigDomain();
       if (operator1 != null) {

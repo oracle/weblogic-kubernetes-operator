@@ -1419,6 +1419,10 @@ window.onload = function() {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodReadinessGate"
           }
         },
+        "serviceAccountName": {
+          "description": "Name of the ServiceAccount to be used to run this pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the pod is created.",
+          "type": "string"
+        },
         "podSecurityContext": {
           "description": "Pod-level security attributes.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"

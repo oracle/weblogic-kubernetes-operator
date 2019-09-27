@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -46,7 +45,7 @@ public class ItManagedCoherence extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
       String template =
@@ -72,13 +71,15 @@ public class ItManagedCoherence extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
-
-    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-
-    logger.info("SUCCESS");
+    if (FULLTEST) {
+      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
+  
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+  
+      logger.info("SUCCESS");
+    }
   }
 
   /**
@@ -108,7 +109,7 @@ public class ItManagedCoherence extends BaseTest {
    */
   @Test
   public void testCreateCoherenceDomainOnPvUsingWlst() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
 
     logTestBegin(testMethodName);
@@ -163,7 +164,7 @@ public class ItManagedCoherence extends BaseTest {
 
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         domain.destroy();
       }
     }
@@ -180,7 +181,7 @@ public class ItManagedCoherence extends BaseTest {
    */
   @Test
   public void testCreateCoherenceDomainInImageUsingWlst() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
 
     logTestBegin(testMethodName);
@@ -235,7 +236,7 @@ public class ItManagedCoherence extends BaseTest {
 
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         domain.destroy();
       }
     }

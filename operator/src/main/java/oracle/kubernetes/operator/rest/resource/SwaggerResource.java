@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.resource;
 
@@ -9,7 +8,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 
 /**
  * SwaggerResource is a jaxrs resource that implements the REST api for the
@@ -18,13 +18,15 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  */
 public class SwaggerResource extends BaseResource {
 
+  private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   /**
    * Construct a SwaggerResource.
    *
    * @param parent - the jaxrs resource that parents this resource.
    * @param pathSegment - the last path segment in the url to this resource.
    */
-  SwaggerResource(BaseResource parent, String pathSegment) {
+  public SwaggerResource(BaseResource parent, String pathSegment) {
     super(parent, pathSegment);
   }
 

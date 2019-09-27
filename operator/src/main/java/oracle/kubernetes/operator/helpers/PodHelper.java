@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -21,6 +20,8 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.utils.Certificates;
@@ -31,22 +32,11 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
-
 public class PodHelper {
   static final long DEFAULT_ADDITIONAL_DELETE_TIME = 10;
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private PodHelper() {
-  }
-
-  /**
-   * Creates an admin server pod resource, based on the specified packet.
-   *
-   * @param packet a packet describing the domain model and topology.
-   * @return an appropriate Kubernetes resource
-   */
-  public static V1Pod createAdminServerPodModel(Packet packet) {
-    return new AdminPodStepContext(null, packet).createPodModel();
   }
 
   /**
@@ -170,7 +160,12 @@ public class PodHelper {
     ArrayList<V1EnvVar> copy = new ArrayList<>();
     if (envVars != null) {
       for (V1EnvVar envVar : envVars) {
-        copy.add(new V1EnvVar().name(envVar.getName()).value(envVar.getValue()));
+        // note that a deep copy of valueFrom is not needed here as, unlike with value, we are
+        // not doing any modifications or macro substitutions on the valueFrom fields
+        copy.add(new V1EnvVar()
+            .name(envVar.getName())
+            .value(envVar.getValue())
+            .valueFrom(envVar.getValueFrom()));
       }
     }
     return copy;
@@ -279,8 +274,9 @@ public class PodHelper {
     public NextAction apply(Packet packet) {
       PodStepContext context = new AdminPodStepContext(this, packet);
 
-      return doNext(context.verifyPersistentVolume(context.verifyPod(getNext())), packet);
+      return doNext(context.verifyPod(getNext()), packet);
     }
+
   }
 
   static class ManagedPodStepContext extends PodStepContext {

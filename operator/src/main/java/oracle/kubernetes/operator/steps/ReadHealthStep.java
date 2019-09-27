@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
@@ -22,6 +21,8 @@ import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.http.Result;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.Scan;
@@ -40,13 +41,13 @@ import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 public class ReadHealthStep extends Step {
 
-  static final String OVERALL_HEALTH_NOT_AVAILABLE = "Not available";
-  static final String OVERALL_HEALTH_FOR_SERVER_OVERLOADED =
+  public static final String OVERALL_HEALTH_NOT_AVAILABLE = "Not available";
+  public static final String OVERALL_HEALTH_FOR_SERVER_OVERLOADED =
       OVERALL_HEALTH_NOT_AVAILABLE + " (possibly overloaded)";
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private ReadHealthStep(Step next) {
     super(next);

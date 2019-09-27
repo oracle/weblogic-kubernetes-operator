@@ -1,9 +1,9 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
 
+import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -19,11 +19,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import org.glassfish.jersey.server.ResourceConfig;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * AuthenticationFilter authenticates the request by extracting the access token from tha
@@ -42,7 +42,8 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 public class AuthenticationFilter extends BaseDebugLoggingFilter implements ContainerRequestFilter {
 
   public static final String REST_BACKEND_PROPERTY = "RestBackend";
-  static final String ACCESS_TOKEN_PREFIX = "Bearer ";
+  public static final String ACCESS_TOKEN_PREFIX = "Bearer ";
+  private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @Context private Application application; // TBD - does this work?
 
   /** Construct an AuthenticationFilter. */
@@ -51,7 +52,7 @@ public class AuthenticationFilter extends BaseDebugLoggingFilter implements Cont
   }
 
   @Override
-  public void filter(ContainerRequestContext req) {
+  public void filter(ContainerRequestContext req) throws IOException {
     LOGGER.entering();
     try {
       ResourceConfig rc = (ResourceConfig) application;
@@ -83,7 +84,6 @@ public class AuthenticationFilter extends BaseDebugLoggingFilter implements Cont
     throw e;
   }
 
-  @SuppressWarnings("SameParameterValue")
   private String formatMessage(ContainerRequestContext req, String msgId) {
     return getResourceBundle(req.getLanguage()).getString(msgId);
   }

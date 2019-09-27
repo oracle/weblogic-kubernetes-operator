@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
 
@@ -12,13 +11,16 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.Provider;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 
 /** ResponseDebugLoggingFilter debug logs all the REST responses. */
 @Provider
 @Priority(FilterPriorities.RESPONSE_DEBUG_LOGGING_FILTER_PRIORITY)
 public class ResponseDebugLoggingFilter extends BaseDebugLoggingFilter
     implements ContainerResponseFilter {
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /** Construct a ResponseDebugLoggingFilter. */
   public ResponseDebugLoggingFilter() {

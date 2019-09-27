@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
@@ -1652,7 +1651,6 @@ overwriteDockerfile.append("cp -f ")
       domainMap.put("domainHomeImageBase", 
           BaseTest.getWeblogicImageName() + ":" + BaseTest.getWeblogicImageTag());
     }
-
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
 
@@ -1855,7 +1853,9 @@ overwriteDockerfile.append("cp -f ")
    */
   private String prepareCmdToCallCreateDomainScript(String outputDir) {
 
-    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
+    StringBuffer createDomainScriptCmd = new StringBuffer("export WDT_VERSION=");
+    createDomainScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
+            .append(BaseTest.getResultDir());
     // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
       createDomainScriptCmd

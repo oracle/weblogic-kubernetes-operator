@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
 
@@ -12,9 +11,9 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.Provider;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.ErrorModel;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * ErrorFilter reformats string entities from non-success responses into arrays of message entities.
@@ -22,6 +21,8 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 @Provider
 @Priority(FilterPriorities.ERROR_FILTER_PRIORITY)
 public class ErrorFilter implements ContainerResponseFilter {
+
+  private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   public ErrorFilter() {
     // nothing to do

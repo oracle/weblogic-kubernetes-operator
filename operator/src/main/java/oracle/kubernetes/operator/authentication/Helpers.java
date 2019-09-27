@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.authentication;
 
@@ -15,9 +14,9 @@ import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1ServiceAccountList;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.apache.commons.codec.binary.Base64;
-
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * This class provides helper methods for getting Service Accounts and Secrets for authentication
@@ -25,9 +24,9 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  */
 public class Helpers {
 
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @SuppressWarnings("unused")
   private final Authenticator authenticator;
-
   private final ApiClient apiClient;
   private final CoreV1Api coreApi;
 
@@ -106,7 +105,6 @@ public class Helpers {
         coreApi.listServiceAccountForAllNamespaces(
             cont, // continue option
             "", // field selector
-            Boolean.FALSE, // includeUninitialized
             "", // labelSelector
             4096, // limit size for list
             "false", // pretty

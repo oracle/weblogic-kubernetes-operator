@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
 # Utility functions that are shared by multiple scripts
@@ -319,6 +319,8 @@ function createFiles {
     weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
   fi
 
+  wdtVersion="${WDT_VERSION}"
+
   if [ "${domainHomeInImage}" == "true" ]; then
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
     domainHome="/u01/oracle/user_projects/domains/${domainName}"
@@ -326,7 +328,7 @@ function createFiles {
     if [ -z $domainHomeImageBuildPath ]; then
       domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image"
     fi
-
+ 
     # Generate the properties file that will be used when creating the weblogic domain
     echo Generating ${domainPropertiesOutput}
 
@@ -412,6 +414,7 @@ function createFiles {
     sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
+    sed -i -e "s:%WDT_VERSION%:${wdtVersion}:g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
     echo Generating ${deleteJobOutput}

@@ -1,12 +1,13 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
 
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
 
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -111,4 +112,18 @@ public interface ClusterConfigurator extends ServiceConfigurator {
    * @return this object
    */
   ClusterConfigurator withRestartVersion(String restartVersion);
+
+  ClusterConfigurator withRestartPolicy(String restartPolicy);
+
+  ClusterConfigurator withAffinity(V1Affinity affinity);
+
+  ClusterConfigurator withNodeName(String nodeName);
+
+  ClusterConfigurator withSchedulerName(String schedulerName);
+
+  ClusterConfigurator withRuntimeClassName(String runtimeClassName);
+
+  ClusterConfigurator withPriorityClassName(String priorityClassName);
+
+  ClusterConfigurator withToleration(V1Toleration toleration);
 }

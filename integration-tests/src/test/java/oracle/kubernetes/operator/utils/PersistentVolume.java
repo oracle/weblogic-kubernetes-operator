@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
@@ -34,7 +33,19 @@ public class PersistentVolume {
         + "'"; 
     }
     
-    TestUtils.exec(cmd, true);
+    // retry logic for PV dir creation as sometimes krun.sh fails
+    int cnt = 0;
+    int maxCnt = 10;
+    while (cnt < maxCnt) {
+      logger.info("Executing command " + cmd);
+      if (ExecCommand.exec(cmd).exitValue() == 0) {
+        break;
+      } else {
+        logger.info("PV dir creation command failed");
+        Thread.sleep(BaseTest.getWaitTimePod());
+        cnt = cnt + 1;
+      }
+    }
 
     Path parentDir =
         pvMap.get("domainUID") != null

@@ -1,5 +1,5 @@
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
 # Purpose:
@@ -418,3 +418,17 @@ function getAdminServerUrl() {
   fi
   echo ${admin_protocol}://${AS_SERVICE_NAME}:${ADMIN_PORT}
 }
+
+#
+# adjustPath
+#   purpose: Prepend $PATH with $JAVA_HOME/bin if $JAVA_HOME is set
+#            and if $JAVA_HOME/bin is not already in $PATH
+#
+function adjustPath() {
+  if [ ! -z ${JAVA_HOME} ]; then
+    if [[ ":$PATH:" != *":${JAVA_HOME}/bin:"* ]]; then
+      export PATH="${JAVA_HOME}/bin:$PATH"
+    fi
+  fi
+}
+

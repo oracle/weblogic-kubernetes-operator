@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
 
@@ -13,7 +12,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 
 /**
  * BaseDebugLoggingFilter provides utilities shared by RequestDebugLoggingFilter and
@@ -21,17 +21,18 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  */
 public abstract class BaseDebugLoggingFilter {
 
-  static final String FILTER_REQUEST_START_TIME = "FILTER_REQUEST_START_TIME";
-  static final String FILTER_REQUEST_ENTITY = "FILTER_REQUEST_ENTITY";
+  protected static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  protected static final String FILTER_REQUEST_START_TIME = "FILTER_REQUEST_START_TIME";
+  protected static final String FILTER_REQUEST_ENTITY = "FILTER_REQUEST_ENTITY";
   private static final String DATE_FORMAT =
       "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"; // ISO 8610, includes time zone
 
-  static String formatTime(long time) {
+  protected static String formatTime(long time) {
     // construct a new SimpleDataFormat each time since it is not thread safe:
     return new SimpleDateFormat(DATE_FORMAT).format(new Date(time));
   }
 
-  String formatEntity(MediaType type, String entityAsString) {
+  protected String formatEntity(MediaType type, String entityAsString) {
     String result = entityAsString;
     if (!MediaType.APPLICATION_JSON_TYPE.isCompatible(type)) {
       // TODO - convert to pretty printed json
@@ -39,11 +40,12 @@ public abstract class BaseDebugLoggingFilter {
     return result;
   }
 
-  String getLoggableHeaders(ContainerRequestContext req) {
+  protected String getLoggableHeaders(ContainerRequestContext req) {
     LOGGER.entering();
 
     // Make a copy of all of the request headers
-    MultivaluedHashMap<String, String> loggableHeaders = new MultivaluedHashMap<>(req.getHeaders());
+    MultivaluedHashMap<String, String> loggableHeaders =
+        new MultivaluedHashMap<String, String>(req.getHeaders());
 
     // Authorization headers contain credentials.  These credentials should not be
     // debug logged since they contain sensitive data.
