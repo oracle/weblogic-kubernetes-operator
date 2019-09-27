@@ -17,7 +17,6 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
-import static oracle.kubernetes.operator.helpers.Matchers.hasPVClaimVolume;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
@@ -30,6 +29,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.Matchers.hasPVClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
@@ -52,8 +52,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class AdminPodHelperTest extends PodHelperTestBase {
   private static final String INTERNAL_OPERATOR_CERT_ENV_NAME = "INTERNAL_OPERATOR_CERT";
 
-  final static String RAW_VALUE_1 = "value-$(SERVER_NAME)";
-  final static String END_VALUE_1 = "value-ADMIN_SERVER";
+  static final String RAW_VALUE_1 = "value-$(SERVER_NAME)";
+  static final String END_VALUE_1 = "value-ADMIN_SERVER";
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -316,7 +316,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasValueFromEnvironmentItemsWithVariables_createPodShouldNotChangeTheirValues() throws Exception {
+  public void whenDomainHasValueFromEnvironmentItemsWithVariables_createPodShouldNotChangeTheirValues()
+      throws Exception {
     V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", RAW_VALUE_1);
     V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", RAW_VALUE_1);
     V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", RAW_VALUE_1);

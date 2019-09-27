@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -12,6 +11,7 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
+import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
@@ -46,7 +46,8 @@ public class Matchers {
   }
 
   static Matcher<Iterable<? super V1Volume>> hasPVClaimVolume(String name, String claimName) {
-    return hasItem(new V1Volume().name(name).persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource().claimName(claimName)));
+    return hasItem(new V1Volume().name(name).persistentVolumeClaim(
+        new V1PersistentVolumeClaimVolumeSource().claimName(claimName)));
   }
 
   private static V1Container createContainer(String name, String image, String... command) {

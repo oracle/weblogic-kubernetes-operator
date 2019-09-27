@@ -3,15 +3,16 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import com.meterware.simplestub.Memento;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.TuningParameters;
-import static oracle.kubernetes.operator.helpers.LegalNames.DNS_1123_FIELDS_PARAM;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.helpers.LegalNames.DNS_1123_FIELDS_PARAM;
 import static oracle.kubernetes.operator.helpers.LegalNames.toClusterServiceName;
 import static oracle.kubernetes.operator.helpers.LegalNames.toServerServiceName;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -81,6 +82,7 @@ public class LegalNamesTest {
     assertThat(LegalNames.isDNS1123Required("ShareName"), is(false));
     assertThat(LegalNames.isDNS1123Required("StoragePolicyName"), is(false));
   }
+
   @Test
   public void verify_requiresDNS1123Names_returnFalse_for_invalidValues() {
     assertThat(LegalNames.isDNS1123Required((String)null), is(false));
