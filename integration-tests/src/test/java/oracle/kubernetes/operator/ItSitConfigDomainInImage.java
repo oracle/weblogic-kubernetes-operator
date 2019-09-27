@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 /** JUnit test class used for testing configuration override use cases for Domain In Image. */
 public class ItSitConfigDomainInImage extends SitConfig {
 
+  private static String testClassName ;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -28,8 +29,8 @@ public class ItSitConfigDomainInImage extends SitConfig {
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       staticPrepare(
-          DOMAININIMAGE_WLST_YAML,
-          "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config-inimage.py");
+          true,
+          "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config-inimage.py", testClassName);
     }
   }
 

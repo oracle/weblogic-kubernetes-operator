@@ -15,7 +15,7 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 
 /** JUnit test class used for testing configuration override use cases for domain in pv WLS. */
 public class ItSitConfigDomainInPV extends SitConfig {
-
+  private static String testClassName ;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -28,8 +28,8 @@ public class ItSitConfigDomainInPV extends SitConfig {
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       staticPrepare(
-          DOMAINONPV_WLST_YAML,
-          "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
+          false,
+          "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py", testClassName);
     }
   }
 

@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -48,7 +49,7 @@ public class SitConfig extends BaseTest {
   private static String JDBC_RES_SCRIPT;
   private static final String oldSecret = "test-secrets";
   private static final String newSecret = "test-secrets-new";
-
+  private static String domainNS ;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -57,14 +58,18 @@ public class SitConfig extends BaseTest {
    * @throws Exception when the initialization, creating directories , copying files and domain
    *     creation fails.
    */
-  protected static void staticPrepare(String domainInputYaml, String domainScript)
+  protected static void staticPrepare(boolean domainInImage, String domainScript, String testClassName)
       throws Exception {
     // initialize test properties and create the directories
     if (FULLTEST) {
       // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE);
-      if (operator1 == null) {
-        operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+      initialize(APP_PROPS_FILE, testClassName);
+      // create operator1
+      if(operator1 == null ) {
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assert.assertNotNull(operator1);
+        domainNS = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
       }
       TEST_RES_DIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
       sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp";
@@ -91,7 +96,7 @@ public class SitConfig extends BaseTest {
       };
       copySitConfigFiles(files, oldSecret);
       // create weblogic domain with configOverrides
-      domain = createSitConfigDomain(domainInputYaml, domainScript);
+      domain = createSitConfigDomain(domainInImage, domainScript);
       Assert.assertNotNull(domain);
       domainYaml =
           BaseTest.getUserProjectsDir()
@@ -142,16 +147,22 @@ public class SitConfig extends BaseTest {
    * @return - created domain
    * @throws Exception - if it cannot create the domain
    */
-  private static Domain createSitConfigDomain(String domainInputYaml, String domainScript)
+  private static Domain createSitConfigDomain(boolean domainInImage, String domainScript)
       throws Exception {
     // load input yaml to map and add configOverrides
-    Map<String, Object> domainMap = TestUtils.loadYaml(domainInputYaml);
+    Map<String, Object> domainMap = null;
+    if(domainInImage) {
+      domainMap = TestUtils.createDomainInImageMap(getNewNumber(),false, "sitconfigdomaininimage");
+    } else {
+      domainMap = TestUtils.createDomainMap(getNewNumber(), "sitconfigdomaininpv");
+    }
     domainMap.put("configOverrides", "sitconfigcm");
     domainMap.put("configOverridesFile", configOverrideDir);
     domainMap.put("domainUID", DOMAINUID);
     domainMap.put("adminNodePort", new Integer(ADMINPORT));
     domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
     domainMap.put("createDomainPyScript", domainScript);
+    domainMap.put("namespace", domainNS);
     domainMap.put(
         "javaOptions",
         "-Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true");
