@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -48,7 +49,9 @@ public class ItPodsShutdown extends BaseTest {
   private static long terminationDefaultOptionsTime = 0;
   private static String modifiedYaml = null;
   private static int podVer = 1;
-
+  private static String testClassName ;
+  private static String domainNS1 ;
+  
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -61,12 +64,18 @@ public class ItPodsShutdown extends BaseTest {
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     if (FULLTEST) {
-      initialize(APP_PROPS_FILE);
+      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      initialize(APP_PROPS_FILE, testClassName);
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
-      if (operator1 == null) {
-        operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+      // create operator1
+      if(operator1 == null ) {
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assert.assertNotNull(operator1);
+        domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
       }
+    
       shutdownTmpDir = BaseTest.getResultDir() + "/shutdowntemp";
       Files.createDirectories(Paths.get(shutdownTmpDir));
 
@@ -104,8 +113,9 @@ public class ItPodsShutdown extends BaseTest {
   }
 
   private static Domain createDomain() throws Exception {
-
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+    
+    Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+    domainMap.put("namespace", domainNS1);
     domainMap.put("domainUID", "domainpodsshutdown");
     domainMap.put("initialManagedServerReplicas", new Integer("1"));
 
@@ -148,7 +158,7 @@ public class ItPodsShutdown extends BaseTest {
 
   private static void destroyDomain() throws Exception {
     if (domain != null) {
-      domain.destroy();
+      TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
     }
   }
 

@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -17,6 +18,7 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -35,6 +37,8 @@ public class ItServerDiscovery extends BaseTest {
 
   private static Operator operator;
   private static Domain domain;
+  private static String domainNS ;
+  private static String testClassName ;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -47,19 +51,23 @@ public class ItServerDiscovery extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE);
+      initialize(APP_PROPS_FILE, testClassName);
   
-      // Create operator1
-      if (operator == null) {
-        LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
-        operator = TestUtils.createOperator(OPERATOR1_YAML);
-      }
-  
+      // create operator1
+      if(operator == null ) {
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assert.assertNotNull(operator);
+        domainNS = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+      }  
       // create domain
       if (domain == null) {
         LoggerHelper.getLocal().log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
-        domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
+        Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+        domainMap.put("namespace", domainNS);
+        domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
       }
   

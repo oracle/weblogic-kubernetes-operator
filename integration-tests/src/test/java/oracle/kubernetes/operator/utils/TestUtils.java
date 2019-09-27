@@ -1037,7 +1037,7 @@ public class TestUtils {
   public static Map<String, Object> createDomainMap(int number, String prefix) {
     Map<String, Object> domainMap = new HashMap<String, Object>();
     domainMap.put("domainUID", prefix.toLowerCase()+"-domain-"+ number);
-    domainMap.put("namespace", prefix.toLowerCase()+"-domain-"+ number);
+    domainMap.put("namespace", prefix.toLowerCase()+"-domainns-"+ number);
     domainMap.put("configuredManagedServerCount", 4);
     domainMap.put("initialManagedServerReplicas", 2);
     domainMap.put("exposeAdminT3Channel", true);

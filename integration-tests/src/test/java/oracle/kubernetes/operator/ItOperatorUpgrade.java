@@ -291,7 +291,7 @@ public class ItOperatorUpgrade extends BaseTest {
     opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
-    Map<String, Object> operatorMap = new HashMap<String, Object>();
+    Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, "");
     operatorMap.put("operatorImageName", "oracle/weblogic-kubernetes-operator");
     operatorMap.put("operatorImageTag", operatorRelease);
     operatorMap.put("operatorGitVersion", operatorGitRelease);

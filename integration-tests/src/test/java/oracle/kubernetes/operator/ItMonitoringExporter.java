@@ -23,6 +23,8 @@ import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
 import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
+import com.jayway.jsonpath.internal.function.json.Append;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -86,7 +88,7 @@ public class ItMonitoringExporter extends BaseTest {
       initialize(APP_PROPS_FILE, testClassName);
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true, testClassName);
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true, "itmon");
         operator = new Operator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
         operator.callHelmInstall();
@@ -382,7 +384,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static Domain createVerifyDomain(int number, Operator operator) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "create domain with UID : test" + number);
-    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number, testClassName));
+    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number, "itmon"));
     domain.verifyDomainCreated();
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     LoggerHelper.getLocal().log(Level.INFO, "verify that domain is managed by operator");
@@ -422,7 +424,8 @@ public class ItMonitoringExporter extends BaseTest {
         .append("\"")
         .append("traefik.hostname=")
         .append("\"")
-        .append(" traefik-ingress-test" + number + " " + chartDir);
+        .append(domain.getDomainUid() +"-traefik " + chartDir);
+        
 
     LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
     TestUtils.exec(cmd.toString());

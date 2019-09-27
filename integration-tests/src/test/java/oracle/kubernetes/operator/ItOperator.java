@@ -81,7 +81,6 @@ public class ItOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
-      // domainMap.put("domainUID", "domainonpvwlst");
       domainMap.put("namespace", domainNS1);
       domainMap.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
       domain = TestUtils.createDomain(domainMap);
