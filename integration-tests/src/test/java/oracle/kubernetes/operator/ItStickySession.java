@@ -121,10 +121,6 @@ public class ItStickySession extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    Map<String, Object> domainMap = domain.getDomainMap();
-    String domainNS = domainMap.get("namespace").toString();
-    String domainUid = domain.getDomainUid();
-
     int counterNum = 4;
     String webServiceSetUrl = testAppPath + "?setCounter=" + counterNum;
     final String webServiceGetUrl = testAppPath + "?getCounter";
@@ -175,7 +171,8 @@ public class ItStickySession extends BaseTest {
 
     // Verify server-affinity
     Assume.assumeTrue("Weblogic server name should NOT change!", serverName1.equals(serverName2));
-    LoggerHelper.getLocal().log(Level.INFO, "Two HTTP requests are directed to same Weblogic server <" + serverName1 + ">");
+    LoggerHelper.getLocal().log(
+        Level.INFO, "Two HTTP requests are directed to same Weblogic server <" + serverName1 + ">");
 
     // Verify that count numbers from two HTTP responses match
     Assume.assumeTrue("Count number does not match", Integer.parseInt(count) == counterNum);

@@ -26,6 +26,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
       staticPrepare(
           false,
           "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py", testClassName);
@@ -40,7 +41,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      staticUnPrepare();
+      staticUnprepare();
     }
   }
 

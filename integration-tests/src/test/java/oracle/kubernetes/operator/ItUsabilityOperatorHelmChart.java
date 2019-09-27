@@ -53,6 +53,11 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     }
   }
   
+  @Before
+  public void prepare() {
+    number = getNewNumber();
+  }
+  
   /**
    * Releases k8s cluster lease, archives result, pv directories.
    *
@@ -86,12 +91,12 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     try {
       LoggerHelper.getLocal().log(Level.INFO, "Checking if first operator is running, if not creating");
       firstoperator =
-          new Operator(TestUtils.createOperatorMap(getNewNumber(), true, testClassName), RestCertType.SELF_SIGNED);
+          new Operator(TestUtils.createOperatorMap(number, true, testClassName), RestCertType.SELF_SIGNED);
       firstoperator.callHelmInstall();
       // number = number + 1;
       // oprelease = "op" + number;
       LoggerHelper.getLocal().log(Level.INFO, " new value for oprelease " + oprelease);
-      number = getNewNumber();
+      // number = getNewNumber();
       secondoperator =
           new Operator((TestUtils.createOperatorMap(number, true, testClassName)), RestCertType.SELF_SIGNED);
       secondoperator.callHelmInstall();
@@ -226,7 +231,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
-
+    //number = getNewNumber();
     operator =
         new Operator(
             (TestUtils.createOperatorMap(number, false, testClassName)),
@@ -510,7 +515,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
-    number = getNewNumber();
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true, testClassName);
 
     try {
@@ -571,7 +575,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     logTestBegin(testMethodName);
     Operator operator = null;
     try {
-      Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+      Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true, testClassName);
       operatorMap.remove("domainNamespaces");
       operator = new Operator(operatorMap, RestCertType.SELF_SIGNED);
       operator.callHelmInstall();
@@ -629,7 +633,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     logTestBegin(testMethodName);
     Operator operator = null;
     try {
-      Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+      Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true, testClassName);
       ArrayList<String> targetDomainsNS = new ArrayList<String>();
       targetDomainsNS.add("default");
       operatorMap.replace("domainNamespaces", targetDomainsNS);

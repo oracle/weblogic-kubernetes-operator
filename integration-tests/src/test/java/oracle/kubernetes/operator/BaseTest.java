@@ -114,10 +114,16 @@ public class BaseTest {
   public static void initialize(String appPropsFile) throws Exception {
     initialize(appPropsFile, "");
   }
+  /**
+   * initializes the application properties and creates directories for results 
+   * @param appPropsFile
+   * @param testClassName
+   * @throws Exception
+   */
   public static void initialize(String appPropsFile, String testClassName) throws Exception {
     
     LoggerHelper.initLocal(Logger.getLogger(testClassName));
-    LoggerHelper.getGlobal().log(Level.INFO, "Starting testClass " +testClassName );
+    LoggerHelper.getGlobal().log(Level.INFO, "Starting testClass "  + testClassName );
     LoggerHelper.getLocal().log(Level.INFO, "Starting testClass " + testClassName);
     
     // load app props defined
@@ -237,7 +243,8 @@ public class BaseTest {
     if (!SHARED_CLUSTER) {
       LoggerHelper.getLocal().log(Level.INFO, "Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
-      ExecResult result = ExecCommand.exec("/usr/local/packages/aime/ias/run_as_root \"chmod 777 " + pvRoot +"\"");
+      ExecResult result = ExecCommand.exec(
+          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 " + pvRoot +"\"");
       if (result.exitValue() != 0) {
         throw new RuntimeException(
             "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
@@ -250,12 +257,14 @@ public class BaseTest {
     Files.createDirectories(Paths.get(userProjectsDir));
 
     // create file handler
-    FileHandler fh = new FileHandler(getResultDir() + "/"+testClassName+".out");
+    FileHandler fh = new FileHandler(getResultDir() + "/"+ testClassName  + ".out");
     SimpleFormatter formatter = new SimpleFormatter();
     fh.setFormatter(formatter);
     LoggerHelper.getLocal().addHandler(fh);
-    LoggerHelper.getLocal().log(Level.INFO, "Adding file handler, logging to file at " + getResultDir() + "/"+testClassName+".out");
-    LoggerHelper.getGlobal().log(Level.INFO, "Adding file handler, logging to file at " + getResultDir() + "/"+testClassName+".out" );
+    LoggerHelper.getLocal().log(Level.INFO, "Adding file handler, logging to file at "
+          + getResultDir() + "/"+ testClassName  + ".out");
+    LoggerHelper.getGlobal().log(Level.INFO, "Adding file handler, logging to file at " 
+          + getResultDir()  + "/"  + testClassName  + ".out" );
     
 
 
@@ -263,7 +272,8 @@ public class BaseTest {
     appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
 
     LoggerHelper.getLocal().log(Level.INFO, "appProps = " + appProps);
-    LoggerHelper.getLocal().log(Level.INFO, "maxIterationPod = " + appProps.getProperty("maxIterationsPod"));
+    LoggerHelper.getLocal().log(Level.INFO, "maxIterationPod = "
+            + appProps.getProperty("maxIterationsPod"));
     LoggerHelper.getLocal().log(Level.INFO, 
         "maxIterationPod with default= "
             + appProps.getProperty("maxIterationsPod", "" + maxIterationsPod));
@@ -275,17 +285,22 @@ public class BaseTest {
 
     LoggerHelper.getLocal().log(Level.INFO, "Env var RESULT_ROOT " + System.getenv("RESULT_ROOT"));
     LoggerHelper.getLocal().log(Level.INFO, "Env var PV_ROOT " + System.getenv("PV_ROOT"));
-    LoggerHelper.getLocal().log(Level.INFO, "Env var K8S_NODEPORT_HOST " + System.getenv("K8S_NODEPORT_HOST"));
-    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_NAME_OPERATOR= " + System.getenv("IMAGE_NAME_OPERATOR"));
-    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_TAG_OPERATOR " + System.getenv("IMAGE_TAG_OPERATOR"));
+    LoggerHelper.getLocal().log(Level.INFO, "Env var K8S_NODEPORT_HOST " 
+     + System.getenv("K8S_NODEPORT_HOST"));
+    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_NAME_OPERATOR= "
+     + System.getenv("IMAGE_NAME_OPERATOR"));
+    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_TAG_OPERATOR " 
+     + System.getenv("IMAGE_TAG_OPERATOR"));
     LoggerHelper.getLocal().log(Level.INFO, 
         "Env var IMAGE_PULL_POLICY_OPERATOR " + System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
     LoggerHelper.getLocal().log(Level.INFO, 
         "Env var IMAGE_PULL_SECRET_OPERATOR " + System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
     LoggerHelper.getLocal().log(Level.INFO, 
         "Env var IMAGE_PULL_SECRET_WEBLOGIC " + System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
-    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_NAME_WEBLOGIC " + System.getenv("IMAGE_NAME_WEBLOGIC"));
-    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_TAG_WEBLOGIC " + System.getenv("IMAGE_TAG_WEBLOGIC"));
+    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_NAME_WEBLOGIC "
+        + System.getenv("IMAGE_NAME_WEBLOGIC"));
+    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_TAG_WEBLOGIC "
+        + System.getenv("IMAGE_TAG_WEBLOGIC"));
 
     LoggerHelper.getLocal().log(Level.INFO, "Env var BRANCH_NAME " + System.getenv("BRANCH_NAME"));
   }
@@ -330,7 +345,7 @@ public class BaseTest {
     return domainApiVersion;
   }
 
-  public ExecResult cleanup() throws Exception {
+  /* public ExecResult cleanup() throws Exception {
     String cmd =
         "export RESULT_ROOT="
             + getResultRoot()
@@ -341,7 +356,7 @@ public class BaseTest {
             + "/src/integration-tests/bash/cleanup.sh";
     LoggerHelper.getLocal().log(Level.INFO, "Command to call cleanup script " + cmd);
     return ExecCommand.exec(cmd);
-  }
+  } */
 
   public static String getResultRoot() {
     return resultRoot;
@@ -407,6 +422,13 @@ public class BaseTest {
     return appLocationOnHost;
   }
 
+  /**
+   * 
+   * @param domain
+   * @param testAppName
+   * @param wsName
+   * @throws Exception
+   */
   public static void buildDeployWebServiceApp(Domain domain, String testAppName, String wsName)
       throws Exception {
     String scriptName = "buildDeployWSAndWSClientAppInPod.sh";
@@ -528,14 +550,15 @@ public class BaseTest {
       domain.callWebAppAndVerifyLoadBalancing(TESTWEBAPP, verifyLoadBalancing);
 
       /* The below check is done for domain-home-in-image domains, it needs 12.2.1.3 patched image
-       * otherwise managed servers will see unicast errors after app deployment and run as standalone servers,
-       * not in cluster.
+       * otherwise managed servers will see unicast errors after app deployment and run as 
+       * standalone servers, not in cluster.
        * Here is the error message
        * <Jan 18, 2019 8:54:16,214 PM GMT> <Error> <Kernel> <BEA-000802> <ExecuteRequest failed
        * java.lang.AssertionError: LocalGroup should atleast have the local server!.
        * java.lang.AssertionError: LocalGroup should atleast have the local server!
        *    at weblogic.cluster.messaging.internal.GroupImpl.send(GroupImpl.java:176)
-       *    at weblogic.cluster.messaging.internal.server.UnicastFragmentSocket.send(UnicastFragmentSocket.java:97)
+       *    at weblogic.cluster.messaging.internal.server.UnicastFragmentSocket.send
+       *    (UnicastFragmentSocket.java:97)
        *    at weblogic.cluster.FragmentSocketWrapper.send(FragmentSocketWrapper.java:84)
        *    at weblogic.cluster.UnicastSender.send(UnicastSender.java:53)
        *    at weblogic.cluster.UnicastSender.send(UnicastSender.java:21)
@@ -558,14 +581,15 @@ public class BaseTest {
           if (result.exitValue() == 0) {
             throw new RuntimeException(
                 "FAILURE: Managed Servers are not part of the cluster, failing with "
-                    + result.stdout()
-                    + ". \n Make sure WebLogic Server 12.2.1.3.0 with patch 29135930 applied is used.");
+         + result.stdout()
+         + ". \n Make sure WebLogic Server 12.2.1.3.0 with patch 29135930 applied is used.");
           }
         }
       }
 
     } else {
-      LoggerHelper.getLocal().log(Level.INFO, "exposeAdminT3Channel is false, can not test t3ChannelPort");
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "exposeAdminT3Channel is false, can not test t3ChannelPort");
     }
 
     LoggerHelper.getLocal().log(Level.INFO, "Done - testAdminT3Channel");
@@ -650,7 +674,8 @@ public class BaseTest {
    *
    * @throws Exception exception
    */
-  public void testClusterScaling(Operator operator, Domain domain, boolean verifyLoadBalancing) throws Exception {
+  public void testClusterScaling(Operator operator, Domain domain, boolean verifyLoadBalancing) 
+      throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Inside testClusterScaling");
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     Map<String, Object> domainMap = domain.getDomainMap();
@@ -668,10 +693,12 @@ public class BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Checking if managed pod(" + podName + ") is Running");
     TestUtils.checkPodCreated(podName, domainNS);
 
-    LoggerHelper.getLocal().log(Level.INFO, "Checking if managed server (" + podName + ") is Running");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Checking if managed server (" + podName + ") is Running");
     TestUtils.checkPodReady(podName, domainNS);
 
-    LoggerHelper.getLocal().log(Level.INFO, "Checking if managed service(" + podName + ") is created");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Checking if managed service(" + podName + ") is created");
     TestUtils.checkServiceCreated(podName, domainNS);
 
     int replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
@@ -682,7 +709,7 @@ public class BaseTest {
               + "/"
               + replicas);
     }
-    if(verifyLoadBalancing) {
+    if (verifyLoadBalancing) {
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     }
 
@@ -702,7 +729,7 @@ public class BaseTest {
               + "/"
               + replicas);
     }
-    if(verifyLoadBalancing) {
+    if (verifyLoadBalancing) {
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     }
 
@@ -741,7 +768,8 @@ public class BaseTest {
 
     String clusterName = domainMap.get("clusterName").toString();
     int replicaCntBeforeScaleup = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-    LoggerHelper.getLocal().log(Level.INFO, "replica count before scaleup " + replicaCntBeforeScaleup);
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "replica count before scaleup " + replicaCntBeforeScaleup);
 
     LoggerHelper.getLocal().log(Level.INFO, "Scale domain " + domainUid + " by calling the webapp");
 
@@ -796,8 +824,9 @@ public class BaseTest {
         Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
     // copy script to pod
     String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
-        + getResultDir() + ":/tmpdir -m " + pvDir
-        + ":/pvdir -n "+domainNS  +" -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/"+domainUid+"/bin/scripts' ";
+      + getResultDir() + ":/tmpdir -m " + pvDir
+      + ":/pvdir -n "+domainNS   + " -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/"
+      +domainUid+"/bin/scripts' ";
     TestUtils.exec(cpUsingKrunCmd, true);
   }
 

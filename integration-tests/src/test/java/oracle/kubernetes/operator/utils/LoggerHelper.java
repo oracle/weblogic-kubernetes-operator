@@ -9,6 +9,7 @@ public class LoggerHelper {
   
   static {
     globalLogger.addHandler(new ConsoleHandler());
+    
   }
   
   public static void closeLocal() {
@@ -18,7 +19,9 @@ public class LoggerHelper {
   
   public static void initLocal(Logger cl) {
     //cl.setUseParentHandlers(false);
+    //cl.addHandler(new ConsoleHandler());
     localLogger.set(cl);
+    
   }
   
   public static Logger getLocal() {

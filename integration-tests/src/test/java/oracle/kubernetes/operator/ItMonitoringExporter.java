@@ -32,6 +32,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -88,7 +89,7 @@ public class ItMonitoringExporter extends BaseTest {
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       initialize(APP_PROPS_FILE);
-      logger.info("Checking if operator and domain are running, if not creating");
+      LoggerHelper.getLocal().log(Level.INFO,"Checking if operator and domain are running, if not creating");
       if (operator == null) {
         operator = TestUtils.createOperator("operatorexp.yaml");
       }
@@ -126,9 +127,9 @@ public class ItMonitoringExporter extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
+      LoggerHelper.getLocal().log(Level.INFO,"+++++++++++++++++++++++++++++++++---------------------------------+");
+      LoggerHelper.getLocal().log(Level.INFO,"BEGIN");
+      LoggerHelper.getLocal().log(Level.INFO,"Run once, release cluster lease");
       if (domain != null) {
         domain.destroy();
         TestUtils.deleteWeblogicDomainResources("test5");
@@ -144,7 +145,7 @@ public class ItMonitoringExporter extends BaseTest {
       }
       uninstallWebHookPrometheusGrafanaMySql();
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-      logger.info("SUCCESS");
+      LoggerHelper.getLocal().log(Level.INFO,"SUCCESS");
     }
   }
 
@@ -156,7 +157,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static void gitCloneBuildMonitoringExporter() throws Exception {
 
-    logger.info("installing monitoring exporter version: " + MONITORING_EXPORTER_VERSION);
+    LoggerHelper.getLocal().log(Level.INFO,"installing monitoring exporter version: " + MONITORING_EXPORTER_VERSION);
     executeShelScript(
         resourceExporterDir,
         monitoringExporterScriptDir,
@@ -177,7 +178,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static void executeShelScript(String srcLoc, String destLoc, String fileName, String args)
       throws Exception {
     if (!new File(destLoc).exists()) {
-      logger.info(" creating script dir ");
+      LoggerHelper.getLocal().log(Level.INFO," creating script dir ");
       Files.createDirectories(Paths.get(destLoc));
     }
     String crdCmd = " cp " + srcLoc + "/" + fileName + " " + destLoc;
@@ -197,7 +198,7 @@ public class ItMonitoringExporter extends BaseTest {
     ExecResult result = ExecCommand.exec(crdCmd);
     assertFalse(
         "Shel script failed: " + result.stdout(), result.stdout().contains("BUILD FAILURE"));
-    logger.info("Result output from  the command " + crdCmd + " : " + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO,"Result output from  the command " + crdCmd + " : " + result.stdout());
   }
 
   /**
@@ -255,13 +256,13 @@ public class ItMonitoringExporter extends BaseTest {
   private static void deployRunMonitoringExporter(Domain domain, Operator operator)
       throws Exception {
     gitCloneBuildMonitoringExporter();
-    logger.info("Creating Operator & waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO,"Creating Operator & waiting for the script to complete execution");
     boolean testCompletedSuccessfully = false;
     startExporter(domain, operator);
     // check if exporter is up
     domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
     testCompletedSuccessfully = true;
-    logger.info("SUCCESS - deployRunMonitoringExporter");
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - deployRunMonitoringExporter");
   }
 
   /**
@@ -270,18 +271,18 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception exception
    */
   private static Domain createVerifyDomain(int number, Operator operator) throws Exception {
-    logger.info("create domain with UID : test" + number);
-    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
+    LoggerHelper.getLocal().log(Level.INFO,"create domain with UID : test" + number);
+    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number, "itmon"));
     domain.verifyDomainCreated();
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-    logger.info("verify that domain is managed by operator");
+    LoggerHelper.getLocal().log(Level.INFO,"verify that domain is managed by operator");
     operator.verifyDomainExists(domain.getDomainUid());
     return domain;
   }
 
   private static void startExporter(Domain domain, Operator operator)
       throws Exception {
-    logger.info("deploy exporter ");
+    LoggerHelper.getLocal().log(Level.INFO,"deploy exporter ");
     deployMonitoringExporter(
         monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war", domain, operator);
   }
@@ -313,7 +314,7 @@ public class ItMonitoringExporter extends BaseTest {
         .append("\"")
         .append(" traefik-ingress-test" + number + " " + chartDir);
 
-    logger.info(" upgradeTraefikNamespace() Running " + cmd.toString());
+    LoggerHelper.getLocal().log(Level.INFO," upgradeTraefikNamespace() Running " + cmd.toString());
     TestUtils.exec(cmd.toString());
   }
 
@@ -330,7 +331,7 @@ public class ItMonitoringExporter extends BaseTest {
     boolean testCompletedSuccessfully = false;
     assertTrue(checkMetricsViaPrometheus(testappPrometheusSearchKey, "httpsessionreptestapp"));
     testCompletedSuccessfully = true;
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -346,7 +347,7 @@ public class ItMonitoringExporter extends BaseTest {
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_jvm.yml");
     assertTrue(checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1"));
     assertTrue(checkMetricsViaPrometheus(prometheusSearchKey2, "managed-server2"));
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -375,7 +376,7 @@ public class ItMonitoringExporter extends BaseTest {
     assertTrue(page.asText().contains("JVMRuntime"));
 
     assertTrue(checkMetricsViaPrometheus(testappPrometheusSearchKey, "httpsessionreptestapp"));
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -392,7 +393,7 @@ public class ItMonitoringExporter extends BaseTest {
         submitConfigureForm(exporterUrl, "replace", configPath + "/rest_oneattribval.yml");
     assertTrue(page.asText().contains("values: invocationTotalCount"));
     assertFalse(page.asText().contains("reloadTotal"));
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -412,7 +413,7 @@ public class ItMonitoringExporter extends BaseTest {
     assertTrue(page.asText().contains("values: invocationTotalCount"));
     page = submitConfigureForm(exporterUrl, "append", configPath + "/rest_twoattribs.yml");
     assertTrue(page.asText().contains("values: [invocationTotalCount, executionTimeAverage]"));
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -427,7 +428,7 @@ public class ItMonitoringExporter extends BaseTest {
     logTestBegin(testMethodName);
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_empty.yml");
     assertTrue(page.asText().contains("queries:") && !page.asText().contains("values"));
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -445,7 +446,7 @@ public class ItMonitoringExporter extends BaseTest {
     assertNotNull(originalPage);
     HtmlPage page = submitConfigureForm(exporterUrl, "append", configPath + "/rest_empty.yml");
     assertTrue(originalPage.asText().equals(page.asText()));
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -460,7 +461,7 @@ public class ItMonitoringExporter extends BaseTest {
     logTestBegin(testMethodName);
     changeConfigNegative(
         "append", configPath + "/rest_notymlformat.yml", "Configuration is not in YAML format");
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -492,7 +493,7 @@ public class ItMonitoringExporter extends BaseTest {
         "append",
         configPath + "/rest_notyml.yml",
         "Configuration YAML format has errors while scanning a simple key");
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -510,7 +511,7 @@ public class ItMonitoringExporter extends BaseTest {
         "replace",
         configPath + "/rest_notyml.yml",
         "Configuration YAML format has errors while scanning a simple key");
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -528,7 +529,7 @@ public class ItMonitoringExporter extends BaseTest {
         "replace",
         configPath + "/rest_dublicatedval.yml",
         "Duplicate values for [deploymentState] at applicationRuntimes.componentRuntimes");
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -545,7 +546,7 @@ public class ItMonitoringExporter extends BaseTest {
         "append",
         configPath + "/rest_dublicatedval.yml",
         "Duplicate values for [deploymentState] at applicationRuntimes.componentRuntimes");
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -568,7 +569,7 @@ public class ItMonitoringExporter extends BaseTest {
     assertFalse(page.asText().contains("metricsNameSnakeCase"));
     String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
     assertTrue(checkMetricsViaPrometheus(searchKey, "httpsessionreptestapp"));
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -592,7 +593,7 @@ public class ItMonitoringExporter extends BaseTest {
     } catch (FailingHttpStatusCodeException ex) {
       assertTrue((ex.getMessage()).contains(expectedErrorMsg));
     }
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -611,7 +612,7 @@ public class ItMonitoringExporter extends BaseTest {
         "401 Unauthorized for " + exporterUrl,
         "invaliduser",
         wlsPassword);
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -648,7 +649,7 @@ public class ItMonitoringExporter extends BaseTest {
         "401 Unauthorized for " + exporterUrl,
         "",
         wlsPassword);
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -667,7 +668,7 @@ public class ItMonitoringExporter extends BaseTest {
         "401 Unauthorized for " + exporterUrl,
         wlsUser,
         "");
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -687,7 +688,7 @@ public class ItMonitoringExporter extends BaseTest {
             monitoringExporterDir + " " + resourceExporterDir);
     checkPromGrafana();
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   /**
@@ -708,11 +709,11 @@ public class ItMonitoringExporter extends BaseTest {
     addMonitoringToExistedDomain();
 
     testCompletedSuccessfully = true;
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
 
   private void fireAlert() throws Exception {
-    logger.info("Fire Alert by changing replca count");
+    LoggerHelper.getLocal().log(Level.INFO,"Fire Alert by changing replca count");
     replaceStringInFile(
         monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "replicas: 2", "replicas: 1");
     // apply new domain yaml and verify pod restart
@@ -730,7 +731,7 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   private static void addMonitoringToExistedDomain() throws Exception {
-    logger.info("Add monitoring to the running domain");
+    LoggerHelper.getLocal().log(Level.INFO,"Add monitoring to the running domain");
     String exporterAppPath = monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
     domain.deployWebAppViaWlst(
             "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true);
@@ -743,7 +744,7 @@ public class ItMonitoringExporter extends BaseTest {
             + "/cm.yaml";
     TestUtils.exec(crdCmd);
     ExecResult result = ExecCommand.exec("cat " + monitoringExporterEndToEndDir + "/cm.yaml");
-    logger.info(" output for cm " + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO," output for cm " + result.stdout());
     replaceStringInFile(
         monitoringExporterEndToEndDir + "/cm.yaml",
         "default;domain1;cluster-1",
@@ -765,15 +766,15 @@ public class ItMonitoringExporter extends BaseTest {
             + " -n "
             + namespace
             + " -o jsonpath=\"{.items[0].metadata.name}\"");
-    logger.info(" pod name cmd =" + cmd);
+    LoggerHelper.getLocal().log(Level.INFO," pod name cmd =" + cmd);
     ExecResult result = null;
     String podName = null;
     int i = 0;
     while (i < 4) {
       result = ExecCommand.exec(cmd.toString());
-      logger.info(" Result output" + result.stdout());
+      LoggerHelper.getLocal().log(Level.INFO," Result output" + result.stdout());
       if (result.exitValue() == 0) {
-        logger.info(result.stdout());
+        LoggerHelper.getLocal().log(Level.INFO,result.stdout());
         podName = result.stdout().trim();
         break;
       } else {
@@ -870,7 +871,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static void setupPv() throws Exception {
     String pvDir = monitoringExporterEndToEndDir + "pvDir";
     if (new File(pvDir).exists()) {
-      logger.info(" PV dir already exists , cleaning ");
+      LoggerHelper.getLocal().log(Level.INFO," PV dir already exists , cleaning ");
       if (!pvDir.isEmpty()) {
         deletePvDir();
       }
@@ -977,7 +978,7 @@ public class ItMonitoringExporter extends BaseTest {
 
     String crdCmd = "kubectl -n monitoring get pods -l app=prometheus";
     ExecResult resultStatus = ExecCommand.exec(crdCmd);
-    logger.info("Status of the pods " + resultStatus.stdout());
+    LoggerHelper.getLocal().log(Level.INFO,"Status of the pods " + resultStatus.stdout());
 
 
     assertFalse(
@@ -989,7 +990,7 @@ public class ItMonitoringExporter extends BaseTest {
     TestUtils.checkPodReady(podName, "monitoring");
 
 
-    logger.info("installing grafana dashboard");
+    LoggerHelper.getLocal().log(Level.INFO,"installing grafana dashboard");
 
     crdCmd =
         " cd "
@@ -1029,7 +1030,7 @@ public class ItMonitoringExporter extends BaseTest {
     String webhookResourceDir = resourceExporterDir + "/../webhook";
     String webhookDir = monitoringExporterDir + "/webhook";
     // install webhook
-    logger.info("installing webhook ");
+    LoggerHelper.getLocal().log(Level.INFO,"installing webhook ");
     executeShelScript(
         webhookResourceDir,
         monitoringExporterScriptDir,
@@ -1072,7 +1073,7 @@ public class ItMonitoringExporter extends BaseTest {
       if (new File(pvDir).exists()) {
         ExecCommand.exec(crdCmd);
         StringBuffer removeDir = new StringBuffer();
-        logger.info("Cleaning PV dir " + pvDir);
+        LoggerHelper.getLocal().log(Level.INFO,"Cleaning PV dir " + pvDir);
         removeDir.append("rm -rf ").append(pvDir);
         ExecCommand.exec(removeDir.toString());
       }
@@ -1080,7 +1081,7 @@ public class ItMonitoringExporter extends BaseTest {
       if (JENKINS) {
         if (new File(pvDir).exists()) {
 
-          logger.info("Deleting pv created dir " + pvDir);
+          LoggerHelper.getLocal().log(Level.INFO,"Deleting pv created dir " + pvDir);
           TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"rm -rf " + pvDir);
         }
       }
@@ -1095,11 +1096,11 @@ public class ItMonitoringExporter extends BaseTest {
   private static void replaceStringInFile(String filePath, String oldValue, String newValue)
       throws IOException {
     Path src = Paths.get(filePath);
-    logger.log(Level.INFO, "Copying {0}", src.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Copying {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
     String content = new String(Files.readAllBytes(src), charset);
     content = content.replaceAll(oldValue, newValue);
-    logger.log(Level.INFO, "to {0}", src.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "to {0}", src.toString());
     Files.write(src, content.getBytes(charset));
   }
 
@@ -1110,7 +1111,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if scaling fails
    */
   private static void scaleCluster(int replicas) throws Exception {
-    logger.info("Scale up/down to " + replicas + " managed servers");
+    LoggerHelper.getLocal().log(Level.INFO,"Scale up/down to " + replicas + " managed servers");
     operator.scale(domain.getDomainUid(), domain.getClusterName(), replicas);
   }
 
@@ -1135,13 +1136,13 @@ public class ItMonitoringExporter extends BaseTest {
     // curl cmd to call webapp
     StringBuffer curlCmd = new StringBuffer("curl --noproxy '*' ");
     curlCmd.append(testAppUrl.toString());
-    logger.info("Curl cmd " + curlCmd);
-    logger.info("searchKey:" + searchKey);
-    logger.info("expected Value " + expectedVal);
+    LoggerHelper.getLocal().log(Level.INFO,"Curl cmd " + curlCmd);
+    LoggerHelper.getLocal().log(Level.INFO,"searchKey:" + searchKey);
+    LoggerHelper.getLocal().log(Level.INFO,"expected Value " + expectedVal);
     boolean result = false;
     try {
       TestUtils.checkAnyCmdInLoop(curlCmd.toString(), expectedVal);
-      logger.info("Prometheus application invoked successfully with curlCmd:" + curlCmd);
+      LoggerHelper.getLocal().log(Level.INFO,"Prometheus application invoked successfully with curlCmd:" + curlCmd);
       result = true;
     } catch (Exception ex) {
       new RuntimeException("FAILURE: can't check metrics" + ex.getMessage());

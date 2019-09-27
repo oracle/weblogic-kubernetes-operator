@@ -35,8 +35,8 @@ public class ItCoherenceTests extends BaseTest {
   private static final String OP_CACHE_LOAD = "load";
   private static final String OP_CACHE_VALIDATE = "validate";
   private static final String PROXY_PORT = "9000";
-  private static String domainNS1 ;
-  private static String testClassName ;
+  private static String domainNS1;
+  private static String testClassName;
   
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -52,8 +52,9 @@ public class ItCoherenceTests extends BaseTest {
       testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
       // create operator1
-      if(operator1 == null ) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+      if (operator1 == null) {
+        Map<String, Object> operatorMap = 
+            TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
@@ -101,8 +102,9 @@ public class ItCoherenceTests extends BaseTest {
   }
 
   /**
-   * Since the coherence.jar is not open source, we need to build the proxy client on the admin VM, which has the
-   * coherence.jar.  Copy the shell script file and all coherence app files over to the admin pod.
+   * Since the coherence.jar is not open source, we need to build the proxy client on the 
+   * admin VM, which has the coherence.jar.  Copy the shell script file and all coherence 
+   * app files over to the admin pod.
    * Then run the script to build the proxy client and run the proxy test.
    *
    * @param cacheOp - cache operation
@@ -123,7 +125,8 @@ public class ItCoherenceTests extends BaseTest {
       final String cohScriptPathInPod = cohAppLocationInPod + "/" + PROXY_CLIENT_SCRIPT;
       final String successMarker = "CACHE-SUCCESS";
 
-      LoggerHelper.getLocal().log(Level.INFO, "Copying files to admin pod for App " + PROXY_CLIENT_APP_NAME);
+      LoggerHelper.getLocal().log(
+                Level.INFO, "Copying files to admin pod for App " +PROXY_CLIENT_APP_NAME);
 
       // Create app dir in the admin pod
       StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
@@ -166,7 +169,8 @@ public class ItCoherenceTests extends BaseTest {
     envMap.put("CUSTOM_WDT_ARCHIVE", buildProxyServerWdtZip());
 
     // create domain
-    Map<String, Object> domainMap = TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
+    Map<String, Object> domainMap = 
+            TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
     domainMap.put("namespace", domainNS1);
     domainMap.put("createDomainFilesDir", "wdt");
     domainMap.put("additionalEnvMap", envMap);

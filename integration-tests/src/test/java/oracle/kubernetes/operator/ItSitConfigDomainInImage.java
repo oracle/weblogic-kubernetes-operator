@@ -15,7 +15,8 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 /** JUnit test class used for testing configuration override use cases for Domain In Image. */
 public class ItSitConfigDomainInImage extends SitConfig {
 
-  private static String testClassName ;
+  private static String testClassName;
+  
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -26,6 +27,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
     if (FULLTEST) {
       staticPrepare(
           true,
@@ -41,7 +43,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      staticUnPrepare();
+      staticUnprepare();
     }
   }
 

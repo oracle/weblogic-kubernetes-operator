@@ -125,7 +125,7 @@ public class SitConfig extends BaseTest {
    *
    * @throws Exception when domain destruction or MySQL container destruction fails
    */
-  protected static void staticUnPrepare() throws Exception {
+  protected static void staticUnprepare() throws Exception {
     if (FULLTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
       destroySitConfigDomain();
