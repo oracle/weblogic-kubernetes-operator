@@ -141,10 +141,10 @@ Events:
 
 ```
 
-If you run into situations where a new domain that is created after its namespace is deleted and recreated,
-does not come up successfully, you can restart the operator pod as shown in the following examples, where
-the operator itself is running in the namespace `weblogic-operator-namespace` with a release name
-of `weblogic-operator`.
+If you still run into problems after you perform the `helm upgrade` to re-initialize a namespace
+that is deleted and recreated, you can restart the operator pod as shown
+in the following examples, where the operator itself is running in the
+namespace `weblogic-operator-namespace` with a release name of `weblogic-operator`.
 
 * Kill the operator pod, and let Kubernetes restart it.
 
@@ -162,7 +162,6 @@ $ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace
 $ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas=1
 ```
 
-{{% notice note %}}
-Restarting an operator pod interrupts not just the domain resources in the namespace that is to be re-initialized,
-but all domain resources managed by the operator deployment. Therefore, use this only as a last resort.
-{{% /notice %}}:
+Note that restarting an operator pod makes the operator temporarily unavailable for managing its namespaces.
+For example, a domain that is created while the operator is restarting will not be started until the
+operator pod is fully up again.
