@@ -162,7 +162,7 @@ public abstract class StepContextBase implements StepContextConstants {
   boolean isDNS1123Required(Method method) {
     // value requires to be in DNS1123 if the value is for a name, which is assumed to be
     // name for a kubernetes object
-    return method.getName().endsWith("Name");
+    return LegalNames.isDNS1123Required(method.getName().substring(3));
   }
 
   private static final String MODELS_PACKAGE = V1Pod.class.getPackageName();
