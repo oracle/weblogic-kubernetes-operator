@@ -25,9 +25,6 @@ public class PersistentVolume {
     
     if (BaseTest.OPENSHIFT) {
       cmd = "mkdir -m 777 -p " +  dirPath;
-      logger.info("BR: going to create the dir " + dirPath);
-   
-      logger.info("BR: command to create the dir " + cmd);
     } else {
       cmd =
             BaseTest.getProjectRoot()

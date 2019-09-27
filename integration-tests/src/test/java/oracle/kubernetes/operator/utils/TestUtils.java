@@ -705,14 +705,12 @@ public class TestUtils {
       tokenCmd
         .append(" -n ")
         .append(operator.getOperatorNamespace());
-      logger.info("BR: tokenCmd = " + tokenCmd.toString());
       ExecResult result = ExecCommand.exec(tokenCmd.toString());
       if (result.exitValue() != 0) {
         throw new RuntimeException(
          "FAILED: command " + tokenCmd + " failed to get the token for Operator");
       }
       String token = result.stdout().trim();
-      logger.info("BR: token = " + token);
       return token;
     } else {
       StringBuffer secretCmd =
@@ -1220,9 +1218,7 @@ public class TestUtils {
   public static void createDirUnderDomainPV(String dirPath) throws Exception {
     if (BaseTest.OPENSHIFT) {
       String crdCmd = "mkdir -m 777 -p " +  dirPath;
-      logger.info("BR: going to create the dir " + dirPath);
   
-      logger.info("BR: command to create dir in PV = " + crdCmd);
       ExecResult result = ExecCommand.exec(crdCmd);
       if (result.exitValue() != 0) {
         throw new RuntimeException(

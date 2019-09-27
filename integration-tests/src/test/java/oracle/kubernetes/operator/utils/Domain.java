@@ -1329,6 +1329,14 @@ public class Domain {
     // clone docker sample from github and copy create domain py script for domain in image case
     if (domainMap.containsKey("domainHomeImageBase")) {
       gitCloneDockerImagesSample();
+StringBuffer overwriteDockerfile = new StringBuffer();
+overwriteDockerfile.append("cp -f ")
+                   .append(BaseTest.getProjectRoot())
+                   .append("/integration-tests/src/test/resources/Dockerfile ")
+                   .append(BaseTest.getResultDir())
+                   .append("/docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
+      logger.info("Executing cmd " + overwriteDockerfile);
+      TestUtils.exec(overwriteDockerfile.toString());
     }
 
     copyDomainTemplate(domainMap);
@@ -1774,6 +1782,9 @@ public class Domain {
   public String getHostNameForCurl() throws Exception {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");
+    } else if (BaseTest.OPENSHIFT) {
+        ExecResult result = ExecCommand.exec("hostname -i");
+        return result.stdout().trim();
     } else {
       // ExecResult result = ExecCommand.exec("hostname | awk -F. '{print $1}'");
       ExecResult result1 =
