@@ -1,6 +1,6 @@
-Copyright (c) 2017, 2019, Oracle Corporation Oracle and/or its affiliates.  All rights reserved.
+Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 
-Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+The Universal Permissive License (UPL), Version 1.0
 
 Subject to the condition set forth below, permission is hereby granted to any
 person obtaining a copy of this software, associated documentation and/or data
