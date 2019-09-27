@@ -162,7 +162,8 @@ public class ItMonitoringExporter extends BaseTest {
         resourceExporterDir,
         monitoringExporterScriptDir,
         "buildMonitoringExporter.sh",
-        monitoringExporterDir + " " + resourceExporterDir + " " + monitoringExporterBranchVer + " " + MONITORING_EXPORTER_VERSION);
+        monitoringExporterDir + " " + resourceExporterDir + " " + monitoringExporterBranchVer + " "
+            + MONITORING_EXPORTER_VERSION);
   }
 
   /**
@@ -959,7 +960,8 @@ public class ItMonitoringExporter extends BaseTest {
             resourceExporterDir,
             monitoringExporterScriptDir,
             "createPromGrafanaMySqlCoordWebhook.sh",
-            monitoringExporterDir + " " + resourceExporterDir + " " + PROMETHEUS_CHART_VERSION + " " + GRAFANA_CHART_VERSION);
+            monitoringExporterDir + " " + resourceExporterDir + " " + PROMETHEUS_CHART_VERSION + " "
+                + GRAFANA_CHART_VERSION);
 
     String webhookPod = getPodName("app=webhook", "webhook");
     TestUtils.checkPodReady(webhookPod, "webhook");
@@ -1006,9 +1008,9 @@ public class ItMonitoringExporter extends BaseTest {
             + "  --data-binary @grafana/dashboard.json";
     TestUtils.exec(crdCmd);
     crdCmd = " cd "
-            + monitoringExporterEndToEndDir
-            + " && " +
-            "curl -v  -H 'Content-Type: application/json' -X GET http://admin:12345678@$HOSTNAME:31000/api/dashboards/db/weblogic-server-dashboard";
+        + monitoringExporterEndToEndDir
+        + " && "
+        + "curl -v  -H 'Content-Type: application/json' -X GET http://admin:12345678@$HOSTNAME:31000/api/dashboards/db/weblogic-server-dashboard";
     ExecResult result = ExecCommand.exec(crdCmd);
     assertTrue(result.stdout().contains("wls_jvm_uptime"));
     assertTrue(
@@ -1154,7 +1156,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @param yamlFile - Name of the yaml file to make changes.
    * @throws IOException exception
    */
-  private static void addRestOptToYaml (String yamlFile, String prop, int restPort ) throws IOException {
+  private static void addRestOptToYaml(String yamlFile, String prop, int restPort) throws IOException {
     ObjectMapper objectMapper = new ObjectMapper();
 
     ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
