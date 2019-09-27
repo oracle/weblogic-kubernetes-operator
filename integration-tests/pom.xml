@@ -1,6 +1,6 @@
-<!-- Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights
+<!-- Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights
 	reserved. -->
-<!-- Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl. -->
+<!-- Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>

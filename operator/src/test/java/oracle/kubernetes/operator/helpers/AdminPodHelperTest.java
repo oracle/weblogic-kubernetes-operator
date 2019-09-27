@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -11,9 +10,9 @@ import java.util.Map;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Status;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -28,6 +27,10 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
+import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_PATCHED;
@@ -39,6 +42,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -69,10 +73,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Override
   protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
     return configurator.configureAdminServer();
-  }
-
-  @Override
-  void expectStepsAfterCreation() {
   }
 
   @Override
@@ -111,9 +111,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         PodAwaiterStepFactory.class,
         new NullPodAwaiterStepFactory(terminalStep));
 
-    expectDeletePod(getPodName()).returning(new V1Status());
-    expectCreatePod(podWithName(getPodName())).returning(createTestPodModel());
-
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getReplacedMessageKey()));
@@ -140,14 +137,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     return new PodHelper.AdminPodStepContext(null, packet).getPodModel();
   }
 
-  private CallTestSupport.CannedResponse expectDeletePod(String podName) {
-    return testSupport
-        .createCannedResponse("deletePod")
-        .withNamespace(NS)
-        .ignoringBody()
-        .withName(podName);
-  }
-
   @Test
   public void whenDeleteReportsNotFound_replaceAdminPod() {
     testSupport.addComponent(
@@ -156,8 +145,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         new NullPodAwaiterStepFactory(terminalStep));
 
     initializeExistingPod(getIncompatiblePod());
-    expectDeletePod(getPodName()).failingWithStatus(CallBuilder.NOT_FOUND);
-    expectCreatePod(podWithName(getPodName())).returning(createTestPodModel());
+    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, CallBuilder.NOT_FOUND);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -174,8 +162,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   public void whenAdminPodDeletionFails_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
     initializeExistingPod(getIncompatiblePod());
-    expectDeletePod(getPodName()).failingWithStatus(401);
-    expectStepsAfterCreation();
+    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, 401);
 
     FiberTestSupport.StepFactory stepFactory = getStepFactory();
     Step initialStep = stepFactory.createStepList(terminalStep);
@@ -188,9 +175,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   public void whenAdminPodReplacementFails_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
     initializeExistingPod(getIncompatiblePod());
-    expectDeletePod(getPodName()).returning(new V1Status());
-    expectCreatePod(podWithName(getPodName())).failingWithStatus(401);
-    expectStepsAfterCreation();
+    testSupport.failOnCreate(KubernetesTestSupport.POD, getPodName(), NS, 401);
 
     FiberTestSupport.StepFactory stepFactory = getStepFactory();
     Step initialStep = stepFactory.createStepList(terminalStep);
@@ -220,29 +205,25 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenAdminPodCreatedWithAdminPortEnabled_adminServerPortSecureEnvVarIsTrue() {
-    final Integer adminPort = 9002;
-    getServerTopology().setAdminPort(adminPort);
+    getServerTopology().setAdminPort((Integer) 9002);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true"));
   }
 
   @Test
   public void whenAdminPodCreatedWithNullAdminPort_adminServerPortSecureEnvVarIsNotSet() {
-    final Integer adminPort = null;
-    getServerTopology().setAdminPort(adminPort);
+    getServerTopology().setAdminPort(null);
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true")));
   }
 
   @Test
   public void whenAdminPodCreatedWithAdminServerHasSslPortEnabled_adminServerPortSecureEnvVarIsTrue() {
-    final Integer adminServerSslPort = 9999;
-    getServerTopology().setSslListenPort(adminServerSslPort);
+    getServerTopology().setSslListenPort(9999);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true"));
   }
 
   @Test
   public void whenAdminPodCreatedWithAdminServerHasNullSslPort_adminServerPortSecureEnvVarIsNotSet() {
-    final Integer adminServerSslPort = null;
-    getServerTopology().setSslListenPort(adminServerSslPort);
+    getServerTopology().setSslListenPort(null);
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true")));
   }
 
@@ -290,7 +271,23 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfiguredDomainSpec().getAdminServer().getEnv();
     assertThat(
         getConfiguredDomainSpec().getAdminServer().getEnv(),
-        allOf(hasEnvVar("item1", itemRawValue)));
+        hasEnvVar("item1", itemRawValue));
+  }
+
+  @Test
+  public void whenDomainHasValueFromEnvironmentItems_createAdminPodStartupWithThem() {
+    V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
+    V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
+    V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
+
+    configureAdminServer()
+        .withEnvironmentVariable(configMapKeyRefEnvVar)
+        .withEnvironmentVariable(secretKeyRefEnvVar)
+        .withEnvironmentVariable(fieldRefEnvVar);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(),
+        allOf(hasItem(configMapKeyRefEnvVar), hasItem(secretKeyRefEnvVar), hasItem(fieldRefEnvVar)));
   }
 
   @Test
@@ -381,7 +378,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator().withServerStartState(ADMIN_STATE);
 
     assertThat(
-        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+        getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
   }
 
   @Test
@@ -389,7 +386,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator().configureAdminServer().withServerStartState(ADMIN_STATE);
 
     assertThat(
-        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+        getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
   }
 
   @Test
@@ -400,7 +397,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withServerStartState(ADMIN_STATE);
 
     assertThat(
-        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+        getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
   }
 
   @Test
@@ -411,7 +408,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withServerStartState(RUNNING_STATE);
 
     assertThat(
-        getCreatedPodSpecContainer().getEnv(), not(allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE))));
+        getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
   }
 
   @Test
@@ -603,11 +600,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  protected void onAdminExpectListPersistentVolume() {
-    expectListPersistentVolume().returning(createPersistentVolumeList());
-  }
-
-  @Override
   V1Pod createTestPodModel() {
     return new V1Pod().metadata(createPodMetadata()).spec(createPodSpec());
   }
@@ -629,4 +621,5 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   // todo test that changing the cert in tuning parameters does not change the hash
+
 }

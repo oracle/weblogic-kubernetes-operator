@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
 #  This sample script creates a WebLogic domain home in docker image, and generates the domain resource
@@ -203,7 +203,18 @@ function createDomainHome {
   cp ${domainPropertiesOutput} ${dockerPropsDir}
   sed  -i  '$ a extract_env IMAGE_TAG ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
 
-  #exit -1000
+  if [ "${fmwDomainType}" == "RestrictedJRF" ];
+  then
+   if [ ! -f ${dockerDir}/container-scripts/createFMWDomain.py.bak ]; then
+    mv ${dockerDir}/container-scripts/createFMWDomain.py \
+       ${dockerDir}/container-scripts/createFMWDomain.py.bak
+   fi
+   echo "Replacing file ${dockerDir}/container-scripts/createFMWDomain.py for RestrictedJRF Domain creation" 
+   cp -f ${scriptDir}/common/createFMWRestrictedJRFDomain.py \
+         ${dockerDir}/container-scripts/createFMWDomain.py
+
+  fi
+
   bash ${dockerDir}/build.sh
 
   if [ "$?" != "0" ]; then

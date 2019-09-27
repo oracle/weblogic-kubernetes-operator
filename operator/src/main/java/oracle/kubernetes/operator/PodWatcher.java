@@ -1,13 +1,11 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,6 +17,7 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -244,22 +243,16 @@ public class PodWatcher extends Watcher<V1Pod>
                               @Override
                               public NextAction onFailure(
                                   Packet packet,
-                                  ApiException e,
-                                  int statusCode,
-                                  Map<String, List<String>> responseHeaders) {
-                                if (statusCode == CallBuilder.NOT_FOUND) {
-                                  return onSuccess(packet, null, statusCode, responseHeaders);
+                                  CallResponse<V1Pod> callResponse) {
+                                if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+                                  return onSuccess(packet, callResponse);
                                 }
-                                return super.onFailure(packet, e, statusCode, responseHeaders);
+                                return super.onFailure(packet, callResponse);
                               }
 
                               @Override
-                              public NextAction onSuccess(
-                                  Packet packet,
-                                  V1Pod result,
-                                  int statusCode,
-                                  Map<String, List<String>> responseHeaders) {
-                                if (testPod(result)) {
+                              public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+                                if (testPod(callResponse.getResult())) {
                                   if (didResume.compareAndSet(false, true)) {
                                     unregister(metadata, ready);
                                     fiber.resume(packet);

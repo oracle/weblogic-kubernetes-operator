@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
 
@@ -12,7 +11,6 @@ class CallParamsImpl implements CallParams {
   private static final int DEFAULT_LIMIT = 500;
   private static final int DEFAULT_TIMEOUT = 30;
 
-  private Boolean includeUninitialized;
   private Integer limit = CallParamsImpl.DEFAULT_LIMIT;
   private Integer timeoutSeconds = CallParamsImpl.DEFAULT_TIMEOUT;
   private String fieldSelector;
@@ -21,15 +19,6 @@ class CallParamsImpl implements CallParams {
   private String resourceVersion;
   private ProgressResponseBody.ProgressListener progressListener;
   private ProgressRequestBody.ProgressRequestListener progressRequestListener;
-
-  @Override
-  public Boolean getIncludeUninitialized() {
-    return includeUninitialized;
-  }
-
-  void setIncludeUninitialized(Boolean includeUninitialized) {
-    this.includeUninitialized = includeUninitialized;
-  }
 
   @Override
   public Integer getLimit() {

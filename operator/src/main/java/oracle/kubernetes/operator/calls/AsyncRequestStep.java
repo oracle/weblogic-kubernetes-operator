@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
 
@@ -32,7 +31,7 @@ import oracle.kubernetes.operator.work.Step;
  * A Step driven by an asynchronous call to the Kubernetes API, which results in a series of
  * callbacks until canceled.
  */
-public class AsyncRequestStep<T> extends Step {
+public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   public static final String RESPONSE_COMPONENT_NAME = "response";
   private static final Random R = new Random();
   private static final int HIGH = 200;
@@ -111,6 +110,11 @@ public class AsyncRequestStep<T> extends Step {
   }
 
   @Override
+  public void listenTimeoutDoubled() {
+    timeoutSeconds *= 2;
+  }
+
+  @Override
   public NextAction apply(Packet packet) {
     // clear out earlier results
     String cont = null;
@@ -128,8 +132,7 @@ public class AsyncRequestStep<T> extends Step {
     }
     String c = (cont != null) ? cont : "";
     if (retry == null) {
-      retry = new DefaultRetryStrategy();
-      retry.setRetryStep(this);
+      retry = new DefaultRetryStrategy(maxRetryCount, this, this);
     }
     RetryStrategy r = retry;
 
@@ -148,7 +151,7 @@ public class AsyncRequestStep<T> extends Step {
     return doSuspend(
         (fiber) -> {
           ApiCallback<T> callback =
-              new BaseApiCallback<T>() {
+              new BaseApiCallback<>() {
                 @Override
                 public void onFailure(
                     ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
@@ -177,7 +180,7 @@ public class AsyncRequestStep<T> extends Step {
                             Component.createFor(
                                 RetryStrategy.class,
                                 r,
-                                new CallResponse<Void>(null, ae, statusCode, responseHeaders)));
+                                CallResponse.createFailure(ae, statusCode).withResponseHeaders(responseHeaders)));
                     fiber.resume(packet);
                   }
                 }
@@ -194,7 +197,7 @@ public class AsyncRequestStep<T> extends Step {
                         .put(
                             RESPONSE_COMPONENT_NAME,
                             Component.createFor(
-                                new CallResponse<>(result, null, statusCode, responseHeaders)));
+                                CallResponse.createSuccess(result, statusCode).withResponseHeaders(responseHeaders)));
                     fiber.resume(packet);
                   }
                 }
@@ -234,11 +237,7 @@ public class AsyncRequestStep<T> extends Step {
                     timeoutSeconds,
                     TimeUnit.SECONDS);
           } catch (Throwable t) {
-            String responseBody = "";
-            if (t instanceof ApiException) {
-              ApiException ae = (ApiException) t;
-              responseBody = ae.getResponseBody();
-            }
+            String responseBody = (t instanceof ApiException) ? ((ApiException) t).getResponseBody() : "";
             LOGGER.warning(
                 MessageKeys.ASYNC_FAILURE,
                 t.getMessage(),
@@ -276,20 +275,18 @@ public class AsyncRequestStep<T> extends Step {
 
   private final class DefaultRetryStrategy implements RetryStrategy {
     private long retryCount = 0;
-    private Step retryStep = null;
+    private int maxRetryCount;
+    private Step retryStep;
+    private RetryStrategyListener listener;
 
-    @Override
-    public void setRetryStep(Step retryStep) {
+    DefaultRetryStrategy(int maxRetryCount, Step retryStep, RetryStrategyListener listener) {
+      this.maxRetryCount = maxRetryCount;
       this.retryStep = retryStep;
+      this.listener = listener;
     }
 
     @Override
-    public NextAction doPotentialRetry(
-        Step conflictStep,
-        Packet packet,
-        ApiException e,
-        int statusCode,
-        Map<String, List<String>> responseHeaders) {
+    public NextAction doPotentialRetry(Step conflictStep, Packet packet, int statusCode) {
       // Check statusCode, many statuses should not be retried
       // https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#http-status-codes
       if (statusCode == 0 /* simple timeout */
@@ -302,8 +299,7 @@ public class AsyncRequestStep<T> extends Step {
         long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
 
         if (statusCode == 0 || statusCode == 504 /* StatusServerTimeout */) {
-          // increase server timeout
-          timeoutSeconds *= 2;
+          listener.listenTimeoutDoubled();
         }
 
         NextAction na = new NextAction();

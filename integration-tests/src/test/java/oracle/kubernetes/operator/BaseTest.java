@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -60,6 +59,10 @@ public class BaseTest {
   public static boolean JENKINS;
   public static boolean SHARED_CLUSTER;
   public static String WDT_VERSION;
+  //currently certified chart versions of Prometheus and Grafana
+  public static String PROMETHEUS_CHART_VERSION;
+  public static String GRAFANA_CHART_VERSION;
+  public static String MONITORING_EXPORTER_VERSION;
   public static boolean INGRESSPERDOMAIN = true;
   protected static String appLocationInPod = "/u01/oracle/apps";
   private static String resultRoot = "";
@@ -150,7 +153,19 @@ public class BaseTest {
     WDT_VERSION =
         System.getenv("WDT_VERSION") != null
             ? System.getenv("WDT_VERSION")
-            : appProps.getProperty("WDT_VERSION");            
+            : appProps.getProperty("WDT_VERSION");
+    PROMETHEUS_CHART_VERSION =
+            System.getenv("PROMETHEUS_CHART_VERSION") != null
+                    ? System.getenv("PROMETHEUS_CHART_VERSION")
+                    : appProps.getProperty("PROMETHEUS_CHART_VERSION");
+    GRAFANA_CHART_VERSION =
+            System.getenv("GRAFANA_CHART_VERSION") != null
+                    ? System.getenv("GRAFANA_CHART_VERSION")
+                    : appProps.getProperty("GRAFANA_CHART_VERSION");
+    MONITORING_EXPORTER_VERSION =
+            System.getenv("MONITORING_EXPORTER_VERSION") != null
+                    ? System.getenv("MONITORING_EXPORTER_VERSION")
+                    : appProps.getProperty("MONITORING_EXPORTER_VERSION");
             
     maxIterationsPod =
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
