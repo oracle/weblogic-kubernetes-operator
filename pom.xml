@@ -86,6 +86,7 @@
                 <failOnViolation>true</failOnViolation>
                 <violationSeverity>warning</violationSeverity>
                 <includeTestResources>true</includeTestResources>
+                <includeTestSourceDirectory>true</includeTestSourceDirectory>
               </configuration>
             </execution>
           </executions>
