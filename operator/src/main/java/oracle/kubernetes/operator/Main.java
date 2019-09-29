@@ -29,10 +29,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.models.V1EventList;
+import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
+import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
@@ -183,7 +185,8 @@ public class Main {
       version = HealthCheckHelper.performK8sVersionCheck();
 
       runSteps(
-          CrdHelper.createDomainCrdStep(version, new StartNamespacesStep(targetNamespaces)),
+          CrdHelper.createDomainCrdStep(version, new StartNamespaceWatcherStep(
+            new StartNamespacesStep(targetNamespaces))),
           Main::completeBegin);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -213,18 +216,22 @@ public class Main {
     }
   }
 
+  private static void stopNamespace(String ns) {
+    processor.stopNamespace(ns);
+    AtomicBoolean stopping = isNamespaceStopping.remove(ns);
+    if (stopping != null) {
+      stopping.set(true);
+    }
+    isNamespaceStarted.remove(ns);
+    domainWatchers.remove(ns);
+    eventWatchers.remove(ns);
+    podWatchers.remove(ns);
+    serviceWatchers.remove(ns);
+  }
+
   private static void stopNamespaces(Collection<String> namespacesToStop) {
     for (String ns : namespacesToStop) {
-      processor.stopNamespace(ns);
-      AtomicBoolean stopping = isNamespaceStopping.remove(ns);
-      if (stopping != null) {
-        stopping.set(true);
-      }
-      isNamespaceStarted.remove(ns);
-      domainWatchers.remove(ns);
-      eventWatchers.remove(ns);
-      podWatchers.remove(ns);
-      serviceWatchers.remove(ns);
+      stopNamespace(ns);
     }
   }
 
@@ -427,8 +434,42 @@ public class Main {
         isNamespaceStopping(ns));
   }
 
+  private static NamespaceWatcher createNamespaceWatcher(String initialResourceVersion) {
+    return NamespaceWatcher.create(
+        threadFactory,
+        initialResourceVersion,
+        tuningAndConfig.getWatchTuning(),
+        Main::dispatchNamespaceWatch,
+        new AtomicBoolean(false));
+  }
+
   private static String computeOperatorNamespace() {
     return Optional.ofNullable(System.getenv("OPERATOR_NAMESPACE")).orElse("default");
+  }
+
+  private static void dispatchNamespaceWatch(Watch.Response<V1Namespace> item) {
+    V1Namespace c = item.object;
+    if (c != null) {
+      String ns = c.getMetadata().getName();
+      switch (item.type) {
+        case "ADDED":
+          Collection<String> targetNamespaces = getTargetNamespaces();
+          if (targetNamespaces.contains(ns) && ! delegate.isNamespaceRunning(ns)) {
+            runSteps(createConfigMapStep(ns));
+          }
+          break;
+
+        case "DELETED":
+          // mark the namespace is stopping and it will be stopped the next time 
+          // when recheckDomains is triggered
+          isNamespaceStopping.put(ns, new AtomicBoolean(true));
+          break;
+
+        case "MODIFIED":
+        case "ERROR":
+        default:
+      }
+    }
   }
 
   private static class WrappedThreadFactory implements ThreadFactory {
@@ -441,6 +482,19 @@ public class Main {
             ContainerResolver.getDefault().enterContainer(container);
             r.run();
           });
+    }
+  }
+
+  private static class StartNamespaceWatcherStep extends Step {
+
+    StartNamespaceWatcherStep(Step next) {
+      
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      createNamespaceWatcher("V1");
+      return doNext(packet);
     }
   }
 
