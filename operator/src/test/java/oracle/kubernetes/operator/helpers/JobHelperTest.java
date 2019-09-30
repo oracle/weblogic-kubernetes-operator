@@ -250,10 +250,10 @@ public class JobHelperTest {
         getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVar("item1", END_VALUE_1));
   }
 
+  private static final String EMPTY_DATA_HOME = "";
+
   @Test
   public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvNotDefined() {
-    final String EMPTY_DATA_HOME = "";
-
     DomainConfigurator domainConfigurator = configureDomain();
 
     V1JobSpec jobSpec = createJobSpec();
@@ -262,11 +262,11 @@ public class JobHelperTest {
               not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
   }
 
+  private static final String OVERRIDE_DATA_DIR = "/u01/data";
+  private static final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + DOMAIN_UID;
+
   @Test
   public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvDefined() {
-    final String OVERRIDE_DATA_DIR = "/u01/data";
-    final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + DOMAIN_UID;
-
     DomainConfigurator domainConfigurator = configureDomain().withDataHome(OVERRIDE_DATA_DIR);
 
     V1JobSpec jobSpec = createJobSpec();
@@ -277,8 +277,6 @@ public class JobHelperTest {
 
   @Test
   public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyEmptyDataHome() {
-    final String EMPTY_DATA_HOME = "";
-
     DomainConfigurator domainConfigurator =
             configureDomain().withDataHome(EMPTY_DATA_HOME);
 
@@ -288,10 +286,10 @@ public class JobHelperTest {
             not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
   }
 
+  private static final String NULL_DATA_HOME = null;
+
   @Test
   public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyNullDataHome() {
-    final String NULL_DATA_HOME = null;
-
     DomainConfigurator domainConfigurator =
             configureDomain().withDataHome(NULL_DATA_HOME);
 

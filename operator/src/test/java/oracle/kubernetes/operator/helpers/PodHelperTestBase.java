@@ -491,34 +491,32 @@ public abstract class PodHelperTestBase {
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID));
   }
 
+  private static final String OVERRIDE_DATA_DIR = "/u01/data";
+  private static final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + UID;
+
   @Test
   public void whenPodCreated_withDataHomeSpecified_verifyDataHomeEnvDefined() {
-    final String OVERRIDE_DATA_DIR = "/u01/data";
-    final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + UID;
-
     domainPresenceInfo.getDomain().getSpec().setDataHome(OVERRIDE_DATA_DIR);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar(ServerEnvVars.DATA_HOME, OVERRIDE_DATA_HOME));
   }
 
+  private static final String EMPTY_DATA_HOME = "";
+
   @Test
   public void whenPodCreated_withDataHomeNotSpecified_verifyDataHomeEnvNotDefined() {
-    final String EMPTY_DATA_HOME = "";
-
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
   }
 
   @Test
   public void whenPodCreated_withEmptyDataHomeSpecified_verifyDataHomeEnvNotDefined() {
-    final String EMPTY_DATA_HOME = "";
-
     domainPresenceInfo.getDomain().getSpec().setDataHome(EMPTY_DATA_HOME);
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
   }
 
+  private static final String NULL_DATA_HOME = null;
+
   @Test
   public void whenPodCreated_withNullDataHomeSpecified_verifyDataHomeEnvNotDefined() {
-    final String NULL_DATA_HOME = null;
-
     domainPresenceInfo.getDomain().getSpec().setDataHome(NULL_DATA_HOME);
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar(ServerEnvVars.DATA_HOME, NULL_DATA_HOME)));
   }
