@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.File;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -130,6 +132,12 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   String getNodeManagerHome() {
     return NODEMGR_HOME;
+  }
+
+
+  protected String getDataHome() {
+    String dataHome = getDomain().getDataHome();
+    return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
   }
 
   private boolean isIstioEnabled() {

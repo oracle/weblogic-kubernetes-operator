@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1PodTemplateSpec;
 import io.kubernetes.client.models.V1SecretReference;
+
 import io.kubernetes.client.models.V1SecurityContext;
 import io.kubernetes.client.models.V1Toleration;
 import oracle.kubernetes.operator.LabelConstants;
@@ -39,6 +41,7 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -245,6 +248,57 @@ public class JobHelperTest {
 
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVar("item1", END_VALUE_1));
+  }
+
+  @Test
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvNotDefined() {
+    final String EMPTY_DATA_HOME = "";
+
+    DomainConfigurator domainConfigurator = configureDomain();
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+              not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
+  }
+
+  @Test
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvDefined() {
+    final String OVERRIDE_DATA_DIR = "/u01/data";
+    final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + DOMAIN_UID;
+
+    DomainConfigurator domainConfigurator = configureDomain().withDataHome(OVERRIDE_DATA_DIR);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+            hasEnvVar(ServerEnvVars.DATA_HOME, OVERRIDE_DATA_HOME));
+  }
+
+  @Test
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyEmptyDataHome() {
+    final String EMPTY_DATA_HOME = "";
+
+    DomainConfigurator domainConfigurator =
+            configureDomain().withDataHome(EMPTY_DATA_HOME);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+            not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
+  }
+
+  @Test
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyNullDataHome() {
+    final String NULL_DATA_HOME = null;
+
+    DomainConfigurator domainConfigurator =
+            configureDomain().withDataHome(NULL_DATA_HOME);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+            not(hasEnvVar(ServerEnvVars.DATA_HOME, NULL_DATA_HOME)));
   }
 
   @Test
