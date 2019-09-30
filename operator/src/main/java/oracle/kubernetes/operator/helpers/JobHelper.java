@@ -218,6 +218,10 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());
       addEnvVar(vars, IntrospectorJobEnvVars.INTROSPECT_HOME, getIntrospectHome());
       addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
+      String dataHome = getDataHome();
+      if (dataHome != null && !dataHome.isEmpty()) {
+        addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
+      }
 
       return vars;
     }

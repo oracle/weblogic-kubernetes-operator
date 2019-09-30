@@ -1186,6 +1186,10 @@ window.onload = function() {
           "description": "If present, every time this value is updated the operator will restart the required servers.",
           "type": "string"
         },
+        "dataHome": {
+          "description": "An optional, in-pod location for data storage of default and custom file stores. If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") then the data storage directories are determined from the WebLogic domain home configuration.",
+          "type": "string"
+        },
         "configOverrides": {
           "description": "The name of the config map for optional WebLogic configuration overrides.",
           "type": "string"
