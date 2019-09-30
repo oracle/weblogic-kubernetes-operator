@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -259,8 +258,8 @@ public class JobHelperTest {
 
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(
-            getMatchingContainerEnv(domainPresenceInfo, jobSpec), not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+              not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
   }
 
   @Test
@@ -268,12 +267,12 @@ public class JobHelperTest {
     final String OVERRIDE_DATA_DIR = "/u01/data";
     final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + DOMAIN_UID;
 
-    DomainConfigurator domainConfigurator =
-      configureDomain().withDataHome(OVERRIDE_DATA_DIR);
+    DomainConfigurator domainConfigurator = configureDomain().withDataHome(OVERRIDE_DATA_DIR);
 
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVar(ServerEnvVars.DATA_HOME, OVERRIDE_DATA_HOME));
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+            hasEnvVar(ServerEnvVars.DATA_HOME, OVERRIDE_DATA_HOME));
   }
 
   @Test
@@ -285,8 +284,8 @@ public class JobHelperTest {
 
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(
-            getMatchingContainerEnv(domainPresenceInfo, jobSpec), not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+            not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
   }
 
   @Test
@@ -298,8 +297,8 @@ public class JobHelperTest {
 
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(
-            getMatchingContainerEnv(domainPresenceInfo, jobSpec), not(hasEnvVar(ServerEnvVars.DATA_HOME, NULL_DATA_HOME)));
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+            not(hasEnvVar(ServerEnvVars.DATA_HOME, NULL_DATA_HOME)));
   }
 
   @Test
