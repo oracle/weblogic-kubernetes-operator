@@ -66,6 +66,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return JOB_WATCHERS.computeIfAbsent(getNamespace(domain), n -> factory.createFor(domain));
   }
 
+  public static void removeNamespace(String ns) {
+    JOB_WATCHERS.remove(ns);
+  }
+
   private static String getNamespace(Domain domain) {
     return domain.getMetadata().getNamespace();
   }
