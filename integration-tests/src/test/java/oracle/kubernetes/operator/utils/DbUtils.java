@@ -114,6 +114,11 @@ public class DbUtils {
   	TestUtils.exec(cmd, true);	
   }
   
+  /**
+   * delete RCU pod
+   *
+   * @throws Exception - if any error occurs when deleting RCU pod
+   */
   public static void deleteRcuPod() throws Exception {
   	String cmd = "kubectl delete -f " +
         BaseTest.getResultDir()
