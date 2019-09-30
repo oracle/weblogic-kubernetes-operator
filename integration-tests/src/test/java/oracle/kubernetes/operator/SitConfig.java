@@ -48,7 +48,8 @@ public class SitConfig extends BaseTest {
   private static String JDBC_RES_SCRIPT;
   private static final String oldSecret = "test-secrets";
   private static final String newSecret = "test-secrets-new";
-  private static String domainNS ;
+  private static String domainNS;
+  
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -64,7 +65,7 @@ public class SitConfig extends BaseTest {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
       // create operator1
-      if(operator1 == null ) {
+      if (operator1 == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
@@ -150,7 +151,7 @@ public class SitConfig extends BaseTest {
       throws Exception {
     // load input yaml to map and add configOverrides
     Map<String, Object> domainMap = null;
-    if(domainInImage) {
+    if (domainInImage) {
       domainMap = TestUtils.createDomainInImageMap(getNewNumber(),false, "sitconfigdomaininimage");
     } else {
       domainMap = TestUtils.createDomainMap(getNewNumber(), "sitconfigdomaininpv");

@@ -14,19 +14,25 @@ import oracle.kubernetes.operator.BaseTest;
 
 public class PersistentVolume {
 
-  private static final Logger logger = LoggerHelper.getLocal().getLogger("OperatorIT", "OperatorIT");
   private Map<String, Object> pvMap;
   private String dirPath;
 
-  public PersistentVolume(String dirPath, Map pvMap) throws Exception {
+  /**
+   * 
+   * @param dirPath
+   * @param pvMap
+   * @throws Exception
+   */
+  public PersistentVolume(String dirPath, Map<String, Object> pvMap) throws Exception {
     this.dirPath = dirPath;
     this.pvMap = pvMap;
     
     String cmd =
             BaseTest.getProjectRoot()
-        + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot()
-        + ":/shareddir-"+pvMap.get("domainUID")+" -t 120 -p pod-"+pvMap.get("domainUID")+" -c 'mkdir -m 777 -p "
-        + dirPath.replace(BaseTest.getPvRoot(), "/shareddir-"+pvMap.get("domainUID")+"/")
+        + "/src/integration-tests/bash/krun.sh -m "  + BaseTest.getPvRoot()
+        + ":/shareddir-"+pvMap.get("domainUID") +" -t 120 -p pod-"
+        +pvMap.get("domainUID") +" -c 'mkdir -m 777 -p "
+        + dirPath.replace(BaseTest.getPvRoot(), "/shareddir-" +pvMap.get("domainUID")+"/")
         + "'"; 
     
     // retry logic for PV dir creation as sometimes krun.sh fails
@@ -38,12 +44,13 @@ public class PersistentVolume {
       if (result.exitValue() == 0) {
         break;
       } else {
-        LoggerHelper.getLocal().log(Level.INFO, "PV dir creation command failed with exitValue= "+result.exitValue() +
-                      "stderr= " + result.stderr() +" stdout="+result.stdout());
+        LoggerHelper.getLocal().log(Level.INFO, 
+            "PV dir creation command failed with exitValue= "+result.exitValue() 
+          + "stderr= " + result.stderr() +" stdout="+result.stdout());
         Thread.sleep(BaseTest.getWaitTimePod());
         cnt = cnt + 1;
       }
-      if(cnt == maxCnt) {
+      if (cnt == maxCnt)  {
         throw new RuntimeException("FAILED: Failed to create PV directory");
       }
     }
@@ -60,7 +67,7 @@ public class PersistentVolume {
     // create PV/PVC
     String cmdPvPvc =
         BaseTest.getResultDir()
-            +"/"+ pvMap.get("domainUID")
+            + "/"  + pvMap.get("domainUID")
             + "/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh "
             + " -i "
             + parentDir
@@ -77,7 +84,7 @@ public class PersistentVolume {
     return dirPath;
   }
 
-  public Map getPvMap() {
+  public Map<String, Object> getPvMap() {
     return pvMap;
   }
 

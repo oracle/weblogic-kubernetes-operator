@@ -114,16 +114,18 @@ public class BaseTest {
   public static void initialize(String appPropsFile) throws Exception {
     initialize(appPropsFile, "");
   }
+  
   /**
    * initializes the application properties and creates directories for results 
    * @param appPropsFile
    * @param testClassName
    * @throws Exception
    */
-  public static void initialize(String appPropsFile, String testClassName) throws Exception {
+  public static void initialize(String appPropsFile, String testClassName) 
+      throws Exception {
     
     LoggerHelper.initLocal(Logger.getLogger(testClassName));
-    LoggerHelper.getGlobal().log(Level.INFO, "Starting testClass "  + testClassName );
+    LoggerHelper.getGlobal().log(Level.INFO, "Starting testClass "  + testClassName);
     LoggerHelper.getLocal().log(Level.INFO, "Starting testClass " + testClassName);
     
     // load app props defined
@@ -244,7 +246,7 @@ public class BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
       ExecResult result = ExecCommand.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 " + pvRoot +"\"");
+          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 " + pvRoot + "\"");
       if (result.exitValue() != 0) {
         throw new RuntimeException(
             "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
@@ -257,14 +259,14 @@ public class BaseTest {
     Files.createDirectories(Paths.get(userProjectsDir));
 
     // create file handler
-    FileHandler fh = new FileHandler(getResultDir() + "/"+ testClassName  + ".out");
+    FileHandler fh = new FileHandler(getResultDir()  + "/" + testClassName  + ".out");
     SimpleFormatter formatter = new SimpleFormatter();
     fh.setFormatter(formatter);
     LoggerHelper.getLocal().addHandler(fh);
     LoggerHelper.getLocal().log(Level.INFO, "Adding file handler, logging to file at "
-          + getResultDir() + "/"+ testClassName  + ".out");
+          + getResultDir()  + "/" + testClassName  + ".out");
     LoggerHelper.getGlobal().log(Level.INFO, "Adding file handler, logging to file at " 
-          + getResultDir()  + "/"  + testClassName  + ".out" );
+          + getResultDir()  + "/"  + testClassName  + ".out");
     
 
 
@@ -286,11 +288,11 @@ public class BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Env var RESULT_ROOT " + System.getenv("RESULT_ROOT"));
     LoggerHelper.getLocal().log(Level.INFO, "Env var PV_ROOT " + System.getenv("PV_ROOT"));
     LoggerHelper.getLocal().log(Level.INFO, "Env var K8S_NODEPORT_HOST " 
-     + System.getenv("K8S_NODEPORT_HOST"));
+      + System.getenv("K8S_NODEPORT_HOST"));
     LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_NAME_OPERATOR= "
-     + System.getenv("IMAGE_NAME_OPERATOR"));
+      + System.getenv("IMAGE_NAME_OPERATOR"));
     LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_TAG_OPERATOR " 
-     + System.getenv("IMAGE_TAG_OPERATOR"));
+      + System.getenv("IMAGE_TAG_OPERATOR"));
     LoggerHelper.getLocal().log(Level.INFO, 
         "Env var IMAGE_PULL_POLICY_OPERATOR " + System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
     LoggerHelper.getLocal().log(Level.INFO, 
@@ -423,7 +425,7 @@ public class BaseTest {
   }
 
   /**
-   * 
+   * build web service app inside pod
    * @param domain
    * @param testAppName
    * @param wsName
@@ -472,7 +474,8 @@ public class BaseTest {
     if (result.exitValue() == 0) {
       log(Level.INFO, "Executed statedump.sh " + result.stdout());
     } else {
-      log(Level.INFO, "Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
+      log(Level.INFO, "Execution of statedump.sh failed, " + result.stderr() + "\n"
+       + result.stdout());
     }
 
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
@@ -805,7 +808,8 @@ public class BaseTest {
   }
 
   protected void logTestBegin(String testName) throws Exception {
-    LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
+    LoggerHelper.getLocal().log(Level.INFO,
+        "+++++++++++++++++++++++++++++++++---------------------------------+");
     LoggerHelper.getLocal().log(Level.INFO, "BEGIN " + testName);
     // renew lease at the beginning for every test method, leaseId is set only for shared cluster
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
@@ -824,9 +828,9 @@ public class BaseTest {
         Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
     // copy script to pod
     String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
-      + getResultDir() + ":/tmpdir -m " + pvDir
-      + ":/pvdir -n "+domainNS   + " -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/"
-      +domainUid+"/bin/scripts' ";
+        + getResultDir() + ":/tmpdir -m " + pvDir
+        + ":/pvdir -n " + domainNS  + " -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/"
+        + domainUid +"/bin/scripts' ";
     TestUtils.exec(cpUsingKrunCmd, true);
   }
 
@@ -846,22 +850,25 @@ public class BaseTest {
     for (int i = replicas; i <= replicaCntAfterScaleup; i++) {
       String podName = domain.getDomainUid() + "-" + managedServerNameBase + i;
 
-      LoggerHelper.getLocal().log(Level.INFO, "Checking if managed pod(" + podName + ") is Running");
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "Checking if managed pod(" + podName + ") is Running");
       TestUtils.checkPodCreated(podName, domainNs);
 
-      LoggerHelper.getLocal().log(Level.INFO, "Checking if managed server (" + podName + ") is Running");
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "Checking if managed server (" + podName + ") is Running");
       TestUtils.checkPodReady(podName, domainNs);
 
-      LoggerHelper.getLocal().log(Level.INFO, "Checking if managed service(" + podName + ") is created");
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "Checking if managed service(" + podName + ") is created");
       TestUtils.checkServiceCreated(podName, domainNs);
     }
   }
   
-  public static int getNewNumber(){
-    number = number +1 ;
+  public static int getNewNumber() {
+    number = number +1;
     return number;
   }
-  public static int getNumber(){
+  public static int getNumber() {
      return number;
   }
 

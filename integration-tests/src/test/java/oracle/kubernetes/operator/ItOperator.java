@@ -32,8 +32,9 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItOperator extends BaseTest {
   private static Operator operator1;
-  private static String domainNS1 ;
-  private static String testClassName ;
+  private static String domainNS1;
+  private static String testClassName;
+  
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -48,8 +49,9 @@ public class ItOperator extends BaseTest {
     // initialize test properties and create the directories
     initialize(APP_PROPS_FILE, testClassName);
     // create operator1
-    if(operator1 == null ) {
-      Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+    if (operator1 == null) {
+      Map<String, Object> operatorMap = 
+          TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
       operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       Assert.assertNotNull(operator1);
       domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
@@ -75,13 +77,15 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating Operator & waiting for the script to complete execution");
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
       domainMap.put("namespace", domainNS1);
-      domainMap.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
+      domainMap.put("createDomainPyScript",
+          "integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       testBasicUseCases(domain, true);
@@ -90,12 +94,9 @@ public class ItOperator extends BaseTest {
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && (JENKINS || testCompletedSuccessfully))
-        // domain.shutdownUsingServerStartPolicy();
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-        /* if(domain != null) {
-          TestUtils.verifyAfterDeletion(domain);
-        } */
+      }
     } 
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
@@ -116,16 +117,18 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain using DomainOnPVUsingWDT & verifing the domain creation");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating Domain using DomainOnPVUsingWDT & verifing the domain creation");
 
     Domain domain = null;
     Operator operator = null;
     boolean testCompletedSuccessfully = false;
     try {
       //create operator just for this test to match the namespaces with wldf-policy.yaml
-      Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+      Map<String, Object> operatorMap = 
+          TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
       ArrayList<String> targetDomainsNS = new ArrayList<String>();
-      targetDomainsNS.add("test2" );
+      targetDomainsNS.add("test2");
       operatorMap.put("domainNamespaces", targetDomainsNS);
       operatorMap.put("namespace", "weblogic-operator2");
       operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
@@ -148,7 +151,7 @@ public class ItOperator extends BaseTest {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
       }
-      if(operator != null && (JENKINS || testCompletedSuccessfully) ){
+      if (operator != null && (JENKINS || testCompletedSuccessfully)) {
         operator.destroy();
       }
     } 
@@ -173,7 +176,8 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain domain1 & verifing the domain creation");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating Domain domain1 & verifing the domain creation");
 
     Domain domain1 = null;
     Domain domain2 = null;
@@ -182,16 +186,15 @@ public class ItOperator extends BaseTest {
       // load input yaml to map and add configOverrides
       Map<String, Object> wlstDomainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
       wlstDomainMap.put("namespace", domainNS1);
-      wlstDomainMap.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
+      wlstDomainMap.put("createDomainPyScript",
+          "integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
       domain1 = TestUtils.createDomain(wlstDomainMap);
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1, false);
-      /* LoggerHelper.getLocal().log(Level.INFO, "Checking if operator2 is running, if not creating");
-      if (operator2 == null) {
-        operator2 = TestUtils.createOperator(OPERATOR2_YAML);
-      } */
-      Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
-      Operator operator2 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+      Map<String, Object> operatorMap = 
+          TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+      Operator operator2 = 
+          TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       String domainNS2 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
       
       // create domain2 with configured cluster
@@ -203,15 +206,18 @@ public class ItOperator extends BaseTest {
       domain2 = TestUtils.createDomain(wdtDomainMap);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2, false);
-      LoggerHelper.getLocal().log(Level.INFO, "Verify the only remaining running domain domain1 is unaffected");
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
       testClusterScaling(operator2, domain2, false);
 
-      LoggerHelper.getLocal().log(Level.INFO, "Verify the only remaining running domain domain1 is unaffected");
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
-      LoggerHelper.getLocal().log(Level.INFO, "Destroy and create domain1 and verify no impact on domain2");
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "Destroy and create domain1 and verify no impact on domain2");
       domain1.destroy();
       domain1.create();
 
@@ -229,7 +235,8 @@ public class ItOperator extends BaseTest {
         domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
       }
       if (!domainUidsToBeDeleted.equals("")) {
-        LoggerHelper.getLocal().log(Level.INFO, "About to delete domains: " + domainUidsToBeDeleted);
+        LoggerHelper.getLocal().log(Level.INFO, 
+            "About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
         if (domain1 != null) {
           TestUtils.verifyAfterDeletion(domain1);
@@ -259,7 +266,8 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain domain1 & verifing the domain creation");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating Domain domain1 & verifing the domain creation");
 
 
     Domain domain1 = null;
@@ -270,7 +278,8 @@ public class ItOperator extends BaseTest {
       Map<String, Object> domain1Map = TestUtils.createDomainMap(getNewNumber(), testClassName);
       domain1Map.put("domainUID", "d1onpv");
       domain1Map.put("namespace", domainNS1);
-      domain1Map.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
+      domain1Map.put("createDomainPyScript",
+          "integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
       domain1Map.put("pvSharing", new Boolean("true"));
       domain1 = TestUtils.createDomain(domain1Map);
       domain1.verifyDomainCreated();
@@ -279,20 +288,24 @@ public class ItOperator extends BaseTest {
       Map<String, Object> domain2Map = TestUtils.createDomainMap(getNewNumber(), testClassName);
       domain2Map.put("domainUID", "d2onpv");
       domain1Map.put("namespace", domainNS1);
-      domain1Map.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
+      domain1Map.put("createDomainPyScript",
+          "integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
       domain1Map.put("pvSharing", new Boolean("true"));
       domain2 = TestUtils.createDomain(domain2Map);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2, false);
-      LoggerHelper.getLocal().log(Level.INFO, "Verify the only remaining running domain domain1 is unaffected");
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
       testClusterScaling(operator1, domain2, false);
 
-      LoggerHelper.getLocal().log(Level.INFO, "Verify the only remaining running domain domain1 is unaffected");
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
-      LoggerHelper.getLocal().log(Level.INFO, "Destroy and create domain1 and verify no impact on domain2");
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "Destroy and create domain1 and verify no impact on domain2");
       domain1.destroy();
       domain1.create();
 
@@ -310,7 +323,8 @@ public class ItOperator extends BaseTest {
         domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
       }
       if (!domainUidsToBeDeleted.equals("")) {
-        LoggerHelper.getLocal().log(Level.INFO, "About to delete domains: " + domainUidsToBeDeleted);
+        LoggerHelper.getLocal().log(Level.INFO, 
+            "About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
         if (domain1 != null) {
           TestUtils.verifyAfterDeletion(domain1);
@@ -337,7 +351,8 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain domain & verifing the domain creation");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating Domain domain & verifing the domain creation");
     // create domain
     Domain domain = null;
     try {
@@ -374,7 +389,8 @@ public class ItOperator extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain domain & verifing the domain creation");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating Domain domain & verifing the domain creation");
     // create domain
     Domain domain = null;
 
@@ -387,7 +403,9 @@ public class ItOperator extends BaseTest {
 
       domain.verifyDomainCreated();
     } finally {
-      if (domain != null) domain.shutdown();
+      if (domain != null) {
+        domain.shutdown();
+      }
     }
     domain.deletePvcAndCheckPvReleased(); 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
@@ -408,7 +426,8 @@ public class ItOperator extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain domain10 & verifing the domain creation");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating Domain domain10 & verifing the domain creation");
 
     // create domain10
     Domain domain = null;
@@ -444,10 +463,13 @@ public class ItOperator extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility ");
-    Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
-    Operator operatorForBackwardCompatibility = TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
+    Map<String, Object> operatorMap = 
+        TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+    Operator operatorForBackwardCompatibility = 
+        TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
     operatorForBackwardCompatibility.verifyOperatorExternalRestEndpoint();
-    LoggerHelper.getLocal().log(Level.INFO, "Operator using legacy REST identity created successfully");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Operator using legacy REST identity created successfully");
     operatorForBackwardCompatibility.destroy(); 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -464,11 +486,14 @@ public class ItOperator extends BaseTest {
 
     logTestBegin("testOperatorRestUsingCertificateChain");
     LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility");
-    Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
-    Operator  operatorForRESTCertChain = TestUtils.createOperator(operatorMap, RestCertType.CHAIN);
+    Map<String, Object> operatorMap = 
+        TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+    Operator  operatorForRESTCertChain = 
+        TestUtils.createOperator(operatorMap, RestCertType.CHAIN);
     operatorForRESTCertChain.verifyOperatorExternalRestEndpoint();
     operatorForRESTCertChain.destroy();
-    LoggerHelper.getLocal().log(Level.INFO, "Operator using legacy REST identity created successfully"); 
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Operator using legacy REST identity created successfully"); 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - testOperatorRestUsingCertificateChain");
   }
 
@@ -489,7 +514,8 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainInImageMap(getNewNumber(), false, testClassName);
+      Map<String, Object> domainMap = 
+          TestUtils.createDomainInImageMap(getNewNumber(), false, testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.remove("clusterType");
       domain = TestUtils.createDomain(domainMap);
@@ -523,7 +549,8 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
+      Map<String, Object> domainMap = 
+          TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.put(
           "customWdtTemplate",

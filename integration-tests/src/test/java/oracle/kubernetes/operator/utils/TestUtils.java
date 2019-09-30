@@ -339,7 +339,8 @@ public class TestUtils {
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException("FAILURE: PV is not in Released status, exiting!");
         }
-        LoggerHelper.getLocal().log(Level.INFO, "PV is not in Released status," + result.stdout() + "\n " + result.stderr());
+        LoggerHelper.getLocal().log(Level.INFO, "PV is not in Released status," 
+        + result.stdout() + "\n " + result.stderr());
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
 
@@ -366,7 +367,8 @@ public class TestUtils {
       String service, String namespace, String protocol, int port) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get services ");
     cmd.append(" -n ").append(namespace);
-    LoggerHelper.getLocal().log(Level.INFO, " Find services in namespage " + namespace + " with command: '" + cmd + "'");
+    LoggerHelper.getLocal().log(Level.INFO, " Find services in namespage " 
+    + namespace + " with command: '" + cmd + "'");
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     String stdout = result.stdout();
@@ -501,7 +503,8 @@ public class TestUtils {
     while (true) {
       final long currentTime = System.currentTimeMillis();
       int finalRestartCnt = getPodRestartCount(podName, namespace);
-      LoggerHelper.getLocal().log(Level.INFO, "initialRestartCnt " + initialRestartCnt + " finalRestartCnt " + finalRestartCnt);
+      LoggerHelper.getLocal().log(Level.INFO, "initialRestartCnt " 
+      + initialRestartCnt + " finalRestartCnt " + finalRestartCnt);
       if ((finalRestartCnt - initialRestartCnt) == 1) {
         LoggerHelper.getLocal().log(Level.INFO, "WLS liveness probe test is successful.");
         break;
@@ -599,13 +602,15 @@ public class TestUtils {
 
         // Create the directory on the pod
         String nestedDirOnPod = appLocationInPod + "/" + file.getName();
-        StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ").append(nestedDirOnPod).append("'");
+        StringBuffer mkdirCmd = 
+            new StringBuffer(" -- bash -c 'mkdir -p ").append(nestedDirOnPod).append("'");
         TestUtils.kubectlexec(podName, namespace, mkdirCmd.toString());
 
         // Find dir recursively
         copyAppFilesToPod(file.getAbsolutePath(), nestedDirOnPod, podName, namespace);
       } else {
-        LoggerHelper.getLocal().log(Level.INFO, "Copy file: " + file.getAbsoluteFile().toString() + " to the pod: " + podName);
+        LoggerHelper.getLocal().log(Level.INFO, "Copy file: " 
+      + file.getAbsoluteFile().toString() + " to the pod: " + podName);
 
         String fileParent = file.getParentFile().getName();
         LoggerHelper.getLocal().log(Level.INFO, "file Parent: " + fileParent);
@@ -858,24 +863,28 @@ public class TestUtils {
   }
 
   public static Domain createDomain(String inputYaml) throws Exception {
-    LoggerHelper.getLocal().log(Level.INFO, "Creating domain with yaml, waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
   }
 
   public static Domain createDomain(String inputYaml, boolean createDomainResource)
       throws Exception {
-    LoggerHelper.getLocal().log(Level.INFO, "Creating domain with yaml, waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml, createDomainResource);
   }
 
   public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
-    LoggerHelper.getLocal().log(Level.INFO, "Creating domain with Map, waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap);
   }
 
   public static Domain createDomain(
       Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
-    LoggerHelper.getLocal().log(Level.INFO, "Creating domain with Map, waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap, createDomainResource);
   }
 
@@ -941,7 +950,8 @@ public class TestUtils {
     String cmd = projectRoot + "/src/integration-tests/bash/lease.sh -d " + leaseId;
     ExecResult leaseResult = ExecCommand.exec(cmd);
     if (leaseResult.exitValue() != 0) {
-      LoggerHelper.getLocal().log(Level.INFO, "FAILED: command to release lease " + cmd + " failed " + leaseResult.stderr());
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "FAILED: command to release lease " + cmd + " failed " + leaseResult.stderr());
     }
     LoggerHelper.getLocal().log(Level.INFO, 
         "Command " + cmd + " returned " + leaseResult.stdout() + "\n" + leaseResult.stderr());
@@ -961,7 +971,8 @@ public class TestUtils {
 
     // Create a resource target identified by Operator ext REST API URL
     WebTarget target = javaClient.target(url.toString());
-    LoggerHelper.getLocal().log(Level.INFO, "Invoking OP REST API URL: " + target.getUri().toString());
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Invoking OP REST API URL: " + target.getUri().toString());
 
     // Obtain a client request invocation builder
     Builder request = target.request(MediaType.APPLICATION_JSON);
@@ -1017,8 +1028,24 @@ public class TestUtils {
       throw new RuntimeException("Couldn't create secret " + result.stderr());
     }
   }
-
-  public static Map<String, Object> createOperatorMap(int number, boolean restEnabled, String prefix) {
+  
+  public static Map<String, Object> createOperatorMap(int number, boolean restEnabled) {
+    Map<String, Object> operatorMap = new HashMap<>();
+    ArrayList<String> targetDomainsNS = new ArrayList<String>();
+    targetDomainsNS.add("test" + number);
+    operatorMap.put("releaseName", "op" + number);
+    operatorMap.put("domainNamespaces", targetDomainsNS);
+    operatorMap.put("serviceAccount", "weblogic-operator" + number);
+    operatorMap.put("namespace", "weblogic-operator" + number);
+    if (restEnabled) {
+      operatorMap.put("externalRestHttpsPort", 31000 + number);
+      operatorMap.put("externalRestEnabled", restEnabled);
+    }
+    return operatorMap;
+  }
+  
+  public static Map<String, Object> createOperatorMap(
+      int number, boolean restEnabled, String prefix) {
     Map<String, Object> operatorMap = new HashMap<String, Object>();
     ArrayList<String> targetDomainsNS = new ArrayList<String>();
     targetDomainsNS.add(prefix.toLowerCase()+"-domainns-" + number);
@@ -1033,6 +1060,27 @@ public class TestUtils {
     return operatorMap;
   }
 
+  public static Map<String, Object> createDomainMap(int number) {
+    Map<String, Object> domainMap = new HashMap<>();
+    ArrayList<String> targetDomainsNS = new ArrayList<String>();
+    targetDomainsNS.add("test" + number);
+    domainMap.put("domainUID", "test" + number);
+    domainMap.put("namespace", "test" + number);
+    domainMap.put("configuredManagedServerCount", 4);
+    domainMap.put("initialManagedServerReplicas", 2);
+    domainMap.put("exposeAdminT3Channel", true);
+    domainMap.put("exposeAdminNodePort", true);
+    domainMap.put("adminNodePort", 30700 + number);
+    domainMap.put("t3ChannelPort", 30000 + number);
+    if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
+        || (domainMap.containsKey("loadBalancer")
+            && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
+      domainMap.put("voyagerWebPort", 30344 + number);
+      LoggerHelper.getLocal().log(Level.INFO, "For this domain voyagerWebPort is set to: 30344 + " + number);
+    }
+    return domainMap;
+  }
+  
   public static Map<String, Object> createDomainMap(int number, String prefix) {
     Map<String, Object> domainMap = new HashMap<String, Object>();
     domainMap.put("domainUID", prefix.toLowerCase()+"-domain-"+ number);
@@ -1045,18 +1093,23 @@ public class TestUtils {
     domainMap.put("t3ChannelPort", 31000 + number);
     if (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
       domainMap.put("voyagerWebPort", 30344 + number);
-      LoggerHelper.getLocal().log(Level.INFO, "For this domain voyagerWebPort is set to: "+domainMap.get("voyagerWebPort"));
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "For this domain voyagerWebPort is set to: "+domainMap.get("voyagerWebPort"));
     }
     return domainMap;
   }
-  public static Map<String, Object> createDomainInImageMap(int number, boolean wdt, String prefix) {
+  public static Map<String, Object> createDomainInImageMap(
+      int number, boolean wdt, String prefix) {
     Map<String, Object> domainMap = createDomainMap(number, prefix);
-    if(wdt) {
-      domainMap.put("domainHomeImageBuildPath", "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");
+    if (wdt) {
+      domainMap.put("domainHomeImageBuildPath", 
+          "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");
     } else {
-      domainMap.put("domainHomeImageBuildPath", "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
+      domainMap.put("domainHomeImageBuildPath", 
+          "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
     }
-    domainMap.put("domainHomeImageBase", "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
+    domainMap.put("domainHomeImageBase", 
+        "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
     domainMap.put("logHomeOnPV", "true");
     domainMap.put("clusterType", "CONFIGURED");
     return domainMap;
@@ -1176,7 +1229,8 @@ public class TestUtils {
    * Build a WDT zip archive, which consists of a set of archives structured as follows:
    * wlsdeploy/applications/archive1, archive2, etc
    * for example, the WDT archive with 3 artifacts could have the following...
-   * wlsdeploy/applications/archive1.ear, wlsdeploy/applications/coh-archive.gar, wlsdeploy/applications/mywebapp.war.
+   * wlsdeploy/applications/archive1.ear, 
+   * wlsdeploy/applications/coh-archive.gar, wlsdeploy/applications/mywebapp.war.
    * Copy each archive to temp location then build the WDT archive.
    *
    * @param wdtArchivePath path where new archive should be created
@@ -1209,7 +1263,8 @@ public class TestUtils {
     dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
     String crdCmd =
         BaseTest.getProjectRoot()
-        + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot() + ":/sharedparent -c 'mkdir -m 777 -p "
+        + "/src/integration-tests/bash/krun.sh -m " 
+            + BaseTest.getPvRoot() + ":/sharedparent -c 'mkdir -m 777 -p "
         + dirPath
         + "'";
     
@@ -1650,7 +1705,8 @@ public class TestUtils {
     copyAppFilesToPod(
         appLocationOnHost + "/WEB-INF", appLocationInPod + "/WEB-INF", adminServerPod, domainNS);
 
-    LoggerHelper.getLocal().log(Level.INFO, "Creating WebService and WebService Servlet Client Applications");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating WebService and WebService Servlet Client Applications");
 
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     domain.callShellScriptToBuildDeployAppInPod(
@@ -1660,8 +1716,8 @@ public class TestUtils {
 
   /**
    * Create dir to save coherence App files. Copy the shell script file and all App files over to
-   * the admin pod Run the shell script to build WAR/GAR/EAR files and deploy the GAR to the cluster 
-   * with storage Enabled and the EAR to the cluster with no storage
+   * the admin pod Run the shell script to build WAR/GAR/EAR files and deploy the GAR to 
+   * the cluster with storage Enabled and the EAR to the cluster with no storage
    *
    * @param domain - Domain where to build and deploy app
    * @param appName - App name to be deployed
@@ -1711,7 +1767,8 @@ public class TestUtils {
     // Copy all App files to the admin pod
     copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
 
-    LoggerHelper.getLocal().log(Level.INFO, "Creating WebService and WebService Servlet Client Applications");
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating WebService and WebService Servlet Client Applications");
 
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     domain.callShellScriptToBuildDeployAppInPod(

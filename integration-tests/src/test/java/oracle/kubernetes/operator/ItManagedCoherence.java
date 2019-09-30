@@ -39,8 +39,8 @@ public class ItManagedCoherence extends BaseTest {
   private static String customDomainTemplate;
   private static Operator operator1;
   Domain domain = null;
-  private static String testClassName ;
-  private static String domainNS1 ;
+  private static String testClassName;
+  private static String domainNS1;
   static boolean testCompletedSuccessfully = false;
 
   /**
@@ -72,8 +72,9 @@ public class ItManagedCoherence extends BaseTest {
     }
     
     // create operator1
-    if(operator1 == null ) {
-      Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+    if (operator1 == null) {
+      Map<String, Object> operatorMap = TestUtils.createOperatorMap(
+                      getNewNumber(), true, testClassName);
       operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       Assert.assertNotNull(operator1);
       domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
@@ -125,7 +126,8 @@ public class ItManagedCoherence extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
 
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, "Creating coeherence domain on pv using wlst and testing the cache");
+    LoggerHelper.getLocal().log(Level.INFO, 
+                "Creating coeherence domain on pv using wlst and testing the cache");
 
     testCompletedSuccessfully = false;
     domain = null;
@@ -162,11 +164,11 @@ public class ItManagedCoherence extends BaseTest {
   
       coherenceCacheTest();
       testCompletedSuccessfully = true;
-      } finally {
-        if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-          TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-        }
-      }
+    } finally {
+     if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+       TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+     }
+    }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -184,12 +186,14 @@ public class ItManagedCoherence extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
 
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, "Creating coeherence domain in image using wlst and testing the cache");
+    LoggerHelper.getLocal().log(Level.INFO, 
+            "Creating coeherence domain in image using wlst and testing the cache");
 
     testCompletedSuccessfully = false;
     domain = null;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainInImageMap(getNewNumber(), false, testClassName);
+      Map<String, Object> domainMap = 
+          TestUtils.createDomainInImageMap(getNewNumber(), false, testClassName);
       domainMap.put("clusterName", "appCluster");
       domainMap.put("domainUID", DOMAINUID1);
       domainMap.put("customDomainTemplate", customDomainTemplate);
@@ -249,11 +253,13 @@ public class ItManagedCoherence extends BaseTest {
     }
     // get the data from cache
     result = getCacheContents();
-    LoggerHelper.getLocal().log(Level.INFO, "Cache contains the following entries \n" + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Cache contains the following entries \n" + result.stdout());
 
     // Now clear the cache
     result = clearCache();
-    LoggerHelper.getLocal().log(Level.INFO, "Cache is cleared and should be empty" + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Cache is cleared and should be empty" + result.stdout());
   }
 
   private ExecResult addDataToCache(String firstName, String secondName) throws Exception {

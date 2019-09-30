@@ -41,9 +41,10 @@ public class ItPodsRestart extends BaseTest {
   private static String domainUid = "";
   private static String restartTmpDir = "";
   private static String originalYaml;
-  private static String domainNS ;
+  private static String domainNS;
   private static boolean testCompletedSuccessfully;
-  private static String testClassName ;
+  private static String testClassName;
+  
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -87,17 +88,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (QUICKTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-      if(testCompletedSuccessfully) {
-        destroyPodsRestartdomain();
-      }
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
-      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
-    }
   }
 
   private static Domain createPodsRestartdomain() throws Exception {
@@ -107,7 +98,8 @@ public class ItPodsRestart extends BaseTest {
     domainMap.put("initialManagedServerReplicas", new Integer("1"));
     domainMap.put("namespace", domainNS);
     domainUid = (String) domainMap.get("domainUID");
-    LoggerHelper.getLocal().log(Level.INFO, "Creating and verifying the domain creation with domainUid: " + domainUid);
+    LoggerHelper.getLocal().log(Level.INFO, 
+        "Creating and verifying the domain creation with domainUid: " + domainUid);
 
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();

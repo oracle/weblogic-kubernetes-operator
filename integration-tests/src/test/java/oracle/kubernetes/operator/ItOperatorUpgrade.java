@@ -39,6 +39,7 @@ public class ItOperatorUpgrade extends BaseTest {
   private Domain domain = null;
   private static Operator operator;
   boolean testCompletedSuccessfully = false;
+  
   /**
    * This method gets called only once before any of the test methods are executed.
    *
@@ -222,10 +223,7 @@ public class ItOperatorUpgrade extends BaseTest {
       checkDomainRollingRestarted();
     }
     checkOperatorVersion();
-    // testBasicUseCases(domain);
-    // if (FULLTEST) {
-      testClusterScaling(operator, domain, false);
-    // }
+    testClusterScaling(operator, domain, false);
   }
 
   /**

@@ -39,7 +39,8 @@ public class ItStickySession extends BaseTest {
 
   private static Operator operator;
   private static Domain domain;
-
+  private static String testClassName;
+  
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -51,18 +52,21 @@ public class ItStickySession extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE);
+      initialize(APP_PROPS_FILE, testClassName);
   
       // Create operator1
       if (operator == null) {
-        LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
+        LoggerHelper.getLocal().log(Level.INFO, 
+            "Creating Operator & waiting for the script to complete execution");
         operator = TestUtils.createOperator(OPERATOR1_YAML);
       }
   
       // create domain
       if (domain == null) {
-        LoggerHelper.getLocal().log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
+        LoggerHelper.getLocal().log(Level.INFO, 
+            "Creating WLS Domain & waiting for the script to complete execution");
         Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
         // Treafik doesn't work due to the bug 28050300. Use Voyager instead
         domainMap.put("loadBalancer", "VOYAGER");
@@ -96,21 +100,14 @@ public class ItStickySession extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-  
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-  
-      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
-    }
+
   }
 
   /**
-   * Use a web application deployed on Weblogic cluster to track HTTP session. In-memory replication
-   * persistence method is configured to implement session persistence. server-affinity is achieved
-   * by Voyager load balancer based on HTTP session information. This test sends two HTTP requests
+   * Use a web application deployed on Weblogic cluster to track HTTP session. 
+   * In-memory replication persistence method is configured to implement session persistence.
+   * server-affinity is achieved by Voyager load balancer based on HTTP session information. 
+   * This test sends two HTTP requests
    * to Weblogic and verify that all requests are directed to same Weblogic server.
    *
    * @throws Exception exception
@@ -172,7 +169,8 @@ public class ItStickySession extends BaseTest {
     // Verify server-affinity
     Assume.assumeTrue("Weblogic server name should NOT change!", serverName1.equals(serverName2));
     LoggerHelper.getLocal().log(
-        Level.INFO, "Two HTTP requests are directed to same Weblogic server <" + serverName1 + ">");
+        Level.INFO, "Two HTTP requests are directed to same Weblogic server <" 
+    + serverName1 + ">");
 
     // Verify that count numbers from two HTTP responses match
     Assume.assumeTrue("Count number does not match", Integer.parseInt(count) == counterNum);

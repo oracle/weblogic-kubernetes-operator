@@ -1,3 +1,5 @@
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+
 package oracle.kubernetes.operator.utils;
 
 import java.util.logging.ConsoleHandler;
@@ -17,6 +19,10 @@ public class LoggerHelper {
     initLocal(null);
   }
   
+  /**
+   * 
+   * @param cl
+   */
   public static void initLocal(Logger cl) {
     //cl.setUseParentHandlers(false);
     //cl.addHandler(new ConsoleHandler());
@@ -24,6 +30,10 @@ public class LoggerHelper {
     
   }
   
+  /**
+   * 
+   * @return
+   */
   public static Logger getLocal() {
     Logger cl = localLogger.get();
     if (cl == null) return globalLogger;

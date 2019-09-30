@@ -99,8 +99,9 @@ public class Domain {
     this(inputDomainMap, true, createLoadBalancer);
   }
   
-  public Domain(Map<String, Object> inputDomainMap, boolean createDomainResource, 
-                    boolean createLoadBalancer) throws Exception {
+  public Domain(Map<String, Object> inputDomainMap, 
+        boolean createDomainResource, boolean createLoadBalancer) 
+                        throws Exception {
     initialize(inputDomainMap);
     this.createDomainResource = createDomainResource;
     createPv();
@@ -121,9 +122,9 @@ public class Domain {
     StringBuffer command = new StringBuffer();
     command.append("kubectl get domain ").append(domainUid).append(" -n ").append(domainNS);
     ExecResult result = TestUtils.exec(command.toString());
-    if (!result.stdout().contains(domainUid))
+    if (!result.stdout().contains(domainUid)) {
       throw new RuntimeException("FAILURE: domain not found, exiting!");
-
+    }
     verifyPodsCreated();
     verifyServicesCreated();
     verifyServersReady();
@@ -315,7 +316,8 @@ public class Domain {
                 + output);
       }
     } else {
-      LoggerHelper.getLocal().log(Level.INFO, "exposeAdminNodePort is false, can not test adminNodePort");
+      LoggerHelper.getLocal().log(Level.INFO, 
+          "exposeAdminNodePort is false, can not test adminNodePort");
     }
   }
 
@@ -1346,7 +1348,7 @@ public class Domain {
     changeClusterTypeInCreateDomainJobTemplate();
 
     // Get the map of any additional environment vars, or null
-    Map<String, String> additionalEnvMap = (Map<String, String>)domainMap.get("additionalEnvMap");;
+    Map<String, String> additionalEnvMap = (Map<String, String>)domainMap.get("additionalEnvMap");
 
     LoggerHelper.getLocal().log(Level.INFO, "Running " + createDomainScriptCmd);
     ExecResult result = ExecCommand.exec(createDomainScriptCmd, true, additionalEnvMap);
@@ -1845,7 +1847,7 @@ public class Domain {
                 .toPath(),
             new File(
                     domainResultsDir
-           + "/samples/scripts/create-weblogic-domain/domain-home-on-pv/wlst/create-domain.py")
+       + "/samples/scripts/create-weblogic-domain/domain-home-on-pv/wlst/create-domain.py")
                 .toPath(),
             StandardCopyOption.REPLACE_EXISTING);
       }
@@ -1910,13 +1912,13 @@ public class Domain {
       TestUtils.copyFile(
           (String) domainMap.get("customWdtTemplate"),
           domainResultsDir
-        + "/docker-images/OracleWebLogic/samples/"
-        + "12213-domain-home-in-image-wdt/simple-topology.yaml");
+       + "/docker-images/OracleWebLogic/samples/"
+       + "12213-domain-home-in-image-wdt/simple-topology.yaml");
       ExecResult exec =
           TestUtils.exec(
               "cat "  + domainResultsDir
-                  + "/docker-images/OracleWebLogic/samples/"
-                  + "12213-domain-home-in-image-wdt/simple-topology.yaml");
+        + "/docker-images/OracleWebLogic/samples/"
+        + "12213-domain-home-in-image-wdt/simple-topology.yaml");
       LoggerHelper.getLocal().log(Level.FINEST, exec.stdout());
     } else if (clusterType.equalsIgnoreCase("CONFIGURED")) {
       // domain on pv

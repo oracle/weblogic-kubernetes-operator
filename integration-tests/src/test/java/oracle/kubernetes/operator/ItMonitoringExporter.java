@@ -77,7 +77,8 @@ public class ItMonitoringExporter extends BaseTest {
   private int waitTime = 5;
   //update with specific branch name if not master
   private static String monitoringExporterBranchVer = "master";
-
+  private static String testClassName;
+  
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -88,7 +89,8 @@ public class ItMonitoringExporter extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      initialize(APP_PROPS_FILE);
+      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      initialize(APP_PROPS_FILE, testClassName);
       LoggerHelper.getLocal().log(Level.INFO,"Checking if operator and domain are running, if not creating");
       if (operator == null) {
         operator = TestUtils.createOperator("operatorexp.yaml");

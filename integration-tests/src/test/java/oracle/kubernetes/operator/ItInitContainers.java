@@ -35,8 +35,9 @@ public class ItInitContainers extends BaseTest {
   private static String domainUid = "domaininitcont";
   private static String initContainerTmpDir = "";
   private static String originalYaml;
-  private static String testClassName ;
-  private static String domainNS ;
+  private static String testClassName;
+  private static String domainNS;
+  
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting

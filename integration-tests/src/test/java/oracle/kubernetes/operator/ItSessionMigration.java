@@ -37,8 +37,8 @@ public class ItSessionMigration extends BaseTest {
   private static String httpHeaderFile;
   private static Operator operator;
   private static Domain domain;
-  private static String domainNS1 ;
-  private static String testClassName ;
+  private static String domainNS1;
+  private static String testClassName;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -59,7 +59,8 @@ public class ItSessionMigration extends BaseTest {
   
       // create operator1
       if(operator == null ) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        Map<String, Object> operatorMap = 
+            TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
         domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
@@ -67,8 +68,10 @@ public class ItSessionMigration extends BaseTest {
   
       // create domain
       if (domain == null) {
-        LoggerHelper.getLocal().log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
-        Map<String, Object> wlstDomainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+        LoggerHelper.getLocal().log(Level.INFO, 
+            "Creating WLS Domain & waiting for the script to complete execution");
+        Map<String, Object> wlstDomainMap = 
+            TestUtils.createDomainMap(getNewNumber(), testClassName);
         wlstDomainMap.put("namespace", domainNS1);
         wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
         domain = TestUtils.createDomain(wlstDomainMap);
@@ -219,7 +222,8 @@ public class ItSessionMigration extends BaseTest {
     domain.restartManagedServerUsingServerStartPolicy(primaryServName1);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName + ". HTTP session state is migrated!");
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " 
+    + testMethodName + ". HTTP session state is migrated!");
   }
 
   /**

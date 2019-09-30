@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import oracle.kubernetes.operator.utils.LoggerHelper;
+
 import java.util.logging.Level;
 
 import org.junit.AfterClass;
@@ -10,7 +12,6 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import oracle.kubernetes.operator.utils.LoggerHelper;
 
 /** JUnit test class used for testing configuration override use cases for Domain In Image. */
 public class ItSitConfigDomainInImage extends SitConfig {
@@ -31,7 +32,8 @@ public class ItSitConfigDomainInImage extends SitConfig {
     if (FULLTEST) {
       staticPrepare(
           true,
-          "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config-inimage.py", testClassName);
+          "integration-tests/src/test/resources/sitconfig/scripts/" 
+         +"create-domain-auto-custom-sit-config-inimage.py", testClassName);
     }
   }
 

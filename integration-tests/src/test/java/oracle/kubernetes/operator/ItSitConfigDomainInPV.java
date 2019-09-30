@@ -4,17 +4,16 @@
 package oracle.kubernetes.operator;
 
 import java.util.logging.Level;
-
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import oracle.kubernetes.operator.utils.LoggerHelper;
-
 /** JUnit test class used for testing configuration override use cases for domain in pv WLS. */
 public class ItSitConfigDomainInPV extends SitConfig {
-  private static String testClassName ;
+  private static String testClassName;
+  
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -29,7 +28,8 @@ public class ItSitConfigDomainInPV extends SitConfig {
       testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
       staticPrepare(
           false,
-          "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py", testClassName);
+          "integration-tests/src/test/resources/sitconfig/" 
+          + "scripts/create-domain-auto-custom-sit-config20.py", testClassName);
     }
   }
 

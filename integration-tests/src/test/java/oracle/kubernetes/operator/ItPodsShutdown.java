@@ -48,8 +48,8 @@ public class ItPodsShutdown extends BaseTest {
   private static long terminationDefaultOptionsTime = 0;
   private static String modifiedYaml = null;
   private static int podVer = 1;
-  private static String testClassName ;
-  private static String domainNS1 ;
+  private static String testClassName;
+  private static String domainNS1;
   
   /**
    * This method gets called only once before any of the test methods are executed. It does the

@@ -40,8 +40,9 @@ public class ItMultipleClusters extends BaseTest {
   private static final String DOMAINUID = "twoconfigclustdomain";
   private static Operator operator1;
   private static String customDomainTemplate;
-  private static String testClassName ;
-  private static String domainNS1 ;
+  private static String testClassName;
+  private static String domainNS1;
+  
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -69,8 +70,9 @@ public class ItMultipleClusters extends BaseTest {
       Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
       
       // create operator1
-      if(operator1 == null ) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+      if (operator1 == null) {
+        Map<String, Object> operatorMap = 
+            TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
@@ -86,13 +88,6 @@ public class ItMultipleClusters extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
-    }
   }
 
   /**
@@ -154,8 +149,6 @@ public class ItMultipleClusters extends BaseTest {
     String domainuid = "twomixedclusterdomain";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String template =
-        BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
@@ -205,14 +198,15 @@ public class ItMultipleClusters extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
+      Map<String, Object> domainMap = 
+          TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
       domainMap.put("domainUID", domainuid);
       domainMap.put("customDomainTemplate", customDomainTemplate);
       domainMap.put("namespace", domainNS1);
       domainMap.put(
           "customWdtTemplate",
           BaseTest.getProjectRoot()
-              + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml");
+        + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
@@ -231,7 +225,7 @@ public class ItMultipleClusters extends BaseTest {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
     }
-LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
