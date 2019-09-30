@@ -700,7 +700,7 @@ public class TestUtils {
   public static String getAccessToken(Operator operator) throws Exception {
     if (BaseTest.OPENSHIFT) {
       StringBuffer tokenCmd = new StringBuffer(
-         "oc serviceaccounts get-token " + operator.getOperatorMap().get("serviceAccount"));
+          "oc serviceaccounts get-token " + operator.getOperatorMap().get("serviceAccount"));
       tokenCmd
         .append(" -n ")
         .append(operator.getOperatorNamespace());
@@ -713,7 +713,7 @@ public class TestUtils {
       return token;
     } else {
       StringBuffer secretCmd =
-        new StringBuffer(
+          new StringBuffer(
             "kubectl get serviceaccount " + operator.getOperatorMap().get("serviceAccount"));
       secretCmd
         .append(" -n ")

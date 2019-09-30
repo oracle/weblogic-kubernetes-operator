@@ -786,7 +786,7 @@ public class BaseTest {
     TestUtils.createDirUnderDomainPV(scriptsDir);
     if (OPENSHIFT) {
       Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
-        Paths.get(scriptsDir + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
+          Paths.get(scriptsDir + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
     } else {
       // workaround for the issue with not allowing .. in the host-path in krun.sh
       Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
