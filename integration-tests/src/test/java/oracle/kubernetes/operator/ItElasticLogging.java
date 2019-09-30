@@ -542,7 +542,7 @@ public class ItElasticLogging extends BaseTest {
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
     final String testResourceDir = resourceDir + "/loggingexporter";
     
-    StringBuffer cmdLisDir= new StringBuffer("kubectl -n ");
+    StringBuffer cmdLisDir = new StringBuffer("kubectl -n ");
     cmdLisDir
         .append(domainNS)
         .append(" exec -it ")
@@ -560,22 +560,22 @@ public class ItElasticLogging extends BaseTest {
     //Copy test files to WebLogic server pod
     TestUtils.kubectlcp(
         loggingExpArchiveLoc + "/" + wlsLoggingExpJar,
-        "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar +
-        " --no-preserve=true ",
+        "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar
+            + " --no-preserve=true ",
         podName,
         domainNS);
 
     TestUtils.kubectlcp(
         loggingExpArchiveLoc + "/" + snakeyamlJar,
-        "/shared/domains/domainonpvwlst/lib/" + snakeyamlJar +
-        " --no-preserve=true ",
+        "/shared/domains/domainonpvwlst/lib/"
+            + snakeyamlJar + " --no-preserve=true ",
         podName,
         domainNS);
 
     TestUtils.kubectlcp(
         testResourceDir + "/" + loggingYamlFile,
-        "/shared/domains/domainonpvwlst/config/" + loggingYamlFile +
-        " --no-preserve=true ",
+        "/shared/domains/domainonpvwlst/config/"
+            + loggingYamlFile + " --no-preserve=true ",
         podName,
         domainNS);
   }
