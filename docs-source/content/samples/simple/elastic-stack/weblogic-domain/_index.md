@@ -1,31 +1,35 @@
 ---
 title: "WebLogic Domain"
-date: 2019-02-23T17:32:31-05:00
-weight: 6
-description: "Sample for configuring fluentd to export domain logs to ELK."
+date: 2019-10-01T14:32:31-05:00
+weight: 2
+description: "WebLogic domains and operator's logs"
 ---
 
 
 #### Overview
-This page describes to how to configure a WebLogic domain to use fluentd to send log information to ELK.
+This page describes to how to configure a WebLogic domain to use fluentd to send log information to Elasticsearch.
 
 The general mechanism of how this works is:
-* fluentd runs as a separate container in the admin and managed server pods
+
+* `fluentd` runs as a separate container in the admin and managed server pods
 * The log files reside on a volume that is shared between the `weblogic-server` and `fluentd` containers
-* fluentd tails the domain logs files and exports to ELK
-* A ConfigMap contains the filter and format rules for exporting log records
+* `fluentd` tails the domain logs files and exports to Elasticsearch
+* A `ConfigMap` contains the filter and format rules for exporting log records
 
 For sample purposes, this document will assume a domain with the following attributes are being configured:
+
 * Domain name is `bobs-bookstore`
 * Kubernetes namespace is `bob`
 * Kubernetes secret is `bobs-bookstore-weblogic-credentials`
-* Elastic Search Configuration
-    * elasticsearchhost: elasticsearch.bobs-books.sample.com
-    * elasticsearchport: 443
-    * elasticsearchuser: bob
-    * elasticsearchpassword: changeme
+* Elasticsearch configuration
+```text
+    elasticsearchhost: elasticsearch.bobs-books.sample.com
+    elasticsearchport: 443
+    elasticsearchuser: bob
+    elasticsearchpassword: changeme
+```
 
-#### Configure Log Files to a Volume
+#### Configure log files to use a volume
 The domain log files must be written to a volume that can be shared between the `weblogic-server` and `fluentd` containers.
 
 NOTE: For brevity only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
@@ -45,10 +49,10 @@ spec:
       name: weblogic-domain-storage-volume
 ```
 
-#### Add ElasticSearch Secrets to WebLogic Domain Credentials
-The fluentd container will be configured to look for elastic search parameters in the domain credentials.  Edit the domain credentials and add the parameters shown in the example below.
+#### Add Elasticsearch secrets to WebLogic domain credentials
+The `fluentd` container will be configured to look for Elasticsearch parameters in the domain credentials.  Edit the domain credentials and add the parameters shown in the example below.
 
-Example: `kubectl edit secret bobs-bookstore-weblogic-credentials -n bob` and add the bae64 encoded values of each ElasticSearch parameter:
+Example: `kubectl edit secret bobs-bookstore-weblogic-credentials -n bob` and add the base64 encoded values of each Elasticsearch parameter:
 ```text
 elasticsearchhost: ZWxhc3RpY3NlYXJjaC5ib2JzLWJvb2tzLnNhbXBsZS5jb20=
 elasticsearchport: NDQz
@@ -56,10 +60,10 @@ elasticsearchuser: Ym9i
 elasticsearchpassword: d2VsY29tZTE=
 ```
 
-## Create Fluentd Configuration
-Create a ConfigMap named `fluentd-config` in the namespace of the domain.  The ConfigMap contains the parsing rules and ElasticSearch configuration.
+## Create FluentD configuration
+Create a `ConfigMap` named `fluentd-config` in the namespace of the domain.  The `ConfigMap` contains the parsing rules and Elasticsearch configuration.
 
-An example of how to create the ConfigMap:
+An example of how to create the `ConfigMap`:
 ```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -113,8 +117,8 @@ data:
 EOF
 ```
 
-#### Mount the ConfigMap as a Volume in weblogic-server Container
-Edit the domain definition and configure a volume for the ConfigMap containing the fluentd configuration.
+#### Mount the ConfigMap as a volume in weblogic-server container
+Edit the domain definition and configure a volume for the `ConfigMap` containing the fluentd configuration.
 
 NOTE: For brevity only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
 
@@ -129,13 +133,14 @@ spec:
       name: fluentd-config-volume
 ```
 
-#### Add fluentd Container
+#### Add fluentd container
 Add a container to the domain that will run `fluentd` in the admin and managed server pods.
 
 Notice the container definition:
-* Defines a LOG_PATH environment variable points to the log location of `bobbys-front-end`
-* Defines ELASTICSEARCH_HOST, ELASTICSEARCH_PORT, ELASTICSEARCH_USER, and ELASTICSEARCH_PASSWORD environment variables that are all retrieving their value from the secret `bobs-bookstore-weblogic-credentials`.
-* Has volume mounts for the `fluentd-config` ConfigMap and the volume containing the domain logs
+
+* Defines a `LOG_PATH` environment variable points to the log location of `bobbys-front-end`
+* Defines `ELASTICSEARCH_HOST`, `ELASTICSEARCH_PORT`, `ELASTICSEARCH_USER`, and `ELASTICSEARCH_PASSWORD` environment variables that are all retrieving their value from the secret `bobs-bookstore-weblogic-credentials`
+* Has volume mounts for the `fluentd-config` `ConfigMap` and the volume containing the domain logs
 
 NOTE: For brevity only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
 
@@ -196,11 +201,11 @@ spec:
         name: weblogic-domain-storage-volume
 ```
 
-#### Verify Logs Exported to ELK
+#### Verify logs are exported to Elasticsearch
 
-Once the admin and managed server pods have started with all the changes describe above, the logs should now be sent to ELK.
+Once the administration and managed server pods have started with all the changes describe above, the logs should now be sent to Elasticsearch.
 
-You can check if the fluentd container is successfully tailing the log by executing a command like `kubectl logs -f bobs-bookstore-admin-server -n bob fluentd`.  The log output should like similar to this:
+You can check if the `fluentd` container is successfully tailing the log by executing a command like `kubectl logs -f bobs-bookstore-admin-server -n bob fluentd`.  The log output should like similar to this:
 ```text
 2019-10-01 16:23:44 +0000 [info]: #0 starting fluentd worker pid=13 ppid=9 worker=0
 2019-10-01 16:23:44 +0000 [warn]: #0 /scratch/logs/bobs-bookstore/managed-server1.log not found. Continuing without tailing it.
@@ -208,7 +213,7 @@ You can check if the fluentd container is successfully tailing the log by execut
 2019-10-01 16:24:01 +0000 [info]: #0 following tail of /scratch/logs/bobs-bookstore/managed-server1.log
 ```
 
-When you connect to Kibana you will see an index created for the domainUID.
+When you connect to Kibana you will see an index created for the `domainUID`.
 
 Example Kibana log output:
 ```text
@@ -218,9 +223,9 @@ messageID:BEA-141107 message:Version: WebLogic Server 12.2.1.3.0 Thu Aug 17 13:3
 _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
 ```
 
-#### Domain Example
+#### Domain example
 
-Below is a complete example of a domain custom resource with a fluentd container configured.
+Below is a complete example of a domain custom resource with a `fluentd` container configured.
 
 ```yaml
 apiVersion: weblogic.oracle/v5
