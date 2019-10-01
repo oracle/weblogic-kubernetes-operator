@@ -118,7 +118,7 @@ EOF
 ```
 
 #### Mount the ConfigMap as a volume in weblogic-server container
-Edit the domain definition and configure a volume for the `ConfigMap` containing the fluentd configuration.
+Edit the domain definition and configure a volume for the `ConfigMap` containing the `fluentd` configuration.
 
 NOTE: For brevity only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
 
