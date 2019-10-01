@@ -127,7 +127,7 @@ public class LegalNames {
   public static boolean isDNS1123Required(String fieldName) {
     if (fieldName != null) {
       for (String dns1123Field: getDns1123Fields()) {
-        if (dns1123Field.equals(fieldName)) {
+        if (dns1123Field.equalsIgnoreCase(fieldName)) {
           return true;
         }
       }

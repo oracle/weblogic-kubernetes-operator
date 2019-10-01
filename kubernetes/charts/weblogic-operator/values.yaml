@@ -106,7 +106,7 @@ elasticSearchPort: 9200
 # domain resource. The default list can be found inside the class Legalnames 
 # in the oracle.kubernetes.operator.helpers package.
 # Supply a comma seperated list of field names to customize the list of fields
-# such as "Name, ClaimName, VolumeName", or leave it commented out to use 
+# such as "name, claimName, volumeName", or leave it commented out to use 
 # the default list of field names.
 # dns1123Fields: ""
 

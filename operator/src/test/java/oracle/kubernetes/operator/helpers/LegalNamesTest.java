@@ -91,7 +91,7 @@ public class LegalNamesTest {
 
   @Test
   public void verify_requiresDNS1123Names_with_customList() {
-    String customList = "DiskName, ClaimName";
+    String customList = "diskName, claimName";
     TuningParameters.getInstance().put(DNS_1123_FIELDS_PARAM, customList);
 
     assertThat(LegalNames.isDNS1123Required("DiskName"), is(true));
@@ -102,8 +102,17 @@ public class LegalNamesTest {
   }
 
   @Test
-  public void verify_requiresDNS1123Names_with_emptyStringCustomList() {
+  public void verify_requiresDNS1123Names_return_false_with_emptyStringCustomList() {
     String customList = "";
+    TuningParameters.getInstance().put(DNS_1123_FIELDS_PARAM, customList);
+
+    assertThat(LegalNames.isDNS1123Required("ClaimName"), is(false));
+    assertThat(LegalNames.isDNS1123Required("SecretName"), is(false));
+  }
+
+  @Test
+  public void verify_requiresDNS1123Names_return_false_with_singleSpaceCustomList() {
+    String customList = " ";
     TuningParameters.getInstance().put(DNS_1123_FIELDS_PARAM, customList);
 
     assertThat(LegalNames.isDNS1123Required("ClaimName"), is(false));
