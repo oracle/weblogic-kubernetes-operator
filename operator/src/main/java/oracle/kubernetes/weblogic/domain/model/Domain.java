@@ -379,6 +379,10 @@ public class Domain {
     return spec.isLogHomeEnabled();
   }
 
+  public String getDataHome() {
+    return spec.getDataHome();
+  }
+
   public boolean isIncludeServerOutInPodLog() {
     return spec.getIncludeServerOutInPodLog();
   }

@@ -29,6 +29,8 @@ spec:
       value: "${NODEMGR_HOME}"
     - name: LOG_HOME
       value: "${LOG_HOME}"
+    - name: DATA_HOME
+      value: "${DATA_HOME}"
     - name: CREDENTIALS_SECRET_NAME
       value: "${WEBLOGIC_CREDENTIALS_SECRET_NAME}"
     - name: ALLOW_DYNAMIC_CLUSTER_IN_FMW

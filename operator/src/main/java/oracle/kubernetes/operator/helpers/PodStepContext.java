@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -162,6 +163,11 @@ public abstract class PodStepContext extends BasePodStepContext {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .getLocalAdminProtocolChannelPort();
+  }
+
+  private String getDataHome() {
+    String dataHome = getDomain().getDataHome();
+    return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
   }
 
   private String getEffectiveLogHome() {
@@ -569,8 +575,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.ADMIN_NAME, getAsName());
     addEnvVar(vars, ServerEnvVars.ADMIN_PORT, getAsPort().toString());
     if (isLocalAdminProtocolChannelSecure()) {
-      // This env variable indicates whether the administration port in the WLS server on the local pod is secure
-      addEnvVar(vars, ServerEnvVars.ADMIN_PORT_SECURE, "true");
+      addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
     }
     if (isAdminServerProtocolChannelSecure()) {
       // The following env variable determines whether to set a secure protocol(https/t3s) in the "AdminURL" property
@@ -586,6 +591,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, isIncludeServerOutInPodLog());
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
+    String dataHome = getDataHome();
+    if (dataHome != null && !dataHome.isEmpty()) {
+      addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
+    }
     if (mockWls()) {
       addEnvVar(vars, "MOCK_WLS", "true");
     }

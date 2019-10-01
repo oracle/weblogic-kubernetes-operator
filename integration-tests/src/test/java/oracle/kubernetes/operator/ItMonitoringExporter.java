@@ -12,9 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.xml.bind.DatatypeConverter;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -703,15 +701,14 @@ public class ItMonitoringExporter extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    boolean testCompletedSuccessfully = false;
 
     setupPv();
-    installPrometheusGrafanaWebHookMySQLCoordinatorWLSImage();
+    installPrometheusGrafanaWebHookMySqlCoordinatorWlsImage();
     fireAlert();
     addMonitoringToExistedDomain();
-
-    testCompletedSuccessfully = true;
+    
     LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
+
   }
 
   private void fireAlert() throws Exception {
@@ -955,7 +952,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if could not run the command successfully to install Prometheus and Grafana
    */
-  private static void installPrometheusGrafanaWebHookMySQLCoordinatorWLSImage() throws Exception {
+  private static void installPrometheusGrafanaWebHookMySqlCoordinatorWlsImage() throws Exception {
     prometheusPort = "30000";
 
     executeShelScript(
@@ -1153,7 +1150,7 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Method to read the yaml file and add extra properties to the root
+   * Method to read the yaml file and add extra properties to the root.
    *
    * @param yamlFile - Name of the yaml file to make changes.
    * @throws IOException exception
