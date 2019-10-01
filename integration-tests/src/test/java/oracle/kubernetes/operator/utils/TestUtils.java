@@ -985,7 +985,7 @@ public class TestUtils {
       throws Exception {
 
     ExecCommand.exec("kubectl delete secret " + secretName + " -n " + namespace);
-    String command = null;
+    /*String command = null;
     if (dockerEmail == null) {
     	command =
           "kubectl create secret docker-registry "
@@ -1013,8 +1013,24 @@ public class TestUtils {
             + dockerEmail
             + " -n "
             + namespace;
-    }	  
-
+    }	*/  
+    
+    String command =
+        "kubectl create secret docker-registry "
+            + secretName
+            + " --docker-server="
+            + dockerServer
+            + " --docker-username="
+            + dockerUser
+            + " --docker-password=\""
+            + dockerPassword
+            + " -n "
+            + namespace;
+    if (dockerEmail != null) {
+    	command = command + " --docker-email=" + dockerEmail;
+    } else {
+    	command = command + " --docker-email=" + "weblogic.operator@oracle.com";
+    }
     String commandToLog =
         "kubectl create secret docker-registry "
             + secretName
