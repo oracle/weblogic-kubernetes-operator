@@ -13,12 +13,14 @@ import java.util.logging.Logger;
 
 import oracle.kubernetes.operator.BaseTest;
 
-/** Operator class with all the utility methods for Operator. */
+/**
+ * Operator class with all the utility methods for Operator.
+ */
 public class Operator {
 
   public static final String CREATE_OPERATOR_SCRIPT_MESSAGE =
       "The Oracle WebLogic Server Kubernetes Operator is deployed";
-  
+
   private static int maxIterationsOp = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTimeOp = BaseTest.getWaitTimePod();
   private RestCertType restCertType = RestCertType.SELF_SIGNED;
@@ -63,11 +65,11 @@ public class Operator {
    * Takes operator input properties which needs to be customized and generates a operator input
    * yaml file, with option to create operator namespace, serviceaccount, domain namespace.
    *
-   * @param inputMap input
-   * @param opNS opNS
-   * @param opSA opSA
+   * @param inputMap       input
+   * @param opNS           opNS
+   * @param opSA           opSA
    * @param targetdomainNS target
-   * @param restCertType cert
+   * @param restCertType   cert
    * @throws Exception exception
    */
   public Operator(
@@ -170,7 +172,7 @@ public class Operator {
           throw new RuntimeException(
               "FAILURE: The WebLogic operator deployment is not available, after waiting 300 seconds");
         }
-        LoggerHelper.getLocal().log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO,
             "status is " + availableReplica + ", iteration " + i + " of " + maxIterationsOp);
         Thread.sleep(waitTimeOp * 1000);
 
@@ -231,9 +233,9 @@ public class Operator {
   /**
    * scale the given cluster in a domain to the given number of servers using Operator REST API.
    *
-   * @param domainUid uid
+   * @param domainUid   uid
    * @param clusterName cluster
-   * @param numOfMS num
+   * @param numOfMS     num
    * @throws Exception exception
    */
   public void scale(String domainUid, String clusterName, int numOfMS) throws Exception {
@@ -437,8 +439,8 @@ public class Operator {
         if (i == maxIterationsOp - 1) {
           throw new RuntimeException("FAILURE: Operator fail to be deleted");
         }
-        LoggerHelper.getLocal().log(Level.INFO, "status is " + result.stdout() 
-        + ", iteration " + i + " of " + maxIterationsOp);
+        LoggerHelper.getLocal().log(Level.INFO, "status is " + result.stdout()
+            + ", iteration " + i + " of " + maxIterationsOp);
         Thread.sleep(waitTimeOp * 1000);
       } else {
         break;

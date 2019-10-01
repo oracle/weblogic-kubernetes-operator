@@ -706,7 +706,7 @@ public class ItMonitoringExporter extends BaseTest {
     installPrometheusGrafanaWebHookMySqlCoordinatorWlsImage();
     fireAlert();
     addMonitoringToExistedDomain();
-    
+
     LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
 
   }

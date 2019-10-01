@@ -50,7 +50,7 @@ public class ItPodsShutdown extends BaseTest {
   private static int podVer = 1;
   private static String testClassName;
   private static String domainNS1;
-  
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -63,18 +63,19 @@ public class ItPodsShutdown extends BaseTest {
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     if (FULLTEST) {
-      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
       // create operator1
-      if(operator1 == null ) {
+      if (operator1 == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
-        domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+        domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
-    
+
       shutdownTmpDir = BaseTest.getResultDir() + "/shutdowntemp";
       Files.createDirectories(Paths.get(shutdownTmpDir));
 
@@ -105,14 +106,15 @@ public class ItPodsShutdown extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
 
       destroyDomain();
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName());
 
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
 
   private static Domain createDomain() throws Exception {
-    
+
     Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
     domainMap.put("namespace", domainNS1);
     domainMap.put("domainUID", "domainpodsshutdown");
@@ -129,7 +131,7 @@ public class ItPodsShutdown extends BaseTest {
 
   private static void getDefaultShutdownTime() throws Exception {
     terminationDefaultOptionsTime = shutdownServer("managed-server1");
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         " termination pod's time with default shutdown options is: "
             + terminationDefaultOptionsTime);
   }
@@ -165,8 +167,8 @@ public class ItPodsShutdown extends BaseTest {
    * send request to web app deployed on wls.
    *
    * @param testAppPath - URL path for webapp
-   * @param domain - Domain where webapp deployed
-   * @param deployApp - option to build and deployApp
+   * @param domain      - Domain where webapp deployed
+   * @param deployApp   - option to build and deployApp
    * @throws Exception exception
    */
   public static void callWebApp(String testAppPath, Domain domain, boolean deployApp)
@@ -232,7 +234,7 @@ public class ItPodsShutdown extends BaseTest {
     cmd.append(" -n ").append(domainNS);
     cmd.append(" | grep SHUTDOWN -A 1 ");
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         " Get SHUTDOWN props for " + podName + " in namespace " + " with command: '" + cmd + "'");
 
     ExecResult result = ExecCommand.exec(cmd.toString());
@@ -260,7 +262,8 @@ public class ItPodsShutdown extends BaseTest {
   @Test
   public void testAddShutdownOptionsToMS() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     String podName = domainUid + "-managed-server1";
     Files.createDirectories(Paths.get(shutdownTmpDir));
@@ -293,7 +296,8 @@ public class ItPodsShutdown extends BaseTest {
   @Test
   public void testAddShutdownOptionToCluster() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     Files.createDirectories(Paths.get(shutdownTmpDir));
@@ -328,7 +332,8 @@ public class ItPodsShutdown extends BaseTest {
   public void testAddShutdownOptionsToDomain() throws Exception {
 
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     Files.createDirectories(Paths.get(shutdownTmpDir));
@@ -361,7 +366,8 @@ public class ItPodsShutdown extends BaseTest {
   public void testAddShutdownOptionsToMsIgnoreSessions() throws Exception {
 
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     Files.createDirectories(Paths.get(shutdownTmpDir));
@@ -382,7 +388,7 @@ public class ItPodsShutdown extends BaseTest {
       throw new Exception("FAILURE: ignored opened session during shutdown");
     }
     long terminationTimeWithIgnoreSessionFalse = terminationTime;
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         " Termination time with ignoreSession=false :" + terminationTimeWithIgnoreSessionFalse);
 
     shutdownProps = new HashMap();
@@ -396,7 +402,7 @@ public class ItPodsShutdown extends BaseTest {
           checkShutdownUpdatedProp(domainUid + "-managed-server1", "160", "true", "Graceful"));
 
       long terminationTimeWithIgnoreSessionTrue = terminationTime;
-      LoggerHelper.getLocal().log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO,
           " Termination time with ignoreSessions=true :" + terminationTimeWithIgnoreSessionTrue);
 
       if (terminationTimeWithIgnoreSessionFalse - (50 * 1000)
@@ -422,7 +428,8 @@ public class ItPodsShutdown extends BaseTest {
   public void testAddShutdownOptionsToMsTimeout() throws Exception {
 
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     Files.createDirectories(Paths.get(shutdownTmpDir));
@@ -461,7 +468,8 @@ public class ItPodsShutdown extends BaseTest {
   public void testAddShutdownOptionsToMsForced() throws Exception {
 
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     if (terminationDefaultOptionsTime == 0) {
@@ -500,7 +508,8 @@ public class ItPodsShutdown extends BaseTest {
   @Test
   public void testAddEnvShutdownOptions() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Files.createDirectories(Paths.get(shutdownTmpDir));
     // Modify the original domain yaml to include shutdown env vars options in domain spec node
@@ -532,7 +541,8 @@ public class ItPodsShutdown extends BaseTest {
   @Test
   public void testShutdownOptionsOverrideViaEnv() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     Files.createDirectories(Paths.get(shutdownTmpDir));
@@ -573,7 +583,8 @@ public class ItPodsShutdown extends BaseTest {
   @Test
   public void testShutdownOptionsOverrideClusterLevel() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Files.createDirectories(Paths.get(shutdownTmpDir));
     // Modify the original domain yaml to include shutdown env vars options in domain spec node

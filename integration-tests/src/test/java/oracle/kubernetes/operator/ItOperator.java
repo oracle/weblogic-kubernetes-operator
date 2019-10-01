@@ -33,7 +33,7 @@ public class ItOperator extends BaseTest {
   private static Operator operator1;
   private static String domainNS1;
   private static String testClassName;
-  
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -43,21 +43,22 @@ public class ItOperator extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
-    
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+
     // initialize test properties and create the directories
     initialize(APP_PROPS_FILE, testClassName);
     // create operator1
     if (operator1 == null) {
-      Map<String, Object> operatorMap = 
+      Map<String, Object> operatorMap =
           TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
       operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       Assert.assertNotNull(operator1);
-      domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+      domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
     }
   }
 
- 
+
   /**
    * Create operator and verify its deployed successfully. Create domain and verify domain is
    * started. Verify admin external service by accessing admin REST endpoint with nodeport in URL
@@ -74,9 +75,10 @@ public class ItOperator extends BaseTest {
   @Test
   public void testDomainOnPvUsingWlst() throws Exception {
     Assume.assumeTrue(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Creating Operator & waiting for the script to complete execution");
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
@@ -96,7 +98,7 @@ public class ItOperator extends BaseTest {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
-    } 
+    }
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -114,9 +116,10 @@ public class ItOperator extends BaseTest {
   @Test
   public void testDomainOnPvUsingWdt() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Creating Domain using DomainOnPVUsingWDT & verifing the domain creation");
 
     Domain domain = null;
@@ -124,14 +127,14 @@ public class ItOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       //create operator just for this test to match the namespaces with wldf-policy.yaml
-      Map<String, Object> operatorMap = 
+      Map<String, Object> operatorMap =
           TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
       ArrayList<String> targetDomainsNS = new ArrayList<String>();
       targetDomainsNS.add("test2");
       operatorMap.put("domainNamespaces", targetDomainsNS);
       operatorMap.put("namespace", "weblogic-operator2");
       operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-      
+
       // create domain
       Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
       domainMap.put("namespace", "test2");
@@ -153,7 +156,7 @@ public class ItOperator extends BaseTest {
       if (operator != null && (JENKINS || testCompletedSuccessfully)) {
         operator.destroy();
       }
-    } 
+    }
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -173,9 +176,10 @@ public class ItOperator extends BaseTest {
   @Test
   public void testTwoDomainsManagedByTwoOperators() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Creating Domain domain1 & verifing the domain creation");
 
     Domain domain1 = null;
@@ -190,12 +194,12 @@ public class ItOperator extends BaseTest {
       domain1 = TestUtils.createDomain(wlstDomainMap);
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1, false);
-      Map<String, Object> operatorMap = 
+      Map<String, Object> operatorMap =
           TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
-      Operator operator2 = 
+      Operator operator2 =
           TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-      String domainNS2 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
-      
+      String domainNS2 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+
       // create domain2 with configured cluster
       // ToDo: configured cluster support is removed from samples, modify the test to create
       // configured cluster
@@ -205,17 +209,17 @@ public class ItOperator extends BaseTest {
       domain2 = TestUtils.createDomain(wdtDomainMap);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2, false);
-      LoggerHelper.getLocal().log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO,
           "Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
       testClusterScaling(operator2, domain2, false);
 
-      LoggerHelper.getLocal().log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO,
           "Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
-      LoggerHelper.getLocal().log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO,
           "Destroy and create domain1 and verify no impact on domain2");
       domain1.destroy();
       domain1.create();
@@ -234,7 +238,7 @@ public class ItOperator extends BaseTest {
         domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
       }
       if (!domainUidsToBeDeleted.equals("")) {
-        LoggerHelper.getLocal().log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO,
             "About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
         if (domain1 != null) {
@@ -244,7 +248,7 @@ public class ItOperator extends BaseTest {
           TestUtils.verifyAfterDeletion(domain2);
         }
       }
-    } 
+    }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -263,9 +267,10 @@ public class ItOperator extends BaseTest {
   @Test
   public void testTwoDomainsManagedByOneOperatorSharingPV() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Creating Domain domain1 & verifing the domain creation");
 
 
@@ -293,17 +298,17 @@ public class ItOperator extends BaseTest {
       domain2 = TestUtils.createDomain(domain2Map);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2, false);
-      LoggerHelper.getLocal().log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO,
           "Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
       testClusterScaling(operator1, domain2, false);
 
-      LoggerHelper.getLocal().log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO,
           "Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
-      LoggerHelper.getLocal().log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO,
           "Destroy and create domain1 and verify no impact on domain2");
       domain1.destroy();
       domain1.create();
@@ -322,7 +327,7 @@ public class ItOperator extends BaseTest {
         domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
       }
       if (!domainUidsToBeDeleted.equals("")) {
-        LoggerHelper.getLocal().log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO,
             "About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
         if (domain1 != null) {
@@ -332,7 +337,7 @@ public class ItOperator extends BaseTest {
           TestUtils.verifyAfterDeletion(domain2);
         }
       }
-    } 
+    }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -348,9 +353,10 @@ public class ItOperator extends BaseTest {
   @Test
   public void testCreateDomainWithStartPolicyAdminOnly() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Creating Domain domain & verifing the domain creation");
     // create domain
     Domain domain = null;
@@ -371,7 +377,7 @@ public class ItOperator extends BaseTest {
       }
     }
 
-    domain.createDomainOnExistingDirectory(); 
+    domain.createDomainOnExistingDirectory();
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -385,10 +391,11 @@ public class ItOperator extends BaseTest {
   @Test
   public void testCreateDomainPvReclaimPolicyRecycle() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Creating Domain domain & verifing the domain creation");
     // create domain
     Domain domain = null;
@@ -406,7 +413,7 @@ public class ItOperator extends BaseTest {
         domain.shutdown();
       }
     }
-    domain.deletePvcAndCheckPvReleased(); 
+    domain.deletePvcAndCheckPvReleased();
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -423,9 +430,10 @@ public class ItOperator extends BaseTest {
   @Test
   public void testCreateDomainWithDefaultValuesInSampleInputs() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Creating Domain domain10 & verifing the domain creation");
 
     // create domain10
@@ -444,7 +452,7 @@ public class ItOperator extends BaseTest {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
-    } 
+    }
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -459,17 +467,18 @@ public class ItOperator extends BaseTest {
   @Test
   public void testOperatorRestIdentityBackwardCompatibility() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility ");
-    Map<String, Object> operatorMap = 
+    Map<String, Object> operatorMap =
         TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
-    Operator operatorForBackwardCompatibility = 
+    Operator operatorForBackwardCompatibility =
         TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
     operatorForBackwardCompatibility.verifyOperatorExternalRestEndpoint();
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Operator using legacy REST identity created successfully");
-    operatorForBackwardCompatibility.destroy(); 
+    operatorForBackwardCompatibility.destroy();
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -485,14 +494,14 @@ public class ItOperator extends BaseTest {
 
     logTestBegin("testOperatorRestUsingCertificateChain");
     LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility");
-    Map<String, Object> operatorMap = 
+    Map<String, Object> operatorMap =
         TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
-    Operator  operatorForRESTCertChain = 
+    Operator operatorForRESTCertChain =
         TestUtils.createOperator(operatorMap, RestCertType.CHAIN);
     operatorForRESTCertChain.verifyOperatorExternalRestEndpoint();
     operatorForRESTCertChain.destroy();
-    LoggerHelper.getLocal().log(Level.INFO, 
-        "Operator using legacy REST identity created successfully"); 
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Operator using legacy REST identity created successfully");
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - testOperatorRestUsingCertificateChain");
   }
 
@@ -505,7 +514,8 @@ public class ItOperator extends BaseTest {
   @Test
   public void testDomainInImageUsingWlst() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     LoggerHelper.getLocal().log(Level.INFO, "Creating Domain & verifing the domain creation");
@@ -513,7 +523,7 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = 
+      Map<String, Object> domainMap =
           TestUtils.createDomainInImageMap(getNewNumber(), false, testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.remove("clusterType");
@@ -526,7 +536,7 @@ public class ItOperator extends BaseTest {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
-    } 
+    }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -540,7 +550,8 @@ public class ItOperator extends BaseTest {
   public void testDomainInImageUsingWdt() throws Exception {
     Assume.assumeTrue(QUICKTEST);
 
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     LoggerHelper.getLocal().log(Level.INFO, "Creating Domain & verifing the domain creation");
@@ -548,7 +559,7 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = 
+      Map<String, Object> domainMap =
           TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.put(
@@ -567,7 +578,7 @@ public class ItOperator extends BaseTest {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
       }
-    } 
+    }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -578,7 +589,7 @@ public class ItOperator extends BaseTest {
     if (FULLTEST) {
       testDomainLifecyle(operator, domain);
       testOperatorLifecycle(operator, domain);
-    }    
+    }
     return domain;
   }
 
@@ -597,13 +608,13 @@ public class ItOperator extends BaseTest {
         adminPod,
         domain.getDomainNs());
     String[] args = {
-      scriptsLocInPod + "/modifyAcceptBacklog.py",
-      BaseTest.getUsername(),
-      BaseTest.getPassword(),
-      "t3://" + adminPod + ":" + domain.getDomainMap().get("t3ChannelPort")
+        scriptsLocInPod + "/modifyAcceptBacklog.py",
+        BaseTest.getUsername(),
+        BaseTest.getPassword(),
+        "t3://" + adminPod + ":" + domain.getDomainMap().get("t3ChannelPort")
     };
     TestUtils.callShellScriptByExecToPod(
         adminPod, domain.getDomainNs(), scriptsLocInPod, "callpyscript.sh", args);
   }
-  
+
 }

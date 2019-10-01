@@ -7,7 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Secret {
-  
+
   protected String secretName;
   protected String namespace;
   protected String username;

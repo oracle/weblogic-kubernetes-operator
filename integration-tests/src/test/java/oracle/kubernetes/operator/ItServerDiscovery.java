@@ -36,8 +36,8 @@ public class ItServerDiscovery extends BaseTest {
 
   private static Operator operator;
   private static Domain domain;
-  private static String domainNS ;
-  private static String testClassName ;
+  private static String domainNS;
+  private static String testClassName;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -50,17 +50,18 @@ public class ItServerDiscovery extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-  
+
       // create operator1
-      if(operator == null ) {
+      if (operator == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
-        domainNS = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
-      }  
+        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+      }
       // create domain
       if (domain == null) {
         LoggerHelper.getLocal().log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
@@ -69,23 +70,23 @@ public class ItServerDiscovery extends BaseTest {
         domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
       }
-  
+
       final String testYamlFileName = "custom-domaint.yaml";
-  
+
       String domainYaml =
           BaseTest.getUserProjectsDir()
               + "/weblogic-domains/"
               + domain.getDomainUid()
               + "/domain.yaml";
-  
+
       // create test domain yaml file
       testDomainYamlFile = BaseTest.getResultDir() + "/" + testYamlFileName;
-  
+
       Path sourceFile = Paths.get(domainYaml);
       Path targetFile = Paths.get(testDomainYamlFile);
-  
+
       Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-  
+
       String content = new String(Files.readAllBytes(targetFile), StandardCharsets.UTF_8);
       content = content.replaceAll("replicas: 2", "replicas: 3");
       Files.write(targetFile, content.getBytes(StandardCharsets.UTF_8));
@@ -103,11 +104,12 @@ public class ItServerDiscovery extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "++++++++++++++++++++++++++++++++++");
       LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
       LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-  
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-  
+
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName());
+
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
-    }    
+    }
   }
 
   /**
@@ -119,7 +121,8 @@ public class ItServerDiscovery extends BaseTest {
   @Test
   public void testOpConnToNewMS() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     LoggerHelper.getLocal().log(Level.INFO, "Stop the Operator");
@@ -152,7 +155,8 @@ public class ItServerDiscovery extends BaseTest {
   @Test
   public void testOpReconnToDomain() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     Map<String, Object> domainMap = domain.getDomainMap();

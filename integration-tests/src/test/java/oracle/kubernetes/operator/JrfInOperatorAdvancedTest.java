@@ -26,7 +26,9 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-/** Test Cases to cover bugs while testing Operator for JRF domains. */
+/**
+ * Test Cases to cover bugs while testing Operator for JRF domains.
+ */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class JrfInOperatorAdvancedTest extends BaseTest {
 
@@ -52,15 +54,15 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
     if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
-  
+
       // create DB used for jrf domain
       DbUtils.createOracleDB(DB_PROP_FILE);
-  
+
       // run RCU first
       DbUtils.deleteNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
       DbUtils.createNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
       rcuPodName = DbUtils.createRcuPod(DbUtils.DEFAULT_RCU_NAMESPACE);
-  
+
       // TODO: reconsider the logic to check the db readiness
       // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
       LoggerHelper.getLocal().log(Level.INFO, "waiting for the db to be visible to rcu script ...");
@@ -80,9 +82,10 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
       LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
       LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-  
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-  
+
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName());
+
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
@@ -97,7 +100,8 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
   @Test
   public void testJrfDomainClusterRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
 
     if (operator1 == null) {
@@ -152,7 +156,8 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       int expectedMsPodsCount =
           (Integer) domain1.getDomainMap().get("initialManagedServerReplicas");
       // TODO: this verification will fail due to bug 29678557
-      LoggerHelper.getLocal().log(Level.INFO, "Verifying the number of not ready MS pods can not exceed maxUnavailable value");
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Verifying the number of not ready MS pods can not exceed maxUnavailable value");
       verifyMsPodsNotReadyCountNotExceedMaxUnAvailable(domain1, expectedMsPodsCount, 2);
 
       // TODO: this verification will fail due to bug 29720185
@@ -185,7 +190,8 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
   @Test
   public void testJrfDomainMsPodCreated() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
 
     if (operator1 == null) {
@@ -232,7 +238,8 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
   @Test
   public void testJrfDomainCreateDomainScriptsMountPath() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
 
     if (operator1 == null) {
@@ -279,7 +286,8 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
   @Test
   public void testJrfDomainAdminPortEnabled() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
 
     if (operator1 == null) {
@@ -333,7 +341,8 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
   @Test
   public void testJrfDomainAdminT3Channel() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
 
     if (operator1 == null) {
@@ -375,9 +384,9 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    * verify that during the rolling restart, the number of managed server pods which are not ready
    * can not exceed the maxUnAvailable value.
    *
-   * @param domain - jrfdomain
+   * @param domain              - jrfdomain
    * @param expectedMsPodsCount - total number of managed server pods expected
-   * @param maxUnavailable - maxUnAvailable value of the managed server pods
+   * @param maxUnavailable      - maxUnAvailable value of the managed server pods
    * @throws Exception - if any error occurs
    */
   private void verifyMsPodsNotReadyCountNotExceedMaxUnAvailable(
@@ -397,7 +406,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
     int msPodRunningAndReadyCount = getMsPodsRunningAndReadyCount(domain);
     while (i < getMaxIterationsPod() * 8 && msPodRunningAndReadyCount != expectedMsPodsCount) {
       int msPodsNotReadyCount = getMsPodsNotReadyCount(domain);
-      LoggerHelper.getLocal().log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO,
           "Iter ["
               + i
               + "/"

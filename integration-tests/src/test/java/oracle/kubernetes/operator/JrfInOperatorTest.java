@@ -53,15 +53,15 @@ public class JrfInOperatorTest extends BaseTest {
     if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
-  
+
       // create DB used for jrf domain
       DbUtils.createOracleDB(DB_PROP_FILE);
-  
+
       // run RCU first
       DbUtils.deleteNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
       DbUtils.createNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
       rcuPodName = DbUtils.createRcuPod(DbUtils.DEFAULT_RCU_NAMESPACE);
-  
+
       // TODO: reconsider the logic to check the db readiness
       // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
       LoggerHelper.getLocal().info("waiting for the db to be visible to rcu script ...");
@@ -81,9 +81,10 @@ public class JrfInOperatorTest extends BaseTest {
       LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
       LoggerHelper.getLocal().info("BEGIN");
       LoggerHelper.getLocal().info("Run once, release cluster lease");
-  
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-  
+
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName());
+
       LoggerHelper.getLocal().info("SUCCESS");
     }
   }
@@ -98,7 +99,8 @@ public class JrfInOperatorTest extends BaseTest {
   @Test
   public void testJrfDomainOnPvUsingWlst() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().info("Creating Operator & waiting for the script to complete execution");
     // create operator1
@@ -146,7 +148,8 @@ public class JrfInOperatorTest extends BaseTest {
   @Test
   public void testTwoJrfDomainsManagedByTwoOperators() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     LoggerHelper.getLocal().info("Checking if operator1 and domain1 are running, if not creating");
@@ -243,7 +246,8 @@ public class JrfInOperatorTest extends BaseTest {
   @Test
   public void testTwoJrfDomainsManagedByOneOperatorInSameNS() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     LoggerHelper.getLocal().info("Checking if operator1 and domain1 are running, if not creating");
@@ -335,7 +339,8 @@ public class JrfInOperatorTest extends BaseTest {
   @Test
   public void testTwoJrfDomainsManagedByOneOperatorInDifferentNS() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     LoggerHelper.getLocal().info("Checking if operator1 and domain1 are running, if not creating");
@@ -428,7 +433,8 @@ public class JrfInOperatorTest extends BaseTest {
   @Test
   public void testCreateJrfDomainWithStartPolicyAdminOnly() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
@@ -464,7 +470,8 @@ public class JrfInOperatorTest extends BaseTest {
   @Test
   public void testCreateJrfDomainPvReclaimPolicyRecycle() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
@@ -500,7 +507,8 @@ public class JrfInOperatorTest extends BaseTest {
   @Test
   public void testCreateJrfDomainWithDefaultValuesInSampleInputs() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().info("Creating Domain domain10 & verifing the domain creation");
     if (operator1 == null) {
@@ -541,7 +549,8 @@ public class JrfInOperatorTest extends BaseTest {
   @Test
   public void testAutoAndCustomSitConfigOverrides() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
 
     if (operator1 == null) {
@@ -634,7 +643,7 @@ public class JrfInOperatorTest extends BaseTest {
    * advanced test cases.
    *
    * @param operator - weblogic operator
-   * @param domain - jrfdomain
+   * @param domain   - jrfdomain
    * @throws Exception - if any error occurs
    */
   private void testAdvancedUseCasesForADomain(Operator operator, JrfDomain domain)
@@ -643,6 +652,6 @@ public class JrfInOperatorTest extends BaseTest {
     int port = (Integer) domain.getDomainMap().get("managedServerPort");
     testDomainLifecyle(operator, domain, port);
     testOperatorLifecycle(operator, domain);
-    
+
   }
 }

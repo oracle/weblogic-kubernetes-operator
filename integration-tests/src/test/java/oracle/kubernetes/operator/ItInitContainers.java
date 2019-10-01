@@ -26,7 +26,9 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-/** Integration tests for testing the init container for WebLogic server pods. */
+/**
+ * Integration tests for testing the init container for WebLogic server pods.
+ */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItInitContainers extends BaseTest {
 
@@ -37,7 +39,7 @@ public class ItInitContainers extends BaseTest {
   private static String originalYaml;
   private static String testClassName;
   private static String domainNS;
-  
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -48,17 +50,18 @@ public class ItInitContainers extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
       LoggerHelper.getLocal().log(Level.INFO, "staticPrepare------Begin");
-      
+
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
-        domainNS = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
       initContainerTmpDir = BaseTest.getResultDir() + "/initconttemp";
       Files.createDirectories(Paths.get(initContainerTmpDir));
@@ -72,7 +75,7 @@ public class ItInitContainers extends BaseTest {
       Assert.assertNotNull(domain);
       LoggerHelper.getLocal().log(Level.INFO, "staticPrepare------End");
     }
-    
+
   }
 
   /**
@@ -90,7 +93,8 @@ public class ItInitContainers extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName());
       LoggerHelper.getLocal().log(Level.INFO, "staticUnPrepare------End");
     }
   }
@@ -127,12 +131,13 @@ public class ItInitContainers extends BaseTest {
    * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     WebLogic server pod doesn't go through initialization and ready state
+   *                   WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testDomainInitContainer() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
 
@@ -154,12 +159,13 @@ public class ItInitContainers extends BaseTest {
    * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *                   weblogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testAdminServerInitContainer() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();
 
@@ -179,12 +185,13 @@ public class ItInitContainers extends BaseTest {
    * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *                   weblogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testClusterInitContainer() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();
     final String ms2PodName = domainUid + "-managed-server2";
@@ -206,12 +213,13 @@ public class ItInitContainers extends BaseTest {
    * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     WebLogic server pod doesn't go through initialization and ready state
+   *                   WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testMsInitContainer() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();
     final String ms1PodName = domainUid + "-managed-server1";
@@ -233,12 +241,13 @@ public class ItInitContainers extends BaseTest {
    * started as result of it.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *                   weblogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testDomainInitContainerNegative() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();
 
@@ -259,12 +268,13 @@ public class ItInitContainers extends BaseTest {
    * level when the names are different.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     WebLogic server pod doesn't go through initialization and ready state
+   *                   WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testInitContainerDiffLevelDiffName() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server2"};
 
@@ -291,12 +301,13 @@ public class ItInitContainers extends BaseTest {
    * both level when the names are same.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     WebLogic server pod doesn't go through initialization and ready state
+   *                   WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testInitContainerDiffLevelSameName() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server2"};
 
@@ -319,12 +330,13 @@ public class ItInitContainers extends BaseTest {
    * Add multiple initContainers at domain level and verify all of the init containers are run.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     WebLogic server pod doesn't go through initialization and ready state
+   *                   WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testInitContainerMultiple() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
 
@@ -350,7 +362,7 @@ public class ItInitContainers extends BaseTest {
    * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     WebLogic server pod doesn't go through initialization and ready state
+   *                   WebLogic server pod doesn't go through initialization and ready state
    */
   private void testInitContainer(String modYaml) throws Exception {
     // Write the modified yaml to a new file

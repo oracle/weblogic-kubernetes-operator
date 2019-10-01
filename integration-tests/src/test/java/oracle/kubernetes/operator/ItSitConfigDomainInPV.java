@@ -4,32 +4,36 @@
 package oracle.kubernetes.operator;
 
 import java.util.logging.Level;
+
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-/** JUnit test class used for testing configuration override use cases for domain in pv WLS. */
+/**
+ * JUnit test class used for testing configuration override use cases for domain in pv WLS.
+ */
 public class ItSitConfigDomainInPV extends SitConfig {
   private static String testClassName;
-  
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
    *
    * @throws Exception when the initialization, creating directories , copying files and domain
-   *     creation fails.
+   *                   creation fails.
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
       staticPrepare(
           false,
-          "integration-tests/src/test/resources/sitconfig/" 
-          + "scripts/create-domain-auto-custom-sit-config20.py", testClassName);
+          "integration-tests/src/test/resources/sitconfig/"
+              + "scripts/create-domain-auto-custom-sit-config20.py", testClassName);
     }
   }
 
@@ -59,7 +63,8 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @Test
   public void testCustomSitConfigOverridesForDomainInPV() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForDomain(testMethod);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
@@ -77,7 +82,8 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @Test
   public void testCustomSitConfigOverridesForDomainMsInPV() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForDomainMS(testMethod);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
@@ -100,7 +106,8 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @Test
   public void testCustomSitConfigOverridesForJdbcInPV() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForJdbc(testMethod);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
@@ -119,7 +126,8 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @Test
   public void testCustomSitConfigOverridesForJmsInPV() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForJms(testMethod);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
@@ -140,7 +148,8 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @Test
   public void testCustomSitConfigOverridesForWldfInPV() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testCustomSitConfigOverridesForWldf(testMethod);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
@@ -156,7 +165,8 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @Test
   public void testConfigOverrideAfterDomainStartupInPV() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testConfigOverrideAfterDomainStartup(testMethod);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
@@ -172,7 +182,8 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @Test
   public void testOverrideJdbcResourceAfterDomainStartInPV() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testOverrideJdbcResourceAfterDomainStart(testMethod);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
@@ -187,7 +198,8 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @Test
   public void testOverrideJdbcResourceWithNewSecretInPV() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     testOverrideJdbcResourceWithNewSecret(testMethod);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);

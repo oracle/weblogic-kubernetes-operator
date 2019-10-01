@@ -53,7 +53,8 @@ public class ItManagedCoherence extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
       String template =
@@ -69,16 +70,18 @@ public class ItManagedCoherence extends BaseTest {
           Paths.get(customDomainTemplate),
           StandardCopyOption.REPLACE_EXISTING);
       Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
+
+      // create operator1
+      if (operator1 == null) {
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(
+            getNewNumber(), true, testClassName);
+        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assert.assertNotNull(operator1);
+        domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+      }
     }
-    
-    // create operator1
-    if (operator1 == null) {
-      Map<String, Object> operatorMap = TestUtils.createOperatorMap(
-                      getNewNumber(), true, testClassName);
-      operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-      Assert.assertNotNull(operator1);
-      domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
-    }
+
+
   }
 
   /**
@@ -98,8 +101,8 @@ public class ItManagedCoherence extends BaseTest {
   /**
    * Verifies all of the servers in the cluster are in Running status.
    *
-   * @param domain Domain
-   * @param pods array pod names to check the status for
+   * @param domain    Domain
+   * @param pods      array pod names to check the status for
    * @param domainUid Domain UID
    */
   private static void verifyServersStatus(Domain domain, String[] pods, String domainUid) {
@@ -123,11 +126,12 @@ public class ItManagedCoherence extends BaseTest {
   @Test
   public void testCreateCoherenceDomainOnPvUsingWlst() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
 
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, 
-                "Creating coeherence domain on pv using wlst and testing the cache");
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Creating coeherence domain on pv using wlst and testing the cache");
 
     testCompletedSuccessfully = false;
     domain = null;
@@ -143,15 +147,15 @@ public class ItManagedCoherence extends BaseTest {
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
-        DOMAINUID + "-" + domain.getAdminServerName(),
-        DOMAINUID + "-managed-server",
-        DOMAINUID + "-managed-server1",
-        DOMAINUID + "-managed-server2",
-        DOMAINUID + "-new-managed-server1",
-        DOMAINUID + "-new-managed-server2",
+          DOMAINUID + "-" + domain.getAdminServerName(),
+          DOMAINUID + "-managed-server",
+          DOMAINUID + "-managed-server1",
+          DOMAINUID + "-managed-server2",
+          DOMAINUID + "-new-managed-server1",
+          DOMAINUID + "-new-managed-server2",
       };
       verifyServersStatus(domain, pods, DOMAINUID);
-  
+
       // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
       TestUtils.buildDeployCoherenceAppInPod(
           domain,
@@ -161,13 +165,13 @@ public class ItManagedCoherence extends BaseTest {
           BaseTest.getPassword(),
           appToDeploy,
           "dataCluster");
-  
+
       coherenceCacheTest();
       testCompletedSuccessfully = true;
     } finally {
-     if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-       TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-     }
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -183,16 +187,17 @@ public class ItManagedCoherence extends BaseTest {
   @Test
   public void testCreateCoherenceDomainInImageUsingWlst() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
 
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO, 
-            "Creating coeherence domain in image using wlst and testing the cache");
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Creating coeherence domain in image using wlst and testing the cache");
 
     testCompletedSuccessfully = false;
     domain = null;
     try {
-      Map<String, Object> domainMap = 
+      Map<String, Object> domainMap =
           TestUtils.createDomainInImageMap(getNewNumber(), false, testClassName);
       domainMap.put("clusterName", "appCluster");
       domainMap.put("domainUID", DOMAINUID1);
@@ -204,15 +209,15 @@ public class ItManagedCoherence extends BaseTest {
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
-        DOMAINUID1 + "-" + domain.getAdminServerName(),
-        DOMAINUID1 + "-managed-server",
-        DOMAINUID1 + "-managed-server1",
-        DOMAINUID1 + "-managed-server2",
-        DOMAINUID1 + "-new-managed-server1",
-        DOMAINUID1 + "-new-managed-server2",
+          DOMAINUID1 + "-" + domain.getAdminServerName(),
+          DOMAINUID1 + "-managed-server",
+          DOMAINUID1 + "-managed-server1",
+          DOMAINUID1 + "-managed-server2",
+          DOMAINUID1 + "-new-managed-server1",
+          DOMAINUID1 + "-new-managed-server2",
       };
       verifyServersStatus(domain, pods, DOMAINUID1);
-  
+
       // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
       TestUtils.buildDeployCoherenceAppInPod(
           domain,
@@ -222,9 +227,9 @@ public class ItManagedCoherence extends BaseTest {
           BaseTest.getPassword(),
           appToDeploy,
           "dataCluster");
-  
+
       coherenceCacheTest();
-  
+
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
@@ -253,12 +258,12 @@ public class ItManagedCoherence extends BaseTest {
     }
     // get the data from cache
     result = getCacheContents();
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Cache contains the following entries \n" + result.stdout());
 
     // Now clear the cache
     result = clearCache();
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Cache is cleared and should be empty" + result.stdout());
   }
 

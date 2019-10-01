@@ -23,7 +23,9 @@ import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.Assert;
 
-/** JUnit test class used for testing configuration override use cases. */
+/**
+ * JUnit test class used for testing configuration override use cases.
+ */
 public class SitConfig extends BaseTest {
 
   private static final String DOMAINUID = "customsitconfigdomain";
@@ -49,14 +51,14 @@ public class SitConfig extends BaseTest {
   private static final String oldSecret = "test-secrets";
   private static final String newSecret = "test-secrets-new";
   private static String domainNS;
-  
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
    *
    * @throws Exception when the initialization, creating directories , copying files and domain
-   *     creation fails.
+   *                   creation fails.
    */
   protected static void staticPrepare(boolean domainInImage, String domainScript, String testClassName)
       throws Exception {
@@ -69,7 +71,7 @@ public class SitConfig extends BaseTest {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
-        domainNS = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
       TEST_RES_DIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
       sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp";
@@ -88,11 +90,11 @@ public class SitConfig extends BaseTest {
       JDBC_URL = "jdbc:mysql://" + fqdn + ":" + MYSQL_DB_PORT + "/";
       // copy the configuration override files to replacing the JDBC_URL token
       String[] files = {
-        "config.xml",
-        "jdbc-JdbcTestDataSource-0.xml",
-        "diagnostics-WLDF-MODULE-0.xml",
-        "jms-ClusterJmsSystemResource.xml",
-        "version.txt"
+          "config.xml",
+          "jdbc-JdbcTestDataSource-0.xml",
+          "diagnostics-WLDF-MODULE-0.xml",
+          "jms-ClusterJmsSystemResource.xml",
+          "version.txt"
       };
       copySitConfigFiles(files, oldSecret);
       // create weblogic domain with configOverrides
@@ -135,7 +137,8 @@ public class SitConfig extends BaseTest {
         operator1.destroy();
         operator1 = null;
       }
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName());
     }
   }
 
@@ -152,7 +155,7 @@ public class SitConfig extends BaseTest {
     // load input yaml to map and add configOverrides
     Map<String, Object> domainMap = null;
     if (domainInImage) {
-      domainMap = TestUtils.createDomainInImageMap(getNewNumber(),false, "sitconfigdomaininimage");
+      domainMap = TestUtils.createDomainInImageMap(getNewNumber(), false, "sitconfigdomaininimage");
     } else {
       domainMap = TestUtils.createDomainMap(getNewNumber(), "sitconfigdomaininpv");
     }

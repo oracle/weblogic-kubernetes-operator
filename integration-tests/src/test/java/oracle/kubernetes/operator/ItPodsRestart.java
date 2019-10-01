@@ -44,7 +44,7 @@ public class ItPodsRestart extends BaseTest {
   private static String domainNS;
   private static boolean testCompletedSuccessfully;
   private static String testClassName;
-  
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -57,7 +57,8 @@ public class ItPodsRestart extends BaseTest {
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     if (QUICKTEST) {
-      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
 
@@ -66,7 +67,7 @@ public class ItPodsRestart extends BaseTest {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
-        domainNS = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
       restartTmpDir = BaseTest.getResultDir() + "/restarttemp";
       Files.createDirectories(Paths.get(restartTmpDir));
@@ -98,7 +99,7 @@ public class ItPodsRestart extends BaseTest {
     domainMap.put("initialManagedServerReplicas", new Integer("1"));
     domainMap.put("namespace", domainNS);
     domainUid = (String) domainMap.get("domainUID");
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Creating and verifying the domain creation with domainUid: " + domainUid);
 
     domain = TestUtils.createDomain(domainMap);
@@ -124,10 +125,11 @@ public class ItPodsRestart extends BaseTest {
   @Test
   public void testServerPodsRestartByChangingEnvProperty() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  env property: StdoutDebugEnabled=false to StdoutDebugEnabled=true");
@@ -147,10 +149,11 @@ public class ItPodsRestart extends BaseTest {
   @Test
   public void testServerPodsRestartByChangingLogHomeEnabled() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  logHomeEnabled: true -->  logHomeEnabled: false");
@@ -169,10 +172,11 @@ public class ItPodsRestart extends BaseTest {
   @Test
   public void testServerPodsRestartByChangingImagePullPolicy() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " imagePullPolicy: IfNotPresent -->  imagePullPolicy: Never ");
@@ -192,10 +196,11 @@ public class ItPodsRestart extends BaseTest {
   @Test
   public void testServerPodsRestartByChangingIncludeServerOutInPodLog() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  includeServerOutInPodLog: true -->  includeServerOutInPodLog: false");
@@ -216,22 +221,23 @@ public class ItPodsRestart extends BaseTest {
   @Test
   public void testServerPodsRestartByChangingZImage() throws Exception {
     Assume.assumeTrue(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     testCompletedSuccessfully = false;
-    
+
     TestUtils.exec("docker images", true);
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "About to verifyDomainServerPodRestart for Domain: "
-         + domain.getDomainUid()
-         + "  Image property: "
-         + getWeblogicImageName()
-         + ":"
-         + getWeblogicImageTag()
-         + " to "
-         + getWeblogicImageName()
-         + ":"
-         + getWeblogicImageDevTag());
+            + domain.getDomainUid()
+            + "  Image property: "
+            + getWeblogicImageName()
+            + ":"
+            + getWeblogicImageTag()
+            + " to "
+            + getWeblogicImageName()
+            + ":"
+            + getWeblogicImageDevTag());
 
     String newImage = getWeblogicImageName() + ":" + getWeblogicImageDevTag();
     TestUtils.exec("docker pull " + newImage, true);
@@ -249,13 +255,14 @@ public class ItPodsRestart extends BaseTest {
    * serverPod: containerSecurityContext: runAsUser: 1000 fsGroup: 1000.
    *
    * @throws Exception - assertion fails due to unmatched value or errors occurred if tested servers
-   *     are not restarted or after restart the server yaml file doesn't include the new added
-   *     property
+   *                   are not restarted or after restart the server yaml file doesn't include the new added
+   *                   property
    */
   @Test
   public void testServerPodsRestartByChangingContSecurityContext() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     // firstly ensure that original domain.yaml doesn't include the property-to-be-added
@@ -267,7 +274,7 @@ public class ItPodsRestart extends BaseTest {
 
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "cont.security.context.domain.yaml";
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " change container securityContext:\n"
@@ -286,13 +293,14 @@ public class ItPodsRestart extends BaseTest {
    * podSecurityContext: runAsUser: 1000 fsGroup: 2000.
    *
    * @throws Exception - assertion fails due to unmatched value or errors occurred if tested servers
-   *     are not restarted or after restart the server yaml file doesn't include the new added
-   *     property
+   *                   are not restarted or after restart the server yaml file doesn't include the new added
+   *                   property
    */
   @Test
   public void testServerPodsRestartByChangingPodSecurityContext() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     // firstly ensure that original domain.yaml doesn't include the property-to-be-added
@@ -305,7 +313,7 @@ public class ItPodsRestart extends BaseTest {
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "pod.security.context.domain.yaml";
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " change securityContext:\n"
@@ -324,13 +332,14 @@ public class ItPodsRestart extends BaseTest {
    * -cpus - "2".
    *
    * @throws Exception - assertion fails due to unmatched value or errors occurred if tested servers
-   *     are not restarted or after restart the server yaml file doesn't include the new added
-   *     property
+   *                   are not restarted or after restart the server yaml file doesn't include the new added
+   *                   property
    */
   @Test
   public void testServerPodsRestartByChangingResource() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     // firstly ensure that original domain.yaml doesn't include the property-to-be-addeded
@@ -343,7 +352,7 @@ public class ItPodsRestart extends BaseTest {
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "resource.domain.yaml";
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " change resource:\n"
@@ -360,12 +369,13 @@ public class ItPodsRestart extends BaseTest {
    * recreated
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the
-   *     restartVersion:v1.1
+   *                   restartVersion:v1.1
    */
   @Test
   public void testAdminServerRestartVersion() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     String podName = domainUid + "-" + domain.getAdminServerName();
 
@@ -406,12 +416,13 @@ public class ItPodsRestart extends BaseTest {
    * recreated
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the
-   *     restartVersion:v1.1
+   *                   restartVersion:v1.1
    */
   @Test
   public void testClusterRestartVersion() throws Exception {
     Assume.assumeTrue(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     testCompletedSuccessfully = false;
     String podName = domainUid + "-managed-server1";
@@ -455,12 +466,13 @@ public class ItPodsRestart extends BaseTest {
    * <p>Currently failing and tracked by bug in BugDB - 29489387
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the
-   *     restartVersion:v1.1
+   *                   restartVersion:v1.1
    */
   @Test
   public void testMsRestartVersion() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     String podName = domainUid + "-managed-server1";
 
@@ -502,12 +514,13 @@ public class ItPodsRestart extends BaseTest {
    * recreated
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the
-   *     restartVersion:v1.1
+   *                   restartVersion:v1.1
    */
   @Test
   public void testDomainRestartVersion() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     String adminPod = domainUid + "-" + domain.getAdminServerName();
     String msPod = domainUid + "-managed-server1";
@@ -548,7 +561,7 @@ public class ItPodsRestart extends BaseTest {
   /**
    * Utility method to check if a pod is in Terminating or Running status.
    *
-   * @param podName - String name of the pod to check the status for
+   * @param podName           - String name of the pod to check the status for
    * @param podStatusExpected - String the expected status of Terminating || RUnning
    * @throws InterruptedException when thread is interrupted
    */

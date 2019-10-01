@@ -42,7 +42,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class K8sTestUtils {
-  
+
 
   static {
     try {
@@ -335,7 +335,7 @@ public class K8sTestUtils {
   /**
    * Utility method to get the pods in a namespace filtered by given label.
    *
-   * @param namespace - String namespace in which to look for the pods
+   * @param namespace      - String namespace in which to look for the pods
    * @param labelSelectors - String selector to filter the pods in the name space
    * @return - V1PodList List of the pods in the given name space.
    */
@@ -360,16 +360,16 @@ public class K8sTestUtils {
     LoggerHelper.getLocal().log(
         Level.INFO,
         "Pods in namespace :{0} and label :{1} :{2}",
-        new Object[] {namespace, labelSelectors, v1PodList.getItems().size()});
+        new Object[]{namespace, labelSelectors, v1PodList.getItems().size()});
     return v1PodList;
   }
 
   /**
    * Utility method to get a pod matching the given name.
    *
-   * @param namespace - String namespace in which to look for the pods
+   * @param namespace      - String namespace in which to look for the pods
    * @param labelSelectors - String selector to filter the pods in the name space
-   * @param podName - String name of the pod to query for
+   * @param podName        - String name of the pod to query for
    * @return V1Pod object matching the podName
    */
   public V1Pod getPod(String namespace, String labelSelectors, String podName) {
@@ -388,9 +388,9 @@ public class K8sTestUtils {
    * by looking at the metadata.getDeletionTimestamp field, a non null value means the pod is
    * terminating.
    *
-   * @param namespace - String namespace in which to look for the pods
+   * @param namespace      - String namespace in which to look for the pods
    * @param labelSelectors - String selector to filter the pods in the name space
-   * @param podName - String name of the pod to query for
+   * @param podName        - String name of the pod to query for
    * @return boolean true if the pod is in Terminating status
    */
   public boolean isPodTerminating(String namespace, String labelSelectors, String podName) {
@@ -412,9 +412,9 @@ public class K8sTestUtils {
    * Utility method to determine if a pod is in Running status It detects the Running status by
    * looking at the metadata.getDeletionTimestamp field, a null value means the pod is Running.
    *
-   * @param namespace - String namespace in which to look for the pods
+   * @param namespace      - String namespace in which to look for the pods
    * @param labelSelectors - String selector to filter the pods in the name space
-   * @param podName - String name of the pod to query for
+   * @param podName        - String name of the pod to query for
    * @return boolean true if the pod is in Terminating status
    */
   public boolean isPodRunning(String namespace, String labelSelectors, String podName) {

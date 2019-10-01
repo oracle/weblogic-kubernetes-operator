@@ -16,8 +16,8 @@ import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -46,8 +46,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (QUICKTEST) {
-      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
-      
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
+
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
     }
@@ -57,7 +58,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   public void prepare() {
     number = getNewNumber();
   } */
-  
+
   /**
    * Releases k8s cluster lease, archives result, pv directories.
    *
@@ -76,7 +77,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testOperatorCreateDeleteCreate() throws Exception {
     Assume.assumeTrue(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator firstoperator = null;
     Operator secondoperator = null;
@@ -99,7 +101,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
 
       LoggerHelper.getLocal().log(Level.INFO, "Verify first perator pod is running");
       firstoperator.verifyOperatorReady();
-      LoggerHelper.getLocal().log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO,
           "Create again second operator pod and verify it is started again after create - delete -create steps");
       secondoperator =
           new Operator(
@@ -112,7 +114,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
 
     } finally {
       // number++;
-    } 
+    }
     if (firstoperator != null) {
       firstoperator.destroy();
     }
@@ -130,7 +132,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testCreateSecondOperatorUsingSameOperatorNsNegativeInstall() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     LoggerHelper.getLocal().log(Level.INFO, "Creating first operator");
@@ -186,7 +189,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testNotPreCreatedOpNsCreateOperatorNegativeInstall() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
 
@@ -220,7 +224,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testNotPreexistedOpServiceAccountCreateOperatorNegativeInstall() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
     //number = getNewNumber();
@@ -281,7 +286,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testSecondOpSharingSameTargetDomainsNsNegativeInstall() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     LoggerHelper.getLocal().log(Level.INFO, "Creating first operator");
@@ -342,7 +348,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testTargetNsIsNotPreexistedNegativeInstall() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, false);
@@ -360,9 +367,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       if (!ex.getMessage()
           .contains(
               "Error: release "
-        + operatorMap.get("releaseName")
-        + " failed: namespaces \""
-        +((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0) +"\" not found")) {
+                  + operatorMap.get("releaseName")
+                  + " failed: namespaces \""
+                  + ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0) + "\" not found")) {
         throw new RuntimeException(
             "FAILURE: Helm install operator with not preexisted target domains "
                 + "namespaces does not report expected message "
@@ -395,7 +402,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testSecondOpSharingSameExternalRestPortNegativeInstall() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     int httpsRestPort = 0;
 
@@ -454,7 +462,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testCreateWithUpperCaseTargetDomainNegativeInstall() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
 
@@ -502,7 +511,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testCreateChartWithInvalidAttributesNegativeInstall() throws Exception {
     Assume.assumeTrue(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
@@ -561,7 +571,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testCreateWithMissingTargetDomainInstall() throws Exception {
     Assume.assumeTrue(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
     try {
@@ -590,7 +601,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testCreateWithEmptyTargetDomainInstall() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
     try {
@@ -619,7 +631,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testCreateWithDefaultTargetDomainInstall() throws Exception {
     Assume.assumeTrue(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
     try {
@@ -651,7 +664,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testAddRemoveDomainUpdateOperatorHC() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
     // create operator
@@ -707,7 +721,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @Test
   public void testDeleteOperatorButNotDomain() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
     // create operator
@@ -753,7 +768,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                   "Response {\"status\":404,\"detail\":\"/operator/latest/domains/test" + number)) {
             // no-op
           } else {
-            LoggerHelper.getLocal().log(Level.INFO, "Got 404, Operator can not access the domain " + domain.getDomainUid());
+            LoggerHelper.getLocal().log(Level.INFO,
+                "Got 404, Operator can not access the domain " + domain.getDomainUid());
             break;
           }
         }
@@ -787,10 +803,10 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     String upgradeSet =
         "domainNamespaces="
             + targetNamespaces
-                .toString()
-                .replaceAll("\\[", "{")
-                .replaceAll("\\]", "}")
-                .replaceAll(" ", "");
+            .toString()
+            .replaceAll("\\[", "{")
+            .replaceAll("\\]", "}")
+            .replaceAll(" ", "");
     LoggerHelper.getLocal().log(Level.INFO, "update operator with new target domain " + upgradeSet);
     operator.callHelmUpgrade(upgradeSet);
     operator.getOperatorMap().replace("domainNamespaces", targetNamespaces);

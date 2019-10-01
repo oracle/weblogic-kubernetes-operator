@@ -17,7 +17,7 @@ import oracle.kubernetes.operator.BaseTest;
 
 public class LoadBalancer {
 
-  
+
   private Map<String, Object> lbMap;
 
   public LoadBalancer(Map lbMap) throws Exception {
@@ -48,7 +48,7 @@ public class LoadBalancer {
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         createVoyagerLoadBalancer();
-        LoggerHelper.getLocal().log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO,
             "Sleeping for 30 seconds to ensure voyager to be ready");
         Thread.sleep(30 * 1000);
       }

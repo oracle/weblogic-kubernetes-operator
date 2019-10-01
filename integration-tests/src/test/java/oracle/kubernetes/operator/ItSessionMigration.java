@@ -53,31 +53,32 @@ public class ItSessionMigration extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-  
+
       // create operator1
-      if(operator == null ) {
-        Map<String, Object> operatorMap = 
+      if (operator == null) {
+        Map<String, Object> operatorMap =
             TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
-        domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+        domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
-  
+
       // create domain
       if (domain == null) {
-        LoggerHelper.getLocal().log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO,
             "Creating WLS Domain & waiting for the script to complete execution");
-        Map<String, Object> wlstDomainMap = 
+        Map<String, Object> wlstDomainMap =
             TestUtils.createDomainMap(getNewNumber(), testClassName);
         wlstDomainMap.put("namespace", domainNS1);
         wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
         domain = TestUtils.createDomain(wlstDomainMap);
         domain.verifyDomainCreated();
       }
-  
+
       httpHeaderFile = BaseTest.getResultDir() + "/headers";
       httpAttrMap = new HashMap<String, String>();
       httpAttrMap.put("sessioncreatetime", "(.*)sessioncreatetime>(.*)</sessioncreatetime(.*)");
@@ -85,15 +86,15 @@ public class ItSessionMigration extends BaseTest {
       httpAttrMap.put("primary", "(.*)primary>(.*)</primary(.*)");
       httpAttrMap.put("secondary", "(.*)secondary>(.*)</secondary(.*)");
       httpAttrMap.put("count", "(.*)countattribute>(.*)</countattribute(.*)");
-  
+
       // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-  
+
       // Wait some time for deployment gets ready
       Thread.sleep(10 * 1000);
     }
-    
+
   }
 
   /**
@@ -107,10 +108,11 @@ public class ItSessionMigration extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "++++++++++++++++++++++++++++++++++");
       LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
       LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-  
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-  
-      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");    
+
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName());
+
+      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
 
@@ -123,7 +125,8 @@ public class ItSessionMigration extends BaseTest {
   @Test
   public void testRepickPrimary() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     Map<String, Object> domainMap = domain.getDomainMap();
@@ -163,7 +166,7 @@ public class ItSessionMigration extends BaseTest {
     domain.restartManagedServerUsingServerStartPolicy(primaryServName1);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "SUCCESS - " + testMethodName + ". ms <" + primaryServName2 + "> is new primary server.");
   }
 
@@ -176,7 +179,8 @@ public class ItSessionMigration extends BaseTest {
   @Test
   public void testHttpSessionMigr() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     Map<String, Object> domainMap = domain.getDomainMap();
@@ -222,15 +226,15 @@ public class ItSessionMigration extends BaseTest {
     domain.restartManagedServerUsingServerStartPolicy(primaryServName1);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " 
-    + testMethodName + ". HTTP session state is migrated!");
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - "
+        + testMethodName + ". HTTP session state is migrated!");
   }
 
   /**
    * Get HTTP response from the web app deployed on wls.
    *
    * @param webServiceUrl - web server URL
-   * @param headerOption - option to save HTTP header info or use it
+   * @param headerOption  - option to save HTTP header info or use it
    * @throws Exception exception
    */
   private ExecResult getHttpResponse(String webServiceUrl, String headerOption) throws Exception {
@@ -247,7 +251,7 @@ public class ItSessionMigration extends BaseTest {
    * Get the value of a HTTP attribute.
    *
    * @param httpResponseString - HTTP response
-   * @param attribute - attribute name to find in the HTTP response
+   * @param attribute          - attribute name to find in the HTTP response
    * @throws Exception exception
    */
   private String getHttpResponseAttribute(String httpResponseString, String attribute)
@@ -268,7 +272,7 @@ public class ItSessionMigration extends BaseTest {
   /**
    * Build web server url.
    *
-   * @param curlUrlPath - URL path sent by curl
+   * @param curlUrlPath   - URL path sent by curl
    * @param paramToAppend - params need to be appended to the URL path
    * @throws Exception exception
    */

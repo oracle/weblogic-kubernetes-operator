@@ -36,8 +36,9 @@ import org.junit.runners.MethodSorters;
 public class ItPodTemplates extends BaseTest {
 
   private static Operator operator1;
-  private static String domainNS ;
-  private static String testClassName ;
+  private static String domainNS;
+  private static String testClassName;
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -49,20 +50,21 @@ public class ItPodTemplates extends BaseTest {
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     if (QUICKTEST) {
-      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
-      
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
+
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
       // create operator1
-      if(operator1 == null ) {
+      if (operator1 == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
-        domainNS = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
     }
-    
-    
+
+
   }
 
   /**
@@ -76,9 +78,10 @@ public class ItPodTemplates extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
       LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
       LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-  
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-  
+
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName());
+
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
@@ -89,12 +92,13 @@ public class ItPodTemplates extends BaseTest {
    * successfully.
    *
    * @throws Exception when the domain crd creation fails or when updating the serverPod with
-   *     variables
+   *                   variables
    */
   @Test
   public void testPodTemplateUsingVariables() throws Exception {
     Assume.assumeTrue(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
     Domain domain = null;
@@ -103,7 +107,6 @@ public class ItPodTemplates extends BaseTest {
       Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
       // domainMap.put("domainUID", "podtemplatedomain");
       domainMap.put("namespace", domainNS);
-      // domainMap.put("createDomainPyScript","integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
       // just create domain yaml, dont apply
       domain = TestUtils.createDomain(domainMap, false);
       String originalYaml =

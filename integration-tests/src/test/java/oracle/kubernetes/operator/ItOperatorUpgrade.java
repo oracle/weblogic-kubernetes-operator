@@ -24,7 +24,9 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-/** Operator upgrade JUnit test file testing the operator upgrade from older releases to develop. */
+/**
+ * Operator upgrade JUnit test file testing the operator upgrade from older releases to develop.
+ */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItOperatorUpgrade extends BaseTest {
 
@@ -39,7 +41,7 @@ public class ItOperatorUpgrade extends BaseTest {
   private Domain domain = null;
   private static Operator operator;
   boolean testCompletedSuccessfully = false;
-  
+
   /**
    * This method gets called only once before any of the test methods are executed.
    *
@@ -47,16 +49,17 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    String testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+    String testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
     // initialize test properties and create the directories
     initialize(APP_PROPS_FILE, testClassName);
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       OP_TARGET_RELEASE = System.getenv("IMAGE_NAME_OPERATOR") + ":"
-        + System.getenv("IMAGE_TAG_OPERATOR");
+          + System.getenv("IMAGE_TAG_OPERATOR");
     }
   }
-  
+
   /**
    * cleanup the domain and operator after every test.
    *
@@ -64,7 +67,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @After
   public void cleanupOperatorAndDomain() throws Exception {
-    if(testCompletedSuccessfully) {
+    if (testCompletedSuccessfully) {
       LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
       if (domain != null) {
         //domain.destroy();
@@ -88,7 +91,8 @@ public class ItOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_0() throws Exception {
     Assume.assumeTrue(FULLTEST);
     testCompletedSuccessfully = false;
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator20";
     OP_DEP_NAME = "operator-upgrade20";
@@ -110,7 +114,8 @@ public class ItOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_0_1() throws Exception {
     Assume.assumeTrue(FULLTEST);
     testCompletedSuccessfully = false;
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator201";
     OP_DEP_NAME = "operator-upgrade201";
@@ -132,7 +137,8 @@ public class ItOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_1() throws Exception {
     Assume.assumeTrue(FULLTEST);
     testCompletedSuccessfully = false;
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator21";
     OP_DEP_NAME = "operator-upgrade21";
@@ -154,7 +160,8 @@ public class ItOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_2_0() throws Exception {
     Assume.assumeTrue(FULLTEST);
     testCompletedSuccessfully = false;
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator220";
     OP_DEP_NAME = "operator-upgrade220";
@@ -176,7 +183,8 @@ public class ItOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_2_1() throws Exception {
     Assume.assumeTrue(FULLTEST);
     testCompletedSuccessfully = false;
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator221";
     OP_DEP_NAME = "operator-upgrade221";
@@ -198,7 +206,8 @@ public class ItOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_3_0() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     testCompletedSuccessfully = false;
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator230";
     OP_DEP_NAME = "operator-upgrade230";
@@ -210,7 +219,7 @@ public class ItOperatorUpgrade extends BaseTest {
     testCompletedSuccessfully = true;
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
   }
-  
+
   /**
    * Upgrades operator to develop branch by using the helm upgrade.
    *
@@ -264,22 +273,22 @@ public class ItOperatorUpgrade extends BaseTest {
     domain.verifyAdminServerRestarted();
     TestUtils.checkPodReady(DUID + "-" + domain.getAdminServerName(), DOM_NS);
     for (int i = 2; i >= 1; i--) {
-      LoggerHelper.getLocal().log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO,
           "Checking if managed server pod(" + DUID + "--managed-server" + i + ") is restarted");
       TestUtils.checkPodTerminating(DUID + "-managed-server" + i, DOM_NS);
       TestUtils.checkPodCreated(DUID + "-managed-server" + i, DOM_NS);
       TestUtils.checkPodReady(DUID + "-managed-server" + i, DOM_NS);
     }
   }
-  
+
 
   /**
    * Creates operator based on operatorRelease passed to it and then creates a WebLogic domain
    * controlled by that operator.
    *
    * @param operatorGitRelease Git branch name of the operator release version
-   * @param operatorRelease Operator release version from the
-   *     https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/tags
+   * @param operatorRelease    Operator release version from the
+   *                           https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/tags
    * @throws Exception when operator or domain creation fails
    */
   private void setupOperatorAndDomain(String operatorGitRelease, String operatorRelease)
@@ -304,7 +313,7 @@ public class ItOperatorUpgrade extends BaseTest {
     TestUtils.exec("kubectl get all --all-namespaces", true);
 
     // Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
-    Map<String, Object> wlstDomainMap = TestUtils.createDomainInImageMap(getNewNumber(), false,"");
+    Map<String, Object> wlstDomainMap = TestUtils.createDomainInImageMap(getNewNumber(), false, "");
     wlstDomainMap.put("domainUID", DUID);
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");

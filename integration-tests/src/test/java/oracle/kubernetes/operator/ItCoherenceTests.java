@@ -37,7 +37,7 @@ public class ItCoherenceTests extends BaseTest {
   private static final String PROXY_PORT = "9000";
   private static String domainNS1;
   private static String testClassName;
-  
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -49,17 +49,18 @@ public class ItCoherenceTests extends BaseTest {
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     if (FULLTEST) {
-      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
       // create operator1
       if (operator1 == null) {
-        Map<String, Object> operatorMap = 
+        Map<String, Object> operatorMap =
             TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
-        domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+        domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
-      
+
     }
   }
 
@@ -80,7 +81,8 @@ public class ItCoherenceTests extends BaseTest {
   public void testRollingRestart() throws Exception {
     Assume.assumeTrue(FULLTEST);
 
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     domain = createDomain();
@@ -102,8 +104,8 @@ public class ItCoherenceTests extends BaseTest {
   }
 
   /**
-   * Since the coherence.jar is not open source, we need to build the proxy client on the 
-   * admin VM, which has the coherence.jar.  Copy the shell script file and all coherence 
+   * Since the coherence.jar is not open source, we need to build the proxy client on the
+   * admin VM, which has the coherence.jar.  Copy the shell script file and all coherence
    * app files over to the admin pod.
    * Then run the script to build the proxy client and run the proxy test.
    *
@@ -126,7 +128,7 @@ public class ItCoherenceTests extends BaseTest {
       final String successMarker = "CACHE-SUCCESS";
 
       LoggerHelper.getLocal().log(
-                Level.INFO, "Copying files to admin pod for App "  + PROXY_CLIENT_APP_NAME);
+          Level.INFO, "Copying files to admin pod for App " + PROXY_CLIENT_APP_NAME);
 
       // Create app dir in the admin pod
       StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
@@ -140,7 +142,7 @@ public class ItCoherenceTests extends BaseTest {
       TestUtils.copyAppFilesToPod(
           cohAppLocationOnHost, cohAppLocationInPod, adminServerPod, domainNS);
 
-      LoggerHelper.getLocal().log(Level.INFO, 
+      LoggerHelper.getLocal().log(Level.INFO,
           "Executing script "
               + PROXY_CLIENT_SCRIPT
               + " for App "
@@ -169,8 +171,8 @@ public class ItCoherenceTests extends BaseTest {
     envMap.put("CUSTOM_WDT_ARCHIVE", buildProxyServerWdtZip());
 
     // create domain
-    Map<String, Object> domainMap = 
-            TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
+    Map<String, Object> domainMap =
+        TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
     domainMap.put("namespace", domainNS1);
     domainMap.put("createDomainFilesDir", "wdt");
     domainMap.put("additionalEnvMap", envMap);
@@ -229,7 +231,7 @@ public class ItCoherenceTests extends BaseTest {
 
     // Build the WDT zip
     String wdtArchivePath = getResultDir() + "/coh-wdt-archive.zip";
-    TestUtils.buildWdtZip(wdtArchivePath, new String[] {garPath}, getResultDir());
+    TestUtils.buildWdtZip(wdtArchivePath, new String[]{garPath}, getResultDir());
     return wdtArchivePath;
   }
 }

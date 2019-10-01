@@ -19,7 +19,7 @@ public class PersistentVolume {
   private String dirPath;
 
   /**
-   * 
+   * Create PV directory and k8s pv and pvc for the domain
    * @param dirPath
    * @param pvMap
    * @throws Exception
@@ -29,13 +29,13 @@ public class PersistentVolume {
     this.pvMap = pvMap;
     UUID uuid = UUID.randomUUID();
     String cmd =
-            BaseTest.getProjectRoot()
-        + "/src/integration-tests/bash/krun.sh -m "  + BaseTest.getPvRoot()
-        + ":/shareddir-"+ uuid  + " -t 120 -p pod-"
-        + uuid   + " -c 'mkdir -m 777 -p "
-        + dirPath.replace(BaseTest.getPvRoot(), "/shareddir-"  + uuid +"/")
-        + "'"; 
-    
+        BaseTest.getProjectRoot()
+            + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot()
+            + ":/shareddir-" + uuid + " -t 120 -p pod-"
+            + uuid + " -c 'mkdir -m 777 -p "
+            + dirPath.replace(BaseTest.getPvRoot(), "/shareddir-" + uuid + "/")
+            + "'";
+
     // retry logic for PV dir creation as sometimes krun.sh fails
     int cnt = 0;
     int maxCnt = 10;
@@ -45,9 +45,9 @@ public class PersistentVolume {
       if (result.exitValue() == 0) {
         break;
       } else {
-        LoggerHelper.getLocal().log(Level.INFO, 
-            "PV dir creation command failed with exitValue= " + result.exitValue() 
-          + "stderr= " + result.stderr()  + " stdout=" + result.stdout());
+        LoggerHelper.getLocal().log(Level.INFO,
+            "PV dir creation command failed with exitValue= " + result.exitValue()
+                + "stderr= " + result.stderr() + " stdout=" + result.stdout());
         Thread.sleep(BaseTest.getWaitTimePod());
         cnt = cnt + 1;
       }
@@ -55,11 +55,11 @@ public class PersistentVolume {
         throw new RuntimeException("FAILED: Failed to create PV directory");
       }
     }
-   
+
     Path parentDir =
         pvMap.get("domainUID") != null
             ? Files.createDirectories(
-                Paths.get(BaseTest.getUserProjectsDir() + "/pv-pvcs/" + pvMap.get("domainUID")))
+            Paths.get(BaseTest.getUserProjectsDir() + "/pv-pvcs/" + pvMap.get("domainUID")))
             : Files.createDirectories(Paths.get(BaseTest.getUserProjectsDir() + "/pv-pvcs/"));
 
     // generate input yaml
@@ -68,7 +68,7 @@ public class PersistentVolume {
     // create PV/PVC
     String cmdPvPvc =
         BaseTest.getResultDir()
-            + "/"  + (pvMap.containsKey("domainUID") ? pvMap.get("domainUID") : "")
+            + "/" + (pvMap.containsKey("domainUID") ? pvMap.get("domainUID") : "")
             + "/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh "
             + " -i "
             + parentDir

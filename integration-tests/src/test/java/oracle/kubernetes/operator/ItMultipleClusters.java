@@ -42,7 +42,7 @@ public class ItMultipleClusters extends BaseTest {
   private static String customDomainTemplate;
   private static String testClassName;
   private static String domainNS1;
-  
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -53,7 +53,8 @@ public class ItMultipleClusters extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
       String template =
@@ -68,16 +69,16 @@ public class ItMultipleClusters extends BaseTest {
           Paths.get(customDomainTemplate),
           StandardCopyOption.REPLACE_EXISTING);
       Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
-      
+
       // create operator1
       if (operator1 == null) {
-        Map<String, Object> operatorMap = 
+        Map<String, Object> operatorMap =
             TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
-        domainNS1 = ((ArrayList<String>)operatorMap.get("domainNamespaces")).get(0);
+        domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
-      
+
     }
   }
 
@@ -100,7 +101,8 @@ public class ItMultipleClusters extends BaseTest {
   public void testCreateDomainTwoConfiguredCluster() throws Exception {
     Assume.assumeTrue(FULLTEST);
 
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     Domain domain = null;
@@ -118,12 +120,12 @@ public class ItMultipleClusters extends BaseTest {
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
-        DOMAINUID + "-" + domain.getAdminServerName(),
-        DOMAINUID + "-managed-server",
-        DOMAINUID + "-managed-server1",
-        DOMAINUID + "-managed-server2",
-        DOMAINUID + "-new-managed-server1",
-        DOMAINUID + "-new-managed-server2",
+          DOMAINUID + "-" + domain.getAdminServerName(),
+          DOMAINUID + "-managed-server",
+          DOMAINUID + "-managed-server1",
+          DOMAINUID + "-managed-server2",
+          DOMAINUID + "-new-managed-server1",
+          DOMAINUID + "-new-managed-server2",
       };
       verifyServersStatus(domain, pods);
       testBasicUseCases(domain, false);
@@ -147,7 +149,8 @@ public class ItMultipleClusters extends BaseTest {
   public void testCreateDomainTwoMixedCluster() throws Exception {
     Assume.assumeTrue(FULLTEST);
     String domainuid = "twomixedclusterdomain";
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
@@ -162,12 +165,12 @@ public class ItMultipleClusters extends BaseTest {
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
-        domainuid + "-" + domain.getAdminServerName(),
-        domainuid + "-managed-server",
-        domainuid + "-managed-server1",
-        domainuid + "-managed-server2",
-        domainuid + "-new-managed-server1",
-        domainuid + "-new-managed-server2",
+          domainuid + "-" + domain.getAdminServerName(),
+          domainuid + "-managed-server",
+          domainuid + "-managed-server1",
+          domainuid + "-managed-server2",
+          domainuid + "-new-managed-server1",
+          domainuid + "-new-managed-server2",
       };
       verifyServersStatus(domain, pods);
 
@@ -192,13 +195,14 @@ public class ItMultipleClusters extends BaseTest {
   public void testCreateDomainTwoClusterWdtInImage() throws Exception {
     Assume.assumeTrue(FULLTEST);
     String domainuid = "twoclusterdomainwdt";
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = 
+      Map<String, Object> domainMap =
           TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
       domainMap.put("domainUID", domainuid);
       domainMap.put("customDomainTemplate", customDomainTemplate);
@@ -206,15 +210,15 @@ public class ItMultipleClusters extends BaseTest {
       domainMap.put(
           "customWdtTemplate",
           BaseTest.getProjectRoot()
-         + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml");
+              + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
-        domainuid + "-" + domain.getAdminServerName(),
-        domainuid + "-managed-server1",
-        domainuid + "-managed-server2",
-        domainuid + "-managed-server-21",
-        domainuid + "-managed-server-22",
+          domainuid + "-" + domain.getAdminServerName(),
+          domainuid + "-managed-server1",
+          domainuid + "-managed-server2",
+          domainuid + "-managed-server-21",
+          domainuid + "-managed-server-22",
       };
       verifyServersStatus(domain, pods);
       testBasicUseCases(domain, false);
@@ -232,7 +236,7 @@ public class ItMultipleClusters extends BaseTest {
    * Verifies all of the servers in the cluster are in Running status.
    *
    * @param domain Domain
-   * @param pods array pod names to check the status for
+   * @param pods   array pod names to check the status for
    */
   private void verifyServersStatus(Domain domain, String[] pods) {
     K8sTestUtils testUtil = new K8sTestUtils();

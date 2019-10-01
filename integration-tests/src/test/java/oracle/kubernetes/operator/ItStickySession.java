@@ -40,7 +40,7 @@ public class ItStickySession extends BaseTest {
   private static Operator operator;
   private static Domain domain;
   private static String testClassName;
-  
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -52,20 +52,21 @@ public class ItStickySession extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      testClassName = new Object() {}.getClass().getEnclosingClass().getSimpleName();
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-  
+
       // Create operator1
       if (operator == null) {
-        LoggerHelper.getLocal().log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO,
             "Creating Operator & waiting for the script to complete execution");
         operator = TestUtils.createOperator(OPERATOR1_YAML);
       }
-  
+
       // create domain
       if (domain == null) {
-        LoggerHelper.getLocal().log(Level.INFO, 
+        LoggerHelper.getLocal().log(Level.INFO,
             "Creating WLS Domain & waiting for the script to complete execution");
         Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
         // Treafik doesn't work due to the bug 28050300. Use Voyager instead
@@ -74,23 +75,23 @@ public class ItStickySession extends BaseTest {
         domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
       }
-  
+
       httpHeaderFile = BaseTest.getResultDir() + "/headers";
-  
+
       httpAttrMap = new HashMap<String, String>();
       httpAttrMap.put("sessioncreatetime", "(.*)sessioncreatetime>(.*)</sessioncreatetime(.*)");
       httpAttrMap.put("sessionid", "(.*)sessionid>(.*)</sessionid(.*)");
       httpAttrMap.put("servername", "(.*)connectedservername>(.*)</connectedservername(.*)");
       httpAttrMap.put("count", "(.*)countattribute>(.*)</countattribute(.*)");
-  
+
       // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-  
+
       // Wait some time for deployment gets ready
       Thread.sleep(10 * 1000);
     }
-    
+
   }
 
   /**
@@ -104,9 +105,9 @@ public class ItStickySession extends BaseTest {
   }
 
   /**
-   * Use a web application deployed on Weblogic cluster to track HTTP session. 
+   * Use a web application deployed on Weblogic cluster to track HTTP session.
    * In-memory replication persistence method is configured to implement session persistence.
-   * server-affinity is achieved by Voyager load balancer based on HTTP session information. 
+   * server-affinity is achieved by Voyager load balancer based on HTTP session information.
    * This test sends two HTTP requests
    * to Weblogic and verify that all requests are directed to same Weblogic server.
    *
@@ -115,7 +116,8 @@ public class ItStickySession extends BaseTest {
   @Test
   public void testSameSessionStickiness() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     int counterNum = 4;
@@ -136,7 +138,7 @@ public class ItStickySession extends BaseTest {
     Assume.assumeNotNull(serverName1);
     Assume.assumeNotNull(serverID1);
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "The first HTTP request established a connection with server <"
             + serverName1
             + ">, HTTP session id is <"
@@ -155,7 +157,7 @@ public class ItStickySession extends BaseTest {
     Assume.assumeNotNull(serverID2);
     Assume.assumeNotNull(count);
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "The second HTTP request connected to server <"
             + serverName2
             + "> with HTTP session id <"
@@ -169,12 +171,12 @@ public class ItStickySession extends BaseTest {
     // Verify server-affinity
     Assume.assumeTrue("Weblogic server name should NOT change!", serverName1.equals(serverName2));
     LoggerHelper.getLocal().log(
-        Level.INFO, "Two HTTP requests are directed to same Weblogic server <" 
-        + serverName1 + ">");
+        Level.INFO, "Two HTTP requests are directed to same Weblogic server <"
+            + serverName1 + ">");
 
     // Verify that count numbers from two HTTP responses match
     Assume.assumeTrue("Count number does not match", Integer.parseInt(count) == counterNum);
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Count number <"
             + count
             + "> got from HTTP response matches "
@@ -196,7 +198,8 @@ public class ItStickySession extends BaseTest {
   @Test
   public void testDiffSessionsNoSharing() throws Exception {
     Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     Map<String, Object> domainMap = domain.getDomainMap();
@@ -217,7 +220,7 @@ public class ItStickySession extends BaseTest {
     String serverIdClient1 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
     Assume.assumeNotNull(serverIdClient1);
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Client1 created a connection with HTTP session id <"
             + serverIdClient1
             + "> and set a count number to <"
@@ -234,7 +237,7 @@ public class ItStickySession extends BaseTest {
     Assume.assumeNotNull(serverIdClient2);
     Assume.assumeNotNull(count);
 
-    LoggerHelper.getLocal().log(Level.INFO, 
+    LoggerHelper.getLocal().log(Level.INFO,
         "Client2 created a connection with HTTP session id <"
             + serverIdClient2
             + "> and retrieved a count number <"

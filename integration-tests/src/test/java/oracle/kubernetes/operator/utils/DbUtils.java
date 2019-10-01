@@ -49,7 +49,7 @@ public class DbUtils {
    * run RCU script to load database schema.
    *
    * @param rcuPodName - rcu pod name
-   * @param inputYaml - create domain input file
+   * @param inputYaml  - create domain input file
    * @throws Exception - if any error occurs
    */
   public static void runRcu(String rcuPodName, String inputYaml) throws Exception {
@@ -61,7 +61,7 @@ public class DbUtils {
    * run RCU script to load database schema.
    *
    * @param rcuPodName - rcu pod name
-   * @param inputMap - domain input map
+   * @param inputMap   - domain input map
    * @throws Exception - if any error occurs
    */
   public static void runRcu(String rcuPodName, Map<String, Object> inputMap) throws Exception {
@@ -73,9 +73,9 @@ public class DbUtils {
   /**
    * run RCU script to load database schema.
    *
-   * @param rcuNamespace - namespace for rcu pod
+   * @param rcuNamespace    - namespace for rcu pod
    * @param dbConnectString - db connect string to load the database schema
-   * @param rcuPrefix - rcu prefix for the db schema name
+   * @param rcuPrefix       - rcu prefix for the db schema name
    * @throws Exception - if any error occurs
    */
   private static void runRcu(
