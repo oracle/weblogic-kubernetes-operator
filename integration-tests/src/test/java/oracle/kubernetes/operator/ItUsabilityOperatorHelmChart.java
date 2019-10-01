@@ -113,7 +113,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       secondoperator.callHelmInstall();
 
     } finally {
-      // number++;
+      number++;
     }
     if (firstoperator != null) {
       firstoperator.destroy();
@@ -553,7 +553,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 + ex.getMessage());
       }
     } finally {
-      // number++;
+      number++;
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -583,7 +583,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       operator.verifyOperatorReady();
 
     } finally {
-      // number++;
+      number++;
       if (operator != null) {
         operator.destroy();
       }
@@ -645,7 +645,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       operator.verifyOperatorReady();
 
     } finally {
-      // number++;
+      number++;
       if (operator != null) {
         operator.destroy();
       }
