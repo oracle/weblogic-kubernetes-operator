@@ -1023,14 +1023,16 @@ public class TestUtils {
             + " --docker-username="
             + dockerUser
             + " --docker-password=\""
-            + dockerPassword
-            + " -n "
-            + namespace;
+            + dockerPassword;
+            
     if (dockerEmail != null) {
     	command = command + " --docker-email=" + dockerEmail;
-    } else {
-    	command = command + " --docker-email=" + "weblogic.operator@oracle.com";
     }
+   
+    command = command + " -n " 
+        + namespace 
+        + " --dry-run -o yaml | kubectl apply -f -";
+       
     String commandToLog =
         "kubectl create secret docker-registry "
             + secretName
