@@ -1,5 +1,5 @@
 ---
-title: "How to Capture WebLogic Domain Logs using Fluentd"
+title: "WebLogic Domain"
 date: 2019-02-23T17:32:31-05:00
 weight: 6
 description: "Sample for configuring fluentd to export domain logs to ELK."
@@ -7,7 +7,7 @@ description: "Sample for configuring fluentd to export domain logs to ELK."
 
 
 #### Overview
-This document describes to how to configure a WebLogic domain to use fluentd to send log information to ELK.
+This page describes to how to configure a WebLogic domain to use fluentd to send log information to ELK.
 
 The general mechanism of how this works is:
 * fluentd runs as a separate container in the admin and managed server pods
