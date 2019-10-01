@@ -101,6 +101,15 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
 
+# dns1123Fields overrides the default list of field names that the operator
+# converts to DNS-1123 legal values when replacing variable references in the 
+# domain resource. The default list can be found inside the class Legalnames 
+# in the oracle.kubernetes.operator.helpers package.
+# Supply a comma seperated list of field names to customize the list of fields
+# such as "Name, ClaimName, VolumeName", or leave it commented out to use 
+# the default list of field names.
+# dns1123Fields: ""
+
 # Istio service mesh support is experimental.
 # istioEnabled specifies whether or not the domain is deployed under an Istio service mesh.
 istioEnabled: false
