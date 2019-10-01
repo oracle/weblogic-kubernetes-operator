@@ -340,7 +340,7 @@ public class TestUtils {
           throw new RuntimeException("FAILURE: PV is not in Released status, exiting!");
         }
         LoggerHelper.getLocal().log(Level.INFO, "PV is not in Released status," 
-        + result.stdout() + "\n " + result.stderr());
+            + result.stdout() + "\n " + result.stderr());
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
 
@@ -368,7 +368,7 @@ public class TestUtils {
     StringBuffer cmd = new StringBuffer("kubectl get services ");
     cmd.append(" -n ").append(namespace);
     LoggerHelper.getLocal().log(Level.INFO, " Find services in namespage " 
-    + namespace + " with command: '" + cmd + "'");
+        + namespace + " with command: '" + cmd + "'");
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     String stdout = result.stdout();
@@ -423,7 +423,8 @@ public class TestUtils {
   public static String getPods(String namespace) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pods -o wide ");
     cmd.append(" -n ").append(namespace);
-    LoggerHelper.getLocal().log(Level.INFO, " Get pods in namespage " + namespace + " with command: '" + cmd + "'");
+    LoggerHelper.getLocal().log(Level.INFO, " Get pods in namespage " 
+          + namespace + " with command: '" + cmd + "'");
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     String stdout = result.stdout();
@@ -490,7 +491,8 @@ public class TestUtils {
               podName,
               namespace,
               "-- bash -c 'chmod +x /shared/killserver.sh && /shared/killserver.sh'");
-      LoggerHelper.getLocal().log(Level.INFO, "kill server process command exitValue " + result.exitValue());
+      LoggerHelper.getLocal().log(Level.INFO, "kill server process command exitValue " 
+              + result.exitValue());
       LoggerHelper.getLocal().log(Level.INFO, 
           "kill server process command result " + result.stdout() + " stderr " + result.stderr());
       Thread.sleep(2 * 1000);
@@ -504,7 +506,7 @@ public class TestUtils {
       final long currentTime = System.currentTimeMillis();
       int finalRestartCnt = getPodRestartCount(podName, namespace);
       LoggerHelper.getLocal().log(Level.INFO, "initialRestartCnt " 
-      + initialRestartCnt + " finalRestartCnt " + finalRestartCnt);
+          + initialRestartCnt + " finalRestartCnt " + finalRestartCnt);
       if ((finalRestartCnt - initialRestartCnt) == 1) {
         LoggerHelper.getLocal().log(Level.INFO, "WLS liveness probe test is successful.");
         break;
@@ -610,7 +612,7 @@ public class TestUtils {
         copyAppFilesToPod(file.getAbsolutePath(), nestedDirOnPod, podName, namespace);
       } else {
         LoggerHelper.getLocal().log(Level.INFO, "Copy file: " 
-      + file.getAbsoluteFile().toString() + " to the pod: " + podName);
+          + file.getAbsoluteFile().toString() + " to the pod: " + podName);
 
         String fileParent = file.getParentFile().getName();
         LoggerHelper.getLocal().log(Level.INFO, "file Parent: " + fileParent);
@@ -1048,13 +1050,13 @@ public class TestUtils {
       int number, boolean restEnabled, String prefix) {
     Map<String, Object> operatorMap = new HashMap<String, Object>();
     ArrayList<String> targetDomainsNS = new ArrayList<String>();
-    targetDomainsNS.add(prefix.toLowerCase()+"-domainns-" + number);
-    operatorMap.put("releaseName", prefix.toLowerCase()+"-op-"  + number);
+    targetDomainsNS.add(prefix.toLowerCase() + "-domainns-"  + number);
+    operatorMap.put("releaseName", prefix.toLowerCase() + "-op-"  + number);
     operatorMap.put("domainNamespaces", targetDomainsNS);
-    operatorMap.put("serviceAccount", prefix.toLowerCase()+"-sa-" + number);
-    operatorMap.put("namespace", prefix.toLowerCase()+"-opns-" + number);
+    operatorMap.put("serviceAccount", prefix.toLowerCase() + "-sa-" + number);
+    operatorMap.put("namespace", prefix.toLowerCase() + "-opns-" + number);
     if (restEnabled) {
-      operatorMap.put("externalRestHttpsPort", 32000 + number);
+      operatorMap.put("externalRestHttpsPort", 32000  + number);
       operatorMap.put("externalRestEnabled", restEnabled);
     }
     return operatorMap;
@@ -1083,8 +1085,8 @@ public class TestUtils {
   
   public static Map<String, Object> createDomainMap(int number, String prefix) {
     Map<String, Object> domainMap = new HashMap<String, Object>();
-    domainMap.put("domainUID", prefix.toLowerCase()+"-domain-"+ number);
-    domainMap.put("namespace", prefix.toLowerCase()+"-domainns-"+ number);
+    domainMap.put("domainUID", prefix.toLowerCase()  + "-domain-"+ number);
+    domainMap.put("namespace", prefix.toLowerCase( )  + "-domainns-"+ number);
     domainMap.put("configuredManagedServerCount", 4);
     domainMap.put("initialManagedServerReplicas", 2);
     domainMap.put("exposeAdminT3Channel", true);
@@ -1094,10 +1096,11 @@ public class TestUtils {
     if (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
       domainMap.put("voyagerWebPort", 30344 + number);
       LoggerHelper.getLocal().log(Level.INFO, 
-          "For this domain voyagerWebPort is set to: "+domainMap.get("voyagerWebPort"));
+          "For this domain voyagerWebPort is set to: "  + domainMap.get("voyagerWebPort"));
     }
     return domainMap;
   }
+  
   public static Map<String, Object> createDomainInImageMap(
       int number, boolean wdt, String prefix) {
     Map<String, Object> domainMap = createDomainMap(number, prefix);
@@ -1114,6 +1117,7 @@ public class TestUtils {
     domainMap.put("clusterType", "CONFIGURED");
     return domainMap;
   }
+  
   public static String callShellScriptByExecToPod(
       String scriptPath, String arguments, String podName, String namespace) throws Exception {
 

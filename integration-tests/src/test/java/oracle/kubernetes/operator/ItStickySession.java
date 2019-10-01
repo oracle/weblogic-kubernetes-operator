@@ -170,7 +170,7 @@ public class ItStickySession extends BaseTest {
     Assume.assumeTrue("Weblogic server name should NOT change!", serverName1.equals(serverName2));
     LoggerHelper.getLocal().log(
         Level.INFO, "Two HTTP requests are directed to same Weblogic server <" 
-    + serverName1 + ">");
+        + serverName1 + ">");
 
     // Verify that count numbers from two HTTP responses match
     Assume.assumeTrue("Count number does not match", Integer.parseInt(count) == counterNum);

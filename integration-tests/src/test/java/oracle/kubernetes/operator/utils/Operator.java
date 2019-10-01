@@ -437,7 +437,8 @@ public class Operator {
         if (i == maxIterationsOp - 1) {
           throw new RuntimeException("FAILURE: Operator fail to be deleted");
         }
-        LoggerHelper.getLocal().log(Level.INFO, "status is " + result.stdout() + ", iteration " + i + " of " + maxIterationsOp);
+        LoggerHelper.getLocal().log(Level.INFO, "status is " + result.stdout() 
+        + ", iteration " + i + " of " + maxIterationsOp);
         Thread.sleep(waitTimeOp * 1000);
       } else {
         break;

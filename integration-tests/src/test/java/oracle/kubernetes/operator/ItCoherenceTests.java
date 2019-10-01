@@ -126,7 +126,7 @@ public class ItCoherenceTests extends BaseTest {
       final String successMarker = "CACHE-SUCCESS";
 
       LoggerHelper.getLocal().log(
-                Level.INFO, "Copying files to admin pod for App " +PROXY_CLIENT_APP_NAME);
+                Level.INFO, "Copying files to admin pod for App "  + PROXY_CLIENT_APP_NAME);
 
       // Create app dir in the admin pod
       StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");

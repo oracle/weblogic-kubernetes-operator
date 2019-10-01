@@ -42,10 +42,6 @@ public class Domain {
 
   private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTime = BaseTest.getWaitTimePod();
-  // LB_TYPE is an evn var. Set to "VOYAGER" to use it as loadBalancer
-  private String LB_TYPE;
-  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
-  private boolean INGRESSPERDOMAIN = true;
   protected Map<String, Object> domainMap;
   protected Map<String, Object> pvMap;
   // attributes from domain properties
@@ -69,6 +65,7 @@ public class Domain {
   private int loadBalancerWebPort = 30305;
   private String domainHomeImageBuildPath = "";
   private String projectRoot = "";
+  //set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
   private boolean ingressPerDomain = true;
   private boolean pvSharing = false;
   private String imageTag;
@@ -843,7 +840,7 @@ public class Domain {
             + domainMap.get("persistentVolumeClaimName")
             + ":/pvc-"
             + domainMap.get("domainUID")
-            + " -n "+ domainNS +" -c \"ls -ltr /pvc-"
+            + " -n " + domainNS  + " -c \"ls -ltr /pvc-"
             + domainMap.get("domainUID")
             + "/domains/"
             + domainMap.get("domainUID")
@@ -856,7 +853,7 @@ public class Domain {
     // create domain using different output dir but pv is same, it fails as the domain was already
     // created on the pv dir
     try {
-      callCreateDomainScript(userProjectsDir + "2");
+      callCreateDomainScript(userProjectsDir  + "2");
     } catch (RuntimeException re) {
       re.printStackTrace();
       LoggerHelper.getLocal().log(
@@ -1405,7 +1402,7 @@ public class Domain {
           "loadBalancerWebPort",
           domainMap.getOrDefault("loadBalancerWebPort", new Integer(loadBalancerWebPort)));
     }
-    if (!INGRESSPERDOMAIN) {
+    if (!ingressPerDomain) {
       lbMap.put("ingressPerDomain", new Boolean("false"));
       LoggerHelper.getLocal().log(Level.INFO, "For this domain, INGRESSPERDOMAIN is set to false");
     } else {
@@ -1537,7 +1534,11 @@ public class Domain {
     domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
-    domainResultsDir = BaseTest.getResultDir( ) + "/" + domainMap.get("domainUID");
+    if (domainMap.containsKey("pvSharing")) {
+      domainResultsDir = BaseTest.getResultDir();
+    } else {
+      domainResultsDir = BaseTest.getResultDir() + "/" + domainMap.get("domainUID");
+    }
 
     // create a temp directory for the domain
     Files.createDirectories(Paths.get(domainResultsDir));
@@ -1562,7 +1563,7 @@ public class Domain {
                 && ((String) inputDomainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"));
 
     if (System.getenv("INGRESSPERDOMAIN") != null) {
-      INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
+      ingressPerDomain = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
     }
 
     domainMap.put("domainName", domainMap.get("domainUID"));
@@ -1785,11 +1786,6 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + result.stdout().trim());
   }
 
-  /**
-   *  returns nodeport host
-   * @return
-   * @throws Exception
-   */
   public String getHostNameForCurl() throws Exception {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");
@@ -1847,7 +1843,7 @@ public class Domain {
                 .toPath(),
             new File(
                     domainResultsDir
-       + "/samples/scripts/create-weblogic-domain/domain-home-on-pv/wlst/create-domain.py")
+          + "/samples/scripts/create-weblogic-domain/domain-home-on-pv/wlst/create-domain.py")
                 .toPath(),
             StandardCopyOption.REPLACE_EXISTING);
       }
@@ -1912,13 +1908,13 @@ public class Domain {
       TestUtils.copyFile(
           (String) domainMap.get("customWdtTemplate"),
           domainResultsDir
-       + "/docker-images/OracleWebLogic/samples/"
-       + "12213-domain-home-in-image-wdt/simple-topology.yaml");
+        + "/docker-images/OracleWebLogic/samples/"
+        + "12213-domain-home-in-image-wdt/simple-topology.yaml");
       ExecResult exec =
           TestUtils.exec(
               "cat "  + domainResultsDir
-        + "/docker-images/OracleWebLogic/samples/"
-        + "12213-domain-home-in-image-wdt/simple-topology.yaml");
+          + "/docker-images/OracleWebLogic/samples/"
+          + "12213-domain-home-in-image-wdt/simple-topology.yaml");
       LoggerHelper.getLocal().log(Level.FINEST, exec.stdout());
     } else if (clusterType.equalsIgnoreCase("CONFIGURED")) {
       // domain on pv

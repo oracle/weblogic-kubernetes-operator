@@ -206,7 +206,7 @@ public class ItMultipleClusters extends BaseTest {
       domainMap.put(
           "customWdtTemplate",
           BaseTest.getProjectRoot()
-        + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml");
+         + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {

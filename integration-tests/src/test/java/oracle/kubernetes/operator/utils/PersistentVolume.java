@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,13 +27,13 @@ public class PersistentVolume {
   public PersistentVolume(String dirPath, Map<String, Object> pvMap) throws Exception {
     this.dirPath = dirPath;
     this.pvMap = pvMap;
-    
+    UUID uuid = UUID.randomUUID();
     String cmd =
             BaseTest.getProjectRoot()
         + "/src/integration-tests/bash/krun.sh -m "  + BaseTest.getPvRoot()
-        + ":/shareddir-"+pvMap.get("domainUID") +" -t 120 -p pod-"
-        +pvMap.get("domainUID") +" -c 'mkdir -m 777 -p "
-        + dirPath.replace(BaseTest.getPvRoot(), "/shareddir-" +pvMap.get("domainUID")+"/")
+        + ":/shareddir-"+ uuid  + " -t 120 -p pod-"
+        + uuid   + " -c 'mkdir -m 777 -p "
+        + dirPath.replace(BaseTest.getPvRoot(), "/shareddir-"  + uuid +"/")
         + "'"; 
     
     // retry logic for PV dir creation as sometimes krun.sh fails
@@ -45,12 +46,12 @@ public class PersistentVolume {
         break;
       } else {
         LoggerHelper.getLocal().log(Level.INFO, 
-            "PV dir creation command failed with exitValue= "+result.exitValue() 
-          + "stderr= " + result.stderr() +" stdout="+result.stdout());
+            "PV dir creation command failed with exitValue= " + result.exitValue() 
+          + "stderr= " + result.stderr()  + " stdout=" + result.stdout());
         Thread.sleep(BaseTest.getWaitTimePod());
         cnt = cnt + 1;
       }
-      if (cnt == maxCnt)  {
+      if (cnt == maxCnt) {
         throw new RuntimeException("FAILED: Failed to create PV directory");
       }
     }
@@ -67,7 +68,7 @@ public class PersistentVolume {
     // create PV/PVC
     String cmdPvPvc =
         BaseTest.getResultDir()
-            + "/"  + pvMap.get("domainUID")
+            + "/"  + (pvMap.containsKey("domainUID") ? pvMap.get("domainUID") : "")
             + "/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh "
             + " -i "
             + parentDir

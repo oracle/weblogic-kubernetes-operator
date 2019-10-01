@@ -33,17 +33,14 @@ public class LoadBalancer {
         createTraefikLoadBalancer();
       }
 
-      // String cmdTraefikLb = "helm list | grep "+lbMap.get("name") +" | grep DEPLOYED";
-      // if (ExecCommand.exec(cmdTraefikLb, true).exitValue() != 0) {
-        if (!((Boolean) lbMap.get("ingressPerDomain")).booleanValue()) {
-          LoggerHelper.getLocal().log(Level.INFO, "Is going to createTraefikHostRouting");
-          createTraefikHostRouting();
-        } else {
-          LoggerHelper.getLocal().log(Level.INFO, "Is going to createTraefikIngressPerDomain");
-          createTraefikIngressPerDomain();
-        }
+      if (!((Boolean) lbMap.get("ingressPerDomain")).booleanValue()) {
+        LoggerHelper.getLocal().log(Level.INFO, "Is going to createTraefikHostRouting");
+        createTraefikHostRouting();
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO, "Is going to createTraefikIngressPerDomain");
+        createTraefikIngressPerDomain();
       }
-    // }
+    }
 
     if (lbMap.get("loadBalancer").equals("VOYAGER")) {
       String cmdLb = "helm list voyager-operator | grep DEPLOYED";
@@ -51,7 +48,8 @@ public class LoadBalancer {
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         createVoyagerLoadBalancer();
-        LoggerHelper.getLocal().log(Level.INFO, "Sleeping for 30 seconds to ensure voyager to be ready");
+        LoggerHelper.getLocal().log(Level.INFO, 
+            "Sleeping for 30 seconds to ensure voyager to be ready");
         Thread.sleep(30 * 1000);
       }
 
@@ -71,7 +69,7 @@ public class LoadBalancer {
 
     ExecResult result = ExecCommand.exec(cmdLb);
     if (result.exitValue() != 0) {
-      if(!result.stderr().contains("release named traefik-operator already exists")) {
+      if (!result.stderr().contains("release named traefik-operator already exists")) {
         throw new RuntimeException(
             "FAILURE: command to create load balancer "
                 + cmdLb

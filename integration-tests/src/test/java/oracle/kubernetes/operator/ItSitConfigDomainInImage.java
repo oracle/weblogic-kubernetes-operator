@@ -33,7 +33,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
       staticPrepare(
           true,
           "integration-tests/src/test/resources/sitconfig/scripts/" 
-         +"create-domain-auto-custom-sit-config-inimage.py", testClassName);
+         + "create-domain-auto-custom-sit-config-inimage.py", testClassName);
     }
   }
 

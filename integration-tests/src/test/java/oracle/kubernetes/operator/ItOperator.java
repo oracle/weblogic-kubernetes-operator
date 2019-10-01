@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
@@ -287,10 +286,10 @@ public class ItOperator extends BaseTest {
 
       Map<String, Object> domain2Map = TestUtils.createDomainMap(getNewNumber(), testClassName);
       domain2Map.put("domainUID", "d2onpv");
-      domain1Map.put("namespace", domainNS1);
-      domain1Map.put("createDomainPyScript",
+      domain2Map.put("namespace", domainNS1);
+      domain2Map.put("createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
-      domain1Map.put("pvSharing", new Boolean("true"));
+      domain2Map.put("pvSharing", new Boolean("true"));
       domain2 = TestUtils.createDomain(domain2Map);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2, false);
