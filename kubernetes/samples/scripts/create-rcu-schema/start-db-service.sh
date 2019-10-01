@@ -70,7 +70,7 @@ checkPodState ${dbpod} default "1/1"
 kubectl get po
 #sleep 200
 #echo "######## start DB debugging ######"
-kubectl log ${dbpod}
+#kubectl log ${dbpod}
 #echo "######## end DB debugging ######"
 kubectl get service
 
