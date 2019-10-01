@@ -30,7 +30,12 @@ For sample purposes, this document will assume a domain with the following attri
 ```
 
 #### Configure log files to use a volume
-The domain log files must be written to a volume that can be shared between the `weblogic-server` and `fluentd` containers.
+The domain log files must be written to a volume that can be shared between the `weblogic-server` and `fluentd` containers.  The following elements are required to accomplish this:
+
+* `logHome` must be a path that can be shared between containers
+* `logHomeEnabled` must be set to `true` so that the logs will be written outside the pod and persist across pod restarts
+* A `volume` must be defined that the log files will reside on.  In the example `emptyDir` is a volume that gets created empty when a Pod is created.  It will persist across pod restarts but deleting the pod would delete the `emptyDir` content.
+* The `volumeMounts` mounts the named volume created with `emptyDir` and establishes the base path for accessing the volume.
 
 NOTE: For brevity only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
 
@@ -41,11 +46,11 @@ spec:
   logHome: /scratch/logs/bobs-bookstore
   logHomeEnabled: true
   serverPod:
-    volumeMounts:
-    - mountPath: /scratch
-      name: weblogic-domain-storage-volume
     volumes:
     - emptyDir: {}
+      name: weblogic-domain-storage-volume
+    volumeMounts:
+    - mountPath: /scratch
       name: weblogic-domain-storage-volume
 ```
 
@@ -60,7 +65,7 @@ elasticsearchuser: Ym9i
 elasticsearchpassword: d2VsY29tZTE=
 ```
 
-## Create FluentD configuration
+#### Create FluentD configuration
 Create a `ConfigMap` named `fluentd-config` in the namespace of the domain.  The `ConfigMap` contains the parsing rules and Elasticsearch configuration.
 
 An example of how to create the `ConfigMap`:
