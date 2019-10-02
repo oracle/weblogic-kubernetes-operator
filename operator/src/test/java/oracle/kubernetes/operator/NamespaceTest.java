@@ -4,16 +4,17 @@
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import com.meterware.simplestub.SystemPropertySupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.After;
@@ -34,12 +35,15 @@ public class NamespaceTest {
   private final TuningParameters.WatchTuning tuning = new TuningParameters.WatchTuning(30, 0);
   private List<Memento> mementos = new ArrayList<>();
   private Set<String> currentNamespaces = new HashSet<>();
+  private Map<String,String> helmValues = new HashMap<>();
+  private Function<String,String> getTestHelmValue = helmValues::get;
 
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(SystemPropertySupport.preserve(NAMESPACES_PROPERTY));
+    mementos.add(StaticStubSupport.preserve(Main.class, "isNamespaceStarted"));
     mementos.add(StaticStubSupport.preserve(Main.class, "isNamespaceStopping"));
+    mementos.add(StaticStubSupport.install(Main.class, "getHelmVariable", getTestHelmValue));
 
     AtomicBoolean stopping = new AtomicBoolean(true);
     JobWatcher.defineFactory(r -> createDaemonThread(), tuning, ns -> stopping);
@@ -61,7 +65,7 @@ public class NamespaceTest {
       throws NoSuchFieldException {
     addTargetNamespace(NS);
     addTargetNamespace(ADDITIONAL_NAMESPACE);
-    cacheTargetNamespaces();
+    cacheStartedNamespaces();
     JobWatcher oldWatcher = JobWatcher.getOrCreateFor(domain);
 
     deleteTargetNamespace(NS);
@@ -72,16 +76,17 @@ public class NamespaceTest {
 
   private void addTargetNamespace(String namespace) {
     currentNamespaces.add(namespace);
-    System.setProperty(NAMESPACES_PROPERTY, String.join(",", currentNamespaces));
+    helmValues.put(NAMESPACES_PROPERTY, String.join(",", currentNamespaces));
   }
 
   @SuppressWarnings("SameParameterValue")
   private void deleteTargetNamespace(String namespace) {
     currentNamespaces.remove(namespace);
-    System.setProperty(NAMESPACES_PROPERTY, String.join(",", currentNamespaces));
+    helmValues.put(NAMESPACES_PROPERTY, String.join(",", currentNamespaces));
   }
 
-  private void cacheTargetNamespaces() throws NoSuchFieldException {
+  private void cacheStartedNamespaces() throws NoSuchFieldException {
+    StaticStubSupport.install(Main.class, "isNamespaceStarted", createNamespaceFlags());
     StaticStubSupport.install(Main.class, "isNamespaceStopping", createNamespaceFlags());
   }
 
