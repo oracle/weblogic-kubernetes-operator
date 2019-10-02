@@ -57,7 +57,7 @@ public class ItSessionMigration extends BaseTest {
       }.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-
+      testClassName = "sessmig";
       // create operator1
       if (operator == null) {
         Map<String, Object> operatorMap =
@@ -74,7 +74,7 @@ public class ItSessionMigration extends BaseTest {
         Map<String, Object> wlstDomainMap =
             TestUtils.createDomainMap(getNewNumber(), testClassName);
         wlstDomainMap.put("namespace", domainNS1);
-        wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
+        // wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
         domain = TestUtils.createDomain(wlstDomainMap);
         domain.verifyDomainCreated();
       }

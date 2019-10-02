@@ -4,7 +4,7 @@
 # This domain inputs file is used to create domain on pv using wlst option and traefik load balancer.
 
 adminServerName: admin-server
-domainUID: domainonpvwlst
+domainUID: domainonpvwlstelk
 clusterName: cluster-1
 configuredManagedServerCount: 4
 initialManagedServerReplicas: 2
@@ -13,8 +13,8 @@ managedServerNameBase: managed-server
 #weblogicDomainStoragePath: /scratch/external-domain-home/pv001/
 exposeAdminT3Channel: true
 exposeAdminNodePort: true
-namespace: default
+namespace: testelk
 loadBalancer: TRAEFIK
 ingressPerDomain: true
 createDomainPyScript: integration-tests/src/test/resources/loggingexporter/create-domain-logging-exporter.py
-voyagerWebPort: 30305
+voyagerWebPort: 30705

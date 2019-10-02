@@ -91,6 +91,7 @@ public class ItMonitoringExporter extends BaseTest {
       initialize(APP_PROPS_FILE, testClassName);
       LoggerHelper.getLocal().log(Level.INFO,"Checking if operator and domain are running, if not creating");
       if (operator == null) {
+
         operator = TestUtils.createOperator("operatorexp.yaml");
       }
       if (domain == null) {
@@ -272,7 +273,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static Domain createVerifyDomain(int number, Operator operator) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO,"create domain with UID : test" + number);
-    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number, "itmon"));
+    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
     domain.verifyDomainCreated();
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     LoggerHelper.getLocal().log(Level.INFO,"verify that domain is managed by operator");

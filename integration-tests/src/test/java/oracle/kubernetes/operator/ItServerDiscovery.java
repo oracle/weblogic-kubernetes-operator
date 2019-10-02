@@ -54,7 +54,7 @@ public class ItServerDiscovery extends BaseTest {
       }.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-
+      testClassName = "itdiscovery";
       // create operator1
       if (operator == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
