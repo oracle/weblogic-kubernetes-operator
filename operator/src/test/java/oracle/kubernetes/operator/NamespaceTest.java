@@ -39,7 +39,7 @@ public class NamespaceTest {
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(SystemPropertySupport.preserve(NAMESPACES_PROPERTY));
-    mementos.add(StaticStubSupport.install(Main.class, "isNamespaceStopping", currentNamespaces));
+    mementos.add(StaticStubSupport.preserve(Main.class, "isNamespaceStopping"));
 
     AtomicBoolean stopping = new AtomicBoolean(true);
     JobWatcher.defineFactory(r -> createDaemonThread(), tuning, ns -> stopping);
@@ -82,8 +82,7 @@ public class NamespaceTest {
   }
 
   private void cacheTargetNamespaces() throws NoSuchFieldException {
-    mementos.add(
-        StaticStubSupport.install(Main.class, "isNamespaceStopping", createNamespaceFlags()));
+    StaticStubSupport.install(Main.class, "isNamespaceStopping", createNamespaceFlags());
   }
 
   private Map<String, AtomicBoolean> createNamespaceFlags() {
