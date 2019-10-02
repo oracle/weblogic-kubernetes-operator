@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.54.0" />
-    <meta name="description" content="">
+    <meta name="description" content="WebLogic domains and operator&#39;s logs">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>Overview :: WebLogic Kubernetes Operator</title>
+    <title>WebLogic Domain :: WebLogic Kubernetes Operator</title>
 
     
     <link href="/weblogic-kubernetes-operator/css/nucleus.css?1570032378" rel="stylesheet">
@@ -32,7 +32,7 @@
     </style>
     
   </head>
-  <body class="" data-url="/weblogic-kubernetes-operator/userguide/overview/">
+  <body class="" data-url="/weblogic-kubernetes-operator/samples/simple/elastic-stack/weblogic-domain/">
     <nav id="sidebar" class="">
 
 
@@ -241,7 +241,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/userguide/" title="User Guide" class="dd-item 
-        parent
+        
         
         
         ">
@@ -378,8 +378,8 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/userguide/overview/" title="Overview" class="dd-item 
-        parent
-        active
+        
+        
         
         ">
       <a href="/weblogic-kubernetes-operator/userguide/overview/">
@@ -1207,7 +1207,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/" title="Samples" class="dd-item 
-        
+        parent
         
         
         ">
@@ -1234,7 +1234,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/" title="Simple samples" class="dd-item 
-        
+        parent
         
         
         ">
@@ -1513,7 +1513,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/elastic-stack/" title="Elastic Stack" class="dd-item 
-        
+        parent
         
         
         ">
@@ -1564,8 +1564,8 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/elastic-stack/weblogic-domain/" title="WebLogic Domain" class="dd-item 
-        
-        
+        parent
+        active
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/elastic-stack/weblogic-domain/">
@@ -2261,7 +2261,19 @@
             
           
           
-            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/userguide/'>User Guide</a> > Overview
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/samples/'>Samples</a> > <a href='/weblogic-kubernetes-operator/samples/simple/'>Simple samples</a> > <a href='/weblogic-kubernetes-operator/samples/simple/elastic-stack/'>Elastic Stack</a> > WebLogic Domain
+          
+         
+          
+         
           
          
           
@@ -2274,7 +2286,30 @@
                 
                     <div class="progress">
     <div class="wrapper">
-
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#overview">Overview</a>
+<ul>
+<li><a href="#sample-code">Sample code</a></li>
+</ul></li>
+<li><a href="#configure-log-files-to-use-a-volume">Configure log files to use a volume</a></li>
+<li><a href="#add-elasticsearch-secrets-to-weblogic-domain-credentials">Add Elasticsearch secrets to WebLogic domain credentials</a></li>
+<li><a href="#create-fluentd-configuration">Create Fluentd configuration</a></li>
+<li><a href="#mount-the-configmap-as-a-volume-in-the-weblogic-server-container">Mount the ConfigMap as a volume in the <code>weblogic-server</code> container</a></li>
+<li><a href="#add-fluentd-container">Add <code>fluentd</code> container</a></li>
+<li><a href="#verify-logs-are-exported-to-elasticsearch">Verify logs are exported to Elasticsearch</a></li>
+<li><a href="#domain-example">Domain example</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
     </div>
 </div>
 
@@ -2286,16 +2321,377 @@
         
         <div id="body-inner">
           
-            <h1>Overview</h1>
+            <h1>WebLogic Domain</h1>
           
 
         
 
 
-<p>The information in the following sections is organized in the order that you would most likely need to use it.  If you
-want to set up an operator and use it to create and manage WebLogic domains, you should
-follow the User Guide sections from top to bottom, and the necessary information will be
-presented in the correct order.</p>
+
+
+<h4 id="overview">Overview</h4>
+
+<p>This document describes to how to configure a WebLogic domain to use Fluentd to send log information to Elasticsearch.</p>
+
+<p>Here&rsquo;s the general mechanism for how this works:</p>
+
+<ul>
+<li><code>fluentd</code> runs as a separate container in the Administration Server and Managed Server pods</li>
+<li>The log files reside on a volume that is shared between the <code>weblogic-server</code> and <code>fluentd</code> containers</li>
+<li><code>fluentd</code> tails the domain logs files and exports them to Elasticsearch</li>
+<li>A <code>ConfigMap</code> contains the filter and format rules for exporting log records</li>
+</ul>
+
+<h5 id="sample-code">Sample code</h5>
+
+<p>The samples in this document assume an existing domain is being edited.  However, all changes to the domain YAML can be performed before the domain is created.</p>
+
+<p>For sample purposes, this document will assume a domain with the following attributes is being configured:</p>
+
+<ul>
+<li>Domain name is <code>bobs-bookstore</code></li>
+<li>Kubernetes namespace is <code>bob</code></li>
+<li>Kubernetes secret is <code>bobs-bookstore-weblogic-credentials</code></li>
+</ul>
+
+<p>The sample Elasticsearch configuration is:</p>
+
+<pre><code class="language-text">    elasticsearchhost: elasticsearch.bobs-books.sample.com
+    elasticsearchport: 443
+    elasticsearchuser: bob
+    elasticsearchpassword: changeme
+</code></pre>
+
+<h4 id="configure-log-files-to-use-a-volume">Configure log files to use a volume</h4>
+
+<p>The domain log files must be written to a volume that can be shared between the <code>weblogic-server</code> and <code>fluentd</code> containers.  The following elements are required to accomplish this:</p>
+
+<ul>
+<li><code>logHome</code> must be a path that can be shared between containers</li>
+<li><code>logHomeEnabled</code> must be set to <code>true</code> so that the logs will be written outside the pod and persist across pod restarts</li>
+<li>A <code>volume</code> must be defined that the log files will reside on.  In the example, <code>emptyDir</code> is a volume that gets created empty when a Pod is created.  It will persist across pod restarts but deleting the pod would delete the <code>emptyDir</code> content.</li>
+<li>The <code>volumeMounts</code> mounts the named volume created with <code>emptyDir</code> and establishes the base path for accessing the volume.</li>
+</ul>
+
+<p><strong>NOTE</strong>: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.</p>
+
+<p>Example: <code>kubectl edit domain bobs-bookstore -n bob</code> and make the following edits:</p>
+
+<pre><code class="language-yaml">spec:
+  logHome: /scratch/logs/bobs-bookstore
+  logHomeEnabled: true
+  serverPod:
+    volumes:
+    - emptyDir: {}
+      name: weblogic-domain-storage-volume
+    volumeMounts:
+    - mountPath: /scratch
+      name: weblogic-domain-storage-volume
+</code></pre>
+
+<h4 id="add-elasticsearch-secrets-to-weblogic-domain-credentials">Add Elasticsearch secrets to WebLogic domain credentials</h4>
+
+<p>The <code>fluentd</code> container will be configured to look for Elasticsearch parameters in the domain credentials.  Edit the domain credentials and add the parameters shown in the example below.</p>
+
+<p>Example: <code>kubectl edit secret bobs-bookstore-weblogic-credentials -n bob</code> and add the base64 encoded values of each Elasticsearch parameter:</p>
+
+<pre><code class="language-text">elasticsearchhost: ZWxhc3RpY3NlYXJjaC5ib2JzLWJvb2tzLnNhbXBsZS5jb20=
+elasticsearchport: NDQz
+elasticsearchuser: Ym9i
+elasticsearchpassword: d2VsY29tZTE=
+</code></pre>
+
+<h4 id="create-fluentd-configuration">Create Fluentd configuration</h4>
+
+<p>Create a <code>ConfigMap</code> named <code>fluentd-config</code> in the namespace of the domain.  The <code>ConfigMap</code> contains the parsing rules and Elasticsearch configuration.</p>
+
+<p>Here&rsquo;s an explanation of some elements defined in the <code>ConfigMap</code>:</p>
+
+<ul>
+<li>The <code>@type tail</code> indicates that <code>tail</code> will be used to obtain updates to the log file</li>
+<li>The <code>path</code> of the log file is obtained from the <code>LOG_PATH</code> environment variable that is defined in the <code>fluentd</code> container</li>
+<li>The <code>tag</code> value of log records is obtained from the <code>DOMAIN_UID</code> environment variable that is defined in the <code>fluentd</code> container</li>
+<li>The <code>&lt;parse&gt;</code> section defines how to interpret and tag each element of a log record</li>
+<li>The <code>&lt;match **&gt;</code> section contains the configuration information for connecting to Elasticsearch and defines the index name of each record to be the <code>domainUID</code></li>
+</ul>
+
+<p>The following is an example of how to create the <code>ConfigMap</code>:</p>
+
+<pre><code class="language-bash">cat &lt;&lt;EOF | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    weblogic.domainUID: bobs-bookstore
+    weblogic.resourceVersion: domain-v2
+  name: fluentd-config
+  namespace: bob
+data:
+  fluentd.conf: |
+    &lt;match fluent.**&gt;
+      @type null
+    &lt;/match&gt;
+    &lt;source&gt;
+      @type tail
+      path &quot;#{ENV['LOG_PATH']}&quot;
+      pos_file /tmp/server.log.pos
+      read_from_head true
+      tag &quot;#{ENV['DOMAIN_UID']}&quot;
+      # multiline_flush_interval 20s
+      &lt;parse&gt;
+        @type multiline
+        format_firstline /^####/
+        format1 /^####&lt;(?&lt;timestamp&gt;(.*?))&gt;/
+        format2 / &lt;(?&lt;level&gt;(.*?))&gt;/
+        format3 / &lt;(?&lt;subSystem&gt;(.*?))&gt;/
+        format4 / &lt;(?&lt;serverName&gt;(.*?))&gt;/
+        format5 / &lt;(?&lt;serverName2&gt;(.*?))&gt;/
+        format6 / &lt;(?&lt;threadName&gt;(.*?))&gt;/
+        format7 / &lt;(?&lt;info1&gt;(.*?))&gt;/
+        format8 / &lt;(?&lt;info2&gt;(.*?))&gt;/
+        format9 / &lt;(?&lt;info3&gt;(.*?))&gt;/
+        format10 / &lt;(?&lt;sequenceNumber&gt;(.*?))&gt;/
+        format11 / &lt;(?&lt;severity&gt;(.*?))&gt;/
+        format12 / &lt;(?&lt;messageID&gt;(.*?))&gt;/
+        format13 / &lt;(?&lt;message&gt;(.*?))&gt;/
+      &lt;/parse&gt;
+    &lt;/source&gt;
+    &lt;match **&gt;
+      @type elasticsearch
+      host &quot;#{ENV['ELASTICSEARCH_HOST']}&quot;
+      port &quot;#{ENV['ELASTICSEARCH_PORT']}&quot;
+      user &quot;#{ENV['ELASTICSEARCH_USER']}&quot;
+      password &quot;#{ENV['ELASTICSEARCH_PASSWORD']}&quot;
+      index_name &quot;#{ENV['DOMAIN_UID']}&quot;
+      scheme https
+      ssl_version TLSv1_2
+    &lt;/match&gt;
+EOF
+</code></pre>
+
+<h4 id="mount-the-configmap-as-a-volume-in-the-weblogic-server-container">Mount the ConfigMap as a volume in the <code>weblogic-server</code> container</h4>
+
+<p>Edit the domain definition and configure a volume for the <code>ConfigMap</code> containing the <code>fluentd</code> configuration.</p>
+
+<p><strong>NOTE</strong>: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.</p>
+
+<p>Example: <code>kubectl edit domain bobs-bookstore -n bob</code> and add the following portions to the domain definition.</p>
+
+<pre><code class="language-yaml">spec:
+  serverPod:
+    volumes:
+    - configMap:
+        defaultMode: 420
+        name: fluentd-config
+      name: fluentd-config-volume
+</code></pre>
+
+<h4 id="add-fluentd-container">Add <code>fluentd</code> container</h4>
+
+<p>Add a container to the domain that will run <code>fluentd</code> in the Administration Server and Managed Server pods.</p>
+
+<p>Notice the container definition:</p>
+
+<ul>
+<li>Defines a <code>LOG_PATH</code> environment variable that points to the log location of <code>bobbys-front-end</code></li>
+<li>Defines <code>ELASTICSEARCH_HOST</code>, <code>ELASTICSEARCH_PORT</code>, <code>ELASTICSEARCH_USER</code>, and <code>ELASTICSEARCH_PASSWORD</code> environment variables that are all retrieving their values from the secret <code>bobs-bookstore-weblogic-credentials</code></li>
+<li>Has volume mounts for the <code>fluentd-config</code> <code>ConfigMap</code> and the volume containing the domain logs</li>
+</ul>
+
+<p><strong>NOTE</strong>: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.</p>
+
+<p>Example: <code>kubectl edit domain bobs-bookstore -n bob</code> and add the following container definition.</p>
+
+<pre><code class="language-yaml">spec:
+  serverPod:
+    containers:
+    - args:
+      - -c
+      - /etc/fluent.conf
+      env:
+      - name: DOMAIN_UID
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.labels['weblogic.domainUID']
+      - name: SERVER_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.labels['weblogic.serverName']
+      - name: LOG_PATH
+        value: /scratch/logs/bobs-bookstore/$(SERVER_NAME).log
+      - name: FLUENTD_CONF
+        value: fluentd.conf
+      - name: FLUENT_ELASTICSEARCH_SED_DISABLE
+        value: &quot;true&quot;
+      - name: ELASTICSEARCH_HOST
+        valueFrom:
+          secretKeyRef:
+            key: elasticsearchhost
+            name: bobs-bookstore-weblogic-credentials
+      - name: ELASTICSEARCH_PORT
+        valueFrom:
+          secretKeyRef:
+            key: elasticsearchport
+            name: bobs-bookstore-weblogic-credentials
+      - name: ELASTICSEARCH_USER
+        valueFrom:
+          secretKeyRef:
+            key: elasticsearchuser
+            name: bobs-bookstore-weblogic-credentials
+            optional: true
+      - name: ELASTICSEARCH_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: elasticsearchpassword
+            name: bobs-bookstore-weblogic-credentials
+            optional: true
+      image: fluent/fluentd-kubernetes-daemonset:v1.3.3-debian-elasticsearch-1.3
+      imagePullPolicy: IfNotPresent
+      name: fluentd
+      resources: {}
+      volumeMounts:
+      - mountPath: /fluentd/etc/fluentd.conf
+        name: fluentd-config-volume
+        subPath: fluentd.conf
+      - mountPath: /scratch
+        name: weblogic-domain-storage-volume
+</code></pre>
+
+<h4 id="verify-logs-are-exported-to-elasticsearch">Verify logs are exported to Elasticsearch</h4>
+
+<p>After the Administration Server and Managed Server pods have started with all the changes described above, the logs should now be sent to Elasticsearch.</p>
+
+<p>You can check if the <code>fluentd</code> container is successfully tailing the log by executing a command like <code>kubectl logs -f bobs-bookstore-admin-server -n bob fluentd</code>.  The log output should look similar to this:</p>
+
+<pre><code class="language-text">2019-10-01 16:23:44 +0000 [info]: #0 starting fluentd worker pid=13 ppid=9 worker=0
+2019-10-01 16:23:44 +0000 [warn]: #0 /scratch/logs/bobs-bookstore/managed-server1.log not found. Continuing without tailing it.
+2019-10-01 16:23:44 +0000 [info]: #0 fluentd worker is now running worker=0
+2019-10-01 16:24:01 +0000 [info]: #0 following tail of /scratch/logs/bobs-bookstore/managed-server1.log
+</code></pre>
+
+<p>When you connect to Kibana, you will see an index created for the <code>domainUID</code>.</p>
+
+<p>Example Kibana log output:</p>
+
+<pre><code class="language-text">timestamp:Oct 1, 2019 4:18:07,111 PM GMT level:Info subSystem:Management serverName:bobs-bookstore-admin-server serverName2: 
+threadName:Thread-8 info1: info2: info3: sequenceNumber:1569946687111 severity:[severity-value: 64] [partition-id: 0] [partition-name: DOMAIN] 
+messageID:BEA-141107 message:Version: WebLogic Server 12.2.1.3.0 Thu Aug 17 13:39:49 PDT 2017 1882952 
+_id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
+</code></pre>
+
+<h4 id="domain-example">Domain example</h4>
+
+<p>The following is a complete example of a domain custom resource with a <code>fluentd</code> container configured.</p>
+
+<pre><code class="language-yaml">apiVersion: weblogic.oracle/v5
+kind: Domain
+metadata:
+  labels:
+    weblogic.domainUID: bobs-bookstore
+    weblogic.resourceVersion: domain-v2
+  name: bobs-bookstore
+  namespace: bob
+spec:
+  adminServer:
+    adminService:
+      channels:
+      - channelName: default
+        nodePort: 32401
+      - channelName: T3Channel
+        nodePort: 32402
+  clusters:
+  - clusterName: cluster-1
+    serverPod:
+  domainHome: /u01/oracle/user_projects/domains/bobs-bookstore
+  domainHomeInImage: true
+  domainUID: bobs-bookstore
+  experimental:
+    istio:
+      enabled: true
+      readinessPort: 8888
+  image: phx.ocir.io/bobs-bookstore
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets:
+  - name: ocir
+  includeServerOutInPodLog: true
+  logHome: /scratch/logs/bobs-bookstore
+  logHomeEnabled: true
+  replicas: 2
+  serverPod:
+    containers:
+    - args:
+      - -c
+      - /etc/fluent.conf
+      env:
+      - name: DOMAIN_UID
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.labels['weblogic.domainUID']
+      - name: SERVER_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.labels['weblogic.serverName']
+      - name: LOG_PATH
+        value: /scratch/logs/bobs-bookstore/$(SERVER_NAME).log
+      - name: FLUENTD_CONF
+        value: fluentd.conf
+      - name: FLUENT_ELASTICSEARCH_SED_DISABLE
+        value: &quot;true&quot;
+      - name: ELASTICSEARCH_HOST
+        valueFrom:
+          secretKeyRef:
+            key: elasticsearchhost
+            name: bobs-bookstore-weblogic-credentials
+      - name: ELASTICSEARCH_PORT
+        valueFrom:
+          secretKeyRef:
+            key: elasticsearchport
+            name: bobs-bookstore-weblogic-credentials
+      - name: ELASTICSEARCH_USER
+        valueFrom:
+          secretKeyRef:
+            key: elasticsearchuser
+            name: bobs-bookstore-weblogic-credentials
+            optional: true
+      - name: ELASTICSEARCH_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: elasticsearchpassword
+            name: bobs-bookstore-weblogic-credentials
+            optional: true
+      image: fluent/fluentd-kubernetes-daemonset:v1.3.3-debian-elasticsearch-1.3
+      imagePullPolicy: IfNotPresent
+      name: fluentd
+      resources: {}
+      volumeMounts:
+      - mountPath: /fluentd/etc/fluentd.conf
+        name: fluentd-config-volume
+        subPath: fluentd.conf
+      - mountPath: /scratch
+        name: weblogic-domain-storage-volume
+    env:
+    - name: JAVA_OPTIONS
+      value: -Dweblogic.StdoutDebugEnabled=false
+    - name: USER_MEM_ARGS
+      value: '-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m '
+    - name: WL_HOME
+      value: /u01/oracle/wlserver
+    - name: MW_HOME
+      value: /u01/oracle
+    volumeMounts:
+    - mountPath: /scratch
+      name: weblogic-domain-storage-volume
+    volumes:
+    - emptyDir: {}
+      name: weblogic-domain-storage-volume
+    - configMap:
+        defaultMode: 420
+        name: fluentd-config
+      name: fluentd-config-volume
+  serverStartPolicy: IF_NEEDED
+  webLogicCredentialsSecret:
+    name: bobs-bookstore-weblogic-credentials
+</code></pre>
 
 
 <footer class=" footline" >
@@ -2464,7 +2860,6 @@ presented in the correct order.</p>
             
                 
                     
-                    
                 
                 
 
@@ -2479,9 +2874,6 @@ presented in the correct order.</p>
             
             
                 
-                    
-                        
-                        
                     
                 
                 
@@ -2563,7 +2955,6 @@ presented in the correct order.</p>
             
                 
                     
-                    
                 
                 
 
@@ -2576,9 +2967,6 @@ presented in the correct order.</p>
             
             
                 
-                    
-                        
-                        
                     
                 
                 
@@ -3120,20 +3508,6 @@ presented in the correct order.</p>
             
                 
                     
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
                     
                 
                 
@@ -3149,6 +3523,25 @@ presented in the correct order.</p>
             
             
                 
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
                     
                 
                 
@@ -3312,6 +3705,7 @@ presented in the correct order.</p>
             
                 
                     
+                    
                 
                 
 
@@ -3327,6 +3721,9 @@ presented in the correct order.</p>
             
                 
                     
+                        
+                        
+                    
                 
                 
 
@@ -3343,6 +3740,7 @@ presented in the correct order.</p>
             
                 
                     
+                    
                 
                 
 
@@ -3367,6 +3765,9 @@ presented in the correct order.</p>
             
             
                 
+                    
+                        
+                        
                     
                 
                 
@@ -3822,10 +4223,10 @@ presented in the correct order.</p>
 	 
 	 
 		
-			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/introduction/design/" title="Design philosophy"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/samples/simple/elastic-stack/operator/" title="Operator"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/overview/prepare/" title="Prepare your environment" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/developerguide/" title="Developer Guide" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>

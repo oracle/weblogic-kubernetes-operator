@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.54.0" />
-    <meta name="description" content="">
+    <meta name="description" content="Sample for configuring the Elasticsearch and Kibana deployments and services for the operator&#39;s logs.">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>Overview :: WebLogic Kubernetes Operator</title>
+    <title>Operator :: WebLogic Kubernetes Operator</title>
 
     
     <link href="/weblogic-kubernetes-operator/css/nucleus.css?1570032378" rel="stylesheet">
@@ -32,7 +32,7 @@
     </style>
     
   </head>
-  <body class="" data-url="/weblogic-kubernetes-operator/userguide/overview/">
+  <body class="" data-url="/weblogic-kubernetes-operator/samples/simple/elastic-stack/operator/">
     <nav id="sidebar" class="">
 
 
@@ -241,7 +241,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/userguide/" title="User Guide" class="dd-item 
-        parent
+        
         
         
         ">
@@ -378,8 +378,8 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/userguide/overview/" title="Overview" class="dd-item 
-        parent
-        active
+        
+        
         
         ">
       <a href="/weblogic-kubernetes-operator/userguide/overview/">
@@ -1207,7 +1207,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/" title="Samples" class="dd-item 
-        
+        parent
         
         
         ">
@@ -1234,7 +1234,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/" title="Simple samples" class="dd-item 
-        
+        parent
         
         
         ">
@@ -1513,7 +1513,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/elastic-stack/" title="Elastic Stack" class="dd-item 
-        
+        parent
         
         
         ">
@@ -1540,8 +1540,8 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/elastic-stack/operator/" title="Operator" class="dd-item 
-        
-        
+        parent
+        active
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/elastic-stack/operator/">
@@ -2261,7 +2261,19 @@
             
           
           
-            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/userguide/'>User Guide</a> > Overview
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/samples/'>Samples</a> > <a href='/weblogic-kubernetes-operator/samples/simple/'>Simple samples</a> > <a href='/weblogic-kubernetes-operator/samples/simple/elastic-stack/'>Elastic Stack</a> > Operator
+          
+         
+          
+         
           
          
           
@@ -2286,16 +2298,42 @@
         
         <div id="body-inner">
           
-            <h1>Overview</h1>
+            <h1>Operator</h1>
           
 
         
 
 
-<p>The information in the following sections is organized in the order that you would most likely need to use it.  If you
-want to set up an operator and use it to create and manage WebLogic domains, you should
-follow the User Guide sections from top to bottom, and the necessary information will be
-presented in the correct order.</p>
+<p>When you install the WebLogic operator Helm chart, you can set
+<code>elkIntegrationEnabled</code> to <code>true</code> in your <code>values.yaml</code> file to tell the operator to send the contents of the operator&rsquo;s logs to Elasticsearch.</p>
+
+<p>Typically, you would have already configured Elasticsearch and Kibana in the
+Kubernetes cluster, and also would have specified <code>elasticSearchHost</code> and <code>elasticSearchPort</code> in your <code>values.yaml</code> file to point to where Elasticsearch is already running.</p>
+
+<p>This sample configures the Elasticsearch and Kibana deployments and services.
+It&rsquo;s useful for trying out the operator in a Kubernetes cluster that doesn&rsquo;t already
+have them configured.</p>
+
+<p>It runs the Elastic Stack on the same host and port that the operator&rsquo;s Helm chart defaults
+to, therefore, you only need to set <code>elkIntegrationEnabled</code> to <code>true</code> in your
+<code>values.yaml</code> file.</p>
+
+<p>To control Elasticsearch memory parameters (Heap allocation and Enabling/Disabling swapping) please open the file <code>elasticsearch_and_kibana.yaml</code>, search for env variables of the elasticsearch container and change the values of the following.</p>
+
+<ul>
+<li><code>ES_JAVA_OPTS</code>: value may contain, for example, <code>-Xms512m</code> <code>-Xmx512m</code> to lower the default memory usage (please be aware that this value is only applicable for demo purpose and it is not the one recommended by Elasticsearch).</li>
+<li><code>bootstrap.memory_lock</code>: value may contain <code>true</code> (enables the usage of <code>mlockall</code> to try to lock the process address space into RAM, preventing any Elasticsearch memory from being swapped out) or <code>false</code> (disables the usage of <code>mlockall</code> to try to lock the process address space into RAM, preventing any Elasticsearch memory from being swapped out).</li>
+</ul>
+
+<p>To install Elasticsearch and Kibana, use:</p>
+
+<pre><code>$  kubectl apply -f kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml
+</code></pre>
+
+<p>To remove them, use:</p>
+
+<pre><code>$  kubectl delete -f kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml
+</code></pre>
 
 
 <footer class=" footline" >
@@ -2464,7 +2502,6 @@ presented in the correct order.</p>
             
                 
                     
-                    
                 
                 
 
@@ -2479,9 +2516,6 @@ presented in the correct order.</p>
             
             
                 
-                    
-                        
-                        
                     
                 
                 
@@ -2563,7 +2597,6 @@ presented in the correct order.</p>
             
                 
                     
-                    
                 
                 
 
@@ -2576,9 +2609,6 @@ presented in the correct order.</p>
             
             
                 
-                    
-                        
-                        
                     
                 
                 
@@ -3120,20 +3150,6 @@ presented in the correct order.</p>
             
                 
                     
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
                     
                 
                 
@@ -3149,6 +3165,25 @@ presented in the correct order.</p>
             
             
                 
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
                     
                 
                 
@@ -3312,6 +3347,7 @@ presented in the correct order.</p>
             
                 
                     
+                    
                 
                 
 
@@ -3326,6 +3362,7 @@ presented in the correct order.</p>
             
             
                 
+                    
                     
                 
                 
@@ -3342,6 +3379,9 @@ presented in the correct order.</p>
             
             
                 
+                    
+                        
+                        
                     
                 
                 
@@ -3822,10 +3862,10 @@ presented in the correct order.</p>
 	 
 	 
 		
-			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/introduction/design/" title="Design philosophy"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/samples/simple/elastic-stack/" title="Elastic Stack"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/overview/prepare/" title="Prepare your environment" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/samples/simple/elastic-stack/weblogic-domain/" title="WebLogic Domain" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
