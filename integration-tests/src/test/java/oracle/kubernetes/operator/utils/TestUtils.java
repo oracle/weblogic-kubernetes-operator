@@ -1022,7 +1022,7 @@ public class TestUtils {
             + dockerServer
             + " --docker-username="
             + dockerUser
-            + " --docker-password=\""
+            + " --docker-password="
             + dockerPassword;
             
     if (dockerEmail != null) {
