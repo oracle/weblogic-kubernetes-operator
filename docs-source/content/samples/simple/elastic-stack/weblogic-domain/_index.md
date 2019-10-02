@@ -16,6 +16,10 @@ Here's the general mechanism for how this works:
 * `fluentd` tails the domain logs files and exports them to Elasticsearch
 * A `ConfigMap` contains the filter and format rules for exporting log records
 
+##### Sample code
+
+The samples in this document assume an existing domain is being edited.  However, all changes to the domain YAML can be performed before the domain is created.
+
 For sample purposes, this document will assume a domain with the following attributes is being configured:
 
 * Domain name is `bobs-bookstore`
