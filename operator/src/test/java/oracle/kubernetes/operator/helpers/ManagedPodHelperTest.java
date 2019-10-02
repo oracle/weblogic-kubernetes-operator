@@ -61,8 +61,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   private static final String RAW_VALUE_2 = "$(SERVER_NAME) is not $(ADMIN_NAME):$(ADMIN_PORT)";
   private static final String END_VALUE_2 = "ess_server1 is not ADMIN_SERVER:7001";
   private static final String RAW_VALUE_3 = "ess-base-$(SERVER_NAME)";
-  private static final String END_VALUE_3_DNS1123 = "ess-base-ess-server1";
   private static final String END_VALUE_3 = "ess-base-ess_server1";
+  private static final String END_VALUE_3_DNS1123 = "ess-base-ess-server1";
   private static final String RAW_VALUE_4 = "$(SERVER_NAME)-volume";
   private static final String END_VALUE_4_DNS1123 = "ess-server1-volume";
   private static final String CLUSTER_NAME = "test-cluster";

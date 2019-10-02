@@ -85,11 +85,12 @@ public class LegalNames {
   }
 
   /**
-   * If "dns_1123_fields" tuning parameter is configured with a comma delimited values
-   * containing field names that are required to be in DNS-1123 format.
+   * Returns a list of field names of fields that needs to be in DNS-1123 format from the
+   * "dns1123Fields" tuning parameter, if it is configured with a comma delimited values
+   * containing field names.
    *
    * @return String array containing a list of fields that are required to be * in DNS-1123 format,
-   *         or null if "dns_1123_fields" tuning parameter is not configured.
+   *         or null if "dns1123Fields" tuning parameter is not configured.
    */
   private static String[] getConfiguredDns1123Fields() {
     String configuredValue = TuningParameters.getInstance().get(DNS_1123_FIELDS_PARAM);
