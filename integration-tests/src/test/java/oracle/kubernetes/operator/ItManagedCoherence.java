@@ -241,7 +241,7 @@ public class ItManagedCoherence extends BaseTest {
     logger.info("number of records in cache = " + result.stdout());
     if (!(result.stdout().equals("6"))) {
       logger.info("number of records in cache = " + result.stdout());
-      assertFalse("Expected 6 records", "6".equals(result.stdout()));
+      assertTrue("Expected 6 records", "6".equals(result.stdout()));
     }
     // get the data from cache
     result = getCacheContents();
@@ -250,7 +250,7 @@ public class ItManagedCoherence extends BaseTest {
     // Now clear the cache
     result = clearCache();
     logger.info("Cache is cleared and should be empty " + result.stdout());
-    if (!(result.stdout().equals("0"))) {
+    if (!(result.stdout().trim().equals("0"))) {
       logger.info("number of records in cache = " + result.stdout());
       assertFalse("Expected 0 records", "0".equals(result.stdout()));
     }
@@ -260,7 +260,7 @@ public class ItManagedCoherence extends BaseTest {
   private ExecResult addDataToCache(String firstName, String secondName) throws Exception {
     logger.info("Add initial data to cache");
 
-    StringBuffer curlCmd = new StringBuffer("curl -v ");
+    StringBuffer curlCmd = new StringBuffer("curl --silent ");
     curlCmd
         .append("-d 'action=add&first=")
         .append(firstName)
@@ -279,7 +279,7 @@ public class ItManagedCoherence extends BaseTest {
         .append("/")
         .append(appToDeploy);
     logger.info("curlCmd is " + curlCmd.toString());
-    ExecResult result = execCacheCmd(curlCmd.toString());
+    ExecResult result = TestUtils.exec(curlCmd.toString(), true);
     return result;
   }
 
@@ -300,7 +300,7 @@ public class ItManagedCoherence extends BaseTest {
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
-    ExecResult result = execCacheCmd(curlCmd.toString());
+    ExecResult result = TestUtils.exec(curlCmd.toString(), true);
     return result;
   }
 
@@ -321,7 +321,7 @@ public class ItManagedCoherence extends BaseTest {
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
-    ExecResult result = execCacheCmd(curlCmd.toString());
+    ExecResult result = TestUtils.exec(curlCmd.toString(), true);
     return result;
   }
 
@@ -342,14 +342,8 @@ public class ItManagedCoherence extends BaseTest {
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
-    ExecResult result = execCacheCmd(curlCmd.toString());
+    ExecResult result = TestUtils.exec(curlCmd.toString(), true);
     return result;
   }
 
-  private ExecResult execCacheCmd(String cmdToExec) throws Exception {
-    ExecResult result = TestUtils.exec(cmdToExec);
-    String output = result.stdout().trim();
-    logger.info("output " + output);
-    return result;
-  }
 }
