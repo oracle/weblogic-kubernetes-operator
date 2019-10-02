@@ -148,12 +148,14 @@ public class ItOperator extends BaseTest {
       // domain.verifyAdminConsoleViaLB();
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+      // if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+      if (domain != null && testCompletedSuccessfully) {
         LoggerHelper.getLocal().log(Level.INFO, "About to delete domain: " + domain.getDomainUid());
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
       }
-      if (operator != null && (JENKINS || testCompletedSuccessfully)) {
+      // if (operator != null && (JENKINS || testCompletedSuccessfully)) {
+      if (operator != null && testCompletedSuccessfully) {
         operator.destroy();
       }
     }
@@ -574,7 +576,8 @@ public class ItOperator extends BaseTest {
       testClusterScaling(operator1, domain, true);
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+      // if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+      if (domain != null && testCompletedSuccessfully) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
       }
