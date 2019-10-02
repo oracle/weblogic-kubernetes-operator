@@ -39,10 +39,10 @@ The domain log files must be written to a volume that can be shared between the 
 
 * `logHome` must be a path that can be shared between containers
 * `logHomeEnabled` must be set to `true` so that the logs will be written outside the pod and persist across pod restarts
-* A `volume` must be defined that the log files will reside on.  In the example `emptyDir` is a volume that gets created empty when a Pod is created.  It will persist across pod restarts but deleting the pod would delete the `emptyDir` content.
+* A `volume` must be defined that the log files will reside on.  In the example, `emptyDir` is a volume that gets created empty when a Pod is created.  It will persist across pod restarts but deleting the pod would delete the `emptyDir` content.
 * The `volumeMounts` mounts the named volume created with `emptyDir` and establishes the base path for accessing the volume.
 
-**NOTE**: For brevity only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
+**NOTE**: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
 
 Example: `kubectl edit domain bobs-bookstore -n bob` and make the following edits:
 
@@ -138,7 +138,7 @@ EOF
 #### Mount the ConfigMap as a volume in the `weblogic-server` container
 Edit the domain definition and configure a volume for the `ConfigMap` containing the `fluentd` configuration.
 
-**NOTE**: For brevity only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
+**NOTE**: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
 
 Example: `kubectl edit domain bobs-bookstore -n bob` and add the following portions to the domain definition.  
 ```yaml
@@ -157,10 +157,10 @@ Add a container to the domain that will run `fluentd` in the Administration Serv
 Notice the container definition:
 
 * Defines a `LOG_PATH` environment variable that points to the log location of `bobbys-front-end`
-* Defines `ELASTICSEARCH_HOST`, `ELASTICSEARCH_PORT`, `ELASTICSEARCH_USER`, and `ELASTICSEARCH_PASSWORD` environment variables that are all retrieving their value from the secret `bobs-bookstore-weblogic-credentials`
+* Defines `ELASTICSEARCH_HOST`, `ELASTICSEARCH_PORT`, `ELASTICSEARCH_USER`, and `ELASTICSEARCH_PASSWORD` environment variables that are all retrieving their values from the secret `bobs-bookstore-weblogic-credentials`
 * Has volume mounts for the `fluentd-config` `ConfigMap` and the volume containing the domain logs
 
-**NOTE**: For brevity only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
+**NOTE**: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
 
 Example: `kubectl edit domain bobs-bookstore -n bob` and add the following container definition.
 ```yaml
@@ -231,7 +231,7 @@ You can check if the `fluentd` container is successfully tailing the log by exec
 2019-10-01 16:24:01 +0000 [info]: #0 following tail of /scratch/logs/bobs-bookstore/managed-server1.log
 ```
 
-Connect to Kibana you will see an index created for the `domainUID`.
+When you connect to Kibana, you will see an index created for the `domainUID`.
 
 Example Kibana log output:
 ```text
@@ -243,7 +243,7 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
 
 #### Domain example
 
-Below is a complete example of a domain custom resource with a `fluentd` container configured.
+The following is a complete example of a domain custom resource with a `fluentd` container configured.
 
 ```yaml
 apiVersion: weblogic.oracle/v5
