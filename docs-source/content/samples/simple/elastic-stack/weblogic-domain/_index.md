@@ -21,7 +21,8 @@ For sample purposes, this document will assume a domain with the following attri
 * Domain name is `bobs-bookstore`
 * Kubernetes namespace is `bob`
 * Kubernetes secret is `bobs-bookstore-weblogic-credentials`
-* Elasticsearch configuration
+
+The sample Elasticsearch configuration is:
 ```text
     elasticsearchhost: elasticsearch.bobs-books.sample.com
     elasticsearchport: 443
@@ -68,7 +69,7 @@ elasticsearchpassword: d2VsY29tZTE=
 #### Create Fluentd configuration
 Create a `ConfigMap` named `fluentd-config` in the namespace of the domain.  The `ConfigMap` contains the parsing rules and Elasticsearch configuration.
 
-An example of how to create the `ConfigMap`:
+The following is an example of how to create the `ConfigMap`:
 ```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -122,7 +123,7 @@ data:
 EOF
 ```
 
-#### Mount the ConfigMap as a volume in weblogic-server container
+#### Mount the ConfigMap as a volume in the `weblogic-server` container
 Edit the domain definition and configure a volume for the `ConfigMap` containing the `fluentd` configuration.
 
 **NOTE**: For brevity only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
@@ -138,7 +139,7 @@ spec:
       name: fluentd-config-volume
 ```
 
-#### Add Fluentd container
+#### Add `fluentd` container
 Add a container to the domain that will run `fluentd` in the Administration Server and Managed Server pods.
 
 Notice the container definition:
