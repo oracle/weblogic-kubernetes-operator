@@ -833,17 +833,6 @@ public class Domain {
       ExecResult result = TestUtils.exec(cmd);
       // logger.info("Command result " + result.stdout() + " err =" + result.stderr());
       logger.info("Run the script to create domain");
-
-      // create domain using different output dir but pv is same, it fails as the domain was already
-      // created on the pv dir
-      try {
-        callCreateDomainScript(userProjectsDir + "2");
-      } catch (RuntimeException re) {
-        re.printStackTrace();
-        logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
-        return;
-      }
-      throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
     } else {
       String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
       String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
@@ -853,18 +842,17 @@ public class Domain {
           "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
       }
       logger.info("Run the script to create domain");
-
-      // create domain using different output dir but pv is same, it fails as the domain was already
-      // created on the pv dir
-      try {
-        callCreateDomainScript(userProjectsDir + "2");
-      } catch (RuntimeException re) {
-        re.printStackTrace();
-        logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
-        return;
-      }
-      throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
     }
+    // create domain using different output dir but pv is same, it fails as the domain was already
+    // created on the pv dir
+    try {
+      callCreateDomainScript(userProjectsDir + "2");
+    } catch (RuntimeException re) {
+      re.printStackTrace();
+      logger.info("[SUCCESS] create domain job failed, this is the expected behavior");
+      return;
+    }
+    throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
   }
 
   /**

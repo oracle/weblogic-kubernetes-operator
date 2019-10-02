@@ -1217,17 +1217,7 @@ public class TestUtils {
   public static void createDirUnderDomainPV(String dirPath) throws Exception {
     if (BaseTest.OPENSHIFT) {
       String crdCmd = "mkdir -m 777 -p " +  dirPath;
-  
-      ExecResult result = ExecCommand.exec(crdCmd);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-          "FAILURE: command to create domain scripts directory "
-              + crdCmd
-              + " failed, returned "
-              + result.stdout()
-              + result.stderr());
-      }
-      logger.info("command result " + result.stdout().trim());
+      ExecResult result = TestUtils.exec(crdCmd, true);
     } else {
       dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
       String crdCmd =
@@ -1236,16 +1226,7 @@ public class TestUtils {
           + dirPath
           + "'";
       
-      ExecResult result = ExecCommand.exec(crdCmd);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-          "FAILURE: command to create domain scripts directory "
-              + crdCmd
-              + " failed, returned "
-              + result.stdout()
-              + result.stderr());
-      }
-      logger.info("command result " + result.stdout().trim());
+      ExecResult result = TestUtils.exec(crdCmd, true);
     }
   }
 

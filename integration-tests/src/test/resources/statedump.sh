@@ -19,7 +19,6 @@ function state_dump {
      local ARCHIVE_DIR="$RESULT_ROOT/acceptance_test_pv_archive"
      local ARCHIVE_FILE="IntSuite.${IT_CLASS}.PV.`date '+%Y%m%d%H%M%S'`.jar"
      local ARCHIVE="$ARCHIVE_DIR/$ARCHIVE_FILE"
-     #local OPENSHIFT="$OPENSHIFT"
 
      if [ ! -d "$RESULT_DIR" ]; then
         echo State dump exiting early.  RESULT_DIR \"$RESULT_DIR\" does not exist or is not a directory.
@@ -183,8 +182,6 @@ export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
 export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
 export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
-#export OPENSHIFT= ${OPENSHIFT:-false}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
-#echo "OPENSHIFT$OPENSHIFT"
     
 state_dump
