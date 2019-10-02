@@ -73,6 +73,14 @@ elasticsearchpassword: d2VsY29tZTE=
 #### Create Fluentd configuration
 Create a `ConfigMap` named `fluentd-config` in the namespace of the domain.  The `ConfigMap` contains the parsing rules and Elasticsearch configuration.
 
+Here's an explanation of some elements defined in the `ConfigMap`:
+
+* The `@type tail` indicates that `tail` will be used to obtain updates to the log file
+* The `path` of the log file is obtained from the `LOG_PATH` environment variable that is defined in the `fluentd` container
+* The `tag` value of log records is obtained from the `DOMAIN_UID` environment variable that is defined in the `fluentd` container
+* The `<parse>` section defines how to interpret and tag each element of a log record
+* The `<match **>` section contains the configuration information for connecting to Elasticsearch and defines the index name of each record to be the `domainUID`
+
 The following is an example of how to create the `ConfigMap`:
 ```bash
 cat <<EOF | kubectl apply -f -
