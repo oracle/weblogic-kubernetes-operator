@@ -66,6 +66,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return JOB_WATCHERS.computeIfAbsent(getNamespace(domain), n -> factory.createFor(domain));
   }
 
+  public static void removeNamespace(String ns) {
+    JOB_WATCHERS.remove(ns);
+  }
+
   private static String getNamespace(Domain domain) {
     return domain.getMetadata().getNamespace();
   }
@@ -100,7 +104,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
 
   public static boolean isComplete(V1Job job) {
     V1JobStatus status = job.getStatus();
-    LOGGER.fine("JobWatcher.isComplete status of job " + job.getMetadata().getName() + ": " + status);
+    LOGGER.fine(
+        "JobWatcher.isComplete status of job " + job.getMetadata().getName() + ": " + status);
     if (status != null) {
       List<V1JobCondition> conds = status.getConditions();
       if (conds != null) {
@@ -255,8 +260,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
                     // failed due to DeadlineExceeded, as the pod container would likely not
                     // be available for reading
                     if (isJobFailed && "DeadlineExceeded".equals(getFailedReason(job))) {
-                      fiber.terminate(
-                          new DeadlineExceededException(job), packet);
+                      fiber.terminate(new DeadlineExceededException(job), packet);
                     }
                     fiber.resume(packet);
                   }
@@ -273,8 +277,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
                             metadata.getNamespace(),
                             new ResponseStep<>(null) {
                               @Override
-                              public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
-                                if (callResponse.getResult() != null && isComplete(callResponse.getResult())) {
+                              public NextAction onSuccess(
+                                  Packet packet, CallResponse<V1Job> callResponse) {
+                                if (callResponse.getResult() != null
+                                    && isComplete(callResponse.getResult())) {
                                   if (didResume.compareAndSet(false, true)) {
                                     completeCallbackRegistrations.remove(
                                         metadata.getName(), complete);

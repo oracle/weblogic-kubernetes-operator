@@ -224,6 +224,7 @@ public class Main {
       eventWatchers.remove(ns);
       podWatchers.remove(ns);
       serviceWatchers.remove(ns);
+      JobWatcher.removeNamespace(ns);
     }
   }
 
@@ -244,7 +245,7 @@ public class Main {
     return new NullCompletionCallback(completionAction);
   }
 
-  private static Runnable recheckDomains() {
+  static Runnable recheckDomains() {
     return () -> {
       Collection<String> targetNamespaces = getTargetNamespaces();
 
