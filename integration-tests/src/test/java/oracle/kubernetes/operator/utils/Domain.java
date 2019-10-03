@@ -1650,7 +1650,7 @@ public class Domain {
     // create config map and secret for custom sit config
     createConfigMapAndSecretForSitConfig();
     
-    if (BaseTest.SHARED_CLUSTER) {
+    if (BaseTest.SHARED_CLUSTER && !domainMap.containsKey("domainHomeImageBase")) {
     	createDockerRegistrySecret();
     }
   }
