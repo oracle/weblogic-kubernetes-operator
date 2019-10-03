@@ -1,8 +1,8 @@
 ---
-title: "WebLogic Domain"
+title: "WebLogic domain"
 date: 2019-10-01T14:32:31-05:00
 weight: 2
-description: "WebLogic domains and operator's logs"
+description: "Sample for using Fluentd for WebLogic domain and operator's logs"
 ---
 
 
@@ -235,9 +235,9 @@ When you connect to Kibana, you will see an index created for the `domainUID`.
 
 Example Kibana log output:
 ```text
-timestamp:Oct 1, 2019 4:18:07,111 PM GMT level:Info subSystem:Management serverName:bobs-bookstore-admin-server serverName2: 
-threadName:Thread-8 info1: info2: info3: sequenceNumber:1569946687111 severity:[severity-value: 64] [partition-id: 0] [partition-name: DOMAIN] 
-messageID:BEA-141107 message:Version: WebLogic Server 12.2.1.3.0 Thu Aug 17 13:39:49 PDT 2017 1882952 
+timestamp:Oct 1, 2019 4:18:07,111 PM GMT level:Info subSystem:Management serverName:bobs-bookstore-admin-server serverName2:
+threadName:Thread-8 info1: info2: info3: sequenceNumber:1569946687111 severity:[severity-value: 64] [partition-id: 0] [partition-name: DOMAIN]
+messageID:BEA-141107 message:Version: WebLogic Server 12.2.1.3.0 Thu Aug 17 13:39:49 PDT 2017 1882952
 _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
 ```
 
@@ -355,4 +355,3 @@ spec:
   webLogicCredentialsSecret:
     name: bobs-bookstore-weblogic-credentials
 ```
-
