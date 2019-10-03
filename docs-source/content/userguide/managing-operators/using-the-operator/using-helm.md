@@ -167,18 +167,17 @@ You must include the `default` namespace in the list if you want the operator to
 ##### `dns1123Fields`
 
 When the operator processes variable references in the domain resource, such as `$(SERVER_NAME)`,
-it would convert them into DNS-1123 legal values if the variables are referenced
-in fields that requires their values to be conforming to DNS-1123. A default list of such field 
+it will convert them into DNS-1123 legal values if the variables are referenced
+in fields that require their values to be conforming to DNS-1123. A default list of such field 
 names can be found inside the class `Legalnames`
 in the `oracle.kubernetes.operator.helpers package`.
-For example, a value `"$(SERVER_NAME)-volume` is specified in a field in a domain resource, 
-where the name of the server is `managed_server1`, and the value is found in a field in the
-list of DNS-1123 field names. Upon variable substitution the operator would replace it with 
-the value `managed-server1-volume` with the underscore, which is not legal in DNS-1123, replaced 
-with a hyphen.
+For example, a value `$(SERVER_NAME)-volume` is specified in a field in a domain resource that 
+requires DNS-1123. Suppose the name of the server is `managed_server1` which contains an illegal 
+underscore character. Upon variable substitution, the operator will replace it with a hyphen, and 
+the resulting value will become `managed-server1-volume`.
 
 A comma separated list of field names can be supplied in `dns1123Fields` to customize the list of 
-field names that , or it can be left commented out to use the default list of field names.
+field names, or it can be left commented out to use the default list of field names.
 
 This property is optional.
 
