@@ -52,8 +52,8 @@ public class ItPodsRestart extends BaseTest {
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     if (QUICKTEST) {
-      setMaxIterationsPod(40);
       initialize(APP_PROPS_FILE);
+      setMaxIterationsPod(40);
 
       logger.info("Checking if operator1 and domain are running, if not creating");
       if (operator1 == null) {
