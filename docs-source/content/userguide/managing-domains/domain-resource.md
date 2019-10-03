@@ -48,7 +48,7 @@ $ kubectl describe domain [domain name] -n [namespace]
 
 The domain resource, like all [Kubernetes objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/), is described by three sections: `metadata`, `spec`, and `status`.  
 
-The `metadata` section names the domain resource and its namespace.  The name of the domain resource is the default value for the "domain UID" which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name.  The domain resource name is required to be unique in the namespace and the domain UID should be unique across the cluster.  The domain UID, domain resource name, and domain name (from the WebLogic domain configuration) may all be different.
+The `metadata` section names the domain resource and its namespace.  The name of the domain resource is the default value for the `domain UID` which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name.  The domain resource name is required to be unique in the namespace and the domain UID should be unique across the cluster.  The domain UID, domain resource name, and domain name (from the WebLogic domain configuration) may all be different.
 
 The `spec` section describes the intended running state of the domain, including intended runtime state of server instances, number of cluster members started, and details about Kubernetes pod or service generation, such as resource constraints, scheduling requirements, or volume mounts.
 
@@ -56,39 +56,46 @@ The `status` section is updated by the operator and describes the actual running
 
 #### Domain resource spec elements
 
-The domain resource `spec` section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters or specific Managed Servers.
+The domain resource `spec` section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers.
 
 Elements related to domain identification, Docker image, and domain home:
+
 * `domainUID`: The domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of `metadata.name`.
-* `image`: The WebLogic Docker image. Required when `domainHomeInImage` is true; otherwise, defaults to "container-registry.oracle.com/middleware/weblogic:12.2.1.3".
-* `imagePullPolicy`: The image pull policy for the WebLogic Docker image. Legal values are `Always`, `Never` and `IfNotPresent`. Defaults to `Always` if image ends in ":latest", `IfNotPresent` otherwise.
+* `image`: The WebLogic Docker image. Required when `domainHomeInImage` is true; otherwise, defaults to `container-registry.oracle.com/middleware/weblogic:12.2.1.3`.
+* `imagePullPolicy`: The image pull policy for the WebLogic Docker image. Legal values are `Always`, `Never` and `IfNotPresent`. Defaults to `Always` if image ends in `:latest`; `IfNotPresent` otherwise.
 * `imagePullSecrets`: A list of image pull secrets for the WebLogic Docker image.
-* `domainHome`: The folder for the WebLogic Domain. Not required. Defaults to "/shared/domains/domains/domainUID" if `domainHomeInImage` is false. Defaults to "/u01/oracle/user_projects/domains/" if `domainHomeInImage` is true.
+* `domainHome`: The folder for the WebLogic domain. Not required. Defaults to `/shared/domains/domains/domainUID` if `domainHomeInImage` is false. Defaults to `/u01/oracle/user_projects/domains/` if `domainHomeInImage` is true.
 * `domainHomeInImage`: True if this domain's home is defined in the Docker image for the domain. Defaults to true.
 
 Elements related to logging:
-* `includeServerOutInPodLog`: If true (the default), the server ".out" file will be included in the pod's stdout.
-* `logHome`: The in-pod name of the directory in which to store the domain, Node Manager, server logs, and server ".out" files.
+
+* `includeServerOutInPodLog`: If true (the default), the server `.out` file will be included in the pod's stdout.
+* `logHome`: The in-pod name of the directory in which to store the domain, Node Manager, server logs, and server `.out` files.
 * `logHomeEnabled`: Specifies whether the log home folder is enabled. Not required. Defaults to true if `domainHomeInImage` is false. Defaults to false if `domainHomeInImage` is true.
 
 Elements related to security:
-* `webLogicCredentialsSecret`: The name of a pre-created Kubernetes secret, in the domain resource's namespace, that holds the user name and password needed to boot WebLogic Server under the 'username' and 'password' fields.
+
+* `webLogicCredentialsSecret`: The name of a pre-created Kubernetes secret, in the domain resource's namespace, that holds the user name and password needed to boot WebLogic Server under the `username` and `password` fields.
 
 Elements related to domain [startup and shutdown](domain-lifecycle/startup.md):
+
 * `serverStartPolicy`: The strategy for deciding whether to start a server. Legal values are `ADMIN_ONLY`, `NEVER`, or `IF_NEEDED`.
-* `serverStartState`: The state in which the server is to be started. Use `ADMIN` if server should start in the admin state. Defaults to `RUNNING`.
+* `serverStartState`: The state in which the server is to be started. Use `ADMIN` if the server should start in the admin state. Defaults to `RUNNING`.
 * `restartVersion`: If present, every time this value is updated, the operator will restart the required servers.
 * `replicas`: The number of Managed Servers to run in any cluster that does not specify a `replicas` count.
 
 Elements related to overriding WebLogic domain configuration:
+
 * `configOverrides`: The name of the config map for optional WebLogic configuration overrides.
 * `configOverrideSecrets`: A list of names of the secrets for optional WebLogic configuration overrides.
 
 Elements related to Kubernetes pod and service generation:
+
 * `serverPod`: Configuration affecting server pods for WebLogic Server instances. Most entries specify standard Kubernetes content for pods that you may want the operator to include in pods generated for WebLogic Server instances, such as labels, annotations, volumes, or scheduling constraints, including anti-affinity.
 * `serverService`: Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.
 
-Sub-sections related to the Administration Server, specific clusters or specific Managed Servers:
+Sub-sections related to the Administration Server, specific clusters, or specific Managed Servers:
+
 * `adminServer`: Configuration for the Administration Server.
 * `clusters`: Configuration for specific clusters.
 * `managedServers`: Configuration for specific Managed Servers.
@@ -97,17 +104,18 @@ The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverSer
 
 ### Pod generation
 
-The operator creates a pod for each running WebLogic Server instance.  This pod will have a container based on the Docker image specified by the `image` field.  Additional pod or container content can be specified using the elements under `serverPod`.  This includes Kubernetes sidecar and init containers, labels, annotations, volumes, volume mounts, scheduling constraints, including anti-affinity, [resource requirements](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) or [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+The operator creates a pod for each running WebLogic Server instance.  This pod will have a container based on the Docker image specified by the `image` field.  Additional pod or container content can be specified using the elements under `serverPod`.  This includes Kubernetes sidecar and init containers, labels, annotations, volumes, volume mounts, scheduling constraints, including anti-affinity, [resource requirements](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/), or [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
 
 Prior to creating a pod, the operator replaces variable references allowing the pod content to be templates.  The format of these variable references is `$(VARIABLE_NAME)` where *VARIABLE_NAME* is one of the variable names available in the container for the WebLogic Server instance.  The default set of environment variables includes:
-* DOMAIN_NAME: The WebLogic domain name
-* DOMAIN_UID: The domain unique identifier
-* DOMAIN_HOME: The domain home location as a file system path within the container
-* SERVER_NAME: The WebLogic Server name
-* CLUSTER_NAME: The WebLogic cluster name, if this is a cluster member
-* LOG_HOME: The WebLogic log location as a file system path within the container
 
-This example domain YAML specifies that pods for WebLogic Server instances in the "cluster-1" cluster will have a per-managed server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled as much as possible on different nodes:
+* `DOMAIN_NAME`: The WebLogic domain name
+* `DOMAIN_UID`: The domain unique identifier
+* `DOMAIN_HOME`: The domain home location as a file system path within the container
+* `SERVER_NAME`: The WebLogic Server name
+* `CLUSTER_NAME`: The WebLogic cluster name, if this is a cluster member
+* `LOG_HOME`: The WebLogic log location as a file system path within the container
+
+This example domain YAML file specifies that pods for WebLogic Server instances in the `cluster-1` cluster will have a per-managed server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled as much as possible on different nodes:
 
 ```
 # Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
