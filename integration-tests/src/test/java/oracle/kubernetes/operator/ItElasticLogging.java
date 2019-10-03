@@ -522,29 +522,25 @@ public class ItElasticLogging extends BaseTest {
     int initialManagedServerReplicas =
         ((Integer) domainMap.get("initialManagedServerReplicas")).intValue();
 
-    try {
-      //Copy test files to admin pod
+    //Copy test files to admin pod
+    logger.info(
+        "Copying the resources to admin pod("
+        + domainUid
+        + "-"
+        + adminServerPodName
+        + ")");
+    copyResourceFilesToOnePod(adminServerPodName, domainNS);
+
+    //Copy test files to all managed server pods
+    for (int i = 1; i <= initialManagedServerReplicas; i++) {
       logger.info(
-          "Copying the resources to admin pod("
+          "Copying the resources to managed pod("
           + domainUid
           + "-"
-          + adminServerPodName
+          + managedServerNameBase
+          + i
           + ")");
-      copyResourceFilesToOnePod(adminServerPodName, domainNS);
-
-      //Copy test files to all managed server pods
-      for (int i = 1; i <= initialManagedServerReplicas; i++) {
-        logger.info(
-            "Copying the resources to managed pod("
-            + domainUid
-            + "-"
-            + managedServerNameBase
-            + i
-            + ")");
-        copyResourceFilesToOnePod(managedServerPodNameBase + i, domainNS);
-      }
-    } catch (Exception ex) {
-      logger.info("Caught Exception. retrying..." + ex.getMessage());
+      copyResourceFilesToOnePod(managedServerPodNameBase + i, domainNS);
     }
   }
 
@@ -604,19 +600,6 @@ public class ItElasticLogging extends BaseTest {
         "/shared/domains/domainonpvwlst/config/" + loggingYamlFile,
         podName,
         domainNS);
-  }
-
-  private String getContainerName(String podName) throws Exception {
-    StringBuffer k8sExecCmd = new StringBuffer("kubectl get pods ");
-    k8sExecCmd
-      .append(podName)
-      .append(" -o jsonpath='{.spec.containers[*].name}'");
-    logger.info("Executing cmd " + k8sExecCmd.toString());
-    ExecResult result = TestUtils.exec(k8sExecCmd.toString());
-    logger.info("exit code: " + result.exitValue());
-    logger.info("Result: " + result.stdout());
-
-    return result.stdout();
   }
 
   private static void addFilterToElkFile() throws Exception {
