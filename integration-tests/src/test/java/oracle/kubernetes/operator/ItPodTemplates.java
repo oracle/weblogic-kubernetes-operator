@@ -57,7 +57,7 @@ public class ItPodTemplates extends BaseTest {
       initialize(APP_PROPS_FILE, testClassName);
       // create operator1
       if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -104,7 +104,7 @@ public class ItPodTemplates extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
       // domainMap.put("domainUID", "podtemplatedomain");
       domainMap.put("namespace", domainNS);
       // just create domain yaml, dont apply

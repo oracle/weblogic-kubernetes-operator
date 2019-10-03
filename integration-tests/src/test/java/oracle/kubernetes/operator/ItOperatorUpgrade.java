@@ -6,7 +6,6 @@ package oracle.kubernetes.operator;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -17,7 +16,6 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -297,7 +295,7 @@ public class ItOperatorUpgrade extends BaseTest {
     opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
-    Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, "");
+    Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, "");
     operatorMap.put("operatorImageName", "oracle/weblogic-kubernetes-operator");
     operatorMap.put("operatorImageTag", operatorRelease);
     operatorMap.put("operatorGitVersion", operatorGitRelease);
@@ -313,7 +311,7 @@ public class ItOperatorUpgrade extends BaseTest {
     // TestUtils.exec("kubectl get all --all-namespaces", true);
 
     // Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
-    Map<String, Object> wlstDomainMap = TestUtils.createDomainInImageMap(getNewNumber(), false, "");
+    Map<String, Object> wlstDomainMap = TestUtils.createDomainInImageMap(getNewSuffixCount(), false, "");
     wlstDomainMap.put("domainUID", DUID);
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");

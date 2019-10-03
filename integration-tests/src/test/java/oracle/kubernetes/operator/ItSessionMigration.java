@@ -61,7 +61,7 @@ public class ItSessionMigration extends BaseTest {
       // create operator1
       if (operator == null) {
         Map<String, Object> operatorMap =
-            TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+            TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -72,7 +72,7 @@ public class ItSessionMigration extends BaseTest {
         LoggerHelper.getLocal().log(Level.INFO,
             "Creating WLS Domain & waiting for the script to complete execution");
         Map<String, Object> wlstDomainMap =
-            TestUtils.createDomainMap(getNewNumber(), testClassName);
+            TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
         wlstDomainMap.put("namespace", domainNS1);
         // wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
         domain = TestUtils.createDomain(wlstDomainMap);

@@ -55,7 +55,7 @@ public class ItCoherenceTests extends BaseTest {
       // create operator1
       if (operator1 == null) {
         Map<String, Object> operatorMap =
-            TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+            TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -172,7 +172,7 @@ public class ItCoherenceTests extends BaseTest {
 
     // create domain
     Map<String, Object> domainMap =
-        TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
+        TestUtils.createDomainInImageMap(getNewSuffixCount(), true, testClassName);
     domainMap.put("namespace", domainNS1);
     domainMap.put("createDomainFilesDir", "wdt");
     domainMap.put("additionalEnvMap", envMap);

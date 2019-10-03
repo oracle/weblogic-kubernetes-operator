@@ -74,7 +74,7 @@ public class ItManagedCoherence extends BaseTest {
       // create operator1
       if (operator1 == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(
-            getNewNumber(), true, testClassName);
+            getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -136,7 +136,7 @@ public class ItManagedCoherence extends BaseTest {
     testCompletedSuccessfully = false;
     domain = null;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("clusterName", "appCluster");
       domainMap.put("domainUID", DOMAINUID);
       domainMap.put("customDomainTemplate", customDomainTemplate);
@@ -198,7 +198,7 @@ public class ItManagedCoherence extends BaseTest {
     domain = null;
     try {
       Map<String, Object> domainMap =
-          TestUtils.createDomainInImageMap(getNewNumber(), false, testClassName);
+          TestUtils.createDomainInImageMap(getNewSuffixCount(), false, testClassName);
       domainMap.put("clusterName", "appCluster");
       domainMap.put("domainUID", DOMAINUID1);
       domainMap.put("customDomainTemplate", customDomainTemplate);

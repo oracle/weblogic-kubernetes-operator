@@ -1045,18 +1045,25 @@ public class TestUtils {
     }
     return operatorMap;
   }
-  
+
+  /**
+   * Creates a map with commonly used operator input attributes using suffixCount and prefix
+   * to make the namespaces and ports unique.
+   * @param suffixCount unique numeric value
+   * @param prefix prefix for the artifact names
+   * @return map with operator input attributes
+   */
   public static Map<String, Object> createOperatorMap(
-      int number, boolean restEnabled, String prefix) {
+      int suffixCount, boolean restEnabled, String prefix) {
     Map<String, Object> operatorMap = new HashMap<String, Object>();
     ArrayList<String> targetDomainsNS = new ArrayList<String>();
-    targetDomainsNS.add(prefix.toLowerCase() + "-domainns-"  + number);
-    operatorMap.put("releaseName", prefix.toLowerCase() + "-op-"  + number);
+    targetDomainsNS.add(prefix.toLowerCase() + "-domainns-"  + suffixCount);
+    operatorMap.put("releaseName", prefix.toLowerCase() + "-op-"  + suffixCount);
     operatorMap.put("domainNamespaces", targetDomainsNS);
-    operatorMap.put("serviceAccount", prefix.toLowerCase() + "-sa-" + number);
-    operatorMap.put("namespace", prefix.toLowerCase() + "-opns-" + number);
+    operatorMap.put("serviceAccount", prefix.toLowerCase() + "-sa-" + suffixCount);
+    operatorMap.put("namespace", prefix.toLowerCase() + "-opns-" + suffixCount);
     if (restEnabled) {
-      operatorMap.put("externalRestHttpsPort", 32000  + number);
+      operatorMap.put("externalRestHttpsPort", 32000  + suffixCount);
       operatorMap.put("externalRestEnabled", restEnabled);
     }
     return operatorMap;
@@ -1082,28 +1089,42 @@ public class TestUtils {
     }
     return domainMap;
   }
-  
-  public static Map<String, Object> createDomainMap(int number, String prefix) {
+
+  /**
+   * Creates a map with commonly used domain input attributes using suffixCount and prefix
+   * to make the namespaces and ports unique.
+   * @param suffixCount unique numeric value
+   * @param prefix prefix for the artifact names
+   * @return map with domain input attributes
+   */
+  public static Map<String, Object> createDomainMap(int suffixCount, String prefix) {
     Map<String, Object> domainMap = new HashMap<String, Object>();
-    domainMap.put("domainUID", prefix.toLowerCase()  + "-domain-" + number);
-    domainMap.put("namespace", prefix.toLowerCase()  + "-domainns-" + number);
+    domainMap.put("domainUID", prefix.toLowerCase()  + "-domain-" + suffixCount);
+    domainMap.put("namespace", prefix.toLowerCase()  + "-domainns-" + suffixCount);
     domainMap.put("configuredManagedServerCount", 4);
     domainMap.put("initialManagedServerReplicas", 2);
     domainMap.put("exposeAdminT3Channel", true);
     domainMap.put("exposeAdminNodePort", true);
-    domainMap.put("adminNodePort", 30800 + number);
-    domainMap.put("t3ChannelPort", 31000 + number);
+    domainMap.put("adminNodePort", 30800 + suffixCount);
+    domainMap.put("t3ChannelPort", 31000 + suffixCount);
     if (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
-      domainMap.put("voyagerWebPort", 30344 + number);
+      domainMap.put("voyagerWebPort", 30344 + suffixCount);
       LoggerHelper.getLocal().log(Level.INFO, 
           "For this domain voyagerWebPort is set to: "  + domainMap.get("voyagerWebPort"));
     }
     return domainMap;
   }
-  
+
+  /**
+   * Creates a map with commonly used domain in image input attributes using suffixCount and prefix
+   * to make the namespaces and ports unique.
+   * @param suffixCount unique numeric value
+   * @param prefix prefix for the artifact names
+   * @return map with domain input attributes
+   */
   public static Map<String, Object> createDomainInImageMap(
-      int number, boolean wdt, String prefix) {
-    Map<String, Object> domainMap = createDomainMap(number, prefix);
+      int suffixCount, boolean wdt, String prefix) {
+    Map<String, Object> domainMap = createDomainMap(suffixCount, prefix);
     if (wdt) {
       domainMap.put("domainHomeImageBuildPath", 
           "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");

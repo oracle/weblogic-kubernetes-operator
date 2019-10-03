@@ -70,7 +70,7 @@ public class ItPodsShutdown extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
       // create operator1
       if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -115,7 +115,7 @@ public class ItPodsShutdown extends BaseTest {
 
   private static Domain createDomain() throws Exception {
 
-    Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+    Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
     domainMap.put("namespace", domainNS1);
     domainMap.put("domainUID", "domainpodsshutdown");
     domainMap.put("initialManagedServerReplicas", new Integer("1"));

@@ -7,14 +7,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -51,7 +49,7 @@ public class ItOperator extends BaseTest {
     // create operator1
     if (operator1 == null) {
       Map<String, Object> operatorMap =
-          TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+          TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
       operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       Assert.assertNotNull(operator1);
       domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -83,7 +81,7 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.put("createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
@@ -128,7 +126,7 @@ public class ItOperator extends BaseTest {
     try {
       //create operator just for this test to match the namespaces with wldf-policy.yaml
       Map<String, Object> operatorMap =
-          TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+          TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
       ArrayList<String> targetDomainsNS = new ArrayList<String>();
       targetDomainsNS.add("test2");
       operatorMap.put("domainNamespaces", targetDomainsNS);
@@ -136,7 +134,7 @@ public class ItOperator extends BaseTest {
       operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
 
       // create domain
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("namespace", "test2");
       domainMap.put("createDomainFilesDir", "wdt");
       domainMap.put("domainUID", "domainonpvwdt");
@@ -189,7 +187,7 @@ public class ItOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
-      Map<String, Object> wlstDomainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      Map<String, Object> wlstDomainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
       wlstDomainMap.put("namespace", domainNS1);
       wlstDomainMap.put("createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
@@ -197,7 +195,7 @@ public class ItOperator extends BaseTest {
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1, false);
       Map<String, Object> operatorMap =
-          TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+          TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
       Operator operator2 =
           TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       String domainNS2 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -205,7 +203,7 @@ public class ItOperator extends BaseTest {
       // create domain2 with configured cluster
       // ToDo: configured cluster support is removed from samples, modify the test to create
       // configured cluster
-      Map<String, Object> wdtDomainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      Map<String, Object> wdtDomainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
       wdtDomainMap.put("namespace", domainNS2);
       wdtDomainMap.put("createDomainFilesDir", "wdt");
       domain2 = TestUtils.createDomain(wdtDomainMap);
@@ -281,7 +279,7 @@ public class ItOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
-      Map<String, Object> domain1Map = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      Map<String, Object> domain1Map = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
       domain1Map.put("domainUID", "d1onpv");
       domain1Map.put("namespace", domainNS1);
       domain1Map.put("createDomainPyScript",
@@ -291,7 +289,7 @@ public class ItOperator extends BaseTest {
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1, false);
 
-      Map<String, Object> domain2Map = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      Map<String, Object> domain2Map = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
       domain2Map.put("domainUID", "d2onpv");
       domain2Map.put("namespace", domainNS1);
       domain2Map.put("createDomainPyScript",
@@ -363,7 +361,7 @@ public class ItOperator extends BaseTest {
     // create domain
     Domain domain = null;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("serverStartPolicy", "ADMIN_ONLY");
       domainMap.put("namespace", domainNS1);
       domain = TestUtils.createDomain(domainMap, false);
@@ -403,7 +401,7 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
 
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("weblogicDomainStorageReclaimPolicy", "Recycle");
       domainMap.put("clusterType", "CONFIGURED");
       domainMap.put("namespace", domainNS1);
@@ -474,7 +472,7 @@ public class ItOperator extends BaseTest {
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility ");
     Map<String, Object> operatorMap =
-        TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
     Operator operatorForBackwardCompatibility =
         TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
     operatorForBackwardCompatibility.verifyOperatorExternalRestEndpoint();
@@ -497,7 +495,7 @@ public class ItOperator extends BaseTest {
     logTestBegin("testOperatorRestUsingCertificateChain");
     LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility");
     Map<String, Object> operatorMap =
-        TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
     Operator operatorForRESTCertChain =
         TestUtils.createOperator(operatorMap, RestCertType.CHAIN);
     operatorForRESTCertChain.verifyOperatorExternalRestEndpoint();
@@ -526,7 +524,7 @@ public class ItOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domainMap =
-          TestUtils.createDomainInImageMap(getNewNumber(), false, testClassName);
+          TestUtils.createDomainInImageMap(getNewSuffixCount(), false, testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.remove("clusterType");
       domain = TestUtils.createDomain(domainMap);
@@ -562,7 +560,7 @@ public class ItOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domainMap =
-          TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
+          TestUtils.createDomainInImageMap(getNewSuffixCount(), true, testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.put(
           "customWdtTemplate",

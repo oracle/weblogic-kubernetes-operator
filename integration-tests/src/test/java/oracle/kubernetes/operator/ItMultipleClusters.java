@@ -73,7 +73,7 @@ public class ItMultipleClusters extends BaseTest {
       // create operator1
       if (operator1 == null) {
         Map<String, Object> operatorMap =
-            TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+            TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -108,7 +108,7 @@ public class ItMultipleClusters extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("domainUID", DOMAINUID);
       domainMap.put("clusterType", "CONFIGURED");
       domainMap.put("customDomainTemplate", customDomainTemplate);
@@ -155,7 +155,7 @@ public class ItMultipleClusters extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("domainUID", domainuid);
       domainMap.put("customDomainTemplate", customDomainTemplate);
       domainMap.put("namespace", domainNS1);
@@ -203,7 +203,7 @@ public class ItMultipleClusters extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domainMap =
-          TestUtils.createDomainInImageMap(getNewNumber(), true, testClassName);
+          TestUtils.createDomainInImageMap(getNewSuffixCount(), true, testClassName);
       domainMap.put("domainUID", domainuid);
       domainMap.put("customDomainTemplate", customDomainTemplate);
       domainMap.put("namespace", domainNS1);

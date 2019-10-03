@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
@@ -64,7 +63,7 @@ public class ItPodsRestart extends BaseTest {
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
       if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewNumber(), true, testClassName);
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -94,7 +93,7 @@ public class ItPodsRestart extends BaseTest {
 
   private static Domain createPodsRestartdomain() throws Exception {
 
-    Map<String, Object> domainMap = TestUtils.createDomainMap(getNewNumber(), testClassName);
+    Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
     // domainMap.put("domainUID", "domainpodsrestart");
     domainMap.put("initialManagedServerReplicas", new Integer("1"));
     domainMap.put("namespace", domainNS);

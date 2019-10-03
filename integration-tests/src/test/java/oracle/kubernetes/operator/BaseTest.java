@@ -83,7 +83,7 @@ public class BaseTest {
   private static String weblogicImageName;
   private static String weblogicImageServer;
   private static String domainApiVersion;
-  private static int number = 0;
+  private static int suffixCount = 0;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
@@ -116,7 +116,7 @@ public class BaseTest {
   }
 
   /**
-   * initializes the application properties and creates directories for results
+   * initializes the application properties and creates directories for results.
    *
    * @param appPropsFile
    * @param testClassName
@@ -865,13 +865,17 @@ public class BaseTest {
     }
   }
 
-  public static int getNewNumber() {
-    number = number + 1;
-    return number;
+  /**
+   * Returns a new suffixCount value which can be used to make namespaces,ports unique.
+   * @return new suffixCount
+   */
+  public static int getNewSuffixCount() {
+    suffixCount = suffixCount + 1;
+    return suffixCount;
   }
 
-  public static int getNumber() {
-    return number;
+  public static int getSuffixCount() {
+    return suffixCount;
   }
 
 }
