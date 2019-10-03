@@ -993,8 +993,9 @@ public class TestUtils {
             + dockerServer
             + " --docker-username="
             + dockerUser
-            + " --docker-password="
-            + dockerPassword;
+            + " --docker-password=\""
+            + dockerPassword
+            + "\"";
             
     if (dockerEmail != null) {
     	command = command + " --docker-email=" + dockerEmail;
@@ -1018,7 +1019,8 @@ public class TestUtils {
             + " -n "
             + namespace;
     
-    logger.info("Running command " + commandToLog);
+    //logger.info("Running command " + commandToLog);
+    logger.info("Running command " + command + " for secret: " + secretName);
   
     ExecResult result = ExecCommand.exec(command, true);
     if (result.exitValue() != 0) {
