@@ -547,39 +547,71 @@ public class ItElasticLogging extends BaseTest {
         .append(domainNS)
         .append(" exec -it ")
         .append(podName)
-        .append(" -- bash -c 'ls -l /shared/domains/domainonpvwlst/lib/")
+        .append(" -- bash -c 'ls -l /shared/domains/domainonpvwlst")
         .append("'");
     logger.info("Executing cmd " + cmdLisDir.toString());
     ExecResult result = TestUtils.exec(cmdLisDir.toString());
     logger.info("exit code: " + result.exitValue());
     logger.info("Result: " + result.stdout());
-    
-    //kubectl -n default exec -it domainonpvwlst-admin-server  -- bash -c 'ls -l /shared/domains/domainonpvwlst/lib'
 
-    
+    cmdLisDir.setLength(0);
+    cmdLisDir = new StringBuffer("kubectl -n ");
+    cmdLisDir
+      .append(domainNS)
+      .append(" exec -it ")
+      .append(podName)
+      .append(" -- bash -c 'ls -l /shared/domains/domainonpvwlst/lib/")
+      .append("'");
+    logger.info("Executing cmd " + cmdLisDir.toString());
+    result = TestUtils.exec(cmdLisDir.toString());
+    logger.info("exit code: " + result.exitValue());
+    logger.info("Result: " + result.stdout());
+
+    cmdLisDir.setLength(0);
+    cmdLisDir = new StringBuffer("ls -l " + loggingExpArchiveLoc);
+    logger.info("Executing cmd " + cmdLisDir.toString());
+    result = TestUtils.exec(cmdLisDir.toString());
+    logger.info("exit code: " + result.exitValue());
+    logger.info("Result: " + result.stdout());
+
     //Copy test files to WebLogic server pod
     TestUtils.kubectlcp(
         loggingExpArchiveLoc + "/" + wlsLoggingExpJar,
         "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar
-            + " --no-preserve=true ",
+            + " --no-preserve=true  -c " + getContainerName(podName),
         podName,
         domainNS);
 
     TestUtils.kubectlcp(
         loggingExpArchiveLoc + "/" + snakeyamlJar,
         "/shared/domains/domainonpvwlst/lib/"
-            + snakeyamlJar + " --no-preserve=true ",
+            + snakeyamlJar + " --no-preserve=true -c "
+            + getContainerName(podName),
         podName,
         domainNS);
 
     TestUtils.kubectlcp(
         testResourceDir + "/" + loggingYamlFile,
         "/shared/domains/domainonpvwlst/config/"
-            + loggingYamlFile + " --no-preserve=true ",
+            + loggingYamlFile + " --no-preserve=true -c "
+            + getContainerName(podName),
         podName,
         domainNS);
   }
-  
+
+  private String getContainerName(String podName) throws Exception {
+    StringBuffer k8sExecCmd = new StringBuffer("kubectl get pods ");
+    k8sExecCmd
+      .append(podName)
+      .append(" -o jsonpath='{.spec.containers[*].name}'");
+    logger.info("Executing cmd " + k8sExecCmd.toString());
+    ExecResult result = TestUtils.exec(k8sExecCmd.toString());
+    logger.info("exit code: " + result.exitValue());
+    logger.info("Result: " + result.stdout());
+
+    return result.stdout();
+  }
+
   private static void addFilterToElkFile() throws Exception {
     String managedServerName = "managed-server1";
 
