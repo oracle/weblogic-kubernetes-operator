@@ -586,6 +586,7 @@ public class ItElasticLogging extends BaseTest {
     logger.info("exit code: " + result.exitValue());
     logger.info("Result: " + result.stdout());
 
+    //Copy test files to WebLogic server pod
     TestUtils.copyFileViaCat(
         loggingExpArchiveLoc + "/" + wlsLoggingExpJar,
         "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar,
@@ -603,32 +604,6 @@ public class ItElasticLogging extends BaseTest {
         "/shared/domains/domainonpvwlst/config/" + loggingYamlFile,
         podName,
         domainNS);
-
-    /*
-    //Copy test files to WebLogic server pod
-    TestUtils.kubectlcp(
-        loggingExpArchiveLoc + "/" + wlsLoggingExpJar,
-        "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar
-            + " --no-preserve=true  -c " + getContainerName(podName),
-        podName,
-        domainNS);
-
-    TestUtils.kubectlcp(
-        loggingExpArchiveLoc + "/" + snakeyamlJar,
-        "/shared/domains/domainonpvwlst/lib/"
-            + snakeyamlJar + " --no-preserve=true -c "
-            + getContainerName(podName),
-        podName,
-        domainNS);
-
-    TestUtils.kubectlcp(
-        testResourceDir + "/" + loggingYamlFile,
-        "/shared/domains/domainonpvwlst/config/"
-            + loggingYamlFile + " --no-preserve=true -c "
-            + getContainerName(podName),
-        podName,
-        domainNS);
-     */
   }
 
   private String getContainerName(String podName) throws Exception {
