@@ -283,7 +283,7 @@ function createWLDomain() {
 
                 cat /tmp/diffed_model.json
 
-                yes ${admin_pwd} | /u01/weblogic-deploy/bin/updateDomain.sh -oracle_home $MW_HOME \
+                yes ${admin_pwd} | ${wdt_bin}/updateDomain.sh -oracle_home $MW_HOME \
                  -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
                  /tmp/diffed_model.json $variable_list -domain_home $DOMAIN_HOME
                 retcode=$?
@@ -311,7 +311,7 @@ function createWLDomain() {
 
                 #Perform an offline update so that we can have a new domain zip later
 
-                /u01/weblogic-deploy/bin/updateDomain.sh -oracle_home $MW_HOME \
+                ${wdt_bin}/updateDomain.sh -oracle_home $MW_HOME \
                  -model_file /tmp/diffed_model.json $variable_list -domain_home $DOMAIN_HOME
 
               # perform wdt online update if the user has specify in the spec ? How to get it from the spec ?  env ?
@@ -401,7 +401,7 @@ for dir_var in JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
   [ ! -d "${!dir_var}" ] && trace SEVERE "Missing ${dir_var} directory '${!dir_var}'." && exit 1
 done
 
-if [ ! -d "$DOMAIN_HOME" ]; then
+if [ ! -d "${DOMAIN_HOME}" ]; then
     command -v gzip
     if [ $? -ne 0 ] ; then
       trace "gzip is missing - image must have gzip installed " && exit 1
@@ -414,7 +414,7 @@ if [ ! -d "$DOMAIN_HOME" ]; then
     if [ $? -ne 0 ] ; then
         trace "tar is missing - image must have tar installed " && exit 1
     fi
-    mkdir -p $DOMAIN_HOME
+    mkdir -p ${DOMAIN_HOME}
     createWLDomain
     created_domain=$?
     trace "created domain " ${created_domain}
