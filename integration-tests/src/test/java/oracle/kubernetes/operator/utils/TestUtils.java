@@ -1019,9 +1019,8 @@ public class TestUtils {
             + " -n "
             + namespace;
     
-    //logger.info("Running command " + commandToLog);
-    logger.info("Running command " + command + " for secret: " + secretName);
-  
+    logger.info("Running command " + commandToLog);
+ 
     ExecResult result = ExecCommand.exec(command, true);
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't create secret " + result.stderr());
