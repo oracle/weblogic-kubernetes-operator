@@ -149,10 +149,8 @@ public class ItElasticLogging extends BaseTest {
 
       // Restore the test env
       deleteTestFile();
-      if (domain != null) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-        TestUtils.verifyAfterDeletion(domain);
-      }
+
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
       // tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
@@ -176,9 +174,11 @@ public class ItElasticLogging extends BaseTest {
     // Verify that number of logs is not zero and failed count is zero
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=level:INFO";
+
     verifySearchResults(queryCriteria, regex, logstashIndexKey, true);
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+
   }
 
   /**
@@ -275,7 +275,7 @@ public class ItElasticLogging extends BaseTest {
     // Verify that serverName:managed-server1 is filtered out
     // by checking the count of logs from serverName:managed-server1 is zero and no failures
     // e.g. when running the query:
-    // curl -X GET http://elasticsearch.default.svc.cluster.local:9200/wls/_count?q=serverName:managed-server1 
+    // curl -X GET http://elasticsearch.default.svc.cluster.local:9200/wls/_count?q=serverName:managed-server1
     // Expected return result is:
     // {"count":0,"_shards":{"total":5,"successful":5,"skipped":0,"failed":0}}
     regex = ".*count\":(\\d+),.*failed\":(\\d+)";
@@ -302,11 +302,11 @@ public class ItElasticLogging extends BaseTest {
 
     //There are multiple indexes from Kibana 6.8.0
     String[] healthStatusArr =
-        healthStatus.split(System.getProperty("line.separator"));
+      healthStatus.split(System.getProperty("line.separator"));
     String[] indexStatusArr =
-        indexStatus.split(System.getProperty("line.separator"));
+      indexStatus.split(System.getProperty("line.separator"));
     String[] indexNameArr =
-        indexName.split(System.getProperty("line.separator"));
+      indexName.split(System.getProperty("line.separator"));
 
     for (int i = 0; i < indexStatusArr.length; i++) {
       LoggerHelper.getLocal().log(Level.INFO, "Health status of " + indexNameArr[i] + " is: " + healthStatusArr[i]);
@@ -336,6 +336,7 @@ public class ItElasticLogging extends BaseTest {
             .append(varLoc)
             .append(" }'\\'")
             .toString();
+
     LoggerHelper.getLocal().log(Level.INFO, "Command to exec Elastic Stack status check: " + cmd);
 
     int i = 0;
@@ -447,19 +448,23 @@ public class ItElasticLogging extends BaseTest {
           .append(loggingJarRepos)
           .append("/")
           .append(wlsLoggingExpJar);
-      logger.info("Executing cmd " + getJars);
+      LoggerHelper.getLocal().log(Level.INFO,"Executing cmd " + getJars.toString());
 
       // Make sure downloading completed
       while (i < BaseTest.getMaxIterationsPod()) {
-        ExecResult result = TestUtils.exec(getJars.toString());
-        logger.info("exit code: " + result.exitValue());
-        logger.info("Result: " + result.stdout());
+        try {
+          ExecResult result = TestUtils.exec(getJars.toString());
+          LoggerHelper.getLocal().log(Level.INFO,"exit code: " + result.exitValue());
+          LoggerHelper.getLocal().log(Level.INFO,"Result: " + result.stdout());
+        } catch (RuntimeException rtect) {
+          LoggerHelper.getLocal().log(Level.INFO,"Caught RuntimeException. retrying..." + rtect.getMessage());
+        }
 
         if (wlsLoggingExpFile.exists()) {
           break;
         }
 
-        logger.info(
+        LoggerHelper.getLocal().log(Level.INFO,
             "Downloading " + wlsLoggingExpJar + " not done ["
                 + i
                 + "/"
@@ -485,9 +490,14 @@ public class ItElasticLogging extends BaseTest {
 
       // Make sure downloading completed
       while (i < BaseTest.getMaxIterationsPod()) {
-        ExecResult result = TestUtils.exec(getJars.toString());
-        LoggerHelper.getLocal().log(Level.INFO, "exit code: " + result.exitValue());
-        LoggerHelper.getLocal().log(Level.INFO, "Result: " + result.stdout());
+        try {
+          ExecResult result = TestUtils.exec(getJars.toString());
+          LoggerHelper.getLocal().log(Level.INFO, "exit code: " + result.exitValue());
+          LoggerHelper.getLocal().log(Level.INFO, "Result: " + result.stdout());
+        } catch (RuntimeException rtect) {
+          LoggerHelper.getLocal().log(Level.INFO,
+              "Caught RuntimeException. retrying..." + rtect.getMessage());
+        }
 
         if (snakeyamlFile.exists()) {
           break;
@@ -507,16 +517,16 @@ public class ItElasticLogging extends BaseTest {
     }
 
     Assume.assumeTrue("Failed to download <" + wlsLoggingExpFile + ">",
-        wlsLoggingExpFile.exists());
+                      wlsLoggingExpFile.exists());
     Assume.assumeTrue("Failed to download <" + snakeyamlFile + ">",
-        snakeyamlFile.exists());
+                      snakeyamlFile.exists());
     File[] jarFiles = loggingJatReposDir.listFiles();
     for (File jarFile : jarFiles) {
       LoggerHelper.getLocal().log(Level.INFO, "Downloaded jar file : " + jarFile.getName());
     }
   }
 
-  private void copyResourceFilesToAllPods() throws Exception {
+  private void copyResourceFilesToAllPods() throws Exception  {
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
     String domainNS = domainMap.get("namespace").toString();
@@ -530,21 +540,21 @@ public class ItElasticLogging extends BaseTest {
     //Copy test files to admin pod
     LoggerHelper.getLocal().log(Level.INFO,
         "Copying the resources to admin pod("
-            + domainUid
-            + "-"
-            + adminServerPodName
-            + ")");
+        + domainUid
+        + "-"
+        + adminServerPodName
+        + ")");
     copyResourceFilesToOnePod(adminServerPodName, domainNS);
 
     //Copy test files to all managed server pods
     for (int i = 1; i <= initialManagedServerReplicas; i++) {
       LoggerHelper.getLocal().log(Level.INFO,
           "Copying the resources to managed pod("
-              + domainUid
-              + "-"
-              + managedServerNameBase
-              + i
-              + ")");
+          + domainUid
+          + "-"
+          + managedServerNameBase
+          + i
+          + ")");
       copyResourceFilesToOnePod(managedServerPodNameBase + i, domainNS);
     }
   }
@@ -560,35 +570,49 @@ public class ItElasticLogging extends BaseTest {
         .append(domainNS)
         .append(" exec -it ")
         .append(podName)
-        .append(" -- bash -c 'ls -l /shared/domains/domainonpvwlst/lib/")
+        .append(" -- bash -c 'ls -l /shared/domains/domainonpvwlst")
         .append("'");
     logger.info("Executing cmd " + cmdLisDir.toString());
     ExecResult result = TestUtils.exec(cmdLisDir.toString());
     logger.info("exit code: " + result.exitValue());
     logger.info("Result: " + result.stdout());
 
-    //kubectl -n default exec -it domainonpvwlst-admin-server  -- bash -c 'ls -l /shared/domains/domainonpvwlst/lib'
+    cmdLisDir.setLength(0);
+    cmdLisDir = new StringBuffer("kubectl -n ");
+    cmdLisDir
+      .append(domainNS)
+      .append(" exec -it ")
+      .append(podName)
+      .append(" -- bash -c 'ls -l /shared/domains/domainonpvwlst/lib/")
+      .append("'");
+    logger.info("Executing cmd " + cmdLisDir.toString());
+    result = TestUtils.exec(cmdLisDir.toString());
+    logger.info("exit code: " + result.exitValue());
+    logger.info("Result: " + result.stdout());
 
+    cmdLisDir.setLength(0);
+    cmdLisDir = new StringBuffer("ls -l " + loggingExpArchiveLoc);
+    logger.info("Executing cmd " + cmdLisDir.toString());
+    result = TestUtils.exec(cmdLisDir.toString());
+    logger.info("exit code: " + result.exitValue());
+    logger.info("Result: " + result.stdout());
 
     //Copy test files to WebLogic server pod
-    TestUtils.kubectlcp(
+    TestUtils.copyFileViaCat(
         loggingExpArchiveLoc + "/" + wlsLoggingExpJar,
-        "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar
-            + " --no-preserve=true ",
+        "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar,
         podName,
         domainNS);
 
-    TestUtils.kubectlcp(
+    TestUtils.copyFileViaCat(
         loggingExpArchiveLoc + "/" + snakeyamlJar,
-        "/shared/domains/domainonpvwlst/lib/"
-            + snakeyamlJar + " --no-preserve=true ",
+        "/shared/domains/domainonpvwlst/lib/" + snakeyamlJar,
         podName,
         domainNS);
 
-    TestUtils.kubectlcp(
+    TestUtils.copyFileViaCat(
         testResourceDir + "/" + loggingYamlFile,
-        "/shared/domains/domainonpvwlst/config/"
-            + loggingYamlFile + " --no-preserve=true ",
+        "/shared/domains/domainonpvwlst/config/" + loggingYamlFile,
         podName,
         domainNS);
   }
@@ -617,7 +641,7 @@ public class ItElasticLogging extends BaseTest {
     final String testResourceDir = resourceDir + "/loggingexporter";
 
     TestUtils.copyFile(testResourceDir + "/" + loggingYamlFileBck,
-        testResourceDir + "/" + loggingYamlFile);
+                       testResourceDir + "/" + loggingYamlFile);
 
     Files.delete(new File(testResourceDir + "/" + loggingYamlFileBck).toPath());
   }
