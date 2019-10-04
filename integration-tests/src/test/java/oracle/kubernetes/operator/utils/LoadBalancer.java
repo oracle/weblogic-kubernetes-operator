@@ -9,6 +9,8 @@ import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
@@ -116,13 +118,14 @@ public class LoadBalancer {
 
   private void upgradeTraefikNamespace() throws Exception {
 
+    String namespace = getKubernetesNamespaceToUpdate((String)lbMap.get("namespace"));
+    LoggerHelper.getLocal().log(Level.INFO, "namespace to update" + namespace);
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append("--reuse-values ")
         .append("--set ")
         .append("\"")
-        .append("kubernetes.namespaces={traefik,")
-        .append(lbMap.get("namespace"))
-        .append("}")
+        .append("kubernetes.namespaces=")
+        .append(namespace)
         .append("\"")
         .append(" traefik-operator")
         .append(" stable/traefik ");
@@ -134,6 +137,37 @@ public class LoadBalancer {
     }
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
+
+  }
+
+  /**
+   * append current namespace to existing namespaces
+   * @param domainNamespace
+   * @return string namespace
+   * @throws Exception when could not get values
+   */
+  private String getKubernetesNamespaceToUpdate(String domainNamespace) throws Exception {
+    ExecResult result = TestUtils.exec("helm get values traefik-operator", true);
+    Map<String, Object> yamlMap = TestUtils.loadYamlFromString(result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "map " + yamlMap);
+    if (yamlMap.containsKey("kubernetes")) {
+      Map<String, Object> kubernetesMap = (Map<String, Object>) yamlMap.get("kubernetes");
+      if (kubernetesMap.containsKey("namespaces")) {
+        String kubernetesNamespace = ((ArrayList) kubernetesMap.get("namespaces")).toString();
+        LoggerHelper.getLocal().log(Level.INFO,
+            "traefik-operator contains kubernetes.namespaces " + kubernetesNamespace);
+        // now be "foo, bar, baz" from ["foo, bar, baz"]
+        String debracketed = kubernetesNamespace.replace("[", "").replace("]", "");
+        // now is "foo,bar,baz"
+        String trimmed = debracketed.replaceAll("\\s+", "");
+        // now have an ArrayList containing "foo", "bar" and "baz"
+        ArrayList<String> list = new ArrayList<String>(Arrays.asList(trimmed.split(",")));
+        list.add(domainNamespace);
+        return list.toString().replace("[", "{").replace("]", "}");
+      }
+    }
+    LoggerHelper.getLocal().log(Level.INFO, "traefik-operator doesn't contain kubernetes.namespaces");
+    return "{traefik," + domainNamespace + "}";
   }
 
   private void createTraefikIngress() throws Exception {

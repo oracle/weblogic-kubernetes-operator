@@ -272,8 +272,9 @@
                         <id>integration-tests</id>
                         <goals>
                             <goal>integration-test</goal>
-                            <goal>verify</goal>
+                            <!-- goal>verify</goal -->
                         </goals>
+                        <phase>integration-test</phase>
                         <configuration>
                             <skipTests>${skipITs}</skipTests>
                             <systemPropertyVariables>
@@ -283,6 +284,14 @@
                             </systemPropertyVariables>
                             <trimStackTrace>false</trimStackTrace>
                         </configuration>
+                    </execution>
+                    <!-- below exec is needed to run post-integration-test phase when running single test if it fails -->
+                    <execution>
+                        <id>verify</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

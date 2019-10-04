@@ -20,6 +20,7 @@ public class PersistentVolume {
 
   /**
    * Create PV directory and k8s pv and pvc for the domain
+   *
    * @param dirPath
    * @param pvMap
    * @throws Exception
@@ -28,14 +29,18 @@ public class PersistentVolume {
     this.dirPath = dirPath;
     this.pvMap = pvMap;
     UUID uuid = UUID.randomUUID();
-    String cmd =
-        BaseTest.getProjectRoot()
-            + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot()
-            + ":/shareddir-" + uuid + " -t 120 -p pod-"
-            + uuid + " -c 'mkdir -m 777 -p "
-            + dirPath.replace(BaseTest.getPvRoot(), "/shareddir-" + uuid + "/")
-            + "'";
-
+    String cmd;
+    if (BaseTest.OPENSHIFT) {
+      cmd = "mkdir -m 777 -p " + dirPath;
+    } else {
+      cmd =
+          BaseTest.getProjectRoot()
+              + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot()
+              + ":/shareddir-" + uuid + " -t 120 -p pod-"
+              + uuid + " -c 'mkdir -m 777 -p "
+              + dirPath.replace(BaseTest.getPvRoot(), "/shareddir-" + uuid + "/")
+              + "'";
+    }
     // retry logic for PV dir creation as sometimes krun.sh fails
     int cnt = 0;
     int maxCnt = 10;

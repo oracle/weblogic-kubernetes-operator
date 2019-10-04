@@ -86,7 +86,12 @@ public class SitConfig extends BaseTest {
       ExecResult result = TestUtils.exec("kubectl create -f " + mysqlYamlFile);
       Assert.assertEquals(0, result.exitValue());
 
-      fqdn = TestUtils.getHostName();
+      if (!OPENSHIFT) {
+        fqdn = TestUtils.getHostName();
+      } else {
+        result = TestUtils.exec("hostname -i");
+        fqdn = result.stdout().trim();
+      }
       JDBC_URL = "jdbc:mysql://" + fqdn + ":" + MYSQL_DB_PORT + "/";
       // copy the configuration override files to replacing the JDBC_URL token
       String[] files = {
