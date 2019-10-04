@@ -271,7 +271,7 @@ function createWLDomain() {
         fi
 
 
-        # if there is a merged model in the cm then it is an update case, try online update first
+        # if there is a merged model in the cm then it is an update case, try online update
         if [ -f ${inventory_merged_model} ] && [ ${archive_zip_changed} -eq 0 ] ; then
 
 
@@ -300,22 +300,8 @@ function createWLDomain() {
                 fi
                 trace "wrote updateResult"
 
-                # if online update is successful, then we extract the old domain and use offline update, so that
-                # we can update the domain
+                # domain is already created, advance to run the introspect python
 
-                rm -fr $DOMAIN_HOME
-                cd / && base64 -d /weblogic-operator/introspectormd5/domainzip.secure > /tmp/domain.zip && unzip \
-                /tmp/domain.zip
-                  # zip does not store external attributes - should we use find ?
-                #chmod +x $DOMAIN_HOME/bin/*.sh $DOMAIN_HOME/*.sh
-
-                #Perform an offline update so that we can have a new domain zip later
-
-                ${wdt_bin}/updateDomain.sh -oracle_home $MW_HOME \
-                 -model_file /tmp/diffed_model.json $variable_list -domain_home $DOMAIN_HOME
-
-              # perform wdt online update if the user has specify in the spec ? How to get it from the spec ?  env ?
-              # write something to the instrospec output so that the operator knows whether to restart the server
             fi
         fi
 
