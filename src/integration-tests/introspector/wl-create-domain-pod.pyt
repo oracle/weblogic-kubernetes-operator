@@ -1,5 +1,5 @@
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This python script is used to create a WebLogic domain
 
@@ -28,6 +28,7 @@ print('admin_port         : [${ADMIN_PORT}]');
 print('cluster_name       : [%s]' % '${CLUSTER_NAME}');
 print('server_port        : [%s]' % ${MANAGED_SERVER_PORT});
 print('cluster_type       : [%s]' % '${CLUSTER_TYPE}');
+print('data_home       : [%s]' % '${DATA_HOME}');
 
 # Open default domain template
 # ============================
@@ -202,6 +203,38 @@ adminServerMBean=cmo
 
 createOracleDataSource('testDS','testDS','None',false,'invalid-host','1521','invalid-sid','invalid-user','invalid-pass',0,10,adminServerMBean)
 createMySQLDataSource('mysqlDS','mysqlDS','None',false,'invalid-host','3306','invalid-db-name','invalid-user','invalid-pass',0,10,adminServerMBean)
+
+# Setup a custom file store 
+# ============================================
+
+def createCustomFileStore(fileStoreName, fsTarget):
+  cd('/')
+  print('create Custom File Store %s' % fileStoreName)
+  create(fileStoreName, 'FileStore')
+  cd('/FileStore/' + fileStoreName)
+  cmo.setName(fileStoreName)
+  cmo.setDirectory('${DATA_HOME}')
+  fsTargets=[fsTarget]
+  cmo.setTargets(fsTargets)
+
+fsName='AdminServerCustomFileStore'
+createCustomFileStore(fsName, adminServerMBean)
+
+# Setup a JMS Server 
+# ============================================
+
+def createJMSServer(jmsServerName, fileStoreName, fsTarget):
+  cd('/FileStore/' + fileStoreName)
+  fs=cmo
+  cd('/')
+  print('create JMS Server %s' % jmsServerName)
+  create(jmsServerName, 'JMSServer')
+  cd('/JMSServer/' + jmsServerName)
+  cmo.setPersistentStore(fs)
+  fsTargets=[fsTarget]
+  cmo.setTargets(fsTargets)
+
+createJMSServer('AdminServerJMSServer', fsName, adminServerMBean)
 
 # Create a cluster
 # ======================

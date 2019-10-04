@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
 # Utility functions that are shared by multiple scripts
@@ -311,6 +311,10 @@ function createFiles {
     logHome="${domainPVMountPath}/logs/${domainUID}"
   fi
 
+  if [ -z "${dataHome}" ]; then
+    dataHome=""
+  fi
+
   if [ -z "${persistentVolumeClaimName}" ]; then
     persistentVolumeClaimName="${domainUID}-weblogic-sample-pvc"
   fi
@@ -460,6 +464,7 @@ function createFiles {
   sed -i -e "s:%LOG_HOME_ON_PV_PREFIX%:${logHomeOnPVPrefix}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME_ENABLED%:${logHomeOnPV}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
+  sed -i -e "s:%DATA_HOME%:${dataHome}:g" ${dcrOutput}
   sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}

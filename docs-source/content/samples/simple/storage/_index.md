@@ -81,8 +81,8 @@ The create script will verify that the PV and PVC were created, and will report 
 The content of the generated `weblogic-sample-pvc.yaml`:
 
 ```
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -102,8 +102,8 @@ metadata:
 
 The content of the generated `weblogic-sample-pv.yaml`:
 ```
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: v1
 kind: PersistentVolume
@@ -132,8 +132,8 @@ spec:
 The content of the generated `domain1-weblogic-sample-pvc.yaml` when `domainUID` is set to `domain1`:
 
 ```
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -154,8 +154,8 @@ spec:
 
 The content of the generated `domain1-weblogic-sample-pv.yaml` when `domainUID` is set to `domain1`:
 ```
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: v1
 kind: PersistentVolume

@@ -27,6 +27,9 @@ will be graceful, the timeout, and if in-flight sessions are given the opportuni
 The `serverStartPolicy` property on the domain resource controls which servers should be running.
 The operator runtime monitors this property and creates or deletes the corresponding server pods.
 
+{{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers.
+{{% /notice %}}
+
 #### `serverStartPolicy` rules
 
 You can specify the `serverStartPolicy` property at the domain, cluster, and server levels. Each level supports a different set of values.
@@ -165,12 +168,12 @@ The server will count toward the cluster's `replicas` count.  Also, if you confi
 
 ### Shutdown options
 
-The domain resource includes the element `serverPod` that is available under `spec`, `adminServer` and each entry of 
+The domain resource includes the element `serverPod` that is available under `spec`, `adminServer` and each entry of
 `clusters` and `managedServers`. The `serverPod` element controls many details of how pods are created for server instances.
 
 The `shutdown` element of `serverPod` controls how servers will be shutdown.  This element has three properties:
-`shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` property can be set to either `Graceful`, the default, 
-or `Forced` specifying the type of shutdown.  The `timeoutSeconds` property configures how long the server is given to 
+`shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` property can be set to either `Graceful`, the default,
+or `Forced` specifying the type of shutdown.  The `timeoutSeconds` property configures how long the server is given to
 complete shutdown before the server is killed.  The `ignoreSessions` property, which is only applicable for graceful shutdown, when `false`,
 the default, allows the shutdown process to take longer to give time for any active sessions to complete up to the configured timeout.
 The operator runtime monitors this property but will not restart any server pods solely to adjust the shutdown options.
@@ -220,7 +223,7 @@ For instance, given the following domain resource:
     ...
 ```
 
-Graceful shutdown is used for all servers in the domain because this is specified at the domain level and is not overridden at 
+Graceful shutdown is used for all servers in the domain because this is specified at the domain level and is not overridden at
 any cluster or server level.  The "cluster1" cluster defaults to ignoring sessions; however, the "cluster1_server1" server
 instance will not ignore sessions and will have a longer timeout.
 
@@ -244,6 +247,7 @@ The operator will restart servers when any of the follow properties on the domai
 * `includeServerOutInPodLog`
 * `logHomeEnabled`
 * `logHome`
+* `dataHome`
 * `livenessProbe`
 * `nodeSelector`
 * `podSecurityContext`
@@ -261,7 +265,7 @@ such a label or annotation by modifying the `restartVersion`.
 {{% /notice %}}
 
 {{% notice note %}}
-Prior to version 2.2, the operator incorrectly restarted servers when the `serverStartState` property was changed.  Now, 
+Prior to version 2.2, the operator incorrectly restarted servers when the `serverStartState` property was changed.  Now,
 this property has no affect on already running servers.
 {{% /notice %}}
 

@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -58,7 +57,12 @@ public class BaseTest {
   public static boolean FULLTEST;
   public static boolean JENKINS;
   public static boolean SHARED_CLUSTER;
+  public static boolean OPENSHIFT;
   public static String WDT_VERSION;
+  //currently certified chart versions of Prometheus and Grafana
+  public static String PROMETHEUS_CHART_VERSION;
+  public static String GRAFANA_CHART_VERSION;
+  public static String MONITORING_EXPORTER_VERSION;
   public static boolean INGRESSPERDOMAIN = true;
   protected static String appLocationInPod = "/u01/oracle/apps";
   private static String resultRoot = "";
@@ -101,6 +105,9 @@ public class BaseTest {
     if (System.getenv("SHARED_CLUSTER") != null) {
       SHARED_CLUSTER = new Boolean(System.getenv("SHARED_CLUSTER")).booleanValue();
     }
+    if (System.getenv("OPENSHIFT") != null) {
+      OPENSHIFT = new Boolean(System.getenv("OPENSHIFT")).booleanValue();
+    }
     if (System.getenv("INGRESSPERDOMAIN") != null) {
       INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
     }
@@ -141,7 +148,19 @@ public class BaseTest {
     WDT_VERSION =
         System.getenv("WDT_VERSION") != null
             ? System.getenv("WDT_VERSION")
-            : appProps.getProperty("WDT_VERSION");            
+            : appProps.getProperty("WDT_VERSION");
+    PROMETHEUS_CHART_VERSION =
+            System.getenv("PROMETHEUS_CHART_VERSION") != null
+                    ? System.getenv("PROMETHEUS_CHART_VERSION")
+                    : appProps.getProperty("PROMETHEUS_CHART_VERSION");
+    GRAFANA_CHART_VERSION =
+            System.getenv("GRAFANA_CHART_VERSION") != null
+                    ? System.getenv("GRAFANA_CHART_VERSION")
+                    : appProps.getProperty("GRAFANA_CHART_VERSION");
+    MONITORING_EXPORTER_VERSION =
+            System.getenv("MONITORING_EXPORTER_VERSION") != null
+                    ? System.getenv("MONITORING_EXPORTER_VERSION")
+                    : appProps.getProperty("MONITORING_EXPORTER_VERSION");
             
     maxIterationsPod =
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
@@ -765,15 +784,20 @@ public class BaseTest {
 
     // create scripts dir under domain pv
     TestUtils.createDirUnderDomainPV(scriptsDir);
-    // workaround for the issue with not allowing .. in the host-path in krun.sh
-    Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
-        Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
-    // copy script to pod
-    String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
-        + getResultDir() + ":/tmpdir -m " + pvDir
-        + ":/pvdir -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/domainonpvwdt/bin/scripts' -n "
-        + domainNS;
-    TestUtils.exec(cpUsingKrunCmd, true);
+    if (OPENSHIFT) {
+      Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
+          Paths.get(scriptsDir + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
+    } else {
+      // workaround for the issue with not allowing .. in the host-path in krun.sh
+      Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
+          Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
+      // copy script to pod
+      String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
+          + getResultDir() + ":/tmpdir -m " + pvDir
+          + ":/pvdir -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/domainonpvwdt/bin/scripts' -n "
+          + domainNS;
+      TestUtils.exec(cpUsingKrunCmd, true);
+    }
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {

@@ -1,9 +1,9 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,7 +15,6 @@ import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1DeleteOptions;
@@ -30,7 +29,6 @@ import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.models.V1Toleration;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -165,6 +163,11 @@ public abstract class PodStepContext extends BasePodStepContext {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .getLocalAdminProtocolChannelPort();
+  }
+
+  private String getDataHome() {
+    String dataHome = getDomain().getDataHome();
+    return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
   }
 
   private String getEffectiveLogHome() {
@@ -572,8 +575,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.ADMIN_NAME, getAsName());
     addEnvVar(vars, ServerEnvVars.ADMIN_PORT, getAsPort().toString());
     if (isLocalAdminProtocolChannelSecure()) {
-      // This env variable indicates whether the administration port in the WLS server on the local pod is secure
-      addEnvVar(vars, ServerEnvVars.ADMIN_PORT_SECURE, "true");
+      addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
     }
     if (isAdminServerProtocolChannelSecure()) {
       // The following env variable determines whether to set a secure protocol(https/t3s) in the "AdminURL" property
@@ -589,6 +591,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, isIncludeServerOutInPodLog());
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
+    String dataHome = getDataHome();
+    if (dataHome != null && !dataHome.isEmpty()) {
+      addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
+    }
     if (mockWls()) {
       addEnvVar(vars, "MOCK_WLS", "true");
     }

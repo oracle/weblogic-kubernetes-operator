@@ -1,5 +1,5 @@
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: v1
 kind: Pod
@@ -29,6 +29,8 @@ spec:
       value: "${NODEMGR_HOME}"
     - name: LOG_HOME
       value: "${LOG_HOME}"
+    - name: DATA_HOME
+      value: "${DATA_HOME}"
     - name: CREDENTIALS_SECRET_NAME
       value: "${WEBLOGIC_CREDENTIALS_SECRET_NAME}"
     - name: ALLOW_DYNAMIC_CLUSTER_IN_FMW
