@@ -141,9 +141,9 @@ public class LoadBalancer {
   }
 
   /**
-   * append current namespace to existing namespaces
-   * @param domainNamespace
-   * @return string namespace
+   * append current namespace to existing namespaces.
+   * @param domainNamespace namepace to append
+   * @return string updated namespace list
    * @throws Exception when could not get values
    */
   private String getKubernetesNamespaceToUpdate(String domainNamespace) throws Exception {
@@ -163,7 +163,8 @@ public class LoadBalancer {
         // now have an ArrayList containing "foo", "bar" and "baz"
         ArrayList<String> list = new ArrayList<String>(Arrays.asList(trimmed.split(",")));
         list.add(domainNamespace);
-        return list.toString().replace("[", "{").replace("]", "}");
+        return list.toString().replace("[", "{")
+            .replace("]", "}").replace(" ", "");
       }
     }
     LoggerHelper.getLocal().log(Level.INFO, "traefik-operator doesn't contain kubernetes.namespaces");
