@@ -74,12 +74,14 @@ class ModelDiffer:
 
         if len(added) > 0:
             for item in added:
+                token = saved_token
                 all_added.append(token + '.' + item)
 
         # We don't really care about this, just put something here is enough
 
         if len(removed) > 0:
             for item in removed:
+                token = saved_token
                 all_removed.append(token + '.' + item)
         # print 'Exiting recursive_changed_detail'
 
