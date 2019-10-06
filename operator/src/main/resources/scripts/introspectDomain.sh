@@ -300,7 +300,18 @@ function createWLDomain() {
                 fi
                 trace "wrote updateResult"
 
-                # domain is already created, advance to run the introspect python
+                # if online update is successful, then we extract the old domain and use offline update, so that
+                # we can update the domain and reuse the old ldap
+                rm -fr ${DOMAIN_HOME}
+                cd / && base64 -d ${domain_zipped} > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
+                chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
+
+
+                ${wdt_bin}/updateDomain.sh -oracle_home ${MW_HOME} \
+                 -model_file /tmp/diffed_model.json ${variable_list} -domain_home ${DOMAIN_HOME} -domain_type \
+                 ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}
+
+              # perform wdt online update if the user has specify in the spec ? How to get it from the spec ?  env ?
 
             fi
         fi
