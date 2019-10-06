@@ -48,10 +48,13 @@ class ModelDiffer:
         diff=a.changed()
         added=a.added()
         removed=a.removed()
+        saved_token=token
+
         # print 'DEBUG: In recursive changed detail ' + str(diff)
         # print 'DEBUG: In recursive added detail: ' + str(a.added())
         if len(diff) > 0:
             for o in diff:
+                token = saved_token
                 # The token is a dotted string that is used to parse and rebuilt the structure later
                 # print 'DEBUG: in recursive changed detail walking down1 ' + str(o)
                 token=token+'.'+o
@@ -166,15 +169,61 @@ class ModelDiffer:
             return 0
 
         if len(all_added) > 0:
-            # filter out topology
-            if model.has_key('topology'):
-                return 0
-            # TODO under what conditions we can return 1 to allow online changes = just resources/** for further
-            # filtering is needed ??
-
-            return 0
+            return self._is_safe_addition()
 
         return 1
+
+    def _is_safe_addition(self):
+        """
+        Check to see if the additions are safe to use for online update
+        Note:  all the additions are in a list.  The entire list is check and the condition is all or nothing
+        :return: 1 if ok to apply all the additions for online update
+                 0 if not ok to apply all the additions for online update
+        """
+        # filter out topology
+        if model.has_key('appDeployments'):
+            return 0
+
+        if model.has_key('topology'):
+            return 0
+
+        # allows add attribute to existing entity
+        found_in_past_dictionary = 1
+
+        for itm in all_added:
+            found_in_past_dictionary = self._in_model(self.past_dict, itm)
+            if found_in_past_dictionary == 0:
+                break
+
+        if found_in_past_dictionary == 1:
+            return 1
+
+        return 0
+
+    def _in_model(self, dictionary, keylist):
+        """
+        Check whether the keylist is in the dictionary
+
+        :param dictionary: model dictionary
+        :param keylist: dot separated keys
+        :return:
+        """
+        splitted=keylist.split('.')
+        n=len(splitted)
+        i=0
+        for i in range(0, n-1):
+            if i > 3:
+                break
+            if dictionary.has_key(splitted[i]):
+                if isinstance(dictionary[splitted[i]], dict):
+                    dictionary = dictionary[splitted[i]]
+                continue
+            else:
+                break
+        if i > 3:
+            return 1
+        return 0
+
 
     def get_final_changed_model(self):
         """
