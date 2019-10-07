@@ -14,7 +14,7 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 
 The following prerequisites must be handled prior to running the create domain script:
 
-* Make sure the WebLogic operator is running.
+* Make sure the WebLogic Kubernetes Operator is running.
 * The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied. The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. Refer to [WebLogic Docker images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}) for details on how to obtain or create the image.
 * Create a Kubernetes namespace for the domain unless you intend to use the default namespace.
 * In the same Kubernetes namespace, create the Kubernetes persistent volume (PV) where the domain home will be hosted, and the Kubernetes persistent volume claim (PVC) for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}). By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1` and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create `domain1-weblogic-sample-pvc` using [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh) with an inputs file that has the `domainUID` set to `domain1`.
