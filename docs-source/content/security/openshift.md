@@ -23,7 +23,7 @@ For example, to update the OpenShift policy, use:
 $ oc adm policy add-scc-to-user anyuid -z default
 ```
 
-and to annotate the WebLogic cotnainers, update the WebLogic `Domain` resource
+and to annotate the WebLogic containers, update the WebLogic `Domain` resource
 to include `annotations` for the `serverPod`. For example:
 
 ``` yaml
