@@ -459,6 +459,16 @@ $ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-
     </item>
     
     <item>
+      <title>OpenShift</title>
+      <link>/weblogic-kubernetes-operator/security/openshift/</link>
+      <pubDate>Fri, 04 Oct 2019 08:08:08 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/security/openshift/</guid>
+      <description>OpenShift anyuid security context The Docker images that Oracle publishes default to the container user as oracle, which is UID 1000 and GID 1000. When running the Oracle images or layered images that retain the default user as oracle with OpenShift, the anyuid security context constraint is required to ensure proper access to the file system within the Docker image. This means that the administrator must:
+ Ensure the anyuid security content is granted Ensure that WebLogic containers are annotated with openshift.</description>
+    </item>
+    
+    <item>
       <title>Asynchronous call model</title>
       <link>/weblogic-kubernetes-operator/developerguide/asynchronous-call-model/</link>
       <pubDate>Sat, 23 Feb 2019 17:20:00 -0500</pubDate>

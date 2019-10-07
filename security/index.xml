@@ -59,5 +59,15 @@ The WebLogic operator will use this ServiceAccount when calling the Kubernetes A
       <description>Contents  WebLogic domain credentials secret WebLogic domain image pull secret WebLogic operator image pull secret WebLogic operator configuration override secrets WebLogic operator external REST interface secret WebLogic operator internal REST interface secret  WebLogic domain credentials secret The credentials for the WebLogic domain are kept in a Kubernetes Secret where the name of the secret is specified using webLogicCredentialsSecret in the WebLogic Domain resource. Also, the domain credentials secret must be created in the namespace where the Domain will be running.</description>
     </item>
     
+    <item>
+      <title>OpenShift</title>
+      <link>/weblogic-kubernetes-operator/security/openshift/</link>
+      <pubDate>Fri, 04 Oct 2019 08:08:08 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/security/openshift/</guid>
+      <description>OpenShift anyuid security context The Docker images that Oracle publishes default to the container user as oracle, which is UID 1000 and GID 1000. When running the Oracle images or layered images that retain the default user as oracle with OpenShift, the anyuid security context constraint is required to ensure proper access to the file system within the Docker image. This means that the administrator must:
+ Ensure the anyuid security content is granted Ensure that WebLogic containers are annotated with openshift.</description>
+    </item>
+    
   </channel>
 </rss>

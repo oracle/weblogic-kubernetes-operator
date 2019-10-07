@@ -403,6 +403,11 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/security/openshift/</loc>
+    <lastmod>2019-10-04T08:08:08-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/</loc>
     <lastmod>2019-02-23T17:39:00-05:00</lastmod>
   </url>
