@@ -275,7 +275,9 @@ function createWLDomain() {
         if [ -f ${inventory_merged_model} ] && [ ${archive_zip_changed} -eq 0 ] ; then
 
 
-            ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${inventory_merged_model} $DOMAIN_HOME/wlsdeploy/domain_model.json || exit 1
+            ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${DOMAIN_HOME}/wlsdeploy/domain_model.json \
+                ${inventory_merged_model} || exit 1
+
             if [ $? -eq 0 ] ; then
                 trace "Using online update"
                 admin_user=$(cat /weblogic-operator/secrets/username)
@@ -283,9 +285,10 @@ function createWLDomain() {
 
                 cat /tmp/diffed_model.json
 
-                yes ${admin_pwd} | ${wdt_bin}/updateDomain.sh -oracle_home $MW_HOME \
+                yes ${admin_pwd} | ${wdt_bin}/updateDomain.sh -oracle_home ${MW_HOME} \
                  -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
-                 /tmp/diffed_model.json $variable_list -domain_home $DOMAIN_HOME
+                 /tmp/diffed_model.json ${variable_list} -domain_home ${DOMAIN_HOME}
+
                 retcode=$?
                 trace "Completed update"
                 if [ ${retcode} -eq 103 ] ; then
@@ -306,14 +309,21 @@ function createWLDomain() {
                 cd / && base64 -d ${domain_zipped} > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
                 chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
 
+                # We do not need OPSS key for offline update
 
                 ${wdt_bin}/updateDomain.sh -oracle_home ${MW_HOME} \
                  -model_file /tmp/diffed_model.json ${variable_list} -domain_home ${DOMAIN_HOME} -domain_type \
-                 ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}
+                 ${WDT_DOMAIN_TYPE}
 
               # perform wdt online update if the user has specify in the spec ? How to get it from the spec ?  env ?
 
             fi
+
+            if [ $? -eq 2 ] ; then
+                trace "Shape changes in the model is not supported"
+                exit 1
+            fi
+
         fi
 
         # The reason for copying the associative array is because they cannot be passed to the function for checking

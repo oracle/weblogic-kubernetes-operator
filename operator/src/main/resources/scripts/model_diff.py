@@ -43,23 +43,22 @@ class ModelDiffer:
             print s
 
     def recursive_changed_detail(self, key, token, root):
-        # print 'Entering recursive changed detail key=' + str(key) + ' token=' + str(token) + ' root=' + str(root)
+        debug("DEBUG: Entering recursive_changed_detail key=%s token=%s root=%s", key, token, root)
         a=ModelDiffer(self.current_dict[key], self.past_dict[key])
         diff=a.changed()
         added=a.added()
         removed=a.removed()
         saved_token=token
-
-        # print 'DEBUG: In recursive changed detail ' + str(diff)
-        # print 'DEBUG: In recursive added detail: ' + str(a.added())
+        debug('DEBUG: In recursive changed detail %s', diff)
+        debug('DEBUG: In recursive added detail %s', added)
         if len(diff) > 0:
             for o in diff:
-                token = saved_token
+                token=saved_token
                 # The token is a dotted string that is used to parse and rebuilt the structure later
-                # print 'DEBUG: in recursive changed detail walking down1 ' + str(o)
+                debug('DEBUG: in recursive changed detail walking down 1 %s', o)
                 token=token+'.'+o
                 if a.is_dict(o):
-                    # print 'DEBUG: in recursive changed detail walking down2 ' + str(token)
+                    debug('DEBUG: in recursive changed detail walking down 2 %s', token)
                     a.recursive_changed_detail(o,token, root)
                     last=token.rfind('.')
                     token=root
@@ -71,19 +70,21 @@ class ModelDiffer:
 
         # already out of recursive calls, add all entries from current dictionary
         # resources.JDBCSubsystemResources.* (note it may not have the lower level nodes
-
+        added_token=token
+        debug('DEBUG: current added token %s' , added_token)
         if len(added) > 0:
             for item in added:
-                token = saved_token
+                token=saved_token
+                debug('DEBUG: recursive added token %s item %s ', token, item)
                 all_added.append(token + '.' + item)
 
         # We don't really care about this, just put something here is enough
 
         if len(removed) > 0:
             for item in removed:
-                token = saved_token
+                debug('DEBUG: removed %s', item)
                 all_removed.append(token + '.' + item)
-        # print 'Exiting recursive_changed_detail'
+        debug('DEBUG: Exiting recursive_changed_detail')
 
     def is_dict(self,key):
         if isinstance(self.current_dict[key],dict):
@@ -103,9 +104,19 @@ class ModelDiffer:
             self.recursive_changed_detail(s, token, s)
             self._add_results(all_changes)
             self._add_results(all_added)
+            # TODO:  delete needs more work, not simply added to the results
+            #self._add_results(all_removed)
+
 
     def _add_results(self, ar_changes):
+
+        # The ar_changes is the keys of changes in the dotted format
+        #  'resources.JDBCSystemResource.Generic2.JdbcResource.JDBCConnectionPoolParams.TestConnectionsOnReserve
+        #
+        #  Now change it to python dictionrary
         for item in ar_changes:
+            debug('DEBUG: add_results %s', item)
+
             splitted=item.split('.',1)
             n=len(splitted)
             result=dict()
@@ -126,20 +137,25 @@ class ModelDiffer:
                     walked.append(splitted[0])
                 splitted=splitted[1].split('.',1)
                 n=len(splitted)
-
+            #
+            # result is the dictionary format
+            #
             leaf=result
             value_tree=self.current_dict
             for k in walked:
                 leaf = leaf[k]
                 value_tree=value_tree[k]
 
-            leaf[splitted[0]] =value_tree[splitted[0]]
+            # walk the current dictionary and set the value
+            # doesn't work in delete case
+            #
+            leaf[splitted[0]] = value_tree[splitted[0]]
             self.merge_dictionaries(self.final_changed_model, result)
 
 
     def merge_dictionaries(self, dictionary, new_dictionary):
         """
-        Merge the values from the new dictionary to the existing one.
+         Merge the values from the new dictionary to the existing one.
         :param dictionary: the existing dictionary
         :param new_dictionary: the new dictionary to be merged
         """
@@ -158,8 +174,12 @@ class ModelDiffer:
         """
         Is it a safe difference to do online update.
         :param model: diffed model
-        return 0 false 1 true
+        return 0 false 1 true 2 for fatal
         """
+
+        # filter out any appDeployments for now. It is possible to support app but
+        # case to handle include deletion, redeploy...
+        #
         if model.has_key('appDeployments'):
             return 0
 
@@ -167,71 +187,87 @@ class ModelDiffer:
         if not model:
             return 0
 
+        # if there is anything not in existing model
+        # WDT does not support certain type of deletion - entity level and no apps
+
         if len(all_removed) > 0:
             return 0
 
         if len(all_added) > 0:
-            return self._is_safe_addition()
+            return self._is_safe_addition(model)
 
         return 1
 
-    def _is_safe_addition(self):
+    def _is_safe_addition(self, model):
         """
-        Check to see if the additions are safe to use for online update
-        Note:  all the additions are in a list.  The entire list is check and the condition is all or nothing
-        :return: 1 if ok to apply all the additions for online update
-                 0 if not ok to apply all the additions for online update
+        check the items in all_added to see if can be used for online update
+        return 1 tbd
+               0 for safe online update
+               2 fatal for any update
         """
-        # filter out topology
-        if model.has_key('appDeployments'):
-            return 0
-
-        if model.has_key('topology'):
-            return 0
-
         # allows add attribute to existing entity
         found_in_past_dictionary = 1
-
+        has_topology=0
         for itm in all_added:
+            if itm.find('topology.') == 0:
+                has_topology=1
+            # print 'DEBUG: is_safe_addition ' + str(itm)
             found_in_past_dictionary = self._in_model(self.past_dict, itm)
-            if found_in_past_dictionary == 0:
+            # print 'DBUEG: found_in_past_dictionary ' + str(found_in_past_dictionary)
+            if not found_in_past_dictionary:
                 break
 
-        if found_in_past_dictionary == 1:
-            return 1
+        # if there is a shape change
+        # return 2 ?
 
+        if has_topology and not found_in_past_dictionary:
+            return 2
+
+        if found_in_past_dictionary:
+            return 0
+
+        # allow new additions for anything ??
         return 0
 
     def _in_model(self, dictionary, keylist):
         """
-        Check whether the keylist is in the dictionary
+        check whether the keys is in the dictionary
+        :param dictionary dictonary to check
+        :param keylist  dot separted key list
 
-        :param dictionary: model dictionary
-        :param keylist: dot separated keys
-        :return:
+        return 1 if it is in model
+               0 if it is not in model
         """
+        debug('DBEUG: in model keylist=%s dictionary %s', keylist, dictionary)
+
         splitted=keylist.split('.')
         n=len(splitted)
         i=0
-        for i in range(0, n-1):
-            if i > 3:
-                break
+        root_key = splitted[0]
+
+        # loop through the keys and use it to walk the dictionary
+        # if it can walk down 3 levels, safely assume it is in the
+        # dictionary, otherwise it is a total new addition
+
+        for i in range(0, n):
             if dictionary.has_key(splitted[i]):
                 if isinstance(dictionary[splitted[i]], dict):
                     dictionary = dictionary[splitted[i]]
                 continue
             else:
                 break
-        if i > 3:
-            return 1
-        return 0
 
+        if i > 2:
+            return 1
+
+        return 0
 
     def get_final_changed_model(self):
         """
         Return the changed model.
         """
         return self.final_changed_model
+
 
 
 class ModelFileDiffer:
@@ -295,6 +331,7 @@ class ModelFileDiffer:
         """
         import java.lang.StringBuilder as StringBuilder
         builder = StringBuilder()
+        debug("DEBUG: value %s TYPE %s", value, type(value))
         if type(value) == bool or (type(value) == str and (value == 'true' or value == 'false')):
             if value:
                 v = "true"
@@ -303,6 +340,16 @@ class ModelFileDiffer:
             builder.append(v)
         elif type(value) == str:
             builder.append('"').append(self.quote_embedded_quotes(value)).append('"')
+        elif type(value) == list:
+            builder.append("[ ")
+            ind = 0
+            for list_item in value:
+                if ind > 0:
+                    builder.append(", ")
+                builder.append('"').append(list_item).append('"')
+                ind = ind+1
+
+            builder.append(" ]")
         else:
             builder.append(value)
         return builder.toString()
@@ -315,17 +362,33 @@ class ModelFileDiffer:
         net_diff = obj.get_final_changed_model()
         fh = open('/tmp/diffed_model.json', 'w')
         self.write_dictionary_to_json_file(net_diff, fh)
-        #print all_added
         fh.close()
         return obj.is_safe_diff(net_diff)
 
+def debug(format_string, *arguments):
+    #print format_string % (arguments)
+    return
 
 def main():
     obj = ModelFileDiffer(sys.argv[1], sys.argv[2])
-    if not obj.compare():
-        exit(exitcode=1)
-    else:
-        exit(exitcode=0)
+    rc=obj.compare()
+    exit(exitcode=rc)
+    # if not obj.compare():
+    #     # print 'all changes '
+    #     # print all_changes
+    #     # print 'all added '
+    #     # print all_added
+    #     # print 'all removed '
+    #     # print all_removed
+    #     exit(exitcode=1)
+    # else:
+    #     # print 'all changes '
+    #     # print all_changes
+    #     # print 'all added '
+    #     # print all_added
+    #     # print 'all removed '
+    #     # print all_removed
+    #     exit(exitcode=0)
 
 
 if __name__ == "main":
@@ -333,4 +396,5 @@ if __name__ == "main":
     all_added = []
     all_removed = []
     main()
+
 
