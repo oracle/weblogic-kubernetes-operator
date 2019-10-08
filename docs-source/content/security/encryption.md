@@ -2,17 +2,17 @@
 title: "Encryption"
 date: 2019-02-23T17:36:29-05:00
 weight: 3
-description: "WebLogic domain encryption and the WebLogic operator"
+description: "WebLogic domain encryption and the operator"
 ---
 #### Contents
 
-* [WebLogic operator introspector encryption](#weblogic-operator-introspector-encryption")
+* [WebLogic Kubernetes Operator introspector encryption](#weblogic-kubernetes-operator-introspector-encryption")
 * [Encryption of Kubernetes secrets](#encryption-of-kubernetes-secrets")
 * [Additional reading](#additional-reading)
 
-#### WebLogic operator introspector encryption
+#### WebLogic Kubernetes Operator introspector encryption
 
-The WebLogic operator has an introspection job that handles WebLogic domain encryption.
+The WebLogic Kubernetes Operator has an introspection job that handles WebLogic domain encryption.
 The introspection also addresses use of Kubernetes secrets for use with configuration overrides.
 For additional information on the configuration handling, see the
 [configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md">}})
