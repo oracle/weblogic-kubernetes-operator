@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
@@ -90,6 +89,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withAdditionalVolume(String name, String path) {
     getDomainSpec().addAdditionalVolume(name, path);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withAdditionalPVClaimVolume(String name, String claimName) {
+    getDomainSpec().addAdditionalPVClaimVolume(name, claimName);
     return this;
   }
 
