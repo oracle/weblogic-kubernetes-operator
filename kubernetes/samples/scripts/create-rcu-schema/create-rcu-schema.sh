@@ -21,7 +21,7 @@ function usage {
   exit $1
 }
 
-while getopts ":h:s:d:p:" opt; do
+while getopts ":h:s:d:p:i:" opt; do
   case $opt in
     s) schemaPrefix="${OPTARG}"
     ;;
@@ -47,15 +47,23 @@ if [ -z ${dburl} ]; then
   dburl="oracle-db.default.svc.cluster.local:1521/devpdb.k8s"
 fi
 
+if [ -z ${rcuType} ]; then
+  rcuType="fmw"
+fi
+
 if [ -z ${pullsecret} ]; then
   pullsecret="docker-store"
 fi
 
 if [ -z ${fmwimage} ]; then
-  fmwimage="container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3"
+ fmwimage="container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3"
 fi
 
-echo "ImagePullSecret[$pullsecret] Image[${fmwimage}] dburl[${dburl}]"
+rcuType=""
+[[ $fmwimage =~ .*soasuite.* ]] && rcuType=soa
+[[ $fmwimage =~ .*fmw-infr.* ]] && rcuType=fmw
+
+echo "ImagePullSecret[$pullsecret] Image[${fmwimage}] dburl[${dburl}] rcuType[${rcuType}]"
 
 dbpod=`kubectl get po | grep oracle | cut -f1 -d " " `
 if [ -z ${dbpod} ]; then
@@ -91,7 +99,7 @@ kubectl cp ${scriptDir}/common/createRepository.sh  rcu:/u01/oracle
 kubectl cp pwd.txt rcu:/u01/oracle
 rm -rf createRepository.sh pwd.txt
 
-kubectl exec -it rcu /bin/bash /u01/oracle/createRepository.sh ${dburl} ${schemaPrefix}
+kubectl exec -it rcu /bin/bash /u01/oracle/createRepository.sh ${dburl} ${schemaPrefix} ${rcuType}
 if [ $? != 0  ]; then
  echo "######################";
  echo "[ERROR] Could not create the RCU Repository";
