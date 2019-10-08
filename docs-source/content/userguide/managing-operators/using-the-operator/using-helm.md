@@ -164,6 +164,8 @@ These examples show two valid YAML syntax options for arrays.
 You must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
 {{% /notice %}}
 
+Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about managing `domainNamespaces`.
+
 #### Elastic Stack integration
 
 ##### `elkIntegrationEnabled`
@@ -480,3 +482,12 @@ To recover:
 - `helm rollback`
 - Create the domain namespace.
 - `helm upgrade` again.
+
+#### Deleting and recreating a namespace that an operator manages without informing the operator
+
+If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
+
+Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about the problem and solutions.
+
+
+
