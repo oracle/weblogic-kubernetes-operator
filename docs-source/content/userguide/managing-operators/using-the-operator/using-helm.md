@@ -111,7 +111,7 @@ javaLoggingLevel:  "FINE"
 
 Specifies the Docker image containing the operator code.
 
-Defaults to `weblogic-kubernetes-operator:2.3.1`.
+Defaults to `weblogic-kubernetes-operator:2.3.0`.
 
 Example:
 ```
@@ -164,27 +164,6 @@ These examples show two valid YAML syntax options for arrays.
 You must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
 {{% /notice %}}
 
-##### `dns1123Fields`
-
-When the operator processes variable references in the domain resource, such as `$(SERVER_NAME)`,
-it will convert them into DNS-1123 legal values if the variables are referenced
-in fields that require their values to be conforming to DNS-1123. A default list of such field 
-names can be found inside the class `Legalnames`
-in the `oracle.kubernetes.operator.helpers package`.
-For example, a value `$(SERVER_NAME)-volume` is specified in a field in a domain resource that 
-requires DNS-1123. Suppose the name of the server is `managed_server1` which contains an illegal 
-underscore character. Upon variable substitution, the operator will replace it with a hyphen, and 
-the resulting value will become `managed-server1-volume`.
-
-A comma separated list of field names can be supplied in `dns1123Fields` to customize the list of 
-field names, or it can be left commented out to use the default list of field names.
-
-This property is optional.
-
-Example:
-```
-dns1123Fields: "name, claimName, volumeName"
-```
 #### Elastic Stack integration
 
 ##### `elkIntegrationEnabled`
@@ -258,7 +237,7 @@ externalRestHttpsPort: 32009
 
 ##### `externalRestIdentitySecret`
 
-Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes tls secret previously created in the namespace where the WebLogic operator is deployed. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored. In order to create the Kubernetes tls secret you can use the following command:
+Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes `tls` secret previously created in the namespace where the operator is deployed. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored. In order to create the Kubernetes `tls` secret you can use the following command:
 
 ```
 $ kubectl create secret tls <secret-name> \
