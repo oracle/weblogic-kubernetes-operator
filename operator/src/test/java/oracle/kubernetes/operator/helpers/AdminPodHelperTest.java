@@ -29,6 +29,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.Matchers.hasPVClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
@@ -50,6 +51,9 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 @SuppressWarnings("SameParameterValue")
 public class AdminPodHelperTest extends PodHelperTestBase {
   private static final String INTERNAL_OPERATOR_CERT_ENV_NAME = "INTERNAL_OPERATOR_CERT";
+
+  static final String RAW_VALUE_1 = "value-$(SERVER_NAME)";
+  static final String END_VALUE_1 = "value-ADMIN_SERVER";
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -291,6 +295,49 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenDomainHasValueFromEnvironmentItemsWithVariables_createAdminPodStartupWithSubstitutions() {
+    V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", RAW_VALUE_1);
+    V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", RAW_VALUE_1);
+    V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", RAW_VALUE_1);
+
+    configureAdminServer()
+        .withEnvironmentVariable(configMapKeyRefEnvVar)
+        .withEnvironmentVariable(secretKeyRefEnvVar)
+        .withEnvironmentVariable(fieldRefEnvVar);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(),
+        allOf(
+          hasItem(createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", END_VALUE_1)),
+          hasItem(createSecretKeyRefEnvVar("VARIABLE2", "my-secret", END_VALUE_1)),
+          hasItem(createFieldRefEnvVar("MY_NODE_IP", END_VALUE_1))
+        )
+    );
+  }
+
+  @Test
+  public void whenDomainHasValueFromEnvironmentItemsWithVariables_createPodShouldNotChangeTheirValues()
+      throws Exception {
+    V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", RAW_VALUE_1);
+    V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", RAW_VALUE_1);
+    V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", RAW_VALUE_1);
+
+    configureAdminServer()
+        .withEnvironmentVariable(configMapKeyRefEnvVar)
+        .withEnvironmentVariable(secretKeyRefEnvVar)
+        .withEnvironmentVariable(fieldRefEnvVar);
+
+    assertThat(
+        getConfiguredDomainSpec().getAdminServer().getEnv(),
+        allOf(
+            hasItem(createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", RAW_VALUE_1)),
+            hasItem(createSecretKeyRefEnvVar("VARIABLE2", "my-secret", RAW_VALUE_1)),
+            hasItem(createFieldRefEnvVar("MY_NODE_IP", RAW_VALUE_1))
+        )
+    );
+  }
+
+  @Test
   public void createAdminPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
     configureAdminServer();
 
@@ -300,26 +347,13 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumes_createAdminPodWithThem() {
+  public void whenDomainHasAdditionalPVClaimVolumesWitVariables_createManagedPodWithThem() {
     getConfigurator()
-        .withAdditionalVolume("volume1", "/source-path1")
-        .withAdditionalVolume("volume2", "/source-path2");
+        .withAdditionalPVClaimVolume("volume-$(SERVER_NAME)", "$(SERVER_NAME)-claim");
 
     assertThat(
         getCreatedPod().getSpec().getVolumes(),
-        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
-  }
-
-  @Test
-  public void whenDomainHasAdditionalVolumeMounts_createAdminPodWithThem() {
-    getConfigurator()
-        .withAdditionalVolumeMount("volume1", "/destination-path1")
-        .withAdditionalVolumeMount("volume2", "/destination-path2");
-    assertThat(
-        getCreatedPodSpecContainer().getVolumeMounts(),
-        allOf(
-            hasVolumeMount("volume1", "/destination-path1"),
-            hasVolumeMount("volume2", "/destination-path2")));
+        allOf(hasPVClaimVolume("volume-admin-server", "admin-server-claim")));
   }
 
   @Test
