@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -13,9 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.xml.bind.DatatypeConverter;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -162,7 +159,8 @@ public class ItMonitoringExporter extends BaseTest {
         resourceExporterDir,
         monitoringExporterScriptDir,
         "buildMonitoringExporter.sh",
-        monitoringExporterDir + " " + resourceExporterDir + " " + monitoringExporterBranchVer + " " + MONITORING_EXPORTER_VERSION);
+        monitoringExporterDir + " " + resourceExporterDir + " " + monitoringExporterBranchVer + " "
+            + MONITORING_EXPORTER_VERSION);
   }
 
   /**
@@ -700,14 +698,12 @@ public class ItMonitoringExporter extends BaseTest {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    boolean testCompletedSuccessfully = false;
 
     setupPv();
-    installPrometheusGrafanaWebHookMySQLCoordinatorWLSImage();
+    installPrometheusGrafanaWebHookMySqlCoordinatorWlsImage();
     fireAlert();
     addMonitoringToExistedDomain();
 
-    testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -952,14 +948,15 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if could not run the command successfully to install Prometheus and Grafana
    */
-  private static void installPrometheusGrafanaWebHookMySQLCoordinatorWLSImage() throws Exception {
+  private static void installPrometheusGrafanaWebHookMySqlCoordinatorWlsImage() throws Exception {
     prometheusPort = "30000";
 
     executeShelScript(
             resourceExporterDir,
             monitoringExporterScriptDir,
             "createPromGrafanaMySqlCoordWebhook.sh",
-            monitoringExporterDir + " " + resourceExporterDir + " " + PROMETHEUS_CHART_VERSION + " " + GRAFANA_CHART_VERSION);
+            monitoringExporterDir + " " + resourceExporterDir + " " + PROMETHEUS_CHART_VERSION + " "
+                + GRAFANA_CHART_VERSION);
 
     String webhookPod = getPodName("app=webhook", "webhook");
     TestUtils.checkPodReady(webhookPod, "webhook");
@@ -1006,9 +1003,9 @@ public class ItMonitoringExporter extends BaseTest {
             + "  --data-binary @grafana/dashboard.json";
     TestUtils.exec(crdCmd);
     crdCmd = " cd "
-            + monitoringExporterEndToEndDir
-            + " && " +
-            "curl -v  -H 'Content-Type: application/json' -X GET http://admin:12345678@$HOSTNAME:31000/api/dashboards/db/weblogic-server-dashboard";
+        + monitoringExporterEndToEndDir
+        + " && "
+        + "curl -v  -H 'Content-Type: application/json' -X GET http://admin:12345678@$HOSTNAME:31000/api/dashboards/db/weblogic-server-dashboard";
     ExecResult result = ExecCommand.exec(crdCmd);
     assertTrue(result.stdout().contains("wls_jvm_uptime"));
     assertTrue(
@@ -1149,12 +1146,12 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Method to read the yaml file and add extra properties to the root
+   * Method to read the yaml file and add extra properties to the root.
    *
    * @param yamlFile - Name of the yaml file to make changes.
    * @throws IOException exception
    */
-  private static void addRestOptToYaml (String yamlFile, String prop, int restPort ) throws IOException {
+  private static void addRestOptToYaml(String yamlFile, String prop, int restPort) throws IOException {
     ObjectMapper objectMapper = new ObjectMapper();
 
     ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());

@@ -1,5 +1,5 @@
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # The version of this inputs file.  Do not modify.
 version: create-weblogic-sample-domain-inputs-v1
@@ -84,6 +84,11 @@ logHomeOnPV: false
 # This parameter is required if 'logHomeOnPV' is true.
 # Otherwise, it is ignored.
 logHome: /shared/logs/domain1
+
+# An (optional) in-pod location for data storage of default and custom file stores.
+# If not specified or the value is either not set or empty (e.g. dataHome: "") then the
+# data storage directories are determined from the WebLogic domain home configuration.
+#dataHome:
 
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012

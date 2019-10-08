@@ -99,3 +99,6 @@ Depending on where your Kubernetes cluster is running, you may need to open fire
     a. Edit the `my-inputs.yaml` file (assuming that you named your copy `my-inputs.yaml`) to set `exposedAdminNodePort: true`.
 
     b. Open a browser to `http://localhost:30701`.
+
+    {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers. See [Starting and Stopping Servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md#starting_and_stopping_servers" >}}).
+    {{% /notice %}}

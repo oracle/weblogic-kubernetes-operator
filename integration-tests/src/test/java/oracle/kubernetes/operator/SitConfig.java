@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -78,7 +77,12 @@ public class SitConfig extends BaseTest {
       ExecResult result = TestUtils.exec("kubectl create -f " + mysqlYamlFile);
       Assert.assertEquals(0, result.exitValue());
 
-      fqdn = TestUtils.getHostName();
+      if (!OPENSHIFT) {
+        fqdn = TestUtils.getHostName();
+      } else {
+        result = TestUtils.exec("hostname -i");
+        fqdn = result.stdout().trim();
+      }
       JDBC_URL = "jdbc:mysql://" + fqdn + ":" + MYSQL_DB_PORT + "/";
       // copy the configuration override files to replacing the JDBC_URL token
       String[] files = {
