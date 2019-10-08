@@ -29,8 +29,8 @@ else
  java utils.dbping ORACLE_THIN scott tiger ${connectString} 
 fi 
 
-# SOA need extra component(s) SOAINFRA and ESS
-# SOA need variables param(s) SOA_PROFILE_TYPE=SMALL,HEALTHCARE_INTEGRATION=NO
+# SOA needs extra component(s) SOAINFRA and ESS
+# SOA needs variables param(s) SOA_PROFILE_TYPE=SMALL,HEALTHCARE_INTEGRATION=NO
 
 extComponents=""
 extVariables=""
