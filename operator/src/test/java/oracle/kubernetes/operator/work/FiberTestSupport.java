@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -174,7 +173,7 @@ public class FiberTestSupport {
     // Wait for fiber to finish
     try {
       fiber.get();
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
     return packet;

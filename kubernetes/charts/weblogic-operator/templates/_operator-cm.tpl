@@ -14,6 +14,9 @@ data:
   {{- end }}
   serviceaccount: {{ .serviceAccount | quote }}
   targetNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
+  {{- if .dns1123Fields }}
+  dns1123Fields: {{ .dns1123Fields | quote }}
+  {{- end }}
 kind: "ConfigMap"
 metadata:
   labels:
