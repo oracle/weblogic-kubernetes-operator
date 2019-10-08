@@ -453,6 +453,11 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/faq/namespace-management/</loc>
+    <lastmod>2019-09-19T10:41:32-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/faq/coherence-requirements/</loc>
     <lastmod>2019-08-12T12:41:38-04:00</lastmod>
   </url>

@@ -531,6 +531,16 @@ OKE Kubernetes worker nodes normally do not have public IP addresses. This means
     </item>
     
     <item>
+      <title>Managing Domain Namespaces</title>
+      <link>/weblogic-kubernetes-operator/faq/namespace-management/</link>
+      <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/namespace-management/</guid>
+      <description>Each WebLogic operator deployment manages a number of Kubernetes namespaces (for information about setting domain namespaces, see Operator Helm configuration values). A number of Kubernetes resources must be present in a namespace before any WebLogic domain custom resources can be successfully deployed into it. Those Kubernetes resources are created either as part of the installation of the operator&amp;rsquo;s Helm chart, or created by the operator at runtime.
+This FAQ describes some considerations to be aware of when you manage the namespaces while the WebLogic operator is running.</description>
+    </item>
+    
+    <item>
       <title>Coherence Requirements</title>
       <link>/weblogic-kubernetes-operator/faq/coherence-requirements/</link>
       <pubDate>Mon, 12 Aug 2019 12:41:38 -0400</pubDate>
