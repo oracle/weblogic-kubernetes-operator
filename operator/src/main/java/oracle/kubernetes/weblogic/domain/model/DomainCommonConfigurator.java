@@ -93,6 +93,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withAdditionalPVClaimVolume(String name, String claimName) {
+    getDomainSpec().addAdditionalPVClaimVolume(name, claimName);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withAdditionalVolumeMount(String name, String path) {
     getDomainSpec().addAdditionalVolumeMount(name, path);
     return this;
