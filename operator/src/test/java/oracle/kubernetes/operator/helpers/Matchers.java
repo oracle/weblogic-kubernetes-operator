@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -12,6 +11,7 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
+import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
@@ -43,6 +43,11 @@ public class Matchers {
 
   static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
     return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
+  }
+
+  static Matcher<Iterable<? super V1Volume>> hasPVClaimVolume(String name, String claimName) {
+    return hasItem(new V1Volume().name(name).persistentVolumeClaim(
+        new V1PersistentVolumeClaimVolumeSource().claimName(claimName)));
   }
 
   private static V1Container createContainer(String name, String image, String... command) {

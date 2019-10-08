@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
 
@@ -138,6 +137,17 @@ public abstract class DomainConfigurator {
   }
 
   /**
+   * Sets the data home value.
+   *
+   * @param dataHome the data home value
+   * @return this object
+   */
+  public DomainConfigurator withDataHome(String dataHome) {
+    getDomainSpec().setDataHome(dataHome);
+    return this;
+  }
+
+  /**
    * Sets the WebLogic configuration overrides configmap name for the domain.
    *
    * @param configMapName Name of the Kubernetes configmap that contains the config overrides
@@ -212,6 +222,8 @@ public abstract class DomainConfigurator {
   }
 
   public abstract DomainConfigurator withAdditionalVolume(String name, String path);
+
+  public abstract DomainConfigurator withAdditionalPVClaimVolume(String name, String claimName);
 
   public abstract DomainConfigurator withAdditionalVolumeMount(String name, String path);
 
