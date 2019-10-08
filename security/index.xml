@@ -27,7 +27,7 @@ The operator requires a re-start in order to begin using the new or udpated exte
       <pubDate>Sat, 23 Feb 2019 17:36:29 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/encryption/</guid>
-      <description>Contents  WebLogic operator introspector encryption Encryption of Kubernetes secrets Additional reading  WebLogic operator introspector encryption The WebLogic operator has an introspection job that handles WebLogic domain encryption. The introspection also addresses use of Kubernetes secrets for use with configuration overrides. For additional information on the configuration handling, see the configuration overrides documentation.
+      <description>Contents  WebLogic Kubernetes Operator introspector encryption Encryption of Kubernetes secrets Additional reading  WebLogic Kubernetes Operator introspector encryption The WebLogic Kubernetes Operator has an introspection job that handles WebLogic domain encryption. The introspection also addresses use of Kubernetes secrets for use with configuration overrides. For additional information on the configuration handling, see the configuration overrides documentation.
 The introspection also creates a boot.properties file that is made available to the pods in the WebLogic domain.</description>
     </item>
     
@@ -37,8 +37,8 @@ The introspection also creates a boot.properties file that is made available to 
       <pubDate>Sat, 23 Feb 2019 17:36:12 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/service-accounts/</guid>
-      <description>WebLogic operator service account When the WebLogic operator is installed, the Helm chart property, serviceAccount, can be specified where the value contains the name of the Kubernetes ServiceAccount in the namespace in which the WebLogic operator will be installed. For more information about the Helm chart, see the operator Helm configuration values.
-The WebLogic operator will use this ServiceAccount when calling the Kubernetes API server and the appropriate access controls will be created for this ServiceAccount by the operator&amp;rsquo;s Helm chart.</description>
+      <description>WebLogic Kubernetes Operator service account When the operator is installed, the Helm chart property, serviceAccount, can be specified where the value contains the name of the Kubernetes ServiceAccount in the namespace in which the operator will be installed. For more information about the Helm chart, see the operator Helm configuration values.
+The operator will use this ServiceAccount when calling the Kubernetes API server and the appropriate access controls will be created for this ServiceAccount by the operator&amp;rsquo;s Helm chart.</description>
     </item>
     
     <item>
@@ -56,7 +56,7 @@ The WebLogic operator will use this ServiceAccount when calling the Kubernetes A
       <pubDate>Sat, 23 Feb 2019 17:36:33 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/secrets/</guid>
-      <description>Contents  WebLogic domain credentials secret WebLogic domain image pull secret WebLogic operator image pull secret WebLogic operator configuration override secrets WebLogic operator external REST interface secret WebLogic operator internal REST interface secret  WebLogic domain credentials secret The credentials for the WebLogic domain are kept in a Kubernetes Secret where the name of the secret is specified using webLogicCredentialsSecret in the WebLogic Domain resource. Also, the domain credentials secret must be created in the namespace where the Domain will be running.</description>
+      <description>Contents  WebLogic domain credentials secret WebLogic domain image pull secret WebLogic Kubernetes Operator image pull secret WebLogic Kubernetes Operator configuration override secrets WebLogic Kubernetes Operator external REST interface secret WebLogic Kubernetes Operator internal REST interface secret  WebLogic domain credentials secret The credentials for the WebLogic domain are kept in a Kubernetes Secret where the name of the secret is specified using webLogicCredentialsSecret in the WebLogic Domain resource. Also, the domain credentials secret must be created in the namespace where the Domain will be running.</description>
     </item>
     
     <item>
