@@ -1,9 +1,9 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -64,6 +64,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -85,7 +86,10 @@ import static oracle.kubernetes.operator.helpers.Matchers.ProbeMatcher.hasExpect
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.readOnlyVolumeMount;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.writableVolumeMount;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.Matchers.hasPVClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
+import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_PERIOD;
@@ -105,6 +109,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -487,6 +492,36 @@ public abstract class PodHelperTestBase {
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome(null);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID));
+  }
+
+  private static final String OVERRIDE_DATA_DIR = "/u01/data";
+  private static final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + UID;
+
+  @Test
+  public void whenPodCreated_withDataHomeSpecified_verifyDataHomeEnvDefined() {
+    domainPresenceInfo.getDomain().getSpec().setDataHome(OVERRIDE_DATA_DIR);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar(ServerEnvVars.DATA_HOME, OVERRIDE_DATA_HOME));
+  }
+
+  private static final String EMPTY_DATA_HOME = "";
+
+  @Test
+  public void whenPodCreated_withDataHomeNotSpecified_verifyDataHomeEnvNotDefined() {
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
+  }
+
+  @Test
+  public void whenPodCreated_withEmptyDataHomeSpecified_verifyDataHomeEnvNotDefined() {
+    domainPresenceInfo.getDomain().getSpec().setDataHome(EMPTY_DATA_HOME);
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
+  }
+
+  private static final String NULL_DATA_HOME = null;
+
+  @Test
+  public void whenPodCreated_withNullDataHomeSpecified_verifyDataHomeEnvNotDefined() {
+    domainPresenceInfo.getDomain().getSpec().setDataHome(NULL_DATA_HOME);
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar(ServerEnvVars.DATA_HOME, NULL_DATA_HOME)));
   }
 
   @Test
@@ -986,6 +1021,39 @@ public abstract class PodHelperTestBase {
     configureDomain().withDefaultImage(null);
 
     assertThat(getCreatedPodSpecContainer().getImage(), equalTo(DEFAULT_IMAGE));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumes_createPodWithThem() {
+    getConfigurator()
+        .withAdditionalVolume("volume1", "/source-path1")
+        .withAdditionalVolume("volume2", "/source-path2");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalPVClaimVolume_createPodWithIt() {
+    getConfigurator()
+        .withAdditionalPVClaimVolume("volume1", "myPersistentVolumeClaim");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasPVClaimVolume("volume1", "myPersistentVolumeClaim")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalVolumeMounts_createAdminPodWithThem() {
+    getConfigurator()
+        .withAdditionalVolumeMount("volume1", "/destination-path1")
+        .withAdditionalVolumeMount("volume2", "/destination-path2");
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", "/destination-path1"),
+            hasVolumeMount("volume2", "/destination-path2")));
   }
 
   @Test

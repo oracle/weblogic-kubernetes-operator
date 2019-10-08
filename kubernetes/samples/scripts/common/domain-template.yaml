@@ -1,6 +1,5 @@
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
 #
@@ -42,6 +41,10 @@ spec:
 
   # The in-pod location for domain log, server logs, server out, and Node Manager log files
   %LOG_HOME_ON_PV_PREFIX%logHome: %LOG_HOME%
+  # An (optional) in-pod location for data storage of default and custom file stores.
+  # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
+  # data storage directories are determined from the WebLogic domain home configuration.
+  dataHome: "%DATA_HOME%"
 
   # Istio service mesh support is experimental.
   %ISTIO_PREFIX%experimental:

@@ -18,7 +18,7 @@ After creating Kubernetes clusters, you can optionally:
 
 #### Load balance with an Ingress controller or a web server
 
-You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to the [WebLogic Operator Load Balancer Samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/README.md) for information about the current capabilities and setup instructions for each of the supported load balancers.
+You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to the [WebLogic Kubernetes Operator Load Balancer Samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/README.md) for information about the current capabilities and setup instructions for each of the supported load balancers.
 
 
 #### Configure Kibana and Elasticsearch

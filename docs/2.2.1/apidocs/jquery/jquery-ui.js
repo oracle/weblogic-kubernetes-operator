@@ -1,7 +1,7 @@
 /*! jQuery UI - v1.11.4 - 2015-05-20
 * http://jqueryui.com
 * Includes: core.js, widget.js, position.js, autocomplete.js, menu.js
-* Copyright 2015 jQuery Foundation and other contributors; Licensed MIT */
+* Copyright (c) 2015 jQuery Foundation and other contributors; Licensed MIT */
 
 (function( factory ) {
 	if ( typeof define === "function" && define.amd ) {

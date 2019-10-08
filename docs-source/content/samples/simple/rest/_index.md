@@ -26,7 +26,7 @@ $ kubernetes/samples/scripts/rest/generate-external-rest-identity.sh \
 ```
 
 Where `<SANs>` lists the subject alternative names to put into the generated self-signed
-certificate for the external WebLogic Operator REST HTTPS interface, `<operator-namespace>` should match
+certificate for the external WebLogic Kubernetes Operator REST HTTPS interface, `<operator-namespace>` should match
 the namespace where the operator will be installed, and optionally the secret name, which defaults
 to `weblogic-operator-external-rest-identity`.
 

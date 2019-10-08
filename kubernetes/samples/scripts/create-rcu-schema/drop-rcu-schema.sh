@@ -1,6 +1,6 @@
 #!/bin/bash
-# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
 # Drop the RCU schema based on schemaPreifix and Database URL
@@ -46,6 +46,11 @@ if [ -z ${rcupod} ]; then
   exit -2
 fi
 
+fmwimage=`kubectl get pod/rcu  -o jsonpath="{..image}"`
+rcuType=""
+[[ $fmwimage =~ .*soasuite.* ]] && rcuType=soa
+[[ $fmwimage =~ .*fmw-infr.* ]] && rcuType=fmw
+
 echo "Oradoc_db1" > pwd.txt
 echo "Oradoc_db1" >> pwd.txt
 
@@ -53,7 +58,7 @@ kubectl cp ${scriptDir}/common/dropRepository.sh  rcu:/u01/oracle
 kubectl cp pwd.txt rcu:/u01/oracle
 rm -rf dropRepository.sh pwd.txt
 
-kubectl exec -it rcu /bin/bash /u01/oracle/dropRepository.sh ${dburl} ${schemaPrefix}
+kubectl exec -it rcu /bin/bash /u01/oracle/dropRepository.sh ${dburl} ${schemaPrefix} ${rcuType}
 if [ $? != 0  ]; then
  echo "######################";
  echo "[ERROR] Could not drop the RCU Repository based on dburl[${dburl}] schemaPrefix[${schemaPrefix}]  ";

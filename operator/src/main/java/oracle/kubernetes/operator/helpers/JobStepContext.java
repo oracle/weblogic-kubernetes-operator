@@ -1,8 +1,9 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
+
+import java.io.File;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -131,6 +132,12 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   String getNodeManagerHome() {
     return NODEMGR_HOME;
+  }
+
+
+  protected String getDataHome() {
+    String dataHome = getDomain().getDataHome();
+    return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
   }
 
   private boolean isIstioEnabled() {

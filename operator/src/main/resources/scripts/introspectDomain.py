@@ -1,5 +1,5 @@
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
 # Description:
@@ -107,6 +107,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
+    self.DATA_HOME                 = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
     # initialize globals
@@ -179,6 +180,9 @@ class OfflineWlstEnv(object):
   def getDomainLogHome(self):
     return self.LOG_HOME
 
+  def getDataHome(self):
+    return self.DATA_HOME
+
   def isFMWInfraDomain(self):
     return self.IS_FMW_INFRA_DOMAIN
 
@@ -238,7 +242,7 @@ class OfflineWlstEnv(object):
 
   def getEnvOrDef(self, name, deflt):
     val = os.getenv(name)
-    if val is None or val == "null":
+    if val == None or val == "null" or len(val) == 0:
       return deflt
     return val
 
@@ -809,6 +813,7 @@ class SitConfigGenerator(Generator):
     #self.writeln("<d:name>" + self.env.DOMAIN_NAME + "</d:name>")
     self.customizeNodeManagerCreds()
     self.customizeDomainLogPath()
+    self.customizeCustomFileStores()
     self.customizeServers()
     self.customizeServerTemplates()
     self.undent()
@@ -827,6 +832,9 @@ class SitConfigGenerator(Generator):
   def customizeDomainLogPath(self):
     self.customizeLog(self.env.getDomain().getName(), self.env.getDomain(), true)
 
+  def customizeCustomFileStores(self):
+    self.customizeFileStores(self.env.getDomain())
+
   def customizeServers(self):
     for server in self.env.getDomain().getServers():
       self.customizeServer(server)
@@ -844,6 +852,7 @@ class SitConfigGenerator(Generator):
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
     self.customizeLog(name, server, false)
+    self.customizeDefaultFileStore(server)
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
     self.undent()
@@ -862,6 +871,7 @@ class SitConfigGenerator(Generator):
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
     self.customizeLog(server_name_prefix + "${id}", template, false)
+    self.customizeDefaultFileStore(template)
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
     self.undent()
@@ -918,6 +928,54 @@ class SitConfigGenerator(Generator):
     self.writeln("<d:file-name" + fileaction + ">" + logs_dir + "/" + name + ".log</d:file-name>")
     self.undent()
     self.writeln("</d:log>")
+
+  def customizeFileStores(self, domain):
+    data_dir = self.env.getDataHome()
+    if data_dir is None or len(data_dir) == 0:
+      # do not override if dataHome not specified or empty ("")
+      return
+
+    for filestore in domain.getFileStores():
+      self.customizeFileStore(filestore, data_dir)
+
+
+  def customizeFileStore(self, filestore, data_dir):
+    fileaction=''
+    if filestore.getDirectory() is None:
+      fileaction=' f:combine-mode="add"'
+    else:
+      fileaction=' f:combine-mode="replace"'
+
+    self.writeln("<d:file-store>")
+    self.indent()
+    self.writeln("<d:name>" + filestore.getName() + "</d:name>")
+    self.writeln("<d:directory"+ fileaction + ">" + data_dir + "</d:directory>")
+    self.undent()
+    self.writeln("</d:file-store>")
+
+  def customizeDefaultFileStore(self, bean):
+    data_dir = self.env.getDataHome()
+    if data_dir is None or len(data_dir) == 0:
+      # do not override if dataHome not specified or empty ("")
+      return
+
+    dfsaction=''
+    fileaction=''
+    if bean.getDefaultFileStore() is None:
+      # don't know why, but don't need to "add" a missing default file store bean, and adding it causes trouble
+      dfsaction=' f:combine-mode="add"'
+      fileaction=' f:combine-mode="add"'
+    else:
+      if bean.getDefaultFileStore().getDirectory() is None:
+        fileaction=' f:combine-mode="add"'
+      else:
+        fileaction=' f:combine-mode="replace"'
+
+    self.writeln("<d:default-file-store" + dfsaction + ">")
+    self.indent()
+    self.writeln("<d:directory" + fileaction + ">" + data_dir + "</d:directory>")
+    self.undent()
+    self.writeln("</d:default-file-store>")
 
 class CustomSitConfigIntrospector(SecretManager):
 

@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
 
@@ -116,6 +115,7 @@ public class MessageKeys {
   public static final String NULL_TOKEN_REVIEW_STATUS = "WLSKO-0109";
   public static final String NULL_USER_INFO = "WLSKO-0110";
   public static final String RESOURCE_BUNDLE_NOT_FOUND = "WLSKO-0111";
+  public static final String CURRENT_STEPS = "WLSKO-0112";
   public static final String RESTART_ADMIN_STARTING = "WLSKO-0115";
   public static final String RESTART_SERVERS_STARTING = "WLSKO-0116";
   public static final String ROLLING_CLUSTERS_STARTING = "WLSKO-0117";
