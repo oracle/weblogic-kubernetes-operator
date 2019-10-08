@@ -170,11 +170,11 @@ Set this to https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT} when i
 
 * `wls_domain_namespace` - Kubernetes namespace in which the WebLogic domain is defined, default=`default`
 
-* `operator_service_name` - WebLogic Operator Service name of the REST endpoint, default=`internal-weblogic-operator-service`
+* `operator_service_name` - WebLogic Kubernetes Operator Service name of the REST endpoint, default=`internal-weblogic-operator-service`
 
-* `operator_service_account` - Kubernetes Service Account name for the WebLogic Operator, default=`weblogic-operator`
+* `operator_service_account` - Kubernetes Service Account name for the operator, default=`weblogic-operator`
 
-* `operator_namespace` – Namespace in which the WebLogic Operator is deployed, default=`weblogic-operator`
+* `operator_namespace` – Namespace in which the operator is deployed, default=`weblogic-operator`
 
 * `scaling_size` – Incremental number of WebLogic Server instances by which to scale up or down, default=`1`
 
