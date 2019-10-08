@@ -6,7 +6,7 @@ description: "Sample for configuring the Elasticsearch and Kibana deployments an
 ---
 
 
-When you install the WebLogic operator Helm chart, you can set
+When you install the WebLogic Kubernetes Operator Helm chart, you can set
 `elkIntegrationEnabled` to `true` in your `values.yaml` file to tell the operator to send the contents of the operator's logs to Elasticsearch.
 
 Typically, you would have already configured Elasticsearch and Kibana in the
