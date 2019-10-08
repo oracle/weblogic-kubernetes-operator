@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -29,6 +28,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.Matchers.hasPVClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
@@ -49,16 +49,22 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ManagedPodHelperTest extends PodHelperTestBase {
 
-  private static final String SERVER_NAME = "ms1";
+  private static final String SERVER_NAME = "ess_server1";
   private static final int LISTEN_PORT = 8001;
   private static final String ITEM1 = "item1";
   private static final String ITEM2 = "item2";
+  private static final String ITEM3 = "item3";
   private static final String VALUE1 = "value1";
   private static final String VALUE2 = "value2";
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
   private static final String RAW_VALUE_2 = "$(SERVER_NAME) is not $(ADMIN_NAME):$(ADMIN_PORT)";
-  private static final String END_VALUE_2 = "ms1 is not ADMIN_SERVER:7001";
+  private static final String END_VALUE_2 = "ess_server1 is not ADMIN_SERVER:7001";
+  private static final String RAW_VALUE_3 = "ess-base-$(SERVER_NAME)";
+  private static final String END_VALUE_3 = "ess-base-ess_server1";
+  private static final String END_VALUE_3_DNS1123 = "ess-base-ess-server1";
+  private static final String RAW_VALUE_4 = "$(SERVER_NAME)-volume";
+  private static final String END_VALUE_4_DNS1123 = "ess-server1-volume";
   private static final String CLUSTER_NAME = "test-cluster";
 
   public ManagedPodHelperTest() {
@@ -133,14 +139,14 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPacketHasEnvironmentItemsWithVariables_createManagedPodStartupWithThem() {
+  public void whenPacketHasEnvironmentItemsWithVariables_createManagedPodStartupWithSubstitutedValues() {
     testSupport.addToPacket(
         ProcessingConstants.ENVVARS,
-        Arrays.asList(toEnvVar(ITEM1, RAW_VALUE_1), toEnvVar(ITEM2, RAW_VALUE_2)));
+        Arrays.asList(toEnvVar(ITEM1, RAW_VALUE_1), toEnvVar(ITEM2, RAW_VALUE_2), toEnvVar(ITEM3, RAW_VALUE_3)));
 
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
-        allOf(hasEnvVar(ITEM1, END_VALUE_1), hasEnvVar(ITEM2, END_VALUE_2)));
+        allOf(hasEnvVar(ITEM1, END_VALUE_1), hasEnvVar(ITEM2, END_VALUE_2), hasEnvVar(ITEM3, END_VALUE_3)));
   }
 
   @Test
@@ -157,6 +163,26 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(hasItem(configMapKeyRefEnvVar), hasItem(secretKeyRefEnvVar), hasItem(fieldRefEnvVar)));
+  }
+
+  @Test
+  public void whenPacketHasValueFromEnvironmentItemsWithVariables_createManagedPodStartupWithSubstitutions() {
+    V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar(ITEM1, "my-env", RAW_VALUE_1);
+    V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar(ITEM2, "my-secret", RAW_VALUE_2);
+    V1EnvVar fieldRefEnvVar = createFieldRefEnvVar(ITEM3, RAW_VALUE_3);
+
+    testSupport.addToPacket(
+        ProcessingConstants.ENVVARS,
+        Arrays.asList(configMapKeyRefEnvVar, secretKeyRefEnvVar, fieldRefEnvVar));
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(),
+        allOf(
+            hasItem(createConfigMapKeyRefEnvVar(ITEM1, "my-env", END_VALUE_1)),
+            hasItem(createSecretKeyRefEnvVar(ITEM2, "my-secret", END_VALUE_2)),
+            hasItem(createFieldRefEnvVar(ITEM3, END_VALUE_3))
+        )
+    );
   }
 
   @Test
@@ -235,14 +261,28 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumes_createManagedPodWithThem() {
+  public void whenDomainHasAdditionalVolumesWithVariables_createManagedPodWithThem() {
     getConfigurator()
-        .withAdditionalVolume("volume1", "/source-path1")
-        .withAdditionalVolume("volume2", "/source-path2");
+        .withAdditionalVolume("volume1", "/$(SERVER_NAME)/source-path1/")
+        .withAdditionalVolume("volume2", "/$(SERVER_NAME)/source-path2/")
+        .withAdditionalVolume(RAW_VALUE_4, "/source-path3/");
 
     assertThat(
         getCreatedPod().getSpec().getVolumes(),
-        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
+        allOf(
+            hasVolume("volume1", "/ess_server1/source-path1/"),
+            hasVolume("volume2", "/ess_server1/source-path2/"),
+            hasVolume(END_VALUE_4_DNS1123, "/source-path3/")));
+  }
+
+  @Test
+  public void whenDomainHasAdditionalPVClaimVolumesWitVariables_createManagedPodWithThem() {
+    getConfigurator()
+        .withAdditionalPVClaimVolume(RAW_VALUE_4, RAW_VALUE_3);
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasPVClaimVolume(END_VALUE_4_DNS1123, END_VALUE_3_DNS1123)));
   }
 
   @Test

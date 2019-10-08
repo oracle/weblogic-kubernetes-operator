@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
@@ -23,6 +22,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1NodeAffinity;
 import io.kubernetes.client.models.V1NodeSelector;
+import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.models.V1PodAffinity;
 import io.kubernetes.client.models.V1PodAntiAffinity;
 import io.kubernetes.client.models.V1PodReadinessGate;
@@ -607,6 +607,13 @@ class ServerPod extends KubernetesResource {
 
   private void addAdditionalVolume(V1Volume var) {
     volumes.add(var);
+  }
+
+  void addAdditionalPVClaimVolume(String name, String claimName) {
+    addAdditionalVolume(
+        new V1Volume().name(name).persistentVolumeClaim(
+            new V1PersistentVolumeClaimVolumeSource().claimName(claimName))
+    );
   }
 
   void addAdditionalVolumeMount(String name, String path) {

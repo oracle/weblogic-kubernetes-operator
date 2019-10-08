@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
@@ -817,9 +816,10 @@ public class Domain {
    */
   public void createDomainOnExistingDirectory() throws Exception {
 
-    // use krun.sh so that the dir check can work on shared cluster/remote k8s cluster env as well
-    String cmd =
-        BaseTest.getProjectRoot()
+    if (!(BaseTest.OPENSHIFT)) {
+      // use krun.sh so that the dir check can work on shared cluster/remote k8s cluster env as well
+      String cmd =
+          BaseTest.getProjectRoot()
             + "/src/integration-tests/bash/krun.sh -m "
             + domainMap.get("persistentVolumeClaimName")
             + ":/pvc-"
@@ -829,11 +829,20 @@ public class Domain {
             + "/domains/"
             + domainMap.get("domainUID")
             + "\"";
-    logger.info("making sure the domain directory exists by running " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
-    // logger.info("Command result " + result.stdout() + " err =" + result.stderr());
-    logger.info("Run the script to create domain");
-
+      logger.info("making sure the domain directory exists by running " + cmd);
+      ExecResult result = TestUtils.exec(cmd);
+      // logger.info("Command result " + result.stdout() + " err =" + result.stderr());
+      logger.info("Run the script to create domain");
+    } else {
+      String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
+      String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
+      logger.info("making sure the domain directory exists");
+      if (domainDir != null && !(new File(domainDir).exists())) {
+        throw new RuntimeException(
+          "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
+      }
+      logger.info("Run the script to create domain");
+    }
     // create domain using different output dir but pv is same, it fails as the domain was already
     // created on the pv dir
     try {
@@ -1012,6 +1021,10 @@ public class Domain {
     pvMap.put("namespace", domainNS);
     pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
 
+    if (BaseTest.OPENSHIFT) {
+      pvMap.put("weblogicDomainStorageType", "NFS");
+    }
+
     // set pv path
     domainMap.put(
         "weblogicDomainStoragePath",
@@ -1024,7 +1037,7 @@ public class Domain {
     pvMap.values().removeIf(Objects::isNull);
 
     // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch, create PV/PVC
-    new PersistentVolume(BaseTest.getPvRoot() + "acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
+    new PersistentVolume(BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
 
     String cmd =
         BaseTest.getProjectRoot()
@@ -1747,6 +1760,9 @@ public class Domain {
   public String getHostNameForCurl() throws Exception {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");
+    } else if (BaseTest.OPENSHIFT) {
+      ExecResult result = ExecCommand.exec("hostname -i");
+      return result.stdout().trim();
     } else {
       // ExecResult result = ExecCommand.exec("hostname | awk -F. '{print $1}'");
       ExecResult result1 =
@@ -1987,7 +2003,6 @@ public class Domain {
             + ", stderr='"
             + result.stderr()
             + "'";
-
     if (!resultStr.contains("Unable to use a TTY") && result.exitValue() != 0) {
       throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
     }

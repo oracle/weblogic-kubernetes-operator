@@ -1,6 +1,6 @@
 # !/bin/sh
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #############################################################################
 #
@@ -265,6 +265,8 @@ function deployTestScriptConfigMap() {
   cp ${SCRIPTPATH}/createTestRoot.sh ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/wl-introspect-pod.sh ${test_home}/test-scripts || exit 1
 
+  export DATA_HOME=${DATA_HOME:-/shared/data}
+
   rm -f ${test_home}/test-scripts/wl-create-domain-pod.py
   ${SCRIPTPATH}/util_subst.sh -g wl-create-domain-pod.pyt ${test_home}/test-scripts/wl-create-domain-pod.py || exit 1
 
@@ -421,6 +423,7 @@ function deployIntrospectJobPod() {
   (
     export JOB_NAME=${DOMAIN_UID}--introspect-domain-pod
     export JOB_SCRIPT=/test-scripts/wl-introspect-pod.sh
+    export DATA_HOME=${DATA_HOME:-/shared/data}
     ${SCRIPTPATH}/util_subst.sh -g wl-introspect-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
 
@@ -514,10 +517,15 @@ function deployPod() {
     export SERVER_NAME=${server_name}
     export SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
     export AS_SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${ADMIN_NAME}`
+    export DATA_HOME=${DATA_HOME:-/shared/data}
     if [ "${SERVER_NAME}" = "${ADMIN_NAME}" ]; then
       export LOCAL_SERVER_DEFAULT_PORT=$ADMIN_PORT
+      export KEEP_DEFAULT_DATA_HOME="true"
+      export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR=""
     else
       export LOCAL_SERVER_DEFAULT_PORT=$MANAGED_SERVER_PORT
+      export KEEP_DEFAULT_DATA_HOME=""
+      export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR="true"
     fi
     ${SCRIPTPATH}/util_subst.sh -g wl-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
@@ -698,6 +706,42 @@ function checkDataSource() {
   fi
 }
 
+#############################################################################
+#
+# Check .DAT default and custom filestores created when overridden with
+# a location specified by DATA_HOME environment variable
+#
+
+function checkFileStores() {
+
+  # Copy file store test file up to admin server and run it
+
+  local testscript=${1?}
+  local server_name=${2?}
+  local outfile="$test_home/${testscript}.out"
+
+  trace "Info: Verifying .DAT file store checks for ${server_name}, output file '$outfile'."
+
+  kubectl -n ${NAMESPACE} \
+    cp ${SCRIPTPATH}/${testscript} \
+       ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1:/shared/${testscript} \
+    || exit 1
+
+  rm -f ${outfile}
+  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+      /shared/${testscript} \
+      > ${outfile} 2>&1
+  status=$?
+
+  if [ $status -ne 0 ]; then
+    trace "Error: The version checks failed, see '${outfile}'."
+  fi
+
+  if [ $status -ne 0 ] || [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+}
+
 
 #############################################################################
 #
@@ -760,5 +804,11 @@ checkOverrides
 # overrides actually took effect:
 
 checkDataSource ${DOMAIN_UID}-${ADMIN_NAME?} t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT} ${ADMIN_NAME?} mysqlDS
+
+# Verify default and custom file stores were created for admin-server
+checkFileStores util_test_adminfilestores.sh ${ADMIN_NAME}
+
+# Verify default file store was created for managed-server1
+checkFileStores util_test_ms1filestores.sh ${MANAGED_SERVER_NAME_BASE?}1
 
 trace "Info: Success!"
