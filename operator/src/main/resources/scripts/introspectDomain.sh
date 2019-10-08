@@ -37,6 +37,10 @@
 #      and introspectDomain.py (see these scripts to find out what else needs to be set).
 #
 
+
+# sort the files according to the pattern and
+# and put it in a sequence array
+
 function sort_files() {
     shopt -s nullglob
     root_dir=$1
@@ -57,6 +61,11 @@ function sort_files() {
     sort -n -k3  | cut -d' ' -f 1
     shopt -u nullglob
 }
+
+# compare the current MD5 list of WDT artifacts against
+# the one keep in the introspect cm
+#  return 0 - nothing has changed
+#         1 - something has changed or new additions, deletions
 
 function checkExistInventory() {
     has_md5=0
@@ -144,6 +153,11 @@ function createWLDomain() {
     if [ -f ${variable_list} ] ; then
         cat /dev/null > ${variable_list}
     fi
+
+    #
+    # First build the command line parameters for WDT
+    # based on the file listing in the image or config map
+    #
 
     for file in $(sort_files $model_root ".yaml")
         do
@@ -270,8 +284,9 @@ function createWLDomain() {
             exit 1
         fi
 
-
+        # For lifecycle updates:
         # if there is a merged model in the cm then it is an update case, try online update
+        #
         if [ -f ${inventory_merged_model} ] && [ ${archive_zip_changed} -eq 0 ] ; then
 
 
