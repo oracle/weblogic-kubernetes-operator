@@ -54,15 +54,12 @@ public class DbUtils {
    * @throws Exception - if any error occurs when creating Oracle DB pod and service
    */
   public static void startOracleDB() throws Exception {
-  	/*String cmd1 = "sh " +
-        BaseTest.getResultDir()
-        + "/create-rcu-schema/start-db-service.sh -i container-registry.oracle.com/database/enterprise:12.2.0.1";*/
-  	String cmd1 = "sh " +
-        BaseTest.getResultDir()
+    String cmd1 = "sh "
+        + BaseTest.getResultDir()
         + "/create-rcu-schema/start-db-service.sh";
-  	TestUtils.exec(cmd1, true);	
-  	String cmd2 = "kubectl get pod | grep oracle-db | cut -f1 -d \" \" ";
-  	ExecResult result = TestUtils.exec(cmd2);
+    TestUtils.exec(cmd1, true);
+    String cmd2 = "kubectl get pod | grep oracle-db | cut -f1 -d \" \" ";
+    ExecResult result = TestUtils.exec(cmd2);
     String podName = result.stdout();
 
     logger.info("DEBUG: DB podname=" + podName);
@@ -71,22 +68,20 @@ public class DbUtils {
     // check the db is ready to use
     String cmd3 = "kubectl logs " + podName + " -n " + "default";
     TestUtils.checkCmdInLoop(cmd3, "The database is ready for use", podName);
-  	
+  
   }
   
   /**
-   * stop oracle service
+   * stop oracle service.
    *
    * @throws Exception - if any error occurs when dropping Oracle DB service
    */
   public static void stopOracleDB() throws Exception {
-  	String cmd = "sh " +
-        BaseTest.getResultDir()
+    String cmd = "sh " 
+        + BaseTest.getResultDir()
         + "/create-rcu-schema/stop-db-service.sh";
-  	/*String cmd = "sh " +
-        BaseTest.getResultDir()
-        + "/create-rcu-schema/stop-db-service.sh -i container-registry.oracle.com/database/enterprise:12.2.0.1";*/
-  	TestUtils.exec(cmd, true);	
+  
+    TestUtils.exec(cmd, true);
   }
   
   /**
@@ -95,35 +90,35 @@ public class DbUtils {
    * @throws Exception - if any error occurs when creating Oracle rcu pod
    */
   public static void createRcuSchema(String rcuSchemaPrefix) throws Exception {
-  	//dropRcuSchema(rcuSchemaPrefix);
-  	String cmd = "sh " +
-        BaseTest.getResultDir()
-        + "/create-rcu-schema/create-rcu-schema.sh -s "+ rcuSchemaPrefix;
-  	TestUtils.exec(cmd, true);	
+    String cmd = "sh " 
+        + BaseTest.getResultDir()
+        + "/create-rcu-schema/create-rcu-schema.sh -s "
+        + rcuSchemaPrefix;
+    TestUtils.exec(cmd, true);
   }
   
   /**
-   * drop Oracle rcu schema
+   * drop Oracle rcu schema.
    * @param rcuSchemaPrefix - rcu SchemaPrefixe
    * @throws Exception - if any error occurs when dropping rcu schema
    */
   public static void dropRcuSchema(String rcuSchemaPrefix) throws Exception {
-  	String cmd = "sh " +
-        BaseTest.getResultDir()
+    String cmd = "sh " 
+        + BaseTest.getResultDir()
         + "/create-rcu-schema/drop-rcu-schema.sh -s rcuSchemaPrefix";
-  	TestUtils.exec(cmd, true);	
+    TestUtils.exec(cmd, true);
   }
   
   /**
-   * delete RCU pod
+   * delete RCU pod.
    *
    * @throws Exception - if any error occurs when deleting RCU pod
    */
   public static void deleteRcuPod() throws Exception {
-  	String cmd = "kubectl delete -f " +
-        BaseTest.getResultDir()
+    String cmd = "kubectl delete -f " 
+        + BaseTest.getResultDir()
         + "/create-rcu-schema/common/rcu.yaml";
-  	TestUtils.exec(cmd, true);	
+    TestUtils.exec(cmd, true);
   }
 
   /**

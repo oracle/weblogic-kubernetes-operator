@@ -89,9 +89,6 @@ public class JrfDomainOnPvWlst extends BaseTest {
    boolean testCompletedSuccessfully = false;
 
    try {
-     // run RCU script to load db schema
-     //DbUtils.runRcu(rcuPodName, JRF_DOMAIN_ON_PV_WLST_FILE);
-
      // create JRF domain
      jrfdomain = new JrfDomain(JRF_DOMAIN_ON_PV_WLST_FILE);
 
@@ -100,8 +97,6 @@ public class JrfDomainOnPvWlst extends BaseTest {
 
      // basic test cases
      testBasicUseCases(jrfdomain);
-
-     
 
      testCompletedSuccessfully = true;
    } finally {
