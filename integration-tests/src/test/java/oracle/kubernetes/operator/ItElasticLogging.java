@@ -564,18 +564,21 @@ public class ItElasticLogging extends BaseTest {
     final String resourceDir =
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
     final String testResourceDir = resourceDir + "/loggingexporter";
+    String domainUid = domain.getDomainUid();
 
     StringBuffer cmdLisDir = new StringBuffer("kubectl -n ");
     cmdLisDir
         .append(domainNS)
         .append(" exec -it ")
         .append(podName)
-        .append(" -- bash -c 'ls -l /shared/domains/domainonpvwlst")
+        .append(" -- bash -c 'ls -l /shared/domains/")
+        .append(domainUid)
         .append("'");
-    logger.info("Executing cmd " + cmdLisDir.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLisDir.toString());
+
     ExecResult result = TestUtils.exec(cmdLisDir.toString());
-    logger.info("exit code: " + result.exitValue());
-    logger.info("Result: " + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "exit code: " + result.exitValue());
+    LoggerHelper.getLocal().log(Level.INFO, "Result: " + result.stdout());
 
     cmdLisDir.setLength(0);
     cmdLisDir = new StringBuffer("kubectl -n ");
@@ -583,36 +586,37 @@ public class ItElasticLogging extends BaseTest {
       .append(domainNS)
       .append(" exec -it ")
       .append(podName)
-      .append(" -- bash -c 'ls -l /shared/domains/domainonpvwlst/lib/")
-      .append("'");
-    logger.info("Executing cmd " + cmdLisDir.toString());
+      .append(" -- bash -c 'ls -l /shared/domains/")
+      .append(domainUid)
+      .append("/lib/'");
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLisDir.toString());
     result = TestUtils.exec(cmdLisDir.toString());
-    logger.info("exit code: " + result.exitValue());
-    logger.info("Result: " + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "exit code: " + result.exitValue());
+    LoggerHelper.getLocal().log(Level.INFO, "Result: " + result.stdout());
 
     cmdLisDir.setLength(0);
     cmdLisDir = new StringBuffer("ls -l " + loggingExpArchiveLoc);
-    logger.info("Executing cmd " + cmdLisDir.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLisDir.toString());
     result = TestUtils.exec(cmdLisDir.toString());
-    logger.info("exit code: " + result.exitValue());
-    logger.info("Result: " + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "exit code: " + result.exitValue());
+    LoggerHelper.getLocal().log(Level.INFO, "Result: " + result.stdout());
 
     //Copy test files to WebLogic server pod
     TestUtils.copyFileViaCat(
         loggingExpArchiveLoc + "/" + wlsLoggingExpJar,
-        "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar,
+        "/shared/domains/" + domainUid + "/lib/" + wlsLoggingExpJar,
         podName,
         domainNS);
 
     TestUtils.copyFileViaCat(
         loggingExpArchiveLoc + "/" + snakeyamlJar,
-        "/shared/domains/domainonpvwlst/lib/" + snakeyamlJar,
+        "/shared/domains/" + domainUid + "/lib/" + snakeyamlJar,
         podName,
         domainNS);
 
     TestUtils.copyFileViaCat(
         testResourceDir + "/" + loggingYamlFile,
-        "/shared/domains/domainonpvwlst/config/" + loggingYamlFile,
+        "/shared/domains/" + domainUid + "/config/" + loggingYamlFile,
         podName,
         domainNS);
   }
