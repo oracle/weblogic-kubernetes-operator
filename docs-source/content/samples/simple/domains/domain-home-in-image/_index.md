@@ -1,7 +1,7 @@
 ---
 title: "Domain home in image"
 date: 2019-02-23T17:32:31-05:00
-weight: 3
+weight: 5
 description: "Sample for creating a WebLogic domain home inside a Docker image, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
