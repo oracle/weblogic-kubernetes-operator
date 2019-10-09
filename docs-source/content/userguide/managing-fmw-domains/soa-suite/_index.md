@@ -28,11 +28,11 @@ it is supported for production use.
 
 Starting with the 2.2.1 release, the operator supports deployment of SOA Suite components such as Oracle Service-Oriented Architecture (SOA), Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS). Currently the operator supports these different domain types:
 
-* soa: Deploys a SOA domain
-* osb: Deploys an OSB (Oracle Service Bus) domain
-* soaess: Deploys a SOA domain with Enterprise Scheduler (ESS)
-* soaosb: Deploys a domain with SOA and OSB
-* soaessosb: Deploys a domain with SOA, OSB, and ESS
+* `soa`: Deploys a SOA domain
+* `osb`: Deploys an OSB (Oracle Service Bus) domain
+* `soaess`: Deploys a SOA domain with Enterprise Scheduler (ESS)
+* `soaosb`: Deploys a domain with SOA and OSB
+* `soaessosb`: Deploys a domain with SOA, OSB, and ESS
 
 This document provides details about the special considerations for deploying and running SOA Suite domains with the operator.
 Other than those considerations listed here, SOA Suite domains work in the same way as FMW Infrastructure domains and WebLogic Server domains.
