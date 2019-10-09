@@ -4,8 +4,15 @@
 # The version of this inputs file.  Do not modify.
 version: create-weblogic-sample-domain-inputs-v1
 
+# Enable SSL in the admin and managed server(s).
+# If this is false, the SSL related parameters(adminServerSSLPort, managedServerSSLPort) are ignored
+sslEnabled: false
+
 # Port number for admin server
-adminPort: 7001
+adminServerPort: 7001
+
+# SSL Port number for admin server
+adminServerPort: 7002
 
 # Name of the Admin Server
 adminServerName: admin-server
@@ -33,6 +40,9 @@ managedServerNameBase: managed-server
 
 # Port number for each managed server
 managedServerPort: 8001
+
+# SSL Port number for each managed server
+managedServerSSLPort: 8002
 
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true

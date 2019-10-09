@@ -65,8 +65,6 @@ if (ssl_enabled == 'true'):
   cd('/Servers/' + admin_server_name)
   create(admin_server_name, 'SSL')
   cd('/Servers/' + admin_server_name + '/SSL/' + admin_server_name)
-  set('HostnameVerificationIgnored', 'False')
-  set('ClientCertificateEnforced', 'False')
   set('ListenPort', admin_server_ssl_port)
   set('Enabled', 'True')
 
@@ -106,8 +104,6 @@ if cluster_type == "CONFIGURED":
       print 'Enabling SSL in the managed server...'
       create(name, 'SSL')
       cd('/Servers/' + name+ '/SSL/' + name)
-      set('HostnameVerificationIgnored', 'False')
-      set('ClientCertificateEnforced', 'False')
       set('ListenPort', managed_server_ssl_port)
       set('Enabled', 'True')
 
