@@ -6,6 +6,11 @@ description: "Sample for creating a SOA Suite domain home on an existing PV or
 PVC, and the domain resource YAML file for deploying the generated SOA domain."
 ---
 
+{{% notice warning %}}
+Oracle SOA Suite is currently only supported for non-production use in Docker and Kubernetes.  The information provided
+in this document is a *preview* for early adopters who wish to experiment with Oracle SOA Suite in Kubernetes before
+it is supported for production use.
+{{% /notice %}}
 
 The sample scripts demonstrate the creation of a SOA Suite domain home on an
 existing Kubernetes persistent volume (PV) and persistent volume claim (PVC). The scripts
