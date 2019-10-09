@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
 # This script starts a node manager for either a WebLogic Server pod,
@@ -260,15 +260,8 @@ EOF
   [ ! $? -eq 0 ] && trace SEVERE "Failed to create '${wl_props_file}'." && exit 1
 
   if [ ! "${ADMIN_NAME}" = "${SERVER_NAME}" ]; then
-    admin_protocol="http"
-    if [ "${ADMIN_PORT_SECURE}" = "true" ]; then
-      admin_protocol="https"
-    fi  
-    if [ "${ISTIO_ENABLED}" == "true" ]; then
-      echo "AdminURL=t3\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
-    else
-      echo "AdminURL=$admin_protocol\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
-    fi
+    ADMIN_URL=$(getAdminServerUrl)
+    echo "AdminURL=$ADMIN_URL" >> ${wl_props_file}
   fi
 fi
 

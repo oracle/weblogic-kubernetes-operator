@@ -1,16 +1,14 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package com.examples.pof;
+
+import java.io.IOException;
 
 import com.tangosol.io.pof.PofReader;
 import com.tangosol.io.pof.PofWriter;
 import com.tangosol.io.pof.PortableObject;
-
 import com.tangosol.util.Base;
-
-import java.io.IOException;
 
 /**
  * ContactId represents a key to the contact for whom information is stored in
@@ -25,8 +23,8 @@ public class ContactId implements PortableObject {
   //The POF index for the LastName property.
   public static final int LASTNAME = 1;
 
-  private String m_sFirstName;
-  private String m_sLastName;
+  private String msFirstName;
+  private String msLastName;
 
   /**
    * Default constructor (necessary for PortableObject implementation).
@@ -35,43 +33,43 @@ public class ContactId implements PortableObject {
   }
 
   /**
-   * Construct a contact key
-   * @param sFirstName first name
-   * @param sLastName last name
+   * Construct a contact key.
+   * @param firstName first name
+   * @param lastName last name
    */
-  public ContactId(String sFirstName, String sLastName) {
-    m_sFirstName = sFirstName;
-    m_sLastName = sLastName;
+  public ContactId(String firstName, String lastName) {
+    msFirstName = firstName;
+    msLastName = lastName;
   }
 
   public String getFirstName() {
-    return m_sFirstName;
+    return msFirstName;
   }
 
   public String getLastName() {
-    return m_sLastName;
+    return msLastName;
   }
 
   public void readExternal(PofReader reader) throws IOException {
-    m_sFirstName = reader.readString(FIRSTNAME);
-    m_sLastName = reader.readString(LASTNAME);
+    msFirstName = reader.readString(FIRSTNAME);
+    msLastName = reader.readString(LASTNAME);
   }
 
   public void writeExternal(PofWriter writer) throws IOException {
-    writer.writeString(FIRSTNAME, m_sFirstName);
-    writer.writeString(LASTNAME, m_sLastName);
+    writer.writeString(FIRSTNAME, msFirstName);
+    writer.writeString(LASTNAME, msLastName);
   }
 
-  public boolean equals(Object oThat) {
-    if (this == oThat) {
+  public boolean equals(Object otherThat) {
+    if (this == otherThat) {
       return true;
     }
 
-    if (oThat == null) {
+    if (otherThat == null) {
       return false;
     }
 
-    ContactId that = (ContactId) oThat;
+    ContactId that = (ContactId) otherThat;
 
     return Base.equals(getFirstName(), that.getFirstName()) && Base.equals(getLastName(), that.getLastName());
   }

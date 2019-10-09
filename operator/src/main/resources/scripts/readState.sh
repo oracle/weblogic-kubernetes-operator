@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at
-# http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Reads the current state of a server. The script checks a WebLogic Server state
 # file which is updated by the node manager.
@@ -19,6 +18,9 @@ SN=${SERVER_NAME?}
 DH=${DOMAIN_HOME?}
 
 STATEFILE=/${DH}/servers/${SN}/data/nodemanager/${SN}.state
+
+# Adjust PATH if necessary before calling jps
+adjustPath
 
 if [ `jps -v | grep -c " -Dweblogic.Name=${SERVER_NAME} "` -eq 0 ]; then
   trace "WebLogic server process not found"

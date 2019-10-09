@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
@@ -13,12 +12,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.validation.Valid;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1VolumeMount;
@@ -30,11 +31,15 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-/** Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster. */
+/**
+ * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
+ */
 @Description(
     "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
 public class Domain {
-  /** The pattern for computing the default shared logs directory. */
+  /**
+   * The pattern for computing the default shared logs directory.
+   */
   private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
 
   /**
@@ -68,7 +73,9 @@ public class Domain {
   @Nonnull
   private V1ObjectMeta metadata = new V1ObjectMeta();
 
-  /** DomainSpec is a description of a domain. */
+  /**
+   * DomainSpec is a description of a domain.
+   */
   @SerializedName("spec")
   @Expose
   @Valid
@@ -222,7 +229,7 @@ public class Domain {
   /**
    * Returns the specification applicable to a particular server/cluster combination.
    *
-   * @param serverName the name of the server
+   * @param serverName  the name of the server
    * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
    * @return the effective configuration for the server
    */
@@ -356,19 +363,24 @@ public class Domain {
 
   /**
    * Returns the path to the log home to be used by this domain. Null if the log home is disabled.
+   *
    * @return a path on a persistent volume, or null
    */
-  public @Nullable String getEffectiveLogHome() {
+  public String getEffectiveLogHome() {
     return isLogHomeEnabled() ? getLogHome() : null;
   }
 
-  @Nonnull String getLogHome() {
+  String getLogHome() {
     return Optional.ofNullable(spec.getLogHome())
         .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUid()));
   }
 
   boolean isLogHomeEnabled() {
     return spec.isLogHomeEnabled();
+  }
+
+  public String getDataHome() {
+    return spec.getDataHome();
   }
 
   public boolean isIncludeServerOutInPodLog() {
@@ -493,15 +505,6 @@ public class Domain {
   }
 
   class Validator {
-    static final String DUPLICATE_SERVER_NAME_FOUND
-          = "More than one item under spec.managedServers in the domain resource has DNS-1123 name '%s'";
-    static final String DUPLICATE_CLUSTER_NAME_FOUND
-          = "More than one item under spec.clusters in the domain resource has DNS-1123 name '%s'";
-    static final String LOG_HOME_PATH_NOT_MOUNTED
-          = "No volume mount contains path for log home '%s', %s in the domain resource";
-    static final String BAD_VOLUME_MOUNT_PATH
-          = "The mount path '%s', in entry '%s' of domain resource additionalVolumeMounts, is not valid";
-    
     private List<String> failures = new ArrayList<>();
     private Set<String> clusterNames = new HashSet<>();
     private Set<String> serverNames = new HashSet<>();
@@ -510,21 +513,22 @@ public class Domain {
       addDuplicateNames();
       addInvalidMountPaths();
       addUnmappedLogHome();
+      addReservedEnvironmentVariables();
 
       return failures;
     }
 
     private void addDuplicateNames() {
       getSpec().getManagedServers()
-            .stream()
-            .map(ManagedServer::getServerName)
-            .map(this::toDns1123LegalName)
-            .forEach(this::checkDuplicateServerName);
+          .stream()
+          .map(ManagedServer::getServerName)
+          .map(this::toDns1123LegalName)
+          .forEach(this::checkDuplicateServerName);
       getSpec().getClusters()
-            .stream()
-            .map(Cluster::getClusterName)
-            .map(this::toDns1123LegalName)
-            .forEach(this::checkDuplicateClusterName);
+          .stream()
+          .map(Cluster::getClusterName)
+          .map(this::toDns1123LegalName)
+          .forEach(this::checkDuplicateClusterName);
     }
 
     /**
@@ -537,18 +541,18 @@ public class Domain {
       return value.toLowerCase().replace('_', '-');
     }
 
-    private void checkDuplicateServerName(String s) {
-      if (serverNames.contains(s))
-        failures.add(String.format(DUPLICATE_SERVER_NAME_FOUND, s));
+    private void checkDuplicateServerName(String serverName) {
+      if (serverNames.contains(serverName))
+        failures.add(DomainValidationMessages.duplicateServerName(serverName));
       else
-        serverNames.add(s);
+        serverNames.add(serverName);
     }
 
-    private void checkDuplicateClusterName(String s) {
-      if (clusterNames.contains(s))
-        failures.add(String.format(DUPLICATE_CLUSTER_NAME_FOUND, s));
+    private void checkDuplicateClusterName(String clusterName) {
+      if (clusterNames.contains(clusterName))
+        failures.add(DomainValidationMessages.duplicateClusterName(clusterName));
       else
-        clusterNames.add(s);
+        clusterNames.add(clusterName);
     }
 
     private void addInvalidMountPaths() {
@@ -557,18 +561,14 @@ public class Domain {
 
     private void checkValidMountPath(V1VolumeMount mount) {
       if (!new File(mount.getMountPath()).isAbsolute())
-        failures.add(String.format(BAD_VOLUME_MOUNT_PATH, mount.getMountPath(), mount.getName()));
+        failures.add(DomainValidationMessages.badVolumeMountPath(mount));
     }
 
     private void addUnmappedLogHome() {
       if (!isLogHomeEnabled()) return;
 
       if (getSpec().getAdditionalVolumeMounts().stream().map(V1VolumeMount::getMountPath).noneMatch(this::mapsLogHome))
-        failures.add(String.format(LOG_HOME_PATH_NOT_MOUNTED, getLogHome(), getLogHomeSource()));
-    }
-
-    private String getLogHomeSource() {
-      return getSpec().getLogHome() == null ? "implicit" : "specified";
+        failures.add(DomainValidationMessages.logHomeNotMounted(getLogHome()));
     }
 
     private boolean mapsLogHome(String mountPath) {
@@ -580,5 +580,47 @@ public class Domain {
       else return path + File.separator;
     }
 
+    private void addReservedEnvironmentVariables() {
+      checkReservedIntrospectorVariables(spec, "spec");
+      Optional.ofNullable(spec.getAdminServer())
+          .ifPresent(a -> checkReservedIntrospectorVariables(a, "spec.adminServer"));
+      
+      spec.getManagedServers()
+          .forEach(s -> checkReservedEnvironmentVariables(s, "spec.managedServers[" + s.getServerName() + "]"));
+      spec.getClusters()
+          .forEach(s -> checkReservedEnvironmentVariables(s, "spec.clusters[" + s.getClusterName() + "]"));
+    }
+
+    class EnvironmentVariableCheck {
+      private Predicate<String> isReserved;
+
+      EnvironmentVariableCheck(Predicate<String> isReserved) {
+        this.isReserved = isReserved;
+      }
+
+      void checkEnvironmentVariables(@Nonnull BaseConfiguration configuration, String prefix) {
+        if (configuration.getEnv() == null) return;
+
+        List<String> reservedNames = configuration.getEnv()
+            .stream()
+            .map(V1EnvVar::getName)
+            .filter(isReserved)
+            .collect(Collectors.toList());
+
+        if (!reservedNames.isEmpty())
+          failures.add(DomainValidationMessages.reservedVariableNames(prefix, reservedNames));
+      }
+    }
+
+    private void checkReservedEnvironmentVariables(BaseConfiguration configuration, String prefix) {
+      new EnvironmentVariableCheck(ServerEnvVars::isReserved).checkEnvironmentVariables(configuration, prefix);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void checkReservedIntrospectorVariables(BaseConfiguration configuration, String prefix) {
+      new EnvironmentVariableCheck(IntrospectorJobEnvVars::isReserved).checkEnvironmentVariables(configuration, prefix);
+    }
+
   }
+
 }

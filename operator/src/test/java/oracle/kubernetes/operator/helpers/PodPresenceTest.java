@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -86,6 +85,7 @@ public class PodPresenceTest {
     domains.put(NS, new HashMap<>(ImmutableMap.of(UID, info)));
     disableDomainProcessing();
     Domain domain = DomainProcessorTestSetup.createTestDomain();
+    testSupport.defineResources(domain);
     info.setDomain(domain);
 
     WlsDomainConfigSupport configSupport =

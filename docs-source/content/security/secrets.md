@@ -2,16 +2,16 @@
 title: "Secrets"
 date: 2019-02-23T17:36:33-05:00
 weight: 6
-description: "Kubernetes secrets for the WebLogic operator"
+description: "Kubernetes secrets for the WebLogic Kubernetes Operator"
 ---
 
 #### Contents
 * [WebLogic domain credentials secret](#weblogic-domain-credentials-secret)
 * [WebLogic domain image pull secret](#weblogic-domain-image-pull-secret)
-* [WebLogic operator image pull secret](#weblogic-operator-image-pull-secret)
-* [WebLogic operator configuration override secrets](#weblogic-operator-configuration-override-secrets)
-* [WebLogic operator external REST interface secret](#weblogic-operator-external-rest-interface-secret)
-* [WebLogic operator internal REST interface secret](#weblogic-operator-internal-rest-interface-secret)
+* [WebLogic Kubernetes Operator image pull secret](#weblogic-kubernetes-operator-image-pull-secret)
+* [WebLogic Kubernetes Operator configuration override secrets](#weblogic-kubernetes-operator-configuration-override-secrets)
+* [WebLogic Kubernetes Operator external REST interface secret](#weblogic-kubernetes-operator-external-rest-interface-secret)
+* [WebLogic Kubernetes Operator internal REST interface secret](#weblogic-kubernetes-operator-internal-rest-interface-secret)
 
 #### WebLogic domain credentials secret
 
@@ -24,7 +24,7 @@ For an example of a WebLogic domain resource using `webLogicCredentialsSecret`,
 see [Docker Image Protection]({{<relref "/security/domain-security/image-protection.md#1-use-imagepullsecrets-with-the-domain-resource">}}).
 {{% /notice %}}
 
-The samples supplied with the WebLogic operator use a naming convention that follows
+The samples supplied with the operator use a naming convention that follows
 the pattern `<domainUID>-weblogic-credentials`, where `<domainUID>` is
 the unique identifier of the domain, for example, `domain1-weblogic-credentials`.
 
@@ -47,7 +47,7 @@ tooling. For more information about creating Kubernetes secrets, see the Kuberne
 documentation.
 {{% /notice %}}
 
-The WebLogic operator's introspector job will expect the secret key names to be:
+The operator's introspector job will expect the secret key names to be:
 
 - `username`
 - `password`
@@ -80,7 +80,7 @@ For more information, see [Docker Image Protection]({{<relref "/security/domain-
 under **Domain security**.
 {{% /notice %}}
 
-#### WebLogic operator image pull secret
+#### WebLogic Kubernetes Operator image pull secret
 
 The Helm chart for installing the operator has an option to specify the
 image pull secret used for the operator's image when using a private registry.
@@ -102,9 +102,9 @@ For more information, see
 under **User Guide**.
 {{% /notice %}}
 
-#### WebLogic operator configuration override secrets
+#### WebLogic Kubernetes Operator configuration override secrets
 
-The WebLogic operator supports embedding macros within configuration override templates
+The operator supports embedding macros within configuration override templates
 that reference Kubernetes secrets. These Kubernetes secrets can be created with any name in the
 namespace where the `Domain` will be running. The Kubernetes secret names are
 specified using `configOverrideSecrets` in the WebLogic `Domain` resource.
@@ -115,7 +115,7 @@ For more information, see
 under **User Guide**.
 {{% /notice %}}
 
-#### WebLogic operator external REST interface secret
+#### WebLogic Kubernetes Operator external REST interface secret
 
 The operator can expose an external REST HTTPS interface which can be
 accessed from outside the Kubernetes cluster. A Kubernetes `tls secret`
@@ -126,13 +126,13 @@ For more information, see [Certificates]({{<relref "/security/certificates.md#re
 under **Securty**.
 {{% /notice %}}
 
-#### WebLogic operator internal REST interface secret
+#### WebLogic Kubernetes Operator internal REST interface secret
 
 The operator exposes an internal REST HTTPS interface with a self-signed certificate.
 The certificate is kept in a Kubernetes `ConfigMap` with the name `weblogic-operator-cm` using the key `internalOperatorCert`.
 The private key is kept in a Kubernetes `Secret` with the name `weblogic-operator-secrets` using the key `internalOperatorKey`.
 These Kubernetes objects are managed by the operator's Helm chart and are part of the
-namespace where the WebLogic operator is installed.
+namespace where the operator is installed.
 
 For example, to see all the operator's config maps and secrets when installed into
 the Kubernetes namespace `weblogic-operator-ns`, use:

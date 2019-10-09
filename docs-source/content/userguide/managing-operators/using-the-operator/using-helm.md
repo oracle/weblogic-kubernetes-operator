@@ -164,6 +164,8 @@ These examples show two valid YAML syntax options for arrays.
 You must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
 {{% /notice %}}
 
+Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about managing `domainNamespaces`.
+
 #### Elastic Stack integration
 
 ##### `elkIntegrationEnabled`
@@ -237,7 +239,7 @@ externalRestHttpsPort: 32009
 
 ##### `externalRestIdentitySecret`
 
-Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes tls secret previously created in the namespace where the WebLogic operator is deployed. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored. In order to create the Kubernetes tls secret you can use the following command:
+Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes `tls` secret previously created in the namespace where the operator is deployed. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored. In order to create the Kubernetes `tls` secret you can use the following command:
 
 ```
 $ kubectl create secret tls <secret-name> \
@@ -480,3 +482,12 @@ To recover:
 - `helm rollback`
 - Create the domain namespace.
 - `helm upgrade` again.
+
+#### Deleting and recreating a namespace that an operator manages without informing the operator
+
+If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
+
+Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about the problem and solutions.
+
+
+

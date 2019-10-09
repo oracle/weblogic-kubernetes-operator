@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -33,7 +32,9 @@ import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
+import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 
 public class JobHelper {
 
@@ -174,12 +175,12 @@ public class JobHelper {
     private final DomainPresenceInfo info;
 
     // domainTopology is null if this is 1st time we're running job for this domain
-    private final WlsDomainConfig domainTopology; 
+    private final WlsDomainConfig domainTopology;
 
     DomainIntrospectorJobStepContext(DomainPresenceInfo info, Packet packet) {
       super(packet);
       this.info = info;
-      this.domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY); 
+      this.domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       init();
     }
 
@@ -202,10 +203,6 @@ public class JobHelper {
     @Override
     String getJobName() {
       return LegalNames.toJobIntrospectorName(getDomainUid());
-    }
-
-    Domain getDomain() {
-      return info.getDomain();
     }
 
     @Override
@@ -244,14 +241,18 @@ public class JobHelper {
       List<V1EnvVar> vars =
             PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
 
-      addEnvVar(vars, "NAMESPACE", getNamespace());
-      addEnvVar(vars, "DOMAIN_UID", getDomainUid());
-      addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
-      addEnvVar(vars, "NODEMGR_HOME", getNodeManagerHome());
-      addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
-      addEnvVar(vars, "INTROSPECT_HOME", getIntrospectHome());
-      addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
-      addEnvVar(vars, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
+      addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
+      addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
+      addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
+      addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
+      addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, getIncludeServerOutInPodLog());
+      addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());
+      addEnvVar(vars, IntrospectorJobEnvVars.INTROSPECT_HOME, getIntrospectHome());
+      addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
+      String dataHome = getDataHome();
+      if (dataHome != null && !dataHome.isEmpty()) {
+        addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
+      }
 
       if (domainTopology != null) {
         // The domainTopology != null when the job is rerun for the same domain. In which
@@ -452,8 +453,8 @@ public class JobHelper {
     }
 
     private void updateStatus(DomainPresenceInfo domainPresenceInfo) {
-      DomainStatusPatch.updateDomainStatus(
-            domainPresenceInfo.getDomain(), "ErrIntrospector", onSeparateLines(severeStatuses));
+      DomainStatusPatch.updateSynchronously(
+            domainPresenceInfo.getDomain(), DomainStatusPatch.ERR_INTROSPECTOR, onSeparateLines(severeStatuses));
     }
 
     private String onSeparateLines(List<String> lines) {

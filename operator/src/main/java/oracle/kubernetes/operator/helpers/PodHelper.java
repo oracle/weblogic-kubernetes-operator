@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -38,16 +37,6 @@ public class PodHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private PodHelper() {
-  }
-
-  /**
-   * Creates an admin server pod resource, based on the specified packet.
-   *
-   * @param packet a packet describing the domain model and topology.
-   * @return an appropriate Kubernetes resource
-   */
-  public static V1Pod createAdminServerPodModel(Packet packet) {
-    return new AdminPodStepContext(null, packet).createPodModel();
   }
 
   /**
@@ -171,7 +160,13 @@ public class PodHelper {
     ArrayList<V1EnvVar> copy = new ArrayList<>();
     if (envVars != null) {
       for (V1EnvVar envVar : envVars) {
-        copy.add(new V1EnvVar().name(envVar.getName()).value(envVar.getValue()));
+        // note that a deep copy of valueFrom is not needed here as, unlike with value, the
+        // new V1EnvVarFrom objects would be created by the doDeepSubstitutions() method in
+        // StepContextBase class.
+        copy.add(new V1EnvVar()
+            .name(envVar.getName())
+            .value(envVar.getValue())
+            .valueFrom(envVar.getValueFrom()));
       }
     }
     return copy;
@@ -251,7 +246,7 @@ public class PodHelper {
     @Override
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> vars = createCopy(getServerSpec().getEnvironmentVariables());
-      overrideContainerWeblogicEnvVars(vars);
+      addStartupEnvVars(vars);
       return vars;
     }
 
@@ -280,8 +275,9 @@ public class PodHelper {
     public NextAction apply(Packet packet) {
       PodStepContext context = new AdminPodStepContext(this, packet);
 
-      return doNext(context.verifyPersistentVolume(context.verifyPod(getNext())), packet);
+      return doNext(context.verifyPod(getNext()), packet);
     }
+
   }
 
   static class ManagedPodStepContext extends PodStepContext {
@@ -407,7 +403,7 @@ public class PodHelper {
       if (envVars != null) {
         vars.addAll(envVars);
       }
-      overrideContainerWeblogicEnvVars(vars);
+      addStartupEnvVars(vars);
       return vars;
     }
   }

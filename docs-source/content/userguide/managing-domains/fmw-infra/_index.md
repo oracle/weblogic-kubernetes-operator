@@ -18,17 +18,17 @@ pre = "<b> </b>"
 * [Additional considerations for Coherence](#additional-considerations-for-coherence)
 
 
-Starting with release 2.2.0, the operator supports FMW Infrastructure domains.
-This means domains that are created with the FMW Infrastructure installer rather than the WebLogic
+Starting with the 2.2.0 release, the operator supports FMW Infrastructure domains, that is,
+domains that are created with the FMW Infrastructure installer rather than the WebLogic
 Server installer.  These domains contain the Java Required Files (JRF) feature and are
-the pre-requisite for "upper stack" products like Oracle SOA Suite, for example.
+the prerequisite for "upper stack" products like Oracle SOA Suite, for example.
 These domains also require a database and the use of the Repository
 Creation Utility (RCU).
 
 This section provides details about the special considerations for running
 FMW Infrastructure domains with the operator.  Other than those considerations
 listed here, FMW Infrastructure domains work in the same way as WebLogic Server domains.
-That is, the remainder of the documentation in this site applies equally to FMW
+The remainder of the documentation in this site applies equally to FMW
 Infrastructure domains and WebLogic Server domains.
 
 FMW Infrastructure domains are supported using both the "domain on a persistent volume"
@@ -43,8 +43,8 @@ Compared to running a WebLogic Server domain in Kubernetes using the operator, t
 following limitations currently exist for FMW Infrastructure domains:
 
 * The [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
-  currently supports WebLogic server logs only.  Other logs will not be sent to
-  Elasticsearch.  Note however that you can use a sidecar with a log handling tool
+  currently supports WebLogic Server logs only.  Other logs will not be sent to
+  Elasticsearch.  Note, however, that you can use a sidecar with a log handling tool
   like Logstash or fluentd to get logs.
 * The [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter)
   currently supports the WebLogic MBean trees only.  Support for JRF MBeans has not
@@ -59,16 +59,16 @@ following limitations currently exist for FMW Infrastructure domains:
 #### Obtaining the FMW Infrastructure Docker Image
 
 The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
-The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3`, already has this patch applied. For detailed instructions on how to log into the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
+The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
 using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.  
 
 Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
-Your acceptance of these terms are stored in a database that links the software images to your Oracle Single Sign-On login credentials.
+Your acceptance of these terms is stored in a database that links the software images to your Oracle Single Sign-On login credentials.
 
 
-First, you will need to log into the Oracle Container Registry:
+First, you will need to log in to the Oracle Container Registry:
 
 ```
 $ docker login container-registry.oracle.com
@@ -92,11 +92,10 @@ Additional information about using this image is available in the
 #### Creating an FMW Infrastructure Docker image
 
 You can also create a Docker image containing the FMW Infrastructure binaries.
-A [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure)
-is provided in the Oracle GitHub account that demonstrates how to create a Docker image
-to run FMW Infrastructure.  
-
-Please consult the [README](https://github.com/oracle/docker-images/blob/master/OracleFMWInfrastructure/dockerfiles/12.2.1.3/README.md) file associated with this sample for important prerequisite steps,
+We provide a [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure)
+ in the Oracle GitHub account that demonstrates how to create a Docker image
+to run the FMW Infrastructure. Please consult the [README](https://github.com/oracle/docker-images/blob/master/OracleFMWInfrastructure/dockerfiles/12.2.1.3/README.md)
+file associated with this sample for important prerequisite steps,
 such as building or pulling the Server JRE Docker image and downloading the Fusion Middleware
 Infrastructure installer binary.
 
@@ -111,8 +110,8 @@ cd docker-images/OracleFMWInfrastructure/dockerfiles
 The image produced will be named `oracle/fmw-infrastructure:12.2.1.3`.
 
 You must also install the [required patch]({{< relref "/userguide/introduction/introduction/_index.md#prerequisites" >}})
-to use this image with the operator.  A [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s)
-is provided that demonstrates how to create a Docker image with the necessary patch installed.
+to use this image with the operator.  We provide a [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s)
+ that demonstrates how to create a Docker image with the necessary patch installed.
 
 After downloading the patch from My Oracle Support, you create the patched image
 by running the provided script:
@@ -130,7 +129,7 @@ All samples and instructions reference the pre-built and already patched image, 
 $ docker tag oracle/fmw-infrastructure:12213-update-k8s container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3
 ```
 
-These samples will allow you to create a Docker image containing the FMW Infrastructure
+These samples allow you to create a Docker image containing the FMW Infrastructure
 binaries and the necessary patch.  You can use this image to run the Repository Creation Utility
 and to run your domain using the "domain on a persistent volume" model. If you want to use
 the "domain in a Docker image" model, you will need to go one step further and add another
@@ -141,18 +140,24 @@ Before creating a domain, you will need to set up the necessary schemas in your 
 #### Configuring access to your database
 
 FMW Infrastructure domains require a database with the necessary schemas installed in them.
-A utility called Repository Creation Utility (RCU) is provided which allows you to create
+We provide a utility, called the Repository Creation Utility (RCU), which allows you to create
 those schemas.  You must set up the database before you create your domain.
 There are no additional requirements added by running FMW Infrastructure in Kubernetes; the
 same existing requirements apply.
 
-You may choose to run your database inside Kubernetes or outside of Kubernetes.
+For testing and development, you may choose to run your database inside Kubernetes or outside of Kubernetes.
+
+{{% notice warning %}}
+The Oracle Database Docker images are only supported for non-production use. 
+For more details, see My Oracle Support note:
+Oracle Support for Database Running on Docker (Doc ID 2216342.1) 
+{{% /notice %}}
 
 ##### Running the database inside Kubernetes
 
 If you wish to run the database inside Kubernetes, you can use the official Docker image
 [from Docker Hub](https://hub.docker.com/_/oracle-database-enterprise-edition) or
-[Oracle Container Registry](https://container-registry.oracle.com/pls/apex/f?p=113:1:10859199204803::NO:1:P1_BUSINESS_AREA:3).
+the [Oracle Container Registry](https://container-registry.oracle.com/pls/apex/f?p=113:1:10859199204803::NO:1:P1_BUSINESS_AREA:3).
 Please note that there is a Slim Variant (`12.2.0.1-slim` tag) of EE that has reduced
 disk space (4GB) requirements and a quicker container startup.
 
@@ -284,7 +289,7 @@ This creates a DNS name `database` in the current namespace, or`default` if no n
 specified, as in the example above. In this example, the fully qualified name would be
 `database.default.svc.cluster.local`.  The second part is the namespace.
 If you looked up the `ClusterIP` for such a service, it would have an IP address on the overlay
-network, that is the network inside the Kubernetes cluster.  If you are using flannel
+network, that is the network inside the Kubernetes cluster.  If you are using flannel,
 for example, the address might be something like `10.0.1.25`.  Note that this is usually a
 non-routed address.
 
@@ -363,7 +368,7 @@ for the regular schema users:
 You need to make sure that you maintain the association between the database schemas and the
 matching domain just like you did in a non-Kubernetes environment.  There is no specific
 functionality provided to help with this.  We recommend that you consider making the RCU
-prefix (value of `schemaPrefix` argument) the same as your `domainUID` to help maintain this association.
+prefix (value of the `schemaPrefix` argument) the same as your `domainUID` to help maintain this association.
 
 ##### Dropping schemas
 
@@ -397,16 +402,16 @@ You also need to create a Kubernetes secret containing the credentials for the d
 When you create your domain using the sample provided below, it will obtain the RCU credentials
 from this secret.
 
-A [sample](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-credentials/README.md)
-is provided that demonstrates how to create the secret.  The schema owner user name required will be the
+We provide a [sample](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-credentials/README.md)
+that demonstrates how to create the secret.  The schema owner user name required will be the
 `schemaPrefix` value followed by an underscore and a component name, such as `FMW1_STB`.  The schema owner
 password will be the password you provided for regular schema users during RCU creation.
 
 #### Creating an FMW Infrastructure domain
 
 Now that you have your Docker images and you have created your RCU schemas, you are ready
-to create your domain.  A [sample]({{< relref "/samples/simple/domains/fmw-domain/_index.md" >}})
-is provided that demonstrates how to create a FMW Infrastructure domain.
+to create your domain.  We provide a [sample]({{< relref "/samples/simple/domains/fmw-domain/_index.md" >}})
+that demonstrates how to create an FMW Infrastructure domain.
 
 #### Patching the FMW Infrastructure image
 
@@ -427,7 +432,7 @@ you can edit the domain custom resource with the name of the new image and
 the operator will initiate a rolling restart of the domain.
 
 If you wish to apply a non-ZDP compliant patch to the FMW Infrastructure binary image,
-you must shutdown the entire domain before applying the patch. Please see the documentation on
+you must shut down the entire domain before applying the patch. Please see the documentation on
 [domain life cycle operations]({{< relref "/userguide/managing-domains/domain-lifecycle/_index.md" >}})
 for more information.
 

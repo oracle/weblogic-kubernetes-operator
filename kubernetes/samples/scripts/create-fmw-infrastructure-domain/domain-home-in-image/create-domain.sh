@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
 #  This sample script creates a WebLogic domain home in docker image, and generates the domain resource
@@ -196,15 +196,24 @@ function createDomainHome {
   sed -i -e "s|INFRA08|${rcuSchemaPrefix}|g" $rcuPropFile
   sed -i -e "s|InfraDB:1521/InfraPDB1.us.oracle.com|${rcuDatabaseURL}|g" $rcuPropFile
 
+  cp -f ${scriptDir}/common/Dockerfile ${dockerDir}/Dockerfile
+  cp -f ${scriptDir}/common/createFMWDomain.sh ${dockerDir}/container-scripts
+
   if [ ! -z $domainHomeImageBase ]; then
     sed -i -e "s|\(FROM \).*|\1 ${domainHomeImageBase}|g" ${dockerDir}/Dockerfile
   fi
 
   cp ${domainPropertiesOutput} ${dockerPropsDir}
   sed  -i  '$ a extract_env IMAGE_TAG ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
+  sed  -i  '$ a set_env_arg EXPOSE_T3_CHANNEL ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
+  sed  -i  '$ a set_env_arg FMW_DOMAIN_TYPE ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
+  sed  -i  '$ a set_env_arg T3_CHANNEL_PORT ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
+  sed  -i  '$ a set_env_arg T3_PUBLIC_ADDRESS ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
 
-  #exit -1000
-  sh ${dockerDir}/build.sh
+  cp -f ${scriptDir}/common/createFMWDomain.py \
+        ${dockerDir}/container-scripts/createFMWDomain.py
+
+  bash ${dockerDir}/build.sh
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."

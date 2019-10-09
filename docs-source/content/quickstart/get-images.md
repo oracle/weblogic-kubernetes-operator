@@ -25,7 +25,7 @@ and accept the license agreement for the [WebLogic Server image](https://hub.doc
 1. Pull the Traefik load balancer image:
 
     ```bash
-    $ docker pull traefik:1.7.6
+    $ docker pull traefik:1.7.12
     ```
 
 1. Obtain the WebLogic image from the [Oracle Container Registry](https://container-registry.oracle.com).

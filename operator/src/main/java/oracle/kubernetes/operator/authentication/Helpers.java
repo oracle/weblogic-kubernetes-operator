@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.authentication;
 
@@ -106,7 +105,6 @@ public class Helpers {
         coreApi.listServiceAccountForAllNamespaces(
             cont, // continue option
             "", // field selector
-            Boolean.FALSE, // includeUninitialized
             "", // labelSelector
             4096, // limit size for list
             "false", // pretty

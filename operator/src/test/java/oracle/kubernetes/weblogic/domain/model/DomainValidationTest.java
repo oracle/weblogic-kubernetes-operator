@@ -1,24 +1,20 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
-import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainValidationTest {
-  private Domain domain = new Domain();
+  private Domain domain = createTestDomain();
 
   @Test
   public void whenManagerServerSpecsHaveUniqueNames_dontReportError() {
@@ -91,11 +87,66 @@ public class DomainValidationTest {
   }
 
   @Test
-  public void whenNoVolumeMountHasLogHomeDirectory_reportError() {
+  public void whenNoVolumeMountHasSpecifiedLogHomeDirectory_reportError() {
     configureDomain(domain).withLogHomeEnabled(true).withLogHome("/private/log/mydomain");
     configureDomain(domain).withAdditionalVolumeMount("sharedlogs", "/shared/logs");
 
-    assertThat(domain.getValidationFailures(), contains(containsStringIgnoringCase("log home")));
+    assertThat(domain.getValidationFailures(), contains(stringContainsInOrder("log home", "/private/log/mydomain")));
+  }
+
+  @Test
+  public void whenNoVolumeMountHasImplicitLogHomeDirectory_reportError() {
+    configureDomain(domain).withLogHomeEnabled(true);
+
+    assertThat(domain.getValidationFailures(), contains(stringContainsInOrder("log home", "/shared/logs/" + UID)));
+  }
+
+  @Test
+  public void whenNonReservedEnvironmentVariableSpecifiedAtDomainLevel_dontReportError() {
+    configureDomain(domain).withEnvironmentVariable("testname", "testValue");
+
+    assertThat(domain.getValidationFailures(), empty());
+  }
+
+  @Test
+  public void whenReservedEnvironmentVariablesSpecifiedAtDomainLevel_reportError() {
+    configureDomain(domain)
+        .withEnvironmentVariable("ADMIN_NAME", "testValue")
+        .withEnvironmentVariable("INTROSPECT_HOME", "/shared/home/introspection");
+
+    assertThat(domain.getValidationFailures(),
+        contains(stringContainsInOrder("variables", "ADMIN_NAME", "INTROSPECT_HOME", "spec.serverPod.env", "are")));
+  }
+
+  @Test
+  public void whenReservedEnvironmentVariablesSpecifiedForAdminServer_reportError() {
+    configureDomain(domain)
+        .configureAdminServer()
+        .withEnvironmentVariable("LOG_HOME", "testValue")
+        .withEnvironmentVariable("NAMESPACE", "badValue");
+
+    assertThat(domain.getValidationFailures(),
+        contains(stringContainsInOrder("variables", "LOG_HOME", "NAMESPACE", "spec.adminServer.serverPod.env", "are")));
+  }
+
+  @Test
+  public void whenReservedEnvironmentVariablesSpecifiedAtServerLevel_reportError() {
+    configureDomain(domain)
+        .configureServer("ms1")
+        .withEnvironmentVariable("SERVER_NAME", "testValue");
+
+    assertThat(domain.getValidationFailures(),
+        contains(stringContainsInOrder("variable", "SERVER_NAME", "spec.managedServers[ms1].serverPod.env", "is")));
+  }
+
+  @Test
+  public void whenReservedEnvironmentVariablesSpecifiedAtClusterLevel_reportError() {
+    configureDomain(domain)
+        .configureCluster("cluster1")
+        .withEnvironmentVariable("DOMAIN_HOME", "testValue");
+
+    assertThat(domain.getValidationFailures(),
+        contains(stringContainsInOrder("variable", "DOMAIN_HOME", "spec.clusters[cluster1].serverPod.env", "is")));
   }
 
   private DomainConfigurator configureDomain(Domain domain) {

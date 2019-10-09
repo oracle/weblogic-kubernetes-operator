@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
 
@@ -520,7 +519,7 @@ public class HelmOperatorValuesTest {
         .append("externalDebugHttpPort: 30999\n")
         .append("externalRestEnabled: false\n")
         .append("externalRestHttpsPort: 31001\n")
-        .append("image: oracle/weblogic-kubernetes-operator:2.3.0\n")
+        .append("image: oracle/weblogic-kubernetes-operator:2.3.1\n")
         .append("imagePullPolicy: IfNotPresent\n")
         .append("internalDebugHttpPort: 30999\n")
         .append("istioEnabled: false\n")

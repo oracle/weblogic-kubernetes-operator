@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
 # Utility functions that are shared by multiple scripts
@@ -311,6 +311,10 @@ function createFiles {
     logHome="${domainPVMountPath}/logs/${domainUID}"
   fi
 
+  if [ -z "${dataHome}" ]; then
+    dataHome=""
+  fi
+
   if [ -z "${persistentVolumeClaimName}" ]; then
     persistentVolumeClaimName="${domainUID}-weblogic-sample-pvc"
   fi
@@ -319,6 +323,8 @@ function createFiles {
     weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
   fi
 
+  wdtVersion="${WDT_VERSION}"
+
   if [ "${domainHomeInImage}" == "true" ]; then
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
     domainHome="/u01/oracle/user_projects/domains/${domainName}"
@@ -326,7 +332,7 @@ function createFiles {
     if [ -z $domainHomeImageBuildPath ]; then
       domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image"
     fi
-
+ 
     # Generate the properties file that will be used when creating the weblogic domain
     echo Generating ${domainPropertiesOutput}
 
@@ -343,15 +349,17 @@ function createFiles {
     sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${domainPropertiesOutput}
     sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${domainPropertiesOutput}
     sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%EXPOSE_T3_CHANNEL%:${exposeAdminT3Channel}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%FMW_DOMAIN_TYPE%:${fmwDomainType}:g" ${domainPropertiesOutput}
 
     if [ -z "${image}" ]; then
       # calculate the internal name to tag the generated image
       defaultImageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
       baseTag=${domainHomeImageBase#*:}
       defaultImageName=${defaultImageName}:${baseTag:-"latest"}
-      sed -i -e "s:%IMAGE_NAME%:${defaultImageName}:g" ${domainPropertiesOutput}
+      sed -i -e "s|%IMAGE_NAME%|${defaultImageName}|g" ${domainPropertiesOutput}
     else 
-      sed -i -e "s:%IMAGE_NAME%:${image}:g" ${domainPropertiesOutput}
+      sed -i -e "s|%IMAGE_NAME%|${image}|g" ${domainPropertiesOutput}
     fi
   else
 
@@ -406,12 +414,13 @@ function createFiles {
     # extra entries for FMW Infra domains
     sed -i -e "s:%RCU_CREDENTIALS_SECRET_NAME%:${rcuCredentialsSecret}:g" ${createJobOutput}
     sed -i -e "s:%CUSTOM_RCUPREFIX%:${rcuSchemaPrefix}:g" ${createJobOutput}
-    sed -i -e "s:%CUSTOM_CONNECTION_STRING%:${rcuDatabaseURL}:g" ${createJobOutput}
+    sed -i -e "s|%CUSTOM_CONNECTION_STRING%|${rcuDatabaseURL}|g" ${createJobOutput}
     sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
     # entries for Istio
     sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
+    sed -i -e "s:%WDT_VERSION%:${wdtVersion}:g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
     echo Generating ${deleteJobOutput}
@@ -457,6 +466,7 @@ function createFiles {
   sed -i -e "s:%LOG_HOME_ON_PV_PREFIX%:${logHomeOnPVPrefix}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME_ENABLED%:${logHomeOnPV}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
+  sed -i -e "s:%DATA_HOME%:${dataHome}:g" ${dcrOutput}
   sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
@@ -482,9 +492,9 @@ function createFiles {
  
     # now we know which image to use, update the domain yaml file
     if [ -z $image ]; then
-      sed -i -e "s:%WEBLOGIC_IMAGE%:${defaultImageName}:g" ${dcrOutput}
+      sed -i -e "s|%WEBLOGIC_IMAGE%|${defaultImageName}|g" ${dcrOutput}
     else
-      sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
+      sed -i -e "s|%WEBLOGIC_IMAGE%|${image}|g" ${dcrOutput}
     fi
   else
     sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
@@ -552,4 +562,3 @@ function createDomain {
   # Print a summary
   printSummary
 }
-
