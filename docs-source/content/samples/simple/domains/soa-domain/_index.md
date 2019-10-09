@@ -30,7 +30,7 @@ The following prerequisites must be handled prior to running the create domain s
 For details, see [Prepare to run a domain]({{< relref "/userguide/managing-domains/prepare.md" >}}).
 
   ```
-$ kubectl create namespace soans
+   $ kubectl create namespace soans
   ```
 
 * In the Kubernetes namespace created above, create the PV and PVC for the database
@@ -45,33 +45,32 @@ Follow the instructions for using the scripts to create a PV and PVC.
 * Create the Kubernetes secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain. For details, see this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/README.md).
 
-  ```bash
-  $ cd  kubernetes/samples/scripts/create-weblogic-domain-credentials
-  $ ./create-weblogic-credentials.sh -u weblogic -p Welcome1 -n soans -d soainfra -s soainfra-domain-credentials
-  ```
+    ```bash
+    $ cd kubernetes/samples/scripts/create-weblogic-domain-credentials
+    $ ./create-weblogic-credentials.sh -u weblogic -p Welcome1 -n soans -d soainfra -s soainfra-domain-credentials
+    ```
 
-  You can check the secret with the `kubectl get secret` command. See the following example, including the output:
+    You can check the secret with the `kubectl get secret` command. See the following example, including the output:
 
-  ```bash
-  $ kubectl get secret soainfra-domain-credentials -o yaml -n soans
-apiVersion: v1
-data:
-  password: V2VsY29tZTE=
-  username: d2VibG9naWM=
-kind: Secret
-metadata:
-  creationTimestamp: 2019-06-02T07:05:25Z
-  labels:
-    weblogic.domainName: soainfra
-    weblogic.domainUID: soainfra
-  name: soainfra-domain-credentials
-  namespace: soans
-  resourceVersion: "11561988"
-  selfLink: /api/v1/namespaces/soans/secrets/soainfra-domain-credentials
-  uid: a91ef4e1-6ca8-11e9-8143-fa163efa261a
-type: Opaque
-$
-```
+    ```bash
+    $ kubectl get secret soainfra-domain-credentials -o yaml -n soans
+    apiVersion: v1
+    data:
+      password: V2VsY29tZTE=
+      username: d2VibG9naWM=
+    kind: Secret
+    metadata:
+      creationTimestamp: 2019-06-02T07:05:25Z
+      labels:
+        weblogic.domainName: soainfra
+        weblogic.domainUID: soainfra
+      name: soainfra-domain-credentials
+      namespace: soans
+      resourceVersion: "11561988"
+      selfLink: /api/v1/namespaces/soans/secrets/soainfra-domain-credentials
+      uid: a91ef4e1-6ca8-11e9-8143-fa163efa261a
+    type: Opaque
+    ```
 
 * Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md#configuring-access-to-your-database" >}}).  
 * Create a Kubernetes secret with the RCU credentials. For details, refer to this [document]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md#running-the-repository-creation-utility-to-set-up-your-database-schema" >}}).

@@ -163,7 +163,7 @@ The following documentation and samples are for creating a container-based datab
 
 ##### Running the database inside Kubernetes
 
-Follow these instructions for a basic database setup inside Kubernetes that uses PV (persistent volume) and PVC (persistent volume claim) to persist the data. For more details about database setup and configuration, refer to this [page](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/#running-the-database-inside-kubernetes).
+Follow these instructions for a basic database setup inside Kubernetes that uses PV (persistent volume) and PVC (persistent volume claim) to persist the data. For more details about database setup and configuration, refer to this [page]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#running-the-database-inside-kubernetes" >}}).
 
 Pull the database image:
 
@@ -173,17 +173,30 @@ $ docker tag  container-registry.oracle.com/database/enterprise:12.2.0.1  oracle
 ```
 Create the PV and PVC for the database
 by running the [create-pv-pvc.sh]({{< relref "/samples/simple/storage/_index.md" >}}) script.
-Follow the instructions for using the scripts to create a PV and PVC.
+Follow the instructions for using the scripts to create a PV and PVC.  
 
+{{% notice note %}}
+When creating the PV and PVC for the database, make sure that you use a different name 
+and storage class to the PV and PVC you create for the domain to use.
+{{% /notice %}}
 
 Bring up the database and database service using the following commands:
 
-**NOTE**: Make sure you update the above created PVC name in `db-with-pv.yaml`.
+**NOTE**: Make sure you update `db-with-pv.yaml` with the name of the PVC you created in the previous step.
 
 ```bash
 $ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-soa-domain/create-database
 $ kubectl create -f db-with-pv.yaml
 ```
+
+The database will take several minutes to start the first time, since it has to 
+complete the setup operations.  You can watch the log to see its progress using
+this command:
+
+```bash
+$ kubectl logs -f soadb-0 -n soans
+```
+
 Verify that the database service status is Ready.
 
 ```bash
@@ -239,12 +252,12 @@ list with `-component ESS` for the `createRepository` and `dropRepository` RCU c
 {{% /notice %}}
 
 ```bash
-$export CONNECTION_STRING=soadb:1521/soapdb.my.domain.com
-$export RCUPREFIX=SOA1
+$ export CONNECTION_STRING=soadb:1521/soapdb.my.domain.com
+$ export RCUPREFIX=SOA1
 
-$echo -e Oradoc_db1"\n"Welcome1 > /tmp/pwd.txt
+$ echo -e Oradoc_db1"\n"Welcome1 > /tmp/pwd.txt
 
-$/u01/oracle/oracle_common/bin/rcu \
+$ /u01/oracle/oracle_common/bin/rcu \
 -silent \
 -createRepository \
 -databaseType ORACLE \
@@ -274,7 +287,7 @@ functionality provided to help with this.
 If you want to drop the schema, you can use a command like this:
 
 ```bash
-$/u01/oracle/oracle_common/bin/rcu \
+$ /u01/oracle/oracle_common/bin/rcu \
 -silent \
 -dropRepository \
 -databaseType ORACLE \
@@ -305,7 +318,7 @@ from this secret.
 Follow these steps to create the secret. The schema owner user name required will be the `schemaPrefix` value followed by an underscore and a component name, such as `SOA1_SOAINFRA`. The schema owner password will be the password you provided for regular schema users during RCU creation.
 
 ```bash
-$ cd  kubernetes/samples/scripts/create-rcu-credentials
+$ cd kubernetes/samples/scripts/create-rcu-credentials
 $ ./create-rcu-credentials.sh -u SOA1 -p Welcome1 -a sys -q Oradoc_db1 -d soainfra -n soans -s soainfra-rcu-credentials
 ```
 You can check the secret with the `kubectl get secret` command. An example is shown below, including the output:
