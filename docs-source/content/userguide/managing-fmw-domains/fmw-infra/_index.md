@@ -1,9 +1,10 @@
-+++
-title = "FMW domains"
-date = 2019-04-18T06:46:23-05:00
-weight = 5
-pre = "<b> </b>"
-+++
+---
+title: "Manage FMW Infrastructure domains"
+date: 2019-04-18T06:46:23-05:00
+weight: 1
+description: "FMW Infrastructure domains contain the Java Required Files (JRF) feature and are
+the prerequisite for upper stack products like Oracle SOA Suite."
+---
 
 #### Contents
 
@@ -25,7 +26,7 @@ the prerequisite for "upper stack" products like Oracle SOA Suite, for example.
 These domains also require a database and the use of the Repository
 Creation Utility (RCU).
 
-This section provides details about the special considerations for running
+This document provides details about the special considerations for running
 FMW Infrastructure domains with the operator.  Other than those considerations
 listed here, FMW Infrastructure domains work in the same way as WebLogic Server domains.
 The remainder of the documentation in this site applies equally to FMW
