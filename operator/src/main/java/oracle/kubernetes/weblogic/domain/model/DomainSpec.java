@@ -205,13 +205,31 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters.")
   protected List<Cluster> clusters = new ArrayList<>();
 
-  /** The name of the wdt config map used for optional wdt tool. */
+  /**
+   * The name of the wdt config map used for optional wdt tool.
+   *
+   * @since 2.3.1
+   */
+
   @Description("The name of the wdt config map used for optional wdt tool.")
   private String wdtConfigMap;
 
-  /** The name of the wdt model encryption passphrase used for optional wdt tool. */
+  /**
+   * The name of the wdt model encryption passphrase used for optional wdt tool.
+   *
+   * @since 2.3.1
+   */
   @Description("The name of the wdt model encryption passphrase  used for optional wdt tool.")
   private String wdtConfigMapSecret;
+
+  /**
+   * The method of lifecycle updates in model in image.
+   *
+   * @since 2.3.1
+   */
+  @Description("The method of lifecycle updates in model in image case")
+  private String lifeCycleUpdateMethod;
+
 
   @Description("Experimental feature configurations.")
   private Experimental experimental;
@@ -426,6 +444,23 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * LifeCycleUpdateMethod.
+   *
+   * <p>An optional, For model in image, this attribute determines the lifecycle update behavior
+   *
+   * @return The in-pod location for data storage of default and custom file stores. Null if
+   *     dataHome is not specified or its value is either not set or empty.
+   */
+  String getLifeCycleUpdateMethod() {
+    return lifeCycleUpdateMethod;
+  }
+
+  public void setLifeCycleUpdateMethod(String lifeCycleUpdateMethod) {
+    this.lifeCycleUpdateMethod = lifeCycleUpdateMethod;
+  }
+
+
+  /**
    * Data Home.
    *
    * <p>An optional, in-pod location for data storage of default and custom file stores. If dataHome
@@ -442,7 +477,7 @@ public class DomainSpec extends BaseConfiguration {
   public void setDataHome(String dataHome) {
     this.dataHome = dataHome;
   }
-
+  
   /**
    * Whether to include server .out to the pod's stdout.
    *

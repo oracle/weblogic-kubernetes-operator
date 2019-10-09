@@ -300,6 +300,8 @@ function createWLDomain() {
 
                 cat /tmp/diffed_model.json
 
+                # no need for encryption phrase because the diffed model has real value
+
                 yes ${admin_pwd} | ${wdt_bin}/updateDomain.sh -oracle_home ${MW_HOME} \
                  -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
                  /tmp/diffed_model.json ${variable_list} -domain_home ${DOMAIN_HOME}

@@ -25,6 +25,12 @@ public class IntrospectorJobEnvVars {
    */
   public static final String CREDENTIALS_SECRET_NAME = "CREDENTIALS_SECRET_NAME";
 
+
+  /**
+   * The life cycle update method used by the introspection job.
+   */
+  public static final String LIFECYCLE_UPDATE_METHOD = "LIFECYCLE_UPDATE_METHOD";
+
   /**
    * Returns true if the specified environment variable name is reserved by the operator for communication with
    * the introspection job.

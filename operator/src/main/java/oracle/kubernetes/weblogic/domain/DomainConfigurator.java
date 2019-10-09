@@ -148,6 +148,18 @@ public abstract class DomainConfigurator {
   }
 
   /**
+   * Sets the life cycle update method value.
+   *
+   * @param lifeCycleUpdateMethod the data home value
+   * @return this object
+   */
+  public DomainConfigurator withLifeCycleUpdateMethod(String lifeCycleUpdateMethod) {
+    getDomainSpec().setLifeCycleUpdateMethod(lifeCycleUpdateMethod);
+    return this;
+  }
+
+
+  /**
    * Sets the WebLogic configuration overrides configmap name for the domain.
    *
    * @param configMapName Name of the Kubernetes configmap that contains the config overrides
