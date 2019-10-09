@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
@@ -96,6 +95,17 @@ public class DomainSpec extends BaseConfiguration {
           + "Defaults to true if domainHomeInImage is false. "
           + "Defaults to false if domainHomeInImage is true. ")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
+
+  /**
+   * An optional, in-pod location for data storage of default and custom file stores. If dataHome is
+   * not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage
+   * directories are determined from the WebLogic domain home configuration.
+   */
+  @Description(
+      "An optional, in-pod location for data storage of default and custom file stores. "
+          + "If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") "
+          + "then the data storage directories are determined from the WebLogic domain home configuration.")
+  private String dataHome;
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
   @Description("If true (the default), the server .out file will be included in the pod's stdout.")
@@ -405,6 +415,24 @@ public class DomainSpec extends BaseConfiguration {
    */
   public void setLogHomeEnabled(boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
+  }
+
+  /**
+   * Data Home.
+   *
+   * <p>An optional, in-pod location for data storage of default and custom file stores. If dataHome
+   * is not specified or its value is either not set or empty (e.g. dataHome: "") then the data
+   * storage directories are determined from the WebLogic domain home configuration.
+   *
+   * @return The in-pod location for data storage of default and custom file stores. Null if
+   *     dataHome is not specified or its value is either not set or empty.
+   */
+  String getDataHome() {
+    return dataHome;
+  }
+
+  public void setDataHome(String dataHome) {
+    this.dataHome = dataHome;
   }
 
   /**

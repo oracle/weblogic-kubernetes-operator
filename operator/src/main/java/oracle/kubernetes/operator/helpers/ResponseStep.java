@@ -1,13 +1,10 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
-import io.kubernetes.client.ApiException;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RetryStrategy;
@@ -21,7 +18,7 @@ import oracle.kubernetes.operator.work.Step;
 /**
  * Step to receive response of Kubernetes API server call.
  *
- * <p>Most implementations will only need to implement {@link #onSuccess(Packet, Object, int, Map)}.
+ * <p>Most implementations will only need to implement {@link #onSuccess(Packet, CallResponse)}.
  *
  * @param <T> Response type
  */
@@ -61,33 +58,34 @@ public abstract class ResponseStep<T> extends Step {
 
   @Override
   public final NextAction apply(Packet packet) {
-    NextAction nextAction = null;
+    NextAction nextAction = getActionForCallResponse(packet);
 
-    @SuppressWarnings("unchecked")
-    CallResponse<T> callResponse = packet.getSpi(CallResponse.class);
-    if (callResponse != null) {
-      if (callResponse.getResult() != null) {
-        nextAction = onSuccess(packet, callResponse);
-      }
-      if (callResponse.isFailure()) {
-        nextAction = onFailure(packet, callResponse);
-      }
+    if (nextAction == null) { // no call response, since call timed-out
+      nextAction = getPotentialRetryAction(packet);
     }
 
-    if (nextAction == null) {
-      // call timed-out
-      nextAction = doPotentialRetry(conflictStep, packet, null, 0, null);
-      if (nextAction == null) {
-        nextAction = doEnd(packet);
-      }
-    }
-
-    if (previousStep != nextAction.getNext()) {
-      // not a retry, clear out old response
+    if (previousStep != nextAction.getNext()) { // not a retry, clear out old response
       packet.getComponents().remove(AsyncRequestStep.RESPONSE_COMPONENT_NAME);
     }
 
     return nextAction;
+  }
+
+  private NextAction getActionForCallResponse(Packet packet) {
+    return Optional.ofNullable(getCallResponse(packet)).map(c -> fromCallResponse(packet, c)).orElse(null);
+  }
+
+  @SuppressWarnings("unchecked")
+  private CallResponse<T> getCallResponse(Packet packet) {
+    return (CallResponse<T>) packet.getSpi(CallResponse.class);
+  }
+
+  private NextAction fromCallResponse(Packet packet,CallResponse<T> callResponse) {
+    return callResponse.isFailure() ? onFailure(packet, callResponse) : onSuccess(packet, callResponse);
+  }
+
+  private NextAction getPotentialRetryAction(Packet packet) {
+    return Optional.ofNullable(doPotentialRetry(conflictStep, packet, CallResponse.createNull())).orElse(doEnd(packet));
   }
 
   /**
@@ -110,27 +108,19 @@ public abstract class ResponseStep<T> extends Step {
    *
    * @param conflictStep Conflict step
    * @param packet Packet
-   * @param e API Exception received
-   * @param statusCode HTTP status code received
-   * @param responseHeaders HTTP response headers received
+   * @param callResponse the response from the call
    * @return Next action for retry or null, if no retry is warranted
    */
-  private NextAction doPotentialRetry(
-      Step conflictStep,
-      Packet packet,
-      ApiException e,
-      int statusCode,
-      Map<String, List<String>> responseHeaders) {
+  private NextAction doPotentialRetry(Step conflictStep,Packet packet, CallResponse<T> callResponse) {
     RetryStrategy retryStrategy = packet.getSpi(RetryStrategy.class);
     if (retryStrategy != null) {
-      return retryStrategy.doPotentialRetry(conflictStep, packet, e, statusCode, responseHeaders);
+      return retryStrategy.doPotentialRetry(conflictStep, packet, callResponse.getStatusCode());
     }
 
-    LOGGER.warning(
-        MessageKeys.ASYNC_NO_RETRY,
-        e != null ? e.getMessage() : "",
-        statusCode,
-        responseHeaders != null ? responseHeaders.toString() : "");
+    LOGGER.warning(MessageKeys.ASYNC_NO_RETRY,
+        callResponse.getExceptionString(),
+        callResponse.getStatusCode(),
+        callResponse.getHeadersString());
     return null;
   }
 
@@ -143,56 +133,7 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for fiber processing, which may be a retry
    */
   public NextAction onFailure(Packet packet, CallResponse<T> callResponse) {
-    return onFailure(
-        packet,
-        callResponse.getE(),
-        callResponse.getStatusCode(),
-        callResponse.getResponseHeaders());
-  }
-
-  /**
-   * Callback for API server call failure. The ApiException and HTTP status code and response
-   * headers are provided; however, these will be null or 0 when the client simply timed-out.
-   *
-   * <p>The default implementation tests if the request could be retried and, if not, ends fiber
-   * processing.
-   *
-   * @param packet Packet
-   * @param e API Exception
-   * @param statusCode HTTP status code
-   * @param responseHeaders HTTP response headers
-   * @return Next action for fiber processing, which may be a retry
-   */
-  public NextAction onFailure(
-      Packet packet, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-    return onFailure(null, packet, e, statusCode, responseHeaders);
-  }
-
-  /**
-   * Callback for API server call failure. The ApiException and HTTP status code and response
-   * headers are provided; however, these will be null or 0 when the client simply timed-out.
-   *
-   * <p>The default implementation tests if the request could be retried and, if not, ends fiber
-   * processing.
-   *
-   * @param conflictStep Conflict step
-   * @param packet Packet
-   * @param e API Exception
-   * @param statusCode HTTP status code
-   * @param responseHeaders HTTP response headers
-   * @return Next action for fiber processing, which may be a retry
-   */
-  public NextAction onFailure(
-      Step conflictStep,
-      Packet packet,
-      ApiException e,
-      int statusCode,
-      Map<String, List<String>> responseHeaders) {
-    NextAction nextAction = doPotentialRetry(conflictStep, packet, e, statusCode, responseHeaders);
-    if (nextAction == null) {
-      nextAction = doTerminate(e, packet);
-    }
-    return nextAction;
+    return onFailure(null, packet, callResponse);
   }
 
   /**
@@ -208,17 +149,8 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for fiber processing, which may be a retry
    */
   public NextAction onFailure(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
-    NextAction nextAction =
-        doPotentialRetry(
-            conflictStep,
-            packet,
-            callResponse.getE(),
-            callResponse.getStatusCode(),
-            callResponse.getResponseHeaders());
-    if (nextAction == null) {
-      nextAction = doTerminate(callResponse.getE(), packet);
-    }
-    return nextAction;
+    return Optional.ofNullable(doPotentialRetry(conflictStep, packet, callResponse))
+        .orElse(doTerminate(callResponse.getE(), packet));
   }
 
   /**
@@ -229,26 +161,7 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for fiber processing
    */
   public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
-    return onSuccess(
-        packet,
-        callResponse.getResult(),
-        callResponse.getStatusCode(),
-        callResponse.getResponseHeaders());
-  }
-
-  /**
-   * Callback for API server call success.
-   *
-   * @deprecated use {@link #onSuccess(Packet, CallResponse)} instead
-   * @param packet Packet
-   * @param result Result value
-   * @param statusCode HTTP status code
-   * @param responseHeaders HTTP response headers
-   * @return Next action for fiber processing
-   */
-  @Deprecated
-  public NextAction onSuccess(
-      Packet packet, T result, int statusCode, Map<String, List<String>> responseHeaders) {
     throw new IllegalStateException("Should be overriden if called");
   }
+
 }

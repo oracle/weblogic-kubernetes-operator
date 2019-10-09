@@ -1,6 +1,6 @@
 #!/bin/bash
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
 # This script introspects a WebLogic DOMAIN_HOME in order to generate:
@@ -42,12 +42,23 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 # setup tracing
 
 source ${SCRIPTPATH}/utils.sh
-[ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1 
+[ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
+
+# Local createFolder method which does an 'exit 1' instead of exitOrLoop for
+# immediate failure during introspection
+function createFolder {
+  mkdir -m 750 -p $1
+  if [ ! -d $1 ]; then
+    trace SEVERE "Unable to create folder $1"
+    exit 1
+  fi
+}
 
 trace "Introspecting the domain"
 
 env | tracePipe "Current environment:"
 
+# set defaults
 # set ORACLE_HOME/WL_HOME/MW_HOME to defaults if needed
 
 exportInstallHomes
@@ -73,6 +84,17 @@ done
 for dir_var in DOMAIN_HOME JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
   [ ! -d "${!dir_var}" ] && trace SEVERE "Missing ${dir_var} directory '${!dir_var}'." && exit 1
 done
+
+trace "DATA_HOME=${DATA_HOME}"
+
+#
+# DATA_HOME env variable exists implies override directory specified.  Attempt to create directory
+#
+if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
+  trace "Creating data home directory: '${DATA_HOME}'"
+  createFolder ${DATA_HOME}
+fi
+
 
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
 

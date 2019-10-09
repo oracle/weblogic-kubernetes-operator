@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -44,7 +43,7 @@ public class ItCoherenceTests extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       initialize(APP_PROPS_FILE);
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
@@ -57,7 +56,7 @@ public class ItCoherenceTests extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       operator1.destroy();
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
     }
@@ -65,7 +64,7 @@ public class ItCoherenceTests extends BaseTest {
 
   @Test
   public void testRollingRestart() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
 
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);

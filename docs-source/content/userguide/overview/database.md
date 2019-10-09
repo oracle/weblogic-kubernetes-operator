@@ -11,6 +11,12 @@ If you wish to run the Oracle database inside your Kubernetes cluster, in order 
 your state store, leasing tables, and such, in that database, then you can use this
 sample to install the database.
 
+{{% notice warning %}}
+The Oracle Database Docker images are only supported for non-production use. 
+For more details, see My Oracle Support note:
+Oracle Support for Database Running on Docker (Doc ID 2216342.1) 
+{{% /notice %}}
+
 You must configure your database to store its DB files
 on persistent storage.  Refer to your cloud vendor's documentation for details of
 available storage providers and how to create a persistent volume and attach it to a pod.

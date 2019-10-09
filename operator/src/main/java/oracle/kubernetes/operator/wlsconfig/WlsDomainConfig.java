@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
 
@@ -245,9 +244,9 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
-   * Return the name of the WLS domain.
+   * Return the name of the admin server.
    *
-   * @return Name of the WLS domain
+   * @return Name of the admin server
    */
   public String getAdminServerName() {
     return this.adminServerName;

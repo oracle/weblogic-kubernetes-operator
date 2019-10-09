@@ -1,16 +1,16 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
@@ -29,7 +29,6 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
-import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -42,9 +41,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
 
   private final String namespace;
 
-  // Map of Pod name to Complete
-  private final ConcurrentMap<String, Complete> completeCallbackRegistrations =
-      new ConcurrentHashMap<>();
+  // Map of Job name to Runnable
+  private final Map<String,Consumer<V1Job>> completeCallbackRegistrations = new ConcurrentHashMap<>();
 
   private JobWatcher(
       String namespace,
@@ -54,6 +52,18 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     super(initialResourceVersion, tuning, isStopping);
     setListener(this);
     this.namespace = namespace;
+  }
+
+  private void addOnModifiedCallback(String jobName, Consumer<V1Job> callback) {
+    completeCallbackRegistrations.put(jobName, callback);
+  }
+
+  private void dispatchCallback(String jobName, V1Job job) {
+    Optional.ofNullable(completeCallbackRegistrations.get(jobName)).ifPresent(callback -> callback.accept(job));
+  }
+
+  private void removeOnModifiedCallback(String jobName, Consumer<V1Job> callback) {
+    completeCallbackRegistrations.remove(jobName, callback);
   }
 
   /**
@@ -99,6 +109,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   public static boolean isComplete(V1Job job) {
+    if (job == null) return false;
+
     V1JobStatus status = job.getStatus();
     LOGGER.fine("JobWatcher.isComplete status of job " + job.getMetadata().getName() + ": " + status);
     if (status != null) {
@@ -108,7 +120,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
           if ("Complete".equals(cond.getType())) {
             if ("True".equals(cond.getStatus())) { // TODO: Verify V1JobStatus.succeeded count?
               // Job is complete!
-              LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName());
+              LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName(), status);
               return true;
             }
           }
@@ -118,7 +130,9 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return false;
   }
 
-  public static boolean isFailed(V1Job job) {
+  static boolean isFailed(V1Job job) {
+    if (job == null) return false;
+
     V1JobStatus status = job.getStatus();
     if (status != null) {
       if (status.getFailed() != null && status.getFailed() > 0) {
@@ -129,7 +143,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return false;
   }
 
-  public static String getFailedReason(V1Job job) {
+  static String getFailedReason(V1Job job) {
     V1JobStatus status = job.getStatus();
     if (status != null && status.getConditions() != null) {
       for (V1JobCondition cond : status.getConditions()) {
@@ -155,16 +169,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     switch (item.type) {
       case "ADDED":
       case "MODIFIED":
-        V1Job job = item.object;
-        Boolean isComplete = isComplete(job);
-        Boolean isFailed = isFailed(job);
-        String jobName = job.getMetadata().getName();
-        if (isComplete || isFailed) {
-          Complete complete = completeCallbackRegistrations.get(jobName);
-          if (complete != null) {
-            complete.isComplete(job, isFailed);
-          }
-        }
+        dispatchCallback(getJobName(item), item.object);
         break;
       case "DELETED":
       case "ERROR":
@@ -172,6 +177,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     }
 
     LOGGER.exiting();
+  }
+
+  private String getJobName(Watch.Response<V1Job> item) {
+    return item.object.getMetadata().getName();
   }
 
   /**
@@ -183,11 +192,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
    */
   public Step waitForReady(V1Job job, Step next) {
     return new WaitForJobReadyStep(job, next);
-  }
-
-  @FunctionalInterface
-  private interface Complete {
-    void isComplete(V1Job job, boolean isJobFailed);
   }
 
   static class JobWatcherFactory {
@@ -216,97 +220,85 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     }
   }
 
-  private class WaitForJobReadyStep extends Step {
-    private final V1Job job;
+  private class WaitForJobReadyStep extends WaitForReadyStep<V1Job> {
+    private long jobCreationTime;
 
     private WaitForJobReadyStep(V1Job job, Step next) {
-      super(next);
-      this.job = job;
+      super(job, next);
+      jobCreationTime = getCreationTime(job);
     }
 
-    boolean shouldProcessJob(V1Job job) {
-      return (this.job.getMetadata().getCreationTimestamp().getMillis()
-          == job.getMetadata().getCreationTimestamp().getMillis());
+    // A job is considered ready once it has either successfully completed, or been marked as failed.
+    @Override
+    boolean isReady(V1Job job) {
+      return isComplete(job) || isFailed(job);
+    }
+
+    // Ignore modified callbacks from different jobs (identified by having different creation times) or those
+    // where the job is not yet ready.
+    @Override
+    boolean shouldProcessCallback(V1Job job) {
+      return hasExpectedCreationTime(job) && isReady(job);
+    }
+
+    private boolean hasExpectedCreationTime(V1Job job) {
+      return getCreationTime(job) == jobCreationTime;
+    }
+
+    private long getCreationTime(V1Job job) {
+      return job.getMetadata().getCreationTimestamp().getMillis();
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      if (isComplete(job)) {
-        return doNext(packet);
-      }
+    V1ObjectMeta getMetadata(V1Job job) {
+      return job.getMetadata();
+    }
 
-      V1ObjectMeta metadata = job.getMetadata();
+    @Override
+    void addCallback(String name, Consumer<V1Job> callback) {
+      addOnModifiedCallback(name, callback);
+    }
 
-      LOGGER.info(MessageKeys.WAITING_FOR_JOB_READY, metadata.getName());
+    @Override
+    void removeCallback(String name, Consumer<V1Job> callback) {
+      removeOnModifiedCallback(name, callback);
+    }
 
-      AtomicBoolean didResume = new AtomicBoolean(false);
-      return doSuspend(
-          (fiber) -> {
-            Complete complete =
-                (V1Job job, boolean isJobFailed) -> {
-                  if (!shouldProcessJob(job)) {
-                    return;
-                  }
-                  completeCallbackRegistrations.remove(job.getMetadata().getName());
-                  if (didResume.compareAndSet(false, true)) {
-                    LOGGER.fine("Job status: " + job.getStatus());
-                    packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
-                    // Do not proceed to next step such as ReadDomainIntrospectorPodLog if job
-                    // failed due to DeadlineExceeded, as the pod container would likely not
-                    // be available for reading
-                    if (isJobFailed && "DeadlineExceeded".equals(getFailedReason(job))) {
-                      fiber.terminate(
-                          new DeadlineExceededException(job), packet);
-                    }
-                    fiber.resume(packet);
-                  }
-                };
-            completeCallbackRegistrations.put(metadata.getName(), complete);
+    @Override
+    Step createReadAsyncStep(String name, String namespace, ResponseStep<V1Job> responseStep) {
+      return new CallBuilder().readJobAsync(name, namespace, responseStep);
+    }
 
-            // Timing window -- job may have come ready before registration for callback
-            fiber
-                .createChildFiber()
-                .start(
-                    new CallBuilder()
-                        .readJobAsync(
-                            metadata.getName(),
-                            metadata.getNamespace(),
-                            new ResponseStep<V1Job>(null) {
-                              @Override
-                              public NextAction onFailure(
-                                  Packet packet,
-                                  ApiException e,
-                                  int statusCode,
-                                  Map<String, List<String>> responseHeaders) {
-                                return super.onFailure(packet, e, statusCode, responseHeaders);
-                              }
+    // When we detect a job as ready, we add it to the packet for downstream processing.
+    @Override
+    void updatePacket(Packet packet, V1Job job) {
+      packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
+    }
 
-                              @Override
-                              public NextAction onSuccess(
-                                  Packet packet,
-                                  V1Job result,
-                                  int statusCode,
-                                  Map<String, List<String>> responseHeaders) {
-                                if (result != null && isComplete(result) /*isReady(result)*/) {
-                                  if (didResume.compareAndSet(false, true)) {
-                                    completeCallbackRegistrations.remove(
-                                        metadata.getName(), complete);
-                                    fiber.resume(packet);
-                                  }
-                                }
-                                return doNext(packet);
-                              }
-                            }),
-                    packet.clone(),
-                    null);
-          });
+    // Do not proceed to next step such as ReadDomainIntrospectorPodLog if job
+    // failed due to DeadlineExceeded, as the pod container would likely not
+    // be available for reading
+    @Override
+    boolean shouldTerminateFiber(V1Job job) {
+      return isFailed(job) && "DeadlineExceeded".equals(getFailedReason(job));
+    }
+
+    // create an exception to terminate the fiber
+    @Override
+    Throwable createTerminationException(V1Job job) {
+      return new DeadlineExceededException(job);
+    }
+
+    @Override
+    void logWaiting(String name) {
+      LOGGER.info(MessageKeys.WAITING_FOR_JOB_READY, name);
     }
   }
 
   static class DeadlineExceededException extends Exception {
     final V1Job job;
 
-    public DeadlineExceededException(V1Job job) {
+    DeadlineExceededException(V1Job job) {
       super();
       this.job = job;
     }

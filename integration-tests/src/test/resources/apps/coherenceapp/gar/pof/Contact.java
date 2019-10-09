@@ -1,19 +1,16 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package com.examples.pof;
 
+import java.io.IOException;
 import com.tangosol.io.pof.PofReader;
 import com.tangosol.io.pof.PofWriter;
 import com.tangosol.io.pof.PortableObject;
-
 import com.tangosol.util.Base;
 
-import java.util.Date;
-
 /**
- *  POF serialization implementation for coherence cache
+ * POF serialization implementation for coherence cache.
  */
 public class Contact implements PortableObject {
 
@@ -23,55 +20,55 @@ public class Contact implements PortableObject {
   // The POF index for the LastName property.
   public static final int LASTNAME = 1;
 
-  private String m_sFirstName;
-  private String m_sLastName;
+  private String msFirstName;
+  private String msLastName;
 
   public Contact() {
   }
 
   public Contact(String firstName, String lastName) {
-    m_sFirstName = firstName;
-    m_sLastName = lastName;
+    msFirstName = firstName;
+    msLastName = lastName;
   }
 
   /**
    * Return the first name. 
    */
   public String getFirstName() {
-    return m_sFirstName;
+    return msFirstName;
   }
 
   /**
    * Set the first name.
-   * @param sFirstName the first name
+   * @param firstName the first name
    */
-  public void setFirstName(String sFirstName) {
-    m_sFirstName = sFirstName;
+  public void setFirstName(String firstName) {
+    msFirstName = firstName;
   }
 
   /**
    * Return the last name.
    */
   public String getLastName() {
-    return m_sLastName;
+    return msLastName;
   }
 
   /**
-   * Set the last name
-   * @param sLastName the last name
+   * Set the last name.
+   * @param lastName the last name
    */
-  public void setLastName(String sLastName) {
-    m_sLastName = sLastName;
+  public void setLastName(String lastName) {
+    msLastName = lastName;
   }
 
   public void readExternal(PofReader reader) throws IOException {
-    m_sFirstName = reader.readString(FIRSTNAME);
-    m_sLastName = reader.readString(LASTNAME);
+    msFirstName = reader.readString(FIRSTNAME);
+    msLastName = reader.readString(LASTNAME);
   }
 
   public void writeExternal(PofWriter writer) throws IOException {
-    writer.writeString(FIRSTNAME, m_sFirstName);
-    writer.writeString(LASTNAME, m_sLastName);
+    writer.writeString(FIRSTNAME, msFirstName);
+    writer.writeString(LASTNAME, msLastName);
   }
 
   public String toString() {
@@ -80,21 +77,21 @@ public class Contact implements PortableObject {
   }
 
   /**
-   * Returns the hashCode of the Contact
+   * Returns the hashCode of the Contact.
    */
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
 
-    result = prime * result + ((m_sFirstName == null) ? 0 : m_sFirstName.hashCode());
-    result = prime * result + ((m_sLastName == null) ? 0 : m_sLastName.hashCode());
+    result = prime * result + ((msFirstName == null) ? 0 : msFirstName.hashCode());
+    result = prime * result + ((msLastName == null) ? 0 : msLastName.hashCode());
     return result;
   }
 
   /**
-   * Compares this Contact with another
-   * @param obj
+   * Compares this Contact with another.
+   * @param obj object
    */
   @Override
   public boolean equals(Object obj) {
