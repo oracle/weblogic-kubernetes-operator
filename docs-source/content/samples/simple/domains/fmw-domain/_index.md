@@ -19,15 +19,9 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 
 The following prerequisites must be handled prior to running the create domain script:
 
-<<<<<<< HEAD
-* Make sure the WebLogic operator is running.
-* The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied. For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}).
-* Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
-=======
 * Make sure the WebLogic Kubernetes Operator is running.
 * The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied. For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}).
 * Create a Kubernetes namespace for the domain unless you intend to use the default namespace.
->>>>>>> 5337c253963f484260ba901b86186ec628538ebd
 * In the same Kubernetes namespace, create the Kubernetes persistent volume (PV) where the domain
   home will be hosted, and the Kubernetes persistent volume claim (PVC) for the domain. For samples
   to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}).

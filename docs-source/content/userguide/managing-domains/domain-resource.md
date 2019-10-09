@@ -62,11 +62,7 @@ Elements related to domain identification, Docker image, and domain home:
 
 * `domainUID`: The domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of `metadata.name`.
 * `image`: The WebLogic Docker image. Required when `domainHomeInImage` is true; otherwise, defaults to `container-registry.oracle.com/middleware/weblogic:12.2.1.3`.
-<<<<<<< HEAD
-* `imagePullPolicy`: The image pull policy for the WebLogic Docker image. Legal values are `Always`, `Never`, and `IfNotPresent`. Defaults to `Always` if image ends in `:latest`, `IfNotPresent` otherwise.
-=======
 * `imagePullPolicy`: The image pull policy for the WebLogic Docker image. Legal values are `Always`, `Never` and `IfNotPresent`. Defaults to `Always` if image ends in `:latest`; `IfNotPresent` otherwise.
->>>>>>> 5337c253963f484260ba901b86186ec628538ebd
 * `imagePullSecrets`: A list of image pull secrets for the WebLogic Docker image.
 * `domainHome`: The folder for the WebLogic domain. Not required. Defaults to `/shared/domains/domains/domainUID` if `domainHomeInImage` is false. Defaults to `/u01/oracle/user_projects/domains/` if `domainHomeInImage` is true.
 * `domainHomeInImage`: True if this domain's home is defined in the Docker image for the domain. Defaults to true.
@@ -78,17 +74,10 @@ Elements related to logging:
 * `logHomeEnabled`: Specifies whether the log home folder is enabled. Not required. Defaults to true if `domainHomeInImage` is false. Defaults to false if `domainHomeInImage` is true.
 
 Elements related to security:
-<<<<<<< HEAD
 
 * `webLogicCredentialsSecret`: The name of a pre-created Kubernetes secret, in the domain resource's namespace, that holds the user name and password needed to boot WebLogic Server under the `username` and `password` fields.
 
 Elements related to domain [startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}):
-=======
-
-* `webLogicCredentialsSecret`: The name of a pre-created Kubernetes secret, in the domain resource's namespace, that holds the user name and password needed to boot WebLogic Server under the `username` and `password` fields.
-
-Elements related to domain [startup and shutdown](domain-lifecycle/startup.md):
->>>>>>> 5337c253963f484260ba901b86186ec628538ebd
 
 * `serverStartPolicy`: The strategy for deciding whether to start a server. Legal values are `ADMIN_ONLY`, `NEVER`, or `IF_NEEDED`.
 * `serverStartState`: The state in which the server is to be started. Use `ADMIN` if the server should start in the admin state. Defaults to `RUNNING`.
@@ -126,11 +115,7 @@ Prior to creating a pod, the operator replaces variable references allowing the 
 * `CLUSTER_NAME`: The WebLogic cluster name, if this is a cluster member
 * `LOG_HOME`: The WebLogic log location as a file system path within the container
 
-<<<<<<< HEAD
-This example domain YAML specifies that pods for WebLogic Server instances in the `cluster-1` cluster will have a per-managed server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled as much as possible on different nodes:
-=======
 This example domain YAML file specifies that pods for WebLogic Server instances in the `cluster-1` cluster will have a per-managed server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled as much as possible on different nodes:
->>>>>>> 5337c253963f484260ba901b86186ec628538ebd
 
 ```
 # Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
@@ -197,8 +182,4 @@ spec:
     replicas: 2
 ```
 
-<<<<<<< HEAD
-The operator uses an "introspection" job to discover details about the WebLogic domain configuration, such as the list of clusters and network access points.  The job pod for the introspector is generated using the `serverPod` entries for the administration server.  Because the Administration Server name is not known until the introspection step is complete, the value of the `$(SERVER_NAME)` variable for the introspection job will be `introspector`.
-=======
 The operator uses an "introspection" job to discover details about the WebLogic domain configuration, such as the list of clusters and network access points.  The job pod for the introspector is generated using the `serverPod` entries for the administration server.  Because the administration server name is not known until the introspection step is complete, the value of the `$(SERVER_NAME)` variable for the introspection job will be "introspector".
->>>>>>> 5337c253963f484260ba901b86186ec628538ebd
