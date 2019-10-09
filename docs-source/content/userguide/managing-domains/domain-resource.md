@@ -77,7 +77,7 @@ Elements related to security:
 
 * `webLogicCredentialsSecret`: The name of a pre-created Kubernetes secret, in the domain resource's namespace, that holds the user name and password needed to boot WebLogic Server under the `username` and `password` fields.
 
-Elements related to domain [startup and shutdown](domain-lifecycle/startup.md):
+Elements related to domain [startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}):
 
 * `serverStartPolicy`: The strategy for deciding whether to start a server. Legal values are `ADMIN_ONLY`, `NEVER`, or `IF_NEEDED`.
 * `serverStartState`: The state in which the server is to be started. Use `ADMIN` if server should start in the admin state. Defaults to `RUNNING`.
