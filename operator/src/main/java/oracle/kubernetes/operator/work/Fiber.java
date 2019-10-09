@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
 
@@ -11,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -20,10 +18,12 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction.Kind;
 
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
+import static oracle.kubernetes.operator.logging.MessageKeys.CURRENT_STEPS;
 
 /**
  * User-level thread&#x2E; Represents the execution of one processing flow. The {@link Engine} is
@@ -47,11 +47,12 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  *
  * <h2>Debugging Aid</h2>
  *
- * <p>Setting the logger to FINE would give you basic start/stop/resume/suspend level logging. Using
- * FINER would cause more detailed logging, which includes what steps are executed in what order and
- * how they behaved.
+ * <p>Setting the {@link #LOGGER} for FINE would give you basic start/stop/resume/suspend level
+ * logging. Using FINER would cause more detailed logging, which includes what steps are executed in
+ * what order and how they behaved.
  */
 public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int NOT_COMPLETE = 0;
   private static final int DONE = 1;
   private static final int CANCELLED = 2;
@@ -68,7 +69,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private final ReentrantLock lock = new ReentrantLock();
   private final Condition condition = lock.newCondition();
   private final AtomicInteger status = new AtomicInteger(NOT_COMPLETE);
-  private final Map<String, Component> components = new ConcurrentHashMap<String, Component>();
+  private final Map<String, Component> components = new ConcurrentHashMap<>();
   /** The next action for this Fiber. */
   private NextAction na;
   private ClassLoader contextClassLoader;
@@ -135,7 +136,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     if (status.get() == NOT_COMPLETE) {
       if (LOGGER.isFineEnabled()) {
         breadCrumbs = new ArrayList<>();
-        LOGGER.fine("{0} started", new Object[] {getName()});
+        LOGGER.fine("{0} started", getName());
       }
 
       owner.addRunnable(this);
@@ -166,11 +167,11 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    * @param resumePacket packet used in the resumed processing
    * @param callback Replacement completion callback
    */
-  public void resume(Packet resumePacket, CompletionCallback callback) {
+  private void resume(Packet resumePacket, CompletionCallback callback) {
     if (status.get() == NOT_COMPLETE) {
 
       if (LOGGER.isFinerEnabled()) {
-        LOGGER.finer("{0} resumed", new Object[] {getName()});
+        LOGGER.finer("{0} resumed", getName());
       }
 
       boolean doAddRunnable = false;
@@ -180,7 +181,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
           setCompletionCallback(callback);
         }
         if (LOGGER.isFinerEnabled()) {
-          LOGGER.finer("{0} resuming.", new Object[] {getName()});
+          LOGGER.finer("{0} resuming.", getName());
         }
         na.packet = resumePacket;
         if (na.kind == Kind.SUSPEND) {
@@ -191,7 +192,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         } else {
           if (LOGGER.isFinerEnabled()) {
             LOGGER.finer(
-                "{0} taking no action on resume because not suspended", new Object[] {getName()});
+                "{0} taking no action on resume because not suspended", getName());
           }
         }
       } finally {
@@ -216,7 +217,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     }
 
     if (LOGGER.isFineEnabled()) {
-      LOGGER.fine("{0} terminated", new Object[] {getName()});
+      LOGGER.fine("{0} terminated", getName());
     }
 
     lock.lock();
@@ -270,7 +271,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     }
 
     if (LOGGER.isFineEnabled()) {
-      LOGGER.fine("{0} cancelled", new Object[] {getName()});
+      LOGGER.fine("{0} cancelled", getName());
     }
 
     // synchronized(this) is used as Thread running Fiber will be holding lock
@@ -303,7 +304,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return status.get() == DONE;
   }
 
-  public Void get() throws InterruptedException, ExecutionException {
+  public Void get() throws InterruptedException {
     int s = status.get();
     if (s == CANCELLED) {
       throw new CancellationException();
@@ -337,8 +338,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return null;
   }
 
-  public Void get(long timeout, TimeUnit unit)
-      throws InterruptedException, ExecutionException, TimeoutException {
+  public Void get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
     int s = status.get();
     if (s == CANCELLED) {
       throw new CancellationException();
@@ -378,7 +378,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
   private boolean suspend(Holder<Boolean> isRequireUnlock, Consumer<Fiber> onExit) {
     if (LOGGER.isFinerEnabled()) {
-      LOGGER.finer("{0} suspending", new Object[] {getName()});
+      LOGGER.finer("{0} suspending", getName());
     }
 
     if (onExit != null) {
@@ -491,7 +491,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private boolean doRun() {
     // isRequireUnlock will contain Boolean.FALSE when lock has already been
     // released in suspend
-    Holder<Boolean> isRequireUnlock = new Holder<Boolean>(Boolean.TRUE);
+    Holder<Boolean> isRequireUnlock = new Holder<>(Boolean.TRUE);
     lock.lock();
     try {
       ClassLoader old;
@@ -546,7 +546,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       if (exitCallback != null) {
 
         if (LOGGER.isFinerEnabled()) {
-          LOGGER.finer("{0} triggering exit callback", new Object[] {getName()});
+          LOGGER.finer("{0} triggering exit callback", getName());
         }
 
         exitCallback.onExit();
@@ -570,14 +570,14 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         return false;
       }
 
+      LOGGER.fine(CURRENT_STEPS, na.next);
+
       if (LOGGER.isFinerEnabled()) {
         LOGGER.finer(
             "{0} {1}.apply({2})",
-            new Object[] {
-              getName(),
-              na.next,
-              na.packet != null ? "Packet@" + Integer.toHexString(na.packet.hashCode()) : "null"
-            });
+            getName(),
+            na.next,
+            na.packet != null ? "Packet@" + Integer.toHexString(na.packet.hashCode()) : "null");
       }
 
       addBreadCrumb(na);
@@ -595,7 +595,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       }
 
       if (LOGGER.isFinerEnabled()) {
-        LOGGER.finer("{0} {1} returned with {2}", new Object[] {getName(), na.next, result});
+        LOGGER.finer("{0} {1} returned with {2}", getName(), na.next, result);
       }
 
       // If resume is called before suspend, then make sure
@@ -678,7 +678,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    *
    * @param completionCallback Completion callback
    */
-  public void setCompletionCallback(CompletionCallback completionCallback) {
+  private void setCompletionCallback(CompletionCallback completionCallback) {
     this.completionCallback = completionCallback;
   }
 
@@ -694,12 +694,12 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    * @return true, if there is a current thread executing in the fiber and that callback will
    *     eventually occur
    */
-  public boolean cancelAndExitCallback(boolean mayInterrupt, ExitCallback exitCallback) {
+  boolean cancelAndExitCallback(boolean mayInterrupt, ExitCallback exitCallback) {
     // Mark fiber as cancelled, if not already done
     status.compareAndSet(NOT_COMPLETE, CANCELLED);
 
     if (LOGGER.isFineEnabled()) {
-      LOGGER.fine("{0} cancelled", new Object[] {getName()});
+      LOGGER.fine("{0} cancelled", getName());
     }
 
     AtomicInteger count = new AtomicInteger(1); // ensure we don't hit zero before iterating
@@ -765,8 +765,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         StringBuilder sb = new StringBuilder();
         writeBreadCrumb(sb);
 
-        if (sb != null && LOGGER.isFineEnabled()) {
-          LOGGER.fine("{0} bread crumb: {1}", new Object[] {getName(), sb.toString()});
+        if (LOGGER.isFineEnabled()) {
+          LOGGER.fine("{0} bread crumb: {1}", getName(), sb.toString());
         }
         breadCrumbs = null;
       }
@@ -854,7 +854,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
     Throwable target;
 
-    public OnExitRunnableException(Throwable target) {
+    OnExitRunnableException(Throwable target) {
       super((Throwable) null); // see pattern for InvocationTargetException
       this.target = target;
     }
@@ -863,7 +863,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private static class NextActionBreadCrumb implements BreadCrumb {
     private final NextAction na;
 
-    public NextActionBreadCrumb(NextAction na) {
+    NextActionBreadCrumb(NextAction na) {
       this.na = na;
     }
 
@@ -892,7 +892,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private static class ChildFiberBreadCrumb implements BreadCrumb {
     private final Fiber child;
 
-    public ChildFiberBreadCrumb(Fiber child) {
+    ChildFiberBreadCrumb(Fiber child) {
       this.child = child;
     }
 
@@ -926,7 +926,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private static final class Holder<T> {
     T value;
 
-    public Holder(T value) {
+    Holder(T value) {
       this.value = value;
     }
   }

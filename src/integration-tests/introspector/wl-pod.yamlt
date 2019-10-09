@@ -1,5 +1,5 @@
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: v1
 kind: Pod
@@ -37,6 +37,12 @@ spec:
       value: "${NODEMGR_HOME}"
     - name: LOG_HOME
       value: "${LOG_HOME}"
+    - name: DATA_HOME
+      value: "${DATA_HOME}"
+    - name: EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR
+      value: "${EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR}"
+    - name: KEEP_DEFAULT_DATA_HOME
+      value: "${KEEP_DEFAULT_DATA_HOME}"
     - name: SERVER_OUT_IN_POD_LOG
       value: "${SERVER_OUT_IN_POD_LOG}"
     - name: SERVICE_NAME

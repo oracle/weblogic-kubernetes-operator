@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.utils;
 
@@ -17,10 +16,10 @@ import java.util.logging.SimpleFormatter;
 
 import ch.qos.logback.classic.LoggerContext;
 import com.meterware.simplestub.Memento;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.slf4j.LoggerFactory;
 
 import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 public class TestUtils {
   /**
@@ -29,7 +28,7 @@ public class TestUtils {
    * @return a collection of the removed handlers
    */
   public static ConsoleHandlerMemento silenceOperatorLogger() {
-    Logger logger = LOGGER.getUnderlyingLogger();
+    Logger logger = LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
     List<Handler> savedHandlers = new ArrayList<>();
     for (Handler handler : logger.getHandlers()) {
       if (handler instanceof ConsoleHandler) {
@@ -46,12 +45,29 @@ public class TestUtils {
   }
 
   /**
+   * Removes the console handlers from the specified logger, in order to silence them during a test.
+   *
+   * @param logger a logger to silence
+   * @return a collection of the removed handlers
+   */
+  public static List<Handler> removeConsoleHandlers(Logger logger) {
+    List<Handler> savedHandlers = new ArrayList<>();
+    for (Handler handler : logger.getHandlers()) {
+      if (handler instanceof ConsoleHandler) {
+        savedHandlers.add(handler);
+      }
+    }
+    for (Handler handler : savedHandlers) logger.removeHandler(handler);
+    return savedHandlers;
+  }
+
+  /**
    * Restores the silenced logger handlers.
    *
    * @param logger a logger to restore
    * @param savedHandlers the handlers to restore
    */
-  private static void restoreConsoleHandlers(Logger logger, List<Handler> savedHandlers) {
+  public static void restoreConsoleHandlers(Logger logger, List<Handler> savedHandlers) {
     for (Handler handler : savedHandlers) {
       logger.addHandler(handler);
     }
@@ -201,6 +217,10 @@ public class TestUtils {
       log = logContext.getLogger("com.jayway.jsonpath.internal.path.CompiledPath");
       originalLogLevel = log.getLevel();
       log.setLevel(ch.qos.logback.classic.Level.INFO);
+    }
+
+    static Memento silenceLogger() {
+      return new JsonPathLoggerMemento();
     }
 
     @Override

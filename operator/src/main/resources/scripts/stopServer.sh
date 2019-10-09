@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at
-# http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
 # This script is used to attempt to gracefully shutdown a WL Server
@@ -76,6 +75,10 @@ trace "After stop-server.py" &>> ${STOP_OUT_FILE}
 # but let's try looking for the server process and
 # kill the server if the process still exists,
 # just in case we failed to stop it via wlst
+
+# Adjust PATH if necessary before calling jps
+adjustPath
+
 pid=$(jps -v | grep " -Dweblogic.Name=${SERVER_NAME} " | awk '{print $1}')
 if [ ! -z $pid ]; then
   echo "Killing the server process $pid" &>> ${STOP_OUT_FILE}

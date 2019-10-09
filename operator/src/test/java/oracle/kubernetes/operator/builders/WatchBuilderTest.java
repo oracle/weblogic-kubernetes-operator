@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
 
@@ -199,13 +198,11 @@ public class WatchBuilderTest extends HttpUserAgentTest {
         withResponses(createAddedResponse(pod))
             .andValidations(
                 parameter("fieldSelector").withValue("thisValue"),
-                parameter("includeUninitialized").withValue("false"),
                 parameter("limit").withValue("25")));
 
     WatchI<V1Pod> podWatch =
         new WatchBuilder()
             .withFieldSelector("thisValue")
-            .withIncludeUninitialized(false)
             .withLimit(25)
             .createPodWatch(NAMESPACE);
 

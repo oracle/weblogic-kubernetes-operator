@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -22,6 +21,8 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.Scan;
 import oracle.kubernetes.operator.rest.ScanCache;
@@ -35,9 +36,10 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 public class ConfigMapHelper {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private static final String SCRIPT_LOCATION = "/scripts";
   private static final ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
 
@@ -131,10 +133,11 @@ public class ConfigMapHelper {
 
   static String extractFilename(String line) {
     int lastSlash = line.lastIndexOf('/');
-    return line.substring(lastSlash + 1, line.length());
+    String fname = line.substring(lastSlash + 1, line.length());
+    return fname;
   }
 
-  static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
+  public static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
     try {

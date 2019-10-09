@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
 
@@ -16,8 +15,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
-import com.meterware.simplestub.Memento;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.After;
@@ -43,9 +44,11 @@ public class StepTest {
   private static final int ACQUIRE_SEMAPHORE = 6;
 
   private static final Command DEFAULT_COMMAND = new Command(INVOKE_NEXT);
+  private static final Logger UNDERLYING_LOGGER =
+      LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
   private Engine engine = null;
+  private List<Handler> savedhandlers;
   private ScheduledExecutorService executorService;
-  private List<Memento> mementos = new ArrayList<>();
 
   /**
    * Simplifies creation of stepline. Steps will be connected following the list ordering of their
@@ -70,9 +73,17 @@ public class StepTest {
   }
 
   @Before
+  public void disableConsoleLogging() {
+    savedhandlers = TestUtils.removeConsoleHandlers(UNDERLYING_LOGGER);
+  }
+
+  @After
+  public void restoreConsoleLogging() {
+    TestUtils.restoreConsoleHandlers(UNDERLYING_LOGGER, savedhandlers);
+  }
+
+  @Before
   public void setup() {
-    mementos.add(
-        TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(NullPointerException.class));
     executorService = Engine.wrappedExecutorService("StepTest", getDefaultContainer());
     engine = new Engine(executorService);
   }
@@ -83,8 +94,6 @@ public class StepTest {
 
   @After
   public void tearDown() throws Exception {
-    mementos.forEach(Memento::revert);
-
     executorService.shutdownNow();
     executorService.awaitTermination(100, TimeUnit.MILLISECONDS);
   }
@@ -449,7 +458,7 @@ public class StepTest {
   }
 
   private abstract static class BaseStep extends Step {
-    BaseStep(Step next) {
+    public BaseStep(Step next) {
       super(next);
     }
 
@@ -476,7 +485,10 @@ public class StepTest {
           case INVOKE_NEXT:
             return doNext(packet);
           case SUSPEND_AND_RESUME:
-            return doSuspend((fiber) -> fiber.resume(packet));
+            return doSuspend(
+                (fiber) -> {
+                  fiber.resume(packet);
+                });
           case SUSPEND_AND_THROW:
             return doSuspend(
                 (fiber) -> {
@@ -519,13 +531,12 @@ public class StepTest {
     private int[] kind;
     private int count;
 
-    Command(int... kind) {
+    public Command(int... kind) {
       this.kind = kind;
       this.count = 0;
     }
 
-    @SuppressWarnings("SameParameterValue")
-    void setCount(int count) {
+    public void setCount(int count) {
       this.count = count;
     }
   }

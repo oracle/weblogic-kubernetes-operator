@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -50,7 +49,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
   private static final String UID = "UID1";
-  private static final String OPERATOR_NAMESPACE = "operator";
 
   private List<Memento> mementos = new ArrayList<>();
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -101,7 +99,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   private void readExistingResources() {
-    testSupport.runStepsToCompletion(Main.readExistingResources(OPERATOR_NAMESPACE, NS));
+    testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
   }
 
   private void addDomainResource(String uid, String namespace) {

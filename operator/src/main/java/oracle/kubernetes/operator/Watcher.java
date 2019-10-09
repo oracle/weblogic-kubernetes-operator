@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -15,12 +14,13 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.net.HttpURLConnection.HTTP_GONE;
-import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
 
 /**
  * This class handles the Watching interface and drives the watch support for a specific type of
@@ -30,6 +30,7 @@ import static oracle.kubernetes.operator.logging.LoggingFacade.LOGGER;
  */
 abstract class Watcher<T> {
   static final String HAS_NEXT_EXCEPTION_MESSAGE = "IO Exception during hasNext method.";
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final long IGNORED_RESOURCE_VERSION = 0;
 
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
@@ -49,7 +50,8 @@ abstract class Watcher<T> {
    * @param stopping an atomic boolean to watch to determine when to stop the watcher
    */
   Watcher(String resourceVersion, WatchTuning tuning, AtomicBoolean stopping) {
-    this.resourceVersion = isNullOrEmpty(resourceVersion) ? 0 : Long.parseLong(resourceVersion);
+    this.resourceVersion =
+        !isNullOrEmpty(resourceVersion) ? Long.parseLong(resourceVersion) : 0;
     this.tuning = tuning;
     this.stopping = stopping;
   }
@@ -248,7 +250,7 @@ abstract class Watcher<T> {
       Method getMetadata = object.getClass().getDeclaredMethod("getMetadata");
       V1ObjectMeta metadata = (V1ObjectMeta) getMetadata.invoke(object);
       String val = metadata.getResourceVersion();
-      return isNullOrEmpty(val) ? 0 : Long.parseLong(val);
+      return !isNullOrEmpty(val) ? Long.parseLong(val) : 0;
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       return IGNORED_RESOURCE_VERSION;

@@ -2,7 +2,7 @@
 title: "RBAC"
 date: 2019-02-23T17:15:36-05:00
 weight: 5
-description: "Role based authorization for the WebLogic operator"
+description: "Role based authorization for the WebLogic Kubernetes Operator"
 ---
 
 #### Contents
@@ -39,7 +39,7 @@ For more information about Kubernetes roles, see the
 #### Operator RBAC definitions
 
 To display the Kubernetes roles and related bindings used by
-the WebLogic operator where the operator was installed using the
+the operator where the operator was installed using the
 Helm release name `weblogic-operator`, look for the Kubernetes objects:
 
 - `Role`
@@ -112,7 +112,7 @@ A complete name for an operator created Kubernetes `ClusterRoleBinding` would be
 
 #### Role bindings
 
-Assuming that the WebLogic operator was installed into the Kubernetes namespace `weblogic-operator-ns`,
+Assuming that the operator was installed into the Kubernetes namespace `weblogic-operator-ns`,
 and a target namespace for the operator is `domain1-ns`, the following `RoleBinding` entries are mapped
 to a `Role` or `ClusterRole` granting permission to the operator.
 
@@ -125,7 +125,7 @@ to a `Role` or `ClusterRole` granting permission to the operator.
 
 #### Cluster role bindings
 
-Assuming that the WebLogic operator was installed into the Kubernetes namespace `weblogic-operator-ns`,
+Assuming that the operator was installed into the Kubernetes namespace `weblogic-operator-ns`,
 the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` granting permission to the operator.
 
 **Note**: The Operator names in table below represent the `<role-name>` from [cluster names](#kubernetes-cluster-role-and-cluster-role-binding-naming-convention) section.

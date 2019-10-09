@@ -1,5 +1,5 @@
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # serviceAccount specifies the name of the service account in the operator's namespace that the
 # operator will use to make requests to the Kubernetes API server.
@@ -20,7 +20,7 @@ domainNamespaces:
   - "default"
 
 # image specifies the docker image containing the operator code.
-image: "oracle/weblogic-kubernetes-operator:2.3.0"
+image: "oracle/weblogic-kubernetes-operator:2.3.1"
 
 # imagePullPolicy specifies the image pull policy for the operator docker image.
 imagePullPolicy: "IfNotPresent"
@@ -100,6 +100,15 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # elasticSearchPort specifies the port number of where elasticsearch is running.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
+
+# dns1123Fields overrides the default list of field names that the operator
+# converts to DNS-1123 legal values when replacing variable references in the 
+# domain resource. The default list can be found inside the class Legalnames 
+# in the oracle.kubernetes.operator.helpers package.
+# Supply a comma seperated list of field names to customize the list of fields
+# such as "name, claimName, volumeName", or leave it commented out to use 
+# the default list of field names.
+# dns1123Fields: ""
 
 # Istio service mesh support is experimental.
 # istioEnabled specifies whether or not the domain is deployed under an Istio service mesh.

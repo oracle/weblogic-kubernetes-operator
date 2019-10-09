@@ -1,13 +1,11 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.helpers.LegalNames;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -16,14 +14,14 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Contains configuration of a WebLogic server. */
 public class WlsServerConfig {
-  private String name;
-  private Integer listenPort;
-  private String listenAddress;
-  private String clusterName;
-  private Integer sslListenPort;
-  private String machineName;
-  private Integer adminPort;
-  private List<NetworkAccessPoint> networkAccessPoints;
+  String name;
+  Integer listenPort;
+  String listenAddress;
+  String clusterName;
+  Integer sslListenPort;
+  String machineName;
+  Integer adminPort;
+  List<NetworkAccessPoint> networkAccessPoints;
 
   public WlsServerConfig() {
   }
@@ -97,6 +95,7 @@ public class WlsServerConfig {
     // parse the SSL configuration
     Map<String, Object> sslMap = (Map<String, Object>) serverConfigMap.get("SSL");
     Integer sslListenPort = (sslMap == null) ? null : (Integer) sslMap.get("listenPort");
+    boolean sslPortEnabled = sslMap != null && sslMap.get("listenPort") != null;
 
     // parse the administration port
 
@@ -140,7 +139,7 @@ public class WlsServerConfig {
    * @param serverMap Map containing parsed Json "servers" or "serverTemplates" element
    * @return Machine name contained in the Json element
    */
-  private static String getMachineNameFromJsonMap(Map<String, Object> serverMap) {
+  static String getMachineNameFromJsonMap(Map<String, Object> serverMap) {
     // serverMap contains a "machine" entry from the REST call which is in the form: "machine":
     // ["machines", "domain1-machine1"]
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -206,9 +205,15 @@ public class WlsServerConfig {
     return "'enabled', 'listenPort'";
   }
 
-  static WlsServerConfig getServerConfig(
-      @Nonnull String serverName, @Nonnull List<WlsServerConfig> servers) {
-    return servers.stream().filter(s -> s.getName().equals(serverName)).findFirst().orElse(null);
+  /**
+   * Set the listen address for this server configuration.
+   *
+   * @param listenAddress the listen address
+   * @return this object
+   */
+  public WlsServerConfig withListenAddress(String listenAddress) {
+    this.listenAddress = listenAddress;
+    return this;
   }
 
   /**
@@ -269,7 +274,6 @@ public class WlsServerConfig {
    *
    * @return The configured machine name for this WLS server
    */
-  @SuppressWarnings("WeakerAccess")
   public String getMachineName() {
     return machineName;
   }
@@ -379,8 +383,12 @@ public class WlsServerConfig {
       }
     }
     if (!adminProtocolPortFound) {
-      if (adminPort != null || sslListenPort != null) {
+      if (adminPort != null) {
         adminProtocolPortSecure = true;
+      } else if (sslListenPort != null) {
+        adminProtocolPortSecure = true;
+      } else if (listenPort != null) {
+        adminProtocolPortSecure = false;
       }
     }
 
