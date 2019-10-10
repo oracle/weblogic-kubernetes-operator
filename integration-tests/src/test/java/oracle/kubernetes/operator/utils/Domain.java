@@ -114,8 +114,9 @@ public class Domain {
     StringBuffer command = new StringBuffer();
     command.append("kubectl get domain ").append(domainUid).append(" -n ").append(domainNS);
     ExecResult result = TestUtils.exec(command.toString());
-    if (!result.stdout().contains(domainUid))
+    if (!result.stdout().contains(domainUid)) {
       throw new RuntimeException("FAILURE: domain not found, exiting!");
+    }
 
     verifyPodsCreated();
     verifyServicesCreated();
@@ -791,7 +792,9 @@ public class Domain {
   public void deletePvcAndCheckPvReleased(String jobName) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
     String pvBaseName = (String) pvMap.get("baseName");
-    if (domainUid != null) pvBaseName = domainUid + "-" + pvBaseName;
+    if (domainUid != null) {
+      pvBaseName = domainUid + "-" + pvBaseName;
+    }
     cmd.append(pvBaseName).append("-pv -n ").append(domainNS);
 
     ExecResult result = ExecCommand.exec(cmd.toString());
@@ -1227,8 +1230,9 @@ public class Domain {
         podNameSet.add(managedServerNameBase + i);
       }
 
-      // Loop until all the servers have recycled.  Wait 5 minutes max for a managed server to be terminating.
-      //
+      /* Loop until all the servers have recycled.  Wait 5 minutes max for a managed server 
+      to be terminating.*/
+      
       final int maxTerminateLoop = 300;
       int terminateLoopCount = 0;
       while (podNameSet.size() > 0) {
@@ -1291,19 +1295,19 @@ public class Domain {
    * @throws Exception when the kubectl create secret command fails
    */
   protected void createDockerRegistrySecret() throws Exception {
-  	String secret = System.getenv("IMAGE_PULL_SECRET_WEBLOGIC");
-  	if (secret == null) {
-       secret = "docker-store";
-  	}
-    
-    String ocr_server = System.getenv("OCR_SERVER");
-    if (ocr_server == null) {
-    	ocr_server = "container-registry.oracle.com";
+    String secret = System.getenv("IMAGE_PULL_SECRET_WEBLOGIC");
+    if (secret == null) {
+      secret = "docker-store";
     }
     
-  	TestUtils.createDockerRegistrySecret(
+    String ocrserver = System.getenv("OCR_SERVER");
+    if (ocrserver == null) {
+      ocrserver = "container-registry.oracle.com";
+    }
+    
+    TestUtils.createDockerRegistrySecret(
         secret,
-        ocr_server,
+        ocrserver,
         System.getenv("OCR_USERNAME"),
         System.getenv("OCR_PASSWORD"),
         null,
@@ -1664,7 +1668,7 @@ public class Domain {
     createConfigMapAndSecretForSitConfig();
     
     if (BaseTest.SHARED_CLUSTER && !domainMap.containsKey("domainHomeImageBase")) {
-    	createDockerRegistrySecret();
+      createDockerRegistrySecret();
     }
   }
 

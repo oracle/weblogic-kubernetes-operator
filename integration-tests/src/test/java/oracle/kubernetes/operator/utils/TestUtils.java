@@ -1012,7 +1012,7 @@ public class TestUtils {
             + "\"";
             
     if (dockerEmail != null) {
-    	command = command + " --docker-email=" + dockerEmail;
+      command = command + " --docker-email=" + dockerEmail;
     }
    
     command = command + " -n " 
