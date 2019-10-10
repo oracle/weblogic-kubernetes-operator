@@ -45,5 +45,3 @@ dependency-reduced-pom.xml
 *.iws
 docs-source/docs
 .git/logs
-docs/charts/index.yaml
-docs/charts/weblogic-operator-*.tgz
