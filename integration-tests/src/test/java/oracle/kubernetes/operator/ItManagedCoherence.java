@@ -184,6 +184,7 @@ public class ItManagedCoherence extends BaseTest {
       domainMap.put("clusterName", "appCluster");
       domainMap.put("domainUID", DOMAINUID1);
       domainMap.put("customDomainTemplate", customDomainTemplate);
+      domainMap.put("image", "cmdominimage:latest");
       domainMap.put("namespace", domainNS1);
       domainMap.put(
           "createDomainPyScript",
