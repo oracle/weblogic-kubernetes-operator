@@ -1,19 +1,20 @@
 ---
 title: "Disabling Fast Application Notifications"
-date:
+date: 2019-10-11
 draft: false
 ---
 
-To support Fast Application Notifications (FAN), Oracle databases configure GRID.
+To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure).
 GRID is typically associated with (and required by) Oracle RAC databases but can
-also be used in other configurations.  ATP-S does not provide GRID.
+also be used in other configurations.  Oracle Autonomous Database-Serverless (ATP-S) does not provide GRID.
 
 When connecting to a database that does not have GRID, the only type of WebLogic Server
 supported data source is Generic Data Sources. Multi Data Sources and Active GridLink
 data sources cannot be used because they work with RAC.
 
 
-When connecting with a 12.2 driver to a database that does not have GRID, you will
+WebLogic Server 12.2.1.3.0 shipped with the 12.2.0.1 Oracle driver. When connecting
+with this driver to a database that does not have GRID, you will
 encounter the following exception (however, the 18.3 driver does not have this problem):
 
 ```
@@ -26,7 +27,7 @@ To correct the problem, you must disable FAN, in one of two places:
 1)	Through a system property at the domain, cluster, or server level.  
 
 To do this, edit the Domain Custom Resource to set the system property `oracle.jdbc.fanEnabled`
-to false as shown in the following example:
+to `false` as shown in the following example:
 
 ```
   serverPod:
@@ -38,7 +39,8 @@ to false as shown in the following example:
 
 2) Configure the data source connection pool properties.  
 
-The following WLST script creates a data source with the connection property set.
+The following WLST script adds the
+ `oracle.jdbc.fanEnabled` property, set to `false`, to an existing data source.
 
 ```
        fmwDb = 'jdbc:oracle:thin:@' + db
@@ -61,3 +63,5 @@ The following WLST script creates a data source with the connection property set
        set('Value', 'false')
        ls()
 ```
+After changing the data source connection pool configuration, for the attribute to take effect,
+make sure to undeploy and redeploy the data source, or restart WebLogic Server. 
