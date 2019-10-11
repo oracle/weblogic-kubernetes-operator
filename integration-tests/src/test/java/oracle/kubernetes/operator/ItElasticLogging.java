@@ -7,6 +7,8 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -46,6 +48,7 @@ public class ItElasticLogging extends BaseTest {
   private static final String loggingYamlFileBck = "WebLogicLoggingExporter_bck.yaml";
   private static Operator operator;
   private static Domain domain;
+  private static String domainNS;
   private static String k8sExecCmdPrefix;
   private static String elasticSearchURL;
   private static Map<String, Object> testVarMap;
@@ -67,7 +70,7 @@ public class ItElasticLogging extends BaseTest {
       }.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-
+      testClassName = "itelastic";
       //Adding filter to WebLogicLoggingExporter.yaml
       addFilterToElkFile();
 
@@ -83,13 +86,30 @@ public class ItElasticLogging extends BaseTest {
       // Create operator-elk
       if (operator == null) {
         LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
-        operator = TestUtils.createOperator(OPERATOR1_ELK_YAML, "2/2");
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(
+            getNewSuffixCount(), true, testClassName);
+        operatorMap.put("elkIntegrationEnabled",Boolean.valueOf("true"));
+        operatorMap.put("logStashImage", "logstash:6.8.0");
+        operatorMap.put("elasticSearchHost","elasticsearch.default.svc.cluster.local");
+        operatorMap.put("elasticSearchPort", new Integer(9200));
+        for (Map.Entry<String, Object> entry : operatorMap.entrySet()) {
+          System.out.println("operatorMap Key:vslue == " + entry.getKey() + ":" + entry.getValue().toString());
+        }
+        operator = TestUtils.createOperator(operatorMap, "2/2", Operator.RestCertType.SELF_SIGNED);
+        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
 
       // create domain
       if (domain == null) {
         LoggerHelper.getLocal().log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
-        domain = TestUtils.createDomain(DOMAINONPV_LOGGINGEXPORTER_YAML);
+        Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+        for (Map.Entry<String, Object> entry : domainMap.entrySet()) {
+          System.out.println("domainMap Key:vslue == " + entry.getKey() + ":" + entry.getValue().toString());
+        }
+        domainMap.put("namespace", domainNS);
+        domainMap.put("createDomainPyScript",
+            "integration-tests/src/test/resources/loggingexporter/create-domain-logging-exporter.py");
+        domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
       }
 
