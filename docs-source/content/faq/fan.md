@@ -1,5 +1,5 @@
 ---
-title: "Fast Application Notifications"
+title: "Disabling Fast Application Notifications"
 date:
 draft: false
 ---
