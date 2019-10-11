@@ -33,7 +33,7 @@ to false as shown in the following example:
     # an (optional) list of environment variable to be set on the servers
     env:
     - name: JAVA_OPTIONS
-      value: "-Dweblogic.StdoutDebugEnabled=false -Doracle.jdbc.fanEnabled=false”
+      value: "-Dweblogic.StdoutDebugEnabled=false -Doracle.jdbc.fanEnabled=false"
 ```
 
 2) Configure the data source connection pool properties.  
