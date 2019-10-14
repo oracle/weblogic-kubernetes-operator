@@ -1,6 +1,6 @@
 ---
 title: "Disabling Fast Application Notifications"
-date: 2019-10-11
+date: 2019-10-11T17:20:00-05:00
 draft: false
 ---
 
@@ -9,7 +9,7 @@ GRID is typically associated with (and required by) Oracle RAC databases but can
 also be used in other configurations.  Oracle Autonomous Database-Serverless (ATP-S) does not provide GRID.
 
 When connecting to a database that does not have GRID, the only type of WebLogic Server
-supported data source is Generic Data Sources. Multi Data Sources and Active GridLink
+data source that is supported is the Generic Data Sources. Multi Data Sources and Active GridLink
 data sources cannot be used because they work with RAC.
 
 
