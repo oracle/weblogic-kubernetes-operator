@@ -521,6 +521,16 @@ git checkout master git pull origin master git checkout -b your-branch  Make you
     </item>
     
     <item>
+      <title>Disabling Fast Application Notifications</title>
+      <link>/weblogic-kubernetes-operator/faq/fan/</link>
+      <pubDate>Fri, 11 Oct 2019 17:20:00 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/fan/</guid>
+      <description>To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure). GRID is typically associated with (and required by) Oracle RAC databases but can also be used in other configurations. Oracle Autonomous Database-Serverless (ATP-S) does not provide GRID.
+When connecting to a database that does not have GRID, the only type of WebLogic Server data source that is supported is the Generic Data Sources. Multi Data Sources and Active GridLink data sources cannot be used because they work with RAC.</description>
+    </item>
+    
+    <item>
       <title>Using an OCI Load Balancer</title>
       <link>/weblogic-kubernetes-operator/faq/oci-lb/</link>
       <pubDate>Wed, 25 Sep 2019 12:41:38 -0400</pubDate>
