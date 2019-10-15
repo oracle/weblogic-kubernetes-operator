@@ -13,6 +13,11 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/</loc>
+    <lastmod>2019-04-18T06:46:23-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/userguide/cicd/layering/</loc>
     <lastmod>2019-04-11T13:15:32-04:00</lastmod>
   </url>
@@ -118,6 +123,11 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/</loc>
+    <lastmod>2019-04-18T06:46:23-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/userguide/cicd/why-layering-matters/</loc>
     <lastmod>2019-04-11T13:27:58-04:00</lastmod>
   </url>
@@ -140,11 +150,6 @@
   <url>
     <loc>/weblogic-kubernetes-operator/userguide/introduction/demo/</loc>
     <lastmod>2019-02-23T20:51:59-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/weblogic-kubernetes-operator/samples/simple/domains/domain-home-on-pv/</loc>
-    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url>
   
   <url>
@@ -185,6 +190,11 @@
   <url>
     <loc>/weblogic-kubernetes-operator/userguide/</loc>
     <lastmod>2019-02-22T15:27:48-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/samples/simple/domains/soa-domain/</loc>
+    <lastmod>2019-04-18T07:32:31-05:00</lastmod>
   </url>
   
   <url>
@@ -278,7 +288,7 @@
   </url>
   
   <url>
-    <loc>/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/</loc>
+    <loc>/weblogic-kubernetes-operator/samples/simple/domains/domain-home-on-pv/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url>
   
@@ -308,6 +318,11 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/userguide/managing-fmw-domains/</loc>
+    <lastmod>2019-02-23T16:43:10-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/quickstart/install/</loc>
     <lastmod>2019-02-22T15:44:42-05:00</lastmod>
   </url>
@@ -315,11 +330,6 @@
   <url>
     <loc>/weblogic-kubernetes-operator/developerguide/</loc>
     <lastmod>2019-02-22T15:27:54-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/weblogic-kubernetes-operator/userguide/managing-domains/fmw-infra/</loc>
-    <lastmod>2019-04-18T06:46:23-05:00</lastmod>
   </url>
   
   <url>
@@ -385,6 +395,11 @@
   <url>
     <loc>/weblogic-kubernetes-operator/security/</loc>
     <lastmod>2019-02-23T17:34:48-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url>
   
   <url>
