@@ -251,6 +251,9 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
       addEnvVar(vars, IntrospectorJobEnvVars.ROLLBACK_IF_REQUIRE_RESTART,
           Boolean.toString(isRollBackIfRequireRestart()));
+      addEnvVar(vars, IntrospectorJobEnvVars.USE_ONLINE_UPDATE, Boolean.toString(isUseOnlineUpdate()));
+      addEnvVar(vars, IntrospectorJobEnvVars.KEEP_JRF_SCHEMA, Boolean.toString(isKeepJRFSchema()));
+      addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType());
 
       String dataHome = getDataHome();
       if (dataHome != null && !dataHome.isEmpty()) {

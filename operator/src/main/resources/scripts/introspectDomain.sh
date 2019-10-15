@@ -259,7 +259,7 @@ function createWLDomain() {
         #  We shouldn't require user to drop the db first since it may have data in it
         #  Can we safely switch to use WLS as type.
         if [ -f "${opss_wallet}" ] ; then
-            if [ ! -z ${KEEP_JRF_SCHEMA} ] && [ ${KEEP_JRF_SCHEMA} -eq 1 ] ; then
+            if [ ! -z ${KEEP_JRF_SCHEMA} ] && [ ${KEEP_JRF_SCHEMA} == "true" ] ; then
                trace "keeping rcu schema"
                mkdir -p /tmp/opsswallet
                base64 -d  ${opss_wallet} > /tmp/opsswallet/ewallet.p12
@@ -271,12 +271,13 @@ function createWLDomain() {
 
 
         if [ $use_passphrase -eq 1 ]; then
-            yes ${wdt_passphrase} | ${wdt_bin}/createDomain.sh -oracle_home $MW_HOME -domain_home \
-            $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
+            yes ${wdt_passphrase} | ${wdt_bin}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \
+            ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type
+            ${WDT_DOMAIN_TYPE} \
             ${OPSS_FLAGS}
         else
-            ${wdt_bin}/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list \
-            $archive_list $variable_list  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}
+            ${wdt_bin}/createDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
+            ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}
         fi
         ret=$?
         if [ $ret -ne 0 ]; then
@@ -286,9 +287,10 @@ function createWLDomain() {
 
         # For lifecycle updates:
         # if there is a merged model in the cm then it is an update case, try online update
+        # only if the useOnlineUpdate is define in the spec and set to true
         #
-        if [ -f ${inventory_merged_model} ] && [ ${archive_zip_changed} -eq 0 ] ; then
-
+        if [ -f ${inventory_merged_model} ] && [ ${archive_zip_changed} -eq 0 ] && [ "true" == "${USE_ONLINE_UPDATE}" \
+                ]; then
 
             ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${DOMAIN_HOME}/wlsdeploy/domain_model.json \
                 ${inventory_merged_model} || exit 1

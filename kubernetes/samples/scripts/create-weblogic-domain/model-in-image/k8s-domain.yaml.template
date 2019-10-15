@@ -51,10 +51,10 @@ spec:
     - name: USER_MEM_ARGS
       value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
     # Valid WDT_DOMAIN_TYPE_VALUES are 'WLS', 'JRF', and 'RestrictedJRF'
-    - name: WDT_DOMAIN_TYPE
-      value: "@@DOMTYPE@@"
-    - name: KEEP_JRF_SCHEMA
-      value: "1"
+    #- name: WDT_DOMAIN_TYPE
+    #  value: "@@DOMTYPE@@"
+    #- name: KEEP_JRF_SCHEMA
+    #  value: "1"
     #   value: "JRF"
     #   value: "RestrictedJRF"
     #
@@ -88,3 +88,13 @@ spec:
   # replicas: 1
   wdtConfigMap : wdt-config-map
   #wdtConfigMapSecret : simple-domain1-wdt-secret
+  #
+  # user online update or not (default is not)
+  #useOnlineUpdate: "true"
+  #
+  # wdt domain type for model in image case
+  # Valid WDT_DOMAIN_TYPE_VALUES are 'WLS', 'JRF', and 'RestrictedJRF'
+  wdtDomainType: "@@DOMTYPE@@"
+  #
+  # keep jrf schema between updates. If not set default to false
+  keepJRFSchema: "true"

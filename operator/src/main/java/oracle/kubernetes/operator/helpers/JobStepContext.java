@@ -144,6 +144,18 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().isRollbackIfRequireRestart();
   }
 
+  protected boolean isUseOnlineUpdate() {
+    return getDomain().isUseOnlineUpdate();
+  }
+
+  protected boolean isKeepJRFSchema() {
+    return getDomain().isKeepJRFSchema();
+  }
+
+  protected String getWdtDomainType() {
+    return getDomain().getWdtDomainType();
+  }
+
   private boolean isIstioEnabled() {
     return getDomain().isIstioEnabled();
   }

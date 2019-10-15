@@ -148,15 +148,49 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Sets the life cycle update method value.
+   * Sets the rollback online updates if restart require value.
    *
-   * @param rollbackIfRequireStart the data home value
+   * @param rollbackIfRequireStart rollback if require (true|false)
    * @return this object
    */
   public DomainConfigurator withRollbackIfRequireStart(boolean rollbackIfRequireStart) {
     getDomainSpec().setRollbackIfRequireStart(rollbackIfRequireStart);
     return this;
   }
+
+  /**
+   * Sets to use online update between lifcycle updates..
+   *
+   * @param useOnlineUpdate true or false
+   * @return this object
+   */
+  public DomainConfigurator withUserOnlineUpdate(boolean useOnlineUpdate) {
+    getDomainSpec().setUseOnlineUpdate(useOnlineUpdate);
+    return this;
+  }
+
+  /**
+   * Sets the wdt domain type.
+   *
+   * @param wdtDomainType the wdt domain type
+   * @return this object
+   */
+  public DomainConfigurator withWdtDomainType(String wdtDomainType) {
+    getDomainSpec().setWdtDomainType(wdtDomainType);
+    return this;
+  }
+
+  /**
+   * Sets the keep jrf schema.
+   *
+   * @param keepJRFSchema the wdt domain type
+   * @return this object
+   */
+  public DomainConfigurator withWdtDomainType(boolean keepJRFSchema) {
+    getDomainSpec().setKeepJRFSchema(keepJRFSchema);
+    return this;
+  }
+
 
 
   /**

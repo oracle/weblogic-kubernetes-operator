@@ -27,9 +27,25 @@ public class IntrospectorJobEnvVars {
 
 
   /**
-   * The life cycle update method used by the introspection job.
+   * The setting for rollback changes if online update require restart.
    */
   public static final String ROLLBACK_IF_REQUIRE_RESTART = "ROLLBACK_IF_REQUIRE_RESTART";
+
+  /**
+   * The setting of whether to use online update.
+   */
+  public static final String USE_ONLINE_UPDATE = "USE_ONLINE_UPDATE";
+
+  /**
+   * The setting for keeping the JRF schema between update..
+   */
+  public static final String KEEP_JRF_SCHEMA = "KEEP_JRF_SCHEMA";
+
+  /**
+   * The wdt domain type.
+   */
+  public static final String WDT_DOMAIN_TYPE = "WDT_DOMAIN_TYPE";
+
 
   /**
    * Returns true if the specified environment variable name is reserved by the operator for communication with

@@ -223,12 +223,37 @@ public class DomainSpec extends BaseConfiguration {
   private String wdtConfigMapSecret;
 
   /**
-   * The method of lifecycle updates in model in image.
+   * Rollback dynamic changes if the updates require restart.
    *
    * @since 2.3.1
    */
-  @Description("The method of lifecycle updates in modeldp in image case")
+  @Description("Rollback dynamic changes if the updates require restart")
   private Boolean rollbackIfRequireStart;
+
+  /**
+   * Use online update.
+   *
+   * @since 2.3.1
+   */
+  @Description("Use Online update during lifecycle changes")
+  private Boolean useOnlineUpdate;
+
+  /**
+   * wdt domain type.
+   *
+   * @since 2.3.1
+   */
+  @Description("wdt domain type")
+  private String wdtDomainType;
+
+
+  /**
+   * keep jrf schema.
+   *
+   * @since 2.3.1
+   */
+  @Description("Keep JRF schema between lifecycle updates")
+  private Boolean keepJRFSchema;
 
 
   @Description("Experimental feature configurations.")
@@ -460,6 +485,53 @@ public class DomainSpec extends BaseConfiguration {
 
 
   /**
+   * useOnlineUpdate.
+   *
+   * <p>An optional, For model in image, this attribute set to use online updates
+   *
+   * @return whether to use online updates or not.
+   */
+  boolean isUseOnlineUpdate() {
+    return Optional.ofNullable(useOnlineUpdate).orElse(false);
+  }
+
+  public void setUseOnlineUpdate(boolean useOnlineUpdate) {
+    this.useOnlineUpdate = useOnlineUpdate;
+  }
+
+  /**
+   * keepJRFSchema
+   *
+   * <p>An optional, For model in image, this attribute determines keeping the jrf schema between updates.
+   *
+   * @return true or false.
+   */
+  boolean isKeepJRFSchema() {
+    return Optional.ofNullable(keepJRFSchema).orElse(true);
+  }
+
+  public void setKeepJRFSchema(boolean keepJRFSchema) {
+    this.keepJRFSchema = keepJRFSchema;
+  }
+
+
+  /**
+   * wdtDomainType.
+   *
+   * <p>An optional, For model in image, this attribute set the domain type
+   * @return domain type (WLS|JRF|RestrictedJRF)
+   */
+  @Nullable
+  public String getWdtDomainType() {
+    return Optional.ofNullable(wdtDomainType).orElse("WLS");
+  }
+
+  public void setWdtDomainType(@Nullable String wdtDomainType) {
+    this.wdtDomainType = wdtDomainType;
+  }
+
+
+  /**
    * Data Home.
    *
    * <p>An optional, in-pod location for data storage of default and custom file stores. If dataHome
@@ -676,7 +748,10 @@ public class DomainSpec extends BaseConfiguration {
             .append("experimental", experimental)
             .append("wdtConfigMapSecret", wdtConfigMapSecret)
             .append("wdtConfigMap", wdtConfigMap)
-            .append("rollbackIfRequireStart", rollbackIfRequireStart);
+            .append("rollbackIfRequireStart", rollbackIfRequireStart)
+            .append("useOnlineUpdate", useOnlineUpdate)
+            .append("wdtDomainType", wdtDomainType)
+            .append("keepJRFSchema", keepJRFSchema);
 
     return builder.toString();
   }
@@ -706,7 +781,10 @@ public class DomainSpec extends BaseConfiguration {
             .append(wdtConfigMapSecret)
             .append(wdtConfigMap)
             .append(experimental)
-            .append(rollbackIfRequireStart);
+            .append(rollbackIfRequireStart)
+            .append(useOnlineUpdate)
+            .append(keepJRFSchema)
+            .append(wdtDomainType);
 
     return builder.toHashCode();
   }
@@ -744,6 +822,9 @@ public class DomainSpec extends BaseConfiguration {
             .append(wdtConfigMapSecret, rhs.wdtConfigMapSecret)
             .append(wdtConfigMap, rhs.wdtConfigMap)
             .append(experimental, rhs.experimental)
+            .append(useOnlineUpdate, rhs.useOnlineUpdate)
+            .append(wdtDomainType, rhs.wdtDomainType)
+            .append(keepJRFSchema, rhs.keepJRFSchema)
             .append(rollbackIfRequireStart, rhs.rollbackIfRequireStart);
 
     return builder.isEquals();
