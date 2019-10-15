@@ -5,6 +5,9 @@ title = "WebLogic Kubernetes Operator"
 # Change the default theme to be use when building the site with Hugo
 theme = "hugo-theme-learn"
 
+# disable the copy to clipboard links
+disableInlineCopyToClipBoard = true
+
 publishDir = "docs"
 
 # analytics
