@@ -150,11 +150,11 @@ public abstract class DomainConfigurator {
   /**
    * Sets the life cycle update method value.
    *
-   * @param lifeCycleUpdateMethod the data home value
+   * @param rollbackIfRequireStart the data home value
    * @return this object
    */
-  public DomainConfigurator withLifeCycleUpdateMethod(String lifeCycleUpdateMethod) {
-    getDomainSpec().setLifeCycleUpdateMethod(lifeCycleUpdateMethod);
+  public DomainConfigurator withRollbackIfRequireStart(boolean rollbackIfRequireStart) {
+    getDomainSpec().setRollbackIfRequireStart(rollbackIfRequireStart);
     return this;
   }
 

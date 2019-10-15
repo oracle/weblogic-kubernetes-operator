@@ -383,8 +383,8 @@ public class Domain {
     return spec.getDataHome();
   }
 
-  public String getLifeCycleUpdateMethod() {
-    return spec.getLifeCycleUpdateMethod();
+  public boolean isRollbackIfRequireRestart() {
+    return spec.isRollbackIfRequireStart();
   }
 
   public boolean isIncludeServerOutInPodLog() {

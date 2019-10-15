@@ -219,8 +219,8 @@ class ModelDiffer:
 
         # if there is a shape change
         # return 2 ?
-
         if has_topology and not found_in_past_dictionary:
+            print 'Found changes not supported for update: %s. Exiting' % (itm)
             return 2
 
         if found_in_past_dictionary:

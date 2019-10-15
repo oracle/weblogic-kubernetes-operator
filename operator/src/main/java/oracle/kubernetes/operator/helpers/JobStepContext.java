@@ -140,9 +140,8 @@ public abstract class JobStepContext extends BasePodStepContext {
     return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
   }
 
-  protected String getLifeCycleUpdateMethod() {
-    String lifeCycleUpdateMethod = getDomain().getLifeCycleUpdateMethod();
-    return lifeCycleUpdateMethod;
+  protected boolean isRollBackIfRequireRestart() {
+    return getDomain().isRollbackIfRequireRestart();
   }
 
   private boolean isIstioEnabled() {

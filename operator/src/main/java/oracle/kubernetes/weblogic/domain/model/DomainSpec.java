@@ -227,8 +227,8 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.3.1
    */
-  @Description("The method of lifecycle updates in model in image case")
-  private String lifeCycleUpdateMethod;
+  @Description("The method of lifecycle updates in modeldp in image case")
+  private Boolean rollbackIfRequireStart;
 
 
   @Description("Experimental feature configurations.")
@@ -444,19 +444,18 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * LifeCycleUpdateMethod.
+   * isRollbackIfRequireStart.
    *
    * <p>An optional, For model in image, this attribute determines the lifecycle update behavior
    *
-   * @return The in-pod location for data storage of default and custom file stores. Null if
-   *     dataHome is not specified or its value is either not set or empty.
+   * @return value of the rollback if require restart.
    */
-  String getLifeCycleUpdateMethod() {
-    return lifeCycleUpdateMethod;
+  boolean isRollbackIfRequireStart() {
+    return Optional.ofNullable(rollbackIfRequireStart).orElse(false);
   }
 
-  public void setLifeCycleUpdateMethod(String lifeCycleUpdateMethod) {
-    this.lifeCycleUpdateMethod = lifeCycleUpdateMethod;
+  public void setRollbackIfRequireStart(boolean rollbackIfRequireStart) {
+    this.rollbackIfRequireStart = rollbackIfRequireStart;
   }
 
 
@@ -477,7 +476,7 @@ public class DomainSpec extends BaseConfiguration {
   public void setDataHome(String dataHome) {
     this.dataHome = dataHome;
   }
-  
+
   /**
    * Whether to include server .out to the pod's stdout.
    *
@@ -676,7 +675,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("configOverrideSecrets", configOverrideSecrets)
             .append("experimental", experimental)
             .append("wdtConfigMapSecret", wdtConfigMapSecret)
-            .append("wdtConfigMap", wdtConfigMap);
+            .append("wdtConfigMap", wdtConfigMap)
+            .append("rollbackIfRequireStart", rollbackIfRequireStart);
 
     return builder.toString();
   }
@@ -705,7 +705,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrideSecrets)
             .append(wdtConfigMapSecret)
             .append(wdtConfigMap)
-            .append(experimental);
+            .append(experimental)
+            .append(rollbackIfRequireStart);
 
     return builder.toHashCode();
   }
@@ -742,7 +743,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(wdtConfigMapSecret, rhs.wdtConfigMapSecret)
             .append(wdtConfigMap, rhs.wdtConfigMap)
-            .append(experimental, rhs.experimental);
+            .append(experimental, rhs.experimental)
+            .append(rollbackIfRequireStart, rhs.rollbackIfRequireStart);
 
     return builder.isEquals();
   }

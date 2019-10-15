@@ -29,7 +29,7 @@ public class IntrospectorJobEnvVars {
   /**
    * The life cycle update method used by the introspection job.
    */
-  public static final String LIFECYCLE_UPDATE_METHOD = "LIFECYCLE_UPDATE_METHOD";
+  public static final String ROLLBACK_IF_REQUIRE_RESTART = "ROLLBACK_IF_REQUIRE_RESTART";
 
   /**
    * Returns true if the specified environment variable name is reserved by the operator for communication with

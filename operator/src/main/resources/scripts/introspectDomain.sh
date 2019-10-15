@@ -300,18 +300,23 @@ function createWLDomain() {
 
                 cat /tmp/diffed_model.json
 
+                ROLLBACK_FLAG=""
+                if [ ! -z "${ROLLBACK_IF_REQUIRE_RESTART}" ] && [ "${ROLLBACK_IF_REQUIRE_RESTART}" == "true" ]; then
+                    ROLLBACK_FLAG="-rollback_if_require_restart"
+                fi
                 # no need for encryption phrase because the diffed model has real value
 
                 yes ${admin_pwd} | ${wdt_bin}/updateDomain.sh -oracle_home ${MW_HOME} \
                  -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
-                 /tmp/diffed_model.json ${variable_list} -domain_home ${DOMAIN_HOME}
+                 /tmp/diffed_model.json ${variable_list} -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG}
 
                 retcode=$?
-                trace "Completed update"
-                if [ ${retcode} -eq 103 ] ; then
-                    trace ">>>  updatedomainResult=103"
-                elif [ ${retcode} -eq 102 ] ; then
-                    trace ">>>  updatedomainResult=102"
+                trace "Completed update="${retcode}
+                # Do we still have 103 and 102 ?
+                # How do we return the error if rc = 3 ?
+                if [ ${retcode} -eq 3 ] ; then
+                    trace ">>>  updatedomainResult=3"
+                    exit 1
                 elif [ ${retcode} -ne 0 ] ; then
                     trace ">>>  updatedomainResult=${retcode}"
                     exit 1
@@ -385,7 +390,7 @@ model_root="${model_home}"
 archive_root="${model_home}"
 variable_root="${model_home}"
 wdt_bin="/u01/wdt/weblogic-deploy/bin"
-operator_md5=$DOMAIN_HOME/operatormd5
+operator_md5=${DOMAIN_HOME}/operatormd5
 archive_zip_changed=0
 
 
