@@ -448,6 +448,7 @@ public class Main {
 
   private static void dispatchNamespaceWatch(Watch.Response<V1Namespace> item) {
     V1Namespace c = item.object;
+    LOGGER.info(MessageKeys.ENTER_METHOD, "dispatchNamespaceWatch", " c=" + c);
     if (c != null) {
       String ns = c.getMetadata().getName();
       switch (item.type) {
@@ -492,7 +493,7 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      createNamespaceWatcher("V1");
+      createNamespaceWatcher("1");
       return doNext(packet);
     }
   }

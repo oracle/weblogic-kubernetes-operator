@@ -22,10 +22,16 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.Pool;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class WatchBuilder {
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   /** Always true for watches. */
   private static final boolean WATCH = true;
 
@@ -145,11 +151,12 @@ public class WatchBuilder {
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
   public WatchI<V1Namespace> createNamespacesWatch() throws ApiException {
+    LOGGER.info(MessageKeys.ENTER_METHOD, "createNamespacesWatch", " ");
     return FACTORY.createWatch(
         ClientPool.getInstance(),
         callParams,
         V1Namespace.class,
-        null);
+        new ListNamespaceCall());
   }
 
   private Integer getSocketTimeout(CallParams callParams) {
@@ -416,7 +423,7 @@ public class WatchBuilder {
     }
   }
 
-  private class ListNamespacesCall implements BiFunction<ApiClient, CallParams, Call> {
+  private class ListNamespaceCall implements BiFunction<ApiClient, CallParams, Call> {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
