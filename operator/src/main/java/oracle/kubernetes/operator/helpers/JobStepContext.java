@@ -313,7 +313,7 @@ public abstract class JobStepContext extends BasePodStepContext {
       podSpec.addVolumesItem(
           new V1Volume()
               .name(opssKeyWalletConfigMap + "-volume")
-              .secret(getWdtConfigMapSecretVolumeSource(opssKeyWalletConfigMap)));
+              .configMap(getOpssKeyWalletVolumeSource(opssKeyWalletConfigMap)));
     }
 
     return podSpec;
@@ -470,7 +470,7 @@ public abstract class JobStepContext extends BasePodStepContext {
     return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
   }
 
-  protected V1SecretVolumeSource getWdtConfigMapSecretVolumeSource(String name) {
-    return new V1SecretVolumeSource().secretName(name).defaultMode(420);
+  protected V1ConfigMapVolumeSource getOpssKeyWalletVolumeSource(String name) {
+    return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
   }
 }
