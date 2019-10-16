@@ -118,27 +118,25 @@ public class LoadBalancer {
 
   private void upgradeTraefikNamespace() throws Exception {
 
-    synchronized (this) {
-      String namespace = getKubernetesNamespaceToUpdate((String)lbMap.get("namespace"));
-      LoggerHelper.getLocal().log(Level.INFO, "namespace to update" + namespace);
-      StringBuffer cmd = new StringBuffer("helm upgrade ");
-      cmd.append("--reuse-values ")
-          .append("--set ")
-          .append("\"")
-          .append("kubernetes.namespaces=")
-          .append(namespace)
-          .append("\"")
-          .append(" traefik-operator")
-          .append(" stable/traefik ");
+    String namespace = getKubernetesNamespaceToUpdate((String)lbMap.get("namespace"));
+    LoggerHelper.getLocal().log(Level.INFO, "namespace to update" + namespace);
+    StringBuffer cmd = new StringBuffer("helm upgrade ");
+    cmd.append("--reuse-values ")
+        .append("--set ")
+        .append("\"")
+        .append("kubernetes.namespaces=")
+        .append(namespace)
+        .append("\"")
+        .append(" traefik-operator")
+        .append(" stable/traefik ");
 
-      LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
-      ExecResult result = ExecCommand.exec(cmd.toString());
-      if (result.exitValue() != 0) {
-        reportHelmInstallFailure(cmd.toString(), result);
-      }
-      String outputStr = result.stdout().trim();
-      LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
+    LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      reportHelmInstallFailure(cmd.toString(), result);
     }
+    String outputStr = result.stdout().trim();
+    LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
 
   /**

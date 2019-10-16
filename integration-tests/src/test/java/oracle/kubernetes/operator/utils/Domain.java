@@ -105,8 +105,10 @@ public class Domain {
     this.createDomainResource = createDomainResource;
     createPv();
     createSecret();
-    if (createLoadBalancer) {
-      createLoadBalancer();
+    synchronized (this) {
+      if (createLoadBalancer) {
+        createLoadBalancer();
+      }
     }
     generateInputYaml();
     callCreateDomainScript(userProjectsDir);
