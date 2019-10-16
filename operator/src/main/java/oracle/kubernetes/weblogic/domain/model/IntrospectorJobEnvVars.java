@@ -21,9 +21,19 @@ public class IntrospectorJobEnvVars {
   public static final String INTROSPECT_HOME = "INTROSPECT_HOME";
 
   /**
-   * The credentials used by the introspection job.
+   * The credentials used by the introspection job - weblogic credenitals.
    */
   public static final String CREDENTIALS_SECRET_NAME = "CREDENTIALS_SECRET_NAME";
+
+  /**
+   * The credentials used by the introspection job - opss key passphrase.
+   */
+  public static final String OPSS_KEY_PASSPHRASE_NAME = "OPSS_KEY_PASSPHRASE_NAME";
+
+  /**
+   * The credentials used by the introspection job - wdt encryption passphrase.
+   */
+  public static final String WDT_ENCRYPTION_PASSPHRASE_NAME = "WDT_ENCRYPTION_PASSPHRASE_NAME";
 
 
   /**

@@ -77,6 +77,23 @@ public class DomainSpec extends BaseConfiguration {
   private V1SecretReference webLogicCredentialsSecret;
 
   /**
+   * Reference to secret opss key passphrase.
+   */
+  @Description(
+      "opss key passphrase.")
+  @Valid
+  private V1SecretReference opssKeyPassPhrase;
+
+  /**
+   * Reference to wdt model encryption pass phrase.
+   */
+  @Description(
+      "wdt model encryption key passphrase.")
+  @Valid
+  private V1SecretReference wdtEncryptionPassPhrase;
+
+
+  /**
    * The in-pod name of the directory to store the domain, node manager, server logs, and server
    * .out files in.
    */
@@ -215,12 +232,12 @@ public class DomainSpec extends BaseConfiguration {
   private String wdtConfigMap;
 
   /**
-   * The name of the wdt model encryption passphrase used for optional wdt tool.
+   * The name of the config map to store the opss key wallet file.
    *
    * @since 2.3.1
    */
-  @Description("The name of the wdt model encryption passphrase  used for optional wdt tool.")
-  private String wdtConfigMapSecret;
+  @Description("The name of the config map to store the opss key wallet file")
+  private String opssKeyWalletConfigMap;
 
   /**
    * Rollback dynamic changes if the updates require restart.
@@ -381,6 +398,49 @@ public class DomainSpec extends BaseConfiguration {
    */
   public DomainSpec withWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
+    return this;
+  }
+
+
+  public V1SecretReference getOpssKeyPassPhrase() {
+    return opssKeyPassPhrase;
+  }
+
+  @SuppressWarnings("unused")
+  public void setOpssKeyPassPhrase(V1SecretReference opssKeyPassPhrase) {
+    this.opssKeyPassPhrase = opssKeyPassPhrase;
+  }
+
+  /**
+   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * contain keys names 'username' and 'password'. Required.
+   *
+   * @param opssKeyPassPhrase WebLogic startup credentials secret
+   * @return this
+   */
+  public DomainSpec withOpssKeyPassPhrase(V1SecretReference opssKeyPassPhrase) {
+    this.webLogicCredentialsSecret = opssKeyPassPhrase;
+    return this;
+  }
+
+
+  public V1SecretReference getWdtEncryptionPassPhrase() {
+    return wdtEncryptionPassPhrase;
+  }
+
+  @SuppressWarnings("unused")
+  public void setWdtEncryptionPassPhrase(V1SecretReference wdtEncryptionPassPhrase) {
+    this.wdtEncryptionPassPhrase = wdtEncryptionPassPhrase;
+  }
+
+  /**
+   * Reference to secret wdt model encryption pass phrase.
+   *
+   * @param wdtEncryptionPassPhrase WebLogic startup credentials secret
+   * @return this
+   */
+  public DomainSpec withWdtEncryptionPassPhrase(V1SecretReference wdtEncryptionPassPhrase) {
+    this.wdtEncryptionPassPhrase = wdtEncryptionPassPhrase;
     return this;
   }
 
@@ -651,21 +711,21 @@ public class DomainSpec extends BaseConfiguration {
    * @return wdt model encryption passphrase secret name
    */
   @Nullable
-  String getWdtConfigMapSecret() {
-    return wdtConfigMapSecret;
+  String getOpssKeyWalletConfigMap() {
+    return opssKeyWalletConfigMap;
   }
 
   /**
    * Set wdt model encryption passphrase secret name.
    *
-   * @param wdtConfigMapSecret wdt model encryption passphrase secret name
+   * @param opssKeyWalletConfigMap wdt model encryption passphrase secret name
    */
-  void setWdtConfigMapSecret(@Nullable String wdtConfigMapSecret) {
-    this.wdtConfigMapSecret = wdtConfigMapSecret;
+  void setOpssKeyWalletConfigMap(@Nullable String opssKeyWalletConfigMap) {
+    this.opssKeyWalletConfigMap = opssKeyWalletConfigMap;
   }
 
   private boolean hasWdtConfigMapSecret() {
-    return wdtConfigMapSecret != null;
+    return opssKeyWalletConfigMap != null;
   }
 
   @Nullable
@@ -746,7 +806,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets)
             .append("experimental", experimental)
-            .append("wdtConfigMapSecret", wdtConfigMapSecret)
+            .append("opssKeyWalletConfigMap", opssKeyWalletConfigMap)
             .append("wdtConfigMap", wdtConfigMap)
             .append("rollbackIfRequireStart", rollbackIfRequireStart)
             .append("useOnlineUpdate", useOnlineUpdate)
@@ -778,7 +838,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog)
             .append(configOverrides)
             .append(configOverrideSecrets)
-            .append(wdtConfigMapSecret)
+            .append(opssKeyWalletConfigMap)
             .append(wdtConfigMap)
             .append(experimental)
             .append(rollbackIfRequireStart)
@@ -819,7 +879,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
-            .append(wdtConfigMapSecret, rhs.wdtConfigMapSecret)
+            .append(opssKeyWalletConfigMap, rhs.opssKeyWalletConfigMap)
             .append(wdtConfigMap, rhs.wdtConfigMap)
             .append(experimental, rhs.experimental)
             .append(useOnlineUpdate, rhs.useOnlineUpdate)

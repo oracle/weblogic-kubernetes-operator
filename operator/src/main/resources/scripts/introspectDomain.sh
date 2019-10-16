@@ -118,9 +118,9 @@ function checkExistInventory() {
     if [ -f ${inventory_passphrase_md5} ] ; then
         has_md5=1
         source -- ${inventory_passphrase_md5}
-        found_wdt_pwd=$(find ${wdt_secret_path} -name wdtpassword -type f)
-        if [ -f "${found_wdt_pwd}" ] ; then
-            target_md5=$(md5sum $found_wdt_pwd | cut -d' ' -f1)
+        #found_wdt_pwd=$(find ${wdt_secret_path} -name wdtpassword -type f)
+        if [ -f "$(get_wdt_encryption_passphrase)" ] ; then
+            target_md5=$(md5sum $(get_wdt_encryption_passphrase) | cut -d' ' -f1)
         fi
         for K in "${!inventory_passphrase[@]}"; do
             if [ ! "$target_md5" == "${inventory_passphrase[$K]}" ]; then
@@ -141,6 +141,26 @@ function checkExistInventory() {
     fi
     return 0
 
+}
+
+function get_wdt_encryption_passphrase() {
+    #found_wdt_pwd=$(find ${wdt_secret_path} -name wdtpassword -type f)
+    echo "/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
+}
+
+function get_opss_key_passphrase() {
+    echo "/weblogic-operator/opss-key-passphrase/passphrase"
+}
+
+function get_opss_key_wallet() {
+    if [ -d /weblogic-operator/opss-key-wallet ] ; then
+       found_wallet=$(find /weblogic-operator/opss-key-wallet -name ewallet.p12 -type f)
+    fi
+    if [ ! -z ${found_wallet} ] && [ -f ${found_wallet} ] ; then
+        echo ${found_wallet}
+    else
+        echo "/weblogic-operator/introspectormd5/ewallet.p12"
+    fi
 }
 
 function createWLDomain() {
@@ -220,16 +240,15 @@ function createWLDomain() {
 
     use_encryption=""
     use_passphrase=0
-    found_wdt_pwd=$(find ${wdt_secret_path} -name wdtpassword -type f)
-    if [ -f "${found_wdt_pwd}" ] ; then
-        inventory_passphrase[wdtpassword]=$(md5sum $found_wdt_pwd | cut -d' ' -f1)
-        wdt_passphrase=$(cat ${found_wdt_pwd})
+    if [ -f "$(get_wdt_encryption_passphrase)" ] ; then
+        inventory_passphrase[wdtpassword]=$(md5sum $(get_wdt_encryption_passphrase) | cut -d' ' -f1)
+        wdt_passphrase=$(cat $(get_wdt_encryption_passphrase))
         use_passphrase=1
     fi
 
-    found_opss_passphrase=$(find ${wdt_secret_path} -name opsspassphrase -type f)
-    if [ -f "${found_opss_passphrase}" ] ; then
-        export OPSS_PASSPHRASE=$(cat ${found_opss_passphrase})
+    #found_opss_passphrase=$(find ${wdt_secret_path} -name opsspassphrase -type f)
+    if [ -f "$(get_opss_key_passphrase)" ] ; then
+        export OPSS_PASSPHRASE=$(cat $(get_opss_key_passphrase))
     fi
     # just in case is not set
     if [ -z "${OPSS_PASSPHRASE}" ] ; then
@@ -258,6 +277,8 @@ function createWLDomain() {
         #  We cannot strictly run create domain for JRF type because it's tied to a database schema
         #  We shouldn't require user to drop the db first since it may have data in it
         #  Can we safely switch to use WLS as type.
+        #
+        opss_wallet=$(get_opss_key_wallet)
         if [ -f "${opss_wallet}" ] ; then
             if [ ! -z ${KEEP_JRF_SCHEMA} ] && [ ${KEEP_JRF_SCHEMA} == "true" ] ; then
                trace "keeping rcu schema"
@@ -383,10 +404,8 @@ inventory_image_md5="/weblogic-operator/introspectormd5/inventory_image.md5"
 inventory_cm_md5="/weblogic-operator/introspectormd5/inventory_cm.md5"
 inventory_passphrase_md5="/weblogic-operator/introspectormd5/inventory_passphrase.md5"
 inventory_merged_model="/weblogic-operator/introspectormd5/merged_model.json"
-opss_wallet="/weblogic-operator/introspectormd5/ewallet.p12"
 domain_zipped="/weblogic-operator/introspectormd5/domainzip.secure"
 wdt_config_root="/weblogic-operator/wdt-config-map"
-wdt_secret_path="/weblogic-operator/wdt-config-map-secrets"
 model_home="/u01/wdt/models"
 model_root="${model_home}"
 archive_root="${model_home}"

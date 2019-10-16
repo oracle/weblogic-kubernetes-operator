@@ -353,6 +353,26 @@ public class Domain {
   }
 
   /**
+   * Reference to secret opss key passphrase.
+   *
+   * @return opss key passphrase
+   */
+  public V1SecretReference getOpssKeyPassPhrase() {
+    return spec.getOpssKeyPassPhrase();
+  }
+
+  /**
+   * Reference to secret wdt encryption key passphrase.
+   *
+   * @return wdt encryption passphrase
+   */
+  public V1SecretReference getWdtEncryptionPassPhrase() {
+    return spec.getWdtEncryptionPassPhrase();
+  }
+
+
+
+  /**
    * Returns the domain unique identifier.
    *
    * @return domain UID
@@ -468,12 +488,12 @@ public class Domain {
   }
 
   /**
-   * Returns the wdt model encryption passphrase secret name.
+   * Returns the opss key config map.
    *
-   * @return wdt model encryption passphrase secret name.
+   * @return opss key config map.
    */
-  public String getWdtConfigMapSecret() {
-    return spec.getWdtConfigMapSecret();
+  public String getOpssKeyWalletConfigMap() {
+    return spec.getOpssKeyWalletConfigMap();
   }
 
   @Override

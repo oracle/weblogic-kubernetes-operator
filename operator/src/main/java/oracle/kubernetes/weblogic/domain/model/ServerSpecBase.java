@@ -79,7 +79,7 @@ public abstract class ServerSpecBase implements ServerSpec {
 
   @Override
   public String getWdtConfigMapSecrets() {
-    return domainSpec.getWdtConfigMapSecret();
+    return domainSpec.getOpssKeyWalletConfigMap();
   }
 
   @Override

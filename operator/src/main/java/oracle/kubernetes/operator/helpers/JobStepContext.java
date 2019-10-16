@@ -100,6 +100,20 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWebLogicCredentialsSecret().getName();
   }
 
+  String getOpssKeyPassPhraseName() {
+    if (getDomain().getOpssKeyPassPhrase() != null)
+      return getDomain().getOpssKeyPassPhrase().getName();
+    else
+      return null;
+  }
+
+  String getWdtEncryptPassPhraseName() {
+    if (getDomain().getWdtEncryptionPassPhrase() != null)
+      return getDomain().getWdtEncryptionPassPhrase().getName();
+    else
+      return null;
+  }
+
   // ----------------------- step methods ------------------------------
 
   abstract List<V1Volume> getAdditionalVolumes();
@@ -186,8 +200,8 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtConfigMap();
   }
 
-  String getWdtConfigMapSecret() {
-    return getDomain().getWdtConfigMapSecret();
+  String getOpssKeyWalletConfigMap() {
+    return getDomain().getOpssKeyWalletConfigMap();
   }
 
   private ResponseStep<V1Job> createResponse(Step next) {
@@ -258,6 +272,14 @@ public abstract class JobStepContext extends BasePodStepContext {
                 new V1Volume()
                     .name(getDomainUid() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
                     .configMap(getIntrospectMD5VolumeSource()));
+    if (getOpssKeyPassPhraseVolume() != null) {
+      podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
+          getOpssKeyPassPhraseVolume()));
+    }
+    if (getWdtEncryptPassPhraseVolume() != null) {
+      podSpec.addVolumesItem(new V1Volume().name(WDT_ENCRYPT_PASSPHRASE_VOLUME)
+          .secret(getWdtEncryptPassPhraseVolume()));
+    }
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
@@ -286,12 +308,12 @@ public abstract class JobStepContext extends BasePodStepContext {
               .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
     }
 
-    String wdtConfigMapSecret = getWdtConfigMapSecret();
-    if (wdtConfigMapSecret != null) {
+    String opssKeyWalletConfigMap = getOpssKeyWalletConfigMap();
+    if (opssKeyWalletConfigMap != null) {
       podSpec.addVolumesItem(
           new V1Volume()
-              .name(wdtConfigMapSecret + "-volume")
-              .secret(getWdtConfigMapSecretVolumeSource(wdtConfigMapSecret)));
+              .name(opssKeyWalletConfigMap + "-volume")
+              .secret(getWdtConfigMapSecretVolumeSource(opssKeyWalletConfigMap)));
     }
 
     return podSpec;
@@ -306,6 +328,14 @@ public abstract class JobStepContext extends BasePodStepContext {
               getDomainUid() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX,
               "/weblogic-operator/introspectormd5")
               .readOnly(false));
+
+    if (getOpssKeyPassPhraseVolume() != null) {
+      container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_KEYPASSPHRASE_VOLUME, OPSS_KEY_MOUNT_PATH));
+    }
+    if (getWdtEncryptPassPhraseVolume() != null) {
+      container.addVolumeMountsItem(readOnlyVolumeMount(WDT_ENCRYPT_PASSPHRASE_VOLUME, WDT_ENCRYPT_KEY_MOUNT_PATH));
+    }
+
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       container.addVolumeMountsItem(additionalVolumeMount);
@@ -328,12 +358,12 @@ public abstract class JobStepContext extends BasePodStepContext {
           readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
     }
 
-    String wdtConfigMapSecret = getWdtConfigMapSecret();
-    if (wdtConfigMapSecret != null) {
+    String opssKeyWalletConfigMap = getOpssKeyWalletConfigMap();
+    if (opssKeyWalletConfigMap != null) {
       container.addVolumeMountsItem(
           readOnlyVolumeMount(
-              wdtConfigMapSecret + "-volume",
-              WDTCONFIGMAP_SECRETS_MOUNT_PATH + '/' + wdtConfigMapSecret));
+              opssKeyWalletConfigMap + "-volume",
+              OPSS_KEY_WALLET_CM_MOUNT_PATH + '/' + opssKeyWalletConfigMap));
     }
 
     return container;
@@ -361,6 +391,28 @@ public abstract class JobStepContext extends BasePodStepContext {
     return new V1SecretVolumeSource()
           .secretName(getWebLogicCredentialsSecretName())
           .defaultMode(420);
+  }
+
+  private V1SecretVolumeSource getOpssKeyPassPhraseVolume() {
+    if (getOpssKeyPassPhraseName() != null) {
+      V1SecretVolumeSource result =  new V1SecretVolumeSource()
+          .secretName(getOpssKeyPassPhraseName())
+          .defaultMode(420);
+      result.setOptional(true);
+      return result;
+    }
+    return null;
+  }
+
+  private V1SecretVolumeSource getWdtEncryptPassPhraseVolume() {
+    if (getWdtEncryptPassPhraseName() != null) {
+      V1SecretVolumeSource result = new V1SecretVolumeSource()
+          .secretName(getWdtEncryptPassPhraseName())
+          .defaultMode(420);
+      result.setOptional(true);
+      return result;
+    }
+    return null;
   }
 
   private V1ConfigMapVolumeSource getConfigMapVolumeSource() {

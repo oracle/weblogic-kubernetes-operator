@@ -87,7 +87,10 @@ spec:
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
   wdtConfigMap : wdt-config-map
-  #wdtConfigMapSecret : simple-domain1-wdt-secret
+  #
+  # opss wallet config map name. Contains the waller file ewallet.p12 in base64 format
+  #
+  #opssKeyWalletConfigMap : simple-domain1-opss-key
   #
   # user online update or not (default is not)
   #useOnlineUpdate: "true"
@@ -96,5 +99,25 @@ spec:
   # Valid WDT_DOMAIN_TYPE_VALUES are 'WLS', 'JRF', and 'RestrictedJRF'
   wdtDomainType: "@@DOMTYPE@@"
   #
+  # use online update or not (default is false)
+  #useOnlineUpdate: true
+  #
   # keep jrf schema between updates. If not set default to false
-  keepJRFSchema: "true"
+  #
+  #keepJRFSchema: "true"
+  #
+  # For life cycle update, if it is set to true it will cancel the update and error out
+  # default is false if not set
+  #
+  #rollbackIfRequireStart: true
+  #
+  # k8 secret name for the opss extract key (it should have a literal called passphrase)
+  #
+  #opssKeyPassPhrase:
+  #  name: opss-key-passphrase-secret (it should have a literal called passphrase)
+  #
+  # k8 secret name if the wdt model is encrypted
+  #
+  #wdtEncryptionPassPhrase:
+  #  name: wdt-encrypt-passphrase-secret
+
