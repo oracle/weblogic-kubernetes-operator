@@ -9,8 +9,10 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/common/utility.sh
 
 function usage {
-  echo "usage: ${script} -s <schemaPrefix> -d <dburl> -i <image> -p <docker-store> [-h]"
+  echo "usage: ${script} -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -p <docker-store> [-h]"
   echo "  -s RCU Schema Prefix (needed)"
+  echo "  -t RCU Schema Type (optional)"
+  echo "      (supported values: fmw(default),soa,osb,soaosb,soaess,soaessosb) "
   echo "  -d RCU Oracle Database URL (optional) "
   echo "      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s) "
   echo "  -p FMW Infrastructure ImagePull Secret (optional) "
@@ -21,9 +23,11 @@ function usage {
   exit $1
 }
 
-while getopts ":h:s:d:p:i:" opt; do
+while getopts ":h:s:d:p:i:t:" opt; do
   case $opt in
     s) schemaPrefix="${OPTARG}"
+    ;;
+    t) rcuType="${OPTARG}"
     ;;
     d) dburl="${OPTARG}"
     ;;
@@ -58,10 +62,6 @@ fi
 if [ -z ${fmwimage} ]; then
  fmwimage="container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3"
 fi
-
-rcuType=""
-[[ $fmwimage =~ .*soasuite.* ]] && rcuType=soa
-[[ $fmwimage =~ .*fmw-infr.* ]] && rcuType=fmw
 
 echo "ImagePullSecret[$pullsecret] Image[${fmwimage}] dburl[${dburl}] rcuType[${rcuType}]"
 
