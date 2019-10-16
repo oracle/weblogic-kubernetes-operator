@@ -68,7 +68,7 @@ echo "ImagePullSecret[$pullsecret] Image[${fmwimage}] dburl[${dburl}] rcuType[${
 dbpod=`kubectl get po | grep oracle | cut -f1 -d " " `
 if [ -z ${dbpod} ]; then
   echo "Oracle deployment pod not found in [default] namespace"
-  echo "Execute the script create-db-service.sh"
+  echo "Execute the script start-db-service.sh"
   exit -2
 fi
 
@@ -80,8 +80,7 @@ checkPodState ${dbpod} default "1/1"
 # Modify the ImagePullSecret based on input
 sed -i -e '$d' ${scriptDir}/common/rcu.yaml
 echo '           - name: docker-store' >> ${scriptDir}/common/rcu.yaml
-sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/rcu.yaml
-sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/rcu.yaml
+sed -i -e "s?name: docker-store?name: ${pullsecret}?g" ${scriptDir}/common/rcu.yaml
 sed -i -e "s?image:.*?image: ${fmwimage}?g" ${scriptDir}/common/rcu.yaml
 kubectl apply -f ${scriptDir}/common/rcu.yaml
 
