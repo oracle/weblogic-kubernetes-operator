@@ -1183,7 +1183,11 @@ public class TestUtils {
         "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
     domainMap.put("logHomeOnPV", "true");
     domainMap.put("clusterType", "CONFIGURED");
-    domainMap.put("image", prefix.toLowerCase() + "-dominimage-" + suffixCount + ":latest");
+    if (prefix != null && !prefix.trim().equals("")) {
+      domainMap.put("image", prefix.toLowerCase() + "-dominimage-" + suffixCount + ":latest");
+    } else {
+      domainMap.put("image", "dominimage-" + suffixCount + ":latest");
+    }
     return domainMap;
   }
 

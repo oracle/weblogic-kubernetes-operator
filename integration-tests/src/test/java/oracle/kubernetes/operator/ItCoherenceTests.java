@@ -209,8 +209,8 @@ public class ItCoherenceTests extends BaseTest {
     // the
     // sleep and iterations
     //
-    setWaitTimePod(2);
-    setMaxIterationsPod(150);
+    // setWaitTimePod(2);
+    // setMaxIterationsPod(150);
 
     domain.verifyDomainServerPodRestart(
         "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
