@@ -64,7 +64,7 @@ public class ItManagedCoherence extends BaseTest {
           "  - clusterName: dataCluster\n"
               + "    serverStartState: \"RUNNING\"\n"
               + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
-      customDomainTemplate = BaseTest.getResultDir() + "/customDomainTemplate.yaml";
+      customDomainTemplate = BaseTest.getResultDir() + "/" + testClassName + "_customDomainTemplate.yaml";
 
       Files.copy(
           Paths.get(template),
