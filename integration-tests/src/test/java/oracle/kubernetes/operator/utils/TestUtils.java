@@ -1174,6 +1174,7 @@ public class TestUtils {
     if (wdt) {
       domainMap.put("domainHomeImageBuildPath",
           "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");
+      domainMap.put("createDomainFilesDir", "wdt");
     } else {
       domainMap.put("domainHomeImageBuildPath",
           "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
