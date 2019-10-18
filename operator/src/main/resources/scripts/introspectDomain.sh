@@ -349,7 +349,7 @@ function createWLDomain() {
                 echo "Completed onine update="${ret}
 
                 # TODO: check all possible values
-                
+
                 if [ ${ret} -eq ${MODELS_SAME} ] ; then
                     trace ">>>  updatedomainResult=3"
                     exit 1

@@ -209,14 +209,11 @@ class ModelDiffer:
     def _is_safe_addition(self, model):
         """
         check the items in all_added to see if can be used for online update
-        return 1 tbd
-               0 for safe online update
-               2 fatal for any update
+        return 0 false ;
+            1 true ;
+            2 for fatal
         """
         # allows add attribute to existing entity
-
-        __safe = 0
-        __fatal = 2
 
         found_in_past_dictionary = 1
         has_topology=0
@@ -236,10 +233,10 @@ class ModelDiffer:
             return FATAL_MODEL_CHANGES
 
         if found_in_past_dictionary:
-            return __safe
+            return SAFE_ONLINE_UPDATE
 
         # allow new additions for anything ??
-        return __safe
+        return SAFE_ONLINE_UPDATE
 
     def _in_model(self, dictionary, keylist):
         """
