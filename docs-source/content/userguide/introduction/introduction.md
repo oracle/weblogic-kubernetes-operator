@@ -38,7 +38,7 @@ For more information, see [OpenShift]({{<relref "/security/openshift.md">}}) in 
 ### Important note about development-focused Kubernetes distributions
 
 There are a number of development-focused distributions of Kubernetes, like kind, Minikube, Minishift and so on.
-Often these run Kubernetes in a virtual machine on you development machine.  We have found that these distributions
+Often these run Kubernetes in a virtual machine on your development machine.  We have found that these distributions
 present some extra challenges in areas like:
 
 * Separate Docker image stores, making it necessary to save/load images to move them between Docker file systems,
