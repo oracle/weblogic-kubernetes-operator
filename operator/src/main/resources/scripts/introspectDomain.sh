@@ -350,7 +350,7 @@ function createWLDomain() {
 
                 # TODO: check all possible values
 
-                if [ ${ret} -eq ${MODELS_SAME} ] ; then
+                if [ ${ret} -eq ${ROLLBACK_ERROR} ] ; then
                     trace ">>>  updatedomainResult=3"
                     exit 1
                 elif [ ${ret} -ne 0 ] ; then
@@ -448,6 +448,7 @@ UNSAFE_ONLINE_UPDATE=0
 SAFE_ONLINE_UPDATE=1
 FATAL_MODEL_CHANGES=2
 MODELS_SAME=3
+ROLLBACK_ERROR=3
 
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
