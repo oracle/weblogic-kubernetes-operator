@@ -328,7 +328,7 @@ public class Operator {
         .append(operatorNS)
         .append(" --set \"imagePullPolicy=")
         .append(imagePullPolicy)
-        .append("\" --wait --timeout 120");
+        .append("\" --wait --timeout 180");
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -347,7 +347,7 @@ public class Operator {
         .append(" --set \"")
         .append(upgradeSet)
         .append("\" --reuse-values ")
-        .append(" --wait --timeout 120");
+        .append(" --wait --timeout 180");
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
