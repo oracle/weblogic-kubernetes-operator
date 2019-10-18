@@ -40,7 +40,7 @@ The official document that defines the [supported configurations is here](https:
 
 In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud
 Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
-Container Servies for use with Kubernetes* on OCI Compute; and on "authorized cloud platforms".
+Container Servies for use with Kubernetes* on OCI Compute; and on "authorized cloud environments".
 
 ### OpenShift
 
