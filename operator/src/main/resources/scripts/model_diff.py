@@ -1,6 +1,10 @@
 import sets
-import sys
+import sys, os
 
+UNSAFE_ONLINE_UPDATE=0
+SAFE_ONLINE_UPDATE=1
+FATAL_MODEL_CHANGES=2
+MODELS_SAME=3
 
 class ModelDiffer:
 
@@ -174,29 +178,33 @@ class ModelDiffer:
         """
         Is it a safe difference to do online update.
         :param model: diffed model
-        return 0 false 1 true 2 for fatal
+        return 0 false ;
+            1 true ;
+            2 for fatal
+            3 for no difference
         """
 
         # filter out any appDeployments for now. It is possible to support app but
         # case to handle include deletion, redeploy...
         #
         if model.has_key('appDeployments'):
-            return 0
+            return UNSAFE_ONLINE_UPDATE
 
         # if nothing changed
-        if not model:
-            return 0
+        if not model or not bool(model):
+            return MODELS_SAME
 
         # if there is anything not in existing model
         # WDT does not support certain type of deletion - entity level and no apps
 
         if len(all_removed) > 0:
-            return 0
+            return UNSAFE_ONLINE_UPDATE
 
         if len(all_added) > 0:
             return self._is_safe_addition(model)
 
-        return 1
+
+        return SAFE_ONLINE_UPDATE
 
     def _is_safe_addition(self, model):
         """
@@ -206,6 +214,10 @@ class ModelDiffer:
                2 fatal for any update
         """
         # allows add attribute to existing entity
+
+        __safe = 0
+        __fatal = 2
+
         found_in_past_dictionary = 1
         has_topology=0
         for itm in all_added:
@@ -221,13 +233,13 @@ class ModelDiffer:
         # return 2 ?
         if has_topology and not found_in_past_dictionary:
             print 'Found changes not supported for update: %s. Exiting' % (itm)
-            return 2
+            return FATAL_MODEL_CHANGES
 
         if found_in_past_dictionary:
-            return 0
+            return __safe
 
         # allow new additions for anything ??
-        return 0
+        return __safe
 
     def _in_model(self, dictionary, keylist):
         """
@@ -366,30 +378,14 @@ class ModelFileDiffer:
         return obj.is_safe_diff(net_diff)
 
 def debug(format_string, *arguments):
-    #print format_string % (arguments)
+    if os.environ.has_key('DEBUG_INTROSPECT_JOB'):
+        print format_string % (arguments)
     return
 
 def main():
     obj = ModelFileDiffer(sys.argv[1], sys.argv[2])
     rc=obj.compare()
     exit(exitcode=rc)
-    # if not obj.compare():
-    #     # print 'all changes '
-    #     # print all_changes
-    #     # print 'all added '
-    #     # print all_added
-    #     # print 'all removed '
-    #     # print all_removed
-    #     exit(exitcode=1)
-    # else:
-    #     # print 'all changes '
-    #     # print all_changes
-    #     # print 'all added '
-    #     # print all_added
-    #     # print 'all removed '
-    #     # print all_removed
-    #     exit(exitcode=0)
-
 
 if __name__ == "main":
     all_changes = []

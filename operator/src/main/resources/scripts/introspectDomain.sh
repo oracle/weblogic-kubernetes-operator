@@ -314,37 +314,50 @@ function createWLDomain() {
                 ]; then
 
             ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${DOMAIN_HOME}/wlsdeploy/domain_model.json \
-                ${inventory_merged_model} || exit 1
+                ${inventory_merged_model}
+            diff_rc=$?
+            trace "model diff returns "${diff_rc}
+            cat /tmp/diffed_model.json
 
-            if [ $? -eq 0 ] ; then
+            # 0 not safe
+            # 1 safe for online changes
+            # 2 fatal
+            # 3 no difference
+
+            # Perform online changes
+
+            if [ ${diff_rc} -eq ${SAFE_ONLINE_UPDATE} ] ; then
                 trace "Using online update"
+
+                
                 admin_user=$(cat /weblogic-operator/secrets/username)
                 admin_pwd=$(cat /weblogic-operator/secrets/password)
 
-                cat /tmp/diffed_model.json
 
                 ROLLBACK_FLAG=""
                 if [ ! -z "${ROLLBACK_IF_REQUIRE_RESTART}" ] && [ "${ROLLBACK_IF_REQUIRE_RESTART}" == "true" ]; then
                     ROLLBACK_FLAG="-rollback_if_require_restart"
                 fi
                 # no need for encryption phrase because the diffed model has real value
-
+                # note: the result of updateDomain.sh is piped and set to variable
+                # this is necessary to avoid broken pipe 141 return code
+                #
                 yes ${admin_pwd} | ${wdt_bin}/updateDomain.sh -oracle_home ${MW_HOME} \
                  -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
-                 /tmp/diffed_model.json ${variable_list} -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG}
+                 /tmp/diffed_model.json -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG} | ret=$?
 
-                retcode=$?
-                trace "Completed update="${retcode}
-                # Do we still have 103 and 102 ?
-                # How do we return the error if rc = 3 ?
-                if [ ${retcode} -eq 3 ] ; then
+                echo "Completed onine update="${ret}
+
+                # TODO: check all possible values
+                
+                if [ ${ret} -eq ${MODELS_SAME} ] ; then
                     trace ">>>  updatedomainResult=3"
                     exit 1
-                elif [ ${retcode} -ne 0 ] ; then
-                    trace ">>>  updatedomainResult=${retcode}"
+                elif [ ${ret} -ne 0 ] ; then
+                    trace ">>>  updatedomainResult=${ret}"
                     exit 1
                 else
-                    trace ">>>  updatedomainResult=${retcode}"
+                    trace ">>>  updatedomainResult=${ret}"
                 fi
                 trace "wrote updateResult"
 
@@ -364,8 +377,26 @@ function createWLDomain() {
 
             fi
 
-            if [ $? -eq 2 ] ; then
+            # Changes are not supported - shape changes
+            if [ ${diff_rc} -eq ${FATAL_MODEL_CHANGES} ] ; then
                 trace "Shape changes in the model is not supported"
+                exit 1
+            fi
+
+            # nothing changed in WDT artifacts
+            # TODO: handling version update later
+
+            if [ ${diff_rc} -eq ${MODELS_SAME} ] ; then
+                trace "Nothing changed. Stopping introspect job."
+                return 0
+            fi
+
+            # Changes are not supported - non shape changes.. deletion, deploy app.
+            # TODO: Are these different from FATAL ?
+
+            if [ ${diff_rc} -eq ${UNSAFE_ONLINE_UPDATE} ] ; then
+                trace "Changes are not safe to do online updates. Use offline changes. See introspect job logs for
+                details"
                 exit 1
             fi
 
@@ -383,7 +414,7 @@ function createWLDomain() {
         fi
         if [ "${#inventory_cm[@]}" -ne "0" ] ; then
             declare -A introspect_cm
-            for K in "${!inventory_cm[@]}"; do introspect_cm[$K]=${inventory_cm[$K]}; done
+            for K in "${!inventory_cm[@]}"; do introhttps://scontent-dfw5-2.xx.fbcdn.net/v/t1.0-9/72239473_10215543110353752_2785130109265248256_o.jpg?_nc_cat=109&_nc_oc=AQkegfITCKpVgMDACqD15_zbxgAFsTl4a3qPtm8KqS7s-z9VEec7bmhzoda9c_oV2yw&_nc_ht=scontent-dfw5-2.xx&oh=ae97c1ad5a52b6fd2b9a02aa06d60889&oe=5E644D4Fspect_cm[$K]=${inventory_cm[$K]}; done
             declare -p introspect_cm > /tmp/inventory_cm.md5
         fi
         if [ "${#inventory_passphrase[@]}" -ne "0" ] ; then
@@ -413,6 +444,10 @@ variable_root="${model_home}"
 wdt_bin="/u01/wdt/weblogic-deploy/bin"
 operator_md5=${DOMAIN_HOME}/operatormd5
 archive_zip_changed=0
+UNSAFE_ONLINE_UPDATE=0
+SAFE_ONLINE_UPDATE=1
+FATAL_MODEL_CHANGES=2
+MODELS_SAME=3
 
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
