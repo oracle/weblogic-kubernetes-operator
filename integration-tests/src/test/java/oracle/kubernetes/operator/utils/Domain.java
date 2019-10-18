@@ -1400,7 +1400,7 @@ public class Domain {
     }
   }
 
-  protected synchronized void createLoadBalancer() throws Exception {
+  protected void createLoadBalancer() throws Exception {
     Map<String, Object> lbMap = new HashMap<String, Object>();
     lbMap.put("domainUID", domainUid);
     lbMap.put("namespace", domainNS);
