@@ -49,6 +49,9 @@ present some extra challenges in areas like:
 As such, we *do not* recommend using these distributions to run the operator and/or WebLogic, and we do not 
 provide support for WebLogic or the operator running in these distributions.
 
+We have found that Docker for Desktop does not seem to suffer the same limitations, and we do support that as a
+dev/test option. 
+
 ### Operator Docker image
 
 You can find the operator image in
