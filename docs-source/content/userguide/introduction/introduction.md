@@ -23,10 +23,10 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 * Oracle WebLogic Server 12.2.1.3.0 with patch 29135930.
    * The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3 `,
    has all the necessary patches applied.
-   * A `docker pull` is required if you pulled the image prior to that date.
    * Check the WLS version with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`.
    * Check the WLS patches with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`.
 * You must have the `cluster-admin` role to install the operator.
+* We do not currently support running WebLogic in non-Linux containers. 
 
 ### OpenShift
 
@@ -34,6 +34,20 @@ Operator 2.0.1+ is certified for use on OpenShift 3.11.43+, with Kubernetes 1.11
 
 When using the operator in OpenShift, the `anyuid` security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain filesystem.
 For more information, see [OpenShift]({{<relref "/security/openshift.md">}}) in the Security section.
+
+### Important note about development-focused Kubernetes distributions
+
+There are a number of development-focused distributions of Kubernetes, like kind, Minikube, Minishift and so on.
+Often these run Kubernetes in a virtual machine on you development machine.  We have found that these distributions
+present some extra challenges in areas like:
+
+* Separate Docker image stores, making it necessary to save/load images to move them between Docker file systems,
+* Default virtual machine file sizes and resource limits that are too small to run WebLogic or hold the necessary images,
+* Storage providers that do not always support the features that the operator and/or WebLogic rely on, 
+* Load balancing implementations that do not always support the features that the operator and/or WebLogic rely on.
+
+As such, we *do not* recommend using these distributions to run the operator and/or WebLogic, and we do not 
+provide support for WebLogic or the operator running in these distributions.
 
 ### Operator Docker image
 
