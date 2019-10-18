@@ -200,13 +200,18 @@ class ModelDiffer:
         if len(all_removed) > 0:
             return UNSAFE_ONLINE_UPDATE
 
-        if len(all_added) > 0:
-            return self._is_safe_addition(model)
+        #if len(all_added) > 0:
+        rc = self._is_safe_addition(all_added)
+        if rc != SAFE_ONLINE_UPDATE:
+            return rc
 
+        rc = self._is_safe_addition(all_changes)
+        if rc != SAFE_ONLINE_UPDATE:
+            return rc
 
         return SAFE_ONLINE_UPDATE
 
-    def _is_safe_addition(self, model):
+    def _is_safe_addition(self, items):
         """
         check the items in all_added to see if can be used for online update
         return 0 false ;
@@ -217,14 +222,21 @@ class ModelDiffer:
 
         found_in_past_dictionary = 1
         has_topology=0
-        for itm in all_added:
+        for itm in items:
             if itm.find('topology.') == 0:
-                has_topology=1
-            # print 'DEBUG: is_safe_addition ' + str(itm)
+                has_topology = 1
+
+            debug('DEBUG: is_safe_addition %s', itm)
             found_in_past_dictionary = self._in_model(self.past_dict, itm)
-            # print 'DBUEG: found_in_past_dictionary ' + str(found_in_past_dictionary)
+            debug('DBUEG: found_in_past_dictionary %s', found_in_past_dictionary)
             if not found_in_past_dictionary:
                 break
+            else:
+                # check whether it is in the forbidden list
+                if self.in_forbidden_list(itm):
+                    print 'Found changes not supported for update: %s. Exiting' % (itm)
+                    return FATAL_MODEL_CHANGES
+
 
         # if there is a shape change
         # return 2 ?
@@ -269,6 +281,13 @@ class ModelDiffer:
         if i > 2:
             return 1
 
+        return 0
+
+    def in_forbidden_list(self, itm):
+        forbidden_list = [ '.ListenPort' ]
+        for forbidden in forbidden_list:
+            if itm.find(forbidden) > 0:
+                return 1
         return 0
 
     def get_final_changed_model(self):

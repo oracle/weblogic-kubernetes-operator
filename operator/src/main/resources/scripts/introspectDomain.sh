@@ -414,7 +414,7 @@ function createWLDomain() {
         fi
         if [ "${#inventory_cm[@]}" -ne "0" ] ; then
             declare -A introspect_cm
-            for K in "${!inventory_cm[@]}"; do introhttps://scontent-dfw5-2.xx.fbcdn.net/v/t1.0-9/72239473_10215543110353752_2785130109265248256_o.jpg?_nc_cat=109&_nc_oc=AQkegfITCKpVgMDACqD15_zbxgAFsTl4a3qPtm8KqS7s-z9VEec7bmhzoda9c_oV2yw&_nc_ht=scontent-dfw5-2.xx&oh=ae97c1ad5a52b6fd2b9a02aa06d60889&oe=5E644D4Fspect_cm[$K]=${inventory_cm[$K]}; done
+            for K in "${!inventory_cm[@]}"; do introspect_cm[$K]=${inventory_cm[$K]}; done
             declare -p introspect_cm > /tmp/inventory_cm.md5
         fi
         if [ "${#inventory_passphrase[@]}" -ne "0" ] ; then
