@@ -64,7 +64,7 @@ public class ItManagedCoherence extends BaseTest {
           "  - clusterName: dataCluster\n"
               + "    serverStartState: \"RUNNING\"\n"
               + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
-      customDomainTemplate = BaseTest.getResultDir() + "/customDomainTemplate.yaml";
+      customDomainTemplate = BaseTest.getResultDir() + "/" + testClassName + "_customDomainTemplate.yaml";
 
       Files.copy(
           Paths.get(template),
@@ -184,6 +184,7 @@ public class ItManagedCoherence extends BaseTest {
       domainMap.put("clusterName", "appCluster");
       domainMap.put("domainUID", DOMAINUID1);
       domainMap.put("customDomainTemplate", customDomainTemplate);
+      domainMap.put("image", "cmdominimage:latest");
       domainMap.put("namespace", domainNS1);
       domainMap.put(
           "createDomainPyScript",
