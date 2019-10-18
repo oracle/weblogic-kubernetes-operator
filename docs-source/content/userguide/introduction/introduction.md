@@ -28,9 +28,21 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 * You must have the `cluster-admin` role to install the operator.
 * We do not currently support running WebLogic in non-Linux containers. 
 
+### Cloud providers
+
+The Oracle [Global Pricing and Licensing site](https://www.oracle.com/corporate/pricing/specialty-topics.html)
+provides details about licensing practices and policies. 
+WebLogic Server and the operator are supported on "Authorized Cloud Environments" as defined in
+[this Oracle licensing policy](https://www.oracle.com/assets/cloud-licensing-070579.pdf) and 
+[this list of eligible products](http://www.oracle.com/us/corporate/pricing/authorized-cloud-environments-3493562.pdf).
+
+In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud
+Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
+Container Servies for use with Kubernetes* on OCI Compute; and on Microsoft Azure using *Azure Kubernetes Service*.
+
 ### OpenShift
 
-Operator 2.0.1+ is certified for use on OpenShift 3.11.43+, with Kubernetes 1.11.5+.  OpenShift 4 certification is currently in progress.
+Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.  OpenShift 4 certification is currently in progress.
 
 When using the operator in OpenShift, the `anyuid` security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain filesystem.
 For more information, see [OpenShift]({{<relref "/security/openshift.md">}}) in the Security section.
