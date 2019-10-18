@@ -27,6 +27,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1PodStatus;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Volume;
@@ -759,6 +760,12 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
+        if (packet.isDynamicUpdate()) {
+          LOGGER.info("PodStepContext.verifyPodStep: isDynamicUpdate no restart necessary");
+          logPodExists();
+          return doNext(packet);
+
+        }
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             currentPod.getMetadata().getName(),

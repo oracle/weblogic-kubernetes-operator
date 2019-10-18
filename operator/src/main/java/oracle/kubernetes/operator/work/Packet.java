@@ -15,6 +15,7 @@ public class Packet extends AbstractMap<String, Object> implements ComponentRegi
   private final ConcurrentMap<String, Component> components =
       new ConcurrentHashMap<String, Component>();
   private final ConcurrentMap<String, Object> delegate = new ConcurrentHashMap<String, Object>();
+  private boolean isDynamicUpdate = false;
 
   public Packet() {
   }
@@ -71,4 +72,14 @@ public class Packet extends AbstractMap<String, Object> implements ComponentRegi
   public <T> T getValue(String key) {
     return (T) get(key);
   }
+
+  public boolean isDynamicUpdate() {
+    return isDynamicUpdate;
+  }
+
+  public void setDynamicUpdate(boolean dynamicUpdate) {
+    isDynamicUpdate = dynamicUpdate;
+  }
+
+
 }

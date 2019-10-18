@@ -329,7 +329,7 @@ function createWLDomain() {
             if [ ${diff_rc} -eq ${SAFE_ONLINE_UPDATE} ] ; then
                 trace "Using online update"
 
-                
+                cp ${DOMAIN_HOME}/wlsdeploy/domain_model.json /tmp/domain_model.json.new
                 admin_user=$(cat /weblogic-operator/secrets/username)
                 admin_pwd=$(cat /weblogic-operator/secrets/password)
 
@@ -342,11 +342,15 @@ function createWLDomain() {
                 # note: the result of updateDomain.sh is piped and set to variable
                 # this is necessary to avoid broken pipe 141 return code
                 #
-                yes ${admin_pwd} | ${wdt_bin}/updateDomain.sh -oracle_home ${MW_HOME} \
-                 -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
-                 /tmp/diffed_model.json -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG} | ret=$?
 
-                echo "Completed onine update="${ret}
+
+                echo ${admin_pwd} | ${wdt_bin}/updateDomain.sh -oracle_home ${MW_HOME} \
+                 -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
+                 /tmp/diffed_model.json -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG}
+
+               ret=$?
+
+                echo "Completed online update="${ret}
 
                 # TODO: check all possible values
 
@@ -372,6 +376,8 @@ function createWLDomain() {
                 ${wdt_bin}/updateDomain.sh -oracle_home ${MW_HOME} \
                  -model_file /tmp/diffed_model.json ${variable_list} -domain_home ${DOMAIN_HOME} -domain_type \
                  ${WDT_DOMAIN_TYPE}
+
+                cp  /tmp/domain_model.json.new ${DOMAIN_HOME}/wlsdeploy/domain_model.json
 
               # perform wdt online update if the user has specify in the spec ? How to get it from the spec ?  env ?
 

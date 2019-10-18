@@ -387,10 +387,13 @@ public class ConfigMapHelper {
             new SitConfigMapContext(
                 this, info.getDomainUid(), getOperatorNamespace(), info.getNamespace(), data);
 
+        // Cannot short circuit here
+        //
         if (updateDomainResult != null) {
           LOGGER.fine("ConfigMapHelper:updateDomainResult " + updateDomainResult);
           if (updateDomainResult.equals("0")) {
             LOGGER.fine("ConfigMapHelper apply: short circuit finished online update");
+            packet.setDynamicUpdate(true);
             //return doNext(null, packet);
           }
         }
@@ -402,7 +405,8 @@ public class ConfigMapHelper {
         LOGGER.fine("ConfigMapHelper:updateDomainResult " + updateDomainResult);
         if (updateDomainResult.equals("0")) {
           LOGGER.fine("ConfigMapHelper apply: short circuit finished online update");
-          return doNext(null, packet);
+          packet.setDynamicUpdate(true);
+          //return doNext(null, packet);
         }
       }
 
