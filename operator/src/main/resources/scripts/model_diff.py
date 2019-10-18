@@ -284,7 +284,7 @@ class ModelDiffer:
         return 0
 
     def in_forbidden_list(self, itm):
-        forbidden_list = [ '.ListenPort' ]
+        forbidden_list = [ '.ListenPort', '.ListenAddress' ]
         for forbidden in forbidden_list:
             if itm.find(forbidden) > 0:
                 return 1
