@@ -36,6 +36,8 @@ WebLogic Server and the operator are supported on "Authorized Cloud Environments
 [this Oracle licensing policy](https://www.oracle.com/assets/cloud-licensing-070579.pdf) and 
 [this list of eligible products](http://www.oracle.com/us/corporate/pricing/authorized-cloud-environments-3493562.pdf).
 
+The official document that defines the [supported configurations is here](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html).
+
 In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud
 Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
 Container Servies for use with Kubernetes* on OCI Compute; and on Microsoft Azure using *Azure Kubernetes Service*.
