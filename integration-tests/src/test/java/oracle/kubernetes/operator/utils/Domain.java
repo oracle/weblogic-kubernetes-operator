@@ -105,7 +105,7 @@ public class Domain {
     this.createDomainResource = createDomainResource;
     createPv();
     createSecret();
-    synchronized (this) {
+    synchronized (Domain.class) {
       if (createLoadBalancer) {
         createLoadBalancer();
       }
