@@ -38,10 +38,6 @@ WebLogic Server and the operator are supported on "Authorized Cloud Environments
 
 The official document that defines the [supported configurations is here](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html).
 
-In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud
-Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
-Container Servies for use with Kubernetes* on OCI Compute; and on Microsoft Azure using *Azure Kubernetes Service*.
-
 ### OpenShift
 
 Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.  OpenShift 4 certification is currently in progress.
