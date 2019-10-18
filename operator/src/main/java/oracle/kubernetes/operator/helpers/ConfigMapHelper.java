@@ -391,7 +391,7 @@ public class ConfigMapHelper {
           LOGGER.fine("ConfigMapHelper:updateDomainResult " + updateDomainResult);
           if (updateDomainResult.equals("0")) {
             LOGGER.fine("ConfigMapHelper apply: short circuit finished online update");
-            return doNext(null, packet);
+            //return doNext(null, packet);
           }
         }
 
