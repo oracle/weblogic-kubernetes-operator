@@ -137,7 +137,6 @@ public class LoadBalancer {
     }
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
-
   }
 
   /**

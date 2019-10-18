@@ -862,6 +862,27 @@ public class TestUtils {
   /**
    * Create operator pod with options for multiple container in it.
    *
+   * @param inputMap   - a map with commonly used operator input attributes
+   * @param containerNum - the number of containers in Operator pod
+   * @throws Exception exception
+   */
+  public static Operator createOperator(Map<String, Object> inputMap, String containerNum,
+                                        RestCertType restCertType) throws Exception {
+    // create op
+    Operator operator = new Operator(inputMap, restCertType);
+    operator.callHelmInstall();
+
+    LoggerHelper.getLocal().log(Level.INFO, "Check Operator status");
+    operator.verifyPodCreated();
+    operator.verifyOperatorReady(containerNum);
+    operator.verifyExternalRestService();
+
+    return operator;
+  }
+
+  /**
+   * Create operator pod with options for multiple container in it.
+   *
    * @param opYamlFile   - yaml file to create the Operator
    * @param containerNum - the number of containers in Operator pod
    * @throws Exception exception
