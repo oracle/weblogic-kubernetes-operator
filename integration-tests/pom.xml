@@ -188,7 +188,7 @@
                             <executable>${resource-integration-test}/setupenv.sh</executable>
                         </configuration>
                     </execution>
-                     <execution>
+                     <!-- execution>
                         <id>archive_cleanup</id>
                         <phase>post-integration-test</phase>
                         <goals>
@@ -200,7 +200,7 @@
                             </environmentVariables>
                             <executable>${resource-integration-test}/statedump.sh</executable>
                         </configuration>
-                    </execution>
+                    </execution -->
                     
                 </executions>
             </plugin>
