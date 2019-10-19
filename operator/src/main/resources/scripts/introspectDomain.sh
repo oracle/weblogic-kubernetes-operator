@@ -342,9 +342,8 @@ function createWLDomain() {
                     ROLLBACK_FLAG="-rollback_if_require_restart"
                 fi
                 # no need for encryption phrase because the diffed model has real value
-                # note: the result of updateDomain.sh is piped and set to variable
-                # this is necessary to avoid broken pipe 141 return code
-                #
+                # note: using yes seems to et a 141 return code, switch to echo seems to be ok
+                # the problem is likely due to how wdt closing the input stream
 
 
                 echo ${admin_pwd} | ${wdt_bin}/updateDomain.sh -oracle_home ${MW_HOME} \
