@@ -1,5 +1,5 @@
 import sets
-import sys, os
+import sys, os, traceback
 
 UNSAFE_ONLINE_UPDATE=0
 SAFE_ONLINE_UPDATE=1
@@ -399,9 +399,15 @@ def debug(format_string, *arguments):
     return
 
 def main():
-    obj = ModelFileDiffer(sys.argv[1], sys.argv[2])
-    rc=obj.compare()
-    exit(exitcode=rc)
+    try:
+        obj = ModelFileDiffer(sys.argv[1], sys.argv[2])
+        rc=obj.compare()
+        exit(exitcode=rc)
+    except:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        eeString = traceback.format_exception(exc_type, exc_obj, exc_tb)
+        print eeString
+        exit(exitcode=-1)
 
 if __name__ == "main":
     all_changes = []

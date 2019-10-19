@@ -325,6 +325,9 @@ function createWLDomain() {
             # 3 no difference
 
             # Perform online changes
+            if [ ${diff_rc} -eq ${SCRIPT_ERROR} ]; then
+                exit 1
+            fi
 
             if [ ${diff_rc} -eq ${SAFE_ONLINE_UPDATE} ] ; then
                 trace "Using online update"
@@ -352,8 +355,6 @@ function createWLDomain() {
 
                 echo "Completed online update="${ret}
 
-                # TODO: check all possible values
-
                 if [ ${ret} -eq ${ROLLBACK_ERROR} ] ; then
                     trace ">>>  updatedomainResult=3"
                     exit 1
@@ -377,7 +378,7 @@ function createWLDomain() {
                  -model_file /tmp/diffed_model.json ${variable_list} -domain_home ${DOMAIN_HOME} -domain_type \
                  ${WDT_DOMAIN_TYPE}
 
-                cp  /tmp/domain_model.json.new ${DOMAIN_HOME}/wlsdeploy/domain_model.json
+                mv  /tmp/domain_model.json.new ${DOMAIN_HOME}/wlsdeploy/domain_model.json
 
               # perform wdt online update if the user has specify in the spec ? How to get it from the spec ?  env ?
 
@@ -455,6 +456,7 @@ SAFE_ONLINE_UPDATE=1
 FATAL_MODEL_CHANGES=2
 MODELS_SAME=3
 ROLLBACK_ERROR=3
+SCRIPT_ERROR=255
 
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
