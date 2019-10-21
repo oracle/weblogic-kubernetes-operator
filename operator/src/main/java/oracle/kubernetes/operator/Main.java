@@ -25,6 +25,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.models.V1EventList;
@@ -85,6 +87,7 @@ public class Main {
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
   private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
   private static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
+  private static Function<String,String> getHelmVariable = System::getenv;
   private static final String operatorNamespace = computeOperatorNamespace();
   private static final AtomicReference<DateTime> lastFullRecheck =
       new AtomicReference<>(DateTime.now());
@@ -224,6 +227,7 @@ public class Main {
       eventWatchers.remove(ns);
       podWatchers.remove(ns);
       serviceWatchers.remove(ns);
+      JobWatcher.removeNamespace(ns);
     }
   }
 
@@ -244,7 +248,7 @@ public class Main {
     return new NullCompletionCallback(completionAction);
   }
 
-  private static Runnable recheckDomains() {
+  static Runnable recheckDomains() {
     return () -> {
       Collection<String> targetNamespaces = getTargetNamespaces();
 
@@ -338,7 +342,7 @@ public class Main {
 
   private static Collection<String> getTargetNamespaces() {
     return getTargetNamespaces(
-        Optional.ofNullable(System.getenv("OPERATOR_TARGET_NAMESPACES"))
+        Optional.ofNullable(getHelmVariable.apply("OPERATOR_TARGET_NAMESPACES"))
             .orElse(tuningAndConfig.get("targetNamespaces")),
         operatorNamespace);
   }
@@ -427,7 +431,7 @@ public class Main {
   }
 
   private static String computeOperatorNamespace() {
-    return Optional.ofNullable(System.getenv("OPERATOR_NAMESPACE")).orElse("default");
+    return Optional.ofNullable(getHelmVariable.apply("OPERATOR_NAMESPACE")).orElse("default");
   }
 
   private static class WrappedThreadFactory implements ThreadFactory {
