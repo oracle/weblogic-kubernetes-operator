@@ -15,6 +15,7 @@ import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
+import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
@@ -60,6 +61,7 @@ public class ItPodsRestart extends BaseTest {
       }.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
+      setMaxIterationsPod(80);
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
       if (operator1 == null) {
@@ -217,7 +219,7 @@ public class ItPodsRestart extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
+  //@Test
   public void testServerPodsRestartByChangingZImage() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
@@ -239,7 +241,8 @@ public class ItPodsRestart extends BaseTest {
             + getWeblogicImageDevTag());
 
     String newImage = getWeblogicImageName() + ":" + getWeblogicImageDevTag();
-    TestUtils.exec("docker pull " + newImage, true);
+    //TestUtils.exec("docker pull " + newImage, true);
+    callDockerPull(newImage);
     // apply new domain yaml and verify pod restart
     domain.verifyDomainServerPodRestart(
         "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
@@ -292,8 +295,8 @@ public class ItPodsRestart extends BaseTest {
    * podSecurityContext: runAsUser: 1000 fsGroup: 2000.
    *
    * @throws Exception - assertion fails due to unmatched value or errors occurred if tested servers
-   *                   are not restarted or after restart the server yaml file doesn't include the new added
-   *                   property
+   *     are not restarted or after restart the server yaml file doesn't include 
+   *     the new added property
    */
   @Test
   public void testServerPodsRestartByChangingPodSecurityContext() throws Exception {
@@ -587,4 +590,40 @@ public class ItPodsRestart extends BaseTest {
     }
     Assert.assertTrue("Didn't get the expected pod status", gotExpected);
   }
+  
+  private void callDockerPull(String imageName) throws Exception {
+    int maxIterations = 20;
+    int waitTime = 10;
+    for (int i = 0; i < maxIterations; i++) {
+      //ExecResult result = TestUtils.exec("docker pull " + imageName, true);
+      ExecResult result = ExecCommand.exec("docker pull " + imageName);
+      if (result.exitValue() != 0) {
+        LoggerHelper.getLocal().log(Level.INFO,
+            "callDockerPull did not return 0 exitValue got "
+                + result.exitValue()
+                + ", iteration "
+                + i
+                + " of "
+                + maxIterations);
+        if (i == (maxIterations - 1)) {
+          throw new RuntimeException(
+              "FAILURE: callDockerPull did not return 0 exitValue, got " 
+                  + "\nstderr = "
+                  + result.stderr()
+                  + "\nstdout = "
+                  + result.stdout());
+        }
+        try {
+          Thread.sleep(waitTime * 1000);
+        } catch (InterruptedException ignore) {
+          // no-op
+        }
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO,
+            "callDockerPull returned 0 exitValue, iteration " + i);
+        break;
+      }
+    }
+  }
+
 }
