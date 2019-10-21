@@ -5,13 +5,14 @@ monitoringExporterDir=$1
 resourceExporterDir=$2
 monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/end2end
 
+POD_NAME=$(kubectl get pod -l app=grafana -n monitoring -o jsonpath="{.items[0].metadata.name}")
+POD_NAME1=$(kubectl get pod -l app=prometheus -n monitoring -o jsonpath="{.items[0].metadata.name}")
 helm delete prometheus --purge
 helm delete grafana --purge
-POD_NAME=$(kubectl get pod -l app=grafana -n monitoring -o jsonpath="{.items[0].metadata.name}")
+
 kubectl delete $POD_NAME --force --grace-period=0 --ignore-not-found
 
-POD_NAME=$(kubectl get pod -l app=prometheus -n monitoring -o jsonpath="{.items[0].metadata.name}")
-kubectl delete $POD_NAME --force --grace-period=0 --ignore-not-found
+kubectl delete $POD_NAME1 --force --grace-period=0 --ignore-not-found
 
 helm install --wait --name prometheus --namespace monitoring --values  ${resourceExporterDir}/promvalues.yaml stable/prometheus
 
