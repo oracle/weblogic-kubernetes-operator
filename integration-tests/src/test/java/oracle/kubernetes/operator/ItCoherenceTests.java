@@ -174,13 +174,12 @@ public class ItCoherenceTests extends BaseTest {
     Map<String, Object> domainMap =
         TestUtils.createDomainInImageMap(getNewSuffixCount(), true, testClassName);
     domainMap.put("namespace", domainNS1);
-    domainMap.put("createDomainFilesDir", "wdt");
     domainMap.put("additionalEnvMap", envMap);
     domainMap.put(
         "customWdtTemplate",
         BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/wdt/coh-wdt-config.yaml");
-    Domain domain = TestUtils.createDomain(domainMap, false);
+    Domain domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
     return domain;
   }
@@ -210,8 +209,8 @@ public class ItCoherenceTests extends BaseTest {
     // the
     // sleep and iterations
     //
-    setWaitTimePod(2);
-    setMaxIterationsPod(150);
+    // setWaitTimePod(2);
+    // setMaxIterationsPod(150);
 
     domain.verifyDomainServerPodRestart(
         "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
