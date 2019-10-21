@@ -201,12 +201,10 @@ function createWLDomain() {
 
     for file in $(ls ${archive_root}/*.zip | sort)
         do
+            inventory_image[$file]=$(md5sum $file | cut -d' ' -f1)
             if [ "$archive_list" != "" ]; then
                 archive_list="${archive_list},"
-                trace "More than one archive file"
-                exit 1
             fi
-            inventory_image[$file]=$(md5sum $file | cut -d' ' -f1)
             archive_list="${archive_list}${file}"
         done
 
