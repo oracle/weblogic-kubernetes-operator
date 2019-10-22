@@ -32,7 +32,7 @@ public class ServerDownStep extends Step {
     V1Pod oldPod = info.getServerPod(serverName);
 
     Step next;
-    if (isPreserveServices) {
+    if (isPreserveServices && !info.getDomain().isShuttingDown()) {
       next = getNext();
     } else {
       next = ServiceHelper.deleteServicesStep(serverName, getNext());
