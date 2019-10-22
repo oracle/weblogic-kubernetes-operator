@@ -112,14 +112,14 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       secondoperator.callHelmInstall();
 
     } finally {
+      if (firstoperator != null) {
+        firstoperator.destroy();
+      }
+      if (secondoperator != null) {
+        secondoperator.destroy();
+      }
+    }
 
-    }
-    if (firstoperator != null) {
-      firstoperator.destroy();
-    }
-    if (secondoperator != null) {
-      secondoperator.destroy();
-    }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -320,7 +320,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 + "target domains namespaces does not report expected message "
                 + ex.getMessage());
       }
-        String cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      String cmdLb = "helm list --failed " + "  | grep " + oprelease;
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -376,7 +376,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 + "namespaces does not report expected message "
                 + ex.getMessage());
       }
-        String cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      String cmdLb = "helm list --failed " + "  | grep " + oprelease;
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -407,7 +407,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     logTestBegin(testMethodName);
     int httpsRestPort = 0;
 
-    Operator operator1 = new Operator(TestUtils.createOperatorMap(getNewSuffixCount(), true, "usab"), RestCertType.SELF_SIGNED);
+    Operator operator1 = new Operator(TestUtils.createOperatorMap(getNewSuffixCount(),
+        true, "usab"),
+        RestCertType.SELF_SIGNED);
     operator1.callHelmInstall();
 
     httpsRestPort = new Integer(operator1.getOperatorMap().get("externalRestHttpsPort").toString()).intValue();
@@ -434,7 +436,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
             "FAILURE: Helm install operator with dublicated rest port number does not report expected message "
                 + ex.getMessage());
       }
-        String cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      String cmdLb = "helm list --failed " + "  | grep " + oprelease;
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -486,7 +488,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 + "domains namespace does not report expected message "
                 + ex.getMessage());
       }
-        String cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      String cmdLb = "helm list --failed " + "  | grep " + oprelease;
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
