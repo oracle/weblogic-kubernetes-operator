@@ -12,15 +12,19 @@ source ${scriptDir}/common/utility.sh
 function usage {
   echo "usage: ${script} -s <schemaPrefix> -d <dburl>  [-h]"
   echo "  -s RCU Schema Prefix (needed)"
+  echo "  -t RCU Schema Type (optional)"
+  echo "      (supported values: fmw(default),soa,osb,soaosb,soaess,soaessosb) "
   echo "  -d Oracle Database URL"
   echo "      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s) "
   echo "  -h Help"
   exit $1
 }
 
-while getopts ":h:s:d:" opt; do
+while getopts ":h:s:d:t:" opt; do
   case $opt in
     s) schemaPrefix="${OPTARG}"
+    ;;
+    t) rcuType="${OPTARG}"
     ;;
     d) dburl="${OPTARG}"
     ;;
@@ -40,16 +44,17 @@ if [ -z ${dburl} ]; then
   dburl="oracle-db.default.svc.cluster.local:1521/devpdb.k8s"
 fi
 
+if [ -z ${rcuType} ]; then
+  rcuType="fmw"
+fi
+
 rcupod=`kubectl get po | grep rcu | cut -f1 -d " " `
 if [ -z ${rcupod} ]; then
   echo "RCU deployment pod not found in [default] namespace"
   exit -2
 fi
 
-fmwimage=`kubectl get pod/rcu  -o jsonpath="{..image}"`
-rcuType=""
-[[ $fmwimage =~ .*soasuite.* ]] && rcuType=soa
-[[ $fmwimage =~ .*fmw-infr.* ]] && rcuType=fmw
+#fmwimage=`kubectl get pod/rcu  -o jsonpath="{..image}"`
 
 echo "Oradoc_db1" > pwd.txt
 echo "Oradoc_db1" >> pwd.txt

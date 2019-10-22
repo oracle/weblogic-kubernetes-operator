@@ -29,16 +29,34 @@ else
  java utils.dbping ORACLE_THIN scott tiger ${connectString} 
 fi 
 
-# SOA needs extra component(s) SOAINFRA and ESS
+# SOA needs extra component(s) SOAINFRA ESS (optional)
 # SOA needs variables param(s) SOA_PROFILE_TYPE=SMALL,HEALTHCARE_INTEGRATION=NO
 
-extComponents=""
-extVariables=""
-if [ "x$rcuType" == "xsoa" ]; then
-  extComponents="-component SOAINFRA -component ESS"
-  extVariables="-variables SOA_PROFILE_TYPE=SMALL,HEALTHCARE_INTEGRATION=NO"
-  echo "Dropping RCU Schema for SOA Infra .."
-fi
+case $rcuType in
+ fmw)
+   extComponents=""
+   extVariables=""
+   echo "Dropping RCU Schema for FMW Domain ..."
+   ;;
+ soa|soaosb|osb)
+   extComponents="-component SOAINFRA"
+   extVariables="-variables SOA_PROFILE_TYPE=SMALL,HEALTHCARE_INTEGRATION=NO"
+   echo "Dropping RCU Schema for SOA Domain ..."
+   ;;
+ soaess|soaessosb)
+    extComponents="-component SOAINFRA -component ESS"
+    extVariables="-variables SOA_PROFILE_TYPE=SMALL,HEALTHCARE_INTEGRATION=NO"
+    echo "Dropping RCU Schema for SOA Domain with ESS ..."
+  ;;
+ * )
+    echo "[ERROR] Unknown RCU Schema Type [$rcuType]"
+    echo "Supported values: fmw(default),soa,osb,soaosb,soaess,soaessosb"
+    exit -1
+  ;;
+esac
+
+echo "Extra RCU Schema Component(s) Choosen[${extComponents}]" 
+echo "Extra RCU Schema Variable(s)  Choosen[${extVariables}]" 
 
 /u01/oracle/oracle_common/bin/rcu -silent -dropRepository \
  -databaseType ORACLE -connectString ${connectString} \
