@@ -30,8 +30,6 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItUsabilityOperatorHelmChart extends BaseTest {
 
-  //private static int number = 100;
-  //String oprelease = "op" + number;
   private int waitTime = 5;
   private int maxIterations = 60;
   private static String testClassName;
@@ -53,11 +51,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       initialize(APP_PROPS_FILE, testClassName);
     }
   }
-  
-  /* @Before
-  public void prepare() {
-    number = getNewNumber();
-  } */
 
   /**
    * Releases k8s cluster lease, archives result, pv directories.
@@ -139,9 +132,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Operator firstoperator =
         new Operator(TestUtils.createOperatorMap(getNewSuffixCount(), true, "usab"), RestCertType.SELF_SIGNED);
     firstoperator.callHelmInstall();
-    //number = number + 1;
-    //oprelease = "op" + number;
-    //LoggerHelper.getLocal().log(Level.INFO, " new value for oprelease" + oprelease);
+
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, "usab");
     operatorMap.replace("namespace", firstoperator.getOperatorMap().get("namespace"));
     Operator secondoperator = new Operator(operatorMap, false, true, true, RestCertType.SELF_SIGNED);
@@ -170,7 +161,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
             "FAILURE: Helm installs second operator with same namespace as the first one ");
       }
     } finally {
-      //number++;
       if (firstoperator != null) {
         firstoperator.destroy();
       }
@@ -209,8 +199,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
 
     } catch (Exception ex) {
       LoggerHelper.getLocal().log(Level.INFO, "Helm install operator with not preexisted ns failed as expected");
-    } finally {
-      //number++;
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -228,7 +216,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
-    //number = getNewNumber();
     operator =
         new Operator(
             (TestUtils.createOperatorMap(getNewSuffixCount(),false, "usab")),
@@ -270,7 +257,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       Thread.sleep(BaseTest.getWaitTimePod() * 2000);
       operator.verifyOperatorReady();
     } finally {
-      //number++;
       if (operator != null) {
         operator.destroy();
       }
@@ -329,7 +315,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       }
 
     } finally {
-      //number++;
       if (firstoperator != null) {
         firstoperator.destroy();
       }
@@ -385,7 +370,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       }
 
     } finally {
-      //number++;
       if (operator != null) {
         operator.destroy();
       }
@@ -414,9 +398,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
 
     httpsRestPort = new Integer(operator1.getOperatorMap().get("externalRestHttpsPort").toString()).intValue();
     LoggerHelper.getLocal().log(Level.INFO, "Creating second operator with externalRestHttpPort " + httpsRestPort);
-    //number = number + 1;
-    //oprelease = "op" + number;
-
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, "usab");
     operatorMap.replace("externalRestHttpsPort", httpsRestPort);
     String oprelease = (String)operatorMap.get("releaseName");
@@ -445,7 +426,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       }
 
     } finally {
-      //number++;
       if (operator1 != null) {
         operator1.destroy();
       }
@@ -497,7 +477,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       }
 
     } finally {
-      //number++;
       if (operator != null) {
         operator.destroy();
       }
@@ -536,7 +515,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     }
     try {
       operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, "usab");
-
       operatorMap.put("javaLoggingLevel", "INVALIDOPTION");
       operator = new Operator(operatorMap, true, true, false, RestCertType.SELF_SIGNED);
       operator.callHelmInstall();
@@ -584,7 +562,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       operator.verifyOperatorReady();
 
     } finally {
-      //number++;
       if (operator != null) {
         operator.destroy();
       }
@@ -616,7 +593,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       operator.verifyOperatorReady();
 
     } finally {
-      //number++;
       if (operator != null) {
         operator.destroy();
       }
@@ -647,7 +623,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       operator.verifyOperatorReady();
 
     } finally {
-      //number++;
       if (operator != null) {
         operator.destroy();
       }
@@ -713,7 +688,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      //number++;
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -753,7 +727,6 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      //number++;
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -795,9 +768,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
 
   private Domain createVerifyDomain(int number, Operator operator) throws Exception {
 
-    //String domainNS1 = ((ArrayList<String>)operator.getOperatorMap().get("domainNamespaces")).get(0);
     Map<String, Object> wlsDomainMap = TestUtils.createDomainMap(number,"usab");
-    //wlsDomainMap.put("namespace", domainNS1);
     Domain domain = TestUtils.createDomain(wlsDomainMap);
     domain.verifyDomainCreated();
     testAdminT3Channel(domain, false);
