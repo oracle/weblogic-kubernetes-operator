@@ -1,0 +1,19 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+# This domain inputs file is used to create domain on pv using wlst option and traefik load balancer.
+
+adminServerName: admin-server
+domainUID: jrfdomain
+clusterName: infra-cluster
+configuredManagedServerCount: 4
+initialManagedServerReplicas: 2
+managedServerNameBase: infraserver
+exposeAdminT3Channel: true
+t3ChannelPort: 30013
+exposeAdminNodePort: true
+namespace: jrfdomains
+image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
+ingressPerDomain: true
+rcuSchemaPrefix: jrfdomain
+rcuDatabaseURL: oracle-db.default.svc.cluster.local:1521/devpdb.k8s
