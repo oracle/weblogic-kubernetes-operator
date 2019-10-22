@@ -141,11 +141,9 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
   
   clean_shared_cluster
     
-  #if [ "$JRF_ENABLED" = true ] ; then
-	#pull_tag_images_jrf
-  #else
-  	export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
-	export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC  
+  
+  export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
+  export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC  
   
   	if [ "$IMAGE_PULL_POLICY_OPERATOR" = "Always" ]; then 
 		if [ -z "$REPO_REGISTRY" ] || [ -z "$REPO_USERNAME" ] || [ -z "$REPO_PASSWORD" ] || [ -z "$REPO_EMAIL" ]; then

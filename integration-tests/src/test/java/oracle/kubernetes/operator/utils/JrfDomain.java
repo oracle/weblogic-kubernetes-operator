@@ -61,7 +61,6 @@ public class JrfDomain extends Domain {
     if (System.getenv("IMAGE_PULL_SECRET_FMWINFRA") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_FMWINFRA"));
     } else {
-      //domainMap.put("imagePullSecretName", "ocir-store");
       domainMap.put("imagePullSecretName", "docker-store");
     }
 
