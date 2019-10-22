@@ -58,8 +58,10 @@ The script assumes that either the image, `container-registry.oracle.com/middlew
 
 ```
 $ ./create-rcu-schema.sh -h
-usage: ./create-rcu-schema.sh -s <schemaPrefix> -d <dburl> -i <image> -s <dockerstore> [-h]
+usage: ./create-rcu-schema.sh -s <schemaPrefix> -t <rcuType> -d <dburl> -i <image> -s <dockerstore> [-h]
   -s RCU Schema Prefix (required)
+  -t RCU Schema Type (optional)
+      Supported values: fmw(default),soa,osb,soaosb,soaess,soaessosb
   -d RCU Oracle Database URL (optional)
       (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s)
   -p Fmw Infrastructure ImagePull Secret (optional)
@@ -89,7 +91,7 @@ PATH=/u01/oracle/wlserver/server/bin:/u01/oracle/wlserver/../oracle_common/modul
 
 Your environment has been set.
 Check if the DB service is ready to accept requests
-DB Connection URL [oracle-db.default.svc.cluster.local:1521/devpdb.k8s] and schemaPrefix is [domain1]
+DB Connection URL [oracle-db.default.svc.cluster.local:1521/devpdb.k8s] and schemaPrefix is [domain1] rcuType [fmw]"
 
 **** Success!!! ****
 You can connect to the database in your app using:
@@ -100,6 +102,8 @@ You can connect to the database in your app using:
     Class.forName("oracle.jdbc.OracleDriver").newInstance();
   java.sql.Connection conn =
     Driver.connect("scott", props);
+
+Creating RCU Schema for FMW Domain ..
 	RCU Logfile: /tmp/RCU2019-09-03_23-13_1113614917/logs/rcu.log
 Enter the database password(User:sys):
 Processing command line ....
