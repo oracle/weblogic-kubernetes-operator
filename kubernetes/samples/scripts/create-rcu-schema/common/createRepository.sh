@@ -11,7 +11,7 @@ rcuType=${3:-fmw}
 
 echo "DB Connection String [$connectString], schemaPrefix [${schemaPrefix}] rcuType [${rcuType}]"
 
-max=20
+max=100
 counter=0
 while [ $counter -le ${max} ]
 do
