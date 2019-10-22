@@ -629,7 +629,8 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
+  //@Test -commenting out, it fails for runs in parallel due sharing same targetDomainNS.
+  // uncomment if want to run in single run
   public void testCreateWithDefaultTargetDomainInstall() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
