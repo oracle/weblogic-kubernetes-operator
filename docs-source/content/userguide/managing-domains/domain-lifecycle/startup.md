@@ -247,7 +247,6 @@ The operator will restart servers when any of the follow properties on the domai
 * `includeServerOutInPodLog`
 * `logHomeEnabled`
 * `logHome`
-* `dataHome`
 * `livenessProbe`
 * `nodeSelector`
 * `podSecurityContext`

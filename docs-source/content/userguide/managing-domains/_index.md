@@ -1,5 +1,5 @@
 ---
-title: "Manage domains"
+title: "Manage WebLogic domains"
 date: 2019-02-23T16:43:45-05:00
 weight: 4
 description: "Important considerations for WebLogic domains in Kubernetes."
@@ -36,11 +36,6 @@ Please be aware of the following important considerations for WebLogic domains r
 * _Log File Locations:_ The operator can automatically override WebLogic domain and server log locations using situational
   configuration overrides.  This occurs if the domain resource `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
   and `domainHomeInImage` is explicitly set to `false`.   When overriding, the log location will be the location specified by the `logHome` setting.
-
-* _Default and Custom File Store Locations:_ The operator can automatically override both the default and custom file store locations, 
-  using situational configuration overrides, using the optional `dataHome` setting.  The value specified for the `dataHome` setting
-  represents an in-pod directory location.  If the `dataHome` setting is not specified or its value is either not set or empty (e.g. dataHome: "")
-  then the data storage directories are determined from the WebLogic domain home configuration.
 
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
   SSL, admin, or custom channel listen addresses (using situational configuration overrides).  These will become `domainUID` followed by a
@@ -85,7 +80,7 @@ Please consult My Oracle Support Doc ID 2349228.1 for up-to-date information abo
 ### Creating and managing WebLogic domains
 
 You can locate a WebLogic domain either in a persistent volume (PV) or in a Docker image.
-For examples of each, see the [WebLogic operator samples]({{< relref "/samples/simple/domains/_index.md" >}}).
+For examples of each, see the [WebLogic Kubernetes Operator samples]({{< relref "/samples/simple/domains/_index.md" >}}).
 
 If you want to create your own Docker images, for example, to choose a specific set of patches or to create a domain
 with a specific configuration and/or applications deployed, then you can create the domain custom resource
