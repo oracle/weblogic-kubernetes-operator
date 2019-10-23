@@ -111,17 +111,20 @@ It's helpful to understand the following high level flow before running the samp
 
      ```
         kubectl -n sample-domain1-ns create secret generic opss-key-passphrase-secret --from-literal=passhrase=welcome1
-  
-     | Attribute                | Usage                              |
-     | ------------------------ | ---------------------------------- | 
-     | keepJRFSchema            | keep jrf schema between updates. If not set default to true   | 
-     | opssKeyWalletConfigMap   | configmap with key ewallet.p12 in base64 format.  This is to store an extracted      |
-     |                          | opss wallet key from the instrospector configmap.       |
-     | opssKeyPassPhrase        | Kubernetes secret name for the opss key stored in opssKeyWalletconfigMap  |
-     |          | When this is set. The operator will use it's value to extract the key and extract and store the opss  |
-     |          | key. The key will store in the introspector configmap. This key can be optionally extracted and save in    |
-     |          | the opssKeyWalletConfigMap.  If this attribute is not set, the defalt password is <domain_uid>_welcome1  |
      ```
+  
+     | Attribute                | Usage                                                                          |
+     | ------------------------ | ------------------------------------------------------------------------------| 
+     | keepJRFSchema            | true or false. Default is true. keep jrf schema between updates.| 
+     | opssKeyWalletConfigMap   | configmap with key ewallet.p12 in base64 format.  This is to store an extracted |
+     | | opss wallet key from the instrospector configmap.|
+     | opssKeyPassPhrase        | Kubernetes secret name for the opss key stored in opssKeyWalletconfigMap |
+     | | When this is set. The operator will use it's value to extract the key and extract |
+     | | and store the opss|key. The key will store in the introspector configmap. This key |
+     | | can be optionally extracted and save in the opssKeyWalletConfigMap.  If this |
+     | | attribute is not set, the defalt password is domain_uid_welcome1  |
+   
+   
 
    - (Experimental) During lifecycle updates, specify the behavior of whether to use dynamic update (no rolling of 
    server). 
@@ -129,8 +132,8 @@ It's helpful to understand the following high level flow before running the samp
 
      | Attribute                | Usage                              |
      | ------------------------ | ---------------------------------- | 
-     | useOnlineUpdate          | User WLST online update for changes. Default is false      |
-     | rollbackIfRequireStart   | (true|false) Default is true. If successful, there will be no rolling restart,  |                        
+     | useOnlineUpdate          | (true or false) Default is false. User WLST online update for changes.      |
+     | rollbackIfRequireStart   | (true or false) Default is true. If successful, there will be no rolling restart,  |                        
      | | Otherwise, it will cancel the changes and the introspector job will have error.  Note: your changes  |
      || in the image or configmap will not be rollback |
 
