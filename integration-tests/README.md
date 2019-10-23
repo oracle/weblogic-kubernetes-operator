@@ -197,9 +197,9 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
     - Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
 		
 		
-* Command to run the tests: This will run QUICKTEST one after another test class.
+* Command to run the tests: This will run the tests sequentially.
  
-To run all the tests, `export QUICKTEST=false`. 
+To run QUICKTEST, `export QUICKTEST=true`. 
 
 To run the test classes in parallel, `export PARALLEL_FAILSAFE=classes`
 ```
