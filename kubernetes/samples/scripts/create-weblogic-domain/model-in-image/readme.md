@@ -116,7 +116,7 @@ It's helpful to understand the following high level flow before running the samp
      | Attribute                | Usage                                                                          |
      | ------------------------ | ------------------------------------------------------------------------------| 
      | keepJRFSchema            | true or false. Default is true. keep jrf schema between updates.| 
-     | opssKeyWalletConfigMap   | configmap with key ewallet.p12 in base64 format.  This is to store an extracted |
+     | opssKeyWalletConfigMap   | name of the configmap with key ewallet.p12 in base64 format.  This is to store an extracted |
      | | opss wallet key from the instrospector configmap after the first domain is created.|
      | opssKeyPassPhrase        | Kubernetes secret name for the opss key stored in opssKeyWalletconfigMap |
      | | When this is set. The operator will use it's value to extract the key and extract |
