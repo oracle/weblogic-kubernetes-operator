@@ -117,14 +117,21 @@ It's helpful to understand the following high level flow before running the samp
      | ------------------------ | ------------------------------------------------------------------------------| 
      | keepJRFSchema            | true or false. Default is true. keep jrf schema between updates.| 
      | opssKeyWalletConfigMap   | configmap with key ewallet.p12 in base64 format.  This is to store an extracted |
-     | | opss wallet key from the instrospector configmap.|
+     | | opss wallet key from the instrospector configmap after the first domain is created.|
      | opssKeyPassPhrase        | Kubernetes secret name for the opss key stored in opssKeyWalletconfigMap |
      | | When this is set. The operator will use it's value to extract the key and extract |
      | | and store the opss|key. The key will store in the introspector configmap. This key |
      | | can be optionally extracted and save in the opssKeyWalletConfigMap.  If this |
-     | | attribute is not set, the defalt password is domain_uid_welcome1  |
+     | | attribute is not set, the default password is domainid_welcome1  |
+     
+     You can extract the opss key from the introspect domain after it is created the very first time.
    
-   
+    ```
+    kubectl -n <ns> describe configmap <domain-uid>-weblogic-domain-introspect-cm | sed -n '/ewallet.p12/ {n;n;p}' > 
+    ewallet.p12
+    kubectl -n <ns> create configmap simple-domain1-opsskey-wallet --from-file=ewallet.p12
+    
+    ```
 
    - (Experimental) During lifecycle updates, specify the behavior of whether to use dynamic update (no rolling of 
    server). 
@@ -138,9 +145,8 @@ It's helpful to understand the following high level flow before running the samp
      || in the image or configmap will not be rollback |
 
 
-     ```
 
-
+     
 # Model File Naming and Loading Order
 
 During domain home creation, model and property files are first loaded from directory `/u01/model_home/models` within the image and are then loaded from the optional wdt config map.  
