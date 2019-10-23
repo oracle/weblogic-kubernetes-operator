@@ -114,9 +114,9 @@ spec:
   # k8 secret name for the opss extract key (it should have a literal called passphrase)
   #
   #opssKeyPassPhrase:
-  #  name: opss-key-passphrase-secret (it should have a literal called passphrase)
+  #  name: opss-key-passphrase-secret 
   #
-  # k8 secret name if the wdt model is encrypted
+  # k8 secret name if the wdt model is encrypted (it should have a literal called passphrase)
   #
   #wdtEncryptionPassPhrase:
   #  name: wdt-encrypt-passphrase-secret
