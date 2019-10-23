@@ -52,10 +52,10 @@ cp model1.10.properties models/model1.10.properties
 echo @@
 echo @@ Info: Creating deploy image with wdt models
 echo @@
-
+set -x
 ${IMGTOOL_BIN} update \
   --tag $MODEL_IMAGE_REPO:$MODEL_IMAGE_TAG \
-  --fromImage $BASE_IMAGE_REPO:$BASE_IMAGE_TAG \
+  --fromImage ${BASE_IMAGE_REPO}:$BASE_IMAGE_TAG \
   --wdtModel models/model1.yaml \
   --wdtVariables models/model1.10.properties \
   --wdtArchive models/archive1.zip \

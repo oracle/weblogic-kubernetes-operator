@@ -118,17 +118,16 @@ It's helpful to understand the following high level flow before running the samp
 
    - (Experimental) During lifecycle updates, specify the behavior of whether to use dynamic update (no rolling of 
    server). 
-   
-        keepJRFSchema:  keep jrf schema between updates. If not set default to false
-        rollbackIfRequireStart: For life cycle update, if it is set to true it will cancel the update and error out
-                                 default is false if not set
-        opssKeyWalletConfigMap: opss wallet config map name. Contains the waller file ewallet.p12 in base64 format
-        useOnlineUpdate: use online update or not (default is false)
-     ```
-      keepJRFSchema: true
-      rollbackIfRequireStart: true
-      opssKeyWalletConfigMap : simple-domain1-wdt-secret
-      useOnlineUpdate: true
+
+
+     | Attribute                | Usage                              |
+     | ------------------------ | ---------------------------------- | 
+     | keepJRFSchema            | keep jrf schema between updates. If not set default to true   | 
+     | opssKeyWalletConfigMap   | configmap with key ewallet.p12 in base64 format.  This is to store       |
+     | opssKeyPassPhrase        | Kubernetes secret name for the opss key stored in opssKeyWalletconfigMap  |
+     | useOnlineUpdate          | User WLST online update for changes. Default is false      |
+     | rollbackIfRequireStart   | Rollback changes       |
+
 
      ```
 

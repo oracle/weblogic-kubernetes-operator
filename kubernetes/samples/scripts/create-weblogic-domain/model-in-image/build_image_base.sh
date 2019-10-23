@@ -57,7 +57,7 @@ if [ -z "${USERPWD:-}" ]; then
 fi
 
 ${IMGTOOL_BIN} create \
-  --tag $BASE_IMAGE_REPO:$BASE_IMAGE_TAG \
+  --tag ${BASE_IMAGE_REPO}:$BASE_IMAGE_TAG \
   --user ${USERID} \
   --password ${USERPWD} \
   --patches ${REQUIRED_PATCHES} \

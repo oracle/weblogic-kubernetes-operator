@@ -23,13 +23,20 @@ set -eu
 
 cd ${WORKDIR}
 
+if [ "${WDT_DOMAIN_TYPE}" == "WLS" ] ; then
+  IMGTYPE=wls
+else
+  IMGTYPE=fmw
+fi
+
+
 BASE_IMAGE_BUILD=${BASE_IMAGE_BUILD:-when-missing}
-BASE_IMAGE_REPO=${BASE_IMAGE_REPO:-model-in-image}
-BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-x0}
+BASE_IMAGE_REPO=${BASE_IMAGE_REPO:-model-in-image}-${IMGTYPE}
+BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-base.0}
 
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-missing}
 MODEL_IMAGE_REPO=${MODEL_IMAGE_REPO:-model-in-image}
-MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-x1}
+MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
 
 SERVER_JRE=${SERVER_JRE:-V982783-01.zip}
 SERVER_JRE_VERSION=${SERVER_JRE_VERSION:-8u221}
@@ -82,9 +89,7 @@ updateImageToolCache jdk ${SERVER_JRE_VERSION} ${SERVER_JRE_TGZ}
 updateImageToolCache wdt latest ${WORKDIR}/weblogic-deploy-tooling.zip
 
 if [ "${WDT_DOMAIN_TYPE}" == "WLS" ] ; then
-  updateImageToolCache wls ${WLS_VERSION} ${WLS_INSTALLER}
-  IMGTYPE=wls
-else 
-  updateImageToolCache fmw ${WLS_VERSION} ${FMW_INSTALLER}
-  IMGTYPE=fmw
+    updateImageToolCache ${IMGTYPE} ${WLS_VERSION} ${WLS_INSTALLER}
+else
+    updateImageToolCache ${IMGTYPE} ${WLS_VERSION} ${FMW_INSTALLER}
 fi
