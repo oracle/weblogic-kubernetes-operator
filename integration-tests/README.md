@@ -197,7 +197,11 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
     - Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
 		
 		
-* Command to run the tests: This will run QUICKTEST. To run all the tests, `export QUICKTEST=false`
+* Command to run the tests: This will run QUICKTEST one after another test class.
+ 
+To run all the tests, `export QUICKTEST=false`. 
+
+To run the test classes in parallel, `export PARALLEL_FAILSAFE=classes`
 ```
 mvn clean verify -P wls-integration-tests 2>&1 | tee log.txt
 ```
@@ -209,6 +213,7 @@ The tests accepts optional env var overrides:
 | RESULT_ROOT | The root directory to use for the tests temporary files. See "Directory Configuration and Structure" for                  defaults and a detailed description of test directories. |
 | PV_ROOT    |  The root directory on the kubernetes cluster used for persistent volumes. See "Directory Configuration and Structure" for defaults and a detailed description of test directories. |
 | QUICKTEST  | When set to "false", runs all the integration tests. Default is true, which limits to a subset of tests |
+| PARALLEL_FAILSAFE  | When set to "classes", runs the test classes in parallel. Default is true |
 | LB_TYPE    | The default value is "TRAEFIK". Set to "VOYAGER" if you want to use it as LB. Using "VOYAGER" requires unique "voyagerWebPort"|
 | INGRESSPERDOMAIN  | The defult value is true. If you want to test creating TRAEFIK LB by kubectl yaml for multiple domains, set it to false. |
 | SHARED_CLUSTER    | Set to true if invoking on shared cluster, set to false or "" if running stand-alone or from Jenkins. Default is "". |

@@ -255,7 +255,7 @@
                             ${includes-failsafe}
                         </include>
                     </includes>
-                    <parallel>${parallel_failsafe}</parallel>
+                    <parallel>${PARALLEL_FAILSAFE}</parallel>
           			<useUnlimitedThreads>true</useUnlimitedThreads>
             		
                 </configuration>
