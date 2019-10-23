@@ -21,6 +21,10 @@ The [current release of the operator](https://github.com/oracle/weblogic-kuberne
 This release was published on August 27th, 2019.
 ***
 
+{{% notice note %}}
+Please review the prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction" >}}).
+{{% /notice %}}
+
 #### Operator earlier versions
 
 Documentation for prior releases of the operator is available [here](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/site/README.md).

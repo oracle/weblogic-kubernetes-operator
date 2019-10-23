@@ -18,6 +18,14 @@
 #    * The kubernetes persistent volume claim must already be created
 #
 
+echo ""
+echo "WARNING"
+echo "-------"
+echo "Oracle SOA Suite is currently only supported for non-production use in Docker and Kubernetes. "
+echo "The information provided in this sample is a preview for early adopters who wish to experiment "
+echo "with Oracle SOA Suite in Kubernetes before it is supported for production use."
+echo ""
+
 # Initialize
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"

@@ -22,6 +22,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1NodeAffinity;
 import io.kubernetes.client.models.V1NodeSelector;
+import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.models.V1PodAffinity;
 import io.kubernetes.client.models.V1PodAntiAffinity;
 import io.kubernetes.client.models.V1PodReadinessGate;
@@ -606,6 +607,13 @@ class ServerPod extends KubernetesResource {
 
   private void addAdditionalVolume(V1Volume var) {
     volumes.add(var);
+  }
+
+  void addAdditionalPVClaimVolume(String name, String claimName) {
+    addAdditionalVolume(
+        new V1Volume().name(name).persistentVolumeClaim(
+            new V1PersistentVolumeClaimVolumeSource().claimName(claimName))
+    );
   }
 
   void addAdditionalVolumeMount(String name, String path) {

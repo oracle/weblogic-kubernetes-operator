@@ -1,3 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oracle-db
+  namespace: default
+spec:
+  ports:
+  - name: tns
+    port: 1521
+    protocol: TCP
+    targetPort: 1521
+    nodePort: 30011
+  selector:
+    app.kubernetes.io/instance: dev
+    app.kubernetes.io/name: oracle-db
+  sessionAffinity: None
+  type: LoadBalancer
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -28,6 +46,8 @@ spec:
           value: devpdb
         - name: DB_DOMAIN
           value: k8s
+        - name: DB_BUNDLE
+          value: basic  
         image: container-registry.oracle.com/database/enterprise:12.2.0.1-slim
         imagePullPolicy: IfNotPresent
         name: oracle-db
