@@ -69,7 +69,7 @@ public class JrfDomainOnPvWlst extends BaseTest {
   */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+    /*logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
     logger.info("Run once, release cluster lease");
    
@@ -77,7 +77,7 @@ public class JrfDomainOnPvWlst extends BaseTest {
     DbUtils.stopOracleDB();
     tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
-    logger.info("SUCCESS");
+    logger.info("SUCCESS");*/
   }
  
   @Test
@@ -102,7 +102,7 @@ public class JrfDomainOnPvWlst extends BaseTest {
       jrfdomain.verifyDomainCreated();
 
       // basic test cases
-      testBasicUseCases(jrfdomain);
+      testBasicUseCases(jrfdomain, false);
 
       testCompletedSuccessfully = true;
     } finally {
