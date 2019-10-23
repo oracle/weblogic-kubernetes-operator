@@ -250,19 +250,12 @@
                     </argLine>
                     <argLine>${failsafeArgLine}</argLine>
                     <failIfNoTests>false</failIfNoTests>
-                    <systemPropertyVariables>
-                        <maxThreads>3</maxThreads>
-                    </systemPropertyVariables>
-                    <!-- additionalClasspathElements>
-                        <additionalClasspathElement>${project.basedir}/src/test/resources/wlthint3client.jar
-                        </additionalClasspathElement>
-                    </additionalClasspathElements -->
                     <includes>
                         <include>
                             ${includes-failsafe}
                         </include>
                     </includes>
-                    <parallel>classes</parallel>
+                    <parallel>${PARALLEL_FAILSAFE}</parallel>
           			<useUnlimitedThreads>true</useUnlimitedThreads>
             		
                 </configuration>
