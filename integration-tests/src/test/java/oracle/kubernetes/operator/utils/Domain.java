@@ -105,8 +105,10 @@ public class Domain {
     this.createDomainResource = createDomainResource;
     createPv();
     createSecret();
-    if (createLoadBalancer) {
-      createLoadBalancer();
+    synchronized (Domain.class) {
+      if (createLoadBalancer) {
+        createLoadBalancer();
+      }
     }
     generateInputYaml();
     callCreateDomainScript(userProjectsDir);
@@ -1135,7 +1137,7 @@ public class Domain {
     }
     LoggerHelper.getLocal().log(Level.INFO, "Done - testDomainServerPodRestart");
   }
-
+   
   /**
    * Verify domain server pods get restarted after the property change by kubectl apply -f new
    * domain yaml file with added/changed property.
@@ -1152,20 +1154,26 @@ public class Domain {
         BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml";
     String domainYamlFile =
         BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+    String changedDomainYamlFile =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_change.yaml";
     String fileWithChangedProperty =
         BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/"
             + fileNameWithChangedProperty;
 
-    // copy the original domain.yaml to domain_new.yaml
-    TestUtils.copyFile(domainYamlFile, newDomainYamlFile);
+    // copy the original domain.yaml to domain_change.yaml
+    TestUtils.copyFile(domainYamlFile, changedDomainYamlFile);
 
-    // append the file with changed property to the end of domain_new.yaml
+    // append the file with changed property to the end of domain_change.yaml
     Files.write(
-        Paths.get(newDomainYamlFile),
+        Paths.get(changedDomainYamlFile),
         Files.readAllBytes(Paths.get(fileWithChangedProperty)),
         StandardOpenOption.APPEND);
-
+    
+    String oldPvc = "domainpodsrestart-weblogic-sample-pvc";
+    String newPvc = domainUid + "-" + pvMap.get("baseName") + "-pvc";
+    LoggerHelper.getLocal().log(Level.INFO, "newPvc in verifyDomainServerPodRestart: " + newPvc);
+    modifyPropertyInYaml(oldPvc, newPvc, changedDomainYamlFile, newDomainYamlFile);
     // kubectl apply the new constructed domain_new.yaml
     StringBuffer command = new StringBuffer();
     command.append("kubectl apply  -f ").append(newDomainYamlFile);
@@ -1182,7 +1190,44 @@ public class Domain {
     LoggerHelper.getLocal().log(
         Level.INFO, "Done - testDomainServerPodRestart with domainYamlWithChangedProperty");
   }
+   
+  /**
+   * Modify the property in the domain yaml file.
+   *
+   * @param oldString - the old property value
+   * @param newString - the new property value
+   * @param oldFileName - the file name that has the oldString 
+   * @param newFileName - the file name that has the newString changed from the old one
+   * @throws Exception - IOException or errors occurred during the call
+   */
+  public void modifyPropertyInYaml(String oldString, String newString, String oldFileName, String newFileName)
+      throws Exception {
+    LoggerHelper.getLocal().log(Level.INFO, "modifyDomainPvcInYaml");
+    String content =
+        new String(
+        Files.readAllBytes(
+            Paths.get(oldFileName)));
+    boolean result = content.indexOf(oldString) >= 0;
+    LoggerHelper.getLocal().log(Level.INFO,
+        "The search result for " + oldString + " is: " + result);
+    if (result) {
+      TestUtils.createNewYamlFile(
+          oldFileName,
+          newFileName,
+          oldString,
+          newString);
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Done - generate new domain.yaml for "
+              + domainUid
+              + " oldPVC: "
+              + oldString
+              + " newPVC: "
+              + newString);
 
+    }
+    LoggerHelper.getLocal().log(Level.INFO, "Done - modifyPropertyInYaml");
+  }
+  
   /**
    * Get runtime server yaml file and verify the changed property is in that file.
    *
@@ -1426,7 +1471,7 @@ public class Domain {
     }
   }
 
-  protected synchronized void createLoadBalancer() throws Exception {
+  protected void createLoadBalancer() throws Exception {
     Map<String, Object> lbMap = new HashMap<String, Object>();
     lbMap.put("domainUID", domainUid);
     lbMap.put("namespace", domainNS);

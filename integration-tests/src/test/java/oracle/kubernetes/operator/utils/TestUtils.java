@@ -1181,6 +1181,7 @@ public class TestUtils {
     if (wdt) {
       domainMap.put("domainHomeImageBuildPath",
           "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");
+      domainMap.put("createDomainFilesDir", "wdt");
     } else {
       domainMap.put("domainHomeImageBuildPath",
           "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
@@ -1189,6 +1190,11 @@ public class TestUtils {
         "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
     domainMap.put("logHomeOnPV", "true");
     domainMap.put("clusterType", "CONFIGURED");
+    if (prefix != null && !prefix.trim().equals("")) {
+      domainMap.put("image", prefix.toLowerCase() + "-dominimage-" + suffixCount + ":latest");
+    } else {
+      domainMap.put("image", "dominimage-" + suffixCount + ":latest");
+    }
     return domainMap;
   }
 

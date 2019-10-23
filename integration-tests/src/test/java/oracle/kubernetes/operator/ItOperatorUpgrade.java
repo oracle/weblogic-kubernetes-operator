@@ -39,6 +39,7 @@ public class ItOperatorUpgrade extends BaseTest {
   private Domain domain = null;
   private static Operator operator;
   boolean testCompletedSuccessfully = false;
+  static String testClassName = null;
 
   /**
    * This method gets called only once before any of the test methods are executed.
@@ -47,7 +48,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    String testClassName = new Object() {
+    testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
     // initialize test properties and create the directories
     initialize(APP_PROPS_FILE, testClassName);
@@ -311,7 +312,7 @@ public class ItOperatorUpgrade extends BaseTest {
     // TestUtils.exec("kubectl get all --all-namespaces", true);
 
     // Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
-    Map<String, Object> wlstDomainMap = TestUtils.createDomainInImageMap(getNewSuffixCount(), false, "");
+    Map<String, Object> wlstDomainMap = TestUtils.createDomainInImageMap(getNewSuffixCount(), false, testClassName);
     wlstDomainMap.put("domainUID", DUID);
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
