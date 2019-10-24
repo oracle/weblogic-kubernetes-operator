@@ -354,6 +354,8 @@ function createWLDomain() {
                     trace ">>>  updatedomainResult=3"
                     exit 1
                 elif [ ${ret} -ne 0 ] ; then
+                    trace "Introspect job terminated: Online update failed. Check error in the logs"
+                    trace "Note: Changes in the optional configmap and/or image may needs to be correction"
                     trace ">>>  updatedomainResult=${ret}"
                     exit 1
                 else
@@ -381,7 +383,7 @@ function createWLDomain() {
 
             # Changes are not supported - shape changes
             if [ ${diff_rc} -eq ${FATAL_MODEL_CHANGES} ] ; then
-                trace "Shape changes in the model is not supported"
+                trace "Introspect job terminated: Shape changes in the model is not supported"
                 exit 1
             fi
 
@@ -389,7 +391,7 @@ function createWLDomain() {
             # TODO: handling version update later
 
             if [ ${diff_rc} -eq ${MODELS_SAME} ] ; then
-                trace "Nothing changed. Stopping introspect job."
+                trace "Introspect job terminated: Nothing changed"
                 return 0
             fi
 
@@ -397,7 +399,7 @@ function createWLDomain() {
             # TODO: Are these different from FATAL ?
 
             if [ ${diff_rc} -eq ${UNSAFE_ONLINE_UPDATE} ] ; then
-                trace "Changes are not safe to do online updates. Use offline changes. See introspect job logs for
+                trace "Introspect job terminated: Changes are not safe to do online updates. Use offline changes. See introspect job logs for
                 details"
                 exit 1
             fi
