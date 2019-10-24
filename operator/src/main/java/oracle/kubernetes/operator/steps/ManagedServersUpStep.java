@@ -156,7 +156,7 @@ public class ManagedServersUpStep extends Step {
         servers.add(serverName);
         addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server));
         addToCluster(clusterName);
-      } else if (server.isPrecreateServerService()) {
+      } else if ((!domain.isShuttingDown() || server.shouldStart(0)) && server.isPrecreateServerService()) {
         servers.add(serverName);
         addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server, true));
       }
