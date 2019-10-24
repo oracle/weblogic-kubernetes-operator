@@ -14,6 +14,8 @@ source ${SCRIPTPATH}/utils.sh
 
 trace "Starting WebLogic Server '${SERVER_NAME}'."
 
+source ${SCRIPTPATH}/model-in-image.sh
+
 
 #
 # Define helper fn to copy a file only if src & tgt differ
@@ -122,18 +124,19 @@ function copySitCfg() {
 
 
 if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
-#  cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.zip.gz && gunzip /tmp/domain.zip.gz && jar xvf /tmp/domain.zip
   cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
-  # zip does not store external attributes - should we use find ?
   chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
-  # unzip the domainlib from archive
-  for fh in /u01/wdt/models/*.zip ; do
-    mkdir -p ${DOMAIN_HOME}/lib && cd ${DOMAIN_HOME}/lib
-    unzip ${fh} wlsdeploy/domainLibraries/*
-    cd ${DOMAIN_HOME}
-    unzip ${fh} wlsdeploy/*
-    rm -fr wlsdeploy/domainLibraries
-  done
+
+  mkdir -p ${DOMAIN_HOME}/lib
+  for file in $(sort_files ${archive_root} "*.zip")
+    do
+        cd ${DOMAIN_HOME}/lib
+        jar xvf ${archive_root}/${file} wlsdeploy/domainLibraries/
+        cd ${DOMAIN_HOME}
+        jar xvf ${archive_root}/${file} wlsdeploy/
+        rm -fr wlsdeploy/domainLibraries
+    done
+
 fi
 
 
