@@ -890,8 +890,6 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if could not run the command successfully to create WLSImage and deploy
    */
   private static void createWlsImageAndDeploy() throws Exception {
-    //operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    //addRestOptToYaml(monitoringExporterEndToEndDir + "/dashboard/exporter-config.yaml", "restPort", 8001);
     logger.info(" Starting to create WLS Image");
 
     String command =
