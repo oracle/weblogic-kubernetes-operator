@@ -1449,7 +1449,8 @@ public class Domain {
     // for remote k8s cluster and domain in image case, push the domain image to OCIR
     if (domainMap.containsKey("domainHomeImageBase") && BaseTest.SHARED_CLUSTER) {
       String image =
-          System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:" + imageTag;
+          System.getenv("REPO_REGISTRY") + "/weblogick8s/" + (String)domainMap.get("image") + ":" 
+                 + (String)domainMap.get("imageTag");
       TestUtils.loginAndPushImageToOcir(image);
 
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
@@ -1726,7 +1727,8 @@ public class Domain {
       if (BaseTest.SHARED_CLUSTER) {
         domainMap.put(
             "image",
-            System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:" + imageTag);
+            System.getenv("REPO_REGISTRY") + "/weblogick8s/" + (String)domainMap.get("image") + ":" 
+                       + (String)domainMap.get("imageTag"));
         domainMap.put("imagePullSecretName", "ocir-domain");
         domainMap.put("imagePullPolicy", "Always");
       }
