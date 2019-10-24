@@ -89,7 +89,7 @@ t3ChannelPort: 30012
 #t3PublicAddress:
 
 # Boolean to indicate if the channel should be exposed as a service
-exposeAdminT3Channel: true
+exposeAdminT3Channel: false
 
 # NodePort to expose for the admin server
 adminNodePort: 30701
