@@ -1445,11 +1445,10 @@ public class Domain {
     }
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
-
+  
     // for remote k8s cluster and domain in image case, push the domain image to OCIR
     if (domainMap.containsKey("domainHomeImageBase") && BaseTest.SHARED_CLUSTER) {
-      String image =
-          System.getenv("REPO_REGISTRY") + "/weblogick8s/" + (String)domainMap.get("image");
+      String image = (String)domainMap.get("image");
       TestUtils.loginAndPushImageToOcir(image);
 
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
