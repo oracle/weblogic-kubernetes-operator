@@ -197,8 +197,6 @@ function createWLDomain() {
             model_list="${model_list}${wdt_config_root}/${file}"
         done
 
-    # Should only have one !!
-
     for file in $(ls ${archive_root}/*.zip | sort)
         do
             inventory_image[$file]=$(md5sum $file | cut -d' ' -f1)
