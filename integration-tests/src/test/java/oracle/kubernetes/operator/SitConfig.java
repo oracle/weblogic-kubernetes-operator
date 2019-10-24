@@ -28,10 +28,11 @@ import org.junit.Assert;
  */
 public class SitConfig extends BaseTest {
 
+  private static int testNumber = getNewSuffixCount();
   private static final String DOMAINUID = "customsitconfigdomain";
-  private static final String ADMINPORT = "30710";
-  private static final int T3CHANNELPORT = 30091;
-  private static final String MYSQL_DB_PORT = "31306";
+  private static final String ADMINPORT = String.valueOf(30800 + testNumber);
+  private static final int T3CHANNELPORT = 31000 + testNumber;
+  private static final String MYSQL_DB_PORT = String.valueOf(31306 + testNumber);
   private static String TEST_RES_DIR;
   private static String ADMINPODNAME;
   private static String fqdn;
