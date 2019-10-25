@@ -103,10 +103,6 @@ if [ ! -d "${DOMAIN_HOME}" ]; then
     if [ $? -ne 0 ] ; then
       trace "gzip is missing - image must have gzip installed " && exit 1
     fi
-#    command -v unzip
-#    if [ $? -ne 0 ] ; then
-#      trace "unzip is missing - image must have unzip installed " && exit 1
-#    fi
     command -v tar
     if [ $? -ne 0 ] ; then
         trace "tar is missing - image must have tar installed " && exit 1

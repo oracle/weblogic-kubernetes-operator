@@ -155,6 +155,15 @@ function get_opss_key_wallet() {
     fi
 }
 
+# Some refactoring is needed
+# 1. Create the parameter list for WDT
+# 2. Check if any WDT artifacts changed
+# 3. If nothing changed return 0
+# 4. If somethin changed (or new) then use WDT createDomain.sh
+# 5. With the new domain created, the generated merged model is compare with the previous one (if any)
+# 6. If there are safe changes then if user select useOnlineUpdate, use wdt online update
+#  7.   ... more info
+
 function createWLDomain() {
 
     model_list=""
