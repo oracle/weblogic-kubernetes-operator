@@ -1,3 +1,4 @@
+import re
 import sets
 import sys, os, traceback
 
@@ -5,6 +6,88 @@ UNSAFE_ONLINE_UPDATE=0
 SAFE_ONLINE_UPDATE=1
 FATAL_MODEL_CHANGES=2
 MODELS_SAME=3
+
+# The following class is borrowed directly from the WDT project's yaml_tranlator.py
+class PythonToYaml:
+    """
+    A class that converts a Python dictionary into Yaml and writes the output to a file.
+    """
+    # 4 spaces
+    _indent_unit = '    '
+    _requires_quotes_chars_regex = '[:{}\[\],&*#?|<>=!%@`-]'
+
+    def __init__(self):
+        return
+
+    def _write_dictionary_to_yaml_file(self, dictionary, writer, indent=''):
+        """
+        Do the actual heavy lifting of converting a dictionary and writing it to the file.  This method is
+        called recursively when a value of the dictionary entry is itself a dictionary.
+        :param dictionary: the Python dictionarhy to converty
+        :param writer: the java.io.PrintWriter for the output file
+        :param indent: the amount of indent to use (based on the level of recursion)
+        :raises: IOException: if an error occurs while writing the output
+        """
+        if dictionary is None:
+            return
+
+        for key, value in dictionary.iteritems():
+            quoted_key = self._quotify_string(key)
+            if isinstance(value, dict):
+                writer.write(indent + quoted_key + ':' + '\n')
+                self._write_dictionary_to_yaml_file(value, writer, indent + self._indent_unit)
+            else:
+                writer.write(indent + quoted_key + ': ' + self._get_value_string(value) + '\n')
+
+        return
+
+    def _get_value_string(self, value):
+        """
+        Convert the Python value into the proper Yaml value
+        :param value: the Python value
+        :return: the Yaml value
+        """
+        if value is None:
+            result = 'null'
+        elif type(value) is int or type(value) is long or type(value) is float:
+            result = str(value)
+        elif type(value) is list:
+            new_value = '['
+            for element in value:
+                new_value += ' ' + self._get_value_string(element) + ','
+            if len(new_value) > 1:
+                new_value = new_value[:-1]
+            new_value += ' ]'
+            result = str(new_value)
+        else:
+            result = self._quotify_string(str(value))
+        return result
+
+    def _quotify_string(self, text):
+        """
+        Insert quotes around the string value if it contains Yaml special characters that require it.
+        :param text: the input string
+        :return: the quoted string, or the original string if no quoting was required
+        """
+        if bool(re.search(self._requires_quotes_chars_regex, text)):
+            result = '\'' + self._quote_embedded_quotes(text) + '\''
+        else:
+            result = self._quote_embedded_quotes(text)
+        return result
+
+    def _quote_embedded_quotes(self, text):
+        """
+        Replace any embedded quotes with two quotes.
+        :param text:  the text to quote
+        :return:  the quoted text
+        """
+        result = text
+        if '\'' in text:
+            result = result.replace('\'', '\'\'')
+        if '"' in text:
+            result = result.replace('"', '""')
+        return result
+
 
 class ModelDiffer:
 
@@ -318,8 +401,8 @@ class ModelFileDiffer:
         :param writer: where to write the dictionary into json syntax
         :param indent: current string indention of the json syntax. If not provided, indent is an empty string
         """
-        _start_dict = '{'
-        _end_dict = '}'
+        _start_dict = "{\n"
+        _end_dict = "}\n"
 
         if dictionary is None:
             return
@@ -330,7 +413,7 @@ class ModelFileDiffer:
         indent += ' '
         for key, value in dictionary.iteritems():
             writer.write(end_line)
-            end_line = ','
+            end_line = ",\n"
             writer.write(indent + '"' + self.quote_embedded_quotes(key) + '" : ')
             if isinstance(value, dict):
                 self.write_dictionary_to_json_file(value, writer, indent)
@@ -390,6 +473,11 @@ class ModelFileDiffer:
         net_diff = obj.get_final_changed_model()
         fh = open('/tmp/diffed_model.json', 'w')
         self.write_dictionary_to_json_file(net_diff, fh)
+        #print all_added
+        fh.close()
+        fh = open('/tmp/diffed_model.yaml', 'w')
+        pty = PythonToYaml()
+        pty._write_dictionary_to_yaml_file(net_diff, fh)
         fh.close()
         return obj.is_safe_diff(net_diff)
 
