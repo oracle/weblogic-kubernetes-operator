@@ -161,14 +161,20 @@ function get_opss_key_wallet() {
 # 3. If nothing changed return 0
 # 4. If somethin changed (or new) then use WDT createDomain.sh
 # 5. With the new domain created, the generated merged model is compare with the previous one (if any)
-# 6. If there are safe changes then if user select useOnlineUpdate, use wdt online update
-#  7.   ... more info
+# 6. If there are safe changes and  user select useOnlineUpdate, use wdt online update
+# 6.1.   if online update failed then exit the introspect job
+# 6.2    if online update succeeded and no restart is need then go to 7.1
+# 6.3    if online update succeeded and restart is needed but user set rollbackIfRequireRestart then exit the job
+# 6.4    go to 7.1.
+# 7. else
+# 7.1    unzip the old domain and use wdt offline updates
+
 
 function createWLDomain() {
 
-    model_list=""
-    archive_list=""
-    variable_list="${model_home}/_k8s_generated_props.properties"
+    local model_list=""
+    local archive_list=""
+    local variable_list="${model_home}/_k8s_generated_props.properties"
 
     # in case retry
     if [ -f ${variable_list} ] ; then
@@ -235,8 +241,8 @@ function createWLDomain() {
         model_list="-model_file ${model_list}"
     fi
 
-    use_encryption=""
-    use_passphrase=0
+    local use_encryption=""
+    local use_passphrase=0
     if [ -f "$(get_wdt_encryption_passphrase)" ] ; then
         inventory_passphrase[wdtpassword]=$(md5sum $(get_wdt_encryption_passphrase) | cut -d' ' -f1)
         wdt_passphrase=$(cat $(get_wdt_encryption_passphrase))
@@ -256,7 +262,7 @@ function createWLDomain() {
     # if yes. then run create domain again
 
     checkExistInventory
-    create_domain=$?
+    local create_domain=$?
     # something changed in the wdt artifacts
     if  [ ${create_domain} -ne 0 ] ; then
 
