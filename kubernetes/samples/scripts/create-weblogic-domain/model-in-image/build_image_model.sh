@@ -49,6 +49,11 @@ fi
 
 cp model1.10.properties models/model1.10.properties
 
+# If not using prebuild image
+if [[ ${BASE_IMAGE_REPO} != container-registry.oracle.com* ]] ; then
+  BASE_IMAGE_REPO=${BASE_IMAGE_REPO}-${IMGTYPE}
+fi
+
 echo @@
 echo @@ Info: Creating deploy image with wdt models
 echo @@

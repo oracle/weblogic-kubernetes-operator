@@ -50,6 +50,8 @@ spec:
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
       value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+    - name: ALLOW_DYNAMIC_CLUSTER_IN_FMW
+      value: "true"
     # volumes:
     # - name: weblogic-domain-storage-volume
     #   persistentVolumeClaim:
