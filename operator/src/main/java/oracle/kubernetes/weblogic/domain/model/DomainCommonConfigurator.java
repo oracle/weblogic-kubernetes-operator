@@ -657,5 +657,11 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       getDomainSpec().addToleration(toleration);
       return this;
     }
+
+    @Override
+    public ClusterConfigurator withPrecreateServerService(boolean precreateServerService) {
+      getDomainSpec().setPrecreateServerService(precreateServerService);
+      return this;
+    }
   }
 }
