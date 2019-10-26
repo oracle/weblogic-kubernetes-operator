@@ -42,14 +42,6 @@ MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-missing}
 MODEL_IMAGE_REPO=${MODEL_IMAGE_REPO:-model-in-image}
 MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
 
-SERVER_JRE=${SERVER_JRE:-V982783-01.zip}
-SERVER_JRE_VERSION=${SERVER_JRE_VERSION:-8u221}
-SERVER_JRE_TGZ=${SERVER_JRE_TGZ:-server-jre-${SERVER_JRE_VERSION}-linux-x64.tar.gz}
-
-WLS_INSTALLER=${WLS_INSTALLER:-V886423-01.zip}
-FMW_INSTALLER=${FMW_INSTALLER:-V886426-01.zip}
-WLS_VERSION=${WLS_VERSION:-12.2.1.3.0}
-REQUIRED_PATCHES=${REQUIRED_PATCHES:-29135930_12.2.1.3.190416,29016089}
 
 echo @@
 echo @@ Info: Setting up imagetool and populating its caches
@@ -61,22 +53,8 @@ if [ ! "${WDT_DOMAIN_TYPE}" == "WLS" ] \
   echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit
 fi
 
-if [ ! -f "${SERVER_JRE}" ] ; then
-  echo "@@ Error: Directory WORKDIR='${WORKDIR}' does not contain installer for SERVER_JRE '${SERVER_JRE}'." && exit
-fi
-
-if [ ! -f "${WLS_INSTALLER}" ] \
-   && [ "${WDT_DOMAIN_TYPE}" == "WLS" ] ; then
-  echo "@@ Error: Directory WORKDIR='${WORKDIR}' does not contain WLS_INSTALLER '${WLS_INSTALLER}'." && exit
-fi
-
-if [ ! -f "${FMW_INSTALLER}" ] \
-   && [ "${WDT_DOMAIN_TYPE}" == "RestrictedJRF" -o "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
-  echo "@@ Error: Directory WORKDIR=${WORKDIR} does not contain FMW_INSTALER '${FMW_INSTALLER}'." && exit
-fi
 
 mkdir -p cache
-unzip -o ${SERVER_JRE}
 unzip -o weblogic-image-tool.zip
 
 IMGTOOL_BIN=${WORKDIR}/imagetool/bin/imagetool.sh
@@ -89,11 +67,5 @@ function updateImageToolCache() {
   ${IMGTOOL_BIN} cache addInstaller --type $1 --version $2 --path $3
 }
 
-updateImageToolCache jdk ${SERVER_JRE_VERSION} ${SERVER_JRE_TGZ}
 updateImageToolCache wdt latest ${WORKDIR}/weblogic-deploy-tooling.zip
 
-if [ "${WDT_DOMAIN_TYPE}" == "WLS" ] ; then
-    updateImageToolCache ${IMGTYPE} ${WLS_VERSION} ${WLS_INSTALLER}
-else
-    updateImageToolCache ${IMGTYPE} ${WLS_VERSION} ${FMW_INSTALLER}
-fi

@@ -2,6 +2,7 @@
 
 This sample demonstrates the WebLogic Kubernetes Operator "Model in Image" feature. This feature supports specifying a Weblogic Deploy Tool (WDT) model for a domain resource so that the operator generates a domain home directly from the model during runtime. The Model in Image feature is an alternative to pre-creating a WebLogic domain home prior to deploying your domain resource. 
 
+
 WDT models are a convenient and succinct alternative to WebLogic configuration scripts. WDT models compactly define a WebLogic domain via yaml files, plus they support bundlng your applications in an application archive. The WDT model format is described in [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling).
 
 This sample demonstrates deploying a WebLogic servlet application within basic `WLS` domain, a Oracle Fusion Middleware Infrastructure `JRF` domain, or a `RestrictedJRF` domain. The `JRF` domain path through the sample includes additional steps for deploying a database and initializing the database using the RCU tool. `JRF` domains are used by Oracle products that layer on top of WebLogic Server such as SOA, OSB, and FA. `RestrictedJRF` domains are used by other Oracle layered products such as CGBU.
@@ -240,30 +241,14 @@ For example:
    export WDT_DOMAIN_TYPE=<one of WLS, JRF, or RestrictedJRF>
    ```
 
-5. Obtain JRE and the appropriate WebLogic installers from [edelivery.oracle.com](https://edelivery.oracle.com)
-   - JRE
-     - Obtain `Oracle SERVER JRE 1.8.0.221 media upload for Linux x86-64`
-       - search for `Oracle JRE`
-       - click on `JRE 1.8.0_221` to add it to the shopping cart
-       - click on `V982783-01.zip` to download the zip files
-   - WebLogic installer for domain type `WLS`
-     - Obtain `Oracle Fusion Middleware 12c (12.2.1.3.0) WebLogic Server and Coherence`
-     - this is recommended for `WLS` domains, and isn't needed for `JRF` and `RestrictedJRF` domains
-       - search for `Oracle WebLogic Server` in [edelivery.oracle.com](https://edelivery.oracle.com)
-       - click on `Oracle WebLogic Server 12.2.1.3.0 (Oracle WebLogic Server Enterprise Edition)`
-       - click on `Checkout`
-       - click `continue` and accept license agreement
-       - click on `V886423-01.zip` to download the zip files
-   - WebLogic installer for domain type `JRF` or `RestrictedJRF`
-     - Obtain `Oracle Fusion Middleware 12c (12.2.1.3.0) Infrastructure`
-     - this is required for `JRF` and `RestrictedJRF` domains, and isn't recommended for `WLS` domains
-       - search for `Oracle Fusion Middleware` in [edelivery.oracle.com](https://edelivery.oracle.com)
-       - click on `Oracle Fusion Middleware 12c Infrastructure 12.2.1.3.0)`
-       - click on `Checkout`
-       - click `continue` and accept license agreement
-       - click on `V886426-01.zip` to download the zip files
+5. Obtain the base WebLoic image from [conainer-registry](http://container-registry.oracle.com)
+  - Use the browser to login to [conainer-registry](http://container-registry.oracle.com)
+  - Click on Middleware
+  - Click on fmw-infrastructure
+  - Accept the license agreement on dialog box on the right
+  - Repeat the same license agreement for weblogic
+  - Open a terminal and ```docker loging container-reigstry.oracle.com```
 
-6. Copy the installers to the working directory `${WORKDIR}` (V982783-01.zip, plus V886423-01.zip or V886426-01.zip).
 
 ## Use the WebLogic Image Tool to create an image
 
@@ -273,7 +258,7 @@ You can use this sample's `./build.sh` script, which will perform the following 
 
   - Expects WDT_DOMAIN_TYPE and WORKDIR to already be initialized (see [Prerequisites for all domain types](#prerequisites-for-all-domain-types))
   - Downloads the latest WebLogic Image Tool and WebLogic Deploy Tool
-  - Creates a base image named `model-in-image:x0` that contains a JRE, a WLS install, and required patch(es)
+  - Creates a base image named `model-in-image:v1` that contains a JRE, a WLS install, and required patch(es)
     - Uses the WebLogic Image Tool's 'create' option
     - Uses the JRE and WLS installers downloaded during the pre-requisites step
     - Determines the correct WLS installer based on WDT_DOMAIN_TYPE
@@ -281,7 +266,7 @@ You can use this sample's `./build.sh` script, which will perform the following 
     - Builds a simple servlet app and puts it in WDT model application archive `./models/archive1.zip`
     - Copies sample model files from `$WORKDIR/` to `$WORKDIR/models`
       - Uses a model file that's appropriate to the domain type (for example, the `JRF` domain model includes database access configuration)
-  - Create a final image named `model-in-image:x1` that layers on the base image
+  - Create a final image named `model-in-image:v1` that layers on the base image
     - Uses the WebLogic Image Tool's 'update' option
     - Installs WDT using the installer you downloaded to image location `/u01/wdt/weblogic-deploy`.
     - Copies the WDT model, properties, and application archive in `$WORKDIR/models/archive1.zip` to image location `/u01/wdt/models`.

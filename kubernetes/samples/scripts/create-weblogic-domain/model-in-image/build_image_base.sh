@@ -41,31 +41,5 @@ if [ ! "$BASE_IMAGE_BUILD" = "always" ] && \
   exit 0
 fi
 
-if [[ ${BASE_IMAGE_REPO} == container-registry.oracle.com* ]] ; then
-  docker pull ${BASE_IMAGE_REPO}:${BASE_IMAGE_TAG}
-else
-  (
-    set +x
+docker pull ${BASE_IMAGE_REPO}:${BASE_IMAGE_TAG}
 
-    if [ -z "${USERID:-}" ]; then
-      echo -n "Enter an Oracle Support Username: "
-      read USERID
-      echo
-    fi
-
-    if [ -z "${USERPWD:-}" ]; then
-      echo -n "Enter Oracle Support Password for Username '$USERID': "
-      read -s USERPWD
-      echo
-    fi
-
-    ${IMGTOOL_BIN} create \
-      --tag ${BASE_IMAGE_REPO}-${IMGTYPE}:$BASE_IMAGE_TAG \
-      --user ${USERID} \
-      --password ${USERPWD} \
-      --patches ${REQUIRED_PATCHES} \
-      --jdkVersion ${SERVER_JRE_VERSION} \
-      --type ${IMGTYPE}
-
-  )
-fi
