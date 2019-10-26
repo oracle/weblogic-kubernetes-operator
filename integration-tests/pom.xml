@@ -286,7 +286,7 @@
             <id>jrf-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/JrfInOperator*Test.java</includes-failsafe>
+                <includes-failsafe>**/JrfDomain*</includes-failsafe>
                 <jrf_enabled>true</jrf_enabled>
             </properties>
         </profile>
@@ -306,7 +306,8 @@
             <id>wls-jrf-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/*.java</includes-failsafe>
+                <includes-failsafe>**/It*</includes-failsafe>
+                <includes-failsafe>**/JrfDomain*</includes-failsafe>
                 <jrf_enabled>true</jrf_enabled>
             </properties>
         </profile>
