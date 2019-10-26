@@ -306,8 +306,7 @@
             <id>wls-jrf-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/It*</includes-failsafe>
-                <includes-failsafe>**/JrfDomain*</includes-failsafe>
+                <includes-failsafe>**/It*,**/JrfDomain*</includes-failsafe>
                 <jrf_enabled>true</jrf_enabled>
             </properties>
         </profile>
