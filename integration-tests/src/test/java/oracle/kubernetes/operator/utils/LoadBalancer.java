@@ -213,7 +213,7 @@ public class LoadBalancer {
     executeHelmCommand(cmd2);
 
     String cmd3 =
-        "helm install appscode/voyager --name voyager-operator --version 7.4.0 --namespace voyage "
+        "helm install appscode/voyager --name voyager-operator --version 7.4.0 --namespace voyager "
             + "--set cloudProvider=baremetal --set apiserver.enableValidatingWebhook=false";
     LoggerHelper.getLocal().log(Level.INFO, "Executing Install voyager operator cmd " + cmd3);
 
