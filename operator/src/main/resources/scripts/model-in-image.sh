@@ -31,7 +31,7 @@ SCRIPT_ERROR=255
 
 
 # sort the files according to the pattern and
-# and put it in a sequence array
+# and write the result in a sequence array to stdout
 
 function sort_files() {
     shopt -s nullglob

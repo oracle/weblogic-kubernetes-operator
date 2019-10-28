@@ -129,6 +129,7 @@ class OfflineWlstEnv(object):
     self.INVENTORY_PASSPHRASE_MD5 = self.INTROSPECT_HOME + '/inventory_passphrase.md5'
     self.MERGED_MODEL_FILE = self.INTROSPECT_HOME + '/merged_model.json'
     self.EWALLET             = self.INTROSPECT_HOME + '/ewallet.p12'
+    self.WLS_VERSION  = self.INTROSPECT_HOME + "/wls.version"
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
@@ -903,26 +904,24 @@ class InventoryMD5Generator(Generator):
     else:
       return None
 
-class MergedModelGenerator(Generator):
+class WLSVersionGenerator(Generator):
 
-  def __init__(self, env, fromfile):
-    Generator.__init__(self, env, env.MERGED_MODEL_FILE)
+  def __init__(self, env):
+    Generator.__init__(self, env, env.WLS_VERSION)
     self.env = env
-    self.fromfile = fromfile
 
   def generate(self):
     self.open()
     try:
-      self.addMergedModelFile()
+      self.addVersionString()
       self.close()
       self.addGeneratedFile()
     finally:
       self.close()
 
-  def addMergedModelFile(self):
-    if os.path.exists(self.fromfile):
-      file_str = self.env.readFile(self.fromfile)
-      self.writeln(base64.encodestring(file_str))
+  def addVersionString(self):
+    version_string = version
+    self.writeln(version_string)
 
 
 class SitConfigGenerator(Generator):
@@ -1413,6 +1412,8 @@ class DomainIntrospector(SecretManager):
         InventoryMD5Generator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
         trace("md5 passphrase")
         InventoryMD5Generator(self.env, self.env.INVENTORY_PASSPHRASE_MD5, '/tmp/inventory_passphrase.md5').generate()
+        trace("wls version")
+        WLSVersionGenerator(self.env).generate()
 
         if self.env.WDT_DOMAIN_TYPE == 'JRF' and self.env.KEEP_JRF_SCHEMA:
           OpssKeyGenerator(self.env).generate()

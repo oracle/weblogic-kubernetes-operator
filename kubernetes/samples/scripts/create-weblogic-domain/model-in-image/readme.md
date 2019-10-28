@@ -307,73 +307,35 @@ A JRF domain requires an infrastructure database and also requires initalizing t
          --docker-server=container-registry.oracle.com \
          --docker-username=your.email@some.com \
          --docker-password=your-password \
-         --docker-email=your.email@some.com \
-         -n sample-domain1-ns
+         --docker-email=your.email@some.com 
+       
        ```
 
-   - Deploy the database:
+   - Use the sample script in <WebLogic Kubernetes Operator Root Directory>/kubernetes/samples/scripts/create-rcu-schema:
 
      ```
-     kubectl apply -f k8s-db-slim.yaml
+        start-db-service.sh
      ```
 
    > __WARNING__: The Oracle Database Docker images are only supported for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1) 
-
+   >            : All the data is gone when the database is restarted. 
+   
    > __NOTE__: This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
 
-4. Start an interactive terminal inside a WebLogic pod by:
-   ```
-   kubectl run rcu -i --tty  --image model-in-image:x0 --restart=Never -- sh
-   ```
 
-5. Create the rcu schema using the following command. Note that `Oradoc_db1` is the dba password and `welcome1` is the schema password:
-   ```
-/u01/oracle/oracle_common/bin/rcu \
-     -silent \
-     -createRepository \
-     -databaseType ORACLE \
-     -connectString  oracle-db.sample-domain1-ns.svc.cluster.local:1521/pdb1.k8s \
-     -dbUser sys \
-     -dbRole sysdba \
-     -useSamePasswordForAllSchemaUsers true \
-     -selectDependentsForComponents true \
-     -schemaPrefix FMW1 \
-     -component MDS \
-     -component IAU \
-     -component IAU_APPEND \
-     -component IAU_VIEWER \
-     -component OPSS  \
-     -component WLS  \
-     -component STB <<EOF
-Oradoc_db1
-welcome1
-EOF
-   ```
-
-6. Type ctrl-d to exit the terminal pod.
-
-7. Delete the terminal pod by ```kubectl delete pod rcu```.
-
-8. __NOTE__:  If you need to drop the repository, you can use this command in the terminal:
+3. Create the rcu schema using the following command. Note that `Oradoc_db1` is the dba password and `Oradoc_db1` is 
+the schema password:
 
    ```
-/u01/oracle/oracle_common/bin/rcu \
-     -silent \
-     -dropRepository \
-     -databaseType ORACLE \
-     -connectString  oracle-db.sample-domain1-ns.svc.cluster.local:1521/pdb1.k8s \
-     -dbUser sys \
-     -dbRole sysdba \
-     -schemaPrefix FMW1 \
-     -component MDS \
-     -component IAU \
-     -component IAU_APPEND \
-     -component IAU_VIEWER \
-     -component OPSS  \
-     -component WLS  \
-     -component STB <<EOF
-Oradoc_db1
-EOF
+     create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-190522
+
+   ```
+
+
+4. __NOTE__:  If you need to drop the repository, you can use this command in the terminal:
+
+   ```
+    drop-rcu-schema.sh -s FMW1
    ```
 
 ## Create and deploy your Kubernetes resources

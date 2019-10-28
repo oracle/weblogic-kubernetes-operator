@@ -32,9 +32,9 @@ echo "@@ Info: Creating rcu access secret (ignored unless domain type is JRF or 
 kubectl -n sample-domain1-ns \
   create secret generic sample-domain1-rcu-access \
   --from-literal=rcu_prefix=FMW1 \
-  --from-literal=rcu_schema_password=welcome1 \
+  --from-literal=rcu_schema_password=Oradoc_db1 \
   --from-literal=rcu_admin_password=Oradoc_db1 \
-  --from-literal=rcu_db_conn_string=oracle-db.sample-domain1-ns.svc.cluster.local:1521/pdb1.k8s
+  --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
 
 kubectl -n sample-domain1-ns \
   label secret sample-domain1-rcu-access \
