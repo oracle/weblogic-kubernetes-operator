@@ -73,7 +73,7 @@ public class ItMonitoringExporter extends BaseTest {
   String oprelease = "op" + number;
   private int waitTime = 5;
   //update with specific branch name if not master
-  private static String monitoringExporterBranchVer = "master";
+  private static String monitoringExporterBranchVer = "downloadwebapp";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
