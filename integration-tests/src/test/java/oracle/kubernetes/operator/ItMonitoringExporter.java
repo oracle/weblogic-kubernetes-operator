@@ -79,7 +79,7 @@ public class ItMonitoringExporter extends BaseTest {
   String oprelease = "op" + number;
   private int waitTime = 5;
   //update with specific branch name if not master
-  private static String monitoringExporterBranchVer = "master";
+  private static String monitoringExporterBranchVer = "downloadwebapp";
   private static String testClassName;
   private static String domainNS1;
   private static String domainNS2;
@@ -1042,6 +1042,7 @@ public class ItMonitoringExporter extends BaseTest {
     //update with current WDT version
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domainBuilder/build.sh",
         "0.24", WDT_VERSION);
+
     createWlsImageAndDeploy();
     checkPromGrafana();
   }
