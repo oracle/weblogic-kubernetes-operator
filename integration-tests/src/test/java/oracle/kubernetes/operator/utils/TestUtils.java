@@ -467,12 +467,12 @@ public class TestUtils {
    * @param namespace  namespace
    * @throws Exception exception
    */
-  public static void testWlsLivenessProbe(String domainUid, String serverName, String namespace)
+  public static void testWlsLivenessProbe(String domainUid, String serverName,
+                                          String namespace, String userProjectsDir)
       throws Exception {
     String podName = domainUid + "-" + serverName;
     int initialRestartCnt = getPodRestartCount(podName, namespace);
-    String filePath =
-        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/killserver.sh";
+    String filePath = userProjectsDir + "/weblogic-domains/" + domainUid + "/killserver.sh";
     // create file to kill server process
     FileWriter fw = new FileWriter(filePath);
     fw.write("#!/bin/bash\n");
@@ -1074,21 +1074,6 @@ public class TestUtils {
     }
   }
 
-  public static Map<String, Object> createOperatorMap(int number, boolean restEnabled) {
-    Map<String, Object> operatorMap = new HashMap<>();
-    ArrayList<String> targetDomainsNS = new ArrayList<String>();
-    targetDomainsNS.add("test" + number);
-    operatorMap.put("releaseName", "op" + number);
-    operatorMap.put("domainNamespaces", targetDomainsNS);
-    operatorMap.put("serviceAccount", "weblogic-operator" + number);
-    operatorMap.put("namespace", "weblogic-operator" + number);
-    if (restEnabled) {
-      operatorMap.put("externalRestHttpsPort", 31000 + number);
-      operatorMap.put("externalRestEnabled", restEnabled);
-    }
-    return operatorMap;
-  }
-
   /**
    * Creates a map with commonly used operator input attributes using suffixCount and prefix
    * to make the namespaces and ports unique.
@@ -1098,7 +1083,7 @@ public class TestUtils {
    * @return map with operator input attributes
    */
   public static Map<String, Object> createOperatorMap(
-      int suffixCount, boolean restEnabled, String prefix) {
+      int suffixCount, boolean restEnabled, String prefix, String resultDir) {
     Map<String, Object> operatorMap = new HashMap<String, Object>();
     ArrayList<String> targetDomainsNS = new ArrayList<String>();
     targetDomainsNS.add(prefix.toLowerCase() + "-domainns-" + suffixCount);
@@ -1106,32 +1091,13 @@ public class TestUtils {
     operatorMap.put("domainNamespaces", targetDomainsNS);
     operatorMap.put("serviceAccount", prefix.toLowerCase() + "-sa-" + suffixCount);
     operatorMap.put("namespace", prefix.toLowerCase() + "-opns-" + suffixCount);
+    operatorMap.put("resultDir", resultDir);
+    operatorMap.put("userProjectsDir", resultDir + "/user-projects");
     if (restEnabled) {
       operatorMap.put("externalRestHttpsPort", 32000 + suffixCount);
       operatorMap.put("externalRestEnabled", restEnabled);
     }
     return operatorMap;
-  }
-
-  public static Map<String, Object> createDomainMap(int number) {
-    Map<String, Object> domainMap = new HashMap<>();
-    ArrayList<String> targetDomainsNS = new ArrayList<String>();
-    targetDomainsNS.add("test" + number);
-    domainMap.put("domainUID", "test" + number);
-    domainMap.put("namespace", "test" + number);
-    domainMap.put("configuredManagedServerCount", 4);
-    domainMap.put("initialManagedServerReplicas", 2);
-    domainMap.put("exposeAdminT3Channel", true);
-    domainMap.put("exposeAdminNodePort", true);
-    domainMap.put("adminNodePort", 30700 + number);
-    domainMap.put("t3ChannelPort", 30000 + number);
-    if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
-        || (domainMap.containsKey("loadBalancer")
-        && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
-      domainMap.put("voyagerWebPort", 30344 + number);
-      LoggerHelper.getLocal().log(Level.INFO, "For this domain voyagerWebPort is set to: 30344 + " + number);
-    }
-    return domainMap;
   }
 
   /**
@@ -1142,7 +1108,8 @@ public class TestUtils {
    * @param prefix      prefix for the artifact names
    * @return map with domain input attributes
    */
-  public static Map<String, Object> createDomainMap(int suffixCount, String prefix) {
+  public static Map<String, Object> createDomainMap(
+              int suffixCount, String prefix, String resultDir) {
     Map<String, Object> domainMap = new HashMap<String, Object>();
     domainMap.put("domainUID", prefix.toLowerCase() + "-domain-" + suffixCount);
     domainMap.put("namespace", prefix.toLowerCase() + "-domainns-" + suffixCount);
@@ -1152,6 +1119,8 @@ public class TestUtils {
     domainMap.put("exposeAdminNodePort", true);
     domainMap.put("adminNodePort", 30800 + suffixCount);
     domainMap.put("t3ChannelPort", 31000 + suffixCount);
+    domainMap.put("resultDir", resultDir);
+    domainMap.put("userProjectsDir", resultDir + "/user-projects");
     if (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
       domainMap.put("voyagerWebPort", 30344 + suffixCount);
       LoggerHelper.getLocal().log(Level.INFO,
@@ -1169,8 +1138,8 @@ public class TestUtils {
    * @return map with domain input attributes
    */
   public static Map<String, Object> createDomainInImageMap(
-      int suffixCount, boolean wdt, String prefix) {
-    Map<String, Object> domainMap = createDomainMap(suffixCount, prefix);
+      int suffixCount, boolean wdt, String prefix, String resultDir) {
+    Map<String, Object> domainMap = createDomainMap(suffixCount, prefix, resultDir);
     if (wdt) {
       domainMap.put("domainHomeImageBuildPath",
           "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");

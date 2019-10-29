@@ -52,6 +52,7 @@ public class Domain {
   // customized property values
   protected String domainNS;
   protected String userProjectsDir = "";
+  protected String resultsDir = "";
   protected String generatedInputYamlFile;
   private String adminServerName;
   private String managedServerNameBase;
@@ -74,7 +75,6 @@ public class Domain {
   private String imageName;
   private boolean voyager;
   private boolean createDomainResource = true;
-  private String domainResultsDir = "";
 
   public Domain() throws Exception {
     domainMap = new HashMap<String, Object>();
@@ -957,7 +957,7 @@ public class Domain {
 
     // test managed server1 pod auto restart
     String serverName = managedServerNameBase + "1";
-    TestUtils.testWlsLivenessProbe(domainUid, serverName, domainNS);
+    TestUtils.testWlsLivenessProbe(domainUid, serverName, domainNS, userProjectsDir);
   }
 
   /**
@@ -1013,7 +1013,7 @@ public class Domain {
     InputStream pvis =
         new FileInputStream(
             new File(
-                domainResultsDir
+                resultsDir
                     + "/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
     pvMap = yaml.load(pvis);
     pvis.close();
@@ -1044,6 +1044,7 @@ public class Domain {
     }
     pvMap.put("namespace", domainNS);
     pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
+    pvMap.put("userProjectsDir", userProjectsDir);
 
     if (BaseTest.OPENSHIFT) {
       pvMap.put("weblogicDomainStorageType", "NFS");
@@ -1093,7 +1094,7 @@ public class Domain {
         new String(
             Files.readAllBytes(
                 Paths.get(
-                    BaseTest.getUserProjectsDir()
+                    userProjectsDir
                         + "/weblogic-domains/"
                         + domainUid
                         + "/domain.yaml")));
@@ -1102,8 +1103,8 @@ public class Domain {
         "The search result for " + newPropertyString + " is: " + result);
     if (!result) {
       TestUtils.createNewYamlFile(
-          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml",
-          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
+          userProjectsDir + "/weblogic-domains/" + domainUid + "/domain.yaml",
+          userProjectsDir + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
           oldPropertyString,
           newPropertyString);
       LoggerHelper.getLocal().log(Level.INFO,
@@ -1119,7 +1120,7 @@ public class Domain {
       command
           .append("kubectl apply  -f ")
           .append(
-              BaseTest.getUserProjectsDir()
+              userProjectsDir
                   + "/weblogic-domains/"
                   + domainUid
                   + "/domain_new.yaml");
@@ -1132,8 +1133,8 @@ public class Domain {
 
       // make domain.yaml include the new changed property
       TestUtils.copyFile(
-          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
-          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml");
+          userProjectsDir + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
+          userProjectsDir + "/weblogic-domains/" + domainUid + "/domain.yaml");
     }
     LoggerHelper.getLocal().log(Level.INFO, "Done - testDomainServerPodRestart");
   }
@@ -1151,11 +1152,11 @@ public class Domain {
         "Inside testDomainServerPodRestart domainYamlWithChangedProperty");
 
     String newDomainYamlFile =
-        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml";
+        userProjectsDir + "/weblogic-domains/" + domainUid + "/domain_new.yaml";
     String domainYamlFile =
-        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+        userProjectsDir + "/weblogic-domains/" + domainUid + "/domain.yaml";
     String changedDomainYamlFile =
-        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_change.yaml";
+        userProjectsDir + "/weblogic-domains/" + domainUid + "/domain_change.yaml";
     String fileWithChangedProperty =
         BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/"
@@ -1239,7 +1240,7 @@ public class Domain {
   public void findServerPropertyChange(String changedProperty, String serverName) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Inside findServerPropertyChange");
     // get runtime server pod yaml file
-    String outDir = BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/";
+    String outDir = userProjectsDir + "/weblogic-domains/" + domainUid + "/";
     StringBuffer command = new StringBuffer();
     command
         .append("kubectl get po/")
@@ -1471,6 +1472,7 @@ public class Domain {
           domainMap.getOrDefault("ingressPerDomain", new Boolean(ingressPerDomain)));
     }
     lbMap.put("clusterName", domainMap.get("clusterName"));
+    lbMap.put("userProjectsDir", userProjectsDir);
 
     loadBalancer = (String) lbMap.get("loadBalancer");
     loadBalancerWebPort = ((Integer) lbMap.get("loadBalancerWebPort")).intValue();
@@ -1592,28 +1594,37 @@ public class Domain {
     imageTag = BaseTest.getWeblogicImageTag();
     imageName = BaseTest.getWeblogicImageName();
     domainMap = inputDomainMap;
-    this.userProjectsDir = BaseTest.getUserProjectsDir();
+    if (!domainMap.containsKey("userProjectsDir") && !domainMap.containsKey("resultDir")) {
+      throw new RuntimeException("FAILURE: Atleast one of the properties"
+          + " userProjectsDir or resultDir should be provided for the domain");
+    }
+    this.userProjectsDir = (String) domainMap.get("userProjectsDir");
+    resultsDir = userProjectsDir + "/..";
     this.projectRoot = BaseTest.getProjectRoot();
-    if (domainMap.containsKey("pvSharing")) {
-      domainResultsDir = BaseTest.getResultDir();
+
+    /* if (domainMap.containsKey("pvSharing")) {
+      domainResultsDir = userProjectsDir + "/../";
     } else {
-      domainResultsDir = BaseTest.getResultDir() + "/" + domainMap.get("domainUID");
+      domainResultsDir = userProjectsDir + "/../" + domainMap.get("domainUID");
     }
 
     // create a temp directory for the domain
-    Files.createDirectories(Paths.get(domainResultsDir));
+    Files.createDirectories(Paths.get(domainResultsDir)); */
 
     // copy samples to RESULT_DIR
+    if (Files.exists(Paths.get(resultsDir + "/samples"))) {
+      TestUtils.exec("rm -rf " + resultsDir + "/samples");
+    }
     if (domainMap.containsKey("projectRoot")) {
       TestUtils.exec(
           "cp -rf "
               + domainMap.get("projectRoot")
               + "/kubernetes/samples "
-              + domainResultsDir,
+              + resultsDir,
           true);
     } else {
       TestUtils.exec(
-          "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + domainResultsDir,
+          "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + resultsDir,
           true);
     }
 
@@ -1643,9 +1654,9 @@ public class Domain {
         Level.INFO, "For this domain sampleDomainInputsFile is: " + sampleDomainInputsFile);
     Yaml dyaml = new Yaml();
     InputStream sampleDomainInputStream =
-        new FileInputStream(new File(domainResultsDir + sampleDomainInputsFile));
+        new FileInputStream(new File(resultsDir + sampleDomainInputsFile));
     LoggerHelper.getLocal().log(Level.INFO,
-        "loading domain inputs template file " + domainResultsDir + sampleDomainInputsFile);
+        "loading domain inputs template file " + resultsDir + sampleDomainInputsFile);
     Map<String, Object> sampleDomainMap = dyaml.load(sampleDomainInputStream);
     sampleDomainInputStream.close();
 
@@ -1708,12 +1719,12 @@ public class Domain {
 
     if (domainMap.containsKey("domainHomeImageBuildPath")) {
       domainHomeImageBuildPath =
-          domainResultsDir
+          resultsDir
               + "/"
               + ((String) domainMap.get("domainHomeImageBuildPath")).trim();
       domainMap.put(
           "domainHomeImageBuildPath",
-          domainResultsDir
+          resultsDir
               + "/"
               + ((String) domainMap.get("domainHomeImageBuildPath")).trim());
 
@@ -1731,13 +1742,13 @@ public class Domain {
     if (inputDomainMap.containsKey("customDomainTemplate")) {
       Files.copy(
           Paths.get((String) inputDomainMap.get("customDomainTemplate")),
-          Paths.get(domainResultsDir + "/samples/scripts/common/domain-template.yaml"),
+          Paths.get(resultsDir + "/samples/scripts/common/domain-template.yaml"),
           StandardCopyOption.REPLACE_EXISTING);
     }
     LoggerHelper.getLocal().log(Level.FINEST, "Domain Template");
     byte[] readAllBytes =
         Files.readAllBytes(
-            Paths.get(domainResultsDir + "/samples/scripts/common/domain-template.yaml"));
+            Paths.get(resultsDir + "/samples/scripts/common/domain-template.yaml"));
     LoggerHelper.getLocal().log(Level.FINEST, new String(readAllBytes, StandardCharsets.UTF_8));
   }
 
@@ -1801,13 +1812,13 @@ public class Domain {
       if (new File(domainHomeImageBuildPath).exists()) {
         removeAndClone
             .append("rm -rf ")
-            .append(domainResultsDir)
+            .append(resultsDir)
             .append("/docker-images && ");
       }
       // git clone docker-images project
       removeAndClone
           .append(" git clone https://github.com/oracle/docker-images.git ")
-          .append(domainResultsDir)
+          .append(resultsDir)
           .append("/docker-images");
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + removeAndClone);
       TestUtils.exec(removeAndClone.toString());
@@ -1824,7 +1835,7 @@ public class Domain {
   private void appendToDomainYamlAndCreate() throws Exception {
 
     String domainYaml =
-        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+        userProjectsDir + "/weblogic-domains/" + domainUid + "/domain.yaml";
 
     if (domainMap.containsKey("configOverrides")) {
       String contentToAppend =
@@ -1894,7 +1905,7 @@ public class Domain {
             new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
                 .toPath(),
             new File(
-                domainResultsDir
+                resultsDir
                     + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/"
                     + "common/createFMWDomain.py")
                 .toPath(),
@@ -1905,7 +1916,7 @@ public class Domain {
             new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
                 .toPath(),
             new File(
-                domainResultsDir
+                resultsDir
                     + "/samples/scripts/create-weblogic-domain/domain-home-on-pv/wlst/create-domain.py")
                 .toPath(),
             StandardCopyOption.REPLACE_EXISTING);
@@ -1924,7 +1935,7 @@ public class Domain {
 
     StringBuffer createDomainScriptCmd = new StringBuffer("export WDT_VERSION=");
     createDomainScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
-        .append(domainResultsDir);
+        .append(resultsDir);
     // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
       createDomainScriptCmd
@@ -1970,18 +1981,18 @@ public class Domain {
     if (domainMap.containsKey("customWdtTemplate")) {
       TestUtils.copyFile(
           (String) domainMap.get("customWdtTemplate"),
-          domainResultsDir
+          resultsDir
               + "/docker-images/OracleWebLogic/samples/"
               + "12213-domain-home-in-image-wdt/simple-topology.yaml");
       ExecResult exec =
           TestUtils.exec(
-              "cat " + domainResultsDir
+              "cat " + resultsDir
                   + "/docker-images/OracleWebLogic/samples/"
                   + "12213-domain-home-in-image-wdt/simple-topology.yaml");
       LoggerHelper.getLocal().log(Level.FINEST, exec.stdout());
     } else if (clusterType.equalsIgnoreCase("CONFIGURED")) {
       // domain on pv
-      StringBuffer createDomainJobTemplateFile = new StringBuffer(domainResultsDir);
+      StringBuffer createDomainJobTemplateFile = new StringBuffer(resultsDir);
       createDomainJobTemplateFile.append(
           "/samples/scripts/create-weblogic-domain/domain-home-on-pv/"
               + "create-domain-job-template.yaml");

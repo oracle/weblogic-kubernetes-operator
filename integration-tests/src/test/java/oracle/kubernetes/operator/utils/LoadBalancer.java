@@ -21,11 +21,13 @@ public class LoadBalancer {
 
 
   private Map<String, Object> lbMap;
+  private String userProjectsDir;
 
   public LoadBalancer(Map lbMap) throws Exception {
     this.lbMap = lbMap;
+    userProjectsDir = (String) lbMap.get("userProjectsDir");
     Files.createDirectories(
-        Paths.get(BaseTest.getUserProjectsDir() + "/load-balancers/" + lbMap.get("domainUID")));
+        Paths.get(userProjectsDir + "/load-balancers/" + lbMap.get("domainUID")));
 
     if (lbMap.get("loadBalancer").equals("TRAEFIK")) {
       String cmdLb = "helm list traefik-operator | grep DEPLOYED";
@@ -87,14 +89,14 @@ public class LoadBalancer {
     createInputFile(
         BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/charts/traefik/host-routing.yaml",
-        BaseTest.getUserProjectsDir()
+        userProjectsDir
             + "/load-balancers/"
             + lbMap.get("domainUID")
             + "/host-routing.yaml");
 
     String cmdLb =
         "kubectl create -f "
-            + BaseTest.getUserProjectsDir()
+            + userProjectsDir
             + "/load-balancers/"
             + lbMap.get("domainUID")
             + "/host-routing.yaml";

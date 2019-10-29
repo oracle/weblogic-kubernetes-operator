@@ -29,6 +29,7 @@ public class PersistentVolume {
     this.dirPath = dirPath;
     this.pvMap = pvMap;
     UUID uuid = UUID.randomUUID();
+    String userProjectsDir = (String) pvMap.get("userProjectsDir");
     String cmd;
     if (BaseTest.OPENSHIFT) {
       cmd = "mkdir -m 777 -p " + dirPath;
@@ -64,23 +65,23 @@ public class PersistentVolume {
     Path parentDir =
         pvMap.get("domainUID") != null
             ? Files.createDirectories(
-            Paths.get(BaseTest.getUserProjectsDir() + "/pv-pvcs/" + pvMap.get("domainUID")))
-            : Files.createDirectories(Paths.get(BaseTest.getUserProjectsDir() + "/pv-pvcs/"));
+            Paths.get(userProjectsDir + "/pv-pvcs/" + pvMap.get("domainUID")))
+            : Files.createDirectories(Paths.get(userProjectsDir + "/pv-pvcs/"));
 
     // generate input yaml
     TestUtils.createInputFile(pvMap, parentDir + "/" + pvMap.get("baseName") + "-pv-inputs.yaml");
 
     // create PV/PVC
     String cmdPvPvc =
-        BaseTest.getResultDir()
-            + "/" + (pvMap.containsKey("domainUID") ? pvMap.get("domainUID") : "")
+        userProjectsDir + "/.."
+            // + "/" + (pvMap.containsKey("domainUID") ? pvMap.get("domainUID") : "")
             + "/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh "
             + " -i "
             + parentDir
             + "/"
             + pvMap.get("baseName")
             + "-pv-inputs.yaml -e -o "
-            + BaseTest.getUserProjectsDir();
+            + userProjectsDir;
     LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdPvPvc);
 
     TestUtils.exec(cmdPvPvc, true);

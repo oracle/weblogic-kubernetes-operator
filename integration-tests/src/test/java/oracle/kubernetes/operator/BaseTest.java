@@ -68,8 +68,8 @@ public class BaseTest {
   protected static String appLocationInPod = "/u01/oracle/apps";
   private static String resultRoot = "";
   private static String pvRoot = "";
-  private static String resultDir = "";
-  private static String userProjectsDir = "";
+  private String resultDir = "";
+  private String userProjectsDir = "";
   private static String projectRoot = "";
   private static String username = "weblogic";
   private static String password = "welcome1";
@@ -115,7 +115,8 @@ public class BaseTest {
     }
   }
 
-  public static void initialize(String appPropsFile) throws Exception {
+  /* To be removed later */
+  public void initialize(String appPropsFile) throws Exception {
     initialize(appPropsFile, "");
   }
 
@@ -126,7 +127,7 @@ public class BaseTest {
    * @param testClassName
    * @throws Exception
    */
-  public static void initialize(String appPropsFile, String testClassName)
+  public void initialize(String appPropsFile, String testClassName)
       throws Exception {
 
     LoggerHelper.initLocal(Logger.getLogger(testClassName));
@@ -184,12 +185,13 @@ public class BaseTest {
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
     waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
     if (System.getenv("RESULT_ROOT") != null) {
-      resultRoot = System.getenv("RESULT_ROOT");
+      resultRoot = System.getenv("RESULT_ROOT") + "/" + testClassName;
     } else {
-      resultRoot = baseDir + "/" + System.getProperty("user.name") + "/wl_k8s_test_results";
+      resultRoot = baseDir + "/" + System.getProperty("user.name")
+            + "/wl_k8s_test_results" + "/" + testClassName;
     }
     if (System.getenv("PV_ROOT") != null) {
-      pvRoot = System.getenv("PV_ROOT");
+      pvRoot = System.getenv("PV_ROOT") + "/" + testClassName;
     } else {
       pvRoot = resultRoot;
     }
@@ -207,44 +209,6 @@ public class BaseTest {
       branchName = TestUtils.getGitBranchName();
     }
 
-    // for manual/local run, do cleanup
-    /* if (!JENKINS) {
-
-      // delete k8s artifacts created if any, delete PV directories
-      ExecResult clnResult = cleanup();
-      log(Level.INFO, 
-          "Command to call cleanup script returned "
-              + clnResult.stdout()
-              + "\n"
-              + clnResult.stderr());
-    } */
-
-    /* if (JENKINS) {
-      log(Level.INFO, "Deleting and creating " + resultRoot + "/acceptance_test_tmp");
-      TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"rm -rf "
-              + resultRoot
-              + "/acceptance_test_tmp\" && "
-              + "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
-              + resultRoot
-              + "/acceptance_test_tmp\"");
-      TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
-              + resultRoot
-              + "/acceptance_test_tmp\"");
-      log(Level.INFO, "Deleting and Creating " + pvRoot + "/acceptance_test_pv");
-      TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"rm -rf "
-              + pvRoot
-              + "/acceptance_test_pv\" && "
-              + "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
-              + pvRoot
-              + "/acceptance_test_pv\"");
-      TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
-              + pvRoot
-              + "/acceptance_test_pv\"");
-    } */
 
     // for manual/local run, create file handler, create PVROOT
     if (!SHARED_CLUSTER) {
@@ -264,14 +228,15 @@ public class BaseTest {
     Files.createDirectories(Paths.get(userProjectsDir));
 
     // create file handler
-    FileHandler fh = new FileHandler(getResultDir() + "/" + testClassName + ".out");
+    String testLogFile = getResultDir() + "/" + testClassName + ".out";
+    FileHandler fh = new FileHandler(testLogFile, true);
     SimpleFormatter formatter = new SimpleFormatter();
     fh.setFormatter(formatter);
     LoggerHelper.getLocal().addHandler(fh);
     LoggerHelper.getLocal().log(Level.INFO, "Adding file handler, logging to file at "
-        + getResultDir() + "/" + testClassName + ".out");
+        + testLogFile);
     LoggerHelper.getGlobal().log(Level.INFO, "Adding file handler, logging to file at "
-        + getResultDir() + "/" + testClassName + ".out");
+        + testLogFile);
 
 
     appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
@@ -371,7 +336,7 @@ public class BaseTest {
     return pvRoot;
   }
 
-  public static String getUserProjectsDir() {
+  public String getUserProjectsDir() {
     return userProjectsDir;
   }
 
@@ -387,7 +352,7 @@ public class BaseTest {
     return password;
   }
 
-  public static String getResultDir() {
+  public String getResultDir() {
     return resultDir;
   }
 
@@ -454,35 +419,37 @@ public class BaseTest {
    * @throws Exception when errors while running statedump.sh or cleanup.sh scripts or while
    *                   renewing the lease for shared cluster run
    */
-  public static void tearDown(String itClassName) throws Exception {
-    /* LoggerHelper.getLocal().log(
+  public static void tearDown(String itClassName, String namespaceList) throws Exception {
+    LoggerHelper.getLocal().log(
         Level.INFO,
-        "TEARDOWN: Starting Test Run TearDown (cleanup and state-dump)."
+        "TEARDOWN: Starting Test Run TearDown (state-dump)."
             + " Note that if the test failed previous to tearDown, "
             + " the error that caused the test failure may be reported "
             + "after the tearDown completes. Note that tearDown itself may report errors,"
             + " but this won't affect the outcome of the test results.");
-    StringBuffer cmd =
-        new StringBuffer(
-            "export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && export IT_CLASS=");
+    StringBuffer cmd = new StringBuffer("export RESULT_ROOT=");
+    cmd.append(getResultRoot()).append(" && export PV_ROOT=")
+        .append(getPvRoot()).append(" && export IT_CLASS=");
     cmd.append(itClassName)
-        .append(" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} && ")
+        .append(" && export NAMESPACE_LIST=\"")
+        .append(namespaceList)
+        .append("\" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} && ")
         .append(getProjectRoot())
         .append("/integration-tests/src/test/resources/statedump.sh");
-    log(Level.INFO, "Running " + cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
 
     // renew lease before callin statedump.sh
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) {
-      log(Level.INFO, "Executed statedump.sh " + result.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, "Executed statedump.sh " + result.stdout());
     } else {
-      log(Level.INFO, "Execution of statedump.sh failed, " + result.stderr() + "\n"
-       + result.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, "Execution of statedump.sh failed, "
+          + result.stderr() + "\n" + result.stdout());
     }
 
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+    /* TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
     if (JENKINS || SHARED_CLUSTER) {
       result = cleanup();
