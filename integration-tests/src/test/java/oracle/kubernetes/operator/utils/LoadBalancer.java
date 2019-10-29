@@ -247,21 +247,6 @@ public class LoadBalancer {
 
     LoggerHelper.getLocal().log(Level.INFO, " upgradeVoyagerNamespace() Running " + cmd.toString());
     executeHelmCommand(cmd.toString());
-    
-    //Print out Voyager pod log
-    StringBuffer cmd0 = new StringBuffer("kubectl get pod -n voyager |grep voyager-| awk '{print $1}'");
-    LoggerHelper.getLocal().log(Level.INFO, "===== get voyager op pod name command: " + cmd0.toString());
-    ExecResult result = TestUtils.exec(cmd0.toString());
-    String podName = result.stdout();
-    LoggerHelper.getLocal().log(Level.INFO, "===== podName: " + podName);
-    
-    cmd0 = new StringBuffer("kubectl log ");
-    cmd0.append(podName)
-        .append(" --namespace voyager");
-
-    LoggerHelper.getLocal().log(Level.INFO, "===== voyager op pod log command: " + cmd0.toString());
-    result = TestUtils.exec(cmd0.toString());
-    LoggerHelper.getLocal().log(Level.INFO, "===== voyager op pod log: " + result.stdout());
   }
 
   private void createVoyagerIngress() throws Exception {
