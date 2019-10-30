@@ -213,13 +213,15 @@ public class BaseTest {
     // for manual/local run, create file handler, create PVROOT
     if (!SHARED_CLUSTER) {
       LoggerHelper.getLocal().log(Level.INFO, "Creating PVROOT " + pvRoot);
-      Files.createDirectories(Paths.get(pvRoot));
-      ExecResult result = ExecCommand.exec(
+      // Files.createDirectories(Paths.get(pvRoot));
+      TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"mkdir -m777 -p "
+                    + pvRoot + "\"", true);
+      /* ExecResult result = ExecCommand.exec(
           "/usr/local/packages/aime/ias/run_as_root \"chmod 777 " + pvRoot + "\"");
       if (result.exitValue() != 0) {
         throw new RuntimeException(
             "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
-      }
+      } */
     }
 
     // create resultRoot, PVRoot, etc
