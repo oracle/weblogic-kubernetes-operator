@@ -1,5 +1,5 @@
 ---
-title: "SOA Preview Guide"
+title: "SOA preview guide"
 date: 2019-10-14T11:21:31-05:00
 weight: 7
 description: "End-to-end guide for SOA Suite preview testers."
@@ -7,14 +7,14 @@ description: "End-to-end guide for SOA Suite preview testers."
 
 ### End-to-end guide for Oracle SOA Suite preview testers
 
-This document provides detailed instructions for testing the Oracle SOA Suite preview. 
+This document provides detailed instructions for testing the Oracle SOA Suite preview.
 This guide uses the WebLogic Kubernetes operator version 2.3.0 and SOA Suite 12.2.1.3.0.
 SOA Suite has also been tested using the WebLogic Kubernetes operator version 2.2.1.
 SOA Suite is currently a *preview*, meaning that everything is tested and should work,
-but official support is not available yet. 
-You can, however, come to [our public Slack](https://weblogic-slack-inviter.herokuapp.com/) to ask questions
+but official support is not available yet.
+You can, however, come to [our public Slack](https://weblogic-slack-inviter.herokuapp.com/) channel to ask questions
 and provide feedback.
-At Oracle OpenWorld 2019, we did announce our *intention* to provide official
+At Oracle OpenWorld 2019, we announced our *intention* to provide official
 support for SOA Suite running on Kubernetes in 2020 (subject to the standard Safe Harbor statement).
 For planning purposes, it would be reasonable to assume that the production support would
 likely be for Oracle SOA Suite 12.2.1.4.0.
@@ -40,7 +40,7 @@ a complete end-to-end example of setting up and using SOA Suite in Kubernetes in
 * [Setting up a load balancer to access various SOA endpoints](#setting-up-a-load-balancer-to-access-various-soa-endpoints).
 * [Configuring the SOA cluster for access through a load balancer](#configuring-the-soa-cluster-for-access-through-a-load-balancer).
 * [Deploying a SCA composite to the domain](#deploying-a-sca-composite-to-the-domain).
-* [Accessing the SCA composite and various SOA web interfaces](#accessing-the-sca-composite-and-various-soa-web-interfaces). 
+* [Accessing the SCA composite and various SOA web interfaces](#accessing-the-sca-composite-and-various-soa-web-interfaces).
 * [Configuring the domain to send logs to Elasticsearch](#configuring-the-domain-to-send-logs-to-elasticsearch).
 * [Using Kibana to view logs for the domain](#using-kibana-to-view-logs-for-the-domain).
 * [Configuring the domain to send metrics to Prometheus](#configuring-the-domain-to-send-metrics-to-prometheus).
@@ -49,23 +49,23 @@ a complete end-to-end example of setting up and using SOA Suite in Kubernetes in
 {{% notice note %}}
 **Feedback**  
 If you find any issues with this guide, please [open an issue in our GitHub repository](https://github.com/oracle/weblogic-kubernetes-operator/issues/new)
-or report it on [our public Slack](https://weblogic-slack-inviter.herokuapp.com/).  Thanks!
+or report it on [our public Slack](https://weblogic-slack-inviter.herokuapp.com/) channel.  Thanks!
 {{% /notice %}}
 
 #### Preparing your Kubernetes cluster
 
 To follow the instructions in this guide, you will need a Kubernetes cluster.
 In this guide, the examples are shown using Oracle Container Engine for Kubernetes,
-Oracle's managed Kubernetes service.  Detailed information can be found
-[in the documentation](https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm).
-If you do not have your own Kuberentes cluster, you can [try Oracle Cloud for free](https://www.oracle.com/cloud/free/)
-and get a cluster using the free credits, which will provide enough time to work through this 
+Oracle's managed Kubernetes service.  For detailed information, see
+[the documentation](https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm).
+If you do not have your own Kubernetes cluster, you can [try Oracle Cloud for free](https://www.oracle.com/cloud/free/)
+and get a cluster using the free credits, which will provide enough time to work through this
 whole guide. You can also use any of the other [supported Kubernetes distributions]({{< relref "/userguide/introduction/introduction" >}}).
 
-##### A current version of Kubernetes 
+##### A current version of Kubernetes
 
 To confirm that your Kubernetes cluster is suitable for SOA Suite, you should confirm
-you have a resonably recent version of Kubernetes, 1.13 or later is recommended.
+you have a reasonably recent version of Kubernetes, 1.13 or later is recommended.
 You can check the version of Kubernetes with this command:
 
 ```bash
@@ -76,16 +76,16 @@ Server Version: version.Info{Major:"1", Minor:"13+", GitVersion:"v1.13.5-6+d6ea2
 
 This output shows that the Kubernetes cluster (the "Server Version" section) is running version 1.13.5.
 
-##### Adequate CPU and RAM 
+##### Adequate CPU and RAM
 
-Make sure that your worker nodes have enough memory and CPU resource.  If you plan to run a SOA
-domain with two managed servers and an admin server, plus a database, then a good
+Make sure that your worker nodes have enough memory and CPU resources.  If you plan to run a SOA
+domain with two Managed Servers and an Administration Server, plus a database, then a good
 rule of thumb would be to have at least 12GB of available RAM between your worker nodes.
-We came up with number by allowing 4GB each for the database, and each of the three 
-WebLogic servers.
+We came up with that number by allowing 4GB each for the database, and each of the three
+WebLogic Servers.
 
 You can use the following commands to check how many worker nodes you have, and to check
-the avilable CPU and memory for each:
+the available CPU and memory for each:
 
 ```bash
 $ kubectl get nodes
@@ -94,9 +94,9 @@ NAME        STATUS   ROLES   AGE   VERSION
 10.0.10.3   Ready    node    54m   v1.13.5
 10.0.10.4   Ready    node    54m   v1.13.5
 
-$ kubectl get nodes -o jsonpath='{.items[*].status.capacity}' 
+$ kubectl get nodes -o jsonpath='{.items[*].status.capacity}'
 map[cpu:16 ephemeral-storage:40223552Ki hugepages-1Gi:0 hugepages-2Mi:0 memory:123485928Ki pods:110] map[cpu:16 ephemeral-storage:40223552Ki hugepages-1Gi:0 hugepages-2Mi:0 memory:123485928Ki pods:110] map[cpu:16 ephemeral-storage:40223552Ki hugepages-1Gi:0 hugepages-2Mi:0 memory:123485928Ki pods:110]
-2019-10-30 09:39:21:~ 
+2019-10-30 09:39:21:~
 ```
 
 From the output shown, you can see that this cluster has three worker nodes, and each one has 16 cores and about 120GB of RAM.
@@ -106,9 +106,9 @@ From the output shown, you can see that this cluster has three worker nodes, and
 You will need to have Helm installed on your client machine (the machine where you run `kubectl` commands) and the "Tiller"
 component installed in your cluster.
 
-You can obtain Helm from their [releases page](https://github.com/helm/helm/releases/tag/v2.14.3). 
+You can obtain Helm from their [releases page](https://github.com/helm/helm/releases/tag/v2.14.3).
 The examples in this guide use version 2.14.3.  You must ensure that the version you choose is
-compatible with the version of Kubernetes that you are running. 
+compatible with the version of Kubernetes that you are running.
 
 To install the "Tiller" component on your Kubernetes cluster, use this command:
 
@@ -116,17 +116,17 @@ To install the "Tiller" component on your Kubernetes cluster, use this command:
 $ helm init
 ```
 
-It will normally take about 30-60 seconds for Tiller to be deployed and to start. 
-To confirm that Tiller is running, use this command: 
+Typically, it will take about 30-60 seconds for Tiller to be deployed and to start.
+To confirm that Tiller is running, use this command:
 
 ```bash
 $ kubectl -n kube-system get pods  | grep tiller
 tiller-deploy-5545b55857-rq8gp          1/1     Running   0          81m
 ```
 
-The output should show the status "Running".
+The output should show the status `Running`.
 
-**Note** More information about the Helm requirement can he found [here]({{< relref "/userguide/managing-operators" >}}).
+**Note**: More information about the Helm requirement can be found [here]({{< relref "/userguide/managing-operators" >}}).
 
 {{% notice note %}}
 All Kubernetes distributions and managed services have small differences.  In particular,
@@ -137,35 +137,35 @@ You may need to adjust the instructions in this guide to suit your particular fl
 
 #### Obtaining the necessary Docker images
 
-You will need the Docker images to run SOA Suite, the Oracle database
-and the WebLogic Kubernetes operator. 
+You will need the Docker images to run SOA Suite, the Oracle database,
+and the WebLogic Kubernetes operator.
 
 ##### Accept license agreements
 
 These Docker images are
-available in [Oracle Container Registry](https://container-registry.oracle.com).
-Before you can pull the images, you will need to log on the 
+available in the [Oracle Container Registry](https://container-registry.oracle.com).
+Before you can pull the images, you will need to log on the
 web interface and accept the license agreements.
 
-From the [main page](https://container-registry.oracle.com), click on the
-"Middleware" category, then click on the "soasuite" repository.
+From the [Home page](https://container-registry.oracle.com), select the
+"Middleware" category, and then select the "soasuite" repository.
 
 ![Oracle Container Registry - Oracle SOA Suite page](/weblogic-kubernetes-operator/images/ocr-sign-in-page.png)
 
-Click on the "Sign In" button and use your Oracle Account to authenticate.
-You will be shown the license agreement, and you must accept the terms
-and conditions.  Once you have accepted, you will be able to pull this 
+In the right pane, click "Sign In" and use your Oracle Account to authenticate.
+The license agreement will be displayed; you must accept the terms
+and conditions.  After you have accepted, you will be able to pull this
 image.
 
 Repeat these steps to also select the license for the "enterprise"
 repository in the "Database" category.
 
-You do not need to accept a license for the WebLogic Kuberentes operator
+You do not need to accept a license for the WebLogic Kubernetes operator
 Docker image.
 
 ##### Confirm access to the images
 
-To confirm that you have access to the images, you can login to Oracle
+To confirm that you have access to the images, you can log in to the Oracle
 Container Registry and pull the images using these commands:
 
 ```bash
@@ -176,8 +176,8 @@ $ docker pull container-registry.oracle.com/middleware/soasuite:12.2.1.3
 
 {{% notice note %}}
 If you are not running these commands on one of your Kubernetes worker nodes,
-then strictly speaking you do not need to pull the images onto your 
-client machine.  This step is jsut to confirm that you have successfully
+then strictly speaking, you do not need to pull the images onto your
+client machine.  This step is just to confirm that you have successfully
 completed the license acceptance and have access to the images.
 {{% /notice %}}
 
@@ -192,7 +192,7 @@ We will use the WebLogic Kubernetes operator to manage the SOA domain.
 
 ##### Grant Tiller the cluster-admin role
 
-To install the WebLogic Kubernetes operator, we must first give the Tiller
+To install the WebLogic Kubernetes operator, you must first give the Tiller
 Service Account the `cluster-admin` role using this command:
 
 ```bash
@@ -223,9 +223,9 @@ install an operator.
 
 You can optionally install the WebLogic Kubernetes operator into its
 own namespace.  If you prefer, you can just install it in the `default`
-namespace. 
+namespace.
 
-To create a namespace use this command:
+To create a namespace, use this command:
 
 ```bash
 $ kubectl create ns operator
@@ -233,13 +233,13 @@ namespace/operator created
 ```
 
 You can change `operator` to your preferred name.  If you chose a different
-name, you will need to adjust the commands in the following sections to 
+name, you will need to adjust the commands in the following sections to
 use the name you chose.
 
 ##### Clone the operator GitHub repository
 
 Make a clone of the WebLogic Kubernetes operator GitHub repository on your
-client machine and change into that directory using these commands: 
+client machine and change into that directory using these commands:
 
 ```bash
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator
@@ -267,7 +267,7 @@ $ helm install \
        --name weblogic-operator \
        --namespace operator \
        --set image=oracle/weblogic-kubernetes-operator:2.3.0 \
-       --set "domainNamespaces={}" 
+       --set "domainNamespaces={}"
 
 NAME:   weblogic-operator
 LAST DEPLOYED: Wed Oct 30 11:01:20 2019
@@ -321,8 +321,8 @@ weblogic-operator  0/1    1           0          1s
 ```
 
 Sample output is shown above, yours may look slightly different.  The operator will take
-a short time to start up (normally less than 30 seconds).  Confirm it has reached
-the "Running" state with this command:
+a short time to start up (normally less than 30 seconds).  Confirm that it has reached
+the `Running` state with this command:
 
 ```bash
 $ kubectl get pods -n operator
@@ -330,11 +330,11 @@ NAME                                 READY   STATUS    RESTARTS   AGE
 weblogic-operator-7c95fd48cf-w427t   1/1     Running   0          2m41s
 ```
 
-If your operator pod is not in the "Running" state, you will need to fix that
+If your operator pod is not in the `Running` state, you will need to fix that
 issue before proceeding.  The most common issue is not being able to pull
-the Docker image.  You can check on the issues using the describe command:
+the Docker image.  You can check on the issues using the described command:
 
-```bash 
+```bash
 $ kubectl -n operator describe pod weblogic-operator-7c95fd48cf-w427t
 ```
 
@@ -376,5 +376,3 @@ from starting successfully.
 
 
 #### Using the Grafana dashboards to view metrics for the domain
-
-

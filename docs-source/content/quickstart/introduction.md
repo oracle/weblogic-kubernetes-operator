@@ -29,5 +29,5 @@ the API version in the data (weblogic.oracle/v2) does not match the expected API
 
 
 {{% notice info %}}
-Looking for a quickstart guide for Oracle SOA Suite? Please look [here]({{< relref "/samples/simple/soa-preview-guide" >}}).
+Looking for a quick start guide for Oracle SOA Suite? Please look [here]({{< relref "/samples/simple/soa-preview-guide" >}}).
 {{% /notice %}}
