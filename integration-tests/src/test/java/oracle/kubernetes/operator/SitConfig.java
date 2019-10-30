@@ -27,12 +27,11 @@ import org.junit.Assert;
  * JUnit test class used for testing configuration override use cases.
  */
 public class SitConfig extends BaseTest {
-
-  private static int testNumber = getNewSuffixCount();
+  
   private static final String DOMAINUID = "customsitconfigdomain";
-  private static final String ADMINPORT = String.valueOf(30800 + testNumber);
-  private static final int T3CHANNELPORT = 31000 + testNumber;
-  private static final String MYSQL_DB_PORT = String.valueOf(31306 + testNumber);
+  private static final String ADMINPORT = String.valueOf(30800 + getNewSuffixCount());
+  private static final int T3CHANNELPORT = 31000 + getNewSuffixCount();
+  private static final String MYSQL_DB_PORT = String.valueOf(31306 + getNewSuffixCount());
   private static String TEST_RES_DIR;
   private static String ADMINPODNAME;
   private static String fqdn;
