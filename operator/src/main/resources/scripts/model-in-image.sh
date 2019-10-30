@@ -17,6 +17,8 @@ inventory_merged_model="/weblogic-operator/introspectormd5/merged_model.json"
 inventory_wls_version="//weblogic-operator/introspectormd5/wls_version"
 domain_zipped="/weblogic-operator/introspectormd5/domainzip.secure"
 wdt_config_root="/weblogic-operator/wdt-config-map"
+wdt_encryption_passphrase="/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
+opss_key_passphrase="/weblogic-operator/opss-key-passphrase/passphrase"
 model_home="/u01/wdt/models"
 model_root="${model_home}"
 archive_root="${model_home}"
@@ -116,8 +118,8 @@ function checkExistInventory() {
         has_md5=1
         source -- ${inventory_passphrase_md5}
         #found_wdt_pwd=$(find ${wdt_secret_path} -name wdtpassword -type f)
-        if [ -f "$(get_wdt_encryption_passphrase)" ] ; then
-            target_md5=$(md5sum $(get_wdt_encryption_passphrase) | cut -d' ' -f1)
+        if [ -f "$(wdt_encryption_passphrase)" ] ; then
+            target_md5=$(md5sum $(wdt_encryption_passphrase) | cut -d' ' -f1)
         fi
         for K in "${!inventory_passphrase[@]}"; do
             if [ ! "$target_md5" == "${inventory_passphrase[$K]}" ]; then
@@ -140,14 +142,12 @@ function checkExistInventory() {
 
 }
 
-function get_wdt_encryption_passphrase() {
-    #found_wdt_pwd=$(find ${wdt_secret_path} -name wdtpassword -type f)
-    echo "/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
-}
 
-function get_opss_key_passphrase() {
-    echo "/weblogic-operator/opss-key-passphrase/passphrase"
-}
+#
+# return opss key wallet ewallet.p12 location
+# if there is one from the user config map, use it first
+# otherwise use the one in the introspect job config map
+#
 
 function get_opss_key_wallet() {
     if [ -d /weblogic-operator/opss-key-wallet ] ; then
@@ -160,7 +160,10 @@ function get_opss_key_wallet() {
     fi
 }
 
-
+#
+# Setup the MD5 inventory for comparison between updates and store in confgimap
+#  Also setup the wdt parameters
+#
 
 function setupInventoryList() {
     model_list=""
@@ -173,9 +176,9 @@ function setupInventoryList() {
         cat /dev/null > ${variable_list}
     fi
 
-    if [ $# -eq 1 ] && [ $1 -eq 1 ] ; then
-        version_changed=1
-    fi
+#    if [ $# -eq 1 ] && [ $1 -eq 1 ] ; then
+#        version_changed=1
+#    fi
 
     #
     # First build the command line parameters for WDT
@@ -239,15 +242,15 @@ function setupInventoryList() {
 
     local use_encryption=""
     local use_passphrase=0
-    if [ -f "$(get_wdt_encryption_passphrase)" ] ; then
-        inventory_passphrase[wdtpassword]=$(md5sum $(get_wdt_encryption_passphrase) | cut -d' ' -f1)
-        wdt_passphrase=$(cat $(get_wdt_encryption_passphrase))
+    if [ -f "$(wdt_encryption_passphrase)" ] ; then
+        inventory_passphrase[wdtpassword]=$(md5sum $(wdt_encryption_passphrase) | cut -d' ' -f1)
+        wdt_passphrase=$(cat $(wdt_encryption_passphrase))
         use_passphrase=1
     fi
 
     #found_opss_passphrase=$(find ${wdt_secret_path} -name opsspassphrase -type f)
-    if [ -f "$(get_opss_key_passphrase)" ] ; then
-        export OPSS_PASSPHRASE=$(cat $(get_opss_key_passphrase))
+    if [ -f "$(opss_key_passphrase)" ] ; then
+        export OPSS_PASSPHRASE=$(cat $(opss_key_passphrase))
     fi
     # just in case is not set
     if [ -z "${OPSS_PASSPHRASE}" ] ; then
@@ -321,7 +324,7 @@ function createWLDomain() {
 
     echo ${current_version} > /tmp/wls_version
 
-    setupInventoryList
+    setupInventoryList ${version_changed}
 
     checkExistInventory
     local need_create_domain=$?
@@ -332,7 +335,7 @@ function createWLDomain() {
 
         trace "Need to create domain ${WDT_DOMAIN_TYPE}"
 
-        wdtCreateDomain ${version_changed}
+        wdtCreateDomain
 
         # For lifecycle updates:
         # if there is a merged model in the cm then it is an update case, try online update
@@ -410,6 +413,9 @@ function createWLDomain() {
     return ${need_create_domain}
 }
 
+#
+# User WDT create domain
+#
 
 function wdtCreateDomain() {
 
