@@ -5,6 +5,7 @@
 # This script contains the all the function of model in image
 # It is used by introspectDomain.sh job and starServer.sh
 
+source utils.sh
 
 declare -A inventory_image
 declare -A inventory_cm
@@ -13,6 +14,7 @@ inventory_image_md5="/weblogic-operator/introspectormd5/inventory_image.md5"
 inventory_cm_md5="/weblogic-operator/introspectormd5/inventory_cm.md5"
 inventory_passphrase_md5="/weblogic-operator/introspectormd5/inventory_passphrase.md5"
 inventory_merged_model="/weblogic-operator/introspectormd5/merged_model.json"
+inventory_wls_version="//weblogic-operator/introspectormd5/wls_version"
 domain_zipped="/weblogic-operator/introspectormd5/domainzip.secure"
 wdt_config_root="/weblogic-operator/wdt-config-map"
 model_home="/u01/wdt/models"
@@ -63,6 +65,9 @@ function checkExistInventory() {
     has_md5=0
 
     trace "Checking model in image"
+
+    cat ${inventory_image_md5}
+
     if [ -f ${inventory_image_md5} ] ; then
         source -- ${inventory_image_md5}
         has_md5=1
@@ -155,126 +160,21 @@ function get_opss_key_wallet() {
     fi
 }
 
-# Some refactoring is needed
-# 1. Create the parameter list for WDT
-# 2. Check if any WDT artifacts changed
-# 3. If nothing changed return 0
-# 4. If somethin changed (or new) then use WDT createDomain.sh
-# 5. With the new domain created, the generated merged model is compare with the previous one (if any)
-# 6. If there are safe changes and  user select useOnlineUpdate, use wdt online update
-# 6.1.   if online update failed then exit the introspect job
-# 6.2    if online update succeeded and no restart is need then go to 7.1
-# 6.3    if online update succeeded and restart is needed but user set rollbackIfRequireRestart then exit the job
-# 6.4    go to 7.1.
-# 7. else
-# 7.1    unzip the old domain and use wdt offline updates
 
 
-function createWLDomain() {
-
-
-    # check to see if any model including changed (or first model in image deploy)
-    # if yes. then run create domain again
-
-    checkExistInventory
-    local create_domain=$?
-    # something changed in the wdt artifacts
-    if  [ ${create_domain} -ne 0 ] ; then
-
-        trace "Need to create domain ${WDT_DOMAIN_TYPE}"
-
-        wdtCreateDomain
-
-        # For lifecycle updates:
-        # if there is a merged model in the cm then it is an update case, try online update
-        # only if the useOnlineUpdate is define in the spec and set to true
-        #
-        if [ -f ${inventory_merged_model} ] && [ ${archive_zip_changed} -eq 0 ] && [ "true" == "${USE_ONLINE_UPDATE}" \
-                ]; then
-
-            ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${DOMAIN_HOME}/wlsdeploy/domain_model.json \
-                ${inventory_merged_model}
-            diff_rc=$?
-            trace "model diff returns "${diff_rc}
-            cat /tmp/diffed_model.json
-
-            # 0 not safe
-            # 1 safe for online changes
-            # 2 fatal
-            # 3 no difference
-
-            # Perform online changes
-            if [ ${diff_rc} -eq ${SCRIPT_ERROR} ]; then
-                exit 1
-            fi
-
-            if [ ${diff_rc} -eq ${SAFE_ONLINE_UPDATE} ] ; then
-                trace "Using online update"
-                handleOnlineUpdate
-            fi
-
-            # Changes are not supported - shape changes
-            if [ ${diff_rc} -eq ${FATAL_MODEL_CHANGES} ] ; then
-                trace "Introspect job terminated: Unsupported changes in the model is not supported"
-                exit 1
-            fi
-
-            # nothing changed in WDT artifacts
-            # TODO: handling version update later
-
-            if [ ${diff_rc} -eq ${MODELS_SAME} ] ; then
-                trace "Introspect job terminated: Nothing changed"
-                return 0
-            fi
-
-            # Changes are not supported - non shape changes.. deletion, deploy app.
-            # TODO: Are these different from FATAL ?
-
-            if [ ${diff_rc} -eq ${UNSAFE_ONLINE_UPDATE} ] ; then
-                trace "Introspect job terminated: Changes are not safe to do online updates. Use offline changes. See introspect job logs for
-                details"
-                exit 1
-            fi
-
-        fi
-
-        # The reason for copying the associative array is because they cannot be passed to the function for checking
-        # and the script source the persisted associative variable shell script to retrieve it back to a variable
-        # we are comparing  inventory* (which is the current image md5 contents) vs introspect* (which is the previous
-        # run stored in the config map )
-
-        if [ "${#inventory_image[@]}" -ne "0" ] ; then
-            declare -A introspect_image
-            for K in "${!inventory_image[@]}"; do introspect_image[$K]=${inventory_image[$K]}; done
-            declare -p introspect_image > /tmp/inventory_image.md5
-        fi
-        if [ "${#inventory_cm[@]}" -ne "0" ] ; then
-            declare -A introspect_cm
-            for K in "${!inventory_cm[@]}"; do introspect_cm[$K]=${inventory_cm[$K]}; done
-            declare -p introspect_cm > /tmp/inventory_cm.md5
-        fi
-        if [ "${#inventory_passphrase[@]}" -ne "0" ] ; then
-            declare -A introspect_passphrase
-            for K in "${!inventory_passphrase[@]}"; do introspect_passphrase[$K]=${inventory_passphrase[$K]}; done
-            declare -p introspect_passphrase > /tmp/inventory_passphrase.md5
-        fi
-
-    fi
-    return ${create_domain}
-}
-
-
-function wdtCreateDomain() {
-
-    export __WLSDEPLOY_STORE_MODEL__=1
-
-    local model_list=""
-    local archive_list=""
-    local variable_list="${model_home}/_k8s_generated_props.properties"
+function setupInventoryList() {
+    model_list=""
+    archive_list=""
+    variable_list="${model_home}/_k8s_generated_props.properties"
+    version_changed=0
 
     # in case retry
     if [ -f ${variable_list} ] ; then
         cat /dev/null > ${variable_list}
+    fi
+
+    if [ $# -eq 1 ] && [ $1 -eq 1 ] ; then
+        version_changed=1
     fi
 
     #
@@ -302,7 +202,7 @@ function wdtCreateDomain() {
 
     for file in $(sort_files ${archive_root} "*.zip")
         do
-            inventory_image[$file]=$(md5sum $file | cut -d' ' -f1)
+            inventory_image[$file]=$(md5sum ${archive_root}/$file | cut -d' ' -f1)
             if [ "$archive_list" != "" ]; then
                 archive_list="${archive_list},"
             fi
@@ -369,7 +269,7 @@ function wdtCreateDomain() {
     #  Can we safely switch to use WLS as type.
     #
     opss_wallet=$(get_opss_key_wallet)
-    if [ -f "${opss_wallet}" ] ; then
+    if [ -f "${opss_wallet}" ] && [ ${version_changed} -eq 0 ] ; then
         if [ ! -z ${KEEP_JRF_SCHEMA} ] && [ ${KEEP_JRF_SCHEMA} == "true" ] ; then
            trace "keeping rcu schema"
            mkdir -p /tmp/opsswallet
@@ -379,6 +279,142 @@ function wdtCreateDomain() {
     else
         OPSS_FLAGS=""
     fi
+
+}
+
+# Some refactoring is needed
+# 1. Create the parameter list for WDT
+# 2. Check if any WDT artifacts changed
+# 3. If nothing changed return 0
+# 4. If somethin changed (or new) then use WDT createDomain.sh
+# 5. With the new domain created, the generated merged model is compare with the previous one (if any)
+# 6. If there are safe changes and  user select useOnlineUpdate, use wdt online update
+# 6.1.   if online update failed then exit the introspect job
+# 6.2    if online update succeeded and no restart is need then go to 7.1
+# 6.3    if online update succeeded and restart is needed but user set rollbackIfRequireRestart then exit the job
+# 6.4    go to 7.1.
+# 7. else
+# 7.1    unzip the old domain and use wdt offline updates
+
+
+function createWLDomain() {
+
+
+    # check to see if any model including changed (or first model in image deploy)
+    # if yes. then run create domain again
+
+    local current_version=$(getWebLogicVersion)
+    # check for version:  can only be rolling
+    local version_changed=0
+
+    if [ -f ${inventory_wls_version} ] ; then
+        previous_version=$(cat ${inventory_wls_version})
+        if [ "${current_version}" != "${previous_version}" ]; then
+            trace "version different: before: ${previous_version} current: ${current_version}"
+            #version_changed=1
+            # TODO: make sure understand the impact for JRF first
+            # handle version upgrade
+        fi
+    fi
+
+    # write out version, introspectDomain.py will write it to the configmap
+
+    echo ${current_version} > /tmp/wls_version
+
+    setupInventoryList
+
+    checkExistInventory
+    local need_create_domain=$?
+
+    # something changed in the wdt artifacts or wls version changed
+
+    if  [ ${need_create_domain} -ne 0 ] || [ ${version_changed} -eq 1 ] ; then
+
+        trace "Need to create domain ${WDT_DOMAIN_TYPE}"
+
+        wdtCreateDomain ${version_changed}
+
+        # For lifecycle updates:
+        # if there is a merged model in the cm then it is an update case, try online update
+        # only if the useOnlineUpdate is define in the spec and set to true
+        # and not for version upgrade
+
+        if [ -f ${inventory_merged_model} ] && [ ${archive_zip_changed} -eq 0 ] && [ "true" == "${USE_ONLINE_UPDATE}" \
+                ] && [ ${version_change} -ne 1 ]; then
+
+            ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${DOMAIN_HOME}/wlsdeploy/domain_model.json \
+                ${inventory_merged_model}
+            diff_rc=$?
+            trace "model diff returns "${diff_rc}
+            cat /tmp/diffed_model.json
+
+            # 0 not safe
+            # 1 safe for online changes
+            # 2 fatal
+            # 3 no difference
+
+            # Perform online changes
+            if [ ${diff_rc} -eq ${SCRIPT_ERROR} ]; then
+                exit 1
+            fi
+
+            if [ ${diff_rc} -eq ${SAFE_ONLINE_UPDATE} ] ; then
+                trace "Using online update"
+                handleOnlineUpdate
+            fi
+
+            # Changes are not supported - shape changes
+            if [ ${diff_rc} -eq ${FATAL_MODEL_CHANGES} ] ; then
+                trace "Introspect job terminated: Unsupported changes in the model is not supported"
+                exit 1
+            fi
+
+            if [ ${diff_rc} -eq ${MODELS_SAME} ] ; then
+                trace "Introspect job terminated: Nothing changed"
+                return 0
+            fi
+
+            # Changes are not supported - non shape changes.. deletion, deploy app.
+            # TODO: Are these different from FATAL ? - May not need differentiation
+
+            if [ ${diff_rc} -eq ${UNSAFE_ONLINE_UPDATE} ] ; then
+                trace "Introspect job terminated: Changes are not safe to do online updates. Use offline changes. See introspect job logs for
+                details"
+                exit 1
+            fi
+
+        fi
+
+        # The reason for copying the associative array is because they cannot be passed to the function for checking
+        # and the script source the persisted associative variable shell script to retrieve it back to a variable
+        # we are comparing  inventory* (which is the current image md5 contents) vs introspect* (which is the previous
+        # run stored in the config map )
+
+        if [ "${#inventory_image[@]}" -ne "0" ] ; then
+            declare -A introspect_image
+            for K in "${!inventory_image[@]}"; do introspect_image[$K]=${inventory_image[$K]}; done
+            declare -p introspect_image > /tmp/inventory_image.md5
+        fi
+        if [ "${#inventory_cm[@]}" -ne "0" ] ; then
+            declare -A introspect_cm
+            for K in "${!inventory_cm[@]}"; do introspect_cm[$K]=${inventory_cm[$K]}; done
+            declare -p introspect_cm > /tmp/inventory_cm.md5
+        fi
+        if [ "${#inventory_passphrase[@]}" -ne "0" ] ; then
+            declare -A introspect_passphrase
+            for K in "${!inventory_passphrase[@]}"; do introspect_passphrase[$K]=${inventory_passphrase[$K]}; done
+            declare -p introspect_passphrase > /tmp/inventory_passphrase.md5
+        fi
+
+    fi
+    return ${need_create_domain}
+}
+
+
+function wdtCreateDomain() {
+
+    export __WLSDEPLOY_STORE_MODEL__=1
+
 
     if [ $use_passphrase -eq 1 ]; then
         yes ${wdt_passphrase} | ${wdt_bin}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \

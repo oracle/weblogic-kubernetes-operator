@@ -904,25 +904,6 @@ class InventoryMD5Generator(Generator):
     else:
       return None
 
-class WLSVersionGenerator(Generator):
-
-  def __init__(self, env):
-    Generator.__init__(self, env, env.WLS_VERSION)
-    self.env = env
-
-  def generate(self):
-    self.open()
-    try:
-      self.addVersionString()
-      self.close()
-      self.addGeneratedFile()
-    finally:
-      self.close()
-
-  def addVersionString(self):
-    version_string = version
-    self.writeln(version_string)
-
 
 class SitConfigGenerator(Generator):
 
@@ -1413,7 +1394,7 @@ class DomainIntrospector(SecretManager):
         trace("md5 passphrase")
         InventoryMD5Generator(self.env, self.env.INVENTORY_PASSPHRASE_MD5, '/tmp/inventory_passphrase.md5').generate()
         trace("wls version")
-        WLSVersionGenerator(self.env).generate()
+        InventoryMD5Generator(self.env, self.env.WLS_VERSION, '/tmp/wls_version').generate()
 
         if self.env.WDT_DOMAIN_TYPE == 'JRF' and self.env.KEEP_JRF_SCHEMA:
           OpssKeyGenerator(self.env).generate()
