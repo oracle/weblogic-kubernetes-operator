@@ -9,6 +9,12 @@ Use this Quick Start guide to create a WebLogic deployment in a Kubernetes clust
 These instructions assume that you are already familiar with Kubernetes.  If you need more detailed instructions, please
 refer to the [User guide]({{< relref "/userguide/_index.md" >}}).
 
+{{% notice note %}}
+All Kubernetes distributions and managed services have small differences.  In particular,
+the way that persistent storage and load balancers are managed varies significantly.  
+You may need to adjust the instructions in this guide to suit your particular flavor of Kubernetes.
+{{% /notice %}}
+
 **Important note for users of operator releases before 2.0**
 {{% expand "Click here to expand" %}}
 
