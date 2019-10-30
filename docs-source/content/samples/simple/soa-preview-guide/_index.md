@@ -473,7 +473,7 @@ This example uses the `default` Service Account in the `soans` Namespace.
 You can confirm that the Service Account was updated with this command:
 
 ```bash
-kubectl -n soans get sa default -o yaml
+$ kubectl -n soans get sa default -o yaml
 apiVersion: v1
 imagePullSecrets:
 - name: oracle-container-reg
@@ -581,8 +581,49 @@ After updating this file if you chose a different namespace, persistent volume c
 etc., apply this file to your cluster using this command:
 
 ```bash
-
+$ kubectl apply -f kubernetes/samples/scripts/create-soa-domain/create-database/db-with-pv.yaml
+service/soadb created
+statefulset.apps/soadb created
 ```
+
+You can confirm the pod is being created with this command:
+
+```bash
+$ kubectl get pods  -n soans
+NAME      READY   STATUS              RESTARTS   AGE
+soadb-0   0/1     ContainerCreating   0          22s
+```
+
+It will take a short period of time to pull the image (might be a few minutes, depending on 
+where your cluster is running) and then the pod will start.  During this time, you can use
+this command to check on progress:
+
+```bash
+$ kubectl -n soans describe pod soadb-0
+// (lines omitted)
+Events:
+  Type    Reason                  Age    From                     Message
+  ----    ------                  ----   ----                     -------
+  Normal  Scheduled               3m14s  default-scheduler        Successfully assigned soans/soadb-0 to 10.0.10.4
+  Normal  SuccessfulAttachVolume  2m58s  attachdetach-controller  AttachVolume.Attach succeeded for volume "ocid1.volume.oc1.eu-frankfurt-1.abtheljspyxxxxxx4zfgcsa"
+  Normal  Pulling                 2m37s  kubelet, 10.0.10.4       pulling image "container-registry.oracle.com/database/enterprise:12.2.0.1"
+```
+
+One the pod starts, you can watch its output with this command:
+
+```bash
+$ kubectl -n soans logs soadb-0 -f
+```
+
+You will see it setting up the database, and after a few minutes, it will display
+this message indicating the database is ready to use: 
+
+```bash
+xxx
+```
+
+
+
 
 
 #### Running the Repository Creation Utility to populate the database
