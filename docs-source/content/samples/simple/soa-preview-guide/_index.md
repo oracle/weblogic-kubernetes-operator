@@ -144,7 +144,7 @@ and the WebLogic Kubernetes operator.
 
 These Docker images are
 available in the [Oracle Container Registry](https://container-registry.oracle.com).
-Before you can pull the images, you will need to log on the
+Before you can pull the images, you will need to log on to the
 web interface and accept the license agreements.
 
 From the [Home page](https://container-registry.oracle.com), select the
@@ -221,7 +221,7 @@ install an operator.
 
 ##### Create a namespace
 
-You can optionally install the WebLogic Kubernetes operator into its
+You can optionally install the WebLogic Kubernetes operator in its
 own namespace.  If you prefer, you can just install it in the `default`
 namespace.
 
@@ -347,7 +347,7 @@ from starting successfully.
 SOA Suite requires a database where it stores its configuration and runtime
 data.  You can run the database inside Kubernetes for testing and development
 purposes.  For a production deployment, you should run the database outside
-Kubernetes.  In this example, we will run the database inside the same 
+Kubernetes.  In this example, you will run the database inside the same
 Kubernetes cluster that SOA Suite is running in.
 
 {{% notice warning %}}
@@ -356,20 +356,20 @@ For more details, see My Oracle Support note:
 Oracle Support for Database Running on Docker (Doc ID 2216342.1)
 {{% /notice %}}
 
-**Note** More detailed information about options for [configuring access
-to your database can be found here]({{< relref "/userguide/managing-fmw-domains/soa-suite#configuring-access-to-your-database" >}}),
+**Note**: More detailed information about options for configuring access
+to your database can be found [here]({{< relref "/userguide/managing-fmw-domains/soa-suite#configuring-access-to-your-database" >}}),
 but this document contains all of the important information.
 
 ##### Create a namespace for SOA Suite and the database
 
-Create a Kubernetes namespace to run SOA Suite and the database in using this command:
+Create a Kubernetes namespace to run SOA Suite and the database using this command:
 
 ```bash
 $ kubectl create ns soans
 namespace/soans created
 ```
 
-**Note** You can chose to run the database in a different namespace than SOA, or in the
+**Note**: You can choose to run the database in a different namespace than SOA, or in the
 `default` namespace.  If you choose a different namespace, you will need
 to adjust the commands in the following sections.
 
@@ -382,17 +382,17 @@ Create some persistent storage for the database files.
 The mechanism for creating persistent storage varies significantly across different variants
 of Kubernetes and different managed Kubernetes services.  You will need
 to consult the documentation for your particular variant to learn how to
-allocate persistent storage.  Note that we are running a single node
-database in this example, so you can use `ReadWriteOnce` storage - which can only be 
+allocate persistent storage.  Note that you are running a single node
+database in this example, so you can use `ReadWriteOnce` storage - which can only be
 mounted read/write by a single pod at any given time.  
 {{% /notice %}}
 
-The following example demonstrates how to allocate persistent storage in 
-Oracle Container Engine for Kubernetes, which allows you to request
-storage from the Block Storage service.  Detailed documenation is 
+The following example demonstrates how to allocate persistent storage in
+the Oracle Container Engine for Kubernetes, which allows you to request
+storage from the Block Storage service.  Detailed documentation is
 available [here](https://docs.cloud.oracle.com/iaas/Content/ContEng/Tasks/contengcreatingpersistentvolumeclaim.htm).
 
-To allocate 50GB of storage, we create the following Kubernetes YAML file:
+To allocate 50GB of storage, you create the following Kubernetes YAML file:
 
 ```yaml
 apiVersion: v1
@@ -418,29 +418,29 @@ You will have to update this file with the correct zone (from the list [here](ht
 Apply this YAML file to your cluster using this command:
 
 ```bash
-$ kubectl apply -f soadb-pvc.yaml 
+$ kubectl apply -f soadb-pvc.yaml
 persistentvolumeclaim/soadb-pvc created
 ```
 
-It will take a short time (normally less that a minute) to provision the storage
+It will take a short time (typically less that a minute) to provision the storage
 and create a file system on it.  During this time, the persistent volume
-claim will show with the state "Pending".  Once the storage is
-provisioned, the status will show as "Bound".  You can check the status with
+claim will display the state as `Pending`.  After the storage is
+provisioned, the status will display  `Bound`.  You can check the status with
 this command:
 
 ```bash
-$ kubectl get pvc -n soans 
+$ kubectl get pvc -n soans
 NAME        STATUS   VOLUME                                                    CAPACITY   ACCESS MODES   STORAGECLASS   AGE
 soadb-pvc   Bound    ocid1.volume.oc1.eu-frankfurt-1.abtheljspyxxxxxx4zfgcsa   50Gi       RWO            oci            16s
 ```
 
-**Note** The output is shortened to fit on the screen.
+**Note**: The output is shortened to fit on the screen.
 
-##### Create secrets to allow the Database image to be pulled
+##### Create secrets to allow the database image to be pulled
 
-As mentioned earlier, we need to create a Docker registry secret in this
+As mentioned earlier, you need to create a Docker registry secret in this
 namespace and attach that to the Service Account so that the Oracle Database
-images can be pulled from Oracle Container Registry.
+images can be pulled from the Oracle Container Registry.
 
 To create the Docker registry secret, use a command like this:
 
@@ -450,12 +450,12 @@ $ kubectl create secret \
           oracle-container-reg \
           --docker-server=container-registry.oracle.com \
           --docker-username=your.name@wherever.com \
-          --docker-password=you-password \
+          --docker-password=your-password \
           --docker-email=your.name@wherever.com \
           --namespace=soans
 ```
 
-You will need to provide the correct username, password and email address in this command.
+You will need to provide the correct user name, password, and email address in this command.
 Note that `oracle-container-reg` is the name of the secret in this example, and
 `docker-registry` is the type of secret to create.  You can choose a different name,
 but you must use this type.
@@ -468,7 +468,7 @@ $ kubectl patch serviceaccount default \
           -n soans
 ```
 
-This example uses the `default` Service Account in the `soans` Namespace.
+This example uses the `default` Service Account in the `soans`  namespace.
 
 You can confirm that the Service Account was updated with this command:
 
@@ -493,9 +493,9 @@ In the example output, you can see that the `oracle-container-reg` secret
 has been added to the `default` Service Account's `imagePullSecrets` list.
 
 
-##### Create the Database 
+##### Create the database
 
-To create the database pod and service, we need to create a Kubernetes YAML
+To create the database pod and service, you need to create a Kubernetes YAML
 file similiar to the one shown below.  This example is provided in the WebLogic
 Kubernetes operator repository in this location:
 
@@ -503,7 +503,7 @@ Kubernetes operator repository in this location:
 
 {{% notice warning %}}
 **TODO FOR MARK**  
-In `develop` branch, this file is moved to: 
+In `develop` branch, this file is moved to:
 `kubernetes/samples/scripts/create-soa-domain/domain-home-on-pv/create-database/db-with-pv.yaml`  
 Need to update this after that change is merged to `master`
 {{% /notice %}}
@@ -575,7 +575,7 @@ spec:
       - name: soadb-storage
         persistentVolumeClaim:
           claimName: soadb-pvc
-``` 
+```
 
 After updating this file if you chose a different namespace, persistent volume claim name,
 etc., apply this file to your cluster using this command:
