@@ -577,6 +577,30 @@ spec:
           claimName: soadb-pvc
 ```
 
+If you are using Oracle Container Engine for Kubernetes and you created the persistent
+volume claim as shown above, you will need to add an `initContainer` to change the 
+owner of the filesystem to the correct `oracle` user that the Oracle Database image
+uses (which is uid 54321).  You can do this by adding the lines shown below:
+
+```yaml
+    ... lines omitted ...
+    spec:
+      terminationGracePeriodSeconds: 30
+      # add the lines after this line
+      initContainers: 
+      - name: fix-pvc-owner
+        image:  busybox
+        command: ["sh", "-c", "chown -R 54321:54321 /ORCL"]
+        volumeMounts:
+        - name: soadb-storage
+          mountPath: /ORCL
+      # add the lines before this line
+      containers:
+      - name: soadb
+        image: coantiner-registry.oracle.com/database/enterprise:12.2.0.1
+    ... lines omitted ...
+```        
+
 After updating this file if you chose a different namespace, persistent volume claim name,
 etc., apply this file to your cluster using this command:
 
@@ -616,14 +640,236 @@ $ kubectl -n soans logs soadb-0 -f
 ```
 
 You will see it setting up the database, and after a few minutes, it will display
-this message indicating the database is ready to use: 
+this message indicating the database is ready to use.  Here is an example of the
+output: 
 
-```bash
-xxx
+```text
+Setup Oracle Database
+ls: cannot access /ORCL//u01/app/oracle/product/12.2.0/dbhome_1/dbs: No such file or directory
+Oracle Database 12.2.0.1 Setup
+Wed Oct 30 22:08:49 UTC 2019
+
+Check parameters ......
+log file is : /home/oracle/setup/log/paramChk.log
+paramChk.sh is done at 0 sec
+
+untar DB bits ......
+log file is : /home/oracle/setup/log/untarDB.log
+untarDB.sh is done at 47 sec
+
+config DB ......
+log file is : /home/oracle/setup/log/configDB.log
+
+DBNEWID: Release 12.2.0.1.0 - Production on Wed Oct 30 22:11:00 2019
+
+Copyright (c) 1982, 2017, Oracle and/or its affiliates.  All rights reserved.
+
+Connected to database ORCLCDB (DBID=2722566360)
+
+Connected to server version 12.2.0
+
+Control Files in database:
+    /u02/app/oracle/oradata/ORCLCDB/cntrlORCLCDB.dbf
+    /u03/app/oracle/fast_recovery_area/ORCLCDB/cntrlORCLCDB2.dbf
+
+Change database ID and database name ORCLCDB to SOADB? (Y/[N]) => 
+Proceeding with operation
+Changing database ID from 2722566360 to 1896944501
+Changing database name from ORCLCDB to SOADB
+    Control File /u02/app/oracle/oradata/ORCLCDB/cntrlORCLCDB.dbf - modified
+    Control File /u03/app/oracle/fast_recovery_area/ORCLCDB/cntrlORCLCDB2.dbf - modified
+    Datafile /u02/app/oracle/oradata/ORCL/system01.db - dbid changed, wrote new name
+    Datafile /u02/app/oracle/oradata/ORCL/sysaux01.db - dbid changed, wrote new name
+    Datafile /u02/app/oracle/oradata/ORCL/pdbseed/system01.db - dbid changed, wrote new name
+    Datafile /u02/app/oracle/oradata/ORCL/pdbseed/sysaux01.db - dbid changed, wrote new name
+    Datafile /u02/app/oracle/oradata/ORCL/users01.db - dbid changed, wrote new name
+    Datafile /u02/app/oracle/oradata/ORCL/pdbseed/undotbs01.db - dbid changed, wrote new name
+    Datafile /u02/app/oracle/oradata/ORCL/undotbs01.db - dbid changed, wrote new name
+    Datafile /u02/app/oracle/oradata/ORCL/temp01.db - dbid changed, wrote new name
+    Datafile /u02/app/oracle/oradata/ORCL/pdbseed/temp012017-03-02_07-54-38-075-AM.db - dbid changed, wrote new name
+    Control File /u02/app/oracle/oradata/ORCLCDB/cntrlORCLCDB.dbf - dbid changed, wrote new name
+    Control File /u03/app/oracle/fast_recovery_area/ORCLCDB/cntrlORCLCDB2.dbf - dbid changed, wrote new name
+    Instance shut down
+
+Database name changed to SOADB.
+Modify parameter file and generate a new password file before restarting.
+Database ID for database SOADB changed to 1896944501.
+All previous backups and archived redo logs for this database are unusable.
+Database is not aware of previous backups and archived logs in Recovery Area.
+Database has been shutdown, open database with RESETLOGS option.
+Succesfully changed database name and ID.
+DBNEWID - Completed succesfully.
+
+Wed Oct 30 22:09:36 UTC 2019
+Start Docker DB configuration
+Call configDBora.sh to configure database
+Wed Oct 30 22:09:37 UTC 2019
+Configure DB as oracle user
+Setup Database directories ...
+
+SQL*Plus: Release 12.2.0.1.0 Production on Wed Oct 30 22:09:37 2019
+
+Copyright (c) 1982, 2016, Oracle.  All rights reserved.
+
+Connected to an idle instance.
+
+SQL> ORACLE instance started.
+
+Total System Global Area 1342177280 bytes
+Fixed Size		    8792536 bytes
+Variable Size		  570426920 bytes
+Database Buffers	  754974720 bytes
+Redo Buffers		    7983104 bytes
+Database mounted.
+SQL> Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+NID change db name
+
+SQL*Plus: Release 12.2.0.1.0 Production on Wed Oct 30 22:11:16 2019
+
+Copyright (c) 1982, 2016, Oracle.  All rights reserved.
+
+Connected to an idle instance.
+
+SQL> 
+File created.
+
+SQL> ORACLE instance started.
+
+Total System Global Area 1342177280 bytes
+Fixed Size		    8792536 bytes
+Variable Size		  570426920 bytes
+Database Buffers	  754974720 bytes
+Redo Buffers		    7983104 bytes
+Database mounted.
+SQL> 
+Database altered.
+
+SQL> 
+Database altered.
+
+SQL> 
+NAME				     TYPE	 VALUE
+------------------------------------ ----------- ------------------------------
+spfile				     string	 /u01/app/oracle/product/12.2.0
+						 /dbhome_1/dbs/spfilesoadb.ora
+SQL> 
+NAME				     TYPE	 VALUE
+------------------------------------ ----------- ------------------------------
+encrypt_new_tablespaces 	     string	 CLOUD_ONLY
+SQL> 
+User altered.
+
+SQL> 
+User altered.
+
+SQL> Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+update password
+
+Enter password for SYS: 
+create pdb : soapdb
+
+SQL*Plus: Release 12.2.0.1.0 Production on Wed Oct 30 22:11:30 2019
+
+Copyright (c) 1982, 2016, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+
+SQL>   2    3    4    5  
+Pluggable database created.
+
+SQL> 
+Pluggable database altered.
+
+SQL> 
+Pluggable database altered.
+
+SQL> Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+Reset Database parameters
+
+SQL*Plus: Release 12.2.0.1.0 Production on Wed Oct 30 22:13:04 2019
+
+Copyright (c) 1982, 2016, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+
+SQL> 
+System altered.
+
+SQL> Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+
+LSNRCTL for Linux: Version 12.2.0.1.0 - Production on 30-OCT-2019 22:13:04
+
+Copyright (c) 1991, 2016, Oracle.  All rights reserved.
+
+Starting /u01/app/oracle/product/12.2.0/dbhome_1/bin/tnslsnr: please wait...
+
+TNSLSNR for Linux: Version 12.2.0.1.0 - Production
+System parameter file is /u01/app/oracle/product/12.2.0/dbhome_1/admin/soadb/listener.ora
+Log messages written to /u01/app/oracle/diag/tnslsnr/soadb-0/listener/alert/log.xml
+Listening on: (DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=0.0.0.0)(PORT=1521)))
+Listening on: (DESCRIPTION=(ADDRESS=(PROTOCOL=ipc)(KEY=EXTPROC1521)))
+
+Connecting to (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=0.0.0.0)(PORT=1521)))
+STATUS of the LISTENER
+------------------------
+Alias                     LISTENER
+Version                   TNSLSNR for Linux: Version 12.2.0.1.0 - Production
+Start Date                30-OCT-2019 22:13:04
+Uptime                    0 days 0 hr. 0 min. 0 sec
+Trace Level               off
+Security                  ON: Local OS Authentication
+SNMP                      OFF
+Listener Parameter File   /u01/app/oracle/product/12.2.0/dbhome_1/admin/soadb/listener.ora
+Listener Log File         /u01/app/oracle/diag/tnslsnr/soadb-0/listener/alert/log.xml
+Listening Endpoints Summary...
+  (DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=0.0.0.0)(PORT=1521)))
+  (DESCRIPTION=(ADDRESS=(PROTOCOL=ipc)(KEY=EXTPROC1521)))
+The listener supports no services
+The command completed successfully
+
+DONE!
+Remove password info
+Docker DB configuration is complete !
+configDB.sh is done at 255 sec
+
+Done ! The database is ready for use .
+# ===========================================================================  
+# == Add below entries to your tnsnames.ora to access this database server ==  
+# ====================== from external host =================================  
+soadb=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=<ip-address>)(PORT=<port>))
+    (CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=soadb.localdomain)))     
+soapdb=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=<ip-address>)(PORT=<port>))
+    (CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=soapdb.localdomain)))     
+#                                                                              
+#ip-address : IP address of the host where the container is running.           
+#port       : Host Port that is mapped to the port 1521 of the container.      
+#                                                                              
+# The mapped port can be obtained from running "docker port <container-id>"  
+# ===========================================================================  
+SOAPDB(3):Database Characterset for SOAPDB is AL32UTF8
+SOAPDB(3):Opatch validation is skipped for PDB SOAPDB (con_id=0)
+2019-10-30T22:13:03.813639+00:00
+SOAPDB(3):Opening pdb with no Resource Manager plan active
+Pluggable database SOAPDB opened read write
+Completed:     alter pluggable database soapdb open
+    alter pluggable database all save state
+Completed:     alter pluggable database all save state
+2019-10-30T22:13:04.220268+00:00
+ALTER SYSTEM SET encrypt_new_tablespaces='DDL' SCOPE=BOTH;
 ```
 
+Once you see this line, you can proceed:
 
+```text
+Done ! The database is ready for use .
+```
 
+The next step is to use the Repository Creation Utility (RCU) to create
+the SOA database schemas.
 
 
 #### Running the Repository Creation Utility to populate the database
