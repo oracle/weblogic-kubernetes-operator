@@ -344,6 +344,24 @@ from starting successfully.
 
 #### Preparing your database for the SOAINFRA schemas
 
+SOA Suite requires a database where it stores its configuration and runtime
+data.  You can run the database inside Kubernetes for testing and development
+purposes.  For a production deployment, you should run the database outside
+Kubernetes.  In this example, we will run the database inside the same 
+Kubernetes cluster that SOA Suite is running in.
+
+{{% notice warning %}}
+The Oracle Database Docker images are supported only for non-production use.
+For more details, see My Oracle Support note:
+Oracle Support for Database Running on Docker (Doc ID 2216342.1)
+{{% /notice %}}
+
+**Note** More detailed information about options for [configuring access
+to your database can be found here]({{< relref "/userguide/managing-fmw-domains/soa-suite#configuring-access-to-your-database" >}}),
+but this document contains all of the important information.
+
+
+
 
 #### Running the Repository Creation Utility to populate the database
 
