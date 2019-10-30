@@ -213,7 +213,7 @@ public class LoadBalancer {
     executeHelmCommand(cmd2);
 
     String cmd3 =
-        "helm install appscode/voyager --name voyager-operator --version 7.4.0 --namespace voyage "
+        "helm install appscode/voyager --name voyager-operator --version 7.4.0 --namespace voyager "
             + "--set cloudProvider=baremetal --set apiserver.enableValidatingWebhook=false";
     LoggerHelper.getLocal().log(Level.INFO, "Executing Install voyager operator cmd " + cmd3);
 
@@ -222,8 +222,8 @@ public class LoadBalancer {
 
   private void createVoyagerIngressPerDomain() throws Exception {
     upgradeVoyagerNamespace();
-    LoggerHelper.getLocal().log(Level.INFO, "Sleeping for 20 seconds after upgradeVoyagerNamespace ");
-    Thread.sleep(20 * 1000);
+    LoggerHelper.getLocal().log(Level.INFO, "Sleeping for 60 seconds after upgradeVoyagerNamespace ");
+    Thread.sleep(60 * 1000);
     createVoyagerIngress();
     LoggerHelper.getLocal().log(Level.INFO, "Sleeping for 20 seconds after createVoyagerIngress ");
     Thread.sleep(20 * 1000);
@@ -247,6 +247,21 @@ public class LoadBalancer {
 
     LoggerHelper.getLocal().log(Level.INFO, " upgradeVoyagerNamespace() Running " + cmd.toString());
     executeHelmCommand(cmd.toString());
+    
+    //Print out Voyager pod log
+    StringBuffer cmd0 = new StringBuffer("kubectl get pod -n voyager |grep voyager-| awk '{print $1}'");
+    LoggerHelper.getLocal().log(Level.INFO, "===== get voyager op pod name command: " + cmd0.toString());
+    ExecResult result = TestUtils.exec(cmd0.toString());
+    String podName = result.stdout();
+    LoggerHelper.getLocal().log(Level.INFO, "===== podName: " + podName);
+    
+    cmd0 = new StringBuffer("kubectl log ");
+    cmd0.append(podName)
+        .append(" --namespace voyager");
+
+    LoggerHelper.getLocal().log(Level.INFO, "===== voyager op pod log command: " + cmd0.toString());
+    result = TestUtils.exec(cmd0.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "===== voyager op pod log: " + result.stdout());
   }
 
   private void createVoyagerIngress() throws Exception {
