@@ -5,9 +5,19 @@ weight: 7
 description: "End-to-end guide for SOA Suite preview testers."
 ---
 
-### End-to-end guide for SOA Suite preview testers
+### End-to-end guide for Oracle SOA Suite preview testers
 
-This document provides detailed instructions for testing the SOA Suite preview.
+This document provides detailed instructions for testing the Oracle SOA Suite preview. 
+This guide uses the WebLogic Kubernetes operator version 2.3.0 and SOA Suite 12.2.1.3.0.
+SOA Suite has also been tested using the WebLogic Kubernetes operator version 2.2.1.
+SOA Suite is currently a *preview*, meaning that everything is tested and should work,
+but official support is not available yet. 
+You can, however, come to [our public Slack](https://weblogic-slack-inviter.herokuapp.com/) to ask questions
+and provide feedback.
+At Oracle OpenWorld 2019, we did announce our *intention* to provide official
+support for SOA Suite running on Kubernetes in 2020 (subject to the standard Safe Harbor statement).
+For planning purposes, it would be reasonable to assume that the production support would
+likely be for Oracle SOA Suite 12.2.1.4.0.
 
 {{% notice warning %}}
 Oracle SOA Suite is currently only supported for non-production use in Docker and Kubernetes.  The information provided
