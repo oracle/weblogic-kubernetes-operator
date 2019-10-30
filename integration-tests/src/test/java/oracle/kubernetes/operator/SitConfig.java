@@ -243,6 +243,7 @@ public class SitConfig extends BaseTest {
     String content = new String(Files.readAllBytes(src), charset);
     content = content.replaceAll("@NAMESPACE@", "default");
     content = content.replaceAll("@DOMAIN_UID@", DOMAINUID);
+    content = content.replaceAll("@MYSQLPORT@", MYSQL_DB_PORT);
     LoggerHelper.getLocal().log(Level.INFO, "to {0}", dst.toString());
     Files.write(dst, content.getBytes(charset));
   }
