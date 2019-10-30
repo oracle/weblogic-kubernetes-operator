@@ -54,6 +54,45 @@ or report it on [our public Slack](https://weblogic-slack-inviter.herokuapp.com/
 
 #### Preparing your Kubernetes cluster
 
+To follow the instructions in this guide, you will need a Kubernetes cluster.
+In this guide, the examples are shown using Oracle Container Engine for Kubernetes,
+Oracle's managed Kubernetes service.  Detailed information can be found
+[in the documentation](https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm).
+If you do not have your own Kuberentes cluster, you can [try Oracle Cloud for free](https://www.oracle.com/cloud/free/)
+and get a cluster using the free credits, which will provide enough time to work through this 
+whole guide. You can also use any of the other [supported Kubernetes distributions]({{< relref "/userguide/introduction/introduction" >}}).
+
+To confirm that your Kubernetes cluster is suitable for SOA Suite, you should confirm
+you have a resonably recent version of Kubernetes, 1.13 or later is recommended.
+
+Make sure that your worker nodes have enough memory and CPU resource.  If you plan to run a SOA
+domain with two managed servers and an admin server, plus a database, then a good
+rule of thumb would be to have at least 12GB of available RAM between your worker nodes.
+We came up with number by allowing 4GB each for the database, and each of the three 
+WebLogic servers.
+
+You can use the following commands to check how many worker nodes you have, and to check
+the avilable CPU and memory for each:
+
+```bash
+$ kubectl get nodes
+NAME        STATUS   ROLES   AGE   VERSION
+10.0.10.2   Ready    node    54m   v1.13.5
+10.0.10.3   Ready    node    54m   v1.13.5
+10.0.10.4   Ready    node    54m   v1.13.5
+
+$ kubectl get nodes -o jsonpath='{.items[*].status.capacity}' 
+map[cpu:16 ephemeral-storage:40223552Ki hugepages-1Gi:0 hugepages-2Mi:0 memory:123485928Ki pods:110] map[cpu:16 ephemeral-storage:40223552Ki hugepages-1Gi:0 hugepages-2Mi:0 memory:123485928Ki pods:110] map[cpu:16 ephemeral-storage:40223552Ki hugepages-1Gi:0 hugepages-2Mi:0 memory:123485928Ki pods:110]
+2019-10-30 09:39:21:~ 
+```
+From the output shown, you can see that this cluster has three worker nodes, and each one has 16 cores and about 120GB of RAM.
+
+{{% notice note %}}
+All Kubernetes distributions and managed services have small differences.  In particular,
+the way that persistent storage and load balancers are managed varies significantly.  
+You may need to adjust the instructions in this guide to suit your particular flavor of Kubernetes.
+{{% /notice %}}
+
 
 #### Obtaining the necessary Docker images
 
