@@ -73,6 +73,7 @@ $ kubectl version
 Client Version: version.Info{Major:"1", Minor:"15", GitVersion:"v1.15.3", GitCommit:"2d3c76f9091b6bec110a5e63777c332469e0cba2", GitTreeState:"clean", BuildDate:"2019-08-19T11:13:54Z", GoVersion:"go1.12.9", Compiler:"gc", Platform:"linux/amd64"}
 Server Version: version.Info{Major:"1", Minor:"13+", GitVersion:"v1.13.5-6+d6ea2e3ed7815b", GitCommit:"d6ea2e3ed7815b9b53d854038041f43b0a98555e", GitTreeState:"clean", BuildDate:"2019-09-19T23:10:35Z", GoVersion:"go1.11.5", Compiler:"gc", Platform:"linux/amd64"}
 ```
+
 This output shows that the Kubernetes cluster (the "Server Version" section) is running version 1.13.5.
 
 ##### Adequate CPU and RAM 
@@ -97,6 +98,7 @@ $ kubectl get nodes -o jsonpath='{.items[*].status.capacity}'
 map[cpu:16 ephemeral-storage:40223552Ki hugepages-1Gi:0 hugepages-2Mi:0 memory:123485928Ki pods:110] map[cpu:16 ephemeral-storage:40223552Ki hugepages-1Gi:0 hugepages-2Mi:0 memory:123485928Ki pods:110] map[cpu:16 ephemeral-storage:40223552Ki hugepages-1Gi:0 hugepages-2Mi:0 memory:123485928Ki pods:110]
 2019-10-30 09:39:21:~ 
 ```
+
 From the output shown, you can see that this cluster has three worker nodes, and each one has 16 cores and about 120GB of RAM.
 
 ##### Helm installed
@@ -121,8 +123,10 @@ To confirm that Tiller is running, use this command:
 $ kubectl -n kube-system get pods  | grep tiller
 tiller-deploy-5545b55857-rq8gp          1/1     Running   0          81m
 ```
+
 The output should show the status "Running".
 
+**Note** More information about the Helm requirement can he found [here]({{< relref "/userguide/managing-operators" >}}).
 
 {{% notice note %}}
 All Kubernetes distributions and managed services have small differences.  In particular,
@@ -134,7 +138,11 @@ You may need to adjust the instructions in this guide to suit your particular fl
 #### Obtaining the necessary Docker images
 
 You will need the Docker images to run SOA Suite, the Oracle database
-and the WebLogic Kubernetes operator. These Docker images are
+and the WebLogic Kubernetes operator. 
+
+##### Accept license agreements
+
+These Docker images are
 available in [Oracle Container Registry](https://container-registry.oracle.com).
 Before you can pull the images, you will need to log on the 
 web interface and accept the license agreements.
@@ -155,6 +163,8 @@ repository in the "Database" category.
 You do not need to accept a license for the WebLogic Kuberentes operator
 Docker image.
 
+##### Confirm access to the images
+
 To confirm that you have access to the images, you can login to Oracle
 Container Registry and pull the images using these commands:
 
@@ -171,8 +181,165 @@ client machine.  This step is jsut to confirm that you have successfully
 completed the license acceptance and have access to the images.
 {{% /notice %}}
 
+In order for your Kubernetes cluster to access these images, you will need
+to create Docker registry secrets and attach these to Service Accounts in the
+Kubernetes Namespaces where they are needed.
+This will be covered later in this document, when it is needed.
 
 #### Installing the WebLogic Kubernetes operator
+
+We will use the WebLogic Kubernetes operator to manage the SOA domain.
+
+##### Grant Tiller the cluster-admin role
+
+To install the WebLogic Kubernetes operator, we must first give the Tiller
+Service Account the `cluster-admin` role using this command:
+
+```bash
+$ cat <<EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: helm-user-cluster-admin-role
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: kube-system
+EOF
+
+output:
+clusterrolebinding "helm-user-cluster-admin-role" configured
+```
+
+This will allow Tiller (the Helm server component) to be able to perform
+the necessary operations in the Kubernetes cluster that are required to
+install an operator.
+
+##### Create a namespace
+
+You can optionally install the WebLogic Kubernetes operator into its
+own namespace.  If you prefer, you can just install it in the `default`
+namespace. 
+
+To create a namespace use this command:
+
+```bash
+$ kubectl create ns operator
+namespace/operator created
+```
+
+You can change `operator` to your preferred name.  If you chose a different
+name, you will need to adjust the commands in the following sections to 
+use the name you chose.
+
+##### Clone the operator GitHub repository
+
+Make a clone of the WebLogic Kubernetes operator GitHub repository on your
+client machine and change into that directory using these commands: 
+
+```bash
+$ git clone https://github.com/oracle/weblogic-kubernetes-operator
+Cloning into 'weblogic-kubernetes-operator'...
+remote: Enumerating objects: 461, done.
+remote: Counting objects: 100% (461/461), done.
+remote: Compressing objects: 100% (272/272), done.
+remote: Total 99543 (delta 191), reused 303 (delta 103), pack-reused 99082
+Receiving objects: 100% (99543/99543), 71.16 MiB | 5.08 MiB/s, done.
+Resolving deltas: 100% (59255/59255), done.
+Updating files: 100% (6481/6481), done.
+
+$ cd weblogic-kubernetes-operator
+```
+
+You will use several samples from this repository during this guide.
+
+##### Install the operator
+
+To install the operator, use the following command:
+
+```bash
+$ helm install \
+       kubernetes/charts/weblogic-operator \
+       --name weblogic-operator \
+       --namespace operator \
+       --set image=oracle/weblogic-kubernetes-operator:2.3.0 \
+       --set "domainNamespaces={}" 
+
+NAME:   weblogic-operator
+LAST DEPLOYED: Wed Oct 30 11:01:20 2019
+NAMESPACE: operator
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1/ClusterRole
+NAME                                                   AGE
+operator-weblogic-operator-clusterrole-domain-admin    2s
+operator-weblogic-operator-clusterrole-general         2s
+operator-weblogic-operator-clusterrole-namespace       2s
+operator-weblogic-operator-clusterrole-nonresource     2s
+operator-weblogic-operator-clusterrole-operator-admin  2s
+
+==> v1/ClusterRoleBinding
+NAME                                                          AGE
+operator-weblogic-operator-clusterrolebinding-auth-delegator  2s
+operator-weblogic-operator-clusterrolebinding-discovery       2s
+operator-weblogic-operator-clusterrolebinding-general         2s
+operator-weblogic-operator-clusterrolebinding-nonresource     2s
+
+==> v1/ConfigMap
+NAME                  DATA  AGE
+weblogic-operator-cm  2     2s
+
+==> v1/Pod(related)
+NAME                                READY  STATUS             RESTARTS  AGE
+weblogic-operator-7c95fd48cf-w427t  0/1    ContainerCreating  0         1s
+
+==> v1/Role
+NAME                    AGE
+weblogic-operator-role  2s
+
+==> v1/RoleBinding
+NAME                                     AGE
+weblogic-operator-rolebinding            2s
+weblogic-operator-rolebinding-namespace  2s
+
+==> v1/Secret
+NAME                       TYPE    DATA  AGE
+weblogic-operator-secrets  Opaque  0     2s
+
+==> v1/Service
+NAME                            TYPE       CLUSTER-IP    EXTERNAL-IP  PORT(S)   AGE
+internal-weblogic-operator-svc  ClusterIP  10.96.169.15  <none>       8082/TCP  2s
+
+==> v1beta1/Deployment
+NAME               READY  UP-TO-DATE  AVAILABLE  AGE
+weblogic-operator  0/1    1           0          1s
+```
+
+Sample output is shown above, yours may look slightly different.  The operator will take
+a short time to start up (normally less than 30 seconds).  Confirm it has reached
+the "Running" state with this command:
+
+```bash
+$ kubectl get pods -n operator
+NAME                                 READY   STATUS    RESTARTS   AGE
+weblogic-operator-7c95fd48cf-w427t   1/1     Running   0          2m41s
+```
+
+If your operator pod is not in the "Running" state, you will need to fix that
+issue before proceeding.  The most common issue is not being able to pull
+the Docker image.  You can check on the issues using the describe command:
+
+```bash 
+$ kubectl -n operator describe pod weblogic-operator-7c95fd48cf-w427t
+```
+
+The output of this command will tell you what issue is preventing the operator
+from starting successfully.
 
 
 #### Preparing your database for the SOAINFRA schemas
