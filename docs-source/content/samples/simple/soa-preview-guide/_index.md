@@ -114,7 +114,7 @@ To install the "Tiller" component on your Kubernetes cluster, use this command:
 $ helm init
 ```
 
-It will take about 30-60 seconds for Tiller to be deployed and to start. 
+It will normally take about 30-60 seconds for Tiller to be deployed and to start. 
 To confirm that Tiller is running, use this command: 
 
 ```bash
@@ -132,6 +132,44 @@ You may need to adjust the instructions in this guide to suit your particular fl
 
 
 #### Obtaining the necessary Docker images
+
+You will need the Docker images to run SOA Suite, the Oracle database
+and the WebLogic Kubernetes operator. These Docker images are
+available in [Oracle Container Registry](https://container-registry.oracle.com).
+Before you can pull the images, you will need to log on the 
+web interface and accept the license agreements.
+
+From the [main page](https://container-registry.oracle.com), click on the
+"Middleware" category, then click on the "soasuite" repository.
+
+![Oracle Container Registry - Oracle SOA Suite page](/weblogic-kubernetes-operator/images/ocr-sign-in-page.png)
+
+Click on the "Sign In" button and use your Oracle Account to authenticate.
+You will be shown the license agreement, and you must accept the terms
+and conditions.  Once you have accepted, you will be able to pull this 
+image.
+
+Repeat these steps to also select the license for the "enterprise"
+repository in the "Database" category.
+
+You do not need to accept a license for the WebLogic Kuberentes operator
+Docker image.
+
+To confirm that you have access to the images, you can login to Oracle
+Container Registry and pull the images using these commands:
+
+```bash
+$ docker login container-registry.oracle.com
+$ docker pull container-registry.oracle.com/database/enterprise:12.2.0.1
+$ docker pull container-registry.oracle.com/middleware/soasuite:12.2.1.3
+```
+
+{{% notice note %}}
+If you are not running these commands on one of your Kubernetes worker nodes,
+then strictly speaking you do not need to pull the images onto your 
+client machine.  This step is jsut to confirm that you have successfully
+completed the license acceptance and have access to the images.
+{{% /notice %}}
 
 
 #### Installing the WebLogic Kubernetes operator
