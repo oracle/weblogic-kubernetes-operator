@@ -15,4 +15,75 @@ in this document is a *preview* for early adopters who wish to experiment with O
 it is supported for production use.
 {{% /notice %}}
 
-More content here....
+#### Overview
+
+This guide will help you to test the Oracle SOA Suite preview in Kubernetes.  The guide presents
+a complete end-to-end example of setting up and using SOA Suite in Kubernetes including:
+
+* [Preparing your Kubernetes cluster](#preparing-your-kubernetes-cluster).
+* [Obtaining the necessary Docker images](#obtaining-the-necessary-docker-images).
+* [Installing the WebLogic Kubernetes operator](#installing-the-weblogic-kubernetes-operator).
+* [Preparing your database for the SOAINFRA schemas](#preparing-your-database-for-the-soainfra-schemas).
+* [Running the Repository Creation Utility to populate the database](#running-the-repository-creation-utility-to-populate-the-database).
+* [Creating a SOA domain](#creating-a-soa-domain).
+* [Starting the SOA domain in Kubernetes](#starting-the-soa-domain-in-kubernetes).
+* [Setting up a load balancer to access various SOA endpoints](#setting-up-a-load-balancer-to-access-various-soa-endpoints).
+* [Configuring the SOA cluster for access through a load balancer](#configuring-the-soa-cluster-for-access-through-a-load-balancer).
+* [Deploying a SCA composite to the domain](#deploying-a-sca-composite-to-the-domain).
+* [Accessing the SCA composite and various SOA web interfaces](#accessing-the-sca-composite-and-various-soa-web-interfaces). 
+* [Configuring the domain to send logs to Elasticsearch](#configuring-the-domain-to-send-logs-to-elasticsearch).
+* [Using Kibana to view logs for the domain](#using-kibana-to-view-logs-for-the-domain).
+* [Configuring the domain to send metrics to Prometheus](#configuring-the-domain-to-send-metrics-to-prometheus).
+* [Using the Grafana dashboards to view metrics for the domain](#using-the-grafana-dashboards-to-view-metrics-for-the-domain).
+
+{{% notice note %}}
+**Feedback**  
+If you find any issues with this guide, please [open an issue in our GitHub repository](https://github.com/oracle/weblogic-kubernetes-operator/issues/new)
+or report it on [our public Slack](https://weblogic-slack-inviter.herokuapp.com/).  Thanks!
+{{% /notice %}}
+
+#### Preparing your Kubernetes cluster
+
+
+#### Obtaining the necessary Docker images
+
+
+#### Installing the WebLogic Kubernetes operator
+
+
+#### Preparing your database for the SOAINFRA schemas
+
+
+#### Running the Repository Creation Utility to populate the database
+
+
+#### Creating a SOA domain
+
+
+#### Starting the SOA domain in Kubernetes
+
+
+#### Setting up a load balancer to access various SOA endpoints
+
+
+#### Configuring the SOA cluster for access through a load balancer
+
+
+#### Deploying a SCA composite to the domain
+
+
+#### Accessing the SCA composite and various SOA web interfaces
+
+
+#### Configuring the domain to send logs to Elasticsearch
+
+
+#### Using Kibana to view logs for the domain
+
+
+#### Configuring the domain to send metrics to Prometheus
+
+
+#### Using the Grafana dashboards to view metrics for the domain
+
+
