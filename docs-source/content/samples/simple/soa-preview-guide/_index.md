@@ -62,8 +62,20 @@ If you do not have your own Kuberentes cluster, you can [try Oracle Cloud for fr
 and get a cluster using the free credits, which will provide enough time to work through this 
 whole guide. You can also use any of the other [supported Kubernetes distributions]({{< relref "/userguide/introduction/introduction" >}}).
 
+##### A current version of Kubernetes 
+
 To confirm that your Kubernetes cluster is suitable for SOA Suite, you should confirm
 you have a resonably recent version of Kubernetes, 1.13 or later is recommended.
+You can check the version of Kubernetes with this command:
+
+```bash
+$ kubectl version
+Client Version: version.Info{Major:"1", Minor:"15", GitVersion:"v1.15.3", GitCommit:"2d3c76f9091b6bec110a5e63777c332469e0cba2", GitTreeState:"clean", BuildDate:"2019-08-19T11:13:54Z", GoVersion:"go1.12.9", Compiler:"gc", Platform:"linux/amd64"}
+Server Version: version.Info{Major:"1", Minor:"13+", GitVersion:"v1.13.5-6+d6ea2e3ed7815b", GitCommit:"d6ea2e3ed7815b9b53d854038041f43b0a98555e", GitTreeState:"clean", BuildDate:"2019-09-19T23:10:35Z", GoVersion:"go1.11.5", Compiler:"gc", Platform:"linux/amd64"}
+```
+This output shows that the Kubernetes cluster (the "Server Version" section) is running version 1.13.5.
+
+##### Adequate CPU and RAM 
 
 Make sure that your worker nodes have enough memory and CPU resource.  If you plan to run a SOA
 domain with two managed servers and an admin server, plus a database, then a good
@@ -86,6 +98,31 @@ map[cpu:16 ephemeral-storage:40223552Ki hugepages-1Gi:0 hugepages-2Mi:0 memory:1
 2019-10-30 09:39:21:~ 
 ```
 From the output shown, you can see that this cluster has three worker nodes, and each one has 16 cores and about 120GB of RAM.
+
+##### Helm installed
+
+You will need to have Helm installed on your client machine (the machine where you run `kubectl` commands) and the "Tiller"
+component installed in your cluster.
+
+You can obtain Helm from their [releases page](https://github.com/helm/helm/releases/tag/v2.14.3). 
+The examples in this guide use version 2.14.3.  You must ensure that the version you choose is
+compatible with the version of Kubernetes that you are running. 
+
+To install the "Tiller" component on your Kubernetes cluster, use this command:
+
+```bash
+$ helm init
+```
+
+It will take about 30-60 seconds for Tiller to be deployed and to start. 
+To confirm that Tiller is running, use this command: 
+
+```bash
+$ kubectl -n kube-system get pods  | grep tiller
+tiller-deploy-5545b55857-rq8gp          1/1     Running   0          81m
+```
+The output should show the status "Running".
+
 
 {{% notice note %}}
 All Kubernetes distributions and managed services have small differences.  In particular,
