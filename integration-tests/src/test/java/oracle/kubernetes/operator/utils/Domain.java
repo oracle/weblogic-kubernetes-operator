@@ -51,8 +51,9 @@ public class Domain {
   // default values as in create-weblogic-domain-inputs.yaml, generated yaml file will have the
   // customized property values
   protected String domainNS;
-  protected String userProjectsDir = "";
-  protected String resultsDir = "";
+  protected String userProjectsDir;
+  protected String resultsDir;
+  protected String pvRoot;
   protected String generatedInputYamlFile;
   private String adminServerName;
   private String managedServerNameBase;
@@ -1045,6 +1046,7 @@ public class Domain {
     pvMap.put("namespace", domainNS);
     pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
     pvMap.put("userProjectsDir", userProjectsDir);
+    pvMap.put("pvRoot", pvRoot);
 
     if (BaseTest.OPENSHIFT) {
       pvMap.put("weblogicDomainStorageType", "NFS");
@@ -1053,25 +1055,25 @@ public class Domain {
     // set pv path
     domainMap.put(
         "weblogicDomainStoragePath",
-        BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid);
+        pvRoot + "/acceptance_test_pv/persistentVolume-" + domainUid);
 
     pvMap.put(
         "weblogicDomainStoragePath",
-        BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid);
+        pvRoot + "/acceptance_test_pv/persistentVolume-" + domainUid);
 
     pvMap.values().removeIf(Objects::isNull);
 
     // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch, create PV/PVC
-    new PersistentVolume(BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
+    new PersistentVolume(pvRoot + "/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
 
     String cmd =
         BaseTest.getProjectRoot()
             + "/src/integration-tests/bash/krun.sh -m "
-            // + BaseTest.getPvRoot()
+            // + pvRoot
             + "/scratch:/scratch -n " + domainNS + " -c \"ls -ltr /scratch "
-            + BaseTest.getPvRoot()
+            + pvRoot
             + " "
-            + BaseTest.getPvRoot()
+            + pvRoot
             + "/acceptance_test_pv"
             + "\"";
     LoggerHelper.getLocal().log(Level.INFO, "Check PVROOT by running " + cmd);
@@ -1594,13 +1596,10 @@ public class Domain {
     imageTag = BaseTest.getWeblogicImageTag();
     imageName = BaseTest.getWeblogicImageName();
     domainMap = inputDomainMap;
-    if (!domainMap.containsKey("userProjectsDir") && !domainMap.containsKey("resultDir")) {
-      throw new RuntimeException("FAILURE: Atleast one of the properties"
-          + " userProjectsDir or resultDir should be provided for the domain");
-    }
-    this.userProjectsDir = (String) domainMap.get("userProjectsDir");
-    resultsDir = userProjectsDir + "/..";
-    this.projectRoot = BaseTest.getProjectRoot();
+    userProjectsDir = (String) domainMap.get("userProjectsDir");
+    resultsDir = (String) domainMap.get("resultDir");
+    pvRoot = (String) domainMap.get("pvRoot");
+    projectRoot = BaseTest.getProjectRoot();
 
     /* if (domainMap.containsKey("pvSharing")) {
       domainResultsDir = userProjectsDir + "/../";

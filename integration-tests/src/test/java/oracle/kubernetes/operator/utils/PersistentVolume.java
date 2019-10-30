@@ -30,16 +30,17 @@ public class PersistentVolume {
     this.pvMap = pvMap;
     UUID uuid = UUID.randomUUID();
     String userProjectsDir = (String) pvMap.get("userProjectsDir");
+    String pvRoot = (String) pvMap.get("pvRoot");
     String cmd;
     if (BaseTest.OPENSHIFT) {
       cmd = "mkdir -m 777 -p " + dirPath;
     } else {
       cmd =
           BaseTest.getProjectRoot()
-              + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot()
+              + "/src/integration-tests/bash/krun.sh -m " + pvRoot
               + ":/shareddir-" + uuid + " -t 120 -p pod-"
               + uuid + " -c 'mkdir -m 777 -p "
-              + dirPath.replace(BaseTest.getPvRoot(), "/shareddir-" + uuid + "/")
+              + dirPath.replace(pvRoot, "/shareddir-" + uuid + "/")
               + "'";
     }
     // retry logic for PV dir creation as sometimes krun.sh fails

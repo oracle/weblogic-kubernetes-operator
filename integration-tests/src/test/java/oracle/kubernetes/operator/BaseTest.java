@@ -6,6 +6,8 @@ package oracle.kubernetes.operator;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
@@ -66,8 +68,10 @@ public class BaseTest {
   public static String MONITORING_EXPORTER_VERSION;
   public static boolean INGRESSPERDOMAIN = true;
   protected static String appLocationInPod = "/u01/oracle/apps";
-  private static String resultRoot = "";
-  private static String pvRoot = "";
+  private static String resultRootCommon = "";
+  private static String pvRootCommon = "";
+  private String resultRoot = "";
+  private String pvRoot = "";
   private String resultDir = "";
   private String userProjectsDir = "";
   private static String projectRoot = "";
@@ -85,6 +89,7 @@ public class BaseTest {
   private static String weblogicImageServer;
   private static String domainApiVersion;
   private static int suffixCount = 0;
+  private String testClassName;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
@@ -115,11 +120,6 @@ public class BaseTest {
     }
   }
 
-  /* To be removed later */
-  public void initialize(String appPropsFile) throws Exception {
-    initialize(appPropsFile, "");
-  }
-
   /**
    * initializes the application properties and creates directories for results.
    *
@@ -129,7 +129,7 @@ public class BaseTest {
    */
   public void initialize(String appPropsFile, String testClassName)
       throws Exception {
-
+    this.testClassName = testClassName;
     LoggerHelper.initLocal(Logger.getLogger(testClassName));
     LoggerHelper.getGlobal().log(Level.INFO, "Starting testClass " + testClassName);
     LoggerHelper.getLocal().log(Level.INFO, "Starting testClass " + testClassName);
@@ -185,16 +185,18 @@ public class BaseTest {
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
     waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
     if (System.getenv("RESULT_ROOT") != null) {
-      resultRoot = System.getenv("RESULT_ROOT") + "/" + testClassName;
+      resultRootCommon = System.getenv("RESULT_ROOT");
     } else {
-      resultRoot = baseDir + "/" + System.getProperty("user.name")
-            + "/wl_k8s_test_results" + "/" + testClassName;
+      resultRootCommon = baseDir + "/" + System.getProperty("user.name")
+            + "/wl_k8s_test_results";
     }
+    resultRoot = resultRootCommon + "/" + testClassName;
     if (System.getenv("PV_ROOT") != null) {
-      pvRoot = System.getenv("PV_ROOT") + "/" + testClassName;
+      pvRootCommon = System.getenv("PV_ROOT");
     } else {
-      pvRoot = resultRoot;
+      pvRootCommon = resultRootCommon;
     }
+    pvRoot = pvRootCommon + "/" + testClassName;
     if (System.getenv("LEASE_ID") != null) {
       leaseId = System.getenv("LEASE_ID");
     }
@@ -330,11 +332,11 @@ public class BaseTest {
     return ExecCommand.exec(cmd);
   } */
 
-  public static String getResultRoot() {
+  public String getResultRoot() {
     return resultRoot;
   }
 
-  public static String getPvRoot() {
+  public String getPvRoot() {
     return pvRoot;
   }
 
@@ -430,8 +432,8 @@ public class BaseTest {
             + "after the tearDown completes. Note that tearDown itself may report errors,"
             + " but this won't affect the outcome of the test results.");
     StringBuffer cmd = new StringBuffer("export RESULT_ROOT=");
-    cmd.append(getResultRoot()).append(" && export PV_ROOT=")
-        .append(getPvRoot()).append(" && export IT_CLASS=");
+    cmd.append(resultRootCommon).append(" && export PV_ROOT=")
+        .append(pvRootCommon).append(" && export IT_CLASS=");
     cmd.append(itClassName)
         .append(" && export NAMESPACE_LIST=\"")
         .append(namespaceList)
@@ -796,7 +798,7 @@ public class BaseTest {
     String scriptsDir = pvDir + "/domains/" + domainUid + "/bin/scripts";
 
     // create scripts dir under domain pv
-    TestUtils.createDirUnderDomainPV(scriptsDir);
+    TestUtils.createDirUnderDomainPV(scriptsDir, pvRoot);
     if (OPENSHIFT) {
       Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
           Paths.get(scriptsDir + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
@@ -854,6 +856,93 @@ public class BaseTest {
 
   public static int getSuffixCount() {
     return suffixCount;
+  }
+
+  /**
+   * Creates a map with commonly used operator input attributes using suffixCount and prefix
+   * to make the namespaces and ports unique.
+   *
+   * @param suffixCount unique numeric value
+   * @param prefix      prefix for the artifact names
+   * @return map with operator input attributes
+   */
+  public Map<String, Object> createOperatorMap(
+      int suffixCount, boolean restEnabled, String prefix) {
+    Map<String, Object> operatorMap = new HashMap<String, Object>();
+    ArrayList<String> targetDomainsNS = new ArrayList<String>();
+    targetDomainsNS.add(prefix.toLowerCase() + "-domainns-" + suffixCount);
+    operatorMap.put("releaseName", prefix.toLowerCase() + "-op-" + suffixCount);
+    operatorMap.put("domainNamespaces", targetDomainsNS);
+    operatorMap.put("serviceAccount", prefix.toLowerCase() + "-sa-" + suffixCount);
+    operatorMap.put("namespace", prefix.toLowerCase() + "-opns-" + suffixCount);
+    operatorMap.put("resultDir", resultDir);
+    operatorMap.put("userProjectsDir", resultDir + "/user-projects");
+    if (restEnabled) {
+      operatorMap.put("externalRestHttpsPort", 32000 + suffixCount);
+      operatorMap.put("externalRestEnabled", restEnabled);
+    }
+    return operatorMap;
+  }
+
+  /**
+   * Creates a map with commonly used domain input attributes using suffixCount and prefix
+   * to make the namespaces and ports unique.
+   *
+   * @param suffixCount unique numeric value
+   * @param prefix      prefix for the artifact names
+   * @return map with domain input attributes
+   */
+  public Map<String, Object> createDomainMap(
+                      int suffixCount, String prefix) {
+    Map<String, Object> domainMap = new HashMap<String, Object>();
+    domainMap.put("domainUID", prefix.toLowerCase() + "-domain-" + suffixCount);
+    domainMap.put("namespace", prefix.toLowerCase() + "-domainns-" + suffixCount);
+    domainMap.put("configuredManagedServerCount", 4);
+    domainMap.put("initialManagedServerReplicas", 2);
+    domainMap.put("exposeAdminT3Channel", true);
+    domainMap.put("exposeAdminNodePort", true);
+    domainMap.put("adminNodePort", 30800 + suffixCount);
+    domainMap.put("t3ChannelPort", 31000 + suffixCount);
+    domainMap.put("resultDir", resultDir);
+    domainMap.put("userProjectsDir", userProjectsDir);
+    domainMap.put("pvRoot", pvRoot);
+    if (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
+      domainMap.put("voyagerWebPort", 30344 + suffixCount);
+      LoggerHelper.getLocal().log(Level.INFO,
+          "For this domain voyagerWebPort is set to: " + domainMap.get("voyagerWebPort"));
+    }
+    return domainMap;
+  }
+
+  /**
+   * Creates a map with commonly used domain in image input attributes using suffixCount and prefix
+   * to make the namespaces and ports unique.
+   *
+   * @param suffixCount unique numeric value
+   * @param prefix      prefix for the artifact names
+   * @return map with domain input attributes
+   */
+  public Map<String, Object> createDomainInImageMap(
+      int suffixCount, boolean wdt, String prefix) {
+    Map<String, Object> domainMap = createDomainMap(suffixCount, prefix);
+    if (wdt) {
+      domainMap.put("domainHomeImageBuildPath",
+          "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");
+      domainMap.put("createDomainFilesDir", "wdt");
+    } else {
+      domainMap.put("domainHomeImageBuildPath",
+          "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
+    }
+    domainMap.put("domainHomeImageBase",
+        "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
+    domainMap.put("logHomeOnPV", "true");
+    domainMap.put("clusterType", "CONFIGURED");
+    if (prefix != null && !prefix.trim().equals("")) {
+      domainMap.put("image", prefix.toLowerCase() + "-dominimage-" + suffixCount + ":latest");
+    } else {
+      domainMap.put("image", "dominimage-" + suffixCount + ":latest");
+    }
+    return domainMap;
   }
 
 }

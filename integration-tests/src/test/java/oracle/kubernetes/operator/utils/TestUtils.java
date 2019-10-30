@@ -1074,92 +1074,6 @@ public class TestUtils {
     }
   }
 
-  /**
-   * Creates a map with commonly used operator input attributes using suffixCount and prefix
-   * to make the namespaces and ports unique.
-   *
-   * @param suffixCount unique numeric value
-   * @param prefix      prefix for the artifact names
-   * @return map with operator input attributes
-   */
-  public static Map<String, Object> createOperatorMap(
-      int suffixCount, boolean restEnabled, String prefix, String resultDir) {
-    Map<String, Object> operatorMap = new HashMap<String, Object>();
-    ArrayList<String> targetDomainsNS = new ArrayList<String>();
-    targetDomainsNS.add(prefix.toLowerCase() + "-domainns-" + suffixCount);
-    operatorMap.put("releaseName", prefix.toLowerCase() + "-op-" + suffixCount);
-    operatorMap.put("domainNamespaces", targetDomainsNS);
-    operatorMap.put("serviceAccount", prefix.toLowerCase() + "-sa-" + suffixCount);
-    operatorMap.put("namespace", prefix.toLowerCase() + "-opns-" + suffixCount);
-    operatorMap.put("resultDir", resultDir);
-    operatorMap.put("userProjectsDir", resultDir + "/user-projects");
-    if (restEnabled) {
-      operatorMap.put("externalRestHttpsPort", 32000 + suffixCount);
-      operatorMap.put("externalRestEnabled", restEnabled);
-    }
-    return operatorMap;
-  }
-
-  /**
-   * Creates a map with commonly used domain input attributes using suffixCount and prefix
-   * to make the namespaces and ports unique.
-   *
-   * @param suffixCount unique numeric value
-   * @param prefix      prefix for the artifact names
-   * @return map with domain input attributes
-   */
-  public static Map<String, Object> createDomainMap(
-              int suffixCount, String prefix, String resultDir) {
-    Map<String, Object> domainMap = new HashMap<String, Object>();
-    domainMap.put("domainUID", prefix.toLowerCase() + "-domain-" + suffixCount);
-    domainMap.put("namespace", prefix.toLowerCase() + "-domainns-" + suffixCount);
-    domainMap.put("configuredManagedServerCount", 4);
-    domainMap.put("initialManagedServerReplicas", 2);
-    domainMap.put("exposeAdminT3Channel", true);
-    domainMap.put("exposeAdminNodePort", true);
-    domainMap.put("adminNodePort", 30800 + suffixCount);
-    domainMap.put("t3ChannelPort", 31000 + suffixCount);
-    domainMap.put("resultDir", resultDir);
-    domainMap.put("userProjectsDir", resultDir + "/user-projects");
-    if (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
-      domainMap.put("voyagerWebPort", 30344 + suffixCount);
-      LoggerHelper.getLocal().log(Level.INFO,
-          "For this domain voyagerWebPort is set to: " + domainMap.get("voyagerWebPort"));
-    }
-    return domainMap;
-  }
-
-  /**
-   * Creates a map with commonly used domain in image input attributes using suffixCount and prefix
-   * to make the namespaces and ports unique.
-   *
-   * @param suffixCount unique numeric value
-   * @param prefix      prefix for the artifact names
-   * @return map with domain input attributes
-   */
-  public static Map<String, Object> createDomainInImageMap(
-      int suffixCount, boolean wdt, String prefix, String resultDir) {
-    Map<String, Object> domainMap = createDomainMap(suffixCount, prefix, resultDir);
-    if (wdt) {
-      domainMap.put("domainHomeImageBuildPath",
-          "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");
-      domainMap.put("createDomainFilesDir", "wdt");
-    } else {
-      domainMap.put("domainHomeImageBuildPath",
-          "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
-    }
-    domainMap.put("domainHomeImageBase",
-        "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
-    domainMap.put("logHomeOnPV", "true");
-    domainMap.put("clusterType", "CONFIGURED");
-    if (prefix != null && !prefix.trim().equals("")) {
-      domainMap.put("image", prefix.toLowerCase() + "-dominimage-" + suffixCount + ":latest");
-    } else {
-      domainMap.put("image", "dominimage-" + suffixCount + ":latest");
-    }
-    return domainMap;
-  }
-
   public static String callShellScriptByExecToPod(
       String scriptPath, String arguments, String podName, String namespace) throws Exception {
 
@@ -1305,15 +1219,15 @@ public class TestUtils {
     }
   }
 
-  public static void createDirUnderDomainPV(String dirPath) throws Exception {
+  public static void createDirUnderDomainPV(String dirPath, String pvRoot) throws Exception {
     if (BaseTest.OPENSHIFT) {
       String crdCmd = "mkdir -m 777 -p " + dirPath;
       ExecResult result = TestUtils.exec(crdCmd, true);
     } else {
-      dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
+      dirPath = dirPath.replace(pvRoot, "/sharedparent/");
       String crdCmd =
           BaseTest.getProjectRoot()
-              + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot() + ":/sharedparent -c 'mkdir -m 777 -p "
+              + "/src/integration-tests/bash/krun.sh -m " + pvRoot + ":/sharedparent -c 'mkdir -m 777 -p "
               + dirPath
               + "'";
 
