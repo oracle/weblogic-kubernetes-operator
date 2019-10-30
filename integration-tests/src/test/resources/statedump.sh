@@ -122,10 +122,10 @@ function state_dump {
 
   if [ "$JENKINS" = "true" ] || [ "$SHARED_CLUSTER" = "true" ]; then
     # echo "Running $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m ${PV_ROOT}:/sharedparent -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}"
-  	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -p "pod-${IT_CLASS}-1" -d ${RESULT_DIR} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
+  	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -p "pod-${IT_CLASS,,}-1" -d ${RESULT_DIR} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
   	if [ "$?" = "0" ]; then
   		#echo "Running $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m  ${PV_ROOT}:/sharedparent -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1"
-    	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -p "pod-${IT_CLASS}-2" -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1
+    	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -p "pod-${IT_CLASS,,}-2" -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1
 	 	if [ "$?" = "0" ]; then
 	 		#echo "Running base64 -di $RESULT_DIR/pvarchive.b64 > $ARCHIVE"
    			base64 -di $RESULT_DIR/pvarchive.b64 > $ARCHIVE

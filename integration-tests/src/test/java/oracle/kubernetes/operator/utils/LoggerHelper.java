@@ -22,7 +22,7 @@ public class LoggerHelper {
 
   public static void initLocal(Logger cl) {
     //cl.setUseParentHandlers(false);
-    cl.addHandler(new ConsoleHandler());
+    //cl.addHandler(new ConsoleHandler());
     localLogger.set(cl);
 
   }
