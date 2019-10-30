@@ -436,6 +436,62 @@ soadb-pvc   Bound    ocid1.volume.oc1.eu-frankfurt-1.abtheljspyxxxxxx4zfgcsa   5
 
 **Note** The output is shortened to fit on the screen.
 
+##### Create secrets to allow the Database image to be pulled
+
+As mentioned earlier, we need to create a Docker registry secret in this
+namespace and attach that to the Service Account so that the Oracle Database
+images can be pulled from Oracle Container Registry.
+
+To create the Docker registry secret, use a command like this:
+
+```bash
+$ kubectl create secret \
+          docker-registry \
+          oracle-container-reg \
+          --docker-server=container-registry.oracle.com \
+          --docker-username=your.name@wherever.com \
+          --docker-password=you-password \
+          --docker-email=your.name@wherever.com \
+          --namespace=soans
+```
+
+You will need to provide the correct username, password and email address in this command.
+Note that `oracle-container-reg` is the name of the secret in this example, and
+`docker-registry` is the type of secret to create.  You can choose a different name,
+but you must use this type.
+
+Now update the Service Account to use this secret, using this command:
+
+```bash
+$ kubectl patch serviceaccount default \
+          -p '{"imagePullSecrets": [{"name": "oracle-container-reg"}]}' \
+          -n soans
+```
+
+This example uses the `default` Service Account in the `soans` Namespace.
+
+You can confirm that the Service Account was updated with this command:
+
+```bash
+kubectl -n soans get sa default -o yaml
+apiVersion: v1
+imagePullSecrets:
+- name: oracle-container-reg
+kind: ServiceAccount
+metadata:
+  creationTimestamp: "2019-10-30T16:51:34Z"
+  name: default
+  namespace: soans
+  resourceVersion: "41031"
+  selfLink: /api/v1/namespaces/soans/serviceaccounts/default
+  uid: 87c3dcd4-xxxx-11e9-xxxx-0a580aed58e1
+secrets:
+- name: default-token-hsjjp
+```
+
+In the example output, you can see that the `oracle-container-reg` secret
+has been added to the `default` Service Account's `imagePullSecrets` list.
+
 
 ##### Create the Database 
 
@@ -443,7 +499,14 @@ To create the database pod and service, we need to create a Kubernetes YAML
 file similiar to the one shown below.  This example is provided in the WebLogic
 Kubernetes operator repository in this location:
 
-`kubernetes/samples/scripts/create-soa-domain/domain-home-on-pv/create-database/db-with-pv.yaml`
+`kubernetes/samples/scripts/create-soa-domain/create-database/db-with-pv.yaml`
+
+{{% notice warning %}}
+**TODO FOR MARK**  
+In `develop` branch, this file is moved to: 
+`kubernetes/samples/scripts/create-soa-domain/domain-home-on-pv/create-database/db-with-pv.yaml`  
+Need to update this after that change is merged to `master`
+{{% /notice %}}
 
 Here are the contents of the example:
 
@@ -512,7 +575,14 @@ spec:
       - name: soadb-storage
         persistentVolumeClaim:
           claimName: soadb-pvc
-```          
+``` 
+
+After updating this file if you chose a different namespace, persistent volume claim name,
+etc., apply this file to your cluster using this command:
+
+```bash
+
+```
 
 
 #### Running the Repository Creation Utility to populate the database
