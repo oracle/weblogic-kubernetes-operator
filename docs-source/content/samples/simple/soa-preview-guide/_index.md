@@ -360,7 +360,159 @@ Oracle Support for Database Running on Docker (Doc ID 2216342.1)
 to your database can be found here]({{< relref "/userguide/managing-fmw-domains/soa-suite#configuring-access-to-your-database" >}}),
 but this document contains all of the important information.
 
+##### Create a namespace for SOA Suite and the database
 
+Create a Kubernetes namespace to run SOA Suite and the database in using this command:
+
+```bash
+$ kubectl create ns soans
+namespace/soans created
+```
+
+**Note** You can chose to run the database in a different namespace than SOA, or in the
+`default` namespace.  If you choose a different namespace, you will need
+to adjust the commands in the following sections.
+
+
+##### Create persistent volumes for the database files
+
+Create some persistent storage for the database files.  
+
+{{% notice note %}}
+The mechanism for creating persistent storage varies significantly across different variants
+of Kubernetes and different managed Kubernetes services.  You will need
+to consult the documentation for your particular variant to learn how to
+allocate persistent storage.  Note that we are running a single node
+database in this example, so you can use `ReadWriteOnce` storage - which can only be 
+mounted read/write by a single pod at any given time.  
+{{% /notice %}}
+
+The following example demonstrates how to allocate persistent storage in 
+Oracle Container Engine for Kubernetes, which allows you to request
+storage from the Block Storage service.  Detailed documenation is 
+available [here](https://docs.cloud.oracle.com/iaas/Content/ContEng/Tasks/contengcreatingpersistentvolumeclaim.htm).
+
+To allocate 50GB of storage, we create the following Kubernetes YAML file:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: soadb-pvc
+  namespace: soans
+spec:
+  storageClassName: "oci"
+  selector:
+    matchLabels:
+      failure-domain.beta.kubernetes.io/zone: "EU-FRANKFURT-1-AD-1"
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+
+```
+
+You will have to update this file with the correct zone (from the list [here](https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengprerequisites.htm#Availab)).  If you chose a different namespace, you will need to specify it in the `metadata` section.
+
+Apply this YAML file to your cluster using this command:
+
+```bash
+$ kubectl apply -f soadb-pvc.yaml 
+persistentvolumeclaim/soadb-pvc created
+```
+
+It will take a short time (normally less that a minute) to provision the storage
+and create a file system on it.  During this time, the persistent volume
+claim will show with the state "Pending".  Once the storage is
+provisioned, the status will show as "Bound".  You can check the status with
+this command:
+
+```bash
+$ kubectl get pvc -n soans 
+NAME        STATUS   VOLUME                                                    CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+soadb-pvc   Bound    ocid1.volume.oc1.eu-frankfurt-1.abtheljspyxxxxxx4zfgcsa   50Gi       RWO            oci            16s
+```
+
+**Note** The output is shortened to fit on the screen.
+
+
+##### Create the Database 
+
+To create the database pod and service, we need to create a Kubernetes YAML
+file similiar to the one shown below.  This example is provided in the WebLogic
+Kubernetes operator repository in this location:
+
+`kubernetes/samples/scripts/create-soa-domain/domain-home-on-pv/create-database/db-with-pv.yaml`
+
+Here are the contents of the example:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: soadb
+  labels:
+    app: soadb
+  namespace: soans
+spec:
+  ports:
+  - port: 1521
+    name: server-port
+  - port: 5500
+    name: em-port
+  clusterIP: None
+  selector:
+    app: soadb
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: soadb
+  namespace: soans
+spec:
+  serviceName: "soadb"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: soadb
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: soadb
+        image: coantiner-registry.oracle.com/database/enterprise:12.2.0.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 1521
+          name: server-port
+        - containerPort: 5500
+          name: em-port
+        env:
+        - name: DB_SID
+          value: soadb
+        - name: DB_PDB
+          value: soapdb
+        - name: DB_DOMAIN
+          value: my.domain.com
+        - name: DB_BUNDLE
+          value: basic
+        readinessProbe:
+          exec:
+            command:
+            - grep
+            - "Done ! The database is ready for use ."
+            - "/home/oracle/setup/log/setupDB.log"
+          initialDelaySeconds: 300
+          periodSeconds: 5
+        volumeMounts:
+        - mountPath: /ORCL
+          name: soadb-storage
+      volumes:
+      - name: soadb-storage
+        persistentVolumeClaim:
+          claimName: soadb-pvc
+```          
 
 
 #### Running the Repository Creation Utility to populate the database
