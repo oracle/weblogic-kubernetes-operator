@@ -27,11 +27,10 @@ import org.junit.Assert;
  * JUnit test class used for testing configuration override use cases.
  */
 public class SitConfig extends BaseTest {
-  
-  private static final String DOMAINUID = "customsitconfigdomain";
-  private static final String ADMINPORT = String.valueOf(30800 + getNewSuffixCount());
-  private static final int T3CHANNELPORT = 31000 + getNewSuffixCount();
-  private static final String MYSQL_DB_PORT = String.valueOf(31306 + getNewSuffixCount());
+
+  private static String ADMINPORT = String.valueOf(30800 + getNewSuffixCount());
+  private static int T3CHANNELPORT = 31000 + getNewSuffixCount();
+  private static String MYSQL_DB_PORT = String.valueOf(31306 + getNewSuffixCount());
   private static String TEST_RES_DIR;
   private static String ADMINPODNAME;
   private static String fqdn;
@@ -51,6 +50,9 @@ public class SitConfig extends BaseTest {
   private static final String oldSecret = "test-secrets";
   private static final String newSecret = "test-secrets-new";
   private static String domainNS;
+  private static String testprefix = "sitconfigdomaininpv";
+  //private static String DOMAINUID = "customsitconfigdomain";
+  private static String DOMAINUID = "customsitconfigdomain";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -66,15 +68,22 @@ public class SitConfig extends BaseTest {
     if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
+      if(domainInImage) {
+        testprefix = "sitconfigdomaininimage";
+        DOMAINUID = DOMAINUID + "image";
+        ADMINPORT = String.valueOf(30801 + getNewSuffixCount());
+        T3CHANNELPORT = 31001 + getNewSuffixCount();
+        MYSQL_DB_PORT = String.valueOf(31307 + getNewSuffixCount());
+      }
       // create operator1
       if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, DOMAINUID);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
       TEST_RES_DIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
-      sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp";
+      sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
       mysqltmpDir = sitconfigTmpDir + "/mysql";
       configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
       mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
@@ -117,8 +126,16 @@ public class SitConfig extends BaseTest {
           "SitConfigTests.java",
           ADMINPODNAME,
           domain.getDomainNs());
+      Files.copy(
+          Paths.get(TEST_RES_DIR + "sitconfig/scripts","runSitConfigTests.sh"),
+          Paths.get(sitconfigTmpDir, "runSitConfigTests.sh"),
+          StandardCopyOption.REPLACE_EXISTING);
+      Path path = Paths.get(sitconfigTmpDir, "runSitConfigTests.sh");
+      String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+      content = content.replaceAll("customsitconfigdomain", DOMAINUID);
+
       TestUtils.copyFileViaCat(
-          TEST_RES_DIR + "sitconfig/scripts/runSitConfigTests.sh",
+          sitconfigTmpDir + "/runSitConfigTests.sh",
           "runSitConfigTests.sh",
           ADMINPODNAME,
           domain.getDomainNs());
@@ -208,6 +225,7 @@ public class SitConfig extends BaseTest {
       String content = new String(Files.readAllBytes(path), charset);
       content = content.replaceAll("JDBC_URL", JDBC_URL);
       content = content.replaceAll(oldSecret, secretName);
+      content = content.replaceAll("customsitconfigdomain", DOMAINUID);
       if (getWeblogicImageTag().contains(PS3_TAG)) {
         content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
       }
@@ -401,6 +419,11 @@ public class SitConfig extends BaseTest {
         Paths.get(srcDir, "config_1.xml"),
         Paths.get(dstDir, "config.xml"),
         StandardCopyOption.REPLACE_EXISTING);
+    Path path = Paths.get(dstDir, "config.xml");
+    String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    content = content.replaceAll("customsitconfigdomain", DOMAINUID);
+
+
     recreateConfigMapandRestart(oldSecret, oldSecret);
     transferTests();
     ExecResult result =
@@ -522,7 +545,7 @@ public class SitConfig extends BaseTest {
           StandardOpenOption.TRUNCATE_EXISTING);
 
       // delete the old secret and add new secret to domain.yaml
-      TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-" + oldSecret, true);
+      TestUtils.exec("kubectl delete secret -n " + domain.getDomainNs() + " " + domain.getDomainUid() + "-" + oldSecret, true);
       String cmd =
           "kubectl -n "
               + domain.getDomainNs()
@@ -554,7 +577,7 @@ public class SitConfig extends BaseTest {
             + configOverrideDir
             + " -o yaml --dry-run | kubectl replace -f -";
     TestUtils.exec(cmd, true);
-    cmd = "kubectl describe cm -n " + domain.getDomainNs() + " customsitconfigdomain-sitconfigcm";
+    cmd = "kubectl describe cm -n " + domain.getDomainNs() + DOMAINUID + "-sitconfigcm";
     TestUtils.exec(cmd, true);
 
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";

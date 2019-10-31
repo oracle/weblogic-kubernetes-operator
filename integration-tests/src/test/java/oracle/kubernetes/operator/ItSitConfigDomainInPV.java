@@ -16,6 +16,7 @@ import org.junit.Test;
  */
 public class ItSitConfigDomainInPV extends SitConfig {
   private static String testClassName;
+  int testNumber = getNewSuffixCount();
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
