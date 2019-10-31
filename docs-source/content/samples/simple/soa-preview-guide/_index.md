@@ -874,8 +874,160 @@ the SOA database schemas.
 
 #### Running the Repository Creation Utility to populate the database
 
+Now that the database is running, you need to create the SOA schemas
+in the database using the Repository Creation Utility (RCU).  To do
+this, you can start up a "utility" pod that can just be used for 
+running interactive commands. 
+
+Start up a "utility" pod using this command:
+
+```bash
+$ kubectl run rcu \
+          --generator=run-pod/v1 \
+          --image container-registry.oracle.com/middleware/soasuite:12.2.1.3 \
+          -n soans \
+          -- sleep infinity
+```
+
+This will start a new pod named `rcu` using the SOA Suite Docker image
+which will not run any command, just go into an infinite sleep.
+You can check that the pod has started using this command, you may
+need to wait a few minutes for it to pull the Docker image before
+it starts:
+
+```bash
+$ kubectl get pods  -n soans
+NAME      READY   STATUS              RESTARTS   AGE
+rcu       1/1     Running             0          4m
+soadb-0   1/1     Running             0          19h
+```
+
+When the pod is running, you can open a shell session inside the pod
+using this command:
+
+```bash
+$ kubectl exec -n soans -ti rcu /bin/bash
+[oracle@rcu ~]
+```
+
+To run RCU to create the schemas in the database, you can use
+commands like those below.  The connection string needs to match
+the Kubernetes service name, port and Oracle Database service name
+that you chose earlier.  If you followed the example as-is, then 
+the connection string shown here will be correct.  If you put the
+database in a different namespace, you will need to add the
+namespace after the Kubernetes service name.  For example, if you
+put the database in a namespace called `dbns` then your connection
+string would be `soadb.dbns:1521/soapdb.my.domain.com`.
+You samples that we will use later to create the domain assume
+that the RCU prefix is `SOA1`.  If you change the prefix, you will
+also need to change the scripts used later to create the SOA
+domain.
+
+```bash
+$ export CONNECTION_STRING=soadb:1521/soapdb.my.domain.com
+$ export RCUPREFIX=SOA1
+$ echo -e Oradoc_db1"\n"Welcome1 > /tmp/pwd.txt
+$ /u01/oracle/oracle_common/bin/rcu \
+  -silent \
+  -createRepository \
+  -databaseType ORACLE \
+  -connectString $CONNECTION_STRING \
+  -dbUser sys \
+  -dbRole sysdba \
+  -useSamePasswordForAllSchemaUsers true \
+  -selectDependentsForComponents true \
+  -variables SOA_PROFILE_TYPE=SMALL,HEALTHCARE_INTEGRATION=NO \
+  -schemaPrefix $RCUPREFIX \
+  -component MDS \
+  -component IAU \
+  -component IAU_APPEND \
+  -component IAU_VIEWER \
+  -component OPSS \
+  -component WLS \
+  -component STB \
+  -component SOAINFRA \
+  -f < /tmp/pwd.txt
+```
+
+Here is an example of the output from RCU:
+
+```text
+	RCU Logfile: /tmp/RCU2019-10-31_18-17_468416136/logs/rcu.log
+
+Processing command line ....
+Repository Creation Utility - Checking Prerequisites
+Checking Global Prerequisites
+
+Repository Creation Utility - Checking Prerequisites
+Checking Component Prerequisites
+Repository Creation Utility - Creating Tablespaces
+Validating and Creating Tablespaces
+Repository Creation Utility - Create
+Repository Create in progress.
+Percent Complete: 11
+Percent Complete: 27
+Percent Complete: 27
+Percent Complete: 28
+... (lines omitted) ...
+Percent Complete: 94
+Percent Complete: 98
+Percent Complete: 98
+Percent Complete: 100
+```
+
+Just like in a normal on-premises installation of SOA Suite, you need to
+make sure you maintain the one to one relationship between this set of
+SOA Schemas and the domain that you create with them.  During domain
+creation, various information that is specific to the domain will be
+written into these schemas (especially by Oracle Platform Security 
+Services).
+
+
+##### Dropping schemas
+
+Just like in a normal on-premises installation of SOA Suite, if the domain
+creation fails, you will need to use RCU to drop the schemas and create
+new ones before retrying domain creation.
+If you need to drop the RCU schemas for any reason, you can use the following 
+commands to drop the schemas, with the same caveats as above about setting the
+correct connection string and so on:
+
+{{% notice warning %}}
+The following commands are not part of the normal process.
+These are given for recorvery/retry purposes only!
+{{% /notice %}}
+
+```bash
+$ kubectl exec -n soans -ti rcu /bin/bash
+$ ### THESE COMMANDS ARE EXECUTED INSIDE THE CONTAINER  ###
+
+$ export CONNECTION_STRING=soadb:1521/soapdb.my.domain.com
+$ export RCUPREFIX=SOA1
+$ echo -e Oradoc_db1"\n"Welcome1 > /tmp/pwd.txt
+$ /u01/oracle/oracle_common/bin/rcu \
+  -silent \
+  -dropRepository \
+  -databaseType ORACLE \
+  -connectString $CONNECTION_STRING \
+  -dbUser sys \
+  -dbRole sysdba \
+  -selectDependentsForComponents true \
+  -schemaPrefix $RCUPREFIX \
+  -component MDS \
+  -component IAU \
+  -component IAU_APPEND \
+  -component IAU_VIEWER \
+  -component OPSS \
+  -component WLS \
+  -component STB \
+  -component SOAINFRA \
+  -f < /tmp/pwd.txt
+```
 
 #### Creating a SOA domain
+
+Now that the database is ready, the next step is to create the SOA domain.
 
 
 #### Starting the SOA domain in Kubernetes
