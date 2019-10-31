@@ -283,7 +283,7 @@
             <id>wls-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <excludes-failsafe>**/*JrfDomain*</excludes-failsafe>
+                <excludes-failsafe>**/*Jrf*</excludes-failsafe>
                 <jrf_enabled>false</jrf_enabled>
             </properties>
         </profile>
