@@ -68,7 +68,7 @@ public class SitConfig extends BaseTest {
     if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-      if(domainInImage) {
+      if (domainInImage) {
         testprefix = "sitconfigdomaininimage";
         DOMAINUID = DOMAINUID + "image";
         ADMINPORT = String.valueOf(30801 + getNewSuffixCount());
@@ -545,7 +545,9 @@ public class SitConfig extends BaseTest {
           StandardOpenOption.TRUNCATE_EXISTING);
 
       // delete the old secret and add new secret to domain.yaml
-      TestUtils.exec("kubectl delete secret -n " + domain.getDomainNs() + " " + domain.getDomainUid() + "-" + oldSecret, true);
+      TestUtils.exec("kubectl delete secret -n "
+          + domain.getDomainNs() + " "
+          + domain.getDomainUid() + "-" + oldSecret, true);
       String cmd =
           "kubectl -n "
               + domain.getDomainNs()
