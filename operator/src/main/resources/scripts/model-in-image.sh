@@ -180,8 +180,6 @@ function setupInventoryList() {
         version_changed=1
     fi
 
-    echo "setup invent "${version_changed}
-    sleep 10
     #
     # First build the command line parameters for WDT
     # based on the file listing in the image or config map
@@ -328,8 +326,6 @@ function createWLDomain() {
 
     setupInventoryList ${version_changed}
 
-    echo "createwls "${version_changed}
-    sleep 10
 
     checkExistInventory
     local need_create_domain=$?
