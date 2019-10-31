@@ -14,7 +14,7 @@ inventory_image_md5="/weblogic-operator/introspectormd5/inventory_image.md5"
 inventory_cm_md5="/weblogic-operator/introspectormd5/inventory_cm.md5"
 inventory_passphrase_md5="/weblogic-operator/introspectormd5/inventory_passphrase.md5"
 inventory_merged_model="/weblogic-operator/introspectormd5/merged_model.json"
-inventory_wls_version="//weblogic-operator/introspectormd5/wls_version"
+inventory_wls_version="//weblogic-operator/introspectormd5/wls.version"
 domain_zipped="/weblogic-operator/introspectormd5/domainzip.secure"
 wdt_config_root="/weblogic-operator/wdt-config-map"
 wdt_encryption_passphrase="/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
@@ -240,8 +240,8 @@ function setupInventoryList() {
         model_list="-model_file ${model_list}"
     fi
 
-    local use_encryption=""
-    local use_passphrase=0
+    use_encryption=""
+    use_passphrase=0
     if [ -f "${wdt_encryption_passphrase}" ] ; then
         inventory_passphrase[wdtpassword]=$(md5sum $(wdt_encryption_passphrase) | cut -d' ' -f1)
         wdt_passphrase=$(cat $(wdt_encryption_passphrase))
@@ -315,7 +315,8 @@ function createWLDomain() {
         previous_version=$(cat ${inventory_wls_version})
         if [ "${current_version}" != "${previous_version}" ]; then
             trace "version different: before: ${previous_version} current: ${current_version}"
-            #version_changed=1
+#            version_changed=1
+#            need_create_domain=1
             # TODO: make sure understand the impact for JRF first
             # handle version upgrade
         fi
@@ -327,16 +328,15 @@ function createWLDomain() {
 
     setupInventoryList ${version_changed}
 
-
     checkExistInventory
     local need_create_domain=$?
     # something changed in the wdt artifacts or wls version changed
-
+    local created_domain=0
     if  [ ${need_create_domain} -ne 0 ] || [ ${version_changed} -eq 1 ] ; then
 
         trace "Need to create domain ${WDT_DOMAIN_TYPE}"
         wdtCreateDomain
-
+        created_domain=1
         # For lifecycle updates:
         # if there is a merged model in the cm then it is an update case, try online update
         # only if the useOnlineUpdate is define in the spec and set to true
@@ -385,7 +385,6 @@ function createWLDomain() {
                 details"
                 exit 1
             fi
-
         fi
 
         # The reason for copying the associative array is because they cannot be passed to the function for checking
@@ -410,7 +409,7 @@ function createWLDomain() {
         fi
 
     fi
-    return ${need_create_domain}
+    return ${created_domain}
 }
 
 #
