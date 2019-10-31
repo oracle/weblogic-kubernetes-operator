@@ -438,9 +438,6 @@ public class ItOperator extends BaseTest {
       domainMap.put("weblogicDomainStorageReclaimPolicy", "Recycle");
       domainMap.put("clusterType", "CONFIGURED");
       domainMap.put("namespace", domainNS1);
-      domainMap.put("resultDir", getResultDir());
-      domainMap.put("userProjectsDir", getUserProjectsDir());
-      domainMap.put("pvRoot", getPvRoot());
 
       domain = TestUtils.createDomain(domainMap, false);
 
@@ -480,6 +477,10 @@ public class ItOperator extends BaseTest {
       Map<String, Object> domainMap = new HashMap<String, Object>();
       domainMap.put("domainUID", "domainsampledefaults");
       domainMap.put("namespace", domainNS1);
+      domainMap.put("resultDir", getResultDir());
+      domainMap.put("userProjectsDir", getUserProjectsDir());
+      domainMap.put("pvRoot", getPvRoot());
+
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       testBasicUseCases(domain, false);
