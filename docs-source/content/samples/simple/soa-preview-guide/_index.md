@@ -995,13 +995,13 @@ correct connection string and so on:
 
 {{% notice warning %}}
 The following commands are not part of the normal process.
-These are given for recorvery/retry purposes only!
+These are given for recovery/retry purposes only!
 {{% /notice %}}
 
 ```bash
 $ kubectl exec -n soans -ti rcu /bin/bash
-$ ### THESE COMMANDS ARE EXECUTED INSIDE THE CONTAINER  ###
 
+$ ### THESE COMMANDS ARE EXECUTED INSIDE THE CONTAINER  ###
 $ export CONNECTION_STRING=soadb:1521/soapdb.my.domain.com
 $ export RCUPREFIX=SOA1
 $ echo -e Oradoc_db1"\n"Welcome1 > /tmp/pwd.txt
@@ -1024,6 +1024,9 @@ $ /u01/oracle/oracle_common/bin/rcu \
   -component SOAINFRA \
   -f < /tmp/pwd.txt
 ```
+
+After the schemas are successfully dropped, you can recreate them and retry
+domain creation.
 
 #### Creating a SOA domain
 
