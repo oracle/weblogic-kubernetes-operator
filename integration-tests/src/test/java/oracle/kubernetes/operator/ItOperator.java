@@ -438,6 +438,10 @@ public class ItOperator extends BaseTest {
       domainMap.put("weblogicDomainStorageReclaimPolicy", "Recycle");
       domainMap.put("clusterType", "CONFIGURED");
       domainMap.put("namespace", domainNS1);
+      domainMap.put("resultDir", getResultDir());
+      domainMap.put("userProjectsDir", getUserProjectsDir());
+      domainMap.put("pvRoot", getPvRoot());
+
       domain = TestUtils.createDomain(domainMap, false);
 
       domain.verifyDomainCreated();
