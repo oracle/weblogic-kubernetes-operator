@@ -5,7 +5,7 @@
 # This script contains the all the function of model in image
 # It is used by introspectDomain.sh job and starServer.sh
 
-source utils.sh
+source ${SCRIPTPATH}/utils.sh
 
 declare -A inventory_image
 declare -A inventory_cm
@@ -169,17 +169,19 @@ function setupInventoryList() {
     model_list=""
     archive_list=""
     variable_list="${model_home}/_k8s_generated_props.properties"
-    version_changed=0
+    local version_changed=0
 
     # in case retry
     if [ -f ${variable_list} ] ; then
         cat /dev/null > ${variable_list}
     fi
 
-#    if [ $# -eq 1 ] && [ $1 -eq 1 ] ; then
-#        version_changed=1
-#    fi
+    if [ $# -eq 1 ] && [ $1 -eq 1 ] ; then
+        version_changed=1
+    fi
 
+    echo "setup invent "${version_changed}
+    sleep 10
     #
     # First build the command line parameters for WDT
     # based on the file listing in the image or config map
@@ -314,7 +316,7 @@ function createWLDomain() {
         previous_version=$(cat ${inventory_wls_version})
         if [ "${current_version}" != "${previous_version}" ]; then
             trace "version different: before: ${previous_version} current: ${current_version}"
-            #version_changed=1
+            version_changed=1
             # TODO: make sure understand the impact for JRF first
             # handle version upgrade
         fi
@@ -325,6 +327,9 @@ function createWLDomain() {
     echo ${current_version} > /tmp/wls_version
 
     setupInventoryList ${version_changed}
+
+    echo "createwls "${version_changed}
+    sleep 10
 
     checkExistInventory
     local need_create_domain=$?
