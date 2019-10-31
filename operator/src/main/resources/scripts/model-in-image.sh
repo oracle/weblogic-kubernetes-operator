@@ -242,14 +242,14 @@ function setupInventoryList() {
 
     local use_encryption=""
     local use_passphrase=0
-    if [ -f "$(wdt_encryption_passphrase)" ] ; then
+    if [ -f "${wdt_encryption_passphrase}" ] ; then
         inventory_passphrase[wdtpassword]=$(md5sum $(wdt_encryption_passphrase) | cut -d' ' -f1)
         wdt_passphrase=$(cat $(wdt_encryption_passphrase))
         use_passphrase=1
     fi
 
     #found_opss_passphrase=$(find ${wdt_secret_path} -name opsspassphrase -type f)
-    if [ -f "$(opss_key_passphrase)" ] ; then
+    if [ -f "${opss_key_passphrase}" ] ; then
         export OPSS_PASSPHRASE=$(cat $(opss_key_passphrase))
     fi
     # just in case is not set
@@ -309,12 +309,14 @@ function createWLDomain() {
     local current_version=$(getWebLogicVersion)
     # check for version:  can only be rolling
     local version_changed=0
+    trace "current version "${current_version}
+
 
     if [ -f ${inventory_wls_version} ] ; then
         previous_version=$(cat ${inventory_wls_version})
         if [ "${current_version}" != "${previous_version}" ]; then
             trace "version different: before: ${previous_version} current: ${current_version}"
-            version_changed=1
+            #version_changed=1
             # TODO: make sure understand the impact for JRF first
             # handle version upgrade
         fi
@@ -329,13 +331,11 @@ function createWLDomain() {
 
     checkExistInventory
     local need_create_domain=$?
-
     # something changed in the wdt artifacts or wls version changed
 
     if  [ ${need_create_domain} -ne 0 ] || [ ${version_changed} -eq 1 ] ; then
 
         trace "Need to create domain ${WDT_DOMAIN_TYPE}"
-
         wdtCreateDomain
 
         # For lifecycle updates:
