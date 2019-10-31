@@ -33,6 +33,14 @@ public class ItSitConfigDomainInImage extends SitConfig {
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
     if (FULLTEST) {
+      ADMINPORT = String.valueOf(30800 + getNewSuffixCount());
+      T3CHANNELPORT = 31000 + getNewSuffixCount();
+      MYSQL_DB_PORT = String.valueOf(31306 + getNewSuffixCount());
+      testprefix = "sitconfigdomaininimage";
+      DOMAINUID = DOMAINUID + "image";
+      ADMINPORT = String.valueOf(30801 + getNewSuffixCount());
+      T3CHANNELPORT = 31001 + getNewSuffixCount();
+      MYSQL_DB_PORT = String.valueOf(31307 + getNewSuffixCount());
       staticPrepare(
           true,
           "integration-tests/src/test/resources/sitconfig/scripts/"

@@ -28,9 +28,9 @@ import org.junit.Assert;
  */
 public class SitConfig extends BaseTest {
 
-  private static String ADMINPORT = String.valueOf(30800 + getNewSuffixCount());
-  private static int T3CHANNELPORT = 31000 + getNewSuffixCount();
-  private static String MYSQL_DB_PORT = String.valueOf(31306 + getNewSuffixCount());
+  protected static String ADMINPORT = String.valueOf(30800 + getNewSuffixCount());
+  protected static int T3CHANNELPORT = 31000 + getNewSuffixCount();
+  protected static String MYSQL_DB_PORT = String.valueOf(31306 + getNewSuffixCount());
   private static String TEST_RES_DIR;
   private static String ADMINPODNAME;
   private static String fqdn;
@@ -50,9 +50,9 @@ public class SitConfig extends BaseTest {
   private static final String oldSecret = "test-secrets";
   private static final String newSecret = "test-secrets-new";
   private static String domainNS;
-  private static String testprefix = "sitconfigdomaininpv";
+  protected static String testprefix = "sitconfigdomaininpv";
   //private static String DOMAINUID = "customsitconfigdomain";
-  private static String DOMAINUID = "customsitconfigdomain";
+  protected static String DOMAINUID = "customsitconfigdomain";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -68,6 +68,7 @@ public class SitConfig extends BaseTest {
     if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
+      /*
       if (domainInImage) {
         testprefix = "sitconfigdomaininimage";
         DOMAINUID = DOMAINUID + "image";
@@ -75,6 +76,7 @@ public class SitConfig extends BaseTest {
         T3CHANNELPORT = 31001 + getNewSuffixCount();
         MYSQL_DB_PORT = String.valueOf(31307 + getNewSuffixCount());
       }
+      */
       // create operator1
       if (operator1 == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, DOMAINUID);
