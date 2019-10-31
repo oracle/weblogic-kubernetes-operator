@@ -26,17 +26,15 @@ cd ${WORKDIR}
 if [ "${WDT_DOMAIN_TYPE}" == "WLS" ] ; then
   IMGTYPE="wls"
   BASE_IMAGE_REPO="container-registry.oracle.com/middleware/weblogic"
-  BASE_IMAGE_TAG="12.2.1.3-190111"
 else
   BASE_IMAGE_REPO="container-registry.oracle.com/middleware/fmw-infrastructure"
-  BASE_IMAGE_TAG="12.2.1.3-190522"
   IMGTYPE="fmw"
 fi
 
 
 BASE_IMAGE_BUILD=${BASE_IMAGE_BUILD:-when-missing}
 BASE_IMAGE_REPO=${BASE_IMAGE_REPO:-model-in-image}
-BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-base.0}
+BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.3}
 
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-missing}
 MODEL_IMAGE_REPO=${MODEL_IMAGE_REPO:-model-in-image}
