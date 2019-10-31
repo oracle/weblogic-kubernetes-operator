@@ -148,17 +148,17 @@ Before you can pull the images, you will need to log on to the
 web interface and accept the license agreements.
 
 From the [Home page](https://container-registry.oracle.com), select the
-"Middleware" category, and then select the "soasuite" repository.
+**Middleware** category, and then select the **soasuite** repository.
 
 ![Oracle Container Registry - Oracle SOA Suite page](/weblogic-kubernetes-operator/images/ocr-sign-in-page.png)
 
-In the right pane, click "Sign In" and use your Oracle Account to authenticate.
+In the right pane, click **Sign In** and use your Oracle Account to authenticate.
 The license agreement will be displayed; you must accept the terms
 and conditions.  After you have accepted, you will be able to pull this
 image.
 
-Repeat these steps to also select the license for the "enterprise"
-repository in the "Database" category.
+Repeat these steps to also select the license for the **enterprise**
+repository in the **Database** category.
 
 You do not need to accept a license for the WebLogic Kubernetes operator
 Docker image.
@@ -188,7 +188,7 @@ This will be covered later in this document, when it is needed.
 
 #### Installing the WebLogic Kubernetes operator
 
-We will use the WebLogic Kubernetes operator to manage the SOA domain.
+You will use the WebLogic Kubernetes operator to manage the SOA domain.
 
 ##### Grant Tiller the cluster-admin role
 
@@ -425,7 +425,7 @@ persistentvolumeclaim/soadb-pvc created
 It will take a short time (typically less that a minute) to provision the storage
 and create a file system on it.  During this time, the persistent volume
 claim will display the state as `Pending`.  After the storage is
-provisioned, the status will display  `Bound`.  You can check the status with
+provisioned, the status will display `Bound`.  You can check the status with
 this command:
 
 ```bash
@@ -496,7 +496,7 @@ has been added to the `default` Service Account's `imagePullSecrets` list.
 ##### Create the database
 
 To create the database pod and service, you need to create a Kubernetes YAML
-file similiar to the one shown below.  This example is provided in the WebLogic
+file similar to the one shown below.  This example is provided in the WebLogic
 Kubernetes operator repository in this location:
 
 `kubernetes/samples/scripts/create-soa-domain/create-database/db-with-pv.yaml`
@@ -577,9 +577,9 @@ spec:
           claimName: soadb-pvc
 ```
 
-If you are using Oracle Container Engine for Kubernetes and you created the persistent
-volume claim as shown above, you will need to add an `initContainer` to change the 
-owner of the filesystem to the correct `oracle` user that the Oracle Database image
+If you are using the Oracle Container Engine for Kubernetes and you created the persistent
+volume claim as shown above, you will need to add an `initContainer` to change the
+owner of the file system to the correct `oracle` user that the Oracle Database image
 uses (which is uid 54321).  You can do this by adding the lines shown below:
 
 ```yaml
@@ -587,7 +587,7 @@ uses (which is uid 54321).  You can do this by adding the lines shown below:
     spec:
       terminationGracePeriodSeconds: 30
       # add the lines after this line
-      initContainers: 
+      initContainers:
       - name: fix-pvc-owner
         image:  busybox
         command: ["sh", "-c", "chown -R 54321:54321 /ORCL"]
@@ -601,7 +601,7 @@ uses (which is uid 54321).  You can do this by adding the lines shown below:
     ... lines omitted ...
 ```        
 
-After updating this file if you chose a different namespace, persistent volume claim name,
+After updating this file, if you chose a different namespace, persistent volume claim name,
 etc., apply this file to your cluster using this command:
 
 ```bash
@@ -618,7 +618,7 @@ NAME      READY   STATUS              RESTARTS   AGE
 soadb-0   0/1     ContainerCreating   0          22s
 ```
 
-It will take a short period of time to pull the image (might be a few minutes, depending on 
+It will take a short period of time to pull the image (might be a few minutes, depending on
 where your cluster is running) and then the pod will start.  During this time, you can use
 this command to check on progress:
 
@@ -633,15 +633,15 @@ Events:
   Normal  Pulling                 2m37s  kubelet, 10.0.10.4       pulling image "container-registry.oracle.com/database/enterprise:12.2.0.1"
 ```
 
-One the pod starts, you can watch its output with this command:
+After the pod starts, you can watch its output with this command:
 
 ```bash
 $ kubectl -n soans logs soadb-0 -f
 ```
 
 You will see it setting up the database, and after a few minutes, it will display
-this message indicating the database is ready to use.  Here is an example of the
-output: 
+this message indicating that the database is ready to use.  Here is an example of the
+output:
 
 ```text
 Setup Oracle Database
@@ -672,7 +672,7 @@ Control Files in database:
     /u02/app/oracle/oradata/ORCLCDB/cntrlORCLCDB.dbf
     /u03/app/oracle/fast_recovery_area/ORCLCDB/cntrlORCLCDB2.dbf
 
-Change database ID and database name ORCLCDB to SOADB? (Y/[N]) => 
+Change database ID and database name ORCLCDB to SOADB? (Y/[N]) =>
 Proceeding with operation
 Changing database ID from 2722566360 to 1896944501
 Changing database name from ORCLCDB to SOADB
@@ -697,8 +697,8 @@ Database ID for database SOADB changed to 1896944501.
 All previous backups and archived redo logs for this database are unusable.
 Database is not aware of previous backups and archived logs in Recovery Area.
 Database has been shutdown, open database with RESETLOGS option.
-Succesfully changed database name and ID.
-DBNEWID - Completed succesfully.
+Successfully changed database name and ID.
+DBNEWID - Completed successfully.
 
 Wed Oct 30 22:09:36 UTC 2019
 Start Docker DB configuration
@@ -730,7 +730,7 @@ Copyright (c) 1982, 2016, Oracle.  All rights reserved.
 
 Connected to an idle instance.
 
-SQL> 
+SQL>
 File created.
 
 SQL> ORACLE instance started.
@@ -741,31 +741,31 @@ Variable Size		  570426920 bytes
 Database Buffers	  754974720 bytes
 Redo Buffers		    7983104 bytes
 Database mounted.
-SQL> 
+SQL>
 Database altered.
 
-SQL> 
+SQL>
 Database altered.
 
-SQL> 
+SQL>
 NAME				     TYPE	 VALUE
 ------------------------------------ ----------- ------------------------------
 spfile				     string	 /u01/app/oracle/product/12.2.0
 						 /dbhome_1/dbs/spfilesoadb.ora
-SQL> 
+SQL>
 NAME				     TYPE	 VALUE
 ------------------------------------ ----------- ------------------------------
 encrypt_new_tablespaces 	     string	 CLOUD_ONLY
-SQL> 
+SQL>
 User altered.
 
-SQL> 
+SQL>
 User altered.
 
 SQL> Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
 update password
 
-Enter password for SYS: 
+Enter password for SYS:
 create pdb : soapdb
 
 SQL*Plus: Release 12.2.0.1.0 Production on Wed Oct 30 22:11:30 2019
@@ -779,10 +779,10 @@ Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
 SQL>   2    3    4    5  
 Pluggable database created.
 
-SQL> 
+SQL>
 Pluggable database altered.
 
-SQL> 
+SQL>
 Pluggable database altered.
 
 SQL> Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
@@ -796,7 +796,7 @@ Copyright (c) 1982, 2016, Oracle.  All rights reserved.
 Connected to:
 Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
 
-SQL> 
+SQL>
 System altered.
 
 SQL> Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
@@ -862,7 +862,7 @@ Completed:     alter pluggable database all save state
 ALTER SYSTEM SET encrypt_new_tablespaces='DDL' SCOPE=BOTH;
 ```
 
-Once you see this line, you can proceed:
+After you see this line, you can proceed:
 
 ```text
 Done ! The database is ready for use .
