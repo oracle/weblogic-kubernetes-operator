@@ -72,6 +72,7 @@ public class SitConfig extends BaseTest {
    * @throws Exception when the initialization, creating directories , copying files and domain
    *                   creation fails.
    */
+
   protected static void staticPrepare(boolean domainInImage, String domainScript, String testClassName)
       throws Exception {
     // initialize test properties and create the directories
