@@ -28,9 +28,14 @@ import org.junit.Assert;
  */
 public class SitConfig extends BaseTest {
 
+  /*
   protected static String ADMINPORT = String.valueOf(30800 + getNewSuffixCount());
   protected static int T3CHANNELPORT = 31000 + getNewSuffixCount();
   protected static String MYSQL_DB_PORT = String.valueOf(31306 + getNewSuffixCount());
+  */
+  protected static String ADMINPORT;
+  protected static int T3CHANNELPORT;
+  protected static String MYSQL_DB_PORT;
   private static String TEST_RES_DIR;
   private static String ADMINPODNAME;
   private static String fqdn;
@@ -50,10 +55,15 @@ public class SitConfig extends BaseTest {
   private static final String oldSecret = "test-secrets";
   private static final String newSecret = "test-secrets-new";
   private static String domainNS;
+  /*
   protected static String testprefix = "sitconfigdomaininpv";
   //private static String DOMAINUID = "customsitconfigdomain";
   protected static String DOMAINUID = "customsitconfigdomain";
+  */
 
+  protected static String testprefix;
+  //private static String DOMAINUID = "customsitconfigdomain";
+  protected static String DOMAINUID;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting

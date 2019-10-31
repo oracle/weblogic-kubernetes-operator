@@ -31,6 +31,14 @@ public class ItSitConfigDomainInPV extends SitConfig {
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
+      ADMINPORT = String.valueOf(30800 + getNewSuffixCount());
+      T3CHANNELPORT = 31000 + getNewSuffixCount();
+      MYSQL_DB_PORT = String.valueOf(31306 + getNewSuffixCount());
+      testprefix = "sitconfigdomaininpv";
+      DOMAINUID = "sitconfigdomaininpv";
+      ADMINPORT = String.valueOf(30801 + getNewSuffixCount());
+      T3CHANNELPORT = 31001 + getNewSuffixCount();
+      MYSQL_DB_PORT = String.valueOf(31307 + getNewSuffixCount());
       staticPrepare(
           false,
           "integration-tests/src/test/resources/sitconfig/"
