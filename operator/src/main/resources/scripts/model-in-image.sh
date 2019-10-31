@@ -265,7 +265,6 @@ function setupInventoryList() {
     if [ -z "${WDT_DOMAIN_TYPE}" ] ; then
         WDT_DOMAIN_TYPE=WLS
     fi
-    trace "Run wdt create domain ${WDT_DOMAIN_TYPE}"
 
     #  We cannot strictly run create domain for JRF type because it's tied to a database schema
     #  We shouldn't require user to drop the db first since it may have data in it
