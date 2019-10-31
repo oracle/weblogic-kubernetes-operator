@@ -321,7 +321,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenClusterStartupDefinedForServerNotRunning_addToServerss() {
+  public void whenClusterStartupDefinedForServerNotRunning_addToServers() {
     configureServerToStart("ms1");
     configureCluster("cluster1");
     addWlsCluster("cluster1", "ms1");
