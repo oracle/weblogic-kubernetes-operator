@@ -126,4 +126,6 @@ public interface ClusterConfigurator extends ServiceConfigurator {
   ClusterConfigurator withPriorityClassName(String priorityClassName);
 
   ClusterConfigurator withToleration(V1Toleration toleration);
+
+  ClusterConfigurator withPrecreateServerService(boolean precreateServerService);
 }
