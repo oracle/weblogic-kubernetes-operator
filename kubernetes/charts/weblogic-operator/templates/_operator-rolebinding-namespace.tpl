@@ -17,7 +17,12 @@ subjects:
   namespace: {{ .Release.Namespace | quote }}
   apiGroup: ""
 roleRef:
+  {{- if .dedicated }}
+  kind: "Role"
+  name: "weblogic-operator-role-namespace"
+  {{- else }}
   kind: "ClusterRole"
   name: {{ list .Release.Namespace "weblogic-operator-clusterrole-namespace" | join "-" | quote }}
+  {{- end }}
   apiGroup: "rbac.authorization.k8s.io"
 {{- end }}

@@ -4,12 +4,21 @@
 {{- define "operator.clusterRoleBindingDiscovery" }}
 ---
 apiVersion: "rbac.authorization.k8s.io/v1"
+{{- if .dedicated }}
+kind: "RoleBinding"
+{{- else }}
 kind: "ClusterRoleBinding"
+{{- end }}
 metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
     weblogic.resourceVersion: "operator-v2"
+  {{- if .dedicated }}
+  name: "weblogic-operator-rolebinding-discovery"
+  namespace: {{ .Release.Namespace | quote }}
+  {{- else }}
   name: {{ list .Release.Namespace "weblogic-operator-clusterrolebinding-discovery" | join "-" | quote }}
+  {{- end }}
 roleRef:
   apiGroup: "rbac.authorization.k8s.io"
   kind: "ClusterRole"

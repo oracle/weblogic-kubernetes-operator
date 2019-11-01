@@ -5,6 +5,7 @@
 {{- $ignore := set $scope "Files" .Files -}}
 {{- $ignore := set $scope "Chart" .Chart -}}
 {{- $ignore := set $scope "Release" .Release -}}
+{{- $ignore := set $scope "APIVersions" .Capabilities.APIVersions -}}
 
 {{ include "operator.validateInputs" $scope }}
 {{- include "operator.operator" $scope }}

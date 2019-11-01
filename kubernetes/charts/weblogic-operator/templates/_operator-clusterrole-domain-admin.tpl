@@ -3,10 +3,19 @@
 
 {{- define "operator.operatorClusterRoleDomainAdmin" }}
 ---
+{{- if .dedicated }}
+kind: "Role"
+{{- else }}
 kind: "ClusterRole"
+{{- end }}
 apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
+  {{- if .dedicated }}
+  name: "weblogic-operator-role-domain-admin"
+  namespace: {{ .Release.Namespace | quote }}
+  {{- else }}
   name: {{ list .Release.Namespace "weblogic-operator-clusterrole-domain-admin" | join "-" | quote }}
+  {{- end }}
   labels:
     weblogic.resourceVersion: "operator-v2"
     weblogic.operatorName: {{ .Release.Namespace | quote }}

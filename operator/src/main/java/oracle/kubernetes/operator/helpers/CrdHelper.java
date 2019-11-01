@@ -3,6 +3,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,6 +26,7 @@ import io.kubernetes.client.models.V1beta1CustomResourceSubresourceScale;
 import io.kubernetes.client.models.V1beta1CustomResourceSubresources;
 import io.kubernetes.client.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.models.V1beta1JSONSchemaProps;
+import io.kubernetes.client.util.Yaml;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -41,6 +47,34 @@ public class CrdHelper {
   private static final CrdComparator COMPARATOR = new CrdComparatorImpl();
 
   private CrdHelper() {
+  }
+
+  /**
+   * Used by build to generate crd-validation.yaml
+   * @param args Arguments that must be one value giving file name to create
+   */
+  public static void main(String[] args) {
+    if (args == null || args.length != 2) {
+      throw new IllegalArgumentException();
+    }
+
+    String outputFileName = args[0];
+    String defineName = args[1];
+
+    Path outputFilePath = Paths.get(outputFileName);
+    CrdContext context = new CrdContext(null, null);
+
+    try (Writer writer = Files.newBufferedWriter(outputFilePath)) {
+      writer.write(
+          "# Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.\n"
+              + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
+      writer.write("\n");
+      writer.write("{{- define \"" + defineName + "\" }}\n");
+      Yaml.dump(context.model.getSpec().getValidation(), writer);
+      writer.write("{{- end}}");
+    } catch (IOException io) {
+      throw new RuntimeException(io);
+    }
   }
 
   /**
@@ -122,7 +156,7 @@ public class CrdHelper {
               .scope("Namespaced")
               .names(getCrdNames())
               .validation(createSchemaValidation());
-      if (version.isCrdSubresourcesSupported()) {
+      if (version == null || version.isCrdSubresourcesSupported()) {
         spec.setSubresources(
             new V1beta1CustomResourceSubresources()
                 .scale(
