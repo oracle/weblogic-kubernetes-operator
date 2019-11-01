@@ -357,8 +357,7 @@ Oracle Support for Database Running on Docker (Doc ID 2216342.1)
 {{% /notice %}}
 
 **Note**: More detailed information about options for configuring access
-to your database can be found [here]({{< relref "/userguide/managing-fmw-domains/soa-suite#configuring-access-to-your-database" >}}),
-but this document contains all of the important information.
+to your database can be found [here]({{< relref "/userguide/managing-fmw-domains/soa-suite#configuring-access-to-your-database" >}}).
 
 ##### Create a namespace for SOA Suite and the database
 
@@ -508,7 +507,7 @@ In `develop` branch, this file is moved to:
 Need to update this after that change is merged to `master`
 {{% /notice %}}
 
-Here are the contents of the example:
+Here are the contents of the example file:
 
 ```yaml
 apiVersion: v1
@@ -602,7 +601,7 @@ uses (which is uid 54321).  You can do this by adding the lines shown below:
 ```        
 
 After updating this file, if you chose a different namespace, persistent volume claim name,
-etc., apply this file to your cluster using this command:
+and such, apply this file to your cluster using this command:
 
 ```bash
 $ kubectl apply -f kubernetes/samples/scripts/create-soa-domain/create-database/db-with-pv.yaml
@@ -876,8 +875,8 @@ the SOA database schemas.
 
 Now that the database is running, you need to create the SOA schemas
 in the database using the Repository Creation Utility (RCU).  To do
-this, you can start up a "utility" pod that can just be used for 
-running interactive commands. 
+this, you can start up a "utility" pod that can just be used for
+running interactive commands.
 
 Start up a "utility" pod using this command:
 
@@ -891,7 +890,7 @@ $ kubectl run rcu \
 
 This will start a new pod named `rcu` using the SOA Suite Docker image
 which will not run any command, just go into an infinite sleep.
-You can check that the pod has started using this command, you may
+You can check that the pod has started using this command; you may
 need to wait a few minutes for it to pull the Docker image before
 it starts:
 
@@ -912,15 +911,15 @@ $ kubectl exec -n soans -ti rcu /bin/bash
 
 To run RCU to create the schemas in the database, you can use
 commands like those below.  The connection string needs to match
-the Kubernetes service name, port and Oracle Database service name
-that you chose earlier.  If you followed the example as-is, then 
+the Kubernetes service name, port, and Oracle Database service name
+that you chose earlier.  If you followed the example as is, then
 the connection string shown here will be correct.  If you put the
 database in a different namespace, you will need to add the
 namespace after the Kubernetes service name.  For example, if you
-put the database in a namespace called `dbns` then your connection
+put the database in a namespace called `dbns`, then your connection
 string would be `soadb.dbns:1521/soapdb.my.domain.com`.
-You samples that we will use later to create the domain assume
-that the RCU prefix is `SOA1`.  If you change the prefix, you will
+Your samples that you will use later to create the domain assume
+that the RCU prefix is `SOA1`.  If you change the prefix, then you will
 also need to change the scripts used later to create the SOA
 domain.
 
@@ -976,20 +975,20 @@ Percent Complete: 98
 Percent Complete: 100
 ```
 
-Just like in a normal on-premises installation of SOA Suite, you need to
-make sure you maintain the one to one relationship between this set of
-SOA Schemas and the domain that you create with them.  During domain
-creation, various information that is specific to the domain will be
-written into these schemas (especially by Oracle Platform Security 
+Just like in a typical on-premises installation of SOA Suite, you need to
+make sure that you maintain the one to one relationship between this set of
+SOA schemas and the domain that you create with them.  During domain
+creation, information that is specific to the domain will be
+written into these schemas (especially by Oracle Platform Security
 Services).
 
 
 ##### Dropping schemas
 
-Just like in a normal on-premises installation of SOA Suite, if the domain
+Just like in a typical on-premises installation of SOA Suite, if the domain
 creation fails, you will need to use RCU to drop the schemas and create
 new ones before retrying domain creation.
-If you need to drop the RCU schemas for any reason, you can use the following 
+If you need to drop the RCU schemas for any reason, you can use the following
 commands to drop the schemas, with the same caveats as above about setting the
 correct connection string and so on:
 
