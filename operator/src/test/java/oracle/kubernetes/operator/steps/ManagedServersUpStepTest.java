@@ -496,6 +496,17 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
+    assertThat(getServers(), allOf(hasItem("ms1"), hasItem("ms2")));
+  }
+
+  @Test
+  public void whenClusterStartupDefinedWithPreCreateServerService_adminServerDown_addAllToServers() {
+    configureCluster("cluster1").withPrecreateServerService(true);
+    addWlsCluster("cluster1", "ms1", "ms2");
+    configureAdminServer().withServerStartPolicy(START_NEVER);
+
+    invokeStep();
+
     assertThat(getServers(),
         allOf(
             hasItem("ms1"),
@@ -504,10 +515,9 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenClusterStartupDefinedWithPreCreateServerService_adminServerDown_addAllToServers() {
-    configureCluster("cluster1").withPrecreateServerService(true);
+  public void whenClusterStartupDefinedWithPreCreateServerService_managedServerDown_addAllToServers() {
+    configureCluster("cluster1").withPrecreateServerService(true).withServerStartPolicy(START_NEVER);
     addWlsCluster("cluster1", "ms1", "ms2");
-    configureAdminServer().withServerStartPolicy(START_NEVER);
 
     invokeStep();
 
