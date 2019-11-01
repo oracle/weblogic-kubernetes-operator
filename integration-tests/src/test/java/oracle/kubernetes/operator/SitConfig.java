@@ -637,7 +637,8 @@ public class SitConfig extends BaseTest {
 
   public static void setParamsForTest(boolean domainInImage) {
     int testNumber = getNewSuffixCount();
-    testprefix = "customsitconfigdomain";
+    //testprefix = "customsitconfigdomain";
+    testprefix = "sitconfigdomaininpv";
     if (domainInImage) {
       testprefix = "sitconfigdomaininimage";
       testNumber++;
