@@ -129,7 +129,7 @@ You can have one or more operators in your Kubernetes cluster that manage one or
       
       <guid>/weblogic-kubernetes-operator/quickstart/introduction/</guid>
       <description>Use this Quick Start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production. These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please refer to the User guide.
-Important note for users of operator releases before 2.0   Click here to expand   If you have an older version of the operator installed on your cluster, for example, a 1.</description>
+All Kubernetes distributions and managed services have small differences. In particular, the way that persistent storage and load balancers are managed varies significantly.</description>
     </item>
     
     <item>
