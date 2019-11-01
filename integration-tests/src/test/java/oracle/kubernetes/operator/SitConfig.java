@@ -80,22 +80,17 @@ public class SitConfig extends BaseTest {
     if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-      if (testClassName.contains("InPV")) {
-        ADMINPORT = String.valueOf(30800 + getNewSuffixCount());
-        T3CHANNELPORT = 31000 + getNewSuffixCount();
-        MYSQL_DB_PORT = String.valueOf(31306 + getNewSuffixCount());
-        testprefix = "sitconfigdomaininpv";
-        ADMINPORT = String.valueOf(30801 + getNewSuffixCount());
-        T3CHANNELPORT = 31001 + getNewSuffixCount();
-        MYSQL_DB_PORT = String.valueOf(31306 + getNewSuffixCount());
-      } else {
-        ADMINPORT = String.valueOf(30800 + getNewSuffixCount());
-        T3CHANNELPORT = 31000 + getNewSuffixCount();
-        MYSQL_DB_PORT = String.valueOf(31306 + getNewSuffixCount());
+      int testNumber = getNewSuffixCount();
+      if (domainInImage) {
+        ADMINPORT = String.valueOf(30800 + testNumber);
+        T3CHANNELPORT = 31000 + testNumber;
+        MYSQL_DB_PORT = String.valueOf(31306 + testNumber);
         testprefix = "sitconfigdomaininimage";
-        ADMINPORT = String.valueOf(30801 + getNewSuffixCount());
-        T3CHANNELPORT = 31001 + getNewSuffixCount();
-        MYSQL_DB_PORT = String.valueOf(31307 + getNewSuffixCount());
+      } else {
+        ADMINPORT = String.valueOf(30801 + testNumber);
+        T3CHANNELPORT = 31001 + testNumber;
+        MYSQL_DB_PORT = String.valueOf(31307 + testNumber);
+        testprefix = "customsitconfigdomain";
       }
 
       DOMAINUID = testprefix;
@@ -614,7 +609,7 @@ public class SitConfig extends BaseTest {
             + configOverrideDir
             + " -o yaml --dry-run | kubectl replace -f -";
     TestUtils.exec(cmd, true);
-    cmd = "kubectl describe cm -n " + domain.getDomainNs() + DOMAINUID + "-sitconfigcm";
+    cmd = "kubectl describe cm -n " + domain.getDomainNs() + " " + DOMAINUID + "-sitconfigcm";
     TestUtils.exec(cmd, true);
 
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
