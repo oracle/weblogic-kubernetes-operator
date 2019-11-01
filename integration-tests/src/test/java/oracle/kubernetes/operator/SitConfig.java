@@ -61,6 +61,7 @@ public class SitConfig extends BaseTest {
   protected static String DOMAINUID = "customsitconfigdomain";
   */
 
+  //protected static String DOMAINUID = "customsitconfigdomain";
   protected static String testprefix;
   //private static String DOMAINUID = "customsitconfigdomain";
   protected static String DOMAINUID;
@@ -606,7 +607,8 @@ public class SitConfig extends BaseTest {
     domain.verifyServerPodsDeleted(clusterReplicas);
 
     String cmd =
-        "kubectl create configmap "
+        "kubectl create configmap -n " + domain.getDomainNs()
+            + " "
             + DOMAINUID
             + "-sitconfigcm --from-file="
             + configOverrideDir
