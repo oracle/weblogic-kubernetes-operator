@@ -312,6 +312,10 @@ public abstract class BaseConfiguration {
     return serverService.isPrecreateService();
   }
 
+  void setPrecreateServerService(boolean value) {
+    serverService.setIsPrecreateService(value);
+  }
+
   public Map<String, String> getServiceLabels() {
     return serverService.getLabels();
   }
