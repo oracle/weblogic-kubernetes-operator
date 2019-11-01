@@ -80,29 +80,8 @@ public class SitConfig extends BaseTest {
     if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-      int testNumber = getNewSuffixCount();
-      if (domainInImage) {
-        ADMINPORT = String.valueOf(30800 + testNumber);
-        T3CHANNELPORT = 31000 + testNumber;
-        MYSQL_DB_PORT = String.valueOf(31306 + testNumber);
-        testprefix = "sitconfigdomaininimage";
-      } else {
-        ADMINPORT = String.valueOf(30801 + testNumber);
-        T3CHANNELPORT = 31001 + testNumber;
-        MYSQL_DB_PORT = String.valueOf(31307 + testNumber);
-        testprefix = "customsitconfigdomain";
-      }
+      setParamsForTest(domainInImage);
 
-      DOMAINUID = testprefix;
-      /*
-      if (domainInImage) {
-        testprefix = "sitconfigdomaininimage";
-        DOMAINUID = DOMAINUID + "image";
-        ADMINPORT = String.valueOf(30801 + getNewSuffixCount());
-        T3CHANNELPORT = 31001 + getNewSuffixCount();
-        MYSQL_DB_PORT = String.valueOf(31307 + getNewSuffixCount());
-      }
-      */
       // create operator1
       if (operator1 == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, DOMAINUID);
@@ -111,10 +90,12 @@ public class SitConfig extends BaseTest {
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
       TEST_RES_DIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
+      /*
       sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
       mysqltmpDir = sitconfigTmpDir + "/mysql";
       configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
       mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
+      */
       Files.createDirectories(Paths.get(sitconfigTmpDir));
       Files.createDirectories(Paths.get(configOverrideDir));
       Files.createDirectories(Paths.get(mysqltmpDir));
@@ -285,7 +266,7 @@ public class SitConfig extends BaseTest {
     final Path dst = Paths.get(mysqlYamlFile);
     LoggerHelper.getLocal().log(Level.INFO, "Copying {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
-    String content = new String(Files.readAllBytes(src), charset);
+    String content = new String(Files.readAllBytes(dst), charset);
     content = content.replaceAll("@NAMESPACE@", "default");
     content = content.replaceAll("@DOMAIN_UID@", DOMAINUID);
     content = content.replaceAll("@MYSQLPORT@", MYSQL_DB_PORT);
@@ -646,4 +627,22 @@ public class SitConfig extends BaseTest {
     Assert.assertFalse(result.stderr().toLowerCase().contains("error"));
     Assert.assertEquals(0, result.exitValue());
   }
+
+  public static void setParamsForTest(boolean domainInImage) {
+    int testNumber = getNewSuffixCount();
+    testprefix = "customsitconfigdomain";
+    if(domainInImage) {
+      testprefix = "sitconfigdomaininimage";
+      testNumber++;
+    }
+    ADMINPORT = String.valueOf(30800 + testNumber);
+    MYSQL_DB_PORT = String.valueOf(31306 + testNumber);
+    T3CHANNELPORT = 31000 + testNumber;
+    DOMAINUID = testprefix;
+    sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
+    mysqltmpDir = sitconfigTmpDir + "/mysql";
+    configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
+    mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
+  }
+
 }
