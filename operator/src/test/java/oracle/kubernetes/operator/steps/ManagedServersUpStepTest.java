@@ -507,11 +507,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(getServers(),
-        allOf(
-            hasItem("ms1"),
-            hasItem("ms2"))
-    );
+    assertThat(getServers(), allOf(hasItem("ms1"), hasItem("ms2")));
   }
 
   @Test
@@ -521,11 +517,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(getServers(),
-        allOf(
-            hasItem("ms1"),
-            hasItem("ms2"))
-    );
+    assertThat(getServers(), allOf(hasItem("ms1"), hasItem("ms2")));
   }
 
   @Test
