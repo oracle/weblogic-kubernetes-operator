@@ -95,19 +95,18 @@ public class SitConfig extends BaseTest {
       mysqltmpDir = sitconfigTmpDir + "/mysql";
       configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
       mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
-      */
+
       Files.createDirectories(Paths.get(sitconfigTmpDir));
       Files.createDirectories(Paths.get(configOverrideDir));
       Files.createDirectories(Paths.get(mysqltmpDir));
+      */
       // Create the MySql db container
       copyMySqlFile(domainInImage);
-      ExecResult result = TestUtils.exec("kubectl create -f " + mysqlYamlFile);
-      Assert.assertEquals(0, result.exitValue());
 
       if (!OPENSHIFT) {
         fqdn = TestUtils.getHostName();
       } else {
-        result = TestUtils.exec("hostname -i");
+        ExecResult result = TestUtils.exec("hostname -i");
         fqdn = result.stdout().trim();
       }
       JDBC_URL = "jdbc:mysql://" + fqdn + ":" + MYSQL_DB_PORT + "/";
@@ -264,8 +263,11 @@ public class SitConfig extends BaseTest {
    *
    * @throws IOException when copying files from source location to staging area fails
    */
-  private static void copyMySqlFile(boolean domainInImage) throws IOException {
+  private static void copyMySqlFile(boolean domainInImage) throws Exception {
     setParamsForTest(domainInImage);
+    Files.createDirectories(Paths.get(sitconfigTmpDir));
+    Files.createDirectories(Paths.get(configOverrideDir));
+    Files.createDirectories(Paths.get(mysqltmpDir));
     final Path src = Paths.get(TEST_RES_DIR + "/mysql/mysql-dbservices.ymlt");
     final Path dst = Paths.get(mysqlYamlFile);
     LoggerHelper.getLocal().log(Level.INFO, "Copying {0}", src.toString());
@@ -278,6 +280,8 @@ public class SitConfig extends BaseTest {
     content = content.replaceAll("@DOMAIN_UID@", DOMAINUID);
     content = content.replaceAll("@MYSQLPORT@", MYSQL_DB_PORT);
     Files.write(dst, content.getBytes(charset));
+    ExecResult result = TestUtils.exec("kubectl create -f " + mysqlYamlFile);
+    Assert.assertEquals(0, result.exitValue());
   }
 
   /**
