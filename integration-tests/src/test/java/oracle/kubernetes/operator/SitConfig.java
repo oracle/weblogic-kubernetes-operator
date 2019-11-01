@@ -100,7 +100,7 @@ public class SitConfig extends BaseTest {
       Files.createDirectories(Paths.get(configOverrideDir));
       Files.createDirectories(Paths.get(mysqltmpDir));
       // Create the MySql db container
-      copyMySqlFile();
+      copyMySqlFile(domainInImage);
       ExecResult result = TestUtils.exec("kubectl create -f " + mysqlYamlFile);
       Assert.assertEquals(0, result.exitValue());
 
@@ -264,7 +264,8 @@ public class SitConfig extends BaseTest {
    *
    * @throws IOException when copying files from source location to staging area fails
    */
-  private static void copyMySqlFile() throws IOException {
+  private static void copyMySqlFile(boolean domainInImage) throws IOException {
+    setParamsForTest(domainInImage);
     final Path src = Paths.get(TEST_RES_DIR + "/mysql/mysql-dbservices.ymlt");
     final Path dst = Paths.get(mysqlYamlFile);
     LoggerHelper.getLocal().log(Level.INFO, "Copying {0}", src.toString());
