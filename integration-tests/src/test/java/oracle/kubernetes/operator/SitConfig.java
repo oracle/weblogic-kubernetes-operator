@@ -142,6 +142,9 @@ public class SitConfig extends BaseTest {
       Path path = Paths.get(sitconfigTmpDir, "runSitConfigTests.sh");
       String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
       content = content.replaceAll("customsitconfigdomain", DOMAINUID);
+      //attention
+      Charset charset = StandardCharsets.UTF_8;
+      Files.write(path, content.getBytes(charset));
 
       TestUtils.copyFileViaCat(
           sitconfigTmpDir + "/runSitConfigTests.sh",
@@ -266,11 +269,13 @@ public class SitConfig extends BaseTest {
     final Path dst = Paths.get(mysqlYamlFile);
     LoggerHelper.getLocal().log(Level.INFO, "Copying {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
-    String content = new String(Files.readAllBytes(dst), charset);
+    String content = new String(Files.readAllBytes(src), charset);
+    LoggerHelper.getLocal().log(Level.INFO, "to {0}", dst.toString());
+    Files.write(dst, content.getBytes(charset));
+    content = new String(Files.readAllBytes(dst), charset);
     content = content.replaceAll("@NAMESPACE@", "default");
     content = content.replaceAll("@DOMAIN_UID@", DOMAINUID);
     content = content.replaceAll("@MYSQLPORT@", MYSQL_DB_PORT);
-    LoggerHelper.getLocal().log(Level.INFO, "to {0}", dst.toString());
     Files.write(dst, content.getBytes(charset));
   }
 
@@ -432,7 +437,9 @@ public class SitConfig extends BaseTest {
     Path path = Paths.get(dstDir, "config.xml");
     String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
     content = content.replaceAll("customsitconfigdomain", DOMAINUID);
-
+    //attention
+    Charset charset = StandardCharsets.UTF_8;
+    Files.write(path, content.getBytes(charset));
 
     recreateConfigMapandRestart(oldSecret, oldSecret);
     transferTests();
@@ -631,7 +638,7 @@ public class SitConfig extends BaseTest {
   public static void setParamsForTest(boolean domainInImage) {
     int testNumber = getNewSuffixCount();
     testprefix = "customsitconfigdomain";
-    if(domainInImage) {
+    if (domainInImage) {
       testprefix = "sitconfigdomaininimage";
       testNumber++;
     }
