@@ -36,25 +36,25 @@ public class SitConfig extends BaseTest {
   protected static String ADMINPORT;
   protected static int T3CHANNELPORT;
   protected static String MYSQL_DB_PORT;
-  private static String TEST_RES_DIR;
-  private static String ADMINPODNAME;
-  private static String fqdn;
-  private static String JDBC_URL;
-  private static final String JDBC_DRIVER_NEW = "com.mysql.cj.jdbc.Driver";
-  private static final String JDBC_DRIVER_OLD = "com.mysql.jdbc.Driver";
-  private static final String PS3_TAG = "12.2.1.3";
-  private static String KUBE_EXEC_CMD;
-  private static Domain domain;
-  private static Operator operator1;
-  private static String sitconfigTmpDir = "";
-  private static String mysqltmpDir = "";
-  private static String configOverrideDir = "";
-  private static String mysqlYamlFile = "";
-  private static String domainYaml;
-  private static String JDBC_RES_SCRIPT;
-  private static final String oldSecret = "test-secrets";
-  private static final String newSecret = "test-secrets-new";
-  private static String domainNS;
+  protected static String TEST_RES_DIR;
+  protected static String ADMINPODNAME;
+  protected static String fqdn;
+  protected static String JDBC_URL;
+  protected static final String JDBC_DRIVER_NEW = "com.mysql.cj.jdbc.Driver";
+  protected static final String JDBC_DRIVER_OLD = "com.mysql.jdbc.Driver";
+  protected static final String PS3_TAG = "12.2.1.3";
+  protected static String KUBE_EXEC_CMD;
+  protected static Domain domain;
+  protected static Operator operator1;
+  protected static String sitconfigTmpDir = "";
+  protected static String mysqltmpDir = "";
+  protected static String configOverrideDir = "";
+  protected static String mysqlYamlFile = "";
+  protected static String domainYaml;
+  protected static String JDBC_RES_SCRIPT;
+  protected static final String oldSecret = "test-secrets";
+  protected static final String newSecret = "test-secrets-new";
+  protected static String domainNS;
   /*
   protected static String testprefix = "sitconfigdomaininpv";
   //private static String DOMAINUID = "customsitconfigdomain";
@@ -65,115 +65,7 @@ public class SitConfig extends BaseTest {
   protected static String testprefix;
   //private static String DOMAINUID = "customsitconfigdomain";
   protected static String DOMAINUID;
-  /**
-   * This method gets called only once before any of the test methods are executed. It does the
-   * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes.
-   *
-   * @throws Exception when the initialization, creating directories , copying files and domain
-   *                   creation fails.
-   */
 
-  protected static void staticPrepare(boolean domainInImage, String domainScript, String testClassName)
-      throws Exception {
-    // initialize test properties and create the directories
-    if (FULLTEST) {
-      // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE, testClassName);
-      setParamsForTest(domainInImage);
-
-      // create operator1
-      if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, DOMAINUID);
-        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator1);
-        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-      }
-      TEST_RES_DIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
-      /*
-      sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
-      mysqltmpDir = sitconfigTmpDir + "/mysql";
-      configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
-      mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
-
-      Files.createDirectories(Paths.get(sitconfigTmpDir));
-      Files.createDirectories(Paths.get(configOverrideDir));
-      Files.createDirectories(Paths.get(mysqltmpDir));
-      */
-      // Create the MySql db container
-      copyMySqlFile(domainInImage);
-
-      if (!OPENSHIFT) {
-        fqdn = TestUtils.getHostName();
-      } else {
-        ExecResult result = TestUtils.exec("hostname -i");
-        fqdn = result.stdout().trim();
-      }
-      JDBC_URL = "jdbc:mysql://" + fqdn + ":" + MYSQL_DB_PORT + "/";
-      // copy the configuration override files to replacing the JDBC_URL token
-      String[] files = {
-          "config.xml",
-          "jdbc-JdbcTestDataSource-0.xml",
-          "diagnostics-WLDF-MODULE-0.xml",
-          "jms-ClusterJmsSystemResource.xml",
-          "version.txt"
-      };
-      copySitConfigFiles(files, oldSecret);
-      // create weblogic domain with configOverrides
-      domain = createSitConfigDomain(domainInImage, domainScript);
-      Assert.assertNotNull(domain);
-      domainYaml =
-          BaseTest.getUserProjectsDir()
-              + "/weblogic-domains/"
-              + domain.getDomainUid()
-              + "/domain.yaml";
-      // copy the jmx test client file the administratioin server weblogic server pod
-      ADMINPODNAME = domain.getDomainUid() + "-" + domain.getAdminServerName();
-      TestUtils.copyFileViaCat(
-          TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
-          "SitConfigTests.java",
-          ADMINPODNAME,
-          domain.getDomainNs());
-      Files.copy(
-          Paths.get(TEST_RES_DIR + "sitconfig/scripts","runSitConfigTests.sh"),
-          Paths.get(sitconfigTmpDir, "runSitConfigTests.sh"),
-          StandardCopyOption.REPLACE_EXISTING);
-      Path path = Paths.get(sitconfigTmpDir, "runSitConfigTests.sh");
-      String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-      content = content.replaceAll("customsitconfigdomain", DOMAINUID);
-      //attention
-      Charset charset = StandardCharsets.UTF_8;
-      Files.write(path, content.getBytes(charset));
-
-      TestUtils.copyFileViaCat(
-          sitconfigTmpDir + "/runSitConfigTests.sh",
-          "runSitConfigTests.sh",
-          ADMINPODNAME,
-          domain.getDomainNs());
-      KUBE_EXEC_CMD =
-          "kubectl -n " + domain.getDomainNs() + "  exec -it " + ADMINPODNAME + "  -- bash -c";
-      JDBC_RES_SCRIPT = TEST_RES_DIR + "/sitconfig/scripts/create-jdbc-resource.py";
-    }
-  }
-
-  /**
-   * Destroy domain, delete the MySQL DB container and teardown.
-   *
-   * @throws Exception when domain destruction or MySQL container destruction fails
-   */
-  protected static void staticUnprepare() throws Exception {
-    if (FULLTEST) {
-      ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
-      destroySitConfigDomain();
-      if (operator1 != null) {
-        LoggerHelper.getLocal().log(Level.INFO, "Destroying operator...");
-        operator1.destroy();
-        operator1 = null;
-      }
-      tearDown(new Object() {
-      }.getClass().getEnclosingClass().getSimpleName());
-    }
-  }
 
   /**
    * Create Domain using the custom domain script create-domain-auto-custom-sit-config20.py
@@ -183,7 +75,7 @@ public class SitConfig extends BaseTest {
    * @return - created domain
    * @throws Exception - if it cannot create the domain
    */
-  private static Domain createSitConfigDomain(boolean domainInImage, String domainScript)
+  protected static Domain createSitConfigDomain(boolean domainInImage, String domainScript)
       throws Exception {
     // load input yaml to map and add configOverrides
     Map<String, Object> domainMap = null;
@@ -212,7 +104,7 @@ public class SitConfig extends BaseTest {
    *
    * @throws Exception when domain destruction fails
    */
-  private static void destroySitConfigDomain() throws Exception {
+  protected static void destroySitConfigDomain() throws Exception {
     if (domain != null) {
       LoggerHelper.getLocal().log(Level.INFO, "Destroying domain...");
       domain.destroy();
@@ -225,7 +117,7 @@ public class SitConfig extends BaseTest {
    *
    * @throws IOException when copying files from source location to staging area fails
    */
-  private static void copySitConfigFiles(String[] files, String secretName) throws IOException {
+  protected static void copySitConfigFiles(String[] files, String secretName) throws IOException {
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
     String dstDir = configOverrideDir;
 
@@ -251,7 +143,7 @@ public class SitConfig extends BaseTest {
     }
   }
 
-  private static void display(String dir) throws IOException {
+  protected static void display(String dir) throws IOException {
     for (File file : new File(dir).listFiles()) {
       LoggerHelper.getLocal().log(Level.INFO, file.getAbsolutePath());
       LoggerHelper.getLocal().log(Level.INFO, new String(Files.readAllBytes(file.toPath())));
@@ -263,7 +155,7 @@ public class SitConfig extends BaseTest {
    *
    * @throws IOException when copying files from source location to staging area fails
    */
-  private static void copyMySqlFile(boolean domainInImage) throws Exception {
+  protected static void copyMySqlFile(boolean domainInImage) throws Exception {
     setParamsForTest(domainInImage);
     Files.createDirectories(Paths.get(sitconfigTmpDir));
     Files.createDirectories(Paths.get(configOverrideDir));
@@ -531,7 +423,7 @@ public class SitConfig extends BaseTest {
    *
    * @throws Exception JDBC resource creation fails
    */
-  private void createJdbcResource() throws Exception {
+  protected void createJdbcResource() throws Exception {
     Path path = Paths.get(JDBC_RES_SCRIPT);
     String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
     content = content.replaceAll("JDBC_URL", JDBC_URL);
@@ -555,7 +447,7 @@ public class SitConfig extends BaseTest {
    *
    * @throws Exception when pods restart fail
    */
-  private void recreateConfigMapandRestart(String oldSecret, String newSecret) throws Exception {
+  protected void recreateConfigMapandRestart(String oldSecret, String newSecret) throws Exception {
     // modify the domain.yaml if the secret name is changed
     if (!oldSecret.equals(newSecret)) {
       String content =
@@ -615,7 +507,7 @@ public class SitConfig extends BaseTest {
    *
    * @throws Exception exception
    */
-  private void transferTests() throws Exception {
+  protected void transferTests() throws Exception {
     TestUtils.copyFileViaCat(
         TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
         "SitConfigTests.java",
@@ -633,7 +525,7 @@ public class SitConfig extends BaseTest {
    *
    * @param result - ExecResult object containing result of the test run
    */
-  private void assertResult(ExecResult result) {
+  protected void assertResult(ExecResult result) {
     LoggerHelper.getLocal().log(Level.INFO, result.stdout().trim());
     Assert.assertFalse(result.stdout().toLowerCase().contains("error"));
     Assert.assertFalse(result.stderr().toLowerCase().contains("error"));
