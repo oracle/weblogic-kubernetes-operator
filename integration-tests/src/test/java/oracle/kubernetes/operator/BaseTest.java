@@ -914,6 +914,30 @@ public class BaseTest {
     return domainMap;
   }
 
+  public Map<String, Object> createDomainMap(int number) {
+    Map<String, Object> domainMap = new HashMap<>();
+    ArrayList<String> targetDomainsNS = new ArrayList<String>();
+    targetDomainsNS.add("test" + number);
+    domainMap.put("domainUID", "test" + number);
+    domainMap.put("namespace", "test" + number);
+    domainMap.put("configuredManagedServerCount", 4);
+    domainMap.put("initialManagedServerReplicas", 2);
+    domainMap.put("exposeAdminT3Channel", true);
+    domainMap.put("exposeAdminNodePort", true);
+    domainMap.put("adminNodePort", 30700 + number);
+    domainMap.put("t3ChannelPort", 30000 + number);
+    domainMap.put("resultDir", resultDir);
+    domainMap.put("userProjectsDir", userProjectsDir);
+    domainMap.put("pvRoot", pvRoot);
+    if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
+        || (domainMap.containsKey("loadBalancer")
+        && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
+      domainMap.put("voyagerWebPort", 30344 + number);
+      LoggerHelper.getLocal().log(Level.INFO, "For this domain voyagerWebPort is set to: 30344 + " + number);
+    }
+    return domainMap;
+  }
+
   /**
    * Creates a map with commonly used domain in image input attributes using suffixCount and prefix
    * to make the namespaces and ports unique.
@@ -944,5 +968,4 @@ public class BaseTest {
     }
     return domainMap;
   }
-
 }
