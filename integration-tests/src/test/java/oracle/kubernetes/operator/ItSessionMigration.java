@@ -113,10 +113,6 @@ public class ItSessionMigration extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "++++++++++++++++++++++++++++++++++");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-
       tearDown(new Object() {}.getClass()
           .getEnclosingClass().getSimpleName(), namespaceList.toString());
 

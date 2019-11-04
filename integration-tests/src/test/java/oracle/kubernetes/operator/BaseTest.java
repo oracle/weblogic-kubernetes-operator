@@ -428,6 +428,10 @@ public class BaseTest {
    *                   renewing the lease for shared cluster run
    */
   public static void tearDown(String itClassName, String namespaceList) throws Exception {
+    LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
+    LoggerHelper.getLocal().info("BEGIN");
+    LoggerHelper.getLocal().info("Run once");
+
     LoggerHelper.getLocal().log(
         Level.INFO,
         "TEARDOWN: Starting Test Run TearDown (state-dump)."

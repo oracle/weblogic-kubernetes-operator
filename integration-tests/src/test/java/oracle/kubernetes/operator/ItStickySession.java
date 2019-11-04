@@ -118,7 +118,12 @@ public class ItStickySession extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
+    if (FULLTEST) {
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
 
+      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
+    }
   }
 
   /**

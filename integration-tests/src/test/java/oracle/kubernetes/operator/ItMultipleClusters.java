@@ -96,15 +96,12 @@ public class ItMultipleClusters extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    LoggerHelper.getLocal().info("BEGIN");
-    LoggerHelper.getLocal().info("Run once, release cluster lease");
+    if (FULLTEST) {
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
 
-    tearDown(new Object() {
-    }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
-
-    LoggerHelper.getLocal().info("SUCCESS");
-
+      LoggerHelper.getLocal().info("SUCCESS");
+    }
   }
 
   /**

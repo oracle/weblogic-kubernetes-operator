@@ -108,10 +108,6 @@ public class ItPodsShutdown extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-
       destroyDomain();
       tearDown(new Object() {
       }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());

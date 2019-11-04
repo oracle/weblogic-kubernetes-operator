@@ -70,10 +70,6 @@ public class ItOperator extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    LoggerHelper.getLocal().info("BEGIN");
-    LoggerHelper.getLocal().info("Run once, release cluster lease");
-
     tearDown(new Object() {
     }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
 
