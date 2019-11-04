@@ -319,9 +319,7 @@ function createWLDomain() {
     previous_version=$(cat ${inventory_wls_version})
     if [ "${current_version}" != "${previous_version}" ]; then
       trace "version different: before: ${previous_version} current: ${current_version}"
-      #version_changed=1
-      # TODO: make sure understand the impact for JRF first
-      # handle version upgrade
+      version_changed=1
     fi
   fi
 
@@ -342,7 +340,7 @@ function createWLDomain() {
   #
   setupInventoryList ${version_changed}
 
-  checkExistInventory
+  checkExistInventoryhttps://www.facebook.com/?ref=tn_tnmn
   local wdt_artifacts_changed=$?
   # something changed in the wdt artifacts or wls version changed
   local created_domain=0
@@ -351,10 +349,12 @@ function createWLDomain() {
     trace "Need to create domain ${WDT_DOMAIN_TYPE}"
     wdtCreateDomain
     created_domain=1
+
     # For lifecycle updates:
-    # if there is a merged model in the cm then it is an update case, try online update
-    # only if the useOnlineUpdate is define in the spec and set to true
-    # and not for version upgrade
+    # 1. If there is a merged model in the cm and
+    # 2. If the archive changed and
+    # 3. If the useOnlineUpdate is define in the spec and set to true and
+    # 4. not for version upgrade
 
     if [ -f ${inventory_merged_model} ] && [ ${archive_zip_changed} -eq 0 ] && [ "true" == "${USE_ONLINE_UPDATE}" \
             ] && [ ${version_change} -ne 1 ]; then
