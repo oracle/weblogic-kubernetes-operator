@@ -1031,6 +1031,77 @@ domain creation.
 
 Now that the database is ready, the next step is to create the SOA domain.
 
+##### Create secret with domain administration credentials
+
+**TODO** write me
+
+##### Create persistent storage for the domain directory
+
+**TODO** write me
+
+##### Create the domain
+
+A sample is provided [here](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-soa-domain)
+to create a SOA domain.  There are five options for the type of domain to create:
+
+* SOA, that is BPEL, adapters, and so on.
+* SOA and Enterprise Scheduler Service (ESS).
+* Oracle Service Bus (OSB).
+* SOA and OSB.
+* SOA, ESS and OSB.
+
+Open the `create-domain-inputs.yaml` file (or a copy of it) and update the
+following options based on the type of domain you wish to create: 
+
+| Option | Purpose | SOA | SOA + ESS | OSB | SOA + OSB | SOA + ESS + OSB |
+| --- | --- | --- | --- | --- | --- | --- |
+| `domainType` | Determines which of the five types of domain listed above you want to create. | `soa` | `soaess` | `osb` | `soaosb` | `soaessosb` |
+| `clusterName` | Determines the name of the WebLogic cluster. | `soa_cluster` | `soa_cluster` | `osb_cluster` | `soa_cluster` | `soa_cluster` |
+| `managedServerNameBase` | Used to create the names of the managed servers in the cluster. | `soa_server` | `soa_server` | `osb_server` | `soa_server` | `soa_server` |
+| `managedServerPort` | The listen port for the managed servers. | `8001` | `8001` | `9001` | `8001` | `8001` |
+
+You should also set the following options, these do not depend on the type
+of domain you are creating:
+
+| Option | Purpose | Default |
+| --- | --- | --- |
+| `adminPort` | The port that the Administration Server will listen on. | `7001` |
+| `domainUID` | A unique identifier (within your Kubernetes cluster) for this domain. We recommend making this the same as the domain name. | `soainfra` |
+| `configuredManagedServerCount` | The number of managed servers that should be defined in the cluster.  This effectively sets the maximum size that you can scale the cluster up to. | `5` |
+| `initialManagedServerReplicas` | The number of managed servers that should be started in the cluster when the domain is started up. | `2` |
+| `image` | This Docker image to use to run SOA Suite. | `container-registry.oracle.com/middleware/soasuite:12.2.1.3` |
+| `t3ChannelPort` | The external (NodePort) to expose T3 on, if the `exposeAdminT3Channel` setting is `true`.  This must be unique across all domains in your Kubernetes cluster. Node Ports are normally allowed in the range 30000-32767. | `30012` |
+| `adminNodePort` | The external (NodePort) to expose the Admin channel on, if the `exposeAdminNodePort` setting is `true`.  This must be unique across all domains in your Kubernetes cluster. | `30701` |
+| `namespace` | The Kubernetes namespace to create the domain in. | `soans` |
+| `rcuSchemaPrefix` | The prefix used for the SOAINFRA schemas in the database.  | `SOA1` |
+| `rcuDatabaseURL` | The URL to access the database containing the SOAINFRA schemas.  Note that this URL is from the perspective of a pod, so you should use Kubernetes DNS names here.  | `soadb.soans:1521/soapdb.my.domain.com` |
+| `rcuCredentialsSecret` |  The kubernetes secret containing the database credentials. | `soainfra-rcu-credentials` |
+
+When you have the inputs file ready, you can create a domain using the provided sample
+`create-domain.sh` script using a command like this:
+
+```bash
+$ ./create-domain.sh -i create-domain-inputs.yaml -o $HOME/outputs 
+```
+
+If you want to set any CPU or memory limits, you can uncomment these settings
+at the bottom of the file and set them appropriately.  The CPU settings are
+measured in thousandths of a CPU, so `1000m` means one full CPU.
+
+```yaml
+# Uncomment and edit value(s) below to specify the maximum amount of
+# compute resources allowed, and minimum amount of compute resources
+# required for each server pod.
+# These are optional.
+# Please refer to the kubernetes documentation on Managing Compute
+# Resources for Containers for details.
+#
+#serverPodMemoryRequest: "4Gi"
+#serverPodCpuRequest: "1000m"
+#serverPodMemoryLimit: "4Gi"
+#serverPodCpuLimit: "1000m"
+```
+
 
 #### Starting the SOA domain in Kubernetes
 
