@@ -391,8 +391,9 @@ function createWLDomain() {
         return 0
       fi
 
-      # Changes are not supported - non shape changes.. deletion, deploy app.
-      # TODO: Are these different from FATAL ? - May not need differentiation
+      # Changes are not supported yet for online update - non shape changes.. deletion, deploy app.
+      # app deployments may involve shared libraries, shared library impacted apps, although WDT online support
+      # it but it has not been fully tested - forbid it for now.
 
       if [ ${diff_rc} -eq ${UNSAFE_ONLINE_UPDATE} ] ; then
         trace "Introspect job terminated: Changes are not safe to do online updates. Use offline changes. See introspect job logs for
