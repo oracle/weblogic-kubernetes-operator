@@ -172,7 +172,8 @@ public class ItElasticLogging extends BaseTest {
               .append("/")
               .append(elasticStackYamlLoc);
       LoggerHelper.getLocal().log(Level.INFO, "Command to uninstall Elastic Stack: " + cmd.toString());
-      TestUtils.exec(cmd.toString());
+      //sometimes this is hanging on jenkins
+      //TestUtils.exec(cmd.toString());
 
       // Restore the test env
       Files.delete(new File(loggingYamlFileLoc + "/" + loggingYamlFile).toPath());
