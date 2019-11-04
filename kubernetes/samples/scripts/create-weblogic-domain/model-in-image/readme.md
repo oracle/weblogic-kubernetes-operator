@@ -327,7 +327,7 @@ A JRF domain requires an infrastructure database and also requires initalizing t
 the schema password:
 
    ```
-     create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-190522
+     create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
 
    ```
 
