@@ -55,4 +55,9 @@ public abstract class TuningParametersStub implements TuningParameters {
   public String get(Object key) {
     return namedParameters.get(key);
   }
+
+  @Override
+  public String put(String key, String value) {
+    return namedParameters.put(key, value);
+  }
 }

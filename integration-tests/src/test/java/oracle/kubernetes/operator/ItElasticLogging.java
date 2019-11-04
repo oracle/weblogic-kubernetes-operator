@@ -44,7 +44,6 @@ public class ItElasticLogging extends BaseTest {
       "https://repo1.maven.org/maven2/org/yaml/snakeyaml/1.23";
   private static final String snakeyamlJar = "snakeyaml-1.23.jar";
   private static final String loggingYamlFile = "WebLogicLoggingExporter.yaml";
-  private static final String loggingYamlFileBck = "WebLogicLoggingExporter_bck.yaml";
   private static Operator operator;
   private static Domain domain;
   private static String domainNS;
@@ -52,6 +51,7 @@ public class ItElasticLogging extends BaseTest {
   private static String elasticSearchURL;
   private static Map<String, Object> testVarMap;
   private static String loggingExpArchiveLoc;
+  private static String loggingYamlFileLoc;
   private static String testClassName;
   private static StringBuffer namespaceList;
 
@@ -75,6 +75,10 @@ public class ItElasticLogging extends BaseTest {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
       testClassName = "itelastic";
+
+      //Adding filter to WebLogicLoggingExporter.yaml
+      loggingYamlFileLoc = getResultDir() + "/loggingYamlFilehDir";
+      Files.createDirectories(Paths.get(loggingYamlFileLoc));
 
       // Create operator-elk
       if (operator == null) {
@@ -175,10 +179,10 @@ public class ItElasticLogging extends BaseTest {
       TestUtils.exec(cmd.toString());
 
       // Restore the test env
-      deleteTestFile();
-
+      Files.delete(new File(loggingYamlFileLoc + "/" + loggingYamlFile).toPath());
       tearDown(new Object() {
       }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
@@ -201,9 +205,8 @@ public class ItElasticLogging extends BaseTest {
     String queryCriteria = "/_count?q=level:INFO";
 
     verifySearchResults(queryCriteria, regex, logstashIndexKey, true);
-
+    
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
-
   }
 
   /**
@@ -586,9 +589,6 @@ public class ItElasticLogging extends BaseTest {
 
   private void copyResourceFilesToOnePod(String podName, String domainNS)
       throws Exception {
-    final String resourceDir =
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
-    final String testResourceDir = resourceDir + "/loggingexporter";
     String domainUid = domain.getDomainUid();
 
     StringBuffer cmdLisDir = new StringBuffer("kubectl -n ");
@@ -640,7 +640,7 @@ public class ItElasticLogging extends BaseTest {
         domainNS);
 
     TestUtils.copyFileViaCat(
-        testResourceDir + "/" + loggingYamlFile,
+        loggingYamlFileLoc + "/" + loggingYamlFile,
         "/shared/domains/" + domainUid + "/config/" + loggingYamlFile,
         podName,
         domainNS);
@@ -652,26 +652,16 @@ public class ItElasticLogging extends BaseTest {
     final String resourceDir =
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
     final String testResourceDir = resourceDir + "/loggingexporter";
+
+    TestUtils.copyFile(testResourceDir + "/" + loggingYamlFile,
+        loggingYamlFileLoc + "/" + loggingYamlFile);
+
     String filterStr =
         System.lineSeparator() + "weblogicLoggingExporterFilters:"
             + System.lineSeparator() + "- FilterExpression: NOT(SERVER = '"
             + managedServerName + "')";
 
-    TestUtils.copyFile(testResourceDir + "/" + loggingYamlFile,
-        testResourceDir + "/" + loggingYamlFileBck);
-
-    Files.write(Paths.get(testResourceDir + "/" + loggingYamlFile),
+    Files.write(Paths.get(loggingYamlFileLoc + "/" + loggingYamlFile),
         filterStr.getBytes(), StandardOpenOption.APPEND);
-  }
-
-  private static void deleteTestFile() throws Exception {
-    final String resourceDir =
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
-    final String testResourceDir = resourceDir + "/loggingexporter";
-
-    TestUtils.copyFile(testResourceDir + "/" + loggingYamlFileBck,
-                       testResourceDir + "/" + loggingYamlFile);
-
-    Files.delete(new File(testResourceDir + "/" + loggingYamlFileBck).toPath());
   }
 }

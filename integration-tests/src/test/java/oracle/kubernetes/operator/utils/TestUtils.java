@@ -1039,6 +1039,7 @@ public class TestUtils {
       throws Exception {
 
     ExecCommand.exec("kubectl delete secret " + secretName + " -n " + namespace);
+    
     String command =
         "kubectl create secret docker-registry "
             + secretName
@@ -1048,11 +1049,16 @@ public class TestUtils {
             + dockerUser
             + " --docker-password=\""
             + dockerPassword
-            + "\" --docker-email="
-            + dockerEmail
-            + " -n "
-            + namespace;
-
+            + "\"";
+            
+    if (dockerEmail != null) {
+      command = command + " --docker-email=" + dockerEmail;
+    }
+   
+    command = command + " -n " 
+        + namespace 
+        + " --dry-run -o yaml | kubectl apply -f -";
+       
     String commandToLog =
         "kubectl create secret docker-registry "
             + secretName
@@ -1068,7 +1074,8 @@ public class TestUtils {
             + namespace;
 
     LoggerHelper.getLocal().log(Level.INFO, "Running command " + commandToLog);
-    ExecResult result = ExecCommand.exec(command);
+
+    ExecResult result = ExecCommand.exec(command, true);
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't create secret " + result.stderr());
     }

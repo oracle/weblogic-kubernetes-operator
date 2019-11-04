@@ -19,7 +19,7 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 
 The following prerequisites must be handled prior to running the create domain script:
 
-* Make sure the WebLogic operator is running.
+* Make sure the WebLogic Kubernetes Operator is running.
 * The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied. For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}).
 * Create a Kubernetes namespace for the domain unless you intend to use the default namespace.
 * In the same Kubernetes namespace, create the Kubernetes persistent volume (PV) where the domain
@@ -32,7 +32,7 @@ The following prerequisites must be handled prior to running the create domain s
   with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain.
-* Configure access to your database. For details, see [here]({{< relref "/userguide/managing-domains/fmw-infra/_index.md#configuring-access-to-your-database" >}}).  
+* Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#configuring-access-to-your-database" >}}).  
 * Create a Kubernetes secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-rcu-credentials/README.md).
 
 #### Use the script to create a domain
@@ -115,13 +115,12 @@ The following parameters can be provided in the inputs file.
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
-| `image` | WebLogic Docker image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied. Refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}) for details on how to obtain or create the image. | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` |
+| `image` | WebLogic Docker image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied. Refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}) for details on how to obtain or create the image. | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` |
 | `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never` | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified. |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server .out to the pod's stdout. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration Server and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
-| `dataHome` | An optional, in-pod location for data storage of default and custom file stores. If `dataHome` is not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage directories are determined from the WebLogic domain home configuration. | |
 | `logHome` | The in-pod location for the domain log, server logs, server out, and Node Manager log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
@@ -163,9 +162,9 @@ namespace, you need to replace `NAMESPACE` in the example `kubectl` commands wit
 The content of the generated `domain.yaml`:
 
 ```
-# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 
-# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
 #
@@ -199,10 +198,6 @@ spec:
   logHomeEnabled: true
   # The in-pod location for domain log, server logs, server out, and Node Manager log files
   logHome: /shared/logs/fmw-domain
-  # An (optional) in-pod location for data storage of default and custom file stores.
-  # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
-  # data storage directories are determined from the WebLogic domain home configuration.
-  # dataHome:  
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "NEVER" will not start any server in the domain

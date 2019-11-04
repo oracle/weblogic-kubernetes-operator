@@ -272,6 +272,10 @@ public abstract class BaseConfiguration {
     serverPod.addAdditionalVolume(name, path);
   }
 
+  void addAdditionalPVClaimVolume(String name, String claimName) {
+    serverPod.addAdditionalPVClaimVolume(name, claimName);
+  }
+
   public List<V1VolumeMount> getAdditionalVolumeMounts() {
     return serverPod.getAdditionalVolumeMounts();
   }

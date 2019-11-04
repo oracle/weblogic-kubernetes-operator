@@ -360,6 +360,10 @@ public class BaseTest {
     return resultDir;
   }
 
+  public static String getResultRootDir() {
+    return resultRootCommon;
+  }
+
   public static int getMaxIterationsPod() {
     return maxIterationsPod;
   }

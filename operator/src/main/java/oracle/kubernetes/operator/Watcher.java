@@ -19,6 +19,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.net.HttpURLConnection.HTTP_GONE;
 
 /**
@@ -50,7 +51,7 @@ abstract class Watcher<T> {
    */
   Watcher(String resourceVersion, WatchTuning tuning, AtomicBoolean stopping) {
     this.resourceVersion =
-        !isNullOrEmptyString(resourceVersion) ? Long.parseLong(resourceVersion) : 0;
+        !isNullOrEmpty(resourceVersion) ? Long.parseLong(resourceVersion) : 0;
     this.tuning = tuning;
     this.stopping = stopping;
   }
@@ -70,10 +71,6 @@ abstract class Watcher<T> {
       WatchListener<T> listener) {
     this(resourceVersion, tuning, stopping);
     this.listener = listener;
-  }
-
-  private static boolean isNullOrEmptyString(String s) {
-    return s == null || s.equals("");
   }
 
   /** Waits for this watcher's thread to exit. For unit testing only. */
@@ -218,7 +215,7 @@ abstract class Watcher<T> {
         int index2 = message.indexOf(')', index1 + 1);
         if (index2 > 0) {
           String val = message.substring(index1 + 1, index2);
-          if (!isNullOrEmptyString(val)) {
+          if (!isNullOrEmpty(val)) {
             return Long.parseLong(val);
           }
         }
@@ -253,7 +250,7 @@ abstract class Watcher<T> {
       Method getMetadata = object.getClass().getDeclaredMethod("getMetadata");
       V1ObjectMeta metadata = (V1ObjectMeta) getMetadata.invoke(object);
       String val = metadata.getResourceVersion();
-      return !isNullOrEmptyString(val) ? Long.parseLong(val) : 0;
+      return !isNullOrEmpty(val) ? Long.parseLong(val) : 0;
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       return IGNORED_RESOURCE_VERSION;

@@ -1303,8 +1303,8 @@ public class Domain {
         podNameSet.add(managedServerNameBase + i);
       }
 
-      // Loop until all the servers have recycled.
-      // Wait 5 minutes max for a managed server to be terminating.
+      /* Loop until all the servers have recycled.  Wait 5 minutes max for a managed server
+      to be terminating.*/
       final int maxTerminateLoop = 300;
       int terminateLoopCount = 0;
       while (podNameSet.size() > 0) {
@@ -1362,6 +1362,31 @@ public class Domain {
             "kubectl label secret %s weblogic.domainUID=%s -n %s",
             secret.getSecretName(), domainUid, domainNS);
     TestUtils.exec(labelCmd);
+  }
+  
+  /**
+   * Create Docker Registry Secret for the domain namespace.
+   *
+   * @throws Exception when the kubectl create secret command fails
+   */
+  protected void createDockerRegistrySecret() throws Exception {
+    String secret = System.getenv("IMAGE_PULL_SECRET_WEBLOGIC");
+    if (secret == null) {
+      secret = "docker-store";
+    }
+    
+    String ocrserver = System.getenv("OCR_SERVER");
+    if (ocrserver == null) {
+      ocrserver = "container-registry.oracle.com";
+    }
+    
+    TestUtils.createDockerRegistrySecret(
+        secret,
+        ocrserver,
+        System.getenv("OCR_USERNAME"),
+        System.getenv("OCR_PASSWORD"),
+        null,
+        domainNS);
   }
 
   /**
@@ -1423,15 +1448,15 @@ public class Domain {
     }
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
-
+  
     // for remote k8s cluster and domain in image case, push the domain image to OCIR
     if (domainMap.containsKey("domainHomeImageBase") && BaseTest.SHARED_CLUSTER) {
-      String image =
-          System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:" + imageTag;
+      String image = (String)domainMap.get("image");
       TestUtils.loginAndPushImageToOcir(image);
 
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
       // image
+      
       TestUtils.createDockerRegistrySecret(
           "ocir-domain",
           System.getenv("REPO_REGISTRY"),
@@ -1710,7 +1735,7 @@ public class Domain {
       if (BaseTest.SHARED_CLUSTER) {
         domainMap.put(
             "image",
-            System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:" + imageTag);
+            System.getenv("REPO_REGISTRY") + "/weblogick8s/" + (String)domainMap.get("image"));
         domainMap.put("imagePullSecretName", "ocir-domain");
         domainMap.put("imagePullPolicy", "Always");
       }
@@ -1735,6 +1760,10 @@ public class Domain {
 
     // create config map and secret for custom sit config
     createConfigMapAndSecretForSitConfig();
+    
+    if (BaseTest.SHARED_CLUSTER && !domainMap.containsKey("domainHomeImageBase")) {
+      createDockerRegistrySecret();
+    }
   }
 
   private void copyDomainTemplate(Map<String, Object> inputDomainMap) throws IOException {

@@ -19,9 +19,10 @@ import oracle.kubernetes.operator.BaseTest;
 
 public class LoadBalancer {
 
-
   private Map<String, Object> lbMap;
   private String userProjectsDir;
+  private static int maxIterationsPod = 60;
+  private static int waitTimePod = 5;
 
   public LoadBalancer(Map lbMap) throws Exception {
     this.lbMap = lbMap;
@@ -215,7 +216,7 @@ public class LoadBalancer {
     executeHelmCommand(cmd2);
 
     String cmd3 =
-        "helm install appscode/voyager --name voyager-operator --version 7.4.0 --namespace voyage "
+        "helm install appscode/voyager --name voyager-operator --version 7.4.0 --namespace voyager "
             + "--set cloudProvider=baremetal --set apiserver.enableValidatingWebhook=false";
     LoggerHelper.getLocal().log(Level.INFO, "Executing Install voyager operator cmd " + cmd3);
 
@@ -232,7 +233,6 @@ public class LoadBalancer {
   }
 
   private void upgradeVoyagerNamespace() throws Exception {
-
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append("--reuse-values ")
         .append("--set ")
@@ -246,13 +246,36 @@ public class LoadBalancer {
         .append(" --set apiserver.enableValidatingWebhook=false")
         .append(" voyager-operator")
         .append(" appscode/voyager");
-
     LoggerHelper.getLocal().log(Level.INFO, " upgradeVoyagerNamespace() Running " + cmd.toString());
-    executeHelmCommand(cmd.toString());
+    
+    String returnStr = null;
+    int i = 0;
+    // Wait max 300 seconds
+    while (i < maxIterationsPod) {
+      returnStr = executeHelmCommand(cmd.toString());
+      if (null != returnStr && returnStr.contains("upgraded")) {
+        LoggerHelper.getLocal().log(Level.INFO, "upgradeVoyagerNamespace() Result: " + returnStr);
+        break;
+      }
+
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Voyager pod is not ready to use yet ["
+              + i
+              + "/"
+              + maxIterationsPod
+              + "], sleeping "
+              + waitTimePod
+              + " seconds more");
+      Thread.sleep(waitTimePod * 1000);
+      i++;
+    }
+    
+    if (null == returnStr) {
+      executeHelmCommand(cmd.toString());
+    }
   }
 
   private void createVoyagerIngress() throws Exception {
-
     String chartDir = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/charts";
 
     StringBuffer cmd = new StringBuffer("cd ");
@@ -271,12 +294,41 @@ public class LoadBalancer {
         .append(" --set ")
         .append("voyager.webPort=")
         .append(lbMap.get("loadBalancerWebPort"));
-
     LoggerHelper.getLocal().log(Level.INFO, "createVoyagerIngress() Running " + cmd.toString());
-    executeHelmCommand(cmd.toString());
+    
+    String returnStr = null;
+    int i = 0;
+    // Wait max 300 seconds
+    while (i < maxIterationsPod) {
+      try {
+        returnStr = executeHelmCommand(cmd.toString());
+      } catch (RuntimeException rtex) { 
+        LoggerHelper.getLocal().log(Level.INFO, "createVoyagerIngress() caight Exception. Retry");
+      }
+      
+      if (null != returnStr && !returnStr.contains("failed")) {
+        LoggerHelper.getLocal().log(Level.INFO, "createVoyagerIngress() Result: " + returnStr);
+        break;
+      }
+
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Voyager ingress is not created yet ["
+              + i
+              + "/"
+              + maxIterationsPod
+              + "], sleeping "
+              + waitTimePod
+              + " seconds more");
+      Thread.sleep(waitTimePod * 1000);
+      i++;
+    }
+    
+    if (null == returnStr) {
+      executeHelmCommand(cmd.toString());
+    }
   }
 
-  private void executeHelmCommand(String cmd) throws Exception {
+  private String executeHelmCommand(String cmd) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       LoggerHelper.getLocal().log(Level.INFO, "executeHelmCommand failed with " + cmd);
@@ -284,6 +336,7 @@ public class LoadBalancer {
     }
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
+    return outputStr;
   }
 
   private void reportHelmInstallFailure(String cmd, ExecResult result) throws Exception {
