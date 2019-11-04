@@ -255,6 +255,9 @@
                             ${includes-failsafe}
                         </include>
                     </includes>
+                    <excludes>
+                        <exclude>ItElasticLogging.java</exclude>
+                    </excludes>
                     <parallel>${PARALLEL_FAILSAFE}</parallel>
           			<useUnlimitedThreads>true</useUnlimitedThreads>
             		
