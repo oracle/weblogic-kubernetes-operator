@@ -505,13 +505,13 @@ Here is an example of the output of this command:
 $ kubectl get services -n soans
 NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)              AGE
 soainfra-adminserver            ClusterIP   None             <none>        30012/TCP,7001/TCP   1h
-soainfra-adminserver-external   NodePort    x.x.x.x          <none>        30012:30012/TCP      1h
-soainfra-cluster-soa-cluster    ClusterIP   x.x.x.x          <none>        8001/TCP             1h
+soainfra-adminserver-external   NodePort    10.99.147.149    <none>        30012:30012/TCP      1h
+soainfra-cluster-soa-cluster    ClusterIP   10.103.205.66    <none>        8001/TCP             1h
 soainfra-soa-server1            ClusterIP   None             <none>        8001/TCP             1h
 soainfra-soa-server2            ClusterIP   None             <none>        8001/TCP             1h
-soainfra-soa-server3            ClusterIP   x.x.x.x          <none>        8001/TCP             1h
-soainfra-soa-server4            ClusterIP   x.x.x.x          <none>        8001/TCP             1h
-soainfra-soa-server5            ClusterIP   x.x.x.x          <none>        8001/TCP             1h
+soainfra-soa-server3            ClusterIP   10.109.227.78    <none>        8001/TCP             1h
+soainfra-soa-server4            ClusterIP   10.101.147.207   <none>        8001/TCP             1h
+soainfra-soa-server5            ClusterIP   10.105.14.5      <none>        8001/TCP             1h
 ```
 
 #### Delete the generated domain home
