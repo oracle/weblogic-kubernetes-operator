@@ -249,11 +249,6 @@ public class BaseTest {
     resultDir = resultRoot + "/acceptance_test_tmp";
     userProjectsDir = resultDir + "/user-projects";
 
-    // create resultRoot, PVRoot, etc
-    Files.createDirectories(Paths.get(resultRoot));
-    Files.createDirectories(Paths.get(resultDir));
-    Files.createDirectories(Paths.get(userProjectsDir));
-
     // for manual/local run, create file handler, create PVROOT
     if (!SHARED_CLUSTER) {
       LoggerHelper.getLocal().log(Level.INFO, "Creating PVROOT " + pvRoot);
@@ -261,6 +256,11 @@ public class BaseTest {
       TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"mkdir -m777 -p "
           + pvRoot + "\"", true);
     }
+
+    // create resultRoot, PVRoot, etc
+    Files.createDirectories(Paths.get(resultRoot));
+    Files.createDirectories(Paths.get(resultDir));
+    Files.createDirectories(Paths.get(userProjectsDir));
 
     // create file handler
     String testLogFile = getResultDir() + "/" + testClassName + ".out";
