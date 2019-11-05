@@ -256,9 +256,9 @@
                         </include>
                     </includes>
                     <excludes>
-                        <exclude>
+                        <!-- exclude>
                             ItElasticLogging.java
-                        </exclude>
+                        </exclude -->
                         <exclude>
                             ${excludes-failsafe}
                         </exclude>
