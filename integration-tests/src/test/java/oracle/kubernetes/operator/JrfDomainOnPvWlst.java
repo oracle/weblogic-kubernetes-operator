@@ -12,7 +12,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
+import oracle.kubernetes.operator.utils.DbUtils;
+import oracle.kubernetes.operator.utils.JrfDomain;
 import oracle.kubernetes.operator.utils.LoggerHelper;
+import oracle.kubernetes.operator.utils.Operator;
+import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Before;
