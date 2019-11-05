@@ -49,9 +49,11 @@ public class ItCoherenceTests extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    testClassName = new Object() {
-    }.getClass().getEnclosingClass().getSimpleName();
-    initialize(APP_PROPS_FILE, testClassName);
+    if (FULLTEST) {
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
+      initialize(APP_PROPS_FILE, testClassName);
+    }
 
   }
 

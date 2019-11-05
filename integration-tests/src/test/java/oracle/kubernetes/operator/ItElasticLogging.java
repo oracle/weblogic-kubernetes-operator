@@ -65,9 +65,11 @@ public class ItElasticLogging extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    testClassName = new Object() {
-    }.getClass().getEnclosingClass().getSimpleName();
-    initialize(APP_PROPS_FILE, testClassName);
+    if (FULLTEST) {
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
+      initialize(APP_PROPS_FILE, testClassName);
+    }
   }
 
   @Before
@@ -172,8 +174,7 @@ public class ItElasticLogging extends BaseTest {
               .append("/")
               .append(elasticStackYamlLoc);
       LoggerHelper.getLocal().log(Level.INFO, "Command to uninstall Elastic Stack: " + cmd.toString());
-      //sometimes this is hanging on jenkins
-      //TestUtils.exec(cmd.toString());
+      TestUtils.exec(cmd.toString());
 
       // Restore the test env
       Files.delete(new File(loggingYamlFileLoc + "/" + loggingYamlFile).toPath());

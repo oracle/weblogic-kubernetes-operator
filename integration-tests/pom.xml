@@ -189,7 +189,7 @@
                         </configuration>
                     </execution>
                      <!-- execution>
-                        <id>archive_cleanup</id>
+                        <id>cleanup</id>
                         <phase>post-integration-test</phase>
                         <goals>
                             <goal>exec</goal>
@@ -198,7 +198,7 @@
                             <environmentVariables>
                                 <JENKINS_RESULTS_DIR>${JENKINS_RESULTS_DIR}</JENKINS_RESULTS_DIR>
                             </environmentVariables>
-                            <executable>${resource-integration-test}/statedump.sh</executable>
+                            <executable>${project.basedir}/../src/integration-tests/bash/cleanup.sh</executable>
                         </configuration>
                     </execution -->
                     

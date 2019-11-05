@@ -96,9 +96,11 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    testClassName = new Object() {
-    }.getClass().getEnclosingClass().getSimpleName();
-    initialize(APP_PROPS_FILE, testClassName);
+    if (FULLTEST) {
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
+      initialize(APP_PROPS_FILE, testClassName);
+    }
   }
 
   @Before
@@ -1168,7 +1170,7 @@ public class ItMonitoringExporter extends BaseTest {
         if (new File(pvDir).exists()) {
 
           LoggerHelper.getLocal().log(Level.INFO, "Deleting pv created dir " + pvDir);
-          TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"rm -rf " + pvDir);
+          TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"rm -rf " + pvDir + "\"");
         }
       }
     }
