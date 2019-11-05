@@ -48,15 +48,15 @@ public class ItInitContainers extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
   }
 
   @Before
   public void prepare() throws Exception {
     if (FULLTEST) {
-      testClassName = new Object() {
-      }.getClass().getEnclosingClass().getSimpleName();
-      // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE, testClassName);
+      createResultAndPvDirs(testClassName);
       LoggerHelper.getLocal().log(Level.INFO, "staticPrepare------Begin");
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");

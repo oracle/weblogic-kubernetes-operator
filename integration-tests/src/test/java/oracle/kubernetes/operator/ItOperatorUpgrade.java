@@ -49,14 +49,14 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
   }
 
   @Before
   public void prepare() throws Exception {
-    testClassName = new Object() {
-    }.getClass().getEnclosingClass().getSimpleName();
-    // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE, testClassName);
+    createResultAndPvDirs(testClassName);
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       OP_TARGET_RELEASE = System.getenv("IMAGE_NAME_OPERATOR") + ":"

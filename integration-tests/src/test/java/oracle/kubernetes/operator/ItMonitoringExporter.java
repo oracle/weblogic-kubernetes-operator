@@ -96,14 +96,15 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
   }
 
   @Before
   public void prepare() throws Exception {
     if (FULLTEST) {
-      testClassName = new Object() {
-      }.getClass().getEnclosingClass().getSimpleName();
-      initialize(APP_PROPS_FILE, testClassName);
+      createResultAndPvDirs(testClassName);
       wlsUser = BaseTest.getUsername();
       wlsPassword = BaseTest.getPassword();
 
@@ -172,11 +173,15 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      uninstallWebHookPrometheusGrafanaMySql();
+      try {
+        uninstallWebHookPrometheusGrafanaMySql();
+      } catch (Exception ex) {
+        LoggerHelper.getLocal().log(Level.INFO,
+            "Exception caught while uninstalling webhook/prometheus/Grafana/Mysql " + ex.getMessage());
+      }
 
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
       LoggerHelper.getLocal().log(Level.INFO,"SUCCESS");
-      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
 

@@ -47,17 +47,16 @@ public class ItPodTemplates extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
   }
 
   @Before
   public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (QUICKTEST) {
-      testClassName = new Object() {
-      }.getClass().getEnclosingClass().getSimpleName();
-
-      // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE, testClassName);
+      createResultAndPvDirs(testClassName);
       // create operator1
       if (operator1 == null) {
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);

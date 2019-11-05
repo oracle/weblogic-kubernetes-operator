@@ -45,16 +45,15 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     namespaceList = new StringBuffer("");
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
   }
 
   @Before
   public void prepare() throws Exception {
     if (QUICKTEST) {
-      testClassName = new Object() {
-      }.getClass().getEnclosingClass().getSimpleName();
-
-      // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE, testClassName);
+      createResultAndPvDirs(testClassName);
     }
   }
 

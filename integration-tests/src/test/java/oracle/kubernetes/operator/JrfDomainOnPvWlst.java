@@ -46,14 +46,14 @@ public class JrfDomainOnPvWlst extends BaseTest {
   */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
   }
 
   @Before
   public void prepare() throws Exception {
-    // initialize test properties and create the directories
-    testClassName = new Object() {
-    }.getClass().getEnclosingClass().getSimpleName();
-    initialize(APP_PROPS_FILE, testClassName);
+    createResultAndPvDirs(testClassName);
     setMaxIterationsPod(35);
     TestUtils.exec(
         "cp -rf " 

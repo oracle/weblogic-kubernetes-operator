@@ -127,9 +127,9 @@ public class BaseTest {
    * @param testClassName
    * @throws Exception
    */
-  public void initialize(String appPropsFile, String testClassName)
+  public static void initialize(String appPropsFile, String testClassName)
       throws Exception {
-    this.testClassName = testClassName;
+    testClassName = testClassName;
     LoggerHelper.initLocal(Logger.getLogger(testClassName));
     LoggerHelper.getGlobal().log(Level.INFO, "Starting testClass " + testClassName);
     LoggerHelper.getLocal().log(Level.INFO, "Starting testClass " + testClassName);
@@ -190,18 +190,17 @@ public class BaseTest {
       resultRootCommon = baseDir + "/" + System.getProperty("user.name")
             + "/wl_k8s_test_results";
     }
-    resultRoot = resultRootCommon + "/" + testClassName;
+
     if (System.getenv("PV_ROOT") != null) {
       pvRootCommon = System.getenv("PV_ROOT");
     } else {
       pvRootCommon = resultRootCommon;
     }
-    pvRoot = pvRootCommon + "/" + testClassName;
+
     if (System.getenv("LEASE_ID") != null) {
       leaseId = System.getenv("LEASE_ID");
     }
-    resultDir = resultRoot + "/acceptance_test_tmp";
-    userProjectsDir = resultDir + "/user-projects";
+
     projectRoot = System.getProperty("user.dir") + "/..";
 
     // BRANCH_NAME var is used in Jenkins job
@@ -210,26 +209,58 @@ public class BaseTest {
     } else {
       branchName = TestUtils.getGitBranchName();
     }
+    appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
 
+    /* LoggerHelper.getLocal().log(Level.INFO, "appProps = " + appProps);
+    LoggerHelper.getLocal().log(Level.INFO, "maxIterationPod = "
+        + appProps.getProperty("maxIterationsPod"));
+    LoggerHelper.getLocal().log(Level.INFO,
+        "maxIterationPod with default= "
+            + appProps.getProperty("maxIterationsPod", "" + maxIterationsPod));
+    LoggerHelper.getLocal().log(Level.INFO, "projectRoot =" + projectRoot);
+    LoggerHelper.getLocal().log(Level.INFO, "branchName =" + branchName);
+
+    LoggerHelper.getLocal().log(Level.INFO, "Env var RESULT_ROOT " + System.getenv("RESULT_ROOT"));
+    LoggerHelper.getLocal().log(Level.INFO, "Env var PV_ROOT " + System.getenv("PV_ROOT"));
+    LoggerHelper.getLocal().log(Level.INFO, "Env var K8S_NODEPORT_HOST "
+        + System.getenv("K8S_NODEPORT_HOST"));
+    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_NAME_OPERATOR= "
+        + System.getenv("IMAGE_NAME_OPERATOR"));
+    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_TAG_OPERATOR "
+        + System.getenv("IMAGE_TAG_OPERATOR"));
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Env var IMAGE_PULL_POLICY_OPERATOR " + System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Env var IMAGE_PULL_SECRET_OPERATOR " + System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Env var IMAGE_PULL_SECRET_WEBLOGIC " + System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
+    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_NAME_WEBLOGIC "
+        + System.getenv("IMAGE_NAME_WEBLOGIC"));
+    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_TAG_WEBLOGIC "
+        + System.getenv("IMAGE_TAG_WEBLOGIC"));
+
+    LoggerHelper.getLocal().log(Level.INFO, "Env var BRANCH_NAME " + System.getenv("BRANCH_NAME")); */
+  }
+
+  public void createResultAndPvDirs(String testClassName) throws Exception {
+
+    resultRoot = resultRootCommon + "/" + testClassName;
+    pvRoot = pvRootCommon + "/" + testClassName;
+    resultDir = resultRoot + "/acceptance_test_tmp";
+    userProjectsDir = resultDir + "/user-projects";
+
+    // create resultRoot, PVRoot, etc
+    Files.createDirectories(Paths.get(resultRoot));
+    Files.createDirectories(Paths.get(resultDir));
+    Files.createDirectories(Paths.get(userProjectsDir));
 
     // for manual/local run, create file handler, create PVROOT
     if (!SHARED_CLUSTER) {
       LoggerHelper.getLocal().log(Level.INFO, "Creating PVROOT " + pvRoot);
       // Files.createDirectories(Paths.get(pvRoot));
       TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"mkdir -m777 -p "
-                    + pvRoot + "\"", true);
-      /* ExecResult result = ExecCommand.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 " + pvRoot + "\"");
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
-      } */
+          + pvRoot + "\"", true);
     }
-
-    // create resultRoot, PVRoot, etc
-    Files.createDirectories(Paths.get(resultRoot));
-    Files.createDirectories(Paths.get(resultDir));
-    Files.createDirectories(Paths.get(userProjectsDir));
 
     // create file handler
     String testLogFile = getResultDir() + "/" + testClassName + ".out";
@@ -242,18 +273,15 @@ public class BaseTest {
     LoggerHelper.getGlobal().log(Level.INFO, "Adding file handler, logging to file at "
         + testLogFile);
 
-
-    appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
-
+    LoggerHelper.getLocal().log(Level.INFO, "RESULT_ROOT =" + resultRoot);
+    LoggerHelper.getLocal().log(Level.INFO, "PV_ROOT =" + pvRoot);
+    LoggerHelper.getLocal().log(Level.INFO, "userProjectsDir =" + userProjectsDir);
     LoggerHelper.getLocal().log(Level.INFO, "appProps = " + appProps);
     LoggerHelper.getLocal().log(Level.INFO, "maxIterationPod = "
         + appProps.getProperty("maxIterationsPod"));
     LoggerHelper.getLocal().log(Level.INFO,
         "maxIterationPod with default= "
             + appProps.getProperty("maxIterationsPod", "" + maxIterationsPod));
-    LoggerHelper.getLocal().log(Level.INFO, "RESULT_ROOT =" + resultRoot);
-    LoggerHelper.getLocal().log(Level.INFO, "PV_ROOT =" + pvRoot);
-    LoggerHelper.getLocal().log(Level.INFO, "userProjectsDir =" + userProjectsDir);
     LoggerHelper.getLocal().log(Level.INFO, "projectRoot =" + projectRoot);
     LoggerHelper.getLocal().log(Level.INFO, "branchName =" + branchName);
 
