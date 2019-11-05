@@ -255,9 +255,13 @@
                             ${includes-failsafe}
                         </include>
                     </includes>
+                    <excludes>
+                        <exclude>
+                            ${excludes-failsafe}
+                        </exclude>
+                    </excludes>
                     <parallel>${PARALLEL_FAILSAFE}</parallel>
           			<useUnlimitedThreads>true</useUnlimitedThreads>
-            		
                 </configuration>
 
                 <executions>
@@ -296,7 +300,7 @@
             <id>wls-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/It*</includes-failsafe>
+                <excludes-failsafe>**/*Jrf*</excludes-failsafe>
                 <jrf_enabled>false</jrf_enabled>
             </properties>
         </profile>
@@ -304,7 +308,7 @@
             <id>jrf-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/JrfDomain*</includes-failsafe>
+                <includes-failsafe>**/ItJrfDomain*</includes-failsafe>
                 <jrf_enabled>true</jrf_enabled>
             </properties>
         </profile>
@@ -324,7 +328,7 @@
             <id>wls-jrf-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/It*,**/JrfDomain*</includes-failsafe>
+                <includes-failsafe>**/It*</includes-failsafe>
                 <jrf_enabled>true</jrf_enabled>
             </properties>
         </profile>
