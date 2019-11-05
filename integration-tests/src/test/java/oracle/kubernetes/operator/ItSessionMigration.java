@@ -15,13 +15,13 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Simple JUnit test file used for testing Operator.
@@ -29,7 +29,7 @@ import org.junit.runners.MethodSorters;
  * <p>This test is used for creating Operator(s) and domain(s) which are managed by the Operator(s).
  * And to test WLS Session Migration feature
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItSessionMigration extends BaseTest {
   private static final String testAppName = "httpsessionreptestapp";
   private static final String scriptName = "buildDeployAppInPod.sh";
@@ -50,7 +50,7 @@ public class ItSessionMigration extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       testClassName = new Object() {
@@ -63,7 +63,7 @@ public class ItSessionMigration extends BaseTest {
         Map<String, Object> operatorMap =
             TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator);
+        Assertions.assertNotNull(operator);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
 
@@ -102,7 +102,7 @@ public class ItSessionMigration extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       LoggerHelper.getLocal().log(Level.INFO, "++++++++++++++++++++++++++++++++++");
@@ -124,7 +124,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @Test
   public void testRepickPrimary() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -155,12 +155,12 @@ public class ItSessionMigration extends BaseTest {
     String sessCreateTime2 = getHttpResponseAttribute(result.stdout(), sessCreateTime);
 
     // Verify that the same session info is used
-    Assume.assumeTrue("HTTP Session should NOT change!", sessCreateTime1.equals(sessCreateTime2));
+    Assumptions.assumeTrue(sessCreateTime1.equals(sessCreateTime2), "HTTP Session should NOT change!");
 
     // Verify that a new primary server is picked
-    Assume.assumeFalse(
-        "A new primary server should be picked!",
-        primaryServName1.trim().equals(primaryServName2.trim()));
+    Assumptions.assumeFalse(
+        primaryServName1.trim().equals(primaryServName2.trim()),
+        "A new primary server should be picked!");
 
     // Restore test env
     domain.restartManagedServerUsingServerStartPolicy(primaryServName1);
@@ -178,7 +178,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @Test
   public void testHttpSessionMigr() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -213,14 +213,14 @@ public class ItSessionMigration extends BaseTest {
     String countattribute2 = getHttpResponseAttribute(result.stdout(), count);
 
     // Verify that the count number is from a new primary server
-    Assume.assumeFalse(
-        "A new primary server should be picked!",
-        primaryServName1.trim().equals(primaryServName2.trim()));
+    Assumptions.assumeFalse(
+        primaryServName1.trim().equals(primaryServName2.trim()),
+        "A new primary server should be picked!");
 
     // Verify that HTTP session state is migrated by checking the count number same
     // bf and af primaryServName1 stopped
-    Assume.assumeTrue(
-        "HTTP session state is NOT migrated!", countattribute1.equals(countattribute2));
+    Assumptions.assumeTrue(
+        countattribute1.equals(countattribute2), "HTTP session state is NOT migrated!");
 
     // Restore test env
     domain.restartManagedServerUsingServerStartPolicy(primaryServName1);
@@ -257,7 +257,7 @@ public class ItSessionMigration extends BaseTest {
   private String getHttpResponseAttribute(String httpResponseString, String attribute)
       throws Exception {
     String attrPatn = httpAttrMap.get(attribute);
-    Assume.assumeNotNull(attrPatn);
+    Assertions.assertNotNull(attrPatn);
     String httpAttribute = null;
 
     Pattern pattern = Pattern.compile(attrPatn);

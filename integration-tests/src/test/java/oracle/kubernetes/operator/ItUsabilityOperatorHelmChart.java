@@ -14,20 +14,20 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Simple JUnit test file used for testing Operator.
  *
  * <p>This test is used for testing Helm install for Operator(s)
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItUsabilityOperatorHelmChart extends BaseTest {
 
   private int waitTime = 5;
@@ -41,7 +41,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (QUICKTEST) {
       testClassName = new Object() {
@@ -57,7 +57,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     tearDown(new Object() {
     }.getClass().getEnclosingClass().getSimpleName());
@@ -70,7 +70,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testOperatorCreateDeleteCreate() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -123,7 +123,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateSecondOperatorUsingSameOperatorNsNegativeInstall() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -178,7 +178,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testNotPreCreatedOpNsCreateOperatorNegativeInstall() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -211,7 +211,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testNotPreexistedOpServiceAccountCreateOperatorNegativeInstall() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -272,7 +272,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testSecondOpSharingSameTargetDomainsNsNegativeInstall() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -332,7 +332,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testTargetNsIsNotPreexistedNegativeInstall() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -385,7 +385,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testSecondOpSharingSameExternalRestPortNegativeInstall() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -443,7 +443,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateWithUpperCaseTargetDomainNegativeInstall() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -491,7 +491,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateChartWithInvalidAttributesNegativeInstall() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -549,7 +549,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateWithMissingTargetDomainInstall() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -578,7 +578,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateWithEmptyTargetDomainInstall() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -608,7 +608,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   //@Test -commenting out, it fails for runs in parallel due sharing same targetDomainNS.
   // uncomment if want to run in single run
   public void testCreateWithDefaultTargetDomainInstall() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -640,7 +640,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testAddRemoveDomainUpdateOperatorHC() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -700,7 +700,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testDeleteOperatorButNotDomain() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);

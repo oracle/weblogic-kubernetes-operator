@@ -21,7 +21,7 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * JUnit test class used for testing configuration override use cases.
@@ -70,7 +70,7 @@ public class SitConfig extends BaseTest {
       if (operator1 == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator1);
+        Assertions.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
       TEST_RES_DIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
@@ -84,7 +84,7 @@ public class SitConfig extends BaseTest {
       // Create the MySql db container
       copyMySqlFile();
       ExecResult result = TestUtils.exec("kubectl create -f " + mysqlYamlFile);
-      Assert.assertEquals(0, result.exitValue());
+      Assertions.assertEquals(0, result.exitValue());
 
       if (!OPENSHIFT) {
         fqdn = TestUtils.getHostName();
@@ -104,7 +104,7 @@ public class SitConfig extends BaseTest {
       copySitConfigFiles(files, oldSecret);
       // create weblogic domain with configOverrides
       domain = createSitConfigDomain(domainInImage, domainScript);
-      Assert.assertNotNull(domain);
+      Assertions.assertNotNull(domain);
       domainYaml =
           BaseTest.getUserProjectsDir()
               + "/weblogic-domains/"
@@ -586,8 +586,8 @@ public class SitConfig extends BaseTest {
    */
   private void assertResult(ExecResult result) {
     LoggerHelper.getLocal().log(Level.INFO, result.stdout().trim());
-    Assert.assertFalse(result.stdout().toLowerCase().contains("error"));
-    Assert.assertFalse(result.stderr().toLowerCase().contains("error"));
-    Assert.assertEquals(0, result.exitValue());
+    Assertions.assertFalse(result.stdout().toLowerCase().contains("error"));
+    Assertions.assertFalse(result.stderr().toLowerCase().contains("error"));
+    Assertions.assertEquals(0, result.exitValue());
   }
 }

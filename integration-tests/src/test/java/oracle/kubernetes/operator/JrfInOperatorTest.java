@@ -10,12 +10,13 @@ import oracle.kubernetes.operator.utils.JrfDomain;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Simple JUnit test file used for testing Operator for JRF domains.
@@ -23,7 +24,7 @@ import org.junit.runners.MethodSorters;
  * <p>This test is used for creating Operator(s) and multiple JRF domains which are managed by the
  * Operator(s).
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class JrfInOperatorTest extends BaseTest {
 
   // property file used to customize operator properties for operator inputs yaml
@@ -48,7 +49,7 @@ public class JrfInOperatorTest extends BaseTest {
    *
    * @throws Exception - if an error occurs when load property file or create DB pod
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       // initialize test properties and create the directories
@@ -75,7 +76,7 @@ public class JrfInOperatorTest extends BaseTest {
    *
    * @throws Exception - if any error occurs
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
@@ -98,7 +99,7 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @Test
   public void testJrfDomainOnPvUsingWlst() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -147,7 +148,7 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @Test
   public void testTwoJrfDomainsManagedByTwoOperators() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assumptions.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -245,7 +246,7 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @Test
   public void testTwoJrfDomainsManagedByOneOperatorInSameNS() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assumptions.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -338,7 +339,7 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @Test
   public void testTwoJrfDomainsManagedByOneOperatorInDifferentNS() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assumptions.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -432,7 +433,7 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @Test
   public void testCreateJrfDomainWithStartPolicyAdminOnly() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assumptions.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -469,7 +470,7 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @Test
   public void testCreateJrfDomainPvReclaimPolicyRecycle() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assumptions.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -506,7 +507,7 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @Test
   public void testCreateJrfDomainWithDefaultValuesInSampleInputs() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assumptions.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -548,7 +549,7 @@ public class JrfInOperatorTest extends BaseTest {
    */
   @Test
   public void testAutoAndCustomSitConfigOverrides() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assumptions.assumeFalse(QUICKTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);

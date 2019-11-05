@@ -6,10 +6,11 @@ package oracle.kubernetes.operator;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.LoggerHelper;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * JUnit test class used for testing configuration override use cases for domain in pv WLS.
@@ -25,7 +26,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    * @throws Exception when the initialization, creating directories , copying files and domain
    *                   creation fails.
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       testClassName = new Object() {
@@ -42,7 +43,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    *
    * @throws Exception when domain destruction or MySQL container destruction fails
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       staticUnprepare();
@@ -62,7 +63,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -81,7 +82,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainMsInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -105,7 +106,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJdbcInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -125,7 +126,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJmsInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -147,7 +148,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForWldfInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -164,7 +165,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testConfigOverrideAfterDomainStartupInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -181,7 +182,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testOverrideJdbcResourceAfterDomainStartInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -197,7 +198,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testOverrideJdbcResourceWithNewSecretInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);

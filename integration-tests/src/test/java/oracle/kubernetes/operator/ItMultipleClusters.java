@@ -16,13 +16,13 @@ import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.junit.Assert.assertTrue;
 
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
  *
  * <p>More than 1 cluster is created in a domain , like configured and dynamic
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItMultipleClusters extends BaseTest {
 
   private static final String TWO_CONFIGURED_CLUSTER_SCRIPT =
@@ -50,7 +50,7 @@ public class ItMultipleClusters extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       testClassName = new Object() {
@@ -75,7 +75,7 @@ public class ItMultipleClusters extends BaseTest {
         Map<String, Object> operatorMap =
             TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator1);
+        Assertions.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
 
@@ -87,7 +87,7 @@ public class ItMultipleClusters extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
   }
 
@@ -99,7 +99,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoConfiguredCluster() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
 
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -147,7 +147,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoMixedCluster() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String domainuid = "twomixedclusterdomain";
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -193,7 +193,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoClusterWdtInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String domainuid = "twoclusterdomainwdt";
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();

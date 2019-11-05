@@ -18,14 +18,15 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.JrfDomain;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 
 public class JrfDomainOnPvWlst extends BaseTest {
   //property file used to customize operator properties for operator inputs yaml
@@ -43,7 +44,7 @@ public class JrfDomainOnPvWlst extends BaseTest {
   *
   * @throws Exception - if an error occurs when load property file or create DB pod
   */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     initialize(APP_PROPS_FILE);
@@ -67,7 +68,7 @@ public class JrfDomainOnPvWlst extends BaseTest {
   *
   * @throws Exception - if any error occurs
   */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     /*logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
@@ -82,7 +83,7 @@ public class JrfDomainOnPvWlst extends BaseTest {
  
   @Test
   public void testJrfDomainOnPvUsingWlst() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");

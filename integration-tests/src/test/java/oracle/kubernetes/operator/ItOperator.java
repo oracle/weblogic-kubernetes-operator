@@ -13,12 +13,13 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Simple JUnit test file used for testing Operator.
@@ -26,7 +27,7 @@ import org.junit.runners.MethodSorters;
  * <p>This test is used for creating Operator(s) and multiple domains which are managed by the
  * Operator(s).
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItOperator extends BaseTest {
   private static Operator operator1;
   private static String domainNS1;
@@ -39,7 +40,7 @@ public class ItOperator extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
@@ -51,7 +52,7 @@ public class ItOperator extends BaseTest {
       Map<String, Object> operatorMap =
           TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
       operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-      Assert.assertNotNull(operator1);
+      Assertions.assertNotNull(operator1);
       domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
     }
   }
@@ -72,7 +73,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testDomainOnPvUsingWlst() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -113,7 +114,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testDomainOnPvUsingWdt() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -175,7 +176,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testTwoDomainsManagedByTwoOperators() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -266,7 +267,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testTwoDomainsManagedByOneOperatorSharingPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -352,7 +353,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainWithStartPolicyAdminOnly() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -390,7 +391,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainPvReclaimPolicyRecycle() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -429,7 +430,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainWithDefaultValuesInSampleInputs() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -466,7 +467,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testOperatorRestIdentityBackwardCompatibility() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -490,7 +491,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testOperatorRestUsingCertificateChain() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
 
     logTestBegin("testOperatorRestUsingCertificateChain");
     LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility");
@@ -513,7 +514,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWlst() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -548,7 +549,7 @@ public class ItOperator extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWdt() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(QUICKTEST);
 
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();

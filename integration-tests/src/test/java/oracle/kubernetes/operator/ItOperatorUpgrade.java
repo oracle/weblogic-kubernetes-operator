@@ -15,17 +15,19 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Operator upgrade JUnit test file testing the operator upgrade from older releases to develop.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItOperatorUpgrade extends BaseTest {
 
   private static final String OP_BASE_REL = "2.0";
@@ -46,7 +48,7 @@ public class ItOperatorUpgrade extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
@@ -64,7 +66,7 @@ public class ItOperatorUpgrade extends BaseTest {
    *
    * @throws Exception when domain and operator cleanup fails
    */
-  @After
+  @AfterEach
   public void cleanupOperatorAndDomain() throws Exception {
     if (testCompletedSuccessfully) {
       LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
@@ -89,7 +91,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_0() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     testCompletedSuccessfully = false;
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -112,7 +114,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_0_1() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     testCompletedSuccessfully = false;
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -135,7 +137,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_1() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     testCompletedSuccessfully = false;
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -158,7 +160,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_2_0() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     testCompletedSuccessfully = false;
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -181,7 +183,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_2_1() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     testCompletedSuccessfully = false;
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -204,7 +206,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_3_0() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(QUICKTEST);
     testCompletedSuccessfully = false;
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();

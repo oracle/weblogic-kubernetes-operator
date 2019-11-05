@@ -18,18 +18,18 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Integration tests for testing the init container for WebLogic server pods.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItInitContainers extends BaseTest {
 
   private static Domain domain = null;
@@ -47,7 +47,7 @@ public class ItInitContainers extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       testClassName = new Object() {
@@ -60,7 +60,7 @@ public class ItInitContainers extends BaseTest {
       if (operator == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator);
+        Assertions.assertNotNull(operator);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
       initContainerTmpDir = BaseTest.getResultDir() + "/initconttemp";
@@ -72,7 +72,7 @@ public class ItInitContainers extends BaseTest {
               + "/weblogic-domains/"
               + domain.getDomainUid()
               + "/domain.yaml";
-      Assert.assertNotNull(domain);
+      Assertions.assertNotNull(domain);
       LoggerHelper.getLocal().log(Level.INFO, "staticPrepare------End");
     }
 
@@ -83,7 +83,7 @@ public class ItInitContainers extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       LoggerHelper.getLocal().log(Level.INFO, "staticUnPrepare------Begin");
@@ -135,7 +135,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testDomainInitContainer() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -163,7 +163,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testAdminServerInitContainer() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -189,7 +189,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testClusterInitContainer() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -217,7 +217,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testMsInitContainer() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -245,7 +245,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testDomainInitContainerNegative() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -272,7 +272,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testInitContainerDiffLevelDiffName() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -305,7 +305,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testInitContainerDiffLevelSameName() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -334,7 +334,7 @@ public class ItInitContainers extends BaseTest {
    */
   @Test
   public void testInitContainerMultiple() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);

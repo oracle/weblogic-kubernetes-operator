@@ -19,19 +19,20 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Simple JUnit test file used for testing Operator.
  *
  * <p>This test is used for testing operator working with Elastic Stack
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItElasticLogging extends BaseTest {
   private static final String logstashIndexKey = "logstash";
   private static final String kibanaIndexKey = "kibana";
@@ -63,7 +64,7 @@ public class ItElasticLogging extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       testClassName = new Object() {
@@ -124,8 +125,8 @@ public class ItElasticLogging extends BaseTest {
               .append(":")
               .append(testVarMap.get("elasticSearchPort"));
       elasticSearchURL = elasticSearchUrlBuff.toString();
-      Assume.assumeFalse(
-          "Got null when building Elasticsearch URL", elasticSearchURL.contains("null"));
+      Assumptions.assumeFalse(
+          elasticSearchURL.contains("null"), "Got null when building Elasticsearch URL");
 
       // Create the prefix of k8s exec command
       StringBuffer k8sExecCmdPrefixBuff =
@@ -153,7 +154,7 @@ public class ItElasticLogging extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
@@ -185,7 +186,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @Test
   public void testLogLevelSearch() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -207,7 +208,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @Test
   public void testOperatorLogSearch() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -228,7 +229,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @Test
   public void testWebLogicLogSearch() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -261,7 +262,7 @@ public class ItElasticLogging extends BaseTest {
    */
   @Test
   public void testWlsLoggingExporter() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -309,9 +310,9 @@ public class ItElasticLogging extends BaseTest {
     String indexStatus = execLoggingExpStatusCheck("*" + index + "*", "$2");
     String indexName = execLoggingExpStatusCheck("*" + index + "*", "$3");
 
-    Assume.assumeNotNull(healthStatus);
-    Assume.assumeNotNull(indexStatus);
-    Assume.assumeNotNull(indexName);
+    Assertions.assertNotNull(healthStatus);
+    Assertions.assertNotNull(indexStatus);
+    Assertions.assertNotNull(indexName);
 
     if (!index.equalsIgnoreCase(kibanaIndexKey)) {
       // Add the logstash and wls index name to a Map
@@ -330,13 +331,12 @@ public class ItElasticLogging extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "Health status of " + indexNameArr[i] + " is: " + healthStatusArr[i]);
       LoggerHelper.getLocal().log(Level.INFO, "Index status of " + indexNameArr[i] + " is: " + indexStatusArr[i]);
       // Verify that the health status of index
-      Assume.assumeTrue(
-          index + " is not ready!",
+      Assumptions.assumeTrue(
           healthStatusArr[i].trim().equalsIgnoreCase("yellow")
-              || healthStatusArr[i].trim().equalsIgnoreCase("green"));
+              || healthStatusArr[i].trim().equalsIgnoreCase("green"), index + " is not ready!");
       // Verify that the index is open for use
-      Assume.assumeTrue(index + " index is not open!",
-          indexStatusArr[i].trim().equalsIgnoreCase("open"));
+      Assumptions.assumeTrue(
+          indexStatusArr[i].trim().equalsIgnoreCase("open"), index + " index is not open!");
     }
 
     LoggerHelper.getLocal().log(Level.INFO, "ELK Stack is up and running and ready to use!");
@@ -418,15 +418,15 @@ public class ItElasticLogging extends BaseTest {
 
     LoggerHelper.getLocal().log(Level.INFO, "Total count of logs: " + count);
     if (!checkExist.equalsIgnoreCase("notExist")) {
-      Assume.assumeTrue("Total count of logs should be more than 0!", count > 0);
+      Assumptions.assumeTrue(count > 0, "Total count of logs should be more than 0!");
       if (checkCount) {
-        Assume.assumeTrue("Total failed count should be 0!", failedCount == 0);
+        Assumptions.assumeTrue(failedCount == 0, "Total failed count should be 0!");
         LoggerHelper.getLocal().log(Level.INFO, "Total failed count: " + failedCount);
       } else {
-        Assume.assumeFalse("Total hits of search is empty!", hits.isEmpty());
+        Assumptions.assumeFalse(hits.isEmpty(), "Total hits of search is empty!");
       }
     } else {
-      Assume.assumeTrue("Total count of logs should be zero!", count == 0);
+      Assumptions.assumeTrue(count == 0, "Total count of logs should be zero!");
     }
   }
 
@@ -534,10 +534,10 @@ public class ItElasticLogging extends BaseTest {
       }
     }
 
-    Assume.assumeTrue("Failed to download <" + wlsLoggingExpFile + ">",
-                      wlsLoggingExpFile.exists());
-    Assume.assumeTrue("Failed to download <" + snakeyamlFile + ">",
-                      snakeyamlFile.exists());
+    Assumptions.assumeTrue(wlsLoggingExpFile.exists(), 
+                      "Failed to download <" + wlsLoggingExpFile + ">");
+    Assumptions.assumeTrue(snakeyamlFile.exists(), 
+                      "Failed to download <" + snakeyamlFile + ">");
     File[] jarFiles = loggingJatReposDir.listFiles();
     for (File jarFile : jarFiles) {
       LoggerHelper.getLocal().log(Level.INFO, "Downloaded jar file : " + jarFile.getName());

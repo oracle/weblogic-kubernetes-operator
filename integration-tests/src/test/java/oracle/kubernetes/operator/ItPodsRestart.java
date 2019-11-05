@@ -21,20 +21,20 @@ import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Simple JUnit test file used for testing Operator.
  *
  * <p>This test is used for testing pods being restarted by some properties change.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItPodsRestart extends BaseTest {
   private static Domain domain = null;
   private static Operator operator1;
@@ -53,7 +53,7 @@ public class ItPodsRestart extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     if (QUICKTEST) {
@@ -67,7 +67,7 @@ public class ItPodsRestart extends BaseTest {
       if (operator1 == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator1);
+        Assertions.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
       restartTmpDir = BaseTest.getResultDir() + "/restarttemp";
@@ -79,7 +79,7 @@ public class ItPodsRestart extends BaseTest {
               + "/weblogic-domains/"
               + domain.getDomainUid()
               + "/domain.yaml";
-      Assert.assertNotNull(domain);
+      Assertions.assertNotNull(domain);
     }
   }
 
@@ -88,7 +88,7 @@ public class ItPodsRestart extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
 
   }
@@ -125,7 +125,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingEnvProperty() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -149,7 +149,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingLogHomeEnabled() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -172,7 +172,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingImagePullPolicy() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -196,7 +196,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingIncludeServerOutInPodLog() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -221,7 +221,7 @@ public class ItPodsRestart extends BaseTest {
    */
   //@Test
   public void testServerPodsRestartByChangingZImage() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -262,7 +262,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingContSecurityContext() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -272,7 +272,7 @@ public class ItPodsRestart extends BaseTest {
         BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
     boolean result =
         (new String(Files.readAllBytes(Paths.get(domainFileName)))).contains("fsGroup: 1000");
-    Assert.assertFalse(result);
+    Assertions.assertFalse(result);
 
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "cont.security.context.domain.yaml";
@@ -300,7 +300,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingPodSecurityContext() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -310,7 +310,7 @@ public class ItPodsRestart extends BaseTest {
         BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
     boolean result =
         (new String(Files.readAllBytes(Paths.get(domainFileName)))).contains("fsGroup: 2000");
-    Assert.assertFalse(result);
+    Assertions.assertFalse(result);
 
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "pod.security.context.domain.yaml";
@@ -339,7 +339,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingResource() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -349,7 +349,7 @@ public class ItPodsRestart extends BaseTest {
         BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
     boolean result =
         (new String(Files.readAllBytes(Paths.get(domainFileName)))).contains("cpu: 500m");
-    Assert.assertFalse(result);
+    Assertions.assertFalse(result);
 
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "resource.domain.yaml";
@@ -375,7 +375,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testAdminServerRestartVersion() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -422,7 +422,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testClusterRestartVersion() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -472,7 +472,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testMsRestartVersion() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -520,7 +520,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testDomainRestartVersion() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -588,7 +588,7 @@ public class ItPodsRestart extends BaseTest {
 
       Thread.sleep(BaseTest.getWaitTimePod() * 1000);
     }
-    Assert.assertTrue("Didn't get the expected pod status", gotExpected);
+    Assertions.assertTrue(gotExpected, "Didn't get the expected pod status");
   }
   
   private void callDockerPull(String imageName) throws Exception {
