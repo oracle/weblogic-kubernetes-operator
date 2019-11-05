@@ -27,7 +27,7 @@ import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 
-public class JrfDomainOnPvWlst extends BaseTest {
+public class ItJrfDomainOnPvWlst extends BaseTest {
   //property file used to customize operator properties for operator inputs yaml
   private static final String JRF_OPERATOR_FILE_1 = "jrfoperator1.yaml";
   // file used to customize domain properties for domain, PV and LB inputs yaml

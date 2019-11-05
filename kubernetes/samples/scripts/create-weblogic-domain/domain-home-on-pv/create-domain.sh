@@ -26,7 +26,7 @@ source ${scriptDir}/../../common/validate.sh
 function usage {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
   echo "  -i Parameter inputs file, must be specified."
-  echo "  -o Ouput directory for the generated yaml files, must be specified."
+  echo "  -o Output directory for the generated yaml files, must be specified."
   echo "  -e Also create the resources in the generated yaml files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -h Help"
