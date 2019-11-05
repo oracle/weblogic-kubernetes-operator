@@ -59,10 +59,10 @@ public class ItServerDiscovery extends BaseTest {
   public void prepare() throws Exception {
     if (FULLTEST) {
       createResultAndPvDirs(testClassName);
-      testClassName = "itdiscovery";
+      String testClassNameShort = "itdiscovery";
       // create operator1
       if (operator == null) {
-        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassNameShort);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -72,7 +72,7 @@ public class ItServerDiscovery extends BaseTest {
       // create domain
       if (domain == null) {
         LoggerHelper.getLocal().log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
-        Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
+        Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassNameShort);
         domainMap.put("namespace", domainNS);
         domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();

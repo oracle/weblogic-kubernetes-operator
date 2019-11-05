@@ -67,13 +67,13 @@ public class ItStickySession extends BaseTest {
   public void prepare() throws Exception {
     if (FULLTEST) {
       createResultAndPvDirs(testClassName);
-      testClassName = "itstickysesn";
+      String testClassNameShort = "itstickysesn";
       
       // Create operator1
       if (operator == null) {
         LoggerHelper.getLocal().log(Level.INFO,
             "Creating Operator & waiting for the script to complete execution");
-        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassNameShort);
         //operator = TestUtils.createOperator(OPERATOR1_YAML);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
@@ -86,7 +86,7 @@ public class ItStickySession extends BaseTest {
       if (domain == null) {
         LoggerHelper.getLocal().log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
         int number = getNewSuffixCount();
-        Map<String, Object> domainMap = createDomainMap(number, testClassName);
+        Map<String, Object> domainMap = createDomainMap(number, testClassNameShort);
         domainMap.put("namespace", domainNS);
         // Treafik doesn't work due to the bug 28050300. Use Voyager instead
         domainMap.put("loadBalancer", "VOYAGER");

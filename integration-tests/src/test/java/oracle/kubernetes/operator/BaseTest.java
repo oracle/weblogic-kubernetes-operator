@@ -886,8 +886,10 @@ public class BaseTest {
    * @return new suffixCount
    */
   public static int getNewSuffixCount() {
-    suffixCount = suffixCount + 1;
-    return suffixCount;
+    synchronized (BaseTest.class) {
+      suffixCount = suffixCount + 1;
+      return suffixCount;
+    }
   }
 
   public static int getSuffixCount() {

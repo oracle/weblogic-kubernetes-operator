@@ -76,7 +76,7 @@ public class ItElasticLogging extends BaseTest {
   public void prepare() throws Exception {
     if (FULLTEST) {
       createResultAndPvDirs(testClassName);
-      testClassName = "itelastic";
+      String testClassNameShort = "itelastic";
 
       //Adding filter to WebLogicLoggingExporter.yaml
       loggingYamlFileLoc = getResultDir() + "/loggingYamlFilehDir";
@@ -98,7 +98,7 @@ public class ItElasticLogging extends BaseTest {
 
         LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
         Map<String, Object> operatorMap = createOperatorMap(
-            getNewSuffixCount(), true, testClassName);
+            getNewSuffixCount(), true, testClassNameShort);
         operatorMap.put("elkIntegrationEnabled",Boolean.valueOf("true"));
         operatorMap.put("logStashImage", "logstash:6.8.0");
         operatorMap.put("elasticSearchHost","elasticsearch.default.svc.cluster.local");
@@ -146,7 +146,7 @@ public class ItElasticLogging extends BaseTest {
       // create domain
       if (domain == null) {
         LoggerHelper.getLocal().log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
-        Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
+        Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassNameShort);
         for (Map.Entry<String, Object> entry : domainMap.entrySet()) {
           System.out.println("domainMap Key:vslue == " + entry.getKey() + ":" + entry.getValue().toString());
         }
