@@ -12,12 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
-import oracle.kubernetes.operator.utils.DbUtils;
-import oracle.kubernetes.operator.utils.DomainCrd;
-import oracle.kubernetes.operator.utils.ExecResult;
-import oracle.kubernetes.operator.utils.JrfDomain;
-import oracle.kubernetes.operator.utils.Operator;
-import oracle.kubernetes.operator.utils.TestUtils;
+import oracle.kubernetes.operator.utils.*;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Before;
@@ -93,7 +88,8 @@ public class JrfDomainOnPvWlst extends BaseTest {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Creating Operator & waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO
+        ,"Creating Operator & waiting for the script to complete execution");
     // create operator1
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
@@ -119,7 +115,7 @@ public class JrfDomainOnPvWlst extends BaseTest {
       }
     }
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
  
 }
