@@ -131,6 +131,7 @@ function state_dump {
    			fi
    			# Jenkins can only publish logs under the workspace
 			mkdir -p ${JENKINS_RESULTS_DIR}
+			rm -f $RESULT_DIR/pvarchive.b64
 			cp $ARCHIVE ${JENKINS_RESULTS_DIR}
 			if [ "$?" = "0" ]; then
    				echo Copy complete. Archive $ARCHIVE copied to ${JENKINS_RESULTS_DIR}

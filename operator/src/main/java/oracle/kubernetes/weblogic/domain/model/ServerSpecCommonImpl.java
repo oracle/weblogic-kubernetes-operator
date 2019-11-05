@@ -127,6 +127,11 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
     }
   }
 
+  @Override
+  public boolean isShuttingDown() {
+    return !shouldStart(0);
+  }
+
   boolean isStartAdminServerOnly() {
     return domainSpec.isStartAdminServerOnly();
   }

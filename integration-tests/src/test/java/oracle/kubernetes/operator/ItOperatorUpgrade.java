@@ -76,6 +76,7 @@ public class ItOperatorUpgrade extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
+      TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
       //ExecResult result = cleanup();
       LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
     }
