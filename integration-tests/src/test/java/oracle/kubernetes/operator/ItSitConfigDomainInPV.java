@@ -30,7 +30,7 @@ import org.junit.Test;
  */
 public class ItSitConfigDomainInPV extends SitConfig {
   private static String testClassName;
-  private static int testNumber = getNewSuffixCount();
+  private static int testNumber;
   private static Operator operator1;
   private static Domain domain;
   private static String sitconfigTmpDir = "";
@@ -56,13 +56,14 @@ public class ItSitConfigDomainInPV extends SitConfig {
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
+      // initialize test properties and create the directories
+      initialize(APP_PROPS_FILE, testClassName);
+      testNumber = getNewSuffixCount();
       mysqldbport = String.valueOf(31306 + testNumber);
       sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
       mysqltmpDir = sitconfigTmpDir + "/mysql";
       configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
       mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
-      // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE, testClassName);
 
       // create operator1
       if (operator1 == null) {
@@ -72,7 +73,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
 
-      staticPrepare(
+      domain = staticPrepare(
           false,
           "integration-tests/src/test/resources/sitconfig/"
               + "scripts/create-domain-auto-custom-sit-config20.py", testClassName, domainNS, mysqldbport);

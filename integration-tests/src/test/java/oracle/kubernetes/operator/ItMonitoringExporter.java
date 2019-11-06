@@ -80,7 +80,8 @@ public class ItMonitoringExporter extends BaseTest {
   private int waitTime = 5;
   //update with specific branch name if not master
 
-  private static String monitoringExporterBranchVer = "master";
+  //private static String monitoringExporterBranchVer = "master";
+  private static String monitoringExporterBranchVer = "downloadwebapp";
 
   private static String testClassName;
   private static String domainNS1;

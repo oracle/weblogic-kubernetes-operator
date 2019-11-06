@@ -33,7 +33,7 @@ import org.junit.Test;
 public class ItSitConfigDomainInImage extends SitConfig {
 
   private static String testClassName;
-  private static int testNumber = getNewSuffixCount();
+  private static int testNumber;
   private static Operator operator1;
   private static Domain domain;
   private static String sitconfigTmpDir = "";
@@ -58,15 +58,15 @@ public class ItSitConfigDomainInImage extends SitConfig {
   public static void staticPrepare() throws Exception {
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
-    mysqldbport = String.valueOf(31306 + testNumber);
-    sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
-    mysqltmpDir = sitconfigTmpDir + "/mysql";
-    configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
-    mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
     if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-
+      testNumber = getNewSuffixCount();
+      mysqldbport = String.valueOf(31306 + testNumber);
+      sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
+      mysqltmpDir = sitconfigTmpDir + "/mysql";
+      configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
+      mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
       // create operator1
       if (operator1 == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testprefix);
@@ -74,7 +74,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
         Assert.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
-      staticPrepare(
+      domain = staticPrepare(
           true,
           "integration-tests/src/test/resources/sitconfig/scripts/"
               + "create-domain-auto-custom-sit-config-inimage.py", testClassName, domainNS, mysqldbport);
