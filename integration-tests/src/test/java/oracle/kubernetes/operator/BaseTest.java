@@ -211,35 +211,6 @@ public class BaseTest {
     }
     appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
 
-    /* LoggerHelper.getLocal().log(Level.INFO, "appProps = " + appProps);
-    LoggerHelper.getLocal().log(Level.INFO, "maxIterationPod = "
-        + appProps.getProperty("maxIterationsPod"));
-    LoggerHelper.getLocal().log(Level.INFO,
-        "maxIterationPod with default= "
-            + appProps.getProperty("maxIterationsPod", "" + maxIterationsPod));
-    LoggerHelper.getLocal().log(Level.INFO, "projectRoot =" + projectRoot);
-    LoggerHelper.getLocal().log(Level.INFO, "branchName =" + branchName);
-
-    LoggerHelper.getLocal().log(Level.INFO, "Env var RESULT_ROOT " + System.getenv("RESULT_ROOT"));
-    LoggerHelper.getLocal().log(Level.INFO, "Env var PV_ROOT " + System.getenv("PV_ROOT"));
-    LoggerHelper.getLocal().log(Level.INFO, "Env var K8S_NODEPORT_HOST "
-        + System.getenv("K8S_NODEPORT_HOST"));
-    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_NAME_OPERATOR= "
-        + System.getenv("IMAGE_NAME_OPERATOR"));
-    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_TAG_OPERATOR "
-        + System.getenv("IMAGE_TAG_OPERATOR"));
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Env var IMAGE_PULL_POLICY_OPERATOR " + System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Env var IMAGE_PULL_SECRET_OPERATOR " + System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Env var IMAGE_PULL_SECRET_WEBLOGIC " + System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
-    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_NAME_WEBLOGIC "
-        + System.getenv("IMAGE_NAME_WEBLOGIC"));
-    LoggerHelper.getLocal().log(Level.INFO, "Env var IMAGE_TAG_WEBLOGIC "
-        + System.getenv("IMAGE_TAG_WEBLOGIC"));
-
-    LoggerHelper.getLocal().log(Level.INFO, "Env var BRANCH_NAME " + System.getenv("BRANCH_NAME")); */
   }
 
   public void createResultAndPvDirs(String testClassName) throws Exception {
@@ -252,7 +223,6 @@ public class BaseTest {
     // for manual/local run, create file handler, create PVROOT
     if (!SHARED_CLUSTER) {
       LoggerHelper.getLocal().log(Level.INFO, "Creating PVROOT " + pvRoot);
-      // Files.createDirectories(Paths.get(pvRoot));
       TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"mkdir -m777 -p "
           + pvRoot + "\"", true);
     }
@@ -347,18 +317,18 @@ public class BaseTest {
     return domainApiVersion;
   }
 
-  /* public ExecResult cleanup() throws Exception {
+  public ExecResult cleanup() throws Exception {
     String cmd =
         "export RESULT_ROOT="
-            + getResultRoot()
+            + resultRootCommon
             + " export PV_ROOT="
-            + getPvRoot()
+            + pvRootCommon
             + " export SHARED_CLUSTER=false && "
             + getProjectRoot()
             + "/src/integration-tests/bash/cleanup.sh";
     LoggerHelper.getLocal().log(Level.INFO, "Command to call cleanup script " + cmd);
     return ExecCommand.exec(cmd);
-  } */
+  }
 
   public String getResultRoot() {
     return resultRoot;
@@ -489,19 +459,6 @@ public class BaseTest {
           + result.stderr() + "\n" + result.stdout());
     }
 
-    /* TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-
-    if (JENKINS || SHARED_CLUSTER) {
-      result = cleanup();
-      if (result.exitValue() != 0) {
-        log(Level.INFO, "cleanup result =" + result.stdout() + "\n " + result.stderr());
-      }
-    }
-
-    if (getLeaseId() != "") {
-      log(Level.INFO, "Release the k8s cluster lease");
-      TestUtils.releaseLease(getProjectRoot(), getLeaseId());
-    } */
   }
 
   /**
