@@ -124,7 +124,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
           "jms-ClusterJmsSystemResource.xml",
           "version.txt"
       };
-      copySitConfigFiles(files, oldSecret, configOverrideDir + "/../", testprefix);
+      copySitConfigFiles(files, oldSecret, configOverrideDir, testprefix);
       // create weblogic domain with configOverrides
       domain = createSitConfigDomain(true, domainScript, domainNS);
       Assert.assertNotNull(domain);

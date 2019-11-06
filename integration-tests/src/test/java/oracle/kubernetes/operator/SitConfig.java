@@ -87,7 +87,7 @@ public class SitConfig extends BaseTest {
       domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testprefix);
     }
 
-    String configOverrideDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
+    String configOverrideDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix + "/configoverridefiles";
     domainMap.put("configOverrides", "sitconfigcm");
     domainMap.put("configOverridesFile", configOverrideDir);
     domainMap.put("domainUID", testprefix);
@@ -352,7 +352,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + (String)domain.getDomainMap().get("t3ChannelPort")
+                + ((Integer) domain.getDomainMap().get("t3ChannelPort")).intValue()
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -384,7 +384,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + (String)domain.getDomainMap().get("t3ChannelPort")
+                + ((Integer) domain.getDomainMap().get("t3ChannelPort")).intValue()
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -401,7 +401,8 @@ public class SitConfig extends BaseTest {
   protected void testOverrideJdbcResourceWithNewSecret(String testMethod, Domain domain) throws Exception {
     // recreate the map with new situational config files
     String[] files = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
-    String configOverrideDir = (String)domain.getDomainMap().get("configOverridesFile");
+    //String configOverrideDir = (String)domain.getDomainMap().get("configOverridesFile") + "/../";
+    String configOverrideDir = BaseTest.getResultDir() + "/sitconfigtemp" + domain.getDomainUid() + "/configoverridefiles";
     try {
       copySitConfigFiles(files, newSecret, configOverrideDir, domain.getDomainUid());
       recreateConfigMapandRestart(oldSecret, newSecret, domain);
@@ -412,7 +413,7 @@ public class SitConfig extends BaseTest {
                   + " 'sh runSitConfigTests.sh "
                   + fqdn
                   + " "
-                  + (String)domain.getDomainMap().get("t3ChannelPort")
+                  + ((Integer) domain.getDomainMap().get("t3ChannelPort")).intValue()
                   + " weblogic welcome1 "
                   + testMethod
                   + " "
