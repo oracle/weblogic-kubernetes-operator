@@ -75,20 +75,24 @@ public class SitConfig extends BaseTest {
    * @return - created domain
    * @throws Exception - if it cannot create the domain
    */
-  protected static Domain createSitConfigDomain(boolean domainInImage, String domainScript)
+  protected static Domain createSitConfigDomain(boolean domainInImage, String domainScript, String domainNS)
       throws Exception {
     // load input yaml to map and add configOverrides
     Map<String, Object> domainMap = null;
     if (domainInImage) {
       domainMap = TestUtils.createDomainInImageMap(getNewSuffixCount(), false, "sitconfigdomaininimage");
+      testprefix = "sitconfigdomaininimage";
     } else {
       domainMap = TestUtils.createDomainMap(getNewSuffixCount(), "sitconfigdomaininpv");
+      testprefix = "sitconfigdomaininpv";
     }
+
+    configOverrideDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
     domainMap.put("configOverrides", "sitconfigcm");
     domainMap.put("configOverridesFile", configOverrideDir);
-    domainMap.put("domainUID", DOMAINUID);
-    domainMap.put("adminNodePort", new Integer(ADMINPORT));
-    domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
+    domainMap.put("domainUID", testprefix);
+    //domainMap.put("adminNodePort", new Integer(ADMINPORT));
+    //domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
     domainMap.put("createDomainPyScript", domainScript);
     domainMap.put("namespace", domainNS);
     domainMap.put(
@@ -96,6 +100,8 @@ public class SitConfig extends BaseTest {
         "-Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true");
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
+    DOMAINUID = testprefix;
+    T3CHANNELPORT = (Integer)domain.getDomainMap().get("t3ChannelPort");
     return domain;
   }
 
@@ -534,7 +540,7 @@ public class SitConfig extends BaseTest {
 
   public static void setParamsForTest(boolean domainInImage) {
     int testNumber = getNewSuffixCount();
-    //testprefix = "customsitconfigdomain";
+    //testprefix = "customsitconfigdomain";copy
     testprefix = "sitconfigdomaininpv";
     if (domainInImage) {
       testprefix = "sitconfigdomaininimage";

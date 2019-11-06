@@ -105,7 +105,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
       };
       copySitConfigFiles(files, oldSecret);
       // create weblogic domain with configOverrides
-      domain = createSitConfigDomain(domainInImage, domainScript);
+      domain = createSitConfigDomain(domainInImage, domainScript, domainNS);
       Assert.assertNotNull(domain);
       domainYaml =
           BaseTest.getUserProjectsDir()
