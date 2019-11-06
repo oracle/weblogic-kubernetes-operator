@@ -1033,11 +1033,56 @@ Now that the database is ready, the next step is to create the SOA domain.
 
 ##### Create secret with domain administration credentials
 
-**TODO** write me
+You need to create a Kubernetes secret to hold the administration credentials
+for the domain.  The operator will use the secret to get the credentials
+when it starts servers.  This eliminates the need to store secrets inside
+the Docker images.
+
+To create the secret, change to the correct sample directory and then execute
+the sample command as shown below:
+
+```bash 
+$ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-credentials
+ 
+$ ./create-weblogic-credentials.sh -u weblogic -p Welcome1 -n soans -d soainfra -s soainfra-domain-credentials
+secret/soainfra-domain-credentials created
+secret/soainfra-domain-credentials labeled
+The secret soainfra-domain-credentials has been successfully created in the soans namespace.
+
+```
+
+The parameters are as follows:
+
+* `-u`: The username for the administrative user
+* `-p`: The password for the administrative user. Oracle strongly recommends using a more
+  secure password than the one shown in this example.
+* `-n`: The namespace that the domain will be in.
+* `-d`: The `domainUID` (unique identifier) for the domain.
+* `-s` (optional): The name of the secret to create.
+
 
 ##### Create persistent storage for the domain directory
 
-**TODO** write me
+Currently SOA domains are only supported with the "domain on persistent
+storage" model.  The "domain in image" model is not supported in the SOA
+preview.
+
+You must provide persistent storage for the domain, and you must use a 
+storage provider that supports the `ReadWriteMany` access mode. If you 
+are using Oracle Container Engine for Kubernetes, this means you need 
+to use the File Storage Service.  You need to create a File System
+attached to the same Virtual Cloud Network adnd Subnet as your Kubernetes cluster,
+and a Mount Point for that File System.  Once you have completed this,
+you should have an IP address and path for the persistent storage.
+For example: `10.0.10.6/soa-fs`.  You will need this address later.
+
+{{% notice note %}}
+Storage providers vary considerably between different Kubernetes variants
+and managed services.  You will need to consult the documentation for your
+particular Kubernetes provider to determine how to create persistent storage.
+{{% /notice %}}
+
+
 
 ##### Create the domain
 
@@ -1104,6 +1149,47 @@ measured in thousandths of a CPU, so `1000m` means one full CPU.
 
 
 #### Starting the SOA domain in Kubernetes
+
+**TODO** write me
+
+##### Add the namespace to the operator
+
+You need to tell the WebLogic Kubernetes operator to manage domains in
+the namespace that the SOA domain is in.  If you followed the examples
+this will be `soans`.  
+
+Use the following commands to tell the operator to manage domains in
+this namespace:
+
+```bash
+$ cd /path/to/weblogic-kubernetes-operator
+$ helm upgrade \
+  --reuse-values \
+  --set "domainNamespaces={soans}" \
+  weblogic-operator \
+  kubernetes/charts/weblogic-operator
+```
+
+You can confirm the setting using this command:
+
+```bash
+$ helm get weblogic-operator | grep -C 3 domainNamespaces
+RELEASED: Wed Nov  6 08:58:19 2019
+CHART: weblogic-operator-2.3.0
+USER-SUPPLIED VALUES:
+domainNamespaces:
+- soans
+image: oracle/weblogic-kubernetes-operator:2.3.0
+
+COMPUTED VALUES:
+domainNamespaces:
+- soans
+elasticSearchHost: elasticsearch.default.svc.cluster.local
+elasticSearchPort: 9200
+```
+
+In the output you can see the list of `domainNamespaces` contains
+the `soans` namespace.
 
 
 #### Setting up a load balancer to access various SOA endpoints
