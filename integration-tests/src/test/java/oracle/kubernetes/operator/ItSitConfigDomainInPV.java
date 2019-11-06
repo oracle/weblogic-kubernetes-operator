@@ -13,11 +13,12 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 
+import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import oracle.kubernetes.operator.utils.Domain;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -29,7 +30,7 @@ import org.junit.Test;
  */
 public class ItSitConfigDomainInPV extends SitConfig {
   private static String testClassName;
-  int testNumber = getNewSuffixCount();
+  private static int testNumber = getNewSuffixCount();
   private static Operator operator1;
   private static Domain domain;
   private static String sitconfigTmpDir = "";
@@ -38,7 +39,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
   private static String mysqlYamlFile = "";
   private static String domainNS;
   private static String testprefix = "sitconfigdomaininpv";
-  private static String MYSQL_DB_PORT;
+  private static String mysqldbport;
   private static String ADMINPODNAME;
   private static String domainYaml;
 
@@ -55,6 +56,11 @@ public class ItSitConfigDomainInPV extends SitConfig {
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
+      mysqldbport = String.valueOf(31306 + testNumber);
+      sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
+      mysqltmpDir = sitconfigTmpDir + "/mysql";
+      configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
+      mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
       staticPrepare(
           false,
           "integration-tests/src/test/resources/sitconfig/"
@@ -98,7 +104,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
       Files.createDirectories(Paths.get(mysqltmpDir));
 
       // Create the MySql db container
-      copyMySqlFile(domainNS, mysqlYamlFile, MYSQL_DB_PORT, testprefix);
+      copyMySqlFile(domainNS, mysqlYamlFile, mysqldbport, testprefix);
 
       if (!OPENSHIFT) {
         fqdn = TestUtils.getHostName();
@@ -106,7 +112,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
         ExecResult result = TestUtils.exec("hostname -i");
         fqdn = result.stdout().trim();
       }
-      JDBC_URL = "jdbc:mysql://" + fqdn + ":" + MYSQL_DB_PORT + "/";
+      JDBC_URL = "jdbc:mysql://" + fqdn + ":" + mysqldbport + "/";
       // copy the configuration override files to replacing the JDBC_URL token
       String[] files = {
           "config.xml",
@@ -115,7 +121,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
           "jms-ClusterJmsSystemResource.xml",
           "version.txt"
       };
-      copySitConfigFiles(files, oldSecret, configOverrideDir, testprefix);
+      copySitConfigFiles(files, oldSecret, configOverrideDir + "/../", testprefix);
       // create weblogic domain with configOverrides
       domain = createSitConfigDomain(false, domainScript, domainNS);
       Assert.assertNotNull(domain);

@@ -202,7 +202,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + (String)domain.getDomainMap().get("t3ChannelPort")
+                + ((Integer) domain.getDomainMap().get("t3ChannelPort")).intValue()
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -228,7 +228,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + (String)domain.getDomainMap().get("t3ChannelPort")
+                + ((Integer) domain.getDomainMap().get("t3ChannelPort")).intValue()
                 + " weblogic welcome1 "
                 + testMethod
                 + " managed-server1'");
@@ -258,7 +258,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + (String)domain.getDomainMap().get("t3ChannelPort")
+                + ((Integer) domain.getDomainMap().get("t3ChannelPort")).intValue()
                 + " weblogic welcome1 "
                 + testMethod
                 + " "
@@ -286,7 +286,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + (String)domain.getDomainMap().get("t3ChannelPort")
+                + ((Integer) domain.getDomainMap().get("t3ChannelPort")).intValue()
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -314,7 +314,7 @@ public class SitConfig extends BaseTest {
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + (String)domain.getDomainMap().get("t3ChannelPort")
+                + ((Integer) domain.getDomainMap().get("t3ChannelPort")).intValue()
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
