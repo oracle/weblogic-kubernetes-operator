@@ -250,12 +250,63 @@ public class ItElasticLogging extends BaseTest {
 
     // Verify that log hits for admin server are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
-    String queryCriteria = "/_search?q=log:" + adminServerPodName + " | grep RUNNING";
-    verifySearchResults(queryCriteria, regex, logstashIndexKey, false);
+    String queryCriteria = "/_search?q=log:" + adminServerPodName;
+    int i = 0;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      String queryResult = execSearchQuery(queryCriteria, logstashIndexKey);
+      if (null != queryResult) {
+        LoggerHelper.getLocal().log(Level.INFO, "ELK repo returns: " + queryResult);
+        if (queryResult.contains("RUNNING")) {
+          LoggerHelper.getLocal().log(Level.INFO, adminServerPodName + " is running!");
+          break;
+        }
+      }
+
+      if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+        Assume.assumeTrue(queryResult.contains("RUNNING"));
+      }
+
+      LoggerHelper.getLocal().log(Level.INFO,
+          adminServerPodName + "logs in ELK repo is not ready yet ["
+          + i
+          + "/"
+          + BaseTest.getMaxIterationsPod()
+          + "], sleeping "
+          + BaseTest.getWaitTimePod()
+          + " seconds more");
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
+    }
 
     // Verify that log hits for managed server are not empty
-    queryCriteria = "/_search?q=log:" + managedServerPodName + " | grep RUNNING";
-    verifySearchResults(queryCriteria, regex, logstashIndexKey, false);
+    queryCriteria = "/_search?q=log:" + managedServerPodName;
+    i = 0;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      String queryResult = execSearchQuery(queryCriteria, logstashIndexKey);
+      LoggerHelper.getLocal().log(Level.INFO, "ELK repo returns: " + queryResult);
+      if (null != queryResult) {
+        LoggerHelper.getLocal().log(Level.INFO, "ELK repo returns: " + queryResult);
+        if (queryResult.contains("RUNNING")) {
+          LoggerHelper.getLocal().log(Level.INFO, managedServerPodName + " is running!");
+          break;
+        }
+      }
+
+      if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+        Assume.assumeTrue(queryResult.contains("RUNNING"));
+      }
+
+      LoggerHelper.getLocal().log(Level.INFO,
+          managedServerPodName + " logs in ELK repo is not ready yet ["
+          + i
+          + "/"
+          + BaseTest.getMaxIterationsPod()
+          + "], sleeping "
+          + BaseTest.getWaitTimePod()
+          + " seconds more");
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
+    }
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
