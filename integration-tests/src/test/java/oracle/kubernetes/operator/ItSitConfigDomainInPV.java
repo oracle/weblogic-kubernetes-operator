@@ -83,7 +83,6 @@ public class ItSitConfigDomainInPV extends SitConfig {
     if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-      //setParamsForTest(domainInImage, testClassName);
 
       // create operator1
       if (operator1 == null) {
@@ -164,8 +163,8 @@ public class ItSitConfigDomainInPV extends SitConfig {
    *
    * @throws Exception when domain destruction or MySQL container destruction fails
    */
-
-  protected static void staticUnprepare() throws Exception {
+  @AfterClass
+  public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
       destroySitConfigDomain(domain);
@@ -176,18 +175,6 @@ public class ItSitConfigDomainInPV extends SitConfig {
       }
       tearDown(new Object() {
       }.getClass().getEnclosingClass().getSimpleName());
-    }
-  }
-
-  /**
-   * Destroy domain, delete the MySQL DB container and teardown.
-   *
-   * @throws Exception when domain destruction or MySQL container destruction fails
-   */
-  @AfterClass
-  public static void staticUnPrepare() throws Exception {
-    if (FULLTEST) {
-      staticUnprepare();
     }
   }
 

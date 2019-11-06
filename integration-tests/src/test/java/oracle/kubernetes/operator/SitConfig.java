@@ -28,44 +28,16 @@ import org.junit.Assert;
  */
 public class SitConfig extends BaseTest {
 
-  /*
-  protected static String ADMINPORT = String.valueOf(30800 + getNewSuffixCount());
-  protected static int T3CHANNELPORT = 31000 + getNewSuffixCount();
-  protected static String mysqldbport = String.valueOf(31306 + getNewSuffixCount());
-  */
-  //protected static String ADMINPORT;
-  //protected static int T3CHANNELPORT;
-  //protected static String mysqldbport;
   protected static String TEST_RES_DIR;
-  //protected static String adminpodname;
   protected static String fqdn;
   protected static String JDBC_URL;
   protected static final String JDBC_DRIVER_NEW = "com.mysql.cj.jdbc.Driver";
   protected static final String JDBC_DRIVER_OLD = "com.mysql.jdbc.Driver";
   protected static final String PS3_TAG = "12.2.1.3";
   protected static String KUBE_EXEC_CMD;
-  //protected static Domain domain;
-  //protected static Operator operator1;
-  //protected static String sitconfigTmpDir = "";
-  //protected static String mysqltmpDir = "";
-  //protected static String configOverrideDir = "";
-  //protected static String mysqlYamlFile = "";
-  //protected static String domainYaml;
   protected static String JDBC_RES_SCRIPT;
   protected static final String oldSecret = "test-secrets";
   protected static final String newSecret = "test-secrets-new";
-  //protected static String domainNS;
-  /*
-  protected static String testprefix = "sitconfigdomaininpv";
-  //private static String DOMAINUID = "customsitconfigdomain";
-  protected static String DOMAINUID = "customsitconfigdomain";
-  */
-
-  //protected static String DOMAINUID = "customsitconfigdomain";
-  //protected static String testprefix;
-  //private static String DOMAINUID = "customsitconfigdomain";
-  //protected static String DOMAINUID;
-
 
   /**
    * Create Domain using the custom domain script create-domain-auto-custom-sit-config20.py
@@ -91,8 +63,6 @@ public class SitConfig extends BaseTest {
     domainMap.put("configOverrides", "sitconfigcm");
     domainMap.put("configOverridesFile", configOverrideDir);
     domainMap.put("domainUID", testprefix);
-    //domainMap.put("adminNodePort", new Integer(ADMINPORT));
-    //domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
     domainMap.put("createDomainPyScript", domainScript);
     domainMap.put("namespace", domainNS);
     domainMap.put(
@@ -100,7 +70,6 @@ public class SitConfig extends BaseTest {
         "-Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true");
     Domain domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
-    //T3CHANNELPORT = (Integer)domain.getDomainMap().get("t3ChannelPort");
     return domain;
   }
 
@@ -146,7 +115,6 @@ public class SitConfig extends BaseTest {
       } else {
         Files.write(path, content.getBytes(charset));
       }
-      // display(dstDir);
     }
   }
 
@@ -192,6 +160,7 @@ public class SitConfig extends BaseTest {
    * whether the overridden values are applied to the runtime.
    *
    * @param testMethod - Name of the test
+   * @param domain - Domain object
    * @throws Exception when the assertion fails due to unmatched values
    */
   protected void testCustomSitConfigOverridesForDomain(String testMethod, Domain domain) throws Exception {
@@ -218,6 +187,7 @@ public class SitConfig extends BaseTest {
    * runtime.
    *
    * @param testMethod - Name of the test
+   * @param domain - Domain object
    * @throws Exception when the assertion fails due to unmatched values
    */
   protected void testCustomSitConfigOverridesForDomainMS(String testMethod, Domain domain) throws Exception {
@@ -248,6 +218,7 @@ public class SitConfig extends BaseTest {
    * at runtime by making a connection to the MySql database and executing a DDL statement.
    *
    * @param testMethod - Name of the test
+   * @param domain - Domain object
    * @throws Exception when the assertion fails due to unmatched values
    */
   protected void testCustomSitConfigOverridesForJdbc(String testMethod, Domain domain) throws Exception {
@@ -276,6 +247,7 @@ public class SitConfig extends BaseTest {
    * whether the overridden values are applied to the runtime.
    *
    * @param testMethod - Name of the test
+   * @param domain - Domain object
    * @throws Exception when the assertion fails due to unmatched values
    */
   protected void testCustomSitConfigOverridesForJms(String testMethod, Domain domain) throws Exception {
@@ -304,6 +276,7 @@ public class SitConfig extends BaseTest {
    * whether the overridden values are applied to the runtime.
    *
    * @param testMethod - Name of the test
+   * @param domain - Domain object   *
    * @throws Exception when the assertion fails due to unmatched values
    */
   protected void testCustomSitConfigOverridesForWldf(String testMethod, Domain domain) throws Exception {
@@ -327,6 +300,7 @@ public class SitConfig extends BaseTest {
    * when domain is restarted.
    *
    * @param testMethod - Name of the test
+   * @param domain - Domain object
    * @throws Exception when assertions fail.
    */
   protected void testConfigOverrideAfterDomainStartup(String testMethod, Domain domain) throws Exception {
@@ -340,7 +314,6 @@ public class SitConfig extends BaseTest {
     Path path = Paths.get(dstDir, "config.xml");
     String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
     content = content.replaceAll("customsitconfigdomain", domain.getDomainUid());
-    //attention
     Charset charset = StandardCharsets.UTF_8;
     Files.write(path, content.getBytes(charset));
 
@@ -365,6 +338,7 @@ public class SitConfig extends BaseTest {
    * the new overridden values with restart of the WLS pods
    *
    * @param testMethod - Name of the test
+   * @param domain - Domain object   *
    * @throws Exception when assertions fail.
    */
   protected void testOverrideJdbcResourceAfterDomainStart(String testMethod, Domain domain) throws Exception {
@@ -396,13 +370,14 @@ public class SitConfig extends BaseTest {
    * dbusername and dbpassword.
    *
    * @param testMethod - Name of the test
+   * @param domain - Domain object   *
    * @throws Exception when assertions fail.
    */
   protected void testOverrideJdbcResourceWithNewSecret(String testMethod, Domain domain) throws Exception {
     // recreate the map with new situational config files
     String[] files = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
-    //String configOverrideDir = (String)domain.getDomainMap().get("configOverridesFile") + "/../";
-    String configOverrideDir = BaseTest.getResultDir() + "/sitconfigtemp" + domain.getDomainUid() + "/configoverridefiles";
+    String configOverrideDir = BaseTest.getResultDir()
+        + "/sitconfigtemp" + domain.getDomainUid() + "/configoverridefiles";
     try {
       copySitConfigFiles(files, newSecret, configOverrideDir, domain.getDomainUid());
       recreateConfigMapandRestart(oldSecret, newSecret, domain);
@@ -429,6 +404,7 @@ public class SitConfig extends BaseTest {
   /**
    * Create a JDBC system resource in domain.
    *
+   * @param domain - Domain object
    * @throws Exception JDBC resource creation fails
    */
   protected void createJdbcResource(Domain domain) throws Exception {
@@ -520,7 +496,7 @@ public class SitConfig extends BaseTest {
 
   /**
    * Transfer the tests to run in WLS pods.
-   *
+   * @param domain - Domain object
    * @throws Exception exception
    */
   protected void transferTests(Domain domain) throws Exception {
@@ -548,25 +524,4 @@ public class SitConfig extends BaseTest {
     Assert.assertFalse(result.stderr().toLowerCase().contains("error"));
     Assert.assertEquals(0, result.exitValue());
   }
-
-  /*
-  public static void setParamsForTest(boolean domainInImage) {
-    int testNumber = getNewSuffixCount();
-    //testprefix = "customsitconfigdomain";copy
-    testprefix = "sitconfigdomaininpv";
-    if (domainInImage) {
-      testprefix = "sitconfigdomaininimage";
-      testNumber++;
-    }
-    ADMINPORT = String.valueOf(30800 + testNumber);
-    mysqldbport = String.valueOf(31306 + testNumber);
-    T3CHANNELPORT = 31000 + testNumber;
-    DOMAINUID = testprefix;
-    sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
-    mysqltmpDir = sitconfigTmpDir + "/mysql";
-    configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
-    mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
-  }
-  */
-
 }
