@@ -257,6 +257,9 @@
                     </includes>
                     <excludes>
                         <exclude>
+                            ItMonitoringExporter.java
+                        </exclude>
+                        <exclude>
                             ${excludes-failsafe}
                         </exclude>
                     </excludes>
