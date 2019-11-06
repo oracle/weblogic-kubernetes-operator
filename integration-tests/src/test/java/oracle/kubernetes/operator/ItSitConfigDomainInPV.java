@@ -73,10 +73,10 @@ public class ItSitConfigDomainInPV extends SitConfig {
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
 
-      domain = staticPrepare(
+      staticPrepare(
           false,
           "integration-tests/src/test/resources/sitconfig/"
-              + "scripts/create-domain-auto-custom-sit-config20.py", testClassName, domainNS, mysqldbport);
+              + "scripts/create-domain-auto-custom-sit-config20.py", testClassName);
     }
   }
 

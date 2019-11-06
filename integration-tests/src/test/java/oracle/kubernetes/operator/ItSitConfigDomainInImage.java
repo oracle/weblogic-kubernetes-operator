@@ -74,10 +74,10 @@ public class ItSitConfigDomainInImage extends SitConfig {
         Assert.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
-      domain = staticPrepare(
+      staticPrepare(
           true,
           "integration-tests/src/test/resources/sitconfig/scripts/"
-              + "create-domain-auto-custom-sit-config-inimage.py", testClassName, domainNS, mysqldbport);
+              + "create-domain-auto-custom-sit-config-inimage.py", testClassName);
     }
   }
 
