@@ -31,30 +31,30 @@ public class SitConfig extends BaseTest {
   /*
   protected static String ADMINPORT = String.valueOf(30800 + getNewSuffixCount());
   protected static int T3CHANNELPORT = 31000 + getNewSuffixCount();
-  protected static String MYSQL_DB_PORT = String.valueOf(31306 + getNewSuffixCount());
+  protected static String mysqldbport = String.valueOf(31306 + getNewSuffixCount());
   */
-  protected static String ADMINPORT;
-  protected static int T3CHANNELPORT;
-  protected static String MYSQL_DB_PORT;
+  //protected static String ADMINPORT;
+  //protected static int T3CHANNELPORT;
+  //protected static String mysqldbport;
   protected static String TEST_RES_DIR;
-  protected static String ADMINPODNAME;
+  //protected static String adminpodname;
   protected static String fqdn;
   protected static String JDBC_URL;
   protected static final String JDBC_DRIVER_NEW = "com.mysql.cj.jdbc.Driver";
   protected static final String JDBC_DRIVER_OLD = "com.mysql.jdbc.Driver";
   protected static final String PS3_TAG = "12.2.1.3";
   protected static String KUBE_EXEC_CMD;
-  protected static Domain domain;
-  protected static Operator operator1;
-  protected static String sitconfigTmpDir = "";
-  protected static String mysqltmpDir = "";
-  protected static String configOverrideDir = "";
-  protected static String mysqlYamlFile = "";
-  protected static String domainYaml;
+  //protected static Domain domain;
+  //protected static Operator operator1;
+  //protected static String sitconfigTmpDir = "";
+  //protected static String mysqltmpDir = "";
+  //protected static String configOverrideDir = "";
+  //protected static String mysqlYamlFile = "";
+  //protected static String domainYaml;
   protected static String JDBC_RES_SCRIPT;
   protected static final String oldSecret = "test-secrets";
   protected static final String newSecret = "test-secrets-new";
-  protected static String domainNS;
+  //protected static String domainNS;
   /*
   protected static String testprefix = "sitconfigdomaininpv";
   //private static String DOMAINUID = "customsitconfigdomain";
@@ -62,9 +62,9 @@ public class SitConfig extends BaseTest {
   */
 
   //protected static String DOMAINUID = "customsitconfigdomain";
-  protected static String testprefix;
+  //protected static String testprefix;
   //private static String DOMAINUID = "customsitconfigdomain";
-  protected static String DOMAINUID;
+  //protected static String DOMAINUID;
 
 
   /**
@@ -79,15 +79,15 @@ public class SitConfig extends BaseTest {
       throws Exception {
     // load input yaml to map and add configOverrides
     Map<String, Object> domainMap = null;
+    String testprefix = "sitconfigdomaininpv";
     if (domainInImage) {
-      domainMap = TestUtils.createDomainInImageMap(getNewSuffixCount(), false, "sitconfigdomaininimage");
       testprefix = "sitconfigdomaininimage";
+      domainMap = TestUtils.createDomainInImageMap(getNewSuffixCount(), false, testprefix);
     } else {
-      domainMap = TestUtils.createDomainMap(getNewSuffixCount(), "sitconfigdomaininpv");
-      testprefix = "sitconfigdomaininpv";
+      domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testprefix);
     }
 
-    configOverrideDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
+    String configOverrideDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
     domainMap.put("configOverrides", "sitconfigcm");
     domainMap.put("configOverridesFile", configOverrideDir);
     domainMap.put("domainUID", testprefix);
@@ -98,10 +98,9 @@ public class SitConfig extends BaseTest {
     domainMap.put(
         "javaOptions",
         "-Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true");
-    domain = TestUtils.createDomain(domainMap);
+    Domain domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
-    DOMAINUID = testprefix;
-    T3CHANNELPORT = (Integer)domain.getDomainMap().get("t3ChannelPort");
+    //T3CHANNELPORT = (Integer)domain.getDomainMap().get("t3ChannelPort");
     return domain;
   }
 
@@ -110,7 +109,7 @@ public class SitConfig extends BaseTest {
    *
    * @throws Exception when domain destruction fails
    */
-  protected static void destroySitConfigDomain() throws Exception {
+  protected static void destroySitConfigDomain(Domain domain) throws Exception {
     if (domain != null) {
       LoggerHelper.getLocal().log(Level.INFO, "Destroying domain...");
       domain.destroy();
@@ -123,7 +122,9 @@ public class SitConfig extends BaseTest {
    *
    * @throws IOException when copying files from source location to staging area fails
    */
-  protected static void copySitConfigFiles(String[] files, String secretName) throws IOException {
+  protected static void copySitConfigFiles(String[] files, String secretName,
+                                           String configOverrideDir,
+                                           String domainNS) throws IOException {
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
     String dstDir = configOverrideDir;
 
@@ -134,7 +135,7 @@ public class SitConfig extends BaseTest {
       String content = new String(Files.readAllBytes(path), charset);
       content = content.replaceAll("JDBC_URL", JDBC_URL);
       content = content.replaceAll(oldSecret, secretName);
-      content = content.replaceAll("customsitconfigdomain", DOMAINUID);
+      content = content.replaceAll("customsitconfigdomain", domainNS);
       if (getWeblogicImageTag().contains(PS3_TAG)) {
         content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
       }
@@ -161,11 +162,10 @@ public class SitConfig extends BaseTest {
    *
    * @throws IOException when copying files from source location to staging area fails
    */
-  protected static void copyMySqlFile(boolean domainInImage) throws Exception {
-    setParamsForTest(domainInImage);
-    Files.createDirectories(Paths.get(sitconfigTmpDir));
-    Files.createDirectories(Paths.get(configOverrideDir));
-    Files.createDirectories(Paths.get(mysqltmpDir));
+  protected static void copyMySqlFile(String domainNS,
+                                      String mysqlYamlFile,
+                                      String mysqldbport, String domainUid) throws Exception {
+
     final Path src = Paths.get(TEST_RES_DIR + "/mysql/mysql-dbservices.ymlt");
     final Path dst = Paths.get(mysqlYamlFile);
     LoggerHelper.getLocal().log(Level.INFO, "Copying {0}", src.toString());
@@ -174,9 +174,9 @@ public class SitConfig extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "to {0}", dst.toString());
     Files.write(dst, content.getBytes(charset));
     content = new String(Files.readAllBytes(dst), charset);
-    content = content.replaceAll("@NAMESPACE@", "default");
-    content = content.replaceAll("@DOMAIN_UID@", DOMAINUID);
-    content = content.replaceAll("@MYSQLPORT@", MYSQL_DB_PORT);
+    content = content.replaceAll("@NAMESPACE@", domainNS);
+    content = content.replaceAll("@DOMAIN_UID@", domainUid);
+    content = content.replaceAll("@MYSQLPORT@", mysqldbport);
     Files.write(dst, content.getBytes(charset));
     ExecResult result = TestUtils.exec("kubectl create -f " + mysqlYamlFile);
     Assert.assertEquals(0, result.exitValue());
@@ -194,15 +194,15 @@ public class SitConfig extends BaseTest {
    * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  protected void testCustomSitConfigOverridesForDomain(String testMethod) throws Exception {
-    transferTests();
+  protected void testCustomSitConfigOverridesForDomain(String testMethod, Domain domain) throws Exception {
+    transferTests(domain);
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + (String)domain.getDomainMap().get("t3ChannelPort")
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -220,15 +220,15 @@ public class SitConfig extends BaseTest {
    * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  protected void testCustomSitConfigOverridesForDomainMS(String testMethod) throws Exception {
-    transferTests();
+  protected void testCustomSitConfigOverridesForDomainMS(String testMethod, Domain domain) throws Exception {
+    transferTests(domain);
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + (String)domain.getDomainMap().get("t3ChannelPort")
                 + " weblogic welcome1 "
                 + testMethod
                 + " managed-server1'");
@@ -250,15 +250,15 @@ public class SitConfig extends BaseTest {
    * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  protected void testCustomSitConfigOverridesForJdbc(String testMethod) throws Exception {
-    transferTests();
+  protected void testCustomSitConfigOverridesForJdbc(String testMethod, Domain domain) throws Exception {
+    transferTests(domain);
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + (String)domain.getDomainMap().get("t3ChannelPort")
                 + " weblogic welcome1 "
                 + testMethod
                 + " "
@@ -278,15 +278,15 @@ public class SitConfig extends BaseTest {
    * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  protected void testCustomSitConfigOverridesForJms(String testMethod) throws Exception {
-    transferTests();
+  protected void testCustomSitConfigOverridesForJms(String testMethod, Domain domain) throws Exception {
+    transferTests(domain);
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + (String)domain.getDomainMap().get("t3ChannelPort")
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -306,15 +306,15 @@ public class SitConfig extends BaseTest {
    * @param testMethod - Name of the test
    * @throws Exception when the assertion fails due to unmatched values
    */
-  protected void testCustomSitConfigOverridesForWldf(String testMethod) throws Exception {
-    transferTests();
+  protected void testCustomSitConfigOverridesForWldf(String testMethod, Domain domain) throws Exception {
+    transferTests(domain);
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + (String)domain.getDomainMap().get("t3ChannelPort")
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -329,30 +329,30 @@ public class SitConfig extends BaseTest {
    * @param testMethod - Name of the test
    * @throws Exception when assertions fail.
    */
-  protected void testConfigOverrideAfterDomainStartup(String testMethod) throws Exception {
+  protected void testConfigOverrideAfterDomainStartup(String testMethod, Domain domain) throws Exception {
     // recreate the map with new situational config files
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
-    String dstDir = configOverrideDir;
+    String dstDir = (String)domain.getDomainMap().get("configOverridesFile");
     Files.copy(
         Paths.get(srcDir, "config_1.xml"),
         Paths.get(dstDir, "config.xml"),
         StandardCopyOption.REPLACE_EXISTING);
     Path path = Paths.get(dstDir, "config.xml");
     String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-    content = content.replaceAll("customsitconfigdomain", DOMAINUID);
+    content = content.replaceAll("customsitconfigdomain", domain.getDomainUid());
     //attention
     Charset charset = StandardCharsets.UTF_8;
     Files.write(path, content.getBytes(charset));
 
-    recreateConfigMapandRestart(oldSecret, oldSecret);
-    transferTests();
+    recreateConfigMapandRestart(oldSecret, oldSecret, domain);
+    transferTests(domain);
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + (String)domain.getDomainMap().get("t3ChannelPort")
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -367,24 +367,24 @@ public class SitConfig extends BaseTest {
    * @param testMethod - Name of the test
    * @throws Exception when assertions fail.
    */
-  protected void testOverrideJdbcResourceAfterDomainStart(String testMethod) throws Exception {
-    createJdbcResource();
+  protected void testOverrideJdbcResourceAfterDomainStart(String testMethod, Domain domain) throws Exception {
+    createJdbcResource(domain);
     // recreate the map with new situational config files
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
-    String dstDir = configOverrideDir;
+    String dstDir = (String)domain.getDomainMap().get("configOverridesFile");
     Files.copy(
         Paths.get(srcDir, "jdbc-JdbcTestDataSource-1.xml"),
         Paths.get(dstDir, "jdbc-JdbcTestDataSource-1.xml"),
         StandardCopyOption.REPLACE_EXISTING);
-    recreateConfigMapandRestart(oldSecret, oldSecret);
-    transferTests();
+    recreateConfigMapandRestart(oldSecret, oldSecret, domain);
+    transferTests(domain);
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
-                + T3CHANNELPORT
+                + (String)domain.getDomainMap().get("t3ChannelPort")
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
@@ -398,20 +398,21 @@ public class SitConfig extends BaseTest {
    * @param testMethod - Name of the test
    * @throws Exception when assertions fail.
    */
-  protected void testOverrideJdbcResourceWithNewSecret(String testMethod) throws Exception {
+  protected void testOverrideJdbcResourceWithNewSecret(String testMethod, Domain domain) throws Exception {
     // recreate the map with new situational config files
     String[] files = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
+    String configOverrideDir = (String)domain.getDomainMap().get("configOverridesFile");
     try {
-      copySitConfigFiles(files, newSecret);
-      recreateConfigMapandRestart(oldSecret, newSecret);
-      transferTests();
+      copySitConfigFiles(files, newSecret, configOverrideDir, domain.getDomainUid());
+      recreateConfigMapandRestart(oldSecret, newSecret, domain);
+      transferTests(domain);
       ExecResult result =
           TestUtils.exec(
               KUBE_EXEC_CMD
                   + " 'sh runSitConfigTests.sh "
                   + fqdn
                   + " "
-                  + T3CHANNELPORT
+                  + (String)domain.getDomainMap().get("t3ChannelPort")
                   + " weblogic welcome1 "
                   + testMethod
                   + " "
@@ -419,8 +420,8 @@ public class SitConfig extends BaseTest {
                   + "'");
       assertResult(result);
     } finally {
-      copySitConfigFiles(files, "test-secrets");
-      recreateConfigMapandRestart("test-secrets-new", "test-secrets");
+      copySitConfigFiles(files, "test-secrets", configOverrideDir, domain.getDomainUid());
+      recreateConfigMapandRestart("test-secrets-new", "test-secrets", domain);
     }
   }
 
@@ -429,21 +430,24 @@ public class SitConfig extends BaseTest {
    *
    * @throws Exception JDBC resource creation fails
    */
-  protected void createJdbcResource() throws Exception {
+  protected void createJdbcResource(Domain domain) throws Exception {
     Path path = Paths.get(JDBC_RES_SCRIPT);
     String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+
     content = content.replaceAll("JDBC_URL", JDBC_URL);
-    content = content.replaceAll("DOMAINUID", DOMAINUID);
+    content = content.replaceAll("DOMAINUID", domain.getDomainUid());
     if (getWeblogicImageTag().contains(PS3_TAG)) {
       content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
     }
+    String sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + domain.getDomainUid();
     Files.write(
         Paths.get(sitconfigTmpDir, "create-jdbc-resource.py"),
         content.getBytes(StandardCharsets.UTF_8));
+    String adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
     TestUtils.copyFileViaCat(
         Paths.get(sitconfigTmpDir, "create-jdbc-resource.py").toString(),
         "create-jdbc-resource.py",
-        ADMINPODNAME,
+        adminpodname,
         domain.getDomainNs());
     TestUtils.exec(KUBE_EXEC_CMD + " 'wlst.sh create-jdbc-resource.py'", true);
   }
@@ -453,8 +457,13 @@ public class SitConfig extends BaseTest {
    *
    * @throws Exception when pods restart fail
    */
-  protected void recreateConfigMapandRestart(String oldSecret, String newSecret) throws Exception {
+  protected void recreateConfigMapandRestart(String oldSecret, String newSecret, Domain domain) throws Exception {
     // modify the domain.yaml if the secret name is changed
+    String domainYaml =
+        BaseTest.getUserProjectsDir()
+            + "/weblogic-domains/"
+            + domain.getDomainUid()
+            + "/domain.yaml";
     if (!oldSecret.equals(newSecret)) {
       String content =
           new String(Files.readAllBytes(Paths.get(domainYaml)), StandardCharsets.UTF_8);
@@ -484,27 +493,27 @@ public class SitConfig extends BaseTest {
     }
 
     int clusterReplicas =
-        TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
+        TestUtils.getClusterReplicas(domain.getDomainUid(), domain.getClusterName(), domain.getDomainNs());
 
     // restart the pods so that introspector can run and replace files with new secret if changed
     // and with new config override files
     String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";
-    TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
+    TestUtils.kubectlpatch(domain.getDomainUid(), domain.getDomainNs(), patchStr);
     domain.verifyServerPodsDeleted(clusterReplicas);
 
     String cmd =
         "kubectl create configmap -n " + domain.getDomainNs()
             + " "
-            + DOMAINUID
+            + domain.getDomainUid()
             + "-sitconfigcm --from-file="
-            + configOverrideDir
+            + (String)domain.getDomainMap().get("configOverridesFile")
             + " -o yaml --dry-run | kubectl replace -f -";
     TestUtils.exec(cmd, true);
-    cmd = "kubectl describe cm -n " + domain.getDomainNs() + " " + DOMAINUID + "-sitconfigcm";
+    cmd = "kubectl describe cm -n " + domain.getDomainNs() + " " + domain.getDomainUid() + "-sitconfigcm";
     TestUtils.exec(cmd, true);
 
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
-    TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
+    TestUtils.kubectlpatch(domain.getDomainUid(), domain.getDomainNs(), patchStr);
     domain.verifyDomainCreated();
   }
 
@@ -513,16 +522,17 @@ public class SitConfig extends BaseTest {
    *
    * @throws Exception exception
    */
-  protected void transferTests() throws Exception {
+  protected void transferTests(Domain domain) throws Exception {
+    String adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
     TestUtils.copyFileViaCat(
         TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
         "SitConfigTests.java",
-        ADMINPODNAME,
+        adminpodname,
         domain.getDomainNs());
     TestUtils.copyFileViaCat(
         TEST_RES_DIR + "sitconfig/scripts/runSitConfigTests.sh",
         "runSitConfigTests.sh",
-        ADMINPODNAME,
+        adminpodname,
         domain.getDomainNs());
   }
 
@@ -538,6 +548,7 @@ public class SitConfig extends BaseTest {
     Assert.assertEquals(0, result.exitValue());
   }
 
+  /*
   public static void setParamsForTest(boolean domainInImage) {
     int testNumber = getNewSuffixCount();
     //testprefix = "customsitconfigdomain";copy
@@ -547,7 +558,7 @@ public class SitConfig extends BaseTest {
       testNumber++;
     }
     ADMINPORT = String.valueOf(30800 + testNumber);
-    MYSQL_DB_PORT = String.valueOf(31306 + testNumber);
+    mysqldbport = String.valueOf(31306 + testNumber);
     T3CHANNELPORT = 31000 + testNumber;
     DOMAINUID = testprefix;
     sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
@@ -555,5 +566,6 @@ public class SitConfig extends BaseTest {
     configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
     mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
   }
+  */
 
 }

@@ -13,11 +13,8 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 
-import oracle.kubernetes.operator.utils.ExecResult;
-import oracle.kubernetes.operator.utils.LoggerHelper;
+import oracle.kubernetes.operator.utils.*;
 
-import oracle.kubernetes.operator.utils.Operator;
-import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -32,6 +29,18 @@ import org.junit.Test;
 public class ItSitConfigDomainInImage extends SitConfig {
 
   private static String testClassName;
+  int testNumber = getNewSuffixCount();
+  private static Operator operator1;
+  private static Domain domain;
+  private static String sitconfigTmpDir = "";
+  private static String mysqltmpDir = "";
+  private static String configOverrideDir = "";
+  private static String mysqlYamlFile = "";
+  private static String domainNS;
+  private static String testprefix = "sitconfigdomaininpv";
+  private static String MYSQL_DB_PORT;
+  private static String ADMINPODNAME;
+  private static String domainYaml;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -68,17 +77,17 @@ public class ItSitConfigDomainInImage extends SitConfig {
     if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-      setParamsForTest(domainInImage);
+      //setParamsForTest(domainInImage, testClassName);
 
       // create operator1
       if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, DOMAINUID);
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testprefix);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       }
       TEST_RES_DIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
-      /*
+
       sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
       mysqltmpDir = sitconfigTmpDir + "/mysql";
       configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
@@ -87,9 +96,9 @@ public class ItSitConfigDomainInImage extends SitConfig {
       Files.createDirectories(Paths.get(sitconfigTmpDir));
       Files.createDirectories(Paths.get(configOverrideDir));
       Files.createDirectories(Paths.get(mysqltmpDir));
-      */
+
       // Create the MySql db container
-      copyMySqlFile(domainInImage);
+      copyMySqlFile(domainNS, mysqlYamlFile, MYSQL_DB_PORT, testprefix);
 
       if (!OPENSHIFT) {
         fqdn = TestUtils.getHostName();
@@ -106,9 +115,9 @@ public class ItSitConfigDomainInImage extends SitConfig {
           "jms-ClusterJmsSystemResource.xml",
           "version.txt"
       };
-      copySitConfigFiles(files, oldSecret);
+      copySitConfigFiles(files, oldSecret, configOverrideDir, testprefix);
       // create weblogic domain with configOverrides
-      domain = createSitConfigDomain(domainInImage, domainScript, domainNS);
+      domain = createSitConfigDomain(false, domainScript, domainNS);
       Assert.assertNotNull(domain);
       domainYaml =
           BaseTest.getUserProjectsDir()
@@ -128,7 +137,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
           StandardCopyOption.REPLACE_EXISTING);
       Path path = Paths.get(sitconfigTmpDir, "runSitConfigTests.sh");
       String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-      content = content.replaceAll("customsitconfigdomain", DOMAINUID);
+      content = content.replaceAll("customsitconfigdomain", testprefix);
       //attention
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, content.getBytes(charset));
@@ -143,7 +152,6 @@ public class ItSitConfigDomainInImage extends SitConfig {
       JDBC_RES_SCRIPT = TEST_RES_DIR + "/sitconfig/scripts/create-jdbc-resource.py";
     }
   }
-
   /**
    * Destroy domain, delete the MySQL DB container and teardown.
    *
@@ -153,7 +161,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
   protected static void staticUnprepare() throws Exception {
     if (FULLTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
-      destroySitConfigDomain();
+      destroySitConfigDomain(domain);
       if (operator1 != null) {
         LoggerHelper.getLocal().log(Level.INFO, "Destroying operator...");
         operator1.destroy();
@@ -194,7 +202,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testCustomSitConfigOverridesForDomain(testMethod);
+    testCustomSitConfigOverridesForDomain(testMethod,domain);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
@@ -214,7 +222,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testCustomSitConfigOverridesForDomainMS(testMethod);
+    testCustomSitConfigOverridesForDomainMS(testMethod,domain);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
@@ -238,7 +246,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testCustomSitConfigOverridesForJdbc(testMethod);
+    testCustomSitConfigOverridesForJdbc(testMethod,domain);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
@@ -258,7 +266,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testCustomSitConfigOverridesForJms(testMethod);
+    testCustomSitConfigOverridesForJms(testMethod,domain);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
@@ -280,7 +288,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testCustomSitConfigOverridesForWldf(testMethod);
+    testCustomSitConfigOverridesForWldf(testMethod,domain);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 }
