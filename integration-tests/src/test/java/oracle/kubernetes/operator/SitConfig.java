@@ -47,7 +47,7 @@ public class SitConfig extends BaseTest {
    * @throws Exception when the initialization, creating directories , copying files and domain
    *                   creation fails.
    */
-
+/*
   protected static Domain staticPrepare(boolean domainInImage,
                                         String domainScript,
                                         String testClassName,
@@ -122,7 +122,7 @@ public class SitConfig extends BaseTest {
     return domain;
 
   }
-
+*/
 
   /**
    * Create Domain using the custom domain script create-domain-auto-custom-sit-config20.py

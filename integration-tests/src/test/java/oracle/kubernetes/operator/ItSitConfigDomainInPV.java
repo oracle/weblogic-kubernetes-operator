@@ -74,14 +74,13 @@ public class ItSitConfigDomainInPV extends SitConfig {
 
   protected static void staticPrepare(boolean domainInImage, String domainScript, String testClassName)
       throws Exception {
-    // initialize test properties and create the directories
     if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-
+      testNumber = getNewSuffixCount();
       // create operator1
       if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testprefix);
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(testNumber, true, testprefix);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -96,7 +95,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
       Files.createDirectories(Paths.get(sitconfigTmpDir));
       Files.createDirectories(Paths.get(configOverrideDir));
       Files.createDirectories(Paths.get(mysqltmpDir));
-
+      mysqldbport = String.valueOf(31306 + testNumber);
       // Create the MySql db container
       copyMySqlFile(domainNS, mysqlYamlFile, mysqldbport, testprefix);
 
