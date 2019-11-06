@@ -1039,11 +1039,11 @@ when it starts servers.  This eliminates the need to store secrets inside
 the Docker images.
 
 To create the secret, change to the correct sample directory and then execute
-the sample command as shown below:
+the sample command, as shown below:
 
-```bash 
+```bash
 $ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-credentials
- 
+
 $ ./create-weblogic-credentials.sh -u weblogic -p Welcome1 -n soans -d soainfra -s soainfra-domain-credentials
 secret/soainfra-domain-credentials created
 secret/soainfra-domain-credentials labeled
@@ -1053,26 +1053,26 @@ The secret soainfra-domain-credentials has been successfully created in the soan
 
 The parameters are as follows:
 
-* `-u`: The username for the administrative user
+* `-u`: The user name for the administrative user
 * `-p`: The password for the administrative user. Oracle strongly recommends using a more
   secure password than the one shown in this example.
 * `-n`: The namespace that the domain will be in.
 * `-d`: The `domainUID` (unique identifier) for the domain.
-* `-s` (optional): The name of the secret to create.
+* `-s`: (Optional) The name of the secret to create.
 
 
 ##### Create persistent storage for the domain directory
 
-Currently SOA domains are only supported with the "domain on persistent
-storage" model.  The "domain in image" model is not supported in the SOA
-preview.
+Currently SOA domains are supported only with the ["domain on persistent
+storage"]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) model. The ["domain in image"]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}})
+model is not supported in the SOA preview.
 
-You must provide persistent storage for the domain, and you must use a 
-storage provider that supports the `ReadWriteMany` access mode. If you 
-are using Oracle Container Engine for Kubernetes, this means you need 
-to use the File Storage Service.  You need to create a File System
-attached to the same Virtual Cloud Network adnd Subnet as your Kubernetes cluster,
-and a Mount Point for that File System.  Once you have completed this,
+You must provide persistent storage for the domain, and you must use a
+storage provider that supports the `ReadWriteMany` access mode. If you
+are using the Oracle Container Engine for Kubernetes, this means that you need
+to use the File Storage Service.  You need to create a file system
+attached to the same Virtual Cloud Network and subnet as your Kubernetes cluster,
+and a mount point for that file system.  After you have completed this,
 you should have an IP address and path for the persistent storage.
 For example: `10.0.10.6/soa-fs`.  You will need this address later.
 
@@ -1155,7 +1155,7 @@ measured in thousandths of a CPU, so `1000m` means one full CPU.
 ##### Add the namespace to the operator
 
 You need to tell the WebLogic Kubernetes operator to manage domains in
-the namespace that the SOA domain is in.  If you followed the examples
+the namespace that the SOA domain is in.  If you followed the examples, then
 this will be `soans`.  
 
 Use the following commands to tell the operator to manage domains in
