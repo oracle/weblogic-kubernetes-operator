@@ -85,7 +85,7 @@ public class K8sTestUtils {
       assertTrue(existed, "Domain exists");
     } catch (ApiException aex) {
       if (aex.getCode() == 404) {
-        assertTrue(!existed, String.format("Expected CRD domain existed in %s."));
+        assertTrue(!existed, String.format("Expected CRD domain existed in %s.", namespace));
       } else {
         throw aex;
       }
