@@ -61,10 +61,21 @@ public class ItSitConfigDomainInPV extends SitConfig {
       mysqltmpDir = sitconfigTmpDir + "/mysql";
       configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
       mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
+      // initialize test properties and create the directories
+      initialize(APP_PROPS_FILE, testClassName);
+
+      // create operator1
+      if (operator1 == null) {
+        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testprefix);
+        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assert.assertNotNull(operator1);
+        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+      }
+
       staticPrepare(
           false,
           "integration-tests/src/test/resources/sitconfig/"
-              + "scripts/create-domain-auto-custom-sit-config20.py", testClassName);
+              + "scripts/create-domain-auto-custom-sit-config20.py", testClassName, domainNS, mysqldbport);
     }
   }
 
