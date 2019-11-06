@@ -56,23 +56,6 @@ public class ItSitConfigDomainInPV extends SitConfig {
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
-      // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE, testClassName);
-      testNumber = getNewSuffixCount();
-      mysqldbport = String.valueOf(31306 + testNumber);
-      sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix;
-      mysqltmpDir = sitconfigTmpDir + "/mysql";
-      configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
-      mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
-
-      // create operator1
-      if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testprefix);
-        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator1);
-        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-      }
-
       staticPrepare(
           false,
           "integration-tests/src/test/resources/sitconfig/"
