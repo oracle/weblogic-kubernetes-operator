@@ -41,6 +41,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
   private static String testprefix = "sitconfigdomaininpv";
   private static String mysqldbport;
   private static String ADMINPODNAME;
+  private static String JDBC_URL;
   private static String domainYaml;
 
   /**
@@ -114,7 +115,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
           "jms-ClusterJmsSystemResource.xml",
           "version.txt"
       };
-      copySitConfigFiles(files, oldSecret, configOverrideDir, testprefix);
+      copySitConfigFiles(files, oldSecret, configOverrideDir, testprefix, JDBC_URL);
       // create weblogic domain with configOverrides
       domain = createSitConfigDomain(false, domainScript, domainNS);
       Assert.assertNotNull(domain);
@@ -146,9 +147,6 @@ public class ItSitConfigDomainInPV extends SitConfig {
           "runSitConfigTests.sh",
           ADMINPODNAME,
           domain.getDomainNs());
-      KUBE_EXEC_CMD =
-          "kubectl -n " + domain.getDomainNs() + "  exec -it " + ADMINPODNAME + "  -- bash -c";
-      JDBC_RES_SCRIPT = TEST_RES_DIR + "/sitconfig/scripts/create-jdbc-resource.py";
     }
   }
 
@@ -232,7 +230,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testCustomSitConfigOverridesForJdbc(testMethod, domain);
+    testCustomSitConfigOverridesForJdbc(testMethod, domain, JDBC_URL);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
@@ -308,7 +306,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testOverrideJdbcResourceAfterDomainStart(testMethod, domain);
+    testOverrideJdbcResourceAfterDomainStart(testMethod, domain, JDBC_URL);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
@@ -324,7 +322,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testOverrideJdbcResourceWithNewSecret(testMethod, domain);
+    testOverrideJdbcResourceWithNewSecret(testMethod, domain, JDBC_URL);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 }

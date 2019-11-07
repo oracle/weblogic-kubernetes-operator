@@ -19,7 +19,6 @@ import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
-import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.Assert;
 
@@ -30,11 +29,10 @@ public class SitConfig extends BaseTest {
 
   protected static String TEST_RES_DIR;
   protected static String fqdn;
-  protected static String JDBC_URL;
+  //protected static String JDBC_URL;
   protected static final String JDBC_DRIVER_NEW = "com.mysql.cj.jdbc.Driver";
   protected static final String JDBC_DRIVER_OLD = "com.mysql.jdbc.Driver";
   protected static final String PS3_TAG = "12.2.1.3";
-  protected static String KUBE_EXEC_CMD;
   protected static String JDBC_RES_SCRIPT;
   protected static final String oldSecret = "test-secrets";
   protected static final String newSecret = "test-secrets-new";
@@ -58,7 +56,7 @@ public class SitConfig extends BaseTest {
     } else {
       domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testprefix);
     }
-
+    JDBC_RES_SCRIPT = TEST_RES_DIR + "/sitconfig/scripts/create-jdbc-resource.py";
     String configOverrideDir = BaseTest.getResultDir() + "/sitconfigtemp" + testprefix + "/configoverridefiles";
     domainMap.put("configOverrides", "sitconfigcm");
     domainMap.put("configOverridesFile", configOverrideDir);
@@ -93,7 +91,7 @@ public class SitConfig extends BaseTest {
    */
   protected static void copySitConfigFiles(String[] files, String secretName,
                                            String configOverrideDir,
-                                           String domainNS) throws IOException {
+                                           String domainNS, String jdbc_url) throws IOException {
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
     String dstDir = configOverrideDir;
 
@@ -102,7 +100,7 @@ public class SitConfig extends BaseTest {
       Path path = Paths.get(srcDir, file);
       LoggerHelper.getLocal().log(Level.INFO, "Copying {0}", path.toString());
       String content = new String(Files.readAllBytes(path), charset);
-      content = content.replaceAll("JDBC_URL", JDBC_URL);
+      content = content.replaceAll("JDBC_URL", jdbc_url);
       content = content.replaceAll(oldSecret, secretName);
       content = content.replaceAll("customsitconfigdomain", domainNS);
       if (getWeblogicImageTag().contains(PS3_TAG)) {
@@ -165,9 +163,12 @@ public class SitConfig extends BaseTest {
    */
   protected void testCustomSitConfigOverridesForDomain(String testMethod, Domain domain) throws Exception {
     transferTests(domain);
+    String adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String kube_exec_cmd =
+        "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
         TestUtils.exec(
-            KUBE_EXEC_CMD
+            kube_exec_cmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
@@ -192,9 +193,12 @@ public class SitConfig extends BaseTest {
    */
   protected void testCustomSitConfigOverridesForDomainMS(String testMethod, Domain domain) throws Exception {
     transferTests(domain);
+    String adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String kube_exec_cmd =
+        "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
         TestUtils.exec(
-            KUBE_EXEC_CMD
+            kube_exec_cmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
@@ -221,11 +225,14 @@ public class SitConfig extends BaseTest {
    * @param domain - Domain object
    * @throws Exception when the assertion fails due to unmatched values
    */
-  protected void testCustomSitConfigOverridesForJdbc(String testMethod, Domain domain) throws Exception {
+  protected void testCustomSitConfigOverridesForJdbc(String testMethod, Domain domain, String jdbc_url) throws Exception {
     transferTests(domain);
+    String adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String kube_exec_cmd =
+        "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
         TestUtils.exec(
-            KUBE_EXEC_CMD
+            kube_exec_cmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
@@ -233,7 +240,7 @@ public class SitConfig extends BaseTest {
                 + " weblogic welcome1 "
                 + testMethod
                 + " "
-                + JDBC_URL
+                + jdbc_url
                 + "'");
     assertResult(result);
   }
@@ -252,9 +259,12 @@ public class SitConfig extends BaseTest {
    */
   protected void testCustomSitConfigOverridesForJms(String testMethod, Domain domain) throws Exception {
     transferTests(domain);
+    String adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String kube_exec_cmd =
+        "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
         TestUtils.exec(
-            KUBE_EXEC_CMD
+            kube_exec_cmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
@@ -281,9 +291,12 @@ public class SitConfig extends BaseTest {
    */
   protected void testCustomSitConfigOverridesForWldf(String testMethod, Domain domain) throws Exception {
     transferTests(domain);
+    String adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String kube_exec_cmd =
+        "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
         TestUtils.exec(
-            KUBE_EXEC_CMD
+            kube_exec_cmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
@@ -319,9 +332,12 @@ public class SitConfig extends BaseTest {
 
     recreateConfigMapandRestart(oldSecret, oldSecret, domain);
     transferTests(domain);
+    String adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String kube_exec_cmd =
+        "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
         TestUtils.exec(
-            KUBE_EXEC_CMD
+            kube_exec_cmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
@@ -341,8 +357,8 @@ public class SitConfig extends BaseTest {
    * @param domain - Domain object   *
    * @throws Exception when assertions fail.
    */
-  protected void testOverrideJdbcResourceAfterDomainStart(String testMethod, Domain domain) throws Exception {
-    createJdbcResource(domain);
+  protected void testOverrideJdbcResourceAfterDomainStart(String testMethod, Domain domain, String jdbc_url) throws Exception {
+    createJdbcResource(domain, jdbc_url);
     // recreate the map with new situational config files
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
     String dstDir = (String)domain.getDomainMap().get("configOverridesFile");
@@ -352,9 +368,12 @@ public class SitConfig extends BaseTest {
         StandardCopyOption.REPLACE_EXISTING);
     recreateConfigMapandRestart(oldSecret, oldSecret, domain);
     transferTests(domain);
+    String adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String kube_exec_cmd =
+        "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
         TestUtils.exec(
-            KUBE_EXEC_CMD
+            kube_exec_cmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
@@ -373,18 +392,21 @@ public class SitConfig extends BaseTest {
    * @param domain - Domain object   *
    * @throws Exception when assertions fail.
    */
-  protected void testOverrideJdbcResourceWithNewSecret(String testMethod, Domain domain) throws Exception {
+  protected void testOverrideJdbcResourceWithNewSecret(String testMethod, Domain domain, String jdbc_url) throws Exception {
     // recreate the map with new situational config files
     String[] files = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
     String configOverrideDir = BaseTest.getResultDir()
         + "/sitconfigtemp" + domain.getDomainUid() + "/configoverridefiles";
     try {
-      copySitConfigFiles(files, newSecret, configOverrideDir, domain.getDomainUid());
+      copySitConfigFiles(files, newSecret, configOverrideDir, domain.getDomainUid(), jdbc_url);
       recreateConfigMapandRestart(oldSecret, newSecret, domain);
       transferTests(domain);
+      String adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
+      String kube_exec_cmd =
+          "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
       ExecResult result =
           TestUtils.exec(
-              KUBE_EXEC_CMD
+              kube_exec_cmd
                   + " 'sh runSitConfigTests.sh "
                   + fqdn
                   + " "
@@ -392,11 +414,11 @@ public class SitConfig extends BaseTest {
                   + " weblogic welcome1 "
                   + testMethod
                   + " "
-                  + JDBC_URL
+                  + jdbc_url
                   + "'");
       assertResult(result);
     } finally {
-      copySitConfigFiles(files, "test-secrets", configOverrideDir, domain.getDomainUid());
+      copySitConfigFiles(files, "test-secrets", configOverrideDir, domain.getDomainUid(), jdbc_url);
       recreateConfigMapandRestart("test-secrets-new", "test-secrets", domain);
     }
   }
@@ -407,11 +429,11 @@ public class SitConfig extends BaseTest {
    * @param domain - Domain object
    * @throws Exception JDBC resource creation fails
    */
-  protected void createJdbcResource(Domain domain) throws Exception {
+  protected void createJdbcResource(Domain domain, String jdbc_url) throws Exception {
     Path path = Paths.get(JDBC_RES_SCRIPT);
     String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
 
-    content = content.replaceAll("JDBC_URL", JDBC_URL);
+    content = content.replaceAll("JDBC_URL", jdbc_url);
     content = content.replaceAll("DOMAINUID", domain.getDomainUid());
     if (getWeblogicImageTag().contains(PS3_TAG)) {
       content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
@@ -426,7 +448,9 @@ public class SitConfig extends BaseTest {
         "create-jdbc-resource.py",
         adminpodname,
         domain.getDomainNs());
-    TestUtils.exec(KUBE_EXEC_CMD + " 'wlst.sh create-jdbc-resource.py'", true);
+    String kube_exec_cmd =
+        "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
+    TestUtils.exec(kube_exec_cmd + " 'wlst.sh create-jdbc-resource.py'", true);
   }
 
   /**

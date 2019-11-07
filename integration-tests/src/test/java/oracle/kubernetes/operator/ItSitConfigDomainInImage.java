@@ -45,7 +45,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
   private static String mysqldbport;
   private static String adminpodname;
   private static String domainYaml;
-
+  private static String JDBC_URL;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -118,7 +118,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
           "jms-ClusterJmsSystemResource.xml",
           "version.txt"
       };
-      copySitConfigFiles(files, oldSecret, configOverrideDir, testprefix);
+      copySitConfigFiles(files, oldSecret, configOverrideDir, testprefix, JDBC_URL);
       // create weblogic domain with configOverrides
       domain = createSitConfigDomain(true, domainScript, domainNS);
       Assert.assertNotNull(domain);
@@ -149,9 +149,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
           "runSitConfigTests.sh",
           adminpodname,
           domain.getDomainNs());
-      KUBE_EXEC_CMD =
-          "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
-      JDBC_RES_SCRIPT = TEST_RES_DIR + "/sitconfig/scripts/create-jdbc-resource.py";
+
     }
   }
 
@@ -236,7 +234,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testCustomSitConfigOverridesForJdbc(testMethod,domain);
+    testCustomSitConfigOverridesForJdbc(testMethod,domain, JDBC_URL);
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
