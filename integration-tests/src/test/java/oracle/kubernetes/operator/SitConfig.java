@@ -100,7 +100,7 @@ public class SitConfig extends BaseTest {
       Path path = Paths.get(srcDir, file);
       LoggerHelper.getLocal().log(Level.INFO, "Copying {0}", path.toString());
       String content = new String(Files.readAllBytes(path), charset);
-      content = content.replaceAll("jdbcUrl", jdbcUrl);
+      content = content.replaceAll("JDBC_URL", jdbcUrl);
       content = content.replaceAll(oldSecret, secretName);
       content = content.replaceAll("customsitconfigdomain", domainNS);
       if (getWeblogicImageTag().contains(PS3_TAG)) {
@@ -438,7 +438,7 @@ public class SitConfig extends BaseTest {
     Path path = Paths.get(JDBC_RES_SCRIPT);
     String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
 
-    content = content.replaceAll("jdbcUrl", jdbcUrl);
+    content = content.replaceAll("JDBC_URL", jdbcUrl);
     content = content.replaceAll("DOMAINUID", domain.getDomainUid());
     if (getWeblogicImageTag().contains(PS3_TAG)) {
       content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
