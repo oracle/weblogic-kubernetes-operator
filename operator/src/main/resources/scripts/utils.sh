@@ -226,6 +226,45 @@ function checkEnv() {
   return 0
 }
 
+# traceEnv:
+#   purpose: trace a curated set of env vars
+#   warning: we purposely avoid dumping all env vars
+#            (K8S provides env vars with potentially sensitive network information)
+#
+function traceEnv() {
+  local env_var
+  trace FINE "Env vars ${*}:"
+  for env_var in \
+    DOMAIN_UID \
+    NAMESPACE \
+    SERVER_NAME \
+    SERVICE_NAME \
+    ADMIN_NAME \
+    AS_SERVICE_NAME \
+    ADMIN_PORT \
+    ADMIN_PORT_SECURE \
+    USER_MEM_ARGS \
+    JAVA_OPTIONS \
+    FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR \
+    STARTUP_MODE \
+    DOMAIN_HOME \
+    LOG_HOME \
+    SERVER_OUT_IN_POD_LOG \
+    DATA_HOME \
+    KEEP_DEFAULT_DATA_HOME \
+    EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR \
+    JAVA_HOME \
+    ORACLE_HOME \
+    WL_HOME \
+    MW_HOME \
+    NODEMGR_HOME \
+    INTROSPECT_HOME \
+    PATH
+  do
+    echo "    ${env_var}='${!env_var}'"
+  done
+}
+
 
 #
 # exportEffectiveDomainHome
