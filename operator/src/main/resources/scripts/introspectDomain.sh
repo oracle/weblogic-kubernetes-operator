@@ -67,7 +67,8 @@ exportInstallHomes
 
 # check if prereq env-vars, files, and directories exist
 
-checkEnv DOMAIN_UID \
+checkEnv -q \
+         DOMAIN_UID \
          NAMESPACE \
          DOMAIN_HOME \
          ORACLE_HOME \

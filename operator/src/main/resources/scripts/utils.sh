@@ -199,10 +199,12 @@ function tracePipe() {
 }
 
 # 
-# checkEnv
+# checkEnv [-q] envvar1 envvar2 ...
+#
 #   purpose: Check and trace the values of the provided env vars.
 #            If any env vars don't exist or are empty, return non-zero
 #            and trace an '[SEVERE]'.
+#            (Pass '-q' to suppress FINE tracing.)
 #
 #   sample:  checkEnv HOST NOTSET1 USER NOTSET2
 #            @[2018-10-05T22:48:04.368 UTC][FINE] HOST='esscupcakes'
@@ -210,12 +212,18 @@ function tracePipe() {
 #            @[2018-10-05T22:48:04.415 UTC][SEVERE] The following env vars are missing or empty:  NOTSET1 NOTSET2
 #
 function checkEnv() {
+  local do_fine="true"
+  if [ "$1" = "-q" ]; then 
+    do_fine="false"
+    shift
+  fi
+  
   local not_found=""
   while [ ! -z "${1}" ]; do 
     if [ -z "${!1}" ]; then
       not_found="$not_found ${1}"
     else
-      trace FINE "${1}='${!1}'"
+      [ "$do_fine" = "true" ] && trace FINE "${1}='${!1}'"
     fi
     shift
   done

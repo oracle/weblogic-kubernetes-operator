@@ -133,10 +133,10 @@ if [ ! -z "$STARTUP_MODE" ] && [[ $JAVA_OPTIONS != *"-Dweblogic.management.start
 fi
 
 #
-# Check and display input env vars
+# Check input env vars
 #
 
-checkEnv \
+checkEnv -q \
   DOMAIN_UID \
   DOMAIN_NAME \
   DOMAIN_HOME \
