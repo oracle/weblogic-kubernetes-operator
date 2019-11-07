@@ -18,6 +18,7 @@ import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -39,6 +40,7 @@ public class ItSessionMigration extends BaseTest {
   private static Domain domain;
   private static String domainNS1;
   private static String testClassName;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -55,16 +57,24 @@ public class ItSessionMigration extends BaseTest {
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
-      // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
+    }
+  }
+
+  @Before
+  public void prepare() throws Exception {
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
       testClassName = "sessmig";
       // create operator1
       if (operator == null) {
         Map<String, Object> operatorMap =
-            TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+            createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS1);
       }
 
       // create domain
@@ -72,14 +82,14 @@ public class ItSessionMigration extends BaseTest {
         LoggerHelper.getLocal().log(Level.INFO,
             "Creating WLS Domain & waiting for the script to complete execution");
         Map<String, Object> wlstDomainMap =
-            TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+            createDomainMap(getNewSuffixCount(), testClassName);
         wlstDomainMap.put("namespace", domainNS1);
         // wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
         domain = TestUtils.createDomain(wlstDomainMap);
         domain.verifyDomainCreated();
       }
 
-      httpHeaderFile = BaseTest.getResultDir() + "/headers";
+      httpHeaderFile = getResultDir() + "/headers";
       httpAttrMap = new HashMap<String, String>();
       httpAttrMap.put("sessioncreatetime", "(.*)sessioncreatetime>(.*)</sessioncreatetime(.*)");
       httpAttrMap.put("sessionid", "(.*)sessionid>(.*)</sessionid(.*)");
@@ -105,12 +115,8 @@ public class ItSessionMigration extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "++++++++++++++++++++++++++++++++++");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-
-      tearDown(new Object() {
-      }.getClass().getEnclosingClass().getSimpleName());
+      tearDown(new Object() {}.getClass()
+          .getEnclosingClass().getSimpleName(), namespaceList.toString());
 
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }

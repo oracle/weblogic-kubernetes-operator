@@ -19,10 +19,9 @@ import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.junit.runners.MethodSorters;
 
 /**
  * Simple JUnit test file used for testing Operator.
@@ -30,7 +29,6 @@ import org.junit.runners.MethodSorters;
  * <p>This test is used for creating Operator(s) and domain(s) which are managed by the Operator(s).
  * And to test WLS server discovery feature.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItServerDiscovery extends BaseTest {
   private static String testDomainYamlFile;
 
@@ -38,6 +36,7 @@ public class ItServerDiscovery extends BaseTest {
   private static Domain domain;
   private static String domainNS;
   private static String testClassName;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -52,20 +51,28 @@ public class ItServerDiscovery extends BaseTest {
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
-      // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-      testClassName = "itdiscovery";
+    }
+  }
+
+  @Before
+  public void prepare() throws Exception {
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
+      String testClassNameShort = "itdiscovery";
       // create operator1
       if (operator == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassNameShort);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS);
       }
       // create domain
       if (domain == null) {
         LoggerHelper.getLocal().log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
-        Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+        Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassNameShort);
         domainMap.put("namespace", domainNS);
         domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
@@ -74,13 +81,13 @@ public class ItServerDiscovery extends BaseTest {
       final String testYamlFileName = "custom-domaint.yaml";
 
       String domainYaml =
-          BaseTest.getUserProjectsDir()
+          getUserProjectsDir()
               + "/weblogic-domains/"
               + domain.getDomainUid()
               + "/domain.yaml";
 
       // create test domain yaml file
-      testDomainYamlFile = BaseTest.getResultDir() + "/" + testYamlFileName;
+      testDomainYamlFile = getResultDir() + "/" + testYamlFileName;
 
       Path sourceFile = Paths.get(domainYaml);
       Path targetFile = Paths.get(testDomainYamlFile);
@@ -101,12 +108,8 @@ public class ItServerDiscovery extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "++++++++++++++++++++++++++++++++++");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-
       tearDown(new Object() {
-      }.getClass().getEnclosingClass().getSimpleName());
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
 
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
