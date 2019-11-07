@@ -54,6 +54,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    * @throws Exception when the initialization, creating directories , copying files and domain
    *                   creation fails.
    */
+
   @BeforeClass
   public static void staticPrepare() throws Exception {
     testClassName = new Object() {
