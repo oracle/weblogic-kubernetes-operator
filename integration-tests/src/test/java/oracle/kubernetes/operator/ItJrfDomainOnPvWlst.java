@@ -54,7 +54,7 @@ public class ItJrfDomainOnPvWlst extends BaseTest {
   @Before
   public void prepare() throws Exception {
     createResultAndPvDirs(testClassName);
-    setMaxIterationsPod(35);
+    // setMaxIterationsPod(35);
     TestUtils.exec(
         "cp -rf " 
         + BaseTest.getProjectRoot() 

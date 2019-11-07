@@ -64,7 +64,7 @@ public class ItPodsRestart extends BaseTest {
     // initialize test properties and create the directories
     if (QUICKTEST) {
       createResultAndPvDirs(testClassName);
-      setMaxIterationsPod(80);
+      // setMaxIterationsPod(80);
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
       if (operator1 == null) {

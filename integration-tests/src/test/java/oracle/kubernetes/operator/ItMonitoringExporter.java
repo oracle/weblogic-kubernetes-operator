@@ -807,7 +807,7 @@ public class ItMonitoringExporter extends BaseTest {
     configureDomainInPrometheus(domainNS2, domainNS2, domainNS1, domainNS1);
 
     BaseTest.setWaitTimePod(10);
-    BaseTest.setMaxIterationsPod(50);
+    // BaseTest.setMaxIterationsPod(50);
     assertTrue(
         "Can't find expected metrics",
         checkMetricsViaPrometheus("webapp_config_open_sessions_current_count", domainNS1));

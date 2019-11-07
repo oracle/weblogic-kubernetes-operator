@@ -99,7 +99,7 @@ public class ItPodsShutdown extends BaseTest {
       domainUid = domain.getDomainUid();
       domainNS = domain.getDomainNs();
       BaseTest.setWaitTimePod(5);
-      BaseTest.setMaxIterationsPod(50);
+      // BaseTest.setMaxIterationsPod(50);
     }
   }
 
