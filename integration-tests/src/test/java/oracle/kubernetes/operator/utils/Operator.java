@@ -456,7 +456,7 @@ public class Operator {
       Map<String, Object> inputMap, boolean opNS, boolean opSA, boolean targetdomainNS)
       throws Exception {
     operatorMap = inputMap;
-    userProjectsDir = BaseTest.getUserProjectsDir();
+    userProjectsDir = (String) operatorMap.get("userProjectsDir");
     operatorNS = (String) operatorMap.getOrDefault("namespace", operatorNS);
 
     if (operatorMap.get("releaseName") == null) {

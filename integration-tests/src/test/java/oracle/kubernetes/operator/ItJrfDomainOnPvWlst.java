@@ -13,13 +13,13 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.DbUtils;
-import oracle.kubernetes.operator.utils.DomainCrd;
-import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.JrfDomain;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -34,6 +34,7 @@ public class ItJrfDomainOnPvWlst extends BaseTest {
   private static final String JRF_DOMAIN_ON_PV_WLST_FILE = "jrf_domainonpvwlst.yaml";
   private static String rcuSchemaPrefix = "jrfdomain";
   private static Operator operator1;
+  private static String testClassName;
 
   /**
   * This method gets called only once before any of the test methods are executed. It does the
@@ -45,18 +46,24 @@ public class ItJrfDomainOnPvWlst extends BaseTest {
   */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE);
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
+  }
+
+  @Before
+  public void prepare() throws Exception {
+    createResultAndPvDirs(testClassName);
     setMaxIterationsPod(35);
     TestUtils.exec(
         "cp -rf " 
         + BaseTest.getProjectRoot() 
         + "/kubernetes/samples/scripts/create-rcu-schema " 
-        + BaseTest.getResultDir(),
+        + getResultDir(),
         true);
    
-    DbUtils.startOracleDB();
-    DbUtils.createRcuSchema(rcuSchemaPrefix);
+    DbUtils.startOracleDB(getResultDir());
+    DbUtils.createRcuSchema(getResultDir(), rcuSchemaPrefix);
 
    
   }
@@ -85,7 +92,8 @@ public class ItJrfDomainOnPvWlst extends BaseTest {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Creating Operator & waiting for the script to complete execution");
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Creating Operator & waiting for the script to complete execution");
     // create operator1
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
@@ -111,7 +119,7 @@ public class ItJrfDomainOnPvWlst extends BaseTest {
       }
     }
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS - " + testMethodName);
   }
  
 }
