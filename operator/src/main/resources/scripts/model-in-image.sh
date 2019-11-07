@@ -340,7 +340,7 @@ function createWLDomain() {
   #
   setupInventoryList ${version_changed}
 
-  checkExistInventoryhttps://www.facebook.com/?ref=tn_tnmn
+  checkExistInventory
   local wdt_artifacts_changed=$?
   # something changed in the wdt artifacts or wls version changed
   local created_domain=0
