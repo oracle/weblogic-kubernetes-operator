@@ -23,17 +23,15 @@ import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.junit.runners.MethodSorters;
 
 /**
  * Simple JUnit test file used for testing Operator.
  *
  * <p>This test is used for testing pods being shutdowned by some properties change.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItPodsShutdown extends BaseTest {
 
   private static final String testAppName = "httpsessionreptestapp";
@@ -50,6 +48,7 @@ public class ItPodsShutdown extends BaseTest {
   private static int podVer = 1;
   private static String testClassName;
   private static String domainNS1;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -61,31 +60,42 @@ public class ItPodsShutdown extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    // initialize test properties and create the directories
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
+    }
+  }
+
+  @Before
+  public void prepare() throws Exception {
+    // initialize test properties and create the directories
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
       // create operator1
       if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS1);
       }
 
-      shutdownTmpDir = BaseTest.getResultDir() + "/shutdowntemp";
+      shutdownTmpDir = getResultDir() + "/shutdowntemp";
       Files.createDirectories(Paths.get(shutdownTmpDir));
 
-      domain = createDomain();
-      originalYaml =
-          BaseTest.getUserProjectsDir()
-              + "/weblogic-domains/"
-              + domain.getDomainUid()
-              + "/domain.yaml";
-      Assert.assertNotNull(domain);
+      if (domain == null) {
+        domain = createDomain();
+        originalYaml =
+            getUserProjectsDir()
+                + "/weblogic-domains/"
+                + domain.getDomainUid()
+                + "/domain.yaml";
+        Assert.assertNotNull(domain);
+      }
       domainUid = domain.getDomainUid();
       domainNS = domain.getDomainNs();
       BaseTest.setWaitTimePod(5);
@@ -101,21 +111,17 @@ public class ItPodsShutdown extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-
       destroyDomain();
       tearDown(new Object() {
-      }.getClass().getEnclosingClass().getSimpleName());
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
 
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
 
-  private static Domain createDomain() throws Exception {
+  private Domain createDomain() throws Exception {
 
-    Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+    Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
     domainMap.put("namespace", domainNS1);
     domainMap.put("domainUID", "domainpodsshutdown");
     domainMap.put("initialManagedServerReplicas", new Integer("1"));

@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -39,6 +40,7 @@ import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -83,6 +85,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static String monitoringExporterBranchVer = "master";
 
   private static String testClassName;
+  private static StringBuffer namespaceList;
   private static String domainNS1;
   private static String domainNS2;
 
@@ -99,13 +102,19 @@ public class ItMonitoringExporter extends BaseTest {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
+    }
+  }
 
+  @Before
+  public void prepare() throws Exception {
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
       wlsUser = BaseTest.getUsername();
       wlsPassword = BaseTest.getPassword();
 
       metricsUrl = exporterUrl + "metrics";
-      monitoringExporterDir = BaseTest.getResultDir() + "/monitoring";
-      monitoringExporterScriptDir = BaseTest.getResultDir() + "/scripts";
+      monitoringExporterDir = getResultDir() + "/monitoring";
+      monitoringExporterScriptDir = getResultDir() + "/scripts";
       resourceExporterDir =
           BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
       configPath = resourceExporterDir;
@@ -114,18 +123,20 @@ public class ItMonitoringExporter extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
         Map<String, Object> operatorMap =
-            TestUtils.createOperatorMap(getNewSuffixCount(), true, "monexp");
+            createOperatorMap(getNewSuffixCount(), true, "monexp");
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
         domainNS2 = "monexp-domainns-" + getNewSuffixCount();
         ((ArrayList<String>) operatorMap.get("domainNamespaces")).add(domainNS2);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
 
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS1).append(" ").append(domainNS2);
 
         //operator = TestUtils.createOperator("operatorexp.yaml");
       }
       if (domain == null) {
-        Map<String, Object> wlstDomainMap = TestUtils.createDomainMap(getNewSuffixCount(), "monexp");
+        Map<String, Object> wlstDomainMap = createDomainMap(getNewSuffixCount(), "monexp");
         wlstDomainMap.put("namespace", domainNS1);
         wlstDomainMap.put("domainUID", domainNS1);
         wlstDomainMap.put("createDomainPyScript",
@@ -153,10 +164,6 @@ public class ItMonitoringExporter extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO,
-          "+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
       if (domain != null) {
         domain.destroy();
         TestUtils.deleteWeblogicDomainResources(domainNS1);
@@ -170,10 +177,15 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      uninstallWebHookPrometheusGrafanaMySql();
-      tearDown(new Object() {
-      }.getClass().getEnclosingClass().getSimpleName());
-      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
+      try {
+        uninstallWebHookPrometheusGrafanaMySql();
+      } catch (Exception ex) {
+        LoggerHelper.getLocal().log(Level.INFO,
+            "Exception caught while uninstalling webhook/prometheus/Grafana/Mysql " + ex.getMessage());
+      }
+
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+      LoggerHelper.getLocal().log(Level.INFO,"SUCCESS");
     }
   }
 
@@ -207,11 +219,11 @@ public class ItMonitoringExporter extends BaseTest {
   private static void executeShelScript(String srcLoc, String destLoc, String fileName, String args)
       throws Exception {
     if (!new File(destLoc).exists()) {
-      LoggerHelper.getLocal().log(Level.INFO, " creating script dir ");
+      LoggerHelper.getLocal().log(Level.INFO," creating script dir " + destLoc);
       Files.createDirectories(Paths.get(destLoc));
     }
     String crdCmd = " cp " + srcLoc + "/" + fileName + " " + destLoc;
-    TestUtils.exec(crdCmd);
+    TestUtils.exec(crdCmd, true);
     crdCmd =
         "cd "
             + destLoc
@@ -222,7 +234,7 @@ public class ItMonitoringExporter extends BaseTest {
             + " "
             + args
             + " | tee script.log";
-    TestUtils.exec(crdCmd);
+    TestUtils.exec(crdCmd, true);
     crdCmd = " cat " + destLoc + "/script.log";
     ExecResult result = ExecCommand.exec(crdCmd);
     assertFalse(
@@ -299,9 +311,9 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  private static Domain createVerifyDomain(int number, Operator operator) throws Exception {
+  private Domain createVerifyDomain(int number, Operator operator) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "create domain with UID : test" + number);
-    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
+    Domain domain = TestUtils.createDomain(createDomainMap(number));
     domain.verifyDomainCreated();
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     LoggerHelper.getLocal().log(Level.INFO, "verify that domain is managed by operator");
@@ -331,7 +343,7 @@ public class ItMonitoringExporter extends BaseTest {
     return DatatypeConverter.printBase64Binary(stringToEncode.getBytes());
   }
 
-  private static void upgradeTraefikHostName() throws Exception {
+  private void upgradeTraefikHostName() throws Exception {
     String chartDir =
         BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/charts/ingress-per-domain";
@@ -1161,7 +1173,7 @@ public class ItMonitoringExporter extends BaseTest {
         if (new File(pvDir).exists()) {
 
           LoggerHelper.getLocal().log(Level.INFO, "Deleting pv created dir " + pvDir);
-          TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"rm -rf " + pvDir);
+          TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"rm -rf " + pvDir + "\"");
         }
       }
     }

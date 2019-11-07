@@ -20,6 +20,7 @@ import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -42,6 +43,7 @@ public class ItManagedCoherence extends BaseTest {
   private static String testClassName;
   private static String domainNS1;
   static boolean testCompletedSuccessfully = false;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -55,16 +57,22 @@ public class ItManagedCoherence extends BaseTest {
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
-
-      // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
+    }
+  }
+
+  @Before
+  public void prepare() throws Exception {
+
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
       String template =
           BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
       String add =
           "  - clusterName: dataCluster\n"
               + "    serverStartState: \"RUNNING\"\n"
               + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
-      customDomainTemplate = BaseTest.getResultDir() + "/" + testClassName + "_customDomainTemplate.yaml";
+      customDomainTemplate = getResultDir() + "/" + testClassName + "_customDomainTemplate.yaml";
 
       Files.copy(
           Paths.get(template),
@@ -74,11 +82,13 @@ public class ItManagedCoherence extends BaseTest {
 
       // create operator1
       if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(
+        Map<String, Object> operatorMap = createOperatorMap(
             getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS1);
       }
     }
 
@@ -96,6 +106,8 @@ public class ItManagedCoherence extends BaseTest {
       if (operator1 != null && (JENKINS || testCompletedSuccessfully)) {
         operator1.destroy();
       }
+      tearDown(new Object() {}.getClass()
+          .getEnclosingClass().getSimpleName(), namespaceList.toString());
     }
   }
 
@@ -137,7 +149,7 @@ public class ItManagedCoherence extends BaseTest {
     testCompletedSuccessfully = false;
     domain = null;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("clusterName", "appCluster");
       domainMap.put("domainUID", DOMAINUID);
       domainMap.put("customDomainTemplate", customDomainTemplate);
@@ -180,7 +192,7 @@ public class ItManagedCoherence extends BaseTest {
     domain = null;
     try {
       Map<String, Object> domainMap =
-          TestUtils.createDomainInImageMap(getNewSuffixCount(), false, testClassName);
+          createDomainInImageMap(getNewSuffixCount(), false, testClassName);
       domainMap.put("clusterName", "appCluster");
       domainMap.put("domainUID", DOMAINUID1);
       domainMap.put("customDomainTemplate", customDomainTemplate);
