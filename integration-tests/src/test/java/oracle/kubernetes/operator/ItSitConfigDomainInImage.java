@@ -45,7 +45,6 @@ public class ItSitConfigDomainInImage extends SitConfig {
   private static String testprefix = "sitconfigdomaininimage";
   private static String mysqldbport;
   private static String adminpodname;
-  private static String domainYaml;
   private static String JDBC_URL;
   private static StringBuffer namespaceList;
   /**
@@ -63,6 +62,8 @@ public class ItSitConfigDomainInImage extends SitConfig {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
+      TEST_RES_DIR = getProjectRoot() + "/integration-tests/src/test/resources/";
+      testNumber = getNewSuffixCount();
     }
   }
 
@@ -78,80 +79,72 @@ public class ItSitConfigDomainInImage extends SitConfig {
   public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (FULLTEST) {
-      createResultAndPvDirs(testClassName);
-      testNumber = getNewSuffixCount();
       // create operator1
       if (operator1 == null) {
+        createResultAndPvDirs(testClassName);
         Map<String, Object> operatorMap = createOperatorMap(testNumber, true, testprefix);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList = new StringBuffer((String) operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS);
+        sitconfigTmpDir = getResultDir() + "/sitconfigtemp" + testprefix;
+        mysqltmpDir = sitconfigTmpDir + "/mysql";
+        configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
+        mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
+
+        Files.createDirectories(Paths.get(sitconfigTmpDir));
+        Files.createDirectories(Paths.get(configOverrideDir));
+        Files.createDirectories(Paths.get(mysqltmpDir));
+        mysqldbport = String.valueOf(31306 + testNumber);
+        // Create the MySql db container
+        copyMySqlFile(domainNS, mysqlYamlFile, mysqldbport, testprefix);
+
+        if (!OPENSHIFT) {
+          fqdn = TestUtils.getHostName();
+        } else {
+          ExecResult result = TestUtils.exec("hostname -i");
+          fqdn = result.stdout().trim();
+        }
+        JDBC_URL = "jdbc:mysql://" + fqdn + ":" + mysqldbport + "/";
+        // copy the configuration override files to replacing the JDBC_URL token
+        String[] files = {
+            "config.xml",
+            "jdbc-JdbcTestDataSource-0.xml",
+            "diagnostics-WLDF-MODULE-0.xml",
+            "jms-ClusterJmsSystemResource.xml",
+            "version.txt"
+        };
+        copySitConfigFiles(files, oldSecret, configOverrideDir, testprefix, JDBC_URL);
+        // create weblogic domain with configOverrides
+        String domainScript = "integration-tests/src/test/resources/sitconfig/scripts/"
+            + "create-domain-auto-custom-sit-config-inimage.py";
+        domain = createSitConfigDomain(true, domainScript, domainNS);
+        Assert.assertNotNull(domain);
+        // copy the jmx test client file the administratioin server weblogic server pod
+        adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
+        TestUtils.copyFileViaCat(
+            TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
+            "SitConfigTests.java",
+            adminpodname,
+            domain.getDomainNs());
+        Files.copy(
+            Paths.get(TEST_RES_DIR + "sitconfig/scripts", "runSitConfigTests.sh"),
+            Paths.get(sitconfigTmpDir, "runSitConfigTests.sh"),
+            StandardCopyOption.REPLACE_EXISTING);
+        Path path = Paths.get(sitconfigTmpDir, "runSitConfigTests.sh");
+        String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+        content = content.replaceAll("customsitconfigdomain", testprefix);
+        Charset charset = StandardCharsets.UTF_8;
+        Files.write(path, content.getBytes(charset));
+
+        TestUtils.copyFileViaCat(
+            sitconfigTmpDir + "/runSitConfigTests.sh",
+            "runSitConfigTests.sh",
+            adminpodname,
+            domain.getDomainNs());
+
       }
-      TEST_RES_DIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
-
-      sitconfigTmpDir = getResultDir() + "/sitconfigtemp" + testprefix;
-      mysqltmpDir = sitconfigTmpDir + "/mysql";
-      configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
-      mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
-
-      Files.createDirectories(Paths.get(sitconfigTmpDir));
-      Files.createDirectories(Paths.get(configOverrideDir));
-      Files.createDirectories(Paths.get(mysqltmpDir));
-      mysqldbport = String.valueOf(31306 + testNumber);
-      // Create the MySql db container
-      copyMySqlFile(domainNS, mysqlYamlFile, mysqldbport, testprefix);
-
-      if (!OPENSHIFT) {
-        fqdn = TestUtils.getHostName();
-      } else {
-        ExecResult result = TestUtils.exec("hostname -i");
-        fqdn = result.stdout().trim();
-      }
-      JDBC_URL = "jdbc:mysql://" + fqdn + ":" + mysqldbport + "/";
-      // copy the configuration override files to replacing the JDBC_URL token
-      String[] files = {
-          "config.xml",
-          "jdbc-JdbcTestDataSource-0.xml",
-          "diagnostics-WLDF-MODULE-0.xml",
-          "jms-ClusterJmsSystemResource.xml",
-          "version.txt"
-      };
-      copySitConfigFiles(files, oldSecret, configOverrideDir, testprefix, JDBC_URL);
-      // create weblogic domain with configOverrides
-      String domainScript = "integration-tests/src/test/resources/sitconfig/scripts/"
-          + "create-domain-auto-custom-sit-config-inimage.py";
-      domain = createSitConfigDomain(true, domainScript, domainNS);
-      Assert.assertNotNull(domain);
-      domainYaml =
-          getUserProjectsDir()
-              + "/weblogic-domains/"
-              + domain.getDomainUid()
-              + "/domain.yaml";
-      // copy the jmx test client file the administratioin server weblogic server pod
-      adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
-      TestUtils.copyFileViaCat(
-          TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
-          "SitConfigTests.java",
-          adminpodname,
-          domain.getDomainNs());
-      Files.copy(
-          Paths.get(TEST_RES_DIR + "sitconfig/scripts","runSitConfigTests.sh"),
-          Paths.get(sitconfigTmpDir, "runSitConfigTests.sh"),
-          StandardCopyOption.REPLACE_EXISTING);
-      Path path = Paths.get(sitconfigTmpDir, "runSitConfigTests.sh");
-      String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-      content = content.replaceAll("customsitconfigdomain", testprefix);
-      Charset charset = StandardCharsets.UTF_8;
-      Files.write(path, content.getBytes(charset));
-
-      TestUtils.copyFileViaCat(
-          sitconfigTmpDir + "/runSitConfigTests.sh",
-          "runSitConfigTests.sh",
-          adminpodname,
-          domain.getDomainNs());
-
     }
   }
 

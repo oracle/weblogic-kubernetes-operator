@@ -56,8 +56,9 @@ public class SitConfig extends BaseTest {
     } else {
       domainMap = createDomainMap(getNewSuffixCount(), testprefix);
     }
+    String resultDir = (String)domainMap.get("resultDir");
     JDBC_RES_SCRIPT = TEST_RES_DIR + "/sitconfig/scripts/create-jdbc-resource.py";
-    String configOverrideDir = getResultDir() + "/sitconfigtemp" + testprefix + "/configoverridefiles";
+    String configOverrideDir = resultDir + "/sitconfigtemp" + testprefix + "/configoverridefiles";
     domainMap.put("configOverrides", "sitconfigcm");
     domainMap.put("configOverridesFile", configOverrideDir);
     domainMap.put("domainUID", testprefix);
@@ -90,11 +91,9 @@ public class SitConfig extends BaseTest {
    * @throws IOException when copying files from source location to staging area fails
    */
   protected static void copySitConfigFiles(String[] files, String secretName,
-                                           String configOverrideDir,
+                                           String dstDir,
                                            String domainNS, String jdbcUrl) throws IOException {
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
-    String dstDir = configOverrideDir;
-
     Charset charset = StandardCharsets.UTF_8;
     for (String file : files) {
       Path path = Paths.get(srcDir, file);
@@ -400,8 +399,7 @@ public class SitConfig extends BaseTest {
                                                        String jdbcUrl) throws Exception {
     // recreate the map with new situational config files
     String[] files = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
-    String configOverrideDir = getResultDir()
-        + "/sitconfigtemp" + domain.getDomainUid() + "/configoverridefiles";
+    String configOverrideDir = (String)domain.getDomainMap().get("configOverridesFile");
     try {
       copySitConfigFiles(files, newSecret, configOverrideDir, domain.getDomainUid(), jdbcUrl);
       recreateConfigMapandRestart(oldSecret, newSecret, domain);
@@ -443,7 +441,8 @@ public class SitConfig extends BaseTest {
     if (getWeblogicImageTag().contains(PS3_TAG)) {
       content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
     }
-    String sitconfigTmpDir = getResultDir() + "/sitconfigtemp" + domain.getDomainUid();
+    String testresultDir = (String)domain.getDomainMap().get("resultDir");
+    String sitconfigTmpDir = testresultDir + "/sitconfigtemp" + domain.getDomainUid();
     Files.write(
         Paths.get(sitconfigTmpDir, "create-jdbc-resource.py"),
         content.getBytes(StandardCharsets.UTF_8));
@@ -466,7 +465,7 @@ public class SitConfig extends BaseTest {
   protected void recreateConfigMapandRestart(String oldSecret, String newSecret, Domain domain) throws Exception {
     // modify the domain.yaml if the secret name is changed
     String domainYaml =
-        getUserProjectsDir()
+        (String)domain.getDomainMap().get("userProjectsDir")
             + "/weblogic-domains/"
             + domain.getDomainUid()
             + "/domain.yaml";
