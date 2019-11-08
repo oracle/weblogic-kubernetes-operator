@@ -16,6 +16,7 @@ inventory_passphrase_md5="/weblogic-operator/introspectormd5/inventory_passphras
 inventory_merged_model="/weblogic-operator/introspectormd5/merged_model.json"
 inventory_wls_version="/weblogic-operator/introspectormd5/wls.version"
 inventory_jdk_path="/weblogic-operator/introspectormd5/jdk.path"
+inventory_secrets_md5="/weblogic-operator/introspectormd5/secrets.md5"
 domain_zipped="/weblogic-operator/introspectormd5/domainzip.secure"
 wdt_config_root="/weblogic-operator/wdt-config-map"
 wdt_encryption_passphrase="/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
@@ -310,10 +311,22 @@ function createWLDomain() {
   local current_version=$(getWebLogicVersion)
   local current_jdkpath=$(readlink -f $JAVA_HOME)
   # check for version:  can only be rolling
+
   local version_changed=0
   local jdk_changed=0
+  local secrets_changed=0
   trace "current version "${current_version}
 
+  getSecretsMD5
+  local current_secrets_md5=$(cat /tmp/secrets.md5)
+
+  if [ -f ${inventory_secrets_md5} ] ; then
+    previous_secrets_md5=$(cat ${inventory_secrets_md5})
+    if [ "${current_secrets_md5}" != "${previous_secrets_md5}" ]; then
+      trace "secrets different: before: ${previous_secrets_md5} current: ${current_secrets_md5}"
+      secrets_changed=1
+    fi
+  fi
 
   if [ -f ${inventory_wls_version} ] ; then
     previous_version=$(cat ${inventory_wls_version})
@@ -344,7 +357,8 @@ function createWLDomain() {
   local wdt_artifacts_changed=$?
   # something changed in the wdt artifacts or wls version changed
   local created_domain=0
-  if  [ ${wdt_artifacts_changed} -ne 0 ] || [ ${version_changed} -eq 1 ] || [ ${jdk_changed} -eq 1 ]; then
+  if  [ ${wdt_artifacts_changed} -ne 0 ] || [ ${version_changed} -eq 1 ] || [ ${jdk_changed} -eq 1 ] \
+    || [ ${secrets_changed} -ne 0 ] ; then
 
     trace "Need to create domain ${WDT_DOMAIN_TYPE}"
     wdtCreateDomain
@@ -427,6 +441,25 @@ function createWLDomain() {
   return ${created_domain}
 }
 
+function getSecretsMD5() {
+  if [ -d "/weblogic-operator/config-overrides-secrets/" ] ; then
+    tar cf /tmp/secrets.tar /weblogic-operator/config-overrides-secrets/
+  fi
+
+  if [ -d "/weblogic-operator/config-overrides-secrets/" ] ; then
+    tar uf /tmp/secrets.tar /weblogic-operator/secrets//
+  fi
+
+  if [ ! -f "/tmp/secrets.tar" ] ; then
+    echo "0" > /tmp/secrets.tar
+  fi
+
+  secrets_md5=$(md5sum /tmp/secrets.tar | cut -d' ' -f1)
+  echo ${secrets_md5} > /tmp/secrets.md5
+  trace "Found secrets"
+  rm /tmp/secrets.tar
+
+}
 #
 # User WDT create domain
 #

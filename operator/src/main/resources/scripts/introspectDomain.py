@@ -131,6 +131,7 @@ class OfflineWlstEnv(object):
     self.EWALLET             = self.INTROSPECT_HOME + '/ewallet.p12'
     self.WLS_VERSION  = self.INTROSPECT_HOME + "/wls.version"
     self.JDK_PATH  = self.INTROSPECT_HOME + "/jdk.path"
+    self.SECRETS_MD5 = self.INTROSPECT_HOME + "/secrets.md5"
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
@@ -1398,6 +1399,8 @@ class DomainIntrospector(SecretManager):
         InventoryMD5Generator(self.env, self.env.WLS_VERSION, '/tmp/wls_version').generate()
         trace("jdk_path")
         InventoryMD5Generator(self.env, self.env.JDK_PATH, '/tmp/jdk_path').generate()
+        trace("jdk_path")
+        InventoryMD5Generator(self.env, self.env.SECRETS_MD5, '/tmp/secrets.md5').generate()
 
         if self.env.WDT_DOMAIN_TYPE == 'JRF' and self.env.KEEP_JRF_SCHEMA:
           OpssKeyGenerator(self.env).generate()
