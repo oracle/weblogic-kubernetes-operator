@@ -20,9 +20,11 @@ import oracle.kubernetes.operator.utils.JrfDomain;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -42,6 +44,7 @@ public class ItJrfPvWlst extends BaseTest {
   private static String restartTmpDir = "";
   private static boolean testCompletedSuccessfully;
   private static String testClassName;
+  private static StringBuffer namespaceList;
 
   /**
   * This method gets called only once before any of the test methods are executed. It does the
@@ -55,22 +58,45 @@ public class ItJrfPvWlst extends BaseTest {
   public static void staticPrepare() throws Exception {
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
-    // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE, testClassName);
-    setMaxIterationsPod(80);
-    TestUtils.exec(
-        "cp -rf " 
-        + BaseTest.getProjectRoot() 
-        + "/kubernetes/samples/scripts/create-rcu-schema " 
-        + BaseTest.getResultDir(),
-        true);
-   
-    DbUtils.startOracleDB();
-    DbUtils.createRcuSchema(rcuSchemaPrefix);
-
-   
+    // initialize test properties 
+    initialize(APP_PROPS_FILE, testClassName);  
   }
-
+  
+  @Before
+  public void prepare() throws Exception {
+    if (QUICKTEST) {
+      createResultAndPvDirs(testClassName);
+      setMaxIterationsPod(80);
+      
+      TestUtils.exec(
+          "cp -rf " 
+          + BaseTest.getProjectRoot() 
+          + "/kubernetes/samples/scripts/create-rcu-schema " 
+          + getResultDir(),
+          true);
+   
+      DbUtils.startOracleDB(getResultDir());
+      DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix);
+    
+      // create operator1
+      if (operator1 == null) {
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
+            true, testClassName);
+        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assert.assertNotNull(operator1);
+        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS);
+      }
+    }  
+  }
+  
+  @After
+  public void unPrepare() throws Exception {
+    DbUtils.deleteRcuPod(getResultDir());
+    DbUtils.stopOracleDB(getResultDir());
+  }
+  
   /**
   * This method will run once after all test methods are finished. It Releases k8s cluster lease,
   * archives result, pv directories.
@@ -79,9 +105,8 @@ public class ItJrfPvWlst extends BaseTest {
   */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    DbUtils.deleteRcuPod();
-    DbUtils.stopOracleDB();
-    //tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+    tearDown(new Object() {
+    }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
 
     LoggerHelper.getLocal().log(Level.INFO,"SUCCESS");
   }
@@ -94,20 +119,13 @@ public class ItJrfPvWlst extends BaseTest {
       logTestBegin(testMethodName);
       LoggerHelper.getLocal().log(Level.INFO,
           "Creating Operator & waiting for the script to complete execution");
-      // create operator1
-      if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
-        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator1);
-        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);;
-      }
-
+      
       JrfDomain jrfdomain = null;
       boolean testCompletedSuccessfully = false;
 
       try {
         // create JRF domain
-        Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+        Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
         domainMap.put("namespace", domainNS);
         domainMap.put("initialManagedServerReplicas", new Integer("2"));
         domainMap.put("image", "container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3");
