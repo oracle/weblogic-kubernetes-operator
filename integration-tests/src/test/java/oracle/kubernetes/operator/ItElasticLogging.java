@@ -134,13 +134,6 @@ public class ItElasticLogging extends BaseTest {
                 .append(elasticSearchURL);
         k8sExecCmdPrefix = k8sExecCmdPrefixBuff.toString();
 
-        // Verify that Elastic Stack is ready to use
-        verifyLoggingExpReady(logstashIndexKey);
-        verifyLoggingExpReady(kibanaIndexKey);
-
-        // Create a dir to hold required WebLogic logging exporter archive files
-        loggingExpArchiveLoc = getResultDir() + "/loggingExpArchDir";
-        Files.createDirectories(Paths.get(loggingExpArchiveLoc));
       }
 
       // create domain
@@ -156,7 +149,15 @@ public class ItElasticLogging extends BaseTest {
         domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
       }
+      // Verify that Elastic Stack is ready to use
+      verifyLoggingExpReady(logstashIndexKey);
+      verifyLoggingExpReady(kibanaIndexKey);
+
+      // Create a dir to hold required WebLogic logging exporter archive files
+      loggingExpArchiveLoc = getResultDir() + "/loggingExpArchDir";
+      Files.createDirectories(Paths.get(loggingExpArchiveLoc));
     }
+
   }
 
   /**
