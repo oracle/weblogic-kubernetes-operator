@@ -117,7 +117,7 @@ public class ItMonitoringExporter extends BaseTest {
           BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
       configPath = resourceExporterDir;
       monitoringExporterEndToEndDir = monitoringExporterDir + "/src/samples/kubernetes/end2end/";
-      BaseTest.setWaitTimePod(10);
+      // BaseTest.setWaitTimePod(10);
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
         Map<String, Object> operatorMap =
