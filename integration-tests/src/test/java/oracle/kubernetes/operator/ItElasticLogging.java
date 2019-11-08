@@ -339,6 +339,7 @@ public class ItElasticLogging extends BaseTest {
 
     // Verify that WebLogic logging exporter installed successfully
     verifyLoggingExpReady(wlsIndexKey);
+    Thread.sleep(30 * 1000);
 
     // Verify that hits of log level = Notice are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
