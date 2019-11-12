@@ -441,23 +441,29 @@ function createWLDomain() {
   return ${created_domain}
 }
 
+# jar up all the secrets, calculate the md5 and delete the file.
+# The md5 is used to determine whether the domain needs to be recreated
+# Note: the secrets are two levels indirections, so use find and filter out the ..data
+#
 function getSecretsMD5() {
   if [ -d "/weblogic-operator/config-overrides-secrets/" ] ; then
-    tar cf /tmp/secrets.tar /weblogic-operator/config-overrides-secrets/
+    jar cMf /tmp/secrets.jar `find /weblogic-operator/config-overrides-secrets/ -type l -print | grep -v "..data"`
+  else
+    touch /tmp/secrets.jar
   fi
 
   if [ -d "/weblogic-operator/config-overrides-secrets/" ] ; then
-    tar uf /tmp/secrets.tar /weblogic-operator/secrets//
+    jar uMf /tmp/secrets.jar `find /weblogic-operator/secrets/ -type l -print | grep -v "..data"`
   fi
 
   if [ ! -f "/tmp/secrets.tar" ] ; then
-    echo "0" > /tmp/secrets.tar
+    echo "0" > /tmp/secrets.jar
   fi
 
-  secrets_md5=$(md5sum /tmp/secrets.tar | cut -d' ' -f1)
+  secrets_md5=$(md5sum /tmp/secrets.jar | cut -d' ' -f1)
   echo ${secrets_md5} > /tmp/secrets.md5
-  trace "Found secrets"
-  rm /tmp/secrets.tar
+  trace "Found secrets ${secrets_md5}"
+  rm /tmp/secrets.jar
 
 }
 #
