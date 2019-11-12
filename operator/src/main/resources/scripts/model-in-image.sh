@@ -446,24 +446,25 @@ function createWLDomain() {
 # Note: the secrets are two levels indirections, so use find and filter out the ..data
 #
 function getSecretsMD5() {
+  local jarname="/tmp/secrets.jar"
   if [ -d "/weblogic-operator/config-overrides-secrets/" ] ; then
-    jar cMf /tmp/secrets.jar `find /weblogic-operator/config-overrides-secrets/ -type l -print | grep -v "..data"`
+    jar cMf ${jarname} `find /weblogic-operator/config-overrides-secrets/ -type l -print | grep -v "..data"`
   else
-    touch /tmp/secrets.jar
+    touch ${jarname}
   fi
 
   if [ -d "/weblogic-operator/config-overrides-secrets/" ] ; then
-    jar uMf /tmp/secrets.jar `find /weblogic-operator/secrets/ -type l -print | grep -v "..data"`
+    jar uMf ${jarname} `find /weblogic-operator/secrets/ -type l -print | grep -v "..data"`
   fi
 
-  if [ ! -f "/tmp/secrets.tar" ] ; then
-    echo "0" > /tmp/secrets.jar
+  if [ ! -f "${jarname}" ] ; then
+    echo "0" > ${jarname}
   fi
 
-  secrets_md5=$(md5sum /tmp/secrets.jar | cut -d' ' -f1)
+  secrets_md5=$(md5sum ${jarname} | cut -d' ' -f1)
   echo ${secrets_md5} > /tmp/secrets.md5
   trace "Found secrets ${secrets_md5}"
-  rm /tmp/secrets.jar
+  rm ${jarname}
 
 }
 #
