@@ -35,8 +35,6 @@ public class BaseTest {
   public static final String TESTWSSERVICE = "TestWsApp";
 
   // property file used to customize operator properties for operator inputs yaml
-
-  public static final String OPERATOR2_YAML = "operator2.yaml";
   public static final String OPERATOR1_ELK_YAML = "operator_elk.yaml";
 
   // property file used to configure constants for integration tests

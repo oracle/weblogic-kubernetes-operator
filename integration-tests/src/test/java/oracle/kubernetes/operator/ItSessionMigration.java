@@ -68,11 +68,11 @@ public class ItSessionMigration extends BaseTest {
   public void prepare() throws Exception {
     if (FULLTEST) {
       createResultAndPvDirs(testClassName);
-      testClassName = "sessmig";
+      String testClassNameShort = "sessmig";
       // create operator1
       if (operator == null) {
         Map<String, Object> operatorMap =
-            createOperatorMap(getNewSuffixCount(), true, testClassName);
+            createOperatorMap(getNewSuffixCount(), true, testClassNameShort);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assert.assertNotNull(operator);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -85,7 +85,7 @@ public class ItSessionMigration extends BaseTest {
         LoggerHelper.getLocal().log(Level.INFO,
             "Creating WLS Domain & waiting for the script to complete execution");
         Map<String, Object> wlstDomainMap =
-            createDomainMap(getNewSuffixCount(), testClassName);
+            createDomainMap(getNewSuffixCount(), testClassNameShort);
         wlstDomainMap.put("namespace", domainNS1);
         // wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
         domain = TestUtils.createDomain(wlstDomainMap);
