@@ -73,7 +73,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
         namespaceList.append(" ").append(domainNS);
         mysqldbport = String.valueOf(31306 + testNumber);
         domain = prepareDomainAndDB(false, domainNS, mysqldbport);
-        mysqlYamlFile = getResultDir() + "/sitconfigtemp" + testprefix + "mysql/mysql-dbservices.yml";
+        mysqlYamlFile = getResultDir() + "/sitconfigtemp" + testprefix + "/mysql/mysql-dbservices.yml";
         JDBC_URL = "jdbc:mysql://" + fqdn + ":" + mysqldbport + "/";
         Assert.assertNotNull(domain);
       }
