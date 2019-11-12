@@ -85,6 +85,79 @@ public class SitConfig extends BaseTest {
   }
 
   /**
+   * create domain, mysql database, test directories.
+   * @param domainInImage - select domain in image or domain in pv
+   * @param domainNS - namespace to create domain
+   * @param mysqldbport - unique port number for mysql db port
+   * @throws Exception when domain destruction fails
+   */
+
+  protected Domain prepareDomainAndDB(boolean domainInImage,String domainNS, String mysqldbport) throws Exception {
+    String testprefix = "sitconfigdomaininpv";
+    if (domainInImage)
+      testprefix = "sitconfigdomaininimage";
+    String sitconfigTmpDir = getResultDir() + "/sitconfigtemp" + testprefix;
+    String mysqltmpDir = sitconfigTmpDir + "/mysql";
+    String configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
+
+    Files.createDirectories(Paths.get(sitconfigTmpDir));
+    Files.createDirectories(Paths.get(configOverrideDir));
+    Files.createDirectories(Paths.get(mysqltmpDir));
+    String mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
+    // Create the MySql db container
+    copyMySqlFile(domainNS, mysqlYamlFile, mysqldbport, testprefix);
+
+    if (!OPENSHIFT) {
+      fqdn = TestUtils.getHostName();
+    } else {
+      ExecResult result = TestUtils.exec("hostname -i");
+      fqdn = result.stdout().trim();
+    }
+    String jdbcUrl = "jdbc:mysql://" + fqdn + ":" + mysqldbport + "/";
+    // copy the configuration override files to replacing the JDBC_URL token
+    String[] files = {
+        "config.xml",
+        "jdbc-JdbcTestDataSource-0.xml",
+        "diagnostics-WLDF-MODULE-0.xml",
+        "jms-ClusterJmsSystemResource.xml",
+        "version.txt"
+    };
+    copySitConfigFiles(files, oldSecret, configOverrideDir, testprefix, jdbcUrl);
+    // create weblogic domain with configOverrides
+    String domainScript = "integration-tests/src/test/resources/sitconfig/"
+        + "scripts/create-domain-auto-custom-sit-config20.py";
+    if (domainInImage)
+      domainScript = "integration-tests/src/test/resources/sitconfig/scripts/"
+          + "create-domain-auto-custom-sit-config-inimage.py";
+    Domain domain = createSitConfigDomain(domainInImage, domainScript, domainNS);
+    Assert.assertNotNull(domain);
+    // copy the jmx test client file the administratioin server weblogic server pod
+    String adminpodName = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    TestUtils.copyFileViaCat(
+        TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
+        "SitConfigTests.java",
+        adminpodName,
+        domain.getDomainNs());
+    Files.copy(
+        Paths.get(TEST_RES_DIR + "sitconfig/scripts", "runSitConfigTests.sh"),
+        Paths.get(sitconfigTmpDir, "runSitConfigTests.sh"),
+        StandardCopyOption.REPLACE_EXISTING);
+    Path path = Paths.get(sitconfigTmpDir, "runSitConfigTests.sh");
+    String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    content = content.replaceAll("customsitconfigdomain", testprefix);
+    //attention
+    Charset charset = StandardCharsets.UTF_8;
+    Files.write(path, content.getBytes(charset));
+
+    TestUtils.copyFileViaCat(
+        sitconfigTmpDir + "/runSitConfigTests.sh",
+        "runSitConfigTests.sh",
+        adminpodName,
+        domain.getDomainNs());
+    return domain;
+  }
+
+  /**
    * Copy the configuration override files to a staging area after replacing the jdbcUrl token in
    * jdbc-JdbcTestDataSource-0.xml.
    *

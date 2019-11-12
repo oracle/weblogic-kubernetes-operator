@@ -3,12 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
@@ -37,23 +31,16 @@ public class ItSitConfigDomainInImage extends SitConfig {
   private static int testNumber;
   private static Operator operator1;
   private static Domain domain;
-  private static String sitconfigTmpDir = "";
-  private static String mysqltmpDir = "";
-  private static String configOverrideDir = "";
   private static String mysqlYamlFile = "";
   private static String domainNS;
   private static String testprefix = "sitconfigdomaininimage";
   private static String mysqldbport;
-  private static String adminpodname;
   private static String JDBC_URL;
   private static StringBuffer namespaceList;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
-   * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes.
-   *
-   * @throws Exception when the initialization, creating directories , copying files and domain
-   *                   creation fails.
+   * initialization of the integration test properties defined in OperatorIT.properties.
+   * @throws Exception when the initialization fails.
    */
 
   @BeforeClass
@@ -68,13 +55,12 @@ public class ItSitConfigDomainInImage extends SitConfig {
   }
 
   /**
-   * This method gets called only once before any of the test methods are executed. It does the
-   * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes.
+   * This method gets called before every test. It creates the resultRoot, pvRoot directories, creates operator and
+   * domain if not running.
    *
-   * @throws Exception when the initialization, creating directories , copying files and domain
-   *                   creation fails.
+   * @throws Exception if results/pv directory or operator or domain creation fails.
    */
+
   @Before
   public void prepare() throws Exception {
     // initialize test properties and create the directories
@@ -88,62 +74,11 @@ public class ItSitConfigDomainInImage extends SitConfig {
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
         namespaceList = new StringBuffer((String) operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS);
-        sitconfigTmpDir = getResultDir() + "/sitconfigtemp" + testprefix;
-        mysqltmpDir = sitconfigTmpDir + "/mysql";
-        configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
-        mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
-
-        Files.createDirectories(Paths.get(sitconfigTmpDir));
-        Files.createDirectories(Paths.get(configOverrideDir));
-        Files.createDirectories(Paths.get(mysqltmpDir));
         mysqldbport = String.valueOf(31306 + testNumber);
-        // Create the MySql db container
-        copyMySqlFile(domainNS, mysqlYamlFile, mysqldbport, testprefix);
-
-        if (!OPENSHIFT) {
-          fqdn = TestUtils.getHostName();
-        } else {
-          ExecResult result = TestUtils.exec("hostname -i");
-          fqdn = result.stdout().trim();
-        }
+        domain = prepareDomainAndDB(false, domainNS, mysqldbport);
         JDBC_URL = "jdbc:mysql://" + fqdn + ":" + mysqldbport + "/";
-        // copy the configuration override files to replacing the JDBC_URL token
-        String[] files = {
-            "config.xml",
-            "jdbc-JdbcTestDataSource-0.xml",
-            "diagnostics-WLDF-MODULE-0.xml",
-            "jms-ClusterJmsSystemResource.xml",
-            "version.txt"
-        };
-        copySitConfigFiles(files, oldSecret, configOverrideDir, testprefix, JDBC_URL);
-        // create weblogic domain with configOverrides
-        String domainScript = "integration-tests/src/test/resources/sitconfig/scripts/"
-            + "create-domain-auto-custom-sit-config-inimage.py";
-        domain = createSitConfigDomain(true, domainScript, domainNS);
+        mysqlYamlFile = getResultDir() + "/sitconfigtemp" + testprefix + "mysql/mysql-dbservices.yml";
         Assert.assertNotNull(domain);
-        // copy the jmx test client file the administratioin server weblogic server pod
-        adminpodname = domain.getDomainUid() + "-" + domain.getAdminServerName();
-        TestUtils.copyFileViaCat(
-            TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
-            "SitConfigTests.java",
-            adminpodname,
-            domain.getDomainNs());
-        Files.copy(
-            Paths.get(TEST_RES_DIR + "sitconfig/scripts", "runSitConfigTests.sh"),
-            Paths.get(sitconfigTmpDir, "runSitConfigTests.sh"),
-            StandardCopyOption.REPLACE_EXISTING);
-        Path path = Paths.get(sitconfigTmpDir, "runSitConfigTests.sh");
-        String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-        content = content.replaceAll("customsitconfigdomain", testprefix);
-        Charset charset = StandardCharsets.UTF_8;
-        Files.write(path, content.getBytes(charset));
-
-        TestUtils.copyFileViaCat(
-            sitconfigTmpDir + "/runSitConfigTests.sh",
-            "runSitConfigTests.sh",
-            adminpodname,
-            domain.getDomainNs());
-
       }
     }
   }
