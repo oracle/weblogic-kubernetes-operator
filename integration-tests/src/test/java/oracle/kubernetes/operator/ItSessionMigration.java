@@ -47,9 +47,6 @@ public class ItSessionMigration extends BaseTest {
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
    *
-   * <p>It also create operator and verify its deployed successfully. Create domain and verify
-   * domain is created.
-   *
    * @throws Exception exception
    */
   @BeforeClass
@@ -61,6 +58,12 @@ public class ItSessionMigration extends BaseTest {
     }
   }
 
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
   @Before
   public void prepare() throws Exception {
     if (FULLTEST) {

@@ -53,8 +53,7 @@ public class ItPodsShutdown extends BaseTest {
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes. Create Operator1 and domainOnPVUsingWLST
-   * with admin server and 1 managed server if they are not running
+   * the resultRoot, pvRoot and projectRoot attributes.
    *
    * @throws Exception exception
    */
@@ -67,6 +66,12 @@ public class ItPodsShutdown extends BaseTest {
     }
   }
 
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
   @Before
   public void prepare() throws Exception {
     // initialize test properties and create the directories

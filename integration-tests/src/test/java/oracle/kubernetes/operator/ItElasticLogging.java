@@ -58,8 +58,7 @@ public class ItElasticLogging extends BaseTest {
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes. It installs Elastic Stack, verifies Elastic
-   * Stack is ready to use, creates an operator and a WebLogic domain
+   * the resultRoot, pvRoot and projectRoot attributes.
    *
    * @throws Exception exception
    */
@@ -72,6 +71,13 @@ public class ItElasticLogging extends BaseTest {
     }
   }
 
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain, it installs Elastic Stack if its not
+   * running, verifies Elastic Stack is ready to use
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fail
+   */
   @Before
   public void prepare() throws Exception {
     if (FULLTEST) {

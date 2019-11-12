@@ -41,8 +41,7 @@ public class ItServerDiscovery extends BaseTest {
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes. It also creates Operator, domain and a test
-   * domain yaml file.
+   * the resultRoot, pvRoot and projectRoot attributes.
    *
    * @throws Exception exception
    */
@@ -55,6 +54,12 @@ public class ItServerDiscovery extends BaseTest {
     }
   }
 
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
   @Before
   public void prepare() throws Exception {
     if (FULLTEST) {
