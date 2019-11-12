@@ -66,7 +66,6 @@ public class ItJrfPvWlst extends BaseTest {
   public void prepare() throws Exception {
     if (QUICKTEST) {
       createResultAndPvDirs(testClassName);
-      setMaxIterationsPod(80);
       
       TestUtils.exec(
           "cp -rf " 
