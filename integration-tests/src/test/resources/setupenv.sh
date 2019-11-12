@@ -25,8 +25,7 @@ function setup_shared_cluster {
   echo "Completed setup_shared_cluster"
 }
 
-function clean_shared_cluster {
-	echo "Clean shared cluster"
+function cleanup {
 	${PROJECT_ROOT}/src/integration-tests/bash/cleanup.sh
 }
 
@@ -136,16 +135,12 @@ export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "
 echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPERATOR JAR_VERSION $JAR_VERSION
 
 #docker_login
-
-if [ "$JENKINS" != "true" ]; then
-	${PROJECT_ROOT}/src/integration-tests/bash/cleanup.sh
-fi
   
 if [ "$SHARED_CLUSTER" = "true" ]; then
   
   echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
-  
-  clean_shared_cluster
+  echo "Clean shared cluster"
+  cleanup
     
   
   export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
@@ -202,6 +197,7 @@ elif [ "$JENKINS" = "true" ]; then
   docker images
 
 else
+  cleanup
   if [ "$JRF_ENABLED" = true ] ; then
 	pull_tag_images_jrf	
   else

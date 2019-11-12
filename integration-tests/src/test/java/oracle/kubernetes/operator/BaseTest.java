@@ -36,22 +36,8 @@ public class BaseTest {
 
   // property file used to customize operator properties for operator inputs yaml
 
-  public static final String OPERATOR1_YAML = "operator1.yaml";
   public static final String OPERATOR2_YAML = "operator2.yaml";
-  public static final String OPERATORBC_YAML = "operator_bc.yaml";
-  public static final String OPERATOR_CHAIN_YAML = "operator_chain.yaml";
   public static final String OPERATOR1_ELK_YAML = "operator_elk.yaml";
-
-  // file used to customize domain properties for domain, PV and LB inputs yaml
-  public static final String DOMAINONPV_WLST_YAML = "domainonpvwlst.yaml";
-  public static final String DOMAINONPV_WDT_YAML = "domainonpvwdt.yaml";
-  public static final String DOMAIN_ADMINONLY_YAML = "domainadminonly.yaml";
-  public static final String DOMAIN_RECYCLEPOLICY_YAML = "domainrecyclepolicy.yaml";
-  public static final String DOMAIN_SAMPLE_DEFAULTS_YAML = "domainsampledefaults.yaml";
-  public static final String DOMAININIMAGE_WLST_YAML = "domaininimagewlst.yaml";
-  public static final String DOMAININIMAGE_WDT_YAML = "domaininimagewdt.yaml";
-  public static final String DOMAINONSHARINGPV_WLST_YAML = "domainonsharingpvwlst.yaml";
-  public static final String DOMAINONPV_LOGGINGEXPORTER_YAML = "loggingexpdomainonpvwlst.yaml";
 
   // property file used to configure constants for integration tests
   public static final String APP_PROPS_FILE = "OperatorIT.properties";
@@ -89,7 +75,6 @@ public class BaseTest {
   private static String weblogicImageServer;
   private static String domainApiVersion;
   private static int suffixCount = 0;
-  private String testClassName;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
