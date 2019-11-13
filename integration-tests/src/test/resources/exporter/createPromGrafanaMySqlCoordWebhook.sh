@@ -14,6 +14,7 @@ monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/en
 sed -i "s/default/${domainNS1}/g"  ${monitoringExporterEndToEndDir}/mysql/persistence.yaml
 sed -i "s/default/${domainNS1}/g"  ${monitoringExporterEndToEndDir}/mysql/mysql.yaml
 sed -i "s/default/${domainNS1}/g"  ${monitoringExporterEndToEndDir}/demo-domains/domainBuilder/scripts/simple-topology.yaml
+sed -i "s/3306\/@@PROP:DOMAIN_NAME@@/3306\/domain1/g" ${monitoringExporterEndToEndDir}/demo-domains/domainBuilder/scripts/simple-topology.yaml
 kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/persistence.yaml 
 kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/mysql.yaml
 
