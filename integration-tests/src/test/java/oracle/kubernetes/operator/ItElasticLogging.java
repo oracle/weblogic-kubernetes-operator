@@ -129,18 +129,11 @@ public class ItElasticLogging extends BaseTest {
                 .append(operatorPodName)
                 .append(" -n ")
                 .append(operator.getOperatorNamespace())
+                .append(" -c weblogic-operator ")
                 .append(" -- /bin/bash -c ")
                 .append("'curl ")
                 .append(elasticSearchURL);
         k8sExecCmdPrefix = k8sExecCmdPrefixBuff.toString();
-
-        // Verify that Elastic Stack is ready to use
-        verifyLoggingExpReady(logstashIndexKey);
-        verifyLoggingExpReady(kibanaIndexKey);
-
-        // Create a dir to hold required WebLogic logging exporter archive files
-        loggingExpArchiveLoc = getResultDir() + "/loggingExpArchDir";
-        Files.createDirectories(Paths.get(loggingExpArchiveLoc));
       }
 
       // create domain
@@ -155,6 +148,14 @@ public class ItElasticLogging extends BaseTest {
             "integration-tests/src/test/resources/loggingexporter/create-domain-logging-exporter.py");
         domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
+
+        // Verify that Elastic Stack is ready to use
+        verifyLoggingExpReady(logstashIndexKey);
+        verifyLoggingExpReady(kibanaIndexKey);
+
+        // Create a dir to hold required WebLogic logging exporter archive files
+        loggingExpArchiveLoc = getResultDir() + "/loggingExpArchDir";
+        Files.createDirectories(Paths.get(loggingExpArchiveLoc));
       }
     }
   }
@@ -254,12 +255,9 @@ public class ItElasticLogging extends BaseTest {
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
       String queryResult = execSearchQuery(queryCriteria, logstashIndexKey);
-      if (null != queryResult) {
-        LoggerHelper.getLocal().log(Level.INFO, "ELK repo returns: " + queryResult);
-        if (queryResult.contains("RUNNING")) {
-          LoggerHelper.getLocal().log(Level.INFO, adminServerPodName + " is running!");
-          break;
-        }
+      if (null != queryResult && queryResult.contains("RUNNING")) {
+        LoggerHelper.getLocal().log(Level.INFO, adminServerPodName + " is running!");
+        break;
       }
 
       if (i == (BaseTest.getMaxIterationsPod() - 1)) {
@@ -283,13 +281,9 @@ public class ItElasticLogging extends BaseTest {
     i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
       String queryResult = execSearchQuery(queryCriteria, logstashIndexKey);
-      LoggerHelper.getLocal().log(Level.INFO, "ELK repo returns: " + queryResult);
-      if (null != queryResult) {
-        LoggerHelper.getLocal().log(Level.INFO, "ELK repo returns: " + queryResult);
-        if (queryResult.contains("RUNNING")) {
-          LoggerHelper.getLocal().log(Level.INFO, managedServerPodName + " is running!");
-          break;
-        }
+      if (null != queryResult && queryResult.contains("RUNNING")) {
+        LoggerHelper.getLocal().log(Level.INFO, managedServerPodName + " is running!");
+        break;
       }
 
       if (i == (BaseTest.getMaxIterationsPod() - 1)) {
@@ -337,6 +331,7 @@ public class ItElasticLogging extends BaseTest {
     domain.restartUsingServerStartPolicy();
 
     // Verify that WebLogic logging exporter installed successfully
+    Thread.sleep(30 * 1000);
     verifyLoggingExpReady(wlsIndexKey);
 
     // Verify that hits of log level = Notice are not empty
@@ -491,9 +486,15 @@ public class ItElasticLogging extends BaseTest {
 
   private String execSearchQuery(String queryCriteria, String index)
       throws Exception {
+    Thread.sleep(20 * 1000);
+    int waittime = BaseTest.getMaxIterationsPod() / 2;
+    StringBuffer curlOptions =
+        new StringBuffer(" --connect-timeout " + waittime)
+        .append(" --max-time " + waittime)
+        .append(" -X GET ");
     StringBuffer k8sExecCmdPrefixBuff = new StringBuffer(k8sExecCmdPrefix);
     int offset = k8sExecCmdPrefixBuff.indexOf("http");
-    k8sExecCmdPrefixBuff.insert(offset, " -X GET ");
+    k8sExecCmdPrefixBuff.insert(offset, curlOptions);
     String indexName = (String) testVarMap.get(index);
     String cmd =
         k8sExecCmdPrefixBuff
