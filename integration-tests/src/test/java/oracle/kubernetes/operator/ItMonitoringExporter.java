@@ -82,7 +82,8 @@ public class ItMonitoringExporter extends BaseTest {
   private int waitTime = 5;
   //update with specific branch name if not master
 
-  private static String monitoringExporterBranchVer = "master";
+  //private static String monitoringExporterBranchVer = "master";
+  private static String monitoringExporterBranchVer = "downloadwebapp";
 
   private static String testClassName;
   private static StringBuffer namespaceList;
@@ -766,8 +767,8 @@ public class ItMonitoringExporter extends BaseTest {
 
     setupPv();
     installPrometheusGrafanaWebHookMySqlCoordinatorWlsImage();
-    fireAlert();
-    addMonitoringToExistedDomain();
+    //fireAlert();
+    //addMonitoringToExistedDomain();
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
 
