@@ -144,16 +144,17 @@ public class ItMonitoringExporter extends BaseTest {
             "integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
         domain = TestUtils.createDomain(wlstDomainMap);
         domain.verifyDomainCreated();
-      }
-      myhost = domain.getHostNameForCurl();
-      exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
-      upgradeTraefikHostName();
-      deployRunMonitoringExporter(domain, operator);
 
-      String testAppName = "httpsessionreptestapp";
-      String scriptName = "buildDeployAppInPod.sh";
-      domain.buildDeployJavaAppInPod(
-          testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
+        myhost = domain.getHostNameForCurl();
+        exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
+        upgradeTraefikHostName();
+        deployRunMonitoringExporter(domain, operator);
+
+        String testAppName = "httpsessionreptestapp";
+        String scriptName = "buildDeployAppInPod.sh";
+        domain.buildDeployJavaAppInPod(
+            testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
+      }
     }
   }
 
@@ -986,6 +987,13 @@ public class ItMonitoringExporter extends BaseTest {
             + wlsPassword
             + " wluser1 wlpwd123 | tee buidImage.log";
     TestUtils.exec(command);
+    String crdCmd = " cat " + monitoringExporterEndToEndDir
+        + "/demo-domains/domainBuilder/"
+        + "/buidImage.log";
+    ExecResult result = ExecCommand.exec(crdCmd);
+    assertFalse(
+        "Shell script failed: " + result.stdout(), result.stdout().contains("BUILD FAILURE"));
+    LoggerHelper.getLocal().log(Level.INFO, "Result output from  the command " + crdCmd + " : " + result.stdout());
     
     LoggerHelper.getLocal().log(Level.INFO, " Starting to create secret");
     command =
@@ -1004,7 +1012,7 @@ public class ItMonitoringExporter extends BaseTest {
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml",
         "30701", String.valueOf(30800 + getNewSuffixCount()));
     // apply new domain yaml and verify pod restart
-    String crdCmd =
+    crdCmd =
         " kubectl apply -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
     TestUtils.exec(crdCmd);
 
@@ -1025,7 +1033,7 @@ public class ItMonitoringExporter extends BaseTest {
             + ":"
             + wlsPassword
             + "@" + domainNS2 + "-managed-server-1:8001/wls-exporter/metrics";
-    ExecResult result = TestUtils.exec(crdCmd);
+    result = TestUtils.exec(crdCmd);
     assertTrue((result.stdout().contains("wls_servlet_execution_time_average")));
     crdCmd =
         "kubectl exec -n " + domainNS2 + " curl -- curl http://"
@@ -1077,7 +1085,7 @@ public class ItMonitoringExporter extends BaseTest {
         resultStatus.stdout().contains("CrashLoopBackOff")
             || resultStatus.stdout().contains("Error"));
 
-    configureDomainInPrometheus("default", "domain1", domainNS2, domainNS2);
+    //configureDomainInPrometheus("default", "domain1", domainNS2, domainNS2);
     podName = getPodName("app=grafana", "monitoring");
     TestUtils.checkPodReady(podName, "monitoring");
 
