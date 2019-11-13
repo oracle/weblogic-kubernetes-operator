@@ -441,30 +441,46 @@ function createWLDomain() {
   return ${created_domain}
 }
 
+# getSecretsMD5
+#
 # jar up all the secrets, calculate the md5 and delete the file.
 # The md5 is used to determine whether the domain needs to be recreated
 # Note: the secrets are two levels indirections, so use find and filter out the ..data
 #
 function getSecretsMD5() {
   local jarname="/tmp/secrets.jar"
-  if [ -d "/weblogic-operator/config-overrides-secrets/" ] ; then
-    jar cMf ${jarname} `find /weblogic-operator/config-overrides-secrets/ -type l -print | grep -v "..data"`
+  local override_secrets="/weblogic-operator/config-overrides-secrets/"
+  local weblogic_secrets="/weblogic-operator/secrets/"
+  local tmp_secrets="/tmp/tmpsecrets"
+
+  if [ -d "${override_secrets}" ] ; then
+    jar cMf ${jarname} `find $override_secrets -type l -print  | grep -v "..data"`
   else
     touch ${jarname}
   fi
 
-  if [ -d "/weblogic-operator/config-overrides-secrets/" ] ; then
-    jar uMf ${jarname} `find /weblogic-operator/secrets/ -type l -print | grep -v "..data"`
+  if [ -d "${weblogic_secrets}" ] ; then
+    jar uf ${jarname} `find $weblogic_secrets -type l -print | grep -v "..data"`
   fi
 
+  # The original files are readonly
+  # jar keep timestamp and md5 will be different each time because operator create the files each time
+  # keep a copy of all secrets, unzip to different location, make it readable and set to fixed timestamp
+  #
   if [ ! -f "${jarname}" ] ; then
     echo "0" > ${jarname}
+  else
+    mkdir -p ${tmp_secrets} && cd ${tmp_secrets} && jar xf ${jarname} && chmod -R 777 ${tmp_secrets}
+    find ${tmp_secrets} -type f -exec touch -c -t 201812310000.00 {} \;
+    cd ${tmp_secrets}
+    jar cMf ${jarname} `find -type f`
   fi
-
+  touch -c -t 201812310000.00 ${jarname}
   secrets_md5=$(md5sum ${jarname} | cut -d' ' -f1)
   echo ${secrets_md5} > /tmp/secrets.md5
   trace "Found secrets ${secrets_md5}"
   rm ${jarname}
+  rm -fr ${tmp_secrets}
 
 }
 #
