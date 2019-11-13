@@ -308,7 +308,7 @@
             <id>jrf-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItJrfDomain*</includes-failsafe>
+                <includes-failsafe>**/ItJrf*</includes-failsafe>
                 <jrf_enabled>true</jrf_enabled>
             </properties>
         </profile>
