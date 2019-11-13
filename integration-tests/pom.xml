@@ -251,7 +251,8 @@
                     </excludes>
                     <parallel>${PARALLEL_FAILSAFE}</parallel>
           			<!-- useUnlimitedThreads>true</useUnlimitedThreads -->
-                    <threadCountClasses>5</threadCountClasses>
+                    <threadCount>5</threadCount>
+                    <perCoreThreadCount>false</perCoreThreadCount>
                 </configuration>
 
                 <executions>
