@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -46,6 +47,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
@@ -330,6 +332,16 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
+  public void whenClusterStartupDefinedWithZeroReplicas_addNothingToServers() {
+    configureCluster("cluster1").withReplicas(0);
+    addWlsCluster("cluster1", "ms1", "ms2");
+
+    invokeStep();
+
+    assertThat(getServers(), empty());
+  }
+
+  @Test
   public void whenServerStartupNotDefined_useEnvForCluster() {
     configureCluster("cluster1").withEnvironmentVariable("item1", "value1");
     addWlsCluster("cluster1", "ms1");
@@ -477,6 +489,48 @@ public class ManagedServersUpStepTest {
     assertStoppingServers(createNextStepWithout("server2"), "server1", "server3", ADMIN);
   }
 
+  @Test
+  public void whenClusterStartupDefinedWithPreCreateServerService_addAllToServers() {
+    configureCluster("cluster1").withPrecreateServerService(true);
+    addWlsCluster("cluster1", "ms1", "ms2");
+
+    invokeStep();
+
+    assertThat(getServers(), allOf(hasItem("ms1"), hasItem("ms2")));
+  }
+
+  @Test
+  public void whenClusterStartupDefinedWithPreCreateServerService_adminServerDown_addAllToServers() {
+    configureCluster("cluster1").withPrecreateServerService(true);
+    addWlsCluster("cluster1", "ms1", "ms2");
+    configureAdminServer().withServerStartPolicy(START_NEVER);
+
+    invokeStep();
+
+    assertThat(getServers(), allOf(hasItem("ms1"), hasItem("ms2")));
+  }
+
+  @Test
+  public void whenClusterStartupDefinedWithPreCreateServerService_managedServerDown_addAllToServers() {
+    configureCluster("cluster1").withPrecreateServerService(true).withServerStartPolicy(START_NEVER);
+    addWlsCluster("cluster1", "ms1", "ms2");
+
+    invokeStep();
+
+    assertThat(getServers(), allOf(hasItem("ms1"), hasItem("ms2")));
+  }
+
+  @Test
+  public void whenClusterStartupDefinedWithPreCreateServerService_allServersDown_addNothingToServers() {
+    configureCluster("cluster1").withPrecreateServerService(true).withServerStartPolicy(START_NEVER);
+    addWlsCluster("cluster1", "ms1", "ms2");
+    configureAdminServer().withServerStartPolicy(START_NEVER);
+
+    invokeStep();
+
+    assertThat(getServers(), empty());
+  }
+
   private void assertStoppingServers(Step step, String... servers) {
     assertThat(((ServerDownIteratorStep) step).getServersToStop(), containsInAnyOrder(servers));
   }
@@ -534,6 +588,10 @@ public class ManagedServersUpStepTest {
 
   private void configureServer(String serverName) {
     configurator.configureServer(serverName);
+  }
+
+  private AdminServerConfigurator configureAdminServer() {
+    return configurator.configureAdminServer();
   }
 
   private ServerConfigurator configureServerToStart(String serverName) {
