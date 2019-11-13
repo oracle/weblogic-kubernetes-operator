@@ -163,13 +163,6 @@ public class ItElasticLogging extends BaseTest {
         loggingExpArchiveLoc = getResultDir() + "/loggingExpArchDir";
         Files.createDirectories(Paths.get(loggingExpArchiveLoc));
       }
-      // Verify that Elastic Stack is ready to use
-      verifyLoggingExpReady(logstashIndexKey);
-      verifyLoggingExpReady(kibanaIndexKey);
-
-      // Create a dir to hold required WebLogic logging exporter archive files
-      loggingExpArchiveLoc = getResultDir() + "/loggingExpArchDir";
-      Files.createDirectories(Paths.get(loggingExpArchiveLoc));
     }
 
   }
