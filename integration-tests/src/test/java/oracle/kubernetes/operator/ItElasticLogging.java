@@ -249,7 +249,7 @@ public class ItElasticLogging extends BaseTest {
    *
    * @throws Exception exception
    */
-  //@Test
+  @Test
   public void testWebLogicLogSearch() throws Exception {
     Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -347,7 +347,6 @@ public class ItElasticLogging extends BaseTest {
     // Verify that WebLogic logging exporter installed successfully
     Thread.sleep(30 * 1000);
     verifyLoggingExpReady(wlsIndexKey);
-    Thread.sleep(30 * 1000);
 
     // Verify that hits of log level = Notice are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
