@@ -175,6 +175,7 @@ public class ItMonitoringExporter extends BaseTest {
       ExecCommand.exec(crdCmd);
       crdCmd = "kubectl delete secret " + domainNS2 + "-weblogic-credentials";
       ExecCommand.exec(crdCmd);
+      TestUtils.deleteWeblogicDomainResources(domainNS2);
       if (operator != null) {
         operator.destroy();
       }
