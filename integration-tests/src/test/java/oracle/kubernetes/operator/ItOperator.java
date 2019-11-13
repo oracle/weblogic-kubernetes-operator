@@ -48,6 +48,12 @@ public class ItOperator extends BaseTest {
     initialize(APP_PROPS_FILE, testClassName);
   }
 
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
   @Before
   public void prepare() throws Exception {
 
