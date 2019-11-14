@@ -29,8 +29,8 @@ for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kub
 kubectl delete -f ${resourceExporterDir}/coordinator_${domainNS}.yaml
 
 #delete database
-kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/mysql.yaml --ignore-not-found
+kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml --ignore-not-found
 kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/persistence.yaml --ignore-not-found
-kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/mysql-secret.yaml
+#kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/mysql-secret.yaml
 kubectl delete -f ${monitoringExporterEndToEndDir}/util/curl.yaml
 echo "Run the script [deletePromGrafanaMySqlCoordWebhook.sh] ..."
