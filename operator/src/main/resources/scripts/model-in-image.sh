@@ -70,7 +70,6 @@ function checkExistInventory() {
 
   trace "Checking model in image"
 
-  cat ${inventory_image_md5}
 
   if [ -f ${inventory_image_md5} ] ; then
     source -- ${inventory_image_md5}
@@ -317,16 +316,16 @@ function createWLDomain() {
   local secrets_changed=0
   trace "current version "${current_version}
 
-  getSecretsMD5
-  local current_secrets_md5=$(cat /tmp/secrets.md5)
-
-  if [ -f ${inventory_secrets_md5} ] ; then
-    previous_secrets_md5=$(cat ${inventory_secrets_md5})
-    if [ "${current_secrets_md5}" != "${previous_secrets_md5}" ]; then
-      trace "secrets different: before: ${previous_secrets_md5} current: ${current_secrets_md5}"
-      secrets_changed=1
-    fi
-  fi
+#  getSecretsMD5
+#  local current_secrets_md5=$(cat /tmp/secrets.md5)
+#
+#  if [ -f ${inventory_secrets_md5} ] ; then
+#    previous_secrets_md5=$(cat ${inventory_secrets_md5})
+#    if [ "${current_secrets_md5}" != "${previous_secrets_md5}" ]; then
+#      trace "secrets different: before: ${previous_secrets_md5} current: ${current_secrets_md5}"
+#      secrets_changed=1
+#    fi
+#  fi
 
   if [ -f ${inventory_wls_version} ] ; then
     previous_version=$(cat ${inventory_wls_version})
@@ -470,10 +469,18 @@ function getSecretsMD5() {
   if [ ! -f "${jarname}" ] ; then
     echo "0" > ${jarname}
   else
-    mkdir -p ${tmp_secrets} && cd ${tmp_secrets} && jar xf ${jarname} && chmod -R 777 ${tmp_secrets}
-    find ${tmp_secrets} -type f -exec touch -c -t 201812310000.00 {} \;
+    echo "nothing"
+    jar tvf ${jarname}
+    mkdir -p ${tmp_secrets}
+    cd ${tmp_secrets}
+    pwd
+    jar xvf ${jarname}
+    ls -aRtl
+    chmod -R 777 ${tmp_secrets}
+    #find ${tmp_secrets} -type f -exec touch -c -t 201812310000.00 {} \;
     cd ${tmp_secrets}
     jar cMf ${jarname} `find -type f`
+    jar tvf ${jarname}
   fi
   touch -c -t 201812310000.00 ${jarname}
   secrets_md5=$(md5sum ${jarname} | cut -d' ' -f1)
