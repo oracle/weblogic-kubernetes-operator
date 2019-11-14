@@ -33,14 +33,18 @@ $ create-weblogic-credentials.sh
 #### Use the script to create a domain
 
 {{% notice note %}}
-The `create-domain.sh` script generates a new Docker image on each run with a new domain home and a different internal `domain secret` in it.  To prevent having disparate images with different domain secrets in the same domain, we strongly recommend that a new domain uses a `domainUID` that is different from any of the active domains, or that you delete the existing domain resource using the following command and wait until all the server pods are terminated before you create a domain with the same `domainUID`:
+The `create-domain.sh` script generates a new Docker image on each run with a new domain home and a different internal `domain secret` in it.  To prevent having disparate images with different domain secrets in the same domain, we strongly recommend that a new domain uses a `domainUID` that is different from any of the active domains, or that you delete the existing domain resource using the following command and wait until all the server pods are terminated before you create a domain with the same `domainUID`: 
+`$ kubectl delete domain [domainUID] -n [domainNamespace]`
 {{% /notice %}}
 
-```
-$kubectl delete domain [domainUID] -n [domainNamespace]
+The sample for creating domains is in this directory:
+
+```bash
+$ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
 ```
 
-Make a copy of the `create-domain-inputs.yaml` file, and run the create script, pointing it at your inputs file and an output directory:
+Make a copy of the `create-domain-inputs.yaml` file, update it with the correct values, 
+and run the create script, pointing it at your inputs file and an output directory:
 
 ```
 $ ./create-domain.sh \
@@ -146,7 +150,6 @@ The following parameters can be provided in the inputs file.
 | `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
 | `logHomeOnPV` | Specifies whether the log home is stored on the persistent volume. If set to true, then you must specify the `logHome`, `persistentVolumeClaimName`, and `domainPVMountPath` parameters.| `false` |
 | `logHome` | The in-pod location for domain log, server logs, server out, and Node Manager log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. This parameter is required if `logHomeOnPV` is true. Otherwise, it is ignored. | `/shared/logs/domain1` |
-| `dataHome` | An optional, in-pod location for data storage of default and custom file stores. If `dataHome` is not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage directories are determined from the WebLogic domain home configuration. | |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `default` |
@@ -173,9 +176,9 @@ Note that the example results below use the `default` Kubernetes namespace. If y
 The content of the generated `domain.yaml`:
 
 ```
-# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 
-# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
 #
@@ -209,10 +212,6 @@ spec:
   # logHomeEnabled: false
   # The in-pod location for domain log, server logs, server out, and Node Manager log files
   # logHome: /shared/logs/domain1
-  # An (optional) in-pod location for data storage of default and custom file stores.
-  # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
-  # data storage directories are determined from the WebLogic domain home configuration.
-  # dataHome:
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the operator will start up when it discovers this Domain
   # - "NEVER" will not start any server in the domain

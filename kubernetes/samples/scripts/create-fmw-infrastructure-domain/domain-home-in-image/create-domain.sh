@@ -196,24 +196,22 @@ function createDomainHome {
   sed -i -e "s|INFRA08|${rcuSchemaPrefix}|g" $rcuPropFile
   sed -i -e "s|InfraDB:1521/InfraPDB1.us.oracle.com|${rcuDatabaseURL}|g" $rcuPropFile
 
+  cp -f ${scriptDir}/common/Dockerfile ${dockerDir}/Dockerfile
+  cp -f ${scriptDir}/common/createFMWDomain.sh ${dockerDir}/container-scripts
+
   if [ ! -z $domainHomeImageBase ]; then
     sed -i -e "s|\(FROM \).*|\1 ${domainHomeImageBase}|g" ${dockerDir}/Dockerfile
   fi
 
   cp ${domainPropertiesOutput} ${dockerPropsDir}
   sed  -i  '$ a extract_env IMAGE_TAG ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
+  sed  -i  '$ a set_env_arg EXPOSE_T3_CHANNEL ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
+  sed  -i  '$ a set_env_arg FMW_DOMAIN_TYPE ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
+  sed  -i  '$ a set_env_arg T3_CHANNEL_PORT ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
+  sed  -i  '$ a set_env_arg T3_PUBLIC_ADDRESS ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
 
-  if [ "${fmwDomainType}" == "RestrictedJRF" ];
-  then
-   if [ ! -f ${dockerDir}/container-scripts/createFMWDomain.py.bak ]; then
-    mv ${dockerDir}/container-scripts/createFMWDomain.py \
-       ${dockerDir}/container-scripts/createFMWDomain.py.bak
-   fi
-   echo "Replacing file ${dockerDir}/container-scripts/createFMWDomain.py for RestrictedJRF Domain creation" 
-   cp -f ${scriptDir}/common/createFMWRestrictedJRFDomain.py \
-         ${dockerDir}/container-scripts/createFMWDomain.py
-
-  fi
+  cp -f ${scriptDir}/common/createFMWDomain.py \
+        ${dockerDir}/container-scripts/createFMWDomain.py
 
   bash ${dockerDir}/build.sh
 
