@@ -232,6 +232,8 @@ public class ConfigMapHelper {
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
         V1ConfigMap existingMap = callResponse.getResult();
+        LOGGER.info(MessageKeys.ENTER_METHOD, "ReadResponseStep.onSeccuss existingMap = " 
+            + existingMap + " isCompatible = " + isCompatibleMap(existingMap));
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
         } else if (isCompatibleMap(existingMap)) {

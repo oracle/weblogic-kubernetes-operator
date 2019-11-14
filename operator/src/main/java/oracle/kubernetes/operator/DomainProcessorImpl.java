@@ -194,7 +194,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   public void stopNamespace(String ns) {
-    Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
+    Map<String, DomainPresenceInfo> map = DOMAINS.remove(ns);
     if (map != null) {
       for (DomainPresenceInfo dpi : map.values()) {
         Domain dom = dpi.getDomain();

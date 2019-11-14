@@ -184,8 +184,8 @@ public class Main {
       version = HealthCheckHelper.performK8sVersionCheck();
 
       runSteps(
-          CrdHelper.createDomainCrdStep(version, new StartNamespaceWatcherStep(
-            new StartNamespacesStep(targetNamespaces))),
+          new StartNamespaceWatcherStep(CrdHelper.createDomainCrdStep(version, 
+              new StartNamespacesStep(targetNamespaces))), 
           Main::completeBegin);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -447,22 +447,41 @@ public class Main {
   }
 
   private static void dispatchNamespaceWatch(Watch.Response<V1Namespace> item) {
+    Collection<String> targetNamespaces = getTargetNamespaces();
     V1Namespace c = item.object;
-    LOGGER.info(MessageKeys.ENTER_METHOD, "dispatchNamespaceWatch", " c=" + c);
+    LOGGER.info(MessageKeys.ENTER_METHOD, "dispatchNamespaceWatch", " type = " 
+        + item.type + " targetNamespaces = " + targetNamespaces + " c=" + c);
     if (c != null) {
       String ns = c.getMetadata().getName();
       switch (item.type) {
         case "ADDED":
-          Collection<String> targetNamespaces = getTargetNamespaces();
-          if (targetNamespaces.contains(ns) && ! delegate.isNamespaceRunning(ns)) {
-            runSteps(createConfigMapStep(ns));
+          LOGGER.info(MessageKeys.ENTER_METHOD, "Adding namespace " + ns
+              + " isrunning = " + delegate.isNamespaceRunning(ns));
+          if (targetNamespaces.contains(ns)) {
+            LOGGER.info(MessageKeys.ENTER_METHOD, "Before creating config map for namespace " 
+                + ns);
+            // if (targetNamespaces.contains(ns) && ! delegate.isNamespaceRunning(ns)) {
+            // runSteps(Step.chain(
+            //     ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
+            //     createConfigMapStep(ns)));
+            Collection<String> nsToStart = new ArrayList<>();
+            nsToStart.add(ns);
+            runSteps(new StartNamespacesStep(nsToStart));
+            LOGGER.info(MessageKeys.ENTER_METHOD, "After creating config map for namespace " 
+                + ns);
           }
           break;
 
         case "DELETED":
           // mark the namespace is stopping and it will be stopped the next time 
           // when recheckDomains is triggered
-          isNamespaceStopping.put(ns, new AtomicBoolean(true));
+          LOGGER.info(MessageKeys.ENTER_METHOD, "Deleting namespace " + ns);
+          if (targetNamespaces.contains(ns)) {
+            stopNamespace(ns);
+            // if (targetNamespaces.contains(ns) && delegate.isNamespaceRunning(ns)) {
+            // isNamespaceStopping.put(ns, new AtomicBoolean(true));
+            LOGGER.info(MessageKeys.ENTER_METHOD, "Deleted namespace " + ns);
+          }
           break;
 
         case "MODIFIED":
@@ -488,7 +507,7 @@ public class Main {
   private static class StartNamespaceWatcherStep extends Step {
 
     StartNamespaceWatcherStep(Step next) {
-      
+      super(next); 
     }
 
     @Override
@@ -773,7 +792,8 @@ public class Main {
 
     @Override
     public boolean isNamespaceRunning(String namespace) {
-      return !isNamespaceStopping.get(namespace).get();
+      AtomicBoolean isStopping = isNamespaceStopping.get(namespace);
+      return (isStopping == null ? true : !isStopping.get());
     }
 
     @Override
