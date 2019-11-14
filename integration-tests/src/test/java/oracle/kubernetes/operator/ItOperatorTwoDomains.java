@@ -42,10 +42,12 @@ public class ItOperatorTwoDomains extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    testClassName = new Object() {
-    }.getClass().getEnclosingClass().getSimpleName();
-    // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE, testClassName);
+    if (FULLTEST) {
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
+      // initialize test properties and create the directories
+      initialize(APP_PROPS_FILE, testClassName);
+    }
   }
 
   /**
@@ -56,18 +58,19 @@ public class ItOperatorTwoDomains extends BaseTest {
    */
   @Before
   public void prepare() throws Exception {
-
-    createResultAndPvDirs(testClassName);
-    testClassNameShort = "twooptwodomain";
-    // create operator1
-    if (operator1 == null) {
-      Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
-          true, testClassNameShort);
-      operator1 = TestUtils.createOperator(operatorMap, RestCertType.SELF_SIGNED);
-      Assert.assertNotNull(operator1);
-      domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-      namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
-      namespaceList.append(" ").append(domainNS1);
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
+      testClassNameShort = "twooptwodomain";
+      // create operator1
+      if (operator1 == null) {
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
+            true, testClassNameShort);
+        operator1 = TestUtils.createOperator(operatorMap, RestCertType.SELF_SIGNED);
+        Assert.assertNotNull(operator1);
+        domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String) operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS1);
+      }
     }
   }
 
@@ -78,10 +81,12 @@ public class ItOperatorTwoDomains extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    tearDown(new Object() {
-    }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+    if (FULLTEST) {
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
 
-    LoggerHelper.getLocal().info("SUCCESS");
+      LoggerHelper.getLocal().info("SUCCESS");
+    }
   }
 
   /**
