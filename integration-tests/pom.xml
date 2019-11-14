@@ -247,7 +247,9 @@
                         </exclude>
                     </excludes>
                     <parallel>${PARALLEL_FAILSAFE}</parallel>
-          			<useUnlimitedThreads>true</useUnlimitedThreads>
+          			<!-- useUnlimitedThreads>true</useUnlimitedThreads -->
+                    <threadCount>7</threadCount>
+                    <perCoreThreadCount>false</perCoreThreadCount>
                 </configuration>
 
                 <executions>
