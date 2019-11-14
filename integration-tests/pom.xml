@@ -188,20 +188,6 @@
                             <executable>${resource-integration-test}/setupenv.sh</executable>
                         </configuration>
                     </execution>
-                     <!-- execution>
-                        <id>cleanup</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <environmentVariables>
-                                <JENKINS_RESULTS_DIR>${JENKINS_RESULTS_DIR}</JENKINS_RESULTS_DIR>
-                            </environmentVariables>
-                            <executable>${project.basedir}/../src/integration-tests/bash/cleanup.sh</executable>
-                        </configuration>
-                    </execution -->
-                    
                 </executions>
             </plugin>
             <plugin>

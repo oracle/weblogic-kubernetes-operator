@@ -33,10 +33,6 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 
 public class ItJrfPvWlst extends BaseTest {
-  //property file used to customize operator properties for operator inputs yaml
-  private static final String JRF_OPERATOR_FILE_1 = "jrfoperator1.yaml";
-  // file used to customize domain properties for domain, PV and LB inputs yaml
-  private static final String JRF_DOMAIN_ON_PV_WLST_FILE = "jrf_domainonpvwlst.yaml";
   private static String rcuSchemaPrefix = "jrfdomain";
   private static Operator operator1;
   private static String domainNS;

@@ -49,8 +49,7 @@ public class ItStickySession extends BaseTest {
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes. It creates an operator, a Weblogic domain
-   * and deploy a web application with persistent-store-type configured to replicated_if_clustered.
+   * the resultRoot, pvRoot and projectRoot attributes.
    *
    * @throws Exception exception
    */
@@ -62,6 +61,14 @@ public class ItStickySession extends BaseTest {
       initialize(APP_PROPS_FILE, testClassName);
     }
   }
+
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. It creates an operator, a Weblogic domain if not running
+   * and deploy a web application with persistent-store-type configured to replicated_if_clustered
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
 
   @Before
   public void prepare() throws Exception {

@@ -1626,15 +1626,6 @@ public class Domain {
     pvRoot = (String) domainMap.get("pvRoot");
     projectRoot = BaseTest.getProjectRoot();
 
-    /* if (domainMap.containsKey("pvSharing")) {
-      domainResultsDir = userProjectsDir + "/../";
-    } else {
-      domainResultsDir = userProjectsDir + "/../" + domainMap.get("domainUID");
-    }
-
-    // create a temp directory for the domain
-    Files.createDirectories(Paths.get(domainResultsDir)); */
-
     // copy samples to RESULT_DIR
     if (Files.exists(Paths.get(resultsDir + "/samples"))) {
       TestUtils.exec("rm -rf " + resultsDir + "/samples");
