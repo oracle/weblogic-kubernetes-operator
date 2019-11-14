@@ -16,6 +16,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -37,6 +38,7 @@ public class ItCoherenceTests extends BaseTest {
   private static final String PROXY_PORT = "9000";
   private static String domainNS1;
   private static String testClassName;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -47,18 +49,29 @@ public class ItCoherenceTests extends BaseTest {
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
-    // initialize test properties and create the directories
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
+    }
+
+  }
+
+  @BeforeEach
+  public void prepare() throws Exception {
+    // initialize test properties and create the directories
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
       // create operator1
       if (operator1 == null) {
         Map<String, Object> operatorMap =
-            TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+            createOperatorMap(getNewSuffixCount(),
+                true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS1);
       }
 
     }
@@ -73,7 +86,8 @@ public class ItCoherenceTests extends BaseTest {
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       operator1.destroy();
-      // tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      tearDown(new Object() {}.getClass()
+          .getEnclosingClass().getSimpleName(), namespaceList.toString());
     }
   }
 
@@ -172,7 +186,8 @@ public class ItCoherenceTests extends BaseTest {
 
     // create domain
     Map<String, Object> domainMap =
-        TestUtils.createDomainInImageMap(getNewSuffixCount(), true, testClassName);
+        createDomainInImageMap(getNewSuffixCount(),
+            true, testClassName);
     domainMap.put("namespace", domainNS1);
     domainMap.put("additionalEnvMap", envMap);
     domainMap.put(
@@ -221,7 +236,7 @@ public class ItCoherenceTests extends BaseTest {
    *
    * @return the WDT zip path
    */
-  private static String buildProxyServerWdtZip() {
+  private String buildProxyServerWdtZip() {
 
     // Build the proxy server gar file
     String garPath = getResultDir() + "/coh-proxy-server.gar";

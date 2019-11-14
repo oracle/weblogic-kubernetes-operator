@@ -20,6 +20,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -52,8 +53,12 @@ public class ItOperatorUpgrade extends BaseTest {
   public static void staticPrepare() throws Exception {
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
-    // initialize test properties and create the directories
     initialize(APP_PROPS_FILE, testClassName);
+  }
+
+  @BeforeEach
+  public void prepare() throws Exception {
+    createResultAndPvDirs(testClassName);
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       OP_TARGET_RELEASE = System.getenv("IMAGE_NAME_OPERATOR") + ":"
@@ -296,10 +301,10 @@ public class ItOperatorUpgrade extends BaseTest {
   private void setupOperatorAndDomain(String operatorGitRelease, String operatorRelease)
       throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
-    opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
+    opUpgradeTmpDir = getResultDir() + "/operatorupgrade";
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
-    Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, "");
+    Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, "");
     operatorMap.put("operatorImageName", "oracle/weblogic-kubernetes-operator");
     operatorMap.put("operatorImageTag", operatorRelease);
     operatorMap.put("operatorGitVersion", operatorGitRelease);
@@ -315,7 +320,7 @@ public class ItOperatorUpgrade extends BaseTest {
     // TestUtils.exec("kubectl get all --all-namespaces", true);
 
     // Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
-    Map<String, Object> wlstDomainMap = TestUtils.createDomainInImageMap(getNewSuffixCount(), false, testClassName);
+    Map<String, Object> wlstDomainMap = createDomainInImageMap(getNewSuffixCount(), false, testClassName);
     wlstDomainMap.put("domainUID", DUID);
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");

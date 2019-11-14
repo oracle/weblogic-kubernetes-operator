@@ -42,6 +42,12 @@
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.jupiter.version}</version>
             <scope>test</scope>
@@ -50,25 +56,32 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <version>${junit.vintage.version}</version>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-commons</artifactId>
+            <version>${junit.platform.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
-            <version>1.3.1</version>
+            <version>${junit.platform.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-engine</artifactId>
-            <version>1.3.1</version>
+            <version>${junit.platform.version}</version>
             <scope>test</scope>
         </dependency>
+        <!--dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${junit.vintage.version}</version>
+            <scope>test</scope>
+        </dependency-->
         <!--dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -151,9 +164,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <skipTests>true</skipTests>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -217,8 +227,8 @@
                             <executable>${resource-integration-test}/setupenv.sh</executable>
                         </configuration>
                     </execution>
-                     <execution>
-                        <id>archive_cleanup</id>
+                     <!-- execution>
+                        <id>cleanup</id>
                         <phase>post-integration-test</phase>
                         <goals>
                             <goal>exec</goal>
@@ -227,9 +237,9 @@
                             <environmentVariables>
                                 <JENKINS_RESULTS_DIR>${JENKINS_RESULTS_DIR}</JENKINS_RESULTS_DIR>
                             </environmentVariables>
-                            <executable>${resource-integration-test}/statedump.sh</executable>
+                            <executable>${project.basedir}/../src/integration-tests/bash/cleanup.sh</executable>
                         </configuration>
-                    </execution>
+                    </execution -->
                     
                 </executions>
             </plugin>
@@ -284,9 +294,16 @@
                             ${includes-failsafe}
                         </include>
                     </includes>
-                    <parallel>${PARALLEL_FAILSAFE}</parallel>
+                    <excludes>
+                        <exclude>
+                            ItMonitoringExporter.java
+                        </exclude>
+                        <exclude>
+                            ${excludes-failsafe}
+                        </exclude>
+                    </excludes>
+                    <!--parallel>${PARALLEL_FAILSAFE}</parallel-->
           			<useUnlimitedThreads>true</useUnlimitedThreads>
-            		
                 </configuration>
 
                 <executions>
@@ -294,7 +311,6 @@
                         <id>integration-tests</id>
                         <goals>
                             <goal>integration-test</goal>
-                            <!-- goal>verify</goal -->
                         </goals>
                         <phase>integration-test</phase>
                         <configuration>
@@ -307,7 +323,6 @@
                             <trimStackTrace>false</trimStackTrace>
                         </configuration>
                     </execution>
-                    <!-- below exec is needed to run post-integration-test phase when running single test if it fails -->
                     <execution>
                         <id>verify</id>
                         <phase>verify</phase>
@@ -325,7 +340,7 @@
             <id>wls-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/It*</includes-failsafe>
+                <excludes-failsafe>**/*Jrf*</excludes-failsafe>
                 <jrf_enabled>false</jrf_enabled>
             </properties>
         </profile>
@@ -333,7 +348,7 @@
             <id>jrf-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/JrfDomain*</includes-failsafe>
+                <includes-failsafe>**/ItJrf*</includes-failsafe>
                 <jrf_enabled>true</jrf_enabled>
             </properties>
         </profile>
@@ -353,7 +368,7 @@
             <id>wls-jrf-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/It*,**/JrfDomain*</includes-failsafe>
+                <includes-failsafe>**/It*</includes-failsafe>
                 <jrf_enabled>true</jrf_enabled>
             </properties>
         </profile>

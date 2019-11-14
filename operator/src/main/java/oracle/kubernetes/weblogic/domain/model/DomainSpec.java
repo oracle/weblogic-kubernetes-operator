@@ -733,7 +733,7 @@ public class DomainSpec extends BaseConfiguration {
 
     @Override
     public boolean isShuttingDown() {
-      return !getAdminServerSpec().shouldStart(0);
+      return getAdminServerSpec().isShuttingDown();
     }
 
     @Override

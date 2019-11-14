@@ -20,11 +20,12 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Multiple clusters in a domain tests.
@@ -42,6 +43,7 @@ public class ItMultipleClusters extends BaseTest {
   private static String customDomainTemplate;
   private static String testClassName;
   private static String domainNS1;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -55,28 +57,36 @@ public class ItMultipleClusters extends BaseTest {
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
-      // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-      String template =
-          BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
-      String add =
-          "  - clusterName: %CLUSTER_NAME%-2\n"
-              + "    serverStartState: \"RUNNING\"\n"
-              + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
-      customDomainTemplate = BaseTest.getResultDir() + "/customDomainTemplate.yaml";
-      Files.copy(
-          Paths.get(template),
-          Paths.get(customDomainTemplate),
-          StandardCopyOption.REPLACE_EXISTING);
-      Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
+    }
+  }
 
+  @BeforeEach
+  public void prepare() throws Exception {
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
       // create operator1
       if (operator1 == null) {
+        String template =
+            BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
+        String add =
+            "  - clusterName: %CLUSTER_NAME%-2\n"
+                + "    serverStartState: \"RUNNING\"\n"
+                + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
+        customDomainTemplate = getResultDir() + "/customDomainTemplate.yaml";
+        Files.copy(
+            Paths.get(template),
+            Paths.get(customDomainTemplate),
+            StandardCopyOption.REPLACE_EXISTING);
+        Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
+
         Map<String, Object> operatorMap =
-            TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+            createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS1);
       }
 
     }
@@ -89,6 +99,12 @@ public class ItMultipleClusters extends BaseTest {
    */
   @AfterAll
   public static void staticUnPrepare() throws Exception {
+    if (FULLTEST) {
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+
+      LoggerHelper.getLocal().info("SUCCESS");
+    }
   }
 
   /**
@@ -108,7 +124,7 @@ public class ItMultipleClusters extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("domainUID", DOMAINUID);
       domainMap.put("clusterType", "CONFIGURED");
       domainMap.put("customDomainTemplate", customDomainTemplate);
@@ -155,7 +171,7 @@ public class ItMultipleClusters extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("domainUID", domainuid);
       domainMap.put("customDomainTemplate", customDomainTemplate);
       domainMap.put("namespace", domainNS1);
@@ -203,7 +219,7 @@ public class ItMultipleClusters extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domainMap =
-          TestUtils.createDomainInImageMap(getNewSuffixCount(), true, testClassName);
+          createDomainInImageMap(getNewSuffixCount(), true, testClassName);
       domainMap.put("domainUID", domainuid);
       domainMap.put("customDomainTemplate", customDomainTemplate);
       domainMap.put("namespace", domainNS1);
@@ -244,7 +260,7 @@ public class ItMultipleClusters extends BaseTest {
     String namespace = domain.getDomainNs();
     for (String pod : pods) {
       assertTrue(
-          pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
+          testUtil.isPodRunning(namespace, domain1LabelSelector, pod), pod + " Pod not running");
     }
   }
 }

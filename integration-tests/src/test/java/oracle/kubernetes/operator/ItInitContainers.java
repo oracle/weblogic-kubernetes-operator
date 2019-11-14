@@ -22,6 +22,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -39,6 +40,7 @@ public class ItInitContainers extends BaseTest {
   private static String originalYaml;
   private static String testClassName;
   private static String domainNS;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -52,27 +54,37 @@ public class ItInitContainers extends BaseTest {
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
-      // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
+    }
+  }
+
+  @BeforeEach
+  public void prepare() throws Exception {
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
       LoggerHelper.getLocal().log(Level.INFO, "staticPrepare------Begin");
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS);
       }
-      initContainerTmpDir = BaseTest.getResultDir() + "/initconttemp";
+      initContainerTmpDir = getResultDir() + "/initconttemp";
       Files.createDirectories(Paths.get(initContainerTmpDir));
 
-      domain = createInitContdomain();
-      originalYaml =
-          BaseTest.getUserProjectsDir()
-              + "/weblogic-domains/"
-              + domain.getDomainUid()
-              + "/domain.yaml";
-      Assertions.assertNotNull(domain);
+      if (domain == null) {
+        domain = createInitContdomain();
+        originalYaml =
+            getUserProjectsDir()
+                + "/weblogic-domains/"
+                + domain.getDomainUid()
+                + "/domain.yaml";
+        Assertions.assertNotNull(domain);
+      }
       LoggerHelper.getLocal().log(Level.INFO, "staticPrepare------End");
     }
 
@@ -94,7 +106,7 @@ public class ItInitContainers extends BaseTest {
         operator.destroy();
       }
       tearDown(new Object() {
-      }.getClass().getEnclosingClass().getSimpleName());
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
       LoggerHelper.getLocal().log(Level.INFO, "staticUnPrepare------End");
     }
   }
@@ -105,8 +117,8 @@ public class ItInitContainers extends BaseTest {
    * @return created domain Domain
    * @throws Exception when domain creation fails
    */
-  private static Domain createInitContdomain() throws Exception {
-    Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+  private Domain createInitContdomain() throws Exception {
+    Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
     domainMap.put("namespace", domainNS);
     domainMap.put("domainUID", domainUid);
     LoggerHelper.getLocal().log(Level.INFO, "Creating and verifying the domain creation with domainUid: " + domainUid);

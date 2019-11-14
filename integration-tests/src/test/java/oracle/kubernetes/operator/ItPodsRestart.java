@@ -25,6 +25,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -44,6 +45,7 @@ public class ItPodsRestart extends BaseTest {
   private static String domainNS;
   private static boolean testCompletedSuccessfully;
   private static String testClassName;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -55,31 +57,39 @@ public class ItPodsRestart extends BaseTest {
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
+  }
+
+  @BeforeEach
+  public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (QUICKTEST) {
-      testClassName = new Object() {
-      }.getClass().getEnclosingClass().getSimpleName();
-      // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE, testClassName);
+      createResultAndPvDirs(testClassName);
       setMaxIterationsPod(80);
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
       if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS);
       }
-      restartTmpDir = BaseTest.getResultDir() + "/restarttemp";
+      restartTmpDir = getResultDir() + "/restarttemp";
       Files.createDirectories(Paths.get(restartTmpDir));
 
-      domain = createPodsRestartdomain();
-      originalYaml =
-          BaseTest.getUserProjectsDir()
-              + "/weblogic-domains/"
-              + domain.getDomainUid()
-              + "/domain.yaml";
-      Assertions.assertNotNull(domain);
+      if (domain == null) {
+        domain = createPodsRestartdomain();
+        originalYaml =
+            getUserProjectsDir()
+                + "/weblogic-domains/"
+                + domain.getDomainUid()
+                + "/domain.yaml";
+        Assertions.assertNotNull(domain);
+      }
     }
   }
 
@@ -90,12 +100,15 @@ public class ItPodsRestart extends BaseTest {
    */
   @AfterAll
   public static void staticUnPrepare() throws Exception {
+    tearDown(new Object() {
+    }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
 
+    LoggerHelper.getLocal().info("SUCCESS");
   }
 
-  private static Domain createPodsRestartdomain() throws Exception {
+  private Domain createPodsRestartdomain() throws Exception {
 
-    Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+    Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
     // domainMap.put("domainUID", "domainpodsrestart");
     domainMap.put("initialManagedServerReplicas", new Integer("1"));
     domainMap.put("namespace", domainNS);
@@ -269,7 +282,7 @@ public class ItPodsRestart extends BaseTest {
 
     // firstly ensure that original domain.yaml doesn't include the property-to-be-added
     String domainFileName =
-        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+        getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
     boolean result =
         (new String(Files.readAllBytes(Paths.get(domainFileName)))).contains("fsGroup: 1000");
     Assertions.assertFalse(result);
@@ -307,7 +320,7 @@ public class ItPodsRestart extends BaseTest {
 
     // firstly ensure that original domain.yaml doesn't include the property-to-be-added
     String domainFileName =
-        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+        getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
     boolean result =
         (new String(Files.readAllBytes(Paths.get(domainFileName)))).contains("fsGroup: 2000");
     Assertions.assertFalse(result);
@@ -346,7 +359,7 @@ public class ItPodsRestart extends BaseTest {
 
     // firstly ensure that original domain.yaml doesn't include the property-to-be-addeded
     String domainFileName =
-        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+        getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
     boolean result =
         (new String(Files.readAllBytes(Paths.get(domainFileName)))).contains("cpu: 500m");
     Assertions.assertFalse(result);

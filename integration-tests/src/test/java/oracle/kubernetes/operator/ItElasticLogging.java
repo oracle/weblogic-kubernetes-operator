@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -55,6 +56,7 @@ public class ItElasticLogging extends BaseTest {
   private static String loggingExpArchiveLoc;
   private static String loggingYamlFileLoc;
   private static String testClassName;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -69,28 +71,37 @@ public class ItElasticLogging extends BaseTest {
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
-      // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
-      testClassName = "itelastic";
-      //Adding filter to WebLogicLoggingExporter.yaml
-      loggingYamlFileLoc = BaseTest.getResultDir() + "/loggingYamlFilehDir";
-      Files.createDirectories(Paths.get(loggingYamlFileLoc));
-      addFilterToElkFile();
+    }
+  }
 
-      // Install Elastic Stack
-      StringBuffer cmd =
-          new StringBuffer("kubectl apply -f ")
-              .append(getProjectRoot())
-              .append("/")
-              .append(elasticStackYamlLoc);
-      LoggerHelper.getLocal().log(Level.INFO, "Command to Install Elastic Stack: " + cmd.toString());
-      TestUtils.exec(cmd.toString());
+  @BeforeEach
+  public void prepare() throws Exception {
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
+      String testClassNameShort = "itelastic";
+
+      //Adding filter to WebLogicLoggingExporter.yaml
+      loggingYamlFileLoc = getResultDir() + "/loggingYamlFilehDir";
+      Files.createDirectories(Paths.get(loggingYamlFileLoc));
 
       // Create operator-elk
       if (operator == null) {
+        //Adding filter to WebLogicLoggingExporter.yaml
+        addFilterToElkFile();
+
+        // Install Elastic Stack
+        StringBuffer cmd =
+            new StringBuffer("kubectl apply -f ")
+                .append(getProjectRoot())
+                .append("/")
+                .append(elasticStackYamlLoc);
+        LoggerHelper.getLocal().log(Level.INFO, "Command to Install Elastic Stack: " + cmd.toString());
+        TestUtils.exec(cmd.toString());
+
         LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(
-            getNewSuffixCount(), true, testClassName);
+        Map<String, Object> operatorMap = createOperatorMap(
+            getNewSuffixCount(), true, testClassNameShort);
         operatorMap.put("elkIntegrationEnabled",Boolean.valueOf("true"));
         operatorMap.put("logStashImage", "logstash:6.8.0");
         operatorMap.put("elasticSearchHost","elasticsearch.default.svc.cluster.local");
@@ -100,12 +111,45 @@ public class ItElasticLogging extends BaseTest {
         }
         operator = TestUtils.createOperator(operatorMap, "2/2", Operator.RestCertType.SELF_SIGNED);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS);
+
+        // Get Elasticsearch host and port from yaml file and build Elasticsearch URL
+        testVarMap = TestUtils.loadYaml(OPERATOR1_ELK_YAML);
+        String operatorPodName = operator.getOperatorPodName();
+        StringBuffer elasticSearchUrlBuff =
+            new StringBuffer("http://")
+                .append(testVarMap.get("elasticSearchHost"))
+                .append(":")
+                .append(testVarMap.get("elasticSearchPort"));
+        elasticSearchURL = elasticSearchUrlBuff.toString();
+        Assumptions.assumeFalse(
+            elasticSearchURL.contains("null"), "Got null when building Elasticsearch URL");
+
+        // Create the prefix of k8s exec command
+        StringBuffer k8sExecCmdPrefixBuff =
+            new StringBuffer("kubectl exec -it ")
+                .append(operatorPodName)
+                .append(" -n ")
+                .append(operator.getOperatorNamespace())
+                .append(" -- /bin/bash -c ")
+                .append("'curl ")
+                .append(elasticSearchURL);
+        k8sExecCmdPrefix = k8sExecCmdPrefixBuff.toString();
+
+        // Verify that Elastic Stack is ready to use
+        verifyLoggingExpReady(logstashIndexKey);
+        verifyLoggingExpReady(kibanaIndexKey);
+
+        // Create a dir to hold required WebLogic logging exporter archive files
+        loggingExpArchiveLoc = getResultDir() + "/loggingExpArchDir";
+        Files.createDirectories(Paths.get(loggingExpArchiveLoc));
       }
 
       // create domain
       if (domain == null) {
         LoggerHelper.getLocal().log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
-        Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+        Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassNameShort);
         for (Map.Entry<String, Object> entry : domainMap.entrySet()) {
           System.out.println("domainMap Key:vslue == " + entry.getKey() + ":" + entry.getValue().toString());
         }
@@ -115,37 +159,6 @@ public class ItElasticLogging extends BaseTest {
         domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
       }
-
-      // Get Elasticsearch host and port from yaml file and build Elasticsearch URL
-      testVarMap = TestUtils.loadYaml(OPERATOR1_ELK_YAML);
-      String operatorPodName = operator.getOperatorPodName();
-      StringBuffer elasticSearchUrlBuff =
-          new StringBuffer("http://")
-              .append(testVarMap.get("elasticSearchHost"))
-              .append(":")
-              .append(testVarMap.get("elasticSearchPort"));
-      elasticSearchURL = elasticSearchUrlBuff.toString();
-      Assumptions.assumeFalse(
-          elasticSearchURL.contains("null"), "Got null when building Elasticsearch URL");
-
-      // Create the prefix of k8s exec command
-      StringBuffer k8sExecCmdPrefixBuff =
-          new StringBuffer("kubectl exec -it ")
-              .append(operatorPodName)
-              .append(" -n ")
-              .append(operator.getOperatorNamespace())
-              .append(" -- /bin/bash -c ")
-              .append("'curl ")
-              .append(elasticSearchURL);
-      k8sExecCmdPrefix = k8sExecCmdPrefixBuff.toString();
-
-      // Verify that Elastic Stack is ready to use
-      verifyLoggingExpReady(logstashIndexKey);
-      verifyLoggingExpReady(kibanaIndexKey);
-
-      // Create a dir to hold required WebLogic logging exporter archive files
-      loggingExpArchiveLoc = BaseTest.getResultDir() + "/loggingExpArchDir";
-      Files.createDirectories(Paths.get(loggingExpArchiveLoc));
     }
   }
 
@@ -157,10 +170,6 @@ public class ItElasticLogging extends BaseTest {
   @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-
       // Uninstall Elastic Stack
       StringBuffer cmd =
           new StringBuffer("kubectl delete -f ")
@@ -172,8 +181,9 @@ public class ItElasticLogging extends BaseTest {
 
       // Restore the test env
       Files.delete(new File(loggingYamlFileLoc + "/" + loggingYamlFile).toPath());
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-      
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
@@ -243,12 +253,63 @@ public class ItElasticLogging extends BaseTest {
 
     // Verify that log hits for admin server are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
-    String queryCriteria = "/_search?q=log:" + adminServerPodName + " | grep RUNNING";
-    verifySearchResults(queryCriteria, regex, logstashIndexKey, false);
+    String queryCriteria = "/_search?q=log:" + adminServerPodName;
+    int i = 0;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      String queryResult = execSearchQuery(queryCriteria, logstashIndexKey);
+      if (null != queryResult) {
+        LoggerHelper.getLocal().log(Level.INFO, "ELK repo returns: " + queryResult);
+        if (queryResult.contains("RUNNING")) {
+          LoggerHelper.getLocal().log(Level.INFO, adminServerPodName + " is running!");
+          break;
+        }
+      }
+
+      if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+        Assumptions.assumeTrue(queryResult.contains("RUNNING"));
+      }
+
+      LoggerHelper.getLocal().log(Level.INFO,
+          adminServerPodName + "logs in ELK repo is not ready yet ["
+          + i
+          + "/"
+          + BaseTest.getMaxIterationsPod()
+          + "], sleeping "
+          + BaseTest.getWaitTimePod()
+          + " seconds more");
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
+    }
 
     // Verify that log hits for managed server are not empty
-    queryCriteria = "/_search?q=log:" + managedServerPodName + " | grep RUNNING";
-    verifySearchResults(queryCriteria, regex, logstashIndexKey, false);
+    queryCriteria = "/_search?q=log:" + managedServerPodName;
+    i = 0;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      String queryResult = execSearchQuery(queryCriteria, logstashIndexKey);
+      LoggerHelper.getLocal().log(Level.INFO, "ELK repo returns: " + queryResult);
+      if (null != queryResult) {
+        LoggerHelper.getLocal().log(Level.INFO, "ELK repo returns: " + queryResult);
+        if (queryResult.contains("RUNNING")) {
+          LoggerHelper.getLocal().log(Level.INFO, managedServerPodName + " is running!");
+          break;
+        }
+      }
+
+      if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+        Assumptions.assumeTrue(queryResult.contains("RUNNING"));
+      }
+
+      LoggerHelper.getLocal().log(Level.INFO,
+          managedServerPodName + " logs in ELK repo is not ready yet ["
+          + i
+          + "/"
+          + BaseTest.getMaxIterationsPod()
+          + "], sleeping "
+          + BaseTest.getWaitTimePod()
+          + " seconds more");
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
+    }
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }

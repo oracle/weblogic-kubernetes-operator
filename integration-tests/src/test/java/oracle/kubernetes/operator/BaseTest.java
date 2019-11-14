@@ -6,6 +6,8 @@ package oracle.kubernetes.operator;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
@@ -66,10 +68,12 @@ public class BaseTest {
   public static String MONITORING_EXPORTER_VERSION;
   public static boolean INGRESSPERDOMAIN = true;
   protected static String appLocationInPod = "/u01/oracle/apps";
-  private static String resultRoot = "";
-  private static String pvRoot = "";
-  private static String resultDir = "";
-  private static String userProjectsDir = "";
+  private static String resultRootCommon = "";
+  private static String pvRootCommon = "";
+  private String resultRoot = "";
+  private String pvRoot = "";
+  private String resultDir = "";
+  private String userProjectsDir = "";
   private static String projectRoot = "";
   private static String username = "weblogic";
   private static String password = "welcome1";
@@ -85,6 +89,7 @@ public class BaseTest {
   private static String weblogicImageServer;
   private static String domainApiVersion;
   private static int suffixCount = 0;
+  private String testClassName;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
@@ -115,10 +120,6 @@ public class BaseTest {
     }
   }
 
-  public static void initialize(String appPropsFile) throws Exception {
-    initialize(appPropsFile, "");
-  }
-
   /**
    * initializes the application properties and creates directories for results.
    *
@@ -128,7 +129,7 @@ public class BaseTest {
    */
   public static void initialize(String appPropsFile, String testClassName)
       throws Exception {
-
+    testClassName = testClassName;
     LoggerHelper.initLocal(Logger.getLogger(testClassName));
     LoggerHelper.getGlobal().log(Level.INFO, "Starting testClass " + testClassName);
     LoggerHelper.getLocal().log(Level.INFO, "Starting testClass " + testClassName);
@@ -184,20 +185,22 @@ public class BaseTest {
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
     waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
     if (System.getenv("RESULT_ROOT") != null) {
-      resultRoot = System.getenv("RESULT_ROOT");
+      resultRootCommon = System.getenv("RESULT_ROOT");
     } else {
-      resultRoot = baseDir + "/" + System.getProperty("user.name") + "/wl_k8s_test_results";
+      resultRootCommon = baseDir + "/" + System.getProperty("user.name")
+            + "/wl_k8s_test_results";
     }
+
     if (System.getenv("PV_ROOT") != null) {
-      pvRoot = System.getenv("PV_ROOT");
+      pvRootCommon = System.getenv("PV_ROOT");
     } else {
-      pvRoot = resultRoot;
+      pvRootCommon = resultRootCommon;
     }
+
     if (System.getenv("LEASE_ID") != null) {
       leaseId = System.getenv("LEASE_ID");
     }
-    resultDir = resultRoot + "/acceptance_test_tmp";
-    userProjectsDir = resultDir + "/user-projects";
+
     projectRoot = System.getProperty("user.dir") + "/..";
 
     // BRANCH_NAME var is used in Jenkins job
@@ -206,56 +209,22 @@ public class BaseTest {
     } else {
       branchName = TestUtils.getGitBranchName();
     }
+    appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
 
-    // for manual/local run, do cleanup
-    /* if (!JENKINS) {
+  }
 
-      // delete k8s artifacts created if any, delete PV directories
-      ExecResult clnResult = cleanup();
-      log(Level.INFO, 
-          "Command to call cleanup script returned "
-              + clnResult.stdout()
-              + "\n"
-              + clnResult.stderr());
-    } */
+  public void createResultAndPvDirs(String testClassName) throws Exception {
 
-    /* if (JENKINS) {
-      log(Level.INFO, "Deleting and creating " + resultRoot + "/acceptance_test_tmp");
-      TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"rm -rf "
-              + resultRoot
-              + "/acceptance_test_tmp\" && "
-              + "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
-              + resultRoot
-              + "/acceptance_test_tmp\"");
-      TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
-              + resultRoot
-              + "/acceptance_test_tmp\"");
-      log(Level.INFO, "Deleting and Creating " + pvRoot + "/acceptance_test_pv");
-      TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"rm -rf "
-              + pvRoot
-              + "/acceptance_test_pv\" && "
-              + "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
-              + pvRoot
-              + "/acceptance_test_pv\"");
-      TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
-              + pvRoot
-              + "/acceptance_test_pv\"");
-    } */
+    resultRoot = resultRootCommon + "/" + testClassName;
+    pvRoot = pvRootCommon + "/" + testClassName;
+    resultDir = resultRoot + "/acceptance_test_tmp";
+    userProjectsDir = resultDir + "/user-projects";
 
     // for manual/local run, create file handler, create PVROOT
     if (!SHARED_CLUSTER) {
       LoggerHelper.getLocal().log(Level.INFO, "Creating PVROOT " + pvRoot);
-      Files.createDirectories(Paths.get(pvRoot));
-      ExecResult result = ExecCommand.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 " + pvRoot + "\"");
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
-      }
+      TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"mkdir -m777 -p "
+          + pvRoot + "\"", true);
     }
 
     // create resultRoot, PVRoot, etc
@@ -264,27 +233,25 @@ public class BaseTest {
     Files.createDirectories(Paths.get(userProjectsDir));
 
     // create file handler
-    FileHandler fh = new FileHandler(getResultDir() + "/" + testClassName + ".out");
+    String testLogFile = getResultDir() + "/" + testClassName + ".out";
+    FileHandler fh = new FileHandler(testLogFile, true);
     SimpleFormatter formatter = new SimpleFormatter();
     fh.setFormatter(formatter);
     LoggerHelper.getLocal().addHandler(fh);
     LoggerHelper.getLocal().log(Level.INFO, "Adding file handler, logging to file at "
-        + getResultDir() + "/" + testClassName + ".out");
+        + testLogFile);
     LoggerHelper.getGlobal().log(Level.INFO, "Adding file handler, logging to file at "
-        + getResultDir() + "/" + testClassName + ".out");
+        + testLogFile);
 
-
-    appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
-
+    LoggerHelper.getLocal().log(Level.INFO, "RESULT_ROOT =" + resultRoot);
+    LoggerHelper.getLocal().log(Level.INFO, "PV_ROOT =" + pvRoot);
+    LoggerHelper.getLocal().log(Level.INFO, "userProjectsDir =" + userProjectsDir);
     LoggerHelper.getLocal().log(Level.INFO, "appProps = " + appProps);
     LoggerHelper.getLocal().log(Level.INFO, "maxIterationPod = "
         + appProps.getProperty("maxIterationsPod"));
     LoggerHelper.getLocal().log(Level.INFO,
         "maxIterationPod with default= "
             + appProps.getProperty("maxIterationsPod", "" + maxIterationsPod));
-    LoggerHelper.getLocal().log(Level.INFO, "RESULT_ROOT =" + resultRoot);
-    LoggerHelper.getLocal().log(Level.INFO, "PV_ROOT =" + pvRoot);
-    LoggerHelper.getLocal().log(Level.INFO, "userProjectsDir =" + userProjectsDir);
     LoggerHelper.getLocal().log(Level.INFO, "projectRoot =" + projectRoot);
     LoggerHelper.getLocal().log(Level.INFO, "branchName =" + branchName);
 
@@ -350,28 +317,28 @@ public class BaseTest {
     return domainApiVersion;
   }
 
-  /* public ExecResult cleanup() throws Exception {
+  public ExecResult cleanup() throws Exception {
     String cmd =
         "export RESULT_ROOT="
-            + getResultRoot()
+            + resultRootCommon
             + " export PV_ROOT="
-            + getPvRoot()
+            + pvRootCommon
             + " export SHARED_CLUSTER=false && "
             + getProjectRoot()
             + "/src/integration-tests/bash/cleanup.sh";
     LoggerHelper.getLocal().log(Level.INFO, "Command to call cleanup script " + cmd);
     return ExecCommand.exec(cmd);
-  } */
+  }
 
-  public static String getResultRoot() {
+  public String getResultRoot() {
     return resultRoot;
   }
 
-  public static String getPvRoot() {
+  public String getPvRoot() {
     return pvRoot;
   }
 
-  public static String getUserProjectsDir() {
+  public String getUserProjectsDir() {
     return userProjectsDir;
   }
 
@@ -387,8 +354,12 @@ public class BaseTest {
     return password;
   }
 
-  public static String getResultDir() {
+  public String getResultDir() {
     return resultDir;
+  }
+
+  public static String getResultRootDir() {
+    return resultRootCommon;
   }
 
   public static int getMaxIterationsPod() {
@@ -454,47 +425,40 @@ public class BaseTest {
    * @throws Exception when errors while running statedump.sh or cleanup.sh scripts or while
    *                   renewing the lease for shared cluster run
    */
-  public static void tearDown(String itClassName) throws Exception {
-    /* LoggerHelper.getLocal().log(
+  public static void tearDown(String itClassName, String namespaceList) throws Exception {
+    LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
+    LoggerHelper.getLocal().info("BEGIN");
+    LoggerHelper.getLocal().info("Run once");
+
+    LoggerHelper.getLocal().log(
         Level.INFO,
-        "TEARDOWN: Starting Test Run TearDown (cleanup and state-dump)."
+        "TEARDOWN: Starting Test Run TearDown (state-dump)."
             + " Note that if the test failed previous to tearDown, "
             + " the error that caused the test failure may be reported "
             + "after the tearDown completes. Note that tearDown itself may report errors,"
             + " but this won't affect the outcome of the test results.");
-    StringBuffer cmd =
-        new StringBuffer(
-            "export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && export IT_CLASS=");
+    StringBuffer cmd = new StringBuffer("export RESULT_ROOT=");
+    cmd.append(resultRootCommon).append(" && export PV_ROOT=")
+        .append(pvRootCommon).append(" && export IT_CLASS=");
     cmd.append(itClassName)
-        .append(" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} && ")
+        .append(" && export NAMESPACE_LIST=\"")
+        .append(namespaceList)
+        .append("\" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} && ")
         .append(getProjectRoot())
         .append("/integration-tests/src/test/resources/statedump.sh");
-    log(Level.INFO, "Running " + cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
 
     // renew lease before callin statedump.sh
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) {
-      log(Level.INFO, "Executed statedump.sh " + result.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, "Executed statedump.sh " + result.stdout());
     } else {
-      log(Level.INFO, "Execution of statedump.sh failed, " + result.stderr() + "\n"
-       + result.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, "Execution of statedump.sh failed, "
+          + result.stderr() + "\n" + result.stdout());
     }
 
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-
-    if (JENKINS || SHARED_CLUSTER) {
-      result = cleanup();
-      if (result.exitValue() != 0) {
-        log(Level.INFO, "cleanup result =" + result.stdout() + "\n " + result.stderr());
-      }
-    }
-
-    if (getLeaseId() != "") {
-      log(Level.INFO, "Release the k8s cluster lease");
-      TestUtils.releaseLease(getProjectRoot(), getLeaseId());
-    } */
   }
 
   /**
@@ -827,7 +791,7 @@ public class BaseTest {
     String scriptsDir = pvDir + "/domains/" + domainUid + "/bin/scripts";
 
     // create scripts dir under domain pv
-    TestUtils.createDirUnderDomainPV(scriptsDir);
+    TestUtils.createDirUnderDomainPV(scriptsDir, pvRoot);
     if (OPENSHIFT) {
       Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
           Paths.get(scriptsDir + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
@@ -879,12 +843,142 @@ public class BaseTest {
    * @return new suffixCount
    */
   public static int getNewSuffixCount() {
-    suffixCount = suffixCount + 1;
-    return suffixCount;
+    synchronized (BaseTest.class) {
+      suffixCount = suffixCount + 1;
+      return suffixCount;
+    }
   }
 
   public static int getSuffixCount() {
     return suffixCount;
+  }
+
+  /**
+   * Creates a map with commonly used operator input attributes using suffixCount and prefix
+   * to make the namespaces and ports unique.
+   *
+   * @param suffixCount unique numeric value
+   * @param prefix      prefix for the artifact names
+   * @return map with operator input attributes
+   */
+  public Map<String, Object> createOperatorMap(
+      int suffixCount, boolean restEnabled, String prefix) {
+    Map<String, Object> operatorMap = new HashMap<String, Object>();
+    ArrayList<String> targetDomainsNS = new ArrayList<String>();
+    targetDomainsNS.add(prefix.toLowerCase() + "-domainns-" + suffixCount);
+    operatorMap.put("releaseName", prefix.toLowerCase() + "-op-" + suffixCount);
+    operatorMap.put("domainNamespaces", targetDomainsNS);
+    operatorMap.put("serviceAccount", prefix.toLowerCase() + "-sa-" + suffixCount);
+    operatorMap.put("namespace", prefix.toLowerCase() + "-opns-" + suffixCount);
+    operatorMap.put("resultDir", resultDir);
+    operatorMap.put("userProjectsDir", resultDir + "/user-projects");
+    if (restEnabled) {
+      operatorMap.put("externalRestHttpsPort", 32000 + suffixCount);
+      operatorMap.put("externalRestEnabled", restEnabled);
+    }
+    return operatorMap;
+  }
+
+  public Map<String, Object> createOperatorMap(int number, boolean restEnabled) {
+    Map<String, Object> operatorMap = new HashMap<>();
+    ArrayList<String> targetDomainsNS = new ArrayList<String>();
+    targetDomainsNS.add("test" + number);
+    operatorMap.put("releaseName", "op" + number);
+    operatorMap.put("domainNamespaces", targetDomainsNS);
+    operatorMap.put("serviceAccount", "weblogic-operator" + number);
+    operatorMap.put("namespace", "weblogic-operator" + number);
+    operatorMap.put("resultDir", resultDir);
+    operatorMap.put("userProjectsDir", resultDir + "/user-projects");
+    if (restEnabled) {
+      operatorMap.put("externalRestHttpsPort", 31000 + number);
+      operatorMap.put("externalRestEnabled", restEnabled);
+    }
+    return operatorMap;
+  }
+
+  /**
+   * Creates a map with commonly used domain input attributes using suffixCount and prefix
+   * to make the namespaces and ports unique.
+   *
+   * @param suffixCount unique numeric value
+   * @param prefix      prefix for the artifact names
+   * @return map with domain input attributes
+   */
+  public Map<String, Object> createDomainMap(
+                      int suffixCount, String prefix) {
+    Map<String, Object> domainMap = new HashMap<String, Object>();
+    domainMap.put("domainUID", prefix.toLowerCase() + "-domain-" + suffixCount);
+    domainMap.put("namespace", prefix.toLowerCase() + "-domainns-" + suffixCount);
+    domainMap.put("configuredManagedServerCount", 4);
+    domainMap.put("initialManagedServerReplicas", 2);
+    domainMap.put("exposeAdminT3Channel", true);
+    domainMap.put("exposeAdminNodePort", true);
+    domainMap.put("adminNodePort", 30800 + suffixCount);
+    domainMap.put("t3ChannelPort", 31000 + suffixCount);
+    domainMap.put("resultDir", resultDir);
+    domainMap.put("userProjectsDir", userProjectsDir);
+    domainMap.put("pvRoot", pvRoot);
+    if (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
+      domainMap.put("voyagerWebPort", 30344 + suffixCount);
+      LoggerHelper.getLocal().log(Level.INFO,
+          "For this domain voyagerWebPort is set to: " + domainMap.get("voyagerWebPort"));
+    }
+    return domainMap;
+  }
+
+  public Map<String, Object> createDomainMap(int number) {
+    Map<String, Object> domainMap = new HashMap<>();
+    ArrayList<String> targetDomainsNS = new ArrayList<String>();
+    targetDomainsNS.add("test" + number);
+    domainMap.put("domainUID", "test" + number);
+    domainMap.put("namespace", "test" + number);
+    domainMap.put("configuredManagedServerCount", 4);
+    domainMap.put("initialManagedServerReplicas", 2);
+    domainMap.put("exposeAdminT3Channel", true);
+    domainMap.put("exposeAdminNodePort", true);
+    domainMap.put("adminNodePort", 30700 + number);
+    domainMap.put("t3ChannelPort", 30000 + number);
+    domainMap.put("resultDir", resultDir);
+    domainMap.put("userProjectsDir", userProjectsDir);
+    domainMap.put("pvRoot", pvRoot);
+    if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
+        || (domainMap.containsKey("loadBalancer")
+        && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
+      domainMap.put("voyagerWebPort", 30344 + number);
+      LoggerHelper.getLocal().log(Level.INFO, "For this domain voyagerWebPort is set to: 30344 + " + number);
+    }
+    return domainMap;
+  }
+
+  /**
+   * Creates a map with commonly used domain in image input attributes using suffixCount and prefix
+   * to make the namespaces and ports unique.
+   *
+   * @param suffixCount unique numeric value
+   * @param prefix      prefix for the artifact names
+   * @return map with domain input attributes
+   */
+  public Map<String, Object> createDomainInImageMap(
+      int suffixCount, boolean wdt, String prefix) {
+    Map<String, Object> domainMap = createDomainMap(suffixCount, prefix);
+    if (wdt) {
+      domainMap.put("domainHomeImageBuildPath",
+          "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");
+      domainMap.put("createDomainFilesDir", "wdt");
+    } else {
+      domainMap.put("domainHomeImageBuildPath",
+          "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
+    }
+    domainMap.put("domainHomeImageBase",
+        "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
+    domainMap.put("logHomeOnPV", "true");
+    domainMap.put("clusterType", "CONFIGURED");
+    if (prefix != null && !prefix.trim().equals("")) {
+      domainMap.put("image", prefix.toLowerCase() + "-dominimage-" + suffixCount + ":latest");
+    } else {
+      domainMap.put("image", "dominimage-" + suffixCount + ":latest");
+    }
+    return domainMap;
   }
 
 }

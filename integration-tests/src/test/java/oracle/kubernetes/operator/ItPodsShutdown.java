@@ -24,6 +24,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -50,6 +51,7 @@ public class ItPodsShutdown extends BaseTest {
   private static int podVer = 1;
   private static String testClassName;
   private static String domainNS1;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -61,31 +63,42 @@ public class ItPodsShutdown extends BaseTest {
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
-    // initialize test properties and create the directories
     if (FULLTEST) {
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
+    }
+  }
+
+  @BeforeEach
+  public void prepare() throws Exception {
+    // initialize test properties and create the directories
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
       // create operator1
       if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS1);
       }
 
-      shutdownTmpDir = BaseTest.getResultDir() + "/shutdowntemp";
+      shutdownTmpDir = getResultDir() + "/shutdowntemp";
       Files.createDirectories(Paths.get(shutdownTmpDir));
 
-      domain = createDomain();
-      originalYaml =
-          BaseTest.getUserProjectsDir()
-              + "/weblogic-domains/"
-              + domain.getDomainUid()
-              + "/domain.yaml";
-      Assertions.assertNotNull(domain);
+      if (domain == null) {
+        domain = createDomain();
+        originalYaml =
+            getUserProjectsDir()
+                + "/weblogic-domains/"
+                + domain.getDomainUid()
+                + "/domain.yaml";
+        Assertions.assertNotNull(domain);
+      }
       domainUid = domain.getDomainUid();
       domainNS = domain.getDomainNs();
       BaseTest.setWaitTimePod(5);
@@ -101,21 +114,17 @@ public class ItPodsShutdown extends BaseTest {
   @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-
       destroyDomain();
       tearDown(new Object() {
-      }.getClass().getEnclosingClass().getSimpleName());
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
 
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
 
-  private static Domain createDomain() throws Exception {
+  private Domain createDomain() throws Exception {
 
-    Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+    Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
     domainMap.put("namespace", domainNS1);
     domainMap.put("domainUID", "domainpodsshutdown");
     domainMap.put("initialManagedServerReplicas", new Integer("1"));

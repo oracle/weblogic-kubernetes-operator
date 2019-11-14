@@ -40,6 +40,7 @@ public class JrfInOperatorTest extends BaseTest {
   private static Operator operator1;
   private static Operator operator2;
   private static String rcuPodName;
+  private static String testClassName;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -52,8 +53,10 @@ public class JrfInOperatorTest extends BaseTest {
   @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
       // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE);
+      initialize(APP_PROPS_FILE, testClassName);
 
       // create DB used for jrf domain
       DbUtils.createOracleDB(DB_PROP_FILE);
@@ -79,12 +82,9 @@ public class JrfInOperatorTest extends BaseTest {
   @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      LoggerHelper.getLocal().info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().info("BEGIN");
-      LoggerHelper.getLocal().info("Run once, release cluster lease");
 
-      tearDown(new Object() {
-      }.getClass().getEnclosingClass().getSimpleName());
+      /* tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName()); */
 
       LoggerHelper.getLocal().info("SUCCESS");
     }

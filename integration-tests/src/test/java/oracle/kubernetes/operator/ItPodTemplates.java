@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -38,6 +39,7 @@ public class ItPodTemplates extends BaseTest {
   private static Operator operator1;
   private static String domainNS;
   private static String testClassName;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -48,19 +50,24 @@ public class ItPodTemplates extends BaseTest {
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
+  }
+
+  @BeforeEach
+  public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (QUICKTEST) {
-      testClassName = new Object() {
-      }.getClass().getEnclosingClass().getSimpleName();
-
-      // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE, testClassName);
+      createResultAndPvDirs(testClassName);
       // create operator1
       if (operator1 == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS);
       }
     }
 
@@ -75,14 +82,10 @@ public class ItPodTemplates extends BaseTest {
   @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (QUICKTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++++++++++++++++++++---------------------------------+");
-      LoggerHelper.getLocal().log(Level.INFO, "BEGIN");
-      LoggerHelper.getLocal().log(Level.INFO, "Run once, release cluster lease");
-
       tearDown(new Object() {
-      }.getClass().getEnclosingClass().getSimpleName());
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
 
-      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
+      LoggerHelper.getLocal().info("SUCCESS");
     }
   }
 
@@ -104,13 +107,13 @@ public class ItPodTemplates extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
       // domainMap.put("domainUID", "podtemplatedomain");
       domainMap.put("namespace", domainNS);
       // just create domain yaml, dont apply
       domain = TestUtils.createDomain(domainMap, false);
       String originalYaml =
-          BaseTest.getUserProjectsDir()
+          getUserProjectsDir()
               + "/weblogic-domains/"
               + domain.getDomainUid()
               + "/domain.yaml";
@@ -143,7 +146,7 @@ public class ItPodTemplates extends BaseTest {
       // Write the modified yaml to a new file
       Path path =
           Paths.get(
-              BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domain.getDomainUid(),
+              getUserProjectsDir() + "/weblogic-domains/" + domain.getDomainUid(),
               "domain.modified.yaml");
       LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;

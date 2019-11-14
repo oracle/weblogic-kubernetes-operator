@@ -6,8 +6,6 @@ package oracle.kubernetes.operator.utils;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import oracle.kubernetes.operator.BaseTest;
-
 public class DbUtils {
   public static final String DEFAULT_FMWINFRA_DOCKER_IMAGENAME =
       "container-registry.oracle.com/middleware/fmw-infrastructure";
@@ -52,9 +50,9 @@ public class DbUtils {
    *
    * @throws Exception - if any error occurs when creating Oracle DB pod and service
    */
-  public static void startOracleDB() throws Exception {
+  public static void startOracleDB(String scriptsDir) throws Exception {
     String cmd1 = "sh "
-        + BaseTest.getResultDir()
+        + scriptsDir
         + "/create-rcu-schema/start-db-service.sh";
     TestUtils.exec(cmd1, true);
     String cmd2 = "kubectl get pod | grep oracle-db | cut -f1 -d \" \" ";
@@ -75,9 +73,9 @@ public class DbUtils {
    *
    * @throws Exception - if any error occurs when dropping Oracle DB service
    */
-  public static void stopOracleDB() throws Exception {
+  public static void stopOracleDB(String scriptsDir) throws Exception {
     String cmd = "sh " 
-        + BaseTest.getResultDir()
+        + scriptsDir
         + "/create-rcu-schema/stop-db-service.sh";
   
     TestUtils.exec(cmd, true);
@@ -88,9 +86,9 @@ public class DbUtils {
    * @param rcuSchemaPrefix - rcu SchemaPrefixe
    * @throws Exception - if any error occurs when creating Oracle rcu pod
    */
-  public static void createRcuSchema(String rcuSchemaPrefix) throws Exception {
+  public static void createRcuSchema(String scriptsDir, String rcuSchemaPrefix) throws Exception {
     String cmd = "sh " 
-        + BaseTest.getResultDir()
+        + scriptsDir
         + "/create-rcu-schema/create-rcu-schema.sh -s "
         + rcuSchemaPrefix;
     TestUtils.exec(cmd, true);
@@ -101,9 +99,9 @@ public class DbUtils {
    * @param rcuSchemaPrefix - rcu SchemaPrefixe
    * @throws Exception - if any error occurs when dropping rcu schema
    */
-  public static void dropRcuSchema(String rcuSchemaPrefix) throws Exception {
+  public static void dropRcuSchema(String scriptsDir, String rcuSchemaPrefix) throws Exception {
     String cmd = "sh " 
-        + BaseTest.getResultDir()
+        + scriptsDir
         + "/create-rcu-schema/drop-rcu-schema.sh -s rcuSchemaPrefix";
     TestUtils.exec(cmd, true);
   }
@@ -113,9 +111,9 @@ public class DbUtils {
    *
    * @throws Exception - if any error occurs when deleting RCU pod
    */
-  public static void deleteRcuPod() throws Exception {
+  public static void deleteRcuPod(String scriptsDir) throws Exception {
     String cmd = "kubectl delete -f " 
-        + BaseTest.getResultDir()
+        + scriptsDir
         + "/create-rcu-schema/common/rcu.yaml";
     TestUtils.exec(cmd, true);
   }

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -32,6 +33,7 @@ public class ItOperator extends BaseTest {
   private static Operator operator1;
   private static String domainNS1;
   private static String testClassName;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -44,19 +46,39 @@ public class ItOperator extends BaseTest {
   public static void staticPrepare() throws Exception {
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
-
     // initialize test properties and create the directories
     initialize(APP_PROPS_FILE, testClassName);
+  }
+
+  @BeforeEach
+  public void prepare() throws Exception {
+
+    createResultAndPvDirs(testClassName);
+
     // create operator1
     if (operator1 == null) {
-      Map<String, Object> operatorMap =
-          TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+      Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
+          true, testClassName);
       operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       Assertions.assertNotNull(operator1);
       domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+      namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+      namespaceList.append(" ").append(domainNS1);
     }
   }
 
+  /**
+   * Releases k8s cluster lease, archives result, pv directories.
+   *
+   * @throws Exception exception
+   */
+  @AfterAll
+  public static void staticUnPrepare() throws Exception {
+    tearDown(new Object() {
+    }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+
+    LoggerHelper.getLocal().info("SUCCESS");
+  }
 
   /**
    * Create operator and verify its deployed successfully. Create domain and verify domain is
@@ -82,7 +104,8 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> domainMap =
+          createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.put("createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
@@ -126,16 +149,17 @@ public class ItOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       //create operator just for this test to match the namespaces with wldf-policy.yaml
-      Map<String, Object> operatorMap =
-          TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+      Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
+          true, testClassName);
       ArrayList<String> targetDomainsNS = new ArrayList<String>();
       targetDomainsNS.add("test2");
       operatorMap.put("domainNamespaces", targetDomainsNS);
       operatorMap.put("namespace", "weblogic-operator2");
       operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+      namespaceList.append(" ").append((String)operatorMap.get("namespace"));
 
       // create domain
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("namespace", "test2");
       domainMap.put("createDomainFilesDir", "wdt");
       domainMap.put("domainUID", "domainonpvwdt");
@@ -143,6 +167,7 @@ public class ItOperator extends BaseTest {
       domain.verifyDomainCreated();
       testBasicUseCases(domain, false);
       testWldfScaling(operator, domain);
+      namespaceList.append(" ").append(domainMap.get("namespace"));
       // TODO: Test Apache LB
       // domain.verifyAdminConsoleViaLB();
       testCompletedSuccessfully = true;
@@ -188,26 +213,29 @@ public class ItOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
-      Map<String, Object> wlstDomainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> wlstDomainMap =
+          createDomainMap(getNewSuffixCount(), testClassName);
       wlstDomainMap.put("namespace", domainNS1);
       wlstDomainMap.put("createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
       domain1 = TestUtils.createDomain(wlstDomainMap);
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1, false);
-      Map<String, Object> operatorMap =
-          TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+      Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
+                          true, testClassName);
       Operator operator2 =
           TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       String domainNS2 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-
+      namespaceList.append(" ").append(operatorMap.get("namespace"));
       // create domain2 with configured cluster
       // ToDo: configured cluster support is removed from samples, modify the test to create
       // configured cluster
-      Map<String, Object> wdtDomainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> wdtDomainMap =
+          createDomainMap(getNewSuffixCount(), testClassName);
       wdtDomainMap.put("namespace", domainNS2);
       wdtDomainMap.put("createDomainFilesDir", "wdt");
       domain2 = TestUtils.createDomain(wdtDomainMap);
+      namespaceList.append(" ").append(wdtDomainMap.get("namespace"));
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2, false);
       LoggerHelper.getLocal().log(Level.INFO,
@@ -280,7 +308,8 @@ public class ItOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
-      Map<String, Object> domain1Map = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> domain1Map =
+          createDomainMap(getNewSuffixCount(), testClassName);
       domain1Map.put("domainUID", "d1onpv");
       domain1Map.put("namespace", domainNS1);
       domain1Map.put("createDomainPyScript",
@@ -290,7 +319,8 @@ public class ItOperator extends BaseTest {
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1, false);
 
-      Map<String, Object> domain2Map = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> domain2Map = createDomainMap(
+          getNewSuffixCount(), testClassName);
       domain2Map.put("domainUID", "d2onpv");
       domain2Map.put("namespace", domainNS1);
       domain2Map.put("createDomainPyScript",
@@ -362,7 +392,8 @@ public class ItOperator extends BaseTest {
     // create domain
     Domain domain = null;
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> domainMap = createDomainMap(
+                        getNewSuffixCount(), testClassName);
       domainMap.put("serverStartPolicy", "ADMIN_ONLY");
       domainMap.put("namespace", domainNS1);
       domain = TestUtils.createDomain(domainMap, false);
@@ -402,10 +433,12 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
 
     try {
-      Map<String, Object> domainMap = TestUtils.createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> domainMap = createDomainMap(
+                  getNewSuffixCount(), testClassName);
       domainMap.put("weblogicDomainStorageReclaimPolicy", "Recycle");
       domainMap.put("clusterType", "CONFIGURED");
       domainMap.put("namespace", domainNS1);
+
       domain = TestUtils.createDomain(domainMap, false);
 
       domain.verifyDomainCreated();
@@ -444,6 +477,10 @@ public class ItOperator extends BaseTest {
       Map<String, Object> domainMap = new HashMap<String, Object>();
       domainMap.put("domainUID", "domainsampledefaults");
       domainMap.put("namespace", domainNS1);
+      domainMap.put("resultDir", getResultDir());
+      domainMap.put("userProjectsDir", getUserProjectsDir());
+      domainMap.put("pvRoot", getPvRoot());
+
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       testBasicUseCases(domain, false);
@@ -472,8 +509,8 @@ public class ItOperator extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility ");
-    Map<String, Object> operatorMap =
-        TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+    Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
+                  true, testClassName);
     Operator operatorForBackwardCompatibility =
         TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
     operatorForBackwardCompatibility.verifyOperatorExternalRestEndpoint();
@@ -495,8 +532,8 @@ public class ItOperator extends BaseTest {
 
     logTestBegin("testOperatorRestUsingCertificateChain");
     LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility");
-    Map<String, Object> operatorMap =
-        TestUtils.createOperatorMap(getNewSuffixCount(), true, testClassName);
+    Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
+              true, testClassName);
     Operator operatorForRESTCertChain =
         TestUtils.createOperator(operatorMap, RestCertType.CHAIN);
     operatorForRESTCertChain.verifyOperatorExternalRestEndpoint();
@@ -524,8 +561,8 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap =
-          TestUtils.createDomainInImageMap(getNewSuffixCount(), false, testClassName);
+      Map<String, Object> domainMap = createDomainInImageMap(
+                getNewSuffixCount(), false, testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.remove("clusterType");
       domain = TestUtils.createDomain(domainMap);
@@ -560,8 +597,8 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap =
-          TestUtils.createDomainInImageMap(getNewSuffixCount(), true, testClassName);
+      Map<String, Object> domainMap = createDomainInImageMap(
+                  getNewSuffixCount(), true, testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.put(
           "customWdtTemplate",
