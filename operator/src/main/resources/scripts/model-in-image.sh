@@ -316,16 +316,16 @@ function createWLDomain() {
   local secrets_changed=0
   trace "current version "${current_version}
 
-#  getSecretsMD5
-#  local current_secrets_md5=$(cat /tmp/secrets.md5)
-#
-#  if [ -f ${inventory_secrets_md5} ] ; then
-#    previous_secrets_md5=$(cat ${inventory_secrets_md5})
-#    if [ "${current_secrets_md5}" != "${previous_secrets_md5}" ]; then
-#      trace "secrets different: before: ${previous_secrets_md5} current: ${current_secrets_md5}"
-#      secrets_changed=1
-#    fi
-#  fi
+  getSecretsMD5
+  local current_secrets_md5=$(cat /tmp/secrets.md5)
+
+  if [ -f ${inventory_secrets_md5} ] ; then
+    previous_secrets_md5=$(cat ${inventory_secrets_md5})
+    if [ "${current_secrets_md5}" != "${previous_secrets_md5}" ]; then
+      trace "secrets different: before: ${previous_secrets_md5} current: ${current_secrets_md5}"
+      secrets_changed=1
+    fi
+  fi
 
   if [ -f ${inventory_wls_version} ] ; then
     previous_version=$(cat ${inventory_wls_version})
@@ -469,15 +469,11 @@ function getSecretsMD5() {
   if [ ! -f "${jarname}" ] ; then
     echo "0" > ${jarname}
   else
-    echo "nothing"
-    jar tvf ${jarname}
     mkdir -p ${tmp_secrets}
     cd ${tmp_secrets}
-    pwd
-    jar xvf ${jarname}
-    ls -aRtl
+    jar xf ${jarname}
     chmod -R 777 ${tmp_secrets}
-    #find ${tmp_secrets} -type f -exec touch -c -t 201812310000.00 {} \;
+    find ${tmp_secrets} -type f -exec touch -c -t 201812310000.00 {} \;
     cd ${tmp_secrets}
     jar cMf ${jarname} `find -type f`
     jar tvf ${jarname}
@@ -487,7 +483,6 @@ function getSecretsMD5() {
   echo ${secrets_md5} > /tmp/secrets.md5
   trace "Found secrets ${secrets_md5}"
   rm ${jarname}
-  rm -fr ${tmp_secrets}
 
 }
 #
