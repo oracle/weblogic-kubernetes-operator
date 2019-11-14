@@ -114,5 +114,3 @@ elasticSearchPort: 9200
 # istioEnabled specifies whether or not the domain is deployed under an Istio service mesh.
 istioEnabled: false
 
-# introspectorJobActiveDeadlineSeconds specifies the introspect job timeout values
-introspectorJobActiveDeadlineSeconds: "60"

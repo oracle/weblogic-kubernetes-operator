@@ -13,7 +13,6 @@ data:
     {{- end }}
   {{- end }}
   serviceaccount: {{ .serviceAccount | quote }}
-  introspectorJobActiveDeadlineSeconds: {{ .introspectorJobActiveDeadlineSeconds | quote }}
   targetNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
   {{- if .dns1123Fields }}
   dns1123Fields: {{ .dns1123Fields | quote }}
