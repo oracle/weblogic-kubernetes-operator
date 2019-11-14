@@ -31,6 +31,6 @@ kubectl delete -f ${resourceExporterDir}/coordinator_${domainNS}.yaml
 #delete database
 kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/mysql.yaml --ignore-not-found
 kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/persistence.yaml --ignore-not-found
-
+kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/mysql-secret.yaml
 kubectl delete -f ${monitoringExporterEndToEndDir}/util/curl.yaml
 echo "Run the script [deletePromGrafanaMySqlCoordWebhook.sh] ..."

@@ -4,7 +4,7 @@
 monitoringExporterDir=$1
 resourceExporterDir=$2
 monitoringExporterBranch=${3:-master}
-monitoringExporterVersion=${4:-1.1.0}
+monitoringExporterVersion=${4:-1.1.1}
 monitoringExporterSrcDir=${monitoringExporterDir}/src
 monitoringExporterWar=${monitoringExporterDir}/apps/monitoringexporter/wls-exporter.war
 

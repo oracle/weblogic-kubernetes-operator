@@ -18,7 +18,11 @@ sed -i "s/3306\/@@PROP:DOMAIN_NAME@@/3306\/domain1/g" ${monitoringExporterEndToE
 cp ${resourceExporterDir}/promvalues.yaml ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
 
 sed -i "s/default;domain1/${domainNS1};${domainNS1}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
-kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/persistence.yaml 
+cp ${resourceExporterDir}/mysql-secret.yaml ${monitoringExporterEndToEndDir}/mysql/mysql-secret.yaml
+sed -i "s/@NAMESPACE@/${domainN1}/g" ${monitoringExporterEndToEndDir}/mysql/mysql-secret.yaml
+sed -i "s/@DOMAIN_UID@/${domainN1}/g" ${monitoringExporterEndToEndDir}/mysql/mysql-secret.yaml
+kubectl apply ${monitoringExporterEndToEndDir}/mysql/mysql-secret.yaml
+kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/persistence.yaml
 kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/mysql.yaml
 
 sleep 15
