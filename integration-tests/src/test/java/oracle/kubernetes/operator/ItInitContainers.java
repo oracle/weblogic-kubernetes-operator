@@ -44,10 +44,9 @@ public class ItInitContainers extends BaseTest {
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
-   * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes. Create Operator1 and domainOnPVUsingWLST
+   * initialization of the integration test properties defined in OperatorIT.properties.
    *
-   * @throws Exception exception
+   * @throws Exception exception if initialization of properties fails
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
@@ -58,6 +57,12 @@ public class ItInitContainers extends BaseTest {
     }
   }
 
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {

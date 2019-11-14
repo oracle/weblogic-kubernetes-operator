@@ -51,6 +51,12 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     initialize(APP_PROPS_FILE, testClassName);
   }
 
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
   @BeforeEach
   public void prepare() throws Exception {
     if (QUICKTEST) {
@@ -84,15 +90,17 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Operator secondoperator = null;
     try {
       LoggerHelper.getLocal().log(Level.INFO, "Checking if first operator is running, if not creating");
+      Map<String, Object> operatorMap1 = createOperatorMap(getNewSuffixCount(), true, "usab");
       firstoperator =
-          new Operator(createOperatorMap(getNewSuffixCount(), true, "usab"), RestCertType.SELF_SIGNED);
+          new Operator(operatorMap1, RestCertType.SELF_SIGNED);
       firstoperator.callHelmInstall();
-
+      namespaceList.append(" ").append(operatorMap1.get("namespace"));
       int randNumber = getNewSuffixCount();
+      Map<String, Object> operatorMap2 = createOperatorMap(randNumber, true, "usab");
       secondoperator =
-          new Operator((createOperatorMap(randNumber, true, "usab")), RestCertType.SELF_SIGNED);
+          new Operator(operatorMap2, RestCertType.SELF_SIGNED);
       secondoperator.callHelmInstall();
-
+      namespaceList.append(" ").append(operatorMap1.get("namespace"));
       LoggerHelper.getLocal().log(Level.INFO, "Delete second operator and verify the first operator pod still running");
       secondoperator.destroy();
       Thread.sleep(BaseTest.getWaitTimePod() * 1000);
@@ -519,6 +527,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 + ex.getMessage());
       }
     }
+    namespaceList.append(" ").append(operatorMap.get("namespace"));
     try {
 
       operatorMap = createOperatorMap(getNewSuffixCount(), true, "usab");
@@ -541,6 +550,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     } finally {
       //number++;
     }
+    namespaceList.append(" ").append(operatorMap.get("namespace"));
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -567,7 +577,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       operator = new Operator(operatorMap, RestCertType.SELF_SIGNED);
       operator.callHelmInstall();
       operator.verifyOperatorReady();
-
+      namespaceList.append(" ").append(operatorMap.get("namespace"));
     } finally {
       if (operator != null) {
         operator.destroy();

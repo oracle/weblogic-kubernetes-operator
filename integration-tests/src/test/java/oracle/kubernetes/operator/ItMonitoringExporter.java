@@ -81,7 +81,9 @@ public class ItMonitoringExporter extends BaseTest {
   String oprelease = "op" + number;
   private int waitTime = 5;
   //update with specific branch name if not master
+
   private static String monitoringExporterBranchVer = "master";
+
   private static String testClassName;
   private static StringBuffer namespaceList;
   private static String domainNS1;
@@ -103,6 +105,12 @@ public class ItMonitoringExporter extends BaseTest {
     }
   }
 
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
@@ -117,7 +125,7 @@ public class ItMonitoringExporter extends BaseTest {
           BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
       configPath = resourceExporterDir;
       monitoringExporterEndToEndDir = monitoringExporterDir + "/src/samples/kubernetes/end2end/";
-      BaseTest.setWaitTimePod(10);
+      // BaseTest.setWaitTimePod(10);
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
         Map<String, Object> operatorMap =
@@ -807,7 +815,7 @@ public class ItMonitoringExporter extends BaseTest {
     configureDomainInPrometheus(domainNS2, domainNS2, domainNS1, domainNS1);
 
     BaseTest.setWaitTimePod(10);
-    BaseTest.setMaxIterationsPod(50);
+    // BaseTest.setMaxIterationsPod(50);
     assertTrue(
         checkMetricsViaPrometheus("webapp_config_open_sessions_current_count", domainNS1),
         "Can't find expected metrics");
@@ -1054,6 +1062,7 @@ public class ItMonitoringExporter extends BaseTest {
     //update with current WDT version
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domainBuilder/build.sh",
         "0.24", WDT_VERSION);
+
     createWlsImageAndDeploy();
     checkPromGrafana();
   }

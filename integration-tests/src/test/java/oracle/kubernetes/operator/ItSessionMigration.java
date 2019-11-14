@@ -47,9 +47,6 @@ public class ItSessionMigration extends BaseTest {
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
    *
-   * <p>It also create operator and verify its deployed successfully. Create domain and verify
-   * domain is created.
-   *
    * @throws Exception exception
    */
   @BeforeAll
@@ -61,15 +58,21 @@ public class ItSessionMigration extends BaseTest {
     }
   }
 
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
       createResultAndPvDirs(testClassName);
-      testClassName = "sessmig";
+      String testClassNameShort = "sessmig";
       // create operator1
       if (operator == null) {
         Map<String, Object> operatorMap =
-            createOperatorMap(getNewSuffixCount(), true, testClassName);
+            createOperatorMap(getNewSuffixCount(), true, testClassNameShort);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -82,7 +85,7 @@ public class ItSessionMigration extends BaseTest {
         LoggerHelper.getLocal().log(Level.INFO,
             "Creating WLS Domain & waiting for the script to complete execution");
         Map<String, Object> wlstDomainMap =
-            createDomainMap(getNewSuffixCount(), testClassName);
+            createDomainMap(getNewSuffixCount(), testClassNameShort);
         wlstDomainMap.put("namespace", domainNS1);
         // wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
         domain = TestUtils.createDomain(wlstDomainMap);

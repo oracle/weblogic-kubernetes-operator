@@ -227,20 +227,6 @@
                             <executable>${resource-integration-test}/setupenv.sh</executable>
                         </configuration>
                     </execution>
-                     <!-- execution>
-                        <id>cleanup</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <environmentVariables>
-                                <JENKINS_RESULTS_DIR>${JENKINS_RESULTS_DIR}</JENKINS_RESULTS_DIR>
-                            </environmentVariables>
-                            <executable>${project.basedir}/../src/integration-tests/bash/cleanup.sh</executable>
-                        </configuration>
-                    </execution -->
-                    
                 </executions>
             </plugin>
             <plugin>
@@ -302,8 +288,10 @@
                             ${excludes-failsafe}
                         </exclude>
                     </excludes>
-                    <!--parallel>${PARALLEL_FAILSAFE}</parallel-->
+                    <!--parallel>${PARALLEL_FAILSAFE}</parallel>
           			<useUnlimitedThreads>true</useUnlimitedThreads>
+                    <threadCount>7</threadCount>
+                    <perCoreThreadCount>false</perCoreThreadCount-->
                 </configuration>
 
                 <executions>
