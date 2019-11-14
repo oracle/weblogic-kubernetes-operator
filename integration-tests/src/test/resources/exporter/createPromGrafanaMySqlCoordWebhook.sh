@@ -21,11 +21,10 @@ sed -i "s/default;domain1/${domainNS1};${domainNS1}/g" ${monitoringExporterEndTo
 cp ${resourceExporterDir}/mysql.yaml ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml
 sed -i "s/NAMESPACE/${domainNS1}/g" ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml
 sed -i "s/DOMAIN_UID/${domainNS1}/g" ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml
-#kubectl apply ${monitoringExporterEndToEndDir}/mysql/mysql-secret.yaml
 kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/persistence.yaml
 kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml
 
-sleep 15
+sleep 30
 
 POD_NAME=$(kubectl get pod -l app=mysql -o jsonpath="{.items[0].metadata.name}" -n ${domainNS1} )
 kubectl exec -it $POD_NAME -n $domainNS1 -- mysql -p123456 -e "CREATE DATABASE domain1;"
