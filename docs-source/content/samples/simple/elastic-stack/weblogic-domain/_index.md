@@ -246,7 +246,7 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
 The following is a complete example of a domain custom resource with a `fluentd` container configured.
 
 ```yaml
-apiVersion: weblogic.oracle/v5
+apiVersion: weblogic.oracle/v6
 kind: Domain
 metadata:
   labels:
