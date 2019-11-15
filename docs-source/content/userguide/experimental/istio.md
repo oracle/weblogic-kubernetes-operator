@@ -73,7 +73,7 @@ because the `create-domain.sh` script makes the necessary adjustments to the dom
 to make it work in an Istio environment.
 
 ```
-apiVersion: "weblogic.oracle/v5"
+apiVersion: "weblogic.oracle/v6"
 kind: Domain
 metadata:
   name: domain2
