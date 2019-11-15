@@ -124,7 +124,6 @@ public class ItMonitoringExporter extends BaseTest {
           BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
       configPath = resourceExporterDir;
       monitoringExporterEndToEndDir = monitoringExporterDir + "/src/samples/kubernetes/end2end/";
-      // BaseTest.setWaitTimePod(10);
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
         Map<String, Object> operatorMap =
@@ -137,8 +136,6 @@ public class ItMonitoringExporter extends BaseTest {
 
         namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS1).append(" ").append(domainNS2);
-
-        //operator = TestUtils.createOperator("operatorexp.yaml");
       }
       if (domain == null) {
         Map<String, Object> wlstDomainMap = createDomainMap(getNewSuffixCount(), "monexp");
@@ -1235,7 +1232,6 @@ public class ItMonitoringExporter extends BaseTest {
 
     // url
     StringBuffer testAppUrl = new StringBuffer("http://");
-    // testAppUrl.append(myhost).append(":").append(prometheusPort).append("/api/v1/query?query=");
     testAppUrl
         .append(myhost)
         .append(":")
