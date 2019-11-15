@@ -53,7 +53,7 @@ fi
 
 echo "NodePort[$nodeport] ImagePullSecret[$pullsecret] Image[${dbimage}]"
 
-# Modify ImagePullSecret and DatabaseImage based on input 
+# Modify ImagePullSecret and DatabaseImage based on input
 sed -i -e '$d' ${scriptDir}/common/oracle.db.yaml
 echo '           - name: docker-store' >> ${scriptDir}/common/oracle.db.yaml
 sed -i -e "s?name: docker-store?name: ${pullsecret}?g" ${scriptDir}/common/oracle.db.yaml
