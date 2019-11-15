@@ -28,11 +28,7 @@ spec:
           mountPath: %DOMAIN_ROOT_DIR%
         securityContext:
           runAsUser: 0
-          runAsGroup: 0
-      volumes:
-      - name: weblogic-sample-domain-storage-volume
-        persistentVolumeClaim:
-          claimName: %DOMAIN_PVC_NAME%      
+          runAsGroup: 0  
       containers:
         - name: create-weblogic-sample-domain-job
           image: %WEBLOGIC_IMAGE%
