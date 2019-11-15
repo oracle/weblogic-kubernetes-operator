@@ -16,7 +16,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Operator prerequisites
 
-* Kubernetes 1.11.5+, 1.12.3+, 1.13.0+, and 1.14.0+  (check with `kubectl version`).
+* Kubernetes 1.11.5+, 1.12.3+, 1.13.0+, 1.14.0+, and 1.15.0+  (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`).
 * Docker 18.9.1 (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
 * Helm 2.14.3+ (check with `helm version`).
@@ -27,6 +27,13 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
    * Check the WLS patches with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`.
 * You must have the `cluster-admin` role to install the operator.
 * We do not currently support running WebLogic in non-Linux containers. 
+
+### Important note about Kubernetes 1.16
+
+Kubernetes 1.16 introduced changes to some Kubernetes APIs that are used by the operator.
+At this time, the operator is not guaranteed to work on Kubernetes 1.16.
+When we have completed testing and made any necessary code changes, we will update this
+page to confirm support of 1.16.
 
 ### Cloud providers
 
@@ -41,6 +48,13 @@ The official document that defines the [supported configurations is here](https:
 In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud
 Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
 Container Servies for use with Kubernetes* on OCI Compute; and on "authorized cloud environments".
+
+### Oracle Linux Cloud Native Environment
+
+[Oracle Linux Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on the Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades and configuration of key features for orchestrating microservices.
+
+WebLogic Server and the WebLogic Kubernetes operator are certified and supported on Oracle Linux Cloud Native Environment.
+
 
 ### OpenShift
 
