@@ -266,6 +266,10 @@
           "description": "If present, every time this value is updated the operator will restart the required servers.",
           "type": "string"
         },
+        "dataHome": {
+          "description": "An optional, in-pod location for data storage of default and custom file stores. If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") then the data storage directories are determined from the WebLogic domain home configuration.",
+          "type": "string"
+        },
         "configOverrides": {
           "description": "The name of the config map for optional WebLogic configuration overrides.",
           "type": "string"
@@ -498,6 +502,10 @@
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodReadinessGate"
           }
+        },
+        "serviceAccountName": {
+          "description": "Name of the ServiceAccount to be used to run this pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the pod is created.",
+          "type": "string"
         },
         "podSecurityContext": {
           "description": "Pod-level security attributes.",
