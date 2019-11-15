@@ -15,10 +15,16 @@ sed -i "s/default/${domainNS1}/g"  ${monitoringExporterEndToEndDir}/mysql/persis
 sed -i "s/default/${domainNS1}/g"  ${monitoringExporterEndToEndDir}/mysql/mysql.yaml
 sed -i "s/default/${domainNS1}/g"  ${monitoringExporterEndToEndDir}/demo-domains/domainBuilder/scripts/simple-topology.yaml
 sed -i "s/3306\/@@PROP:DOMAIN_NAME@@/3306\/domain1/g" ${monitoringExporterEndToEndDir}/demo-domains/domainBuilder/scripts/simple-topology.yaml
-kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/persistence.yaml 
-kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/mysql.yaml
+cp ${resourceExporterDir}/promvalues.yaml ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
 
-sleep 15
+sed -i "s/default;domain1/${domainNS1};${domainNS1}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
+cp ${resourceExporterDir}/mysql.yaml ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml
+sed -i "s/NAMESPACE/${domainNS1}/g" ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml
+sed -i "s/DOMAIN_UID/${domainNS1}/g" ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml
+kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/persistence.yaml
+kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml
+
+sleep 30
 
 POD_NAME=$(kubectl get pod -l app=mysql -o jsonpath="{.items[0].metadata.name}" -n ${domainNS1} )
 kubectl exec -it $POD_NAME -n $domainNS1 -- mysql -p123456 -e "CREATE DATABASE domain1;"
@@ -34,8 +40,13 @@ kubectl get pv -n monitoring
 kubectl get pvc -n monitoring
 
 helm repo update
+export appname=grafana
+for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
 
-helm install --wait --name prometheus --namespace monitoring --values  ${resourceExporterDir}/promvalues.yaml stable/prometheus  --version ${promVersionArgs}
+export appname=prometheus
+for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
+
+helm install --wait --name prometheus --namespace monitoring --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus  --version ${promVersionArgs}
 
 
 POD_NAME=$(kubectl get pod -l app=prometheus -n monitoring -o jsonpath="{.items[0].metadata.name}")
