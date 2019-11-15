@@ -26,7 +26,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
    * Check the WLS version with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`.
    * Check the WLS patches with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`.
 * You must have the `cluster-admin` role to install the operator.
-* We do not currently support running WebLogic in non-Linux containers. 
+* We do not currently support running WebLogic in non-Linux containers.
 
 ### Important note about Kubernetes 1.16
 
@@ -38,20 +38,20 @@ page to confirm support of 1.16.
 ### Cloud providers
 
 The Oracle [Global Pricing and Licensing site](https://www.oracle.com/corporate/pricing/specialty-topics.html)
-provides details about licensing practices and policies. 
+provides details about licensing practices and policies.
 WebLogic Server and the operator are supported on "Authorized Cloud Environments" as defined in
-[this Oracle licensing policy](https://www.oracle.com/assets/cloud-licensing-070579.pdf) and 
+[this Oracle licensing policy](https://www.oracle.com/assets/cloud-licensing-070579.pdf) and
 [this list of eligible products](http://www.oracle.com/us/corporate/pricing/authorized-cloud-environments-3493562.pdf).
 
 The official document that defines the [supported configurations is here](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html).
 
 In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud
 Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
-Container Servies for use with Kubernetes* on OCI Compute; and on "authorized cloud environments".
+Container Services for use with Kubernetes* on OCI Compute, and on "authorized cloud environments".
 
 ### Oracle Linux Cloud Native Environment
 
-[Oracle Linux Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on the Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades and configuration of key features for orchestrating microservices.
+[Oracle Linux Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on the Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
 
 WebLogic Server and the WebLogic Kubernetes operator are certified and supported on Oracle Linux Cloud Native Environment.
 
@@ -69,16 +69,16 @@ There are a number of development-focused distributions of Kubernetes, like kind
 Often these run Kubernetes in a virtual machine on your development machine.  We have found that these distributions
 present some extra challenges in areas like:
 
-* Separate Docker image stores, making it necessary to save/load images to move them between Docker file systems,
-* Default virtual machine file sizes and resource limits that are too small to run WebLogic or hold the necessary images,
-* Storage providers that do not always support the features that the operator and/or WebLogic rely on, 
-* Load balancing implementations that do not always support the features that the operator and/or WebLogic rely on.
+* Separate Docker image stores, making it necessary to save/load images to move them between Docker file systems
+* Default virtual machine file sizes and resource limits that are too small to run WebLogic or hold the necessary images
+* Storage providers that do not always support the features that the operator and/or WebLogic rely on
+* Load balancing implementations that do not always support the features that the operator and/or WebLogic rely on
 
-As such, we *do not* recommend using these distributions to run the operator and/or WebLogic, and we do not 
+As such, we *do not* recommend using these distributions to run the operator and/or WebLogic, and we do not
 provide support for WebLogic or the operator running in these distributions.
 
 We have found that Docker for Desktop does not seem to suffer the same limitations, and we do support that as a
-dev/test option. 
+development/test option.
 
 ### Operator Docker image
 
