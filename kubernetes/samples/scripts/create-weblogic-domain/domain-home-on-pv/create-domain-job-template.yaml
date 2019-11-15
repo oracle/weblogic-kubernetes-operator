@@ -18,7 +18,7 @@ spec:
         app: %DOMAIN_UID%-create-weblogic-sample-domain-job
     spec:
       restartPolicy: Never
-        initContainers:
+      initContainers:
         - name: fix-pvc-owner
           image: %WEBLOGIC_IMAGE%
           command: ["sh", "-c", "chown -R 1000:1000 %DOMAIN_ROOT_DIR%"]
@@ -28,10 +28,6 @@ spec:
           securityContext:
             runAsUser: 0
             runAsGroup: 0
-        volumes:
-        - name: weblogic-sample-domain-storage-volume
-          persistentVolumeClaim:
-            claimName: %DOMAIN_PVC_NAME%
       containers:
         - name: create-weblogic-sample-domain-job
           image: %WEBLOGIC_IMAGE%
