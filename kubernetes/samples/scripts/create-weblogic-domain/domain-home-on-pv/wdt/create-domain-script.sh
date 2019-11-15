@@ -166,6 +166,7 @@ function run_wdt {
   fi 
 
   echo domain_home_dir = $domain_home_dir
+  mkdir -p $domain_home_dir
 
   # Output files and directories.
 
