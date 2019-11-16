@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
@@ -115,8 +114,9 @@ public class Domain {
     StringBuffer command = new StringBuffer();
     command.append("kubectl get domain ").append(domainUid).append(" -n ").append(domainNS);
     ExecResult result = TestUtils.exec(command.toString());
-    if (!result.stdout().contains(domainUid))
+    if (!result.stdout().contains(domainUid)) {
       throw new RuntimeException("FAILURE: domain not found, exiting!");
+    }
 
     verifyPodsCreated();
     verifyServicesCreated();
@@ -792,7 +792,9 @@ public class Domain {
   public void deletePvcAndCheckPvReleased(String jobName) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
     String pvBaseName = (String) pvMap.get("baseName");
-    if (domainUid != null) pvBaseName = domainUid + "-" + pvBaseName;
+    if (domainUid != null) {
+      pvBaseName = domainUid + "-" + pvBaseName;
+    }
     cmd.append(pvBaseName).append("-pv -n ").append(domainNS);
 
     ExecResult result = ExecCommand.exec(cmd.toString());
@@ -817,9 +819,10 @@ public class Domain {
    */
   public void createDomainOnExistingDirectory() throws Exception {
 
-    // use krun.sh so that the dir check can work on shared cluster/remote k8s cluster env as well
-    String cmd =
-        BaseTest.getProjectRoot()
+    if (!(BaseTest.OPENSHIFT)) {
+      // use krun.sh so that the dir check can work on shared cluster/remote k8s cluster env as well
+      String cmd =
+          BaseTest.getProjectRoot()
             + "/src/integration-tests/bash/krun.sh -m "
             + domainMap.get("persistentVolumeClaimName")
             + ":/pvc-"
@@ -829,11 +832,20 @@ public class Domain {
             + "/domains/"
             + domainMap.get("domainUID")
             + "\"";
-    logger.info("making sure the domain directory exists by running " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
-    // logger.info("Command result " + result.stdout() + " err =" + result.stderr());
-    logger.info("Run the script to create domain");
-
+      logger.info("making sure the domain directory exists by running " + cmd);
+      ExecResult result = TestUtils.exec(cmd);
+      // logger.info("Command result " + result.stdout() + " err =" + result.stderr());
+      logger.info("Run the script to create domain");
+    } else {
+      String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
+      String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
+      logger.info("making sure the domain directory exists");
+      if (domainDir != null && !(new File(domainDir).exists())) {
+        throw new RuntimeException(
+          "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
+      }
+      logger.info("Run the script to create domain");
+    }
     // create domain using different output dir but pv is same, it fails as the domain was already
     // created on the pv dir
     try {
@@ -1012,6 +1024,10 @@ public class Domain {
     pvMap.put("namespace", domainNS);
     pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
 
+    if (BaseTest.OPENSHIFT) {
+      pvMap.put("weblogicDomainStorageType", "NFS");
+    }
+
     // set pv path
     domainMap.put(
         "weblogicDomainStoragePath",
@@ -1024,7 +1040,7 @@ public class Domain {
     pvMap.values().removeIf(Objects::isNull);
 
     // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch, create PV/PVC
-    new PersistentVolume(BaseTest.getPvRoot() + "acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
+    new PersistentVolume(BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
 
     String cmd =
         BaseTest.getProjectRoot()
@@ -1214,8 +1230,9 @@ public class Domain {
         podNameSet.add(managedServerNameBase + i);
       }
 
-      // Loop until all the servers have recycled.  Wait 5 minutes max for a managed server to be terminating.
-      //
+      /* Loop until all the servers have recycled.  Wait 5 minutes max for a managed server 
+      to be terminating.*/
+      
       final int maxTerminateLoop = 300;
       int terminateLoopCount = 0;
       while (podNameSet.size() > 0) {
@@ -1270,6 +1287,31 @@ public class Domain {
             "kubectl label secret %s weblogic.domainUID=%s -n %s",
             secret.getSecretName(), domainUid, domainNS);
     TestUtils.exec(labelCmd);
+  }
+  
+  /**
+   * Create Docker Registry Secret for the domain namespace.
+   *
+   * @throws Exception when the kubectl create secret command fails
+   */
+  protected void createDockerRegistrySecret() throws Exception {
+    String secret = System.getenv("IMAGE_PULL_SECRET_WEBLOGIC");
+    if (secret == null) {
+      secret = "docker-store";
+    }
+    
+    String ocrserver = System.getenv("OCR_SERVER");
+    if (ocrserver == null) {
+      ocrserver = "container-registry.oracle.com";
+    }
+    
+    TestUtils.createDockerRegistrySecret(
+        secret,
+        ocrserver,
+        System.getenv("OCR_USERNAME"),
+        System.getenv("OCR_PASSWORD"),
+        null,
+        domainNS);
   }
 
   /**
@@ -1340,6 +1382,7 @@ public class Domain {
 
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
       // image
+      
       TestUtils.createDockerRegistrySecret(
           "ocir-domain",
           System.getenv("REPO_REGISTRY"),
@@ -1618,12 +1661,15 @@ public class Domain {
       domainMap.put("domainHomeImageBase", 
           BaseTest.getWeblogicImageName() + ":" + BaseTest.getWeblogicImageTag());
     }
-
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
 
     // create config map and secret for custom sit config
     createConfigMapAndSecretForSitConfig();
+    
+    if (BaseTest.SHARED_CLUSTER && !domainMap.containsKey("domainHomeImageBase")) {
+      createDockerRegistrySecret();
+    }
   }
 
   private void copyDomainTemplate(Map<String, Object> inputDomainMap) throws IOException {
@@ -1748,6 +1794,9 @@ public class Domain {
   public String getHostNameForCurl() throws Exception {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");
+    } else if (BaseTest.OPENSHIFT) {
+      ExecResult result = ExecCommand.exec("hostname -i");
+      return result.stdout().trim();
     } else {
       // ExecResult result = ExecCommand.exec("hostname | awk -F. '{print $1}'");
       ExecResult result1 =
@@ -1818,7 +1867,9 @@ public class Domain {
    */
   private String prepareCmdToCallCreateDomainScript(String outputDir) {
 
-    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
+    StringBuffer createDomainScriptCmd = new StringBuffer("export WDT_VERSION=");
+    createDomainScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
+            .append(BaseTest.getResultDir());
     // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
       createDomainScriptCmd
@@ -1986,7 +2037,6 @@ public class Domain {
             + ", stderr='"
             + result.stderr()
             + "'";
-
     if (!resultStr.contains("Unable to use a TTY") && result.exitValue() != 0) {
       throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
     }

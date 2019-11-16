@@ -11,7 +11,7 @@ rcuType=${3:-fmw}
 
 echo "DB Connection String [$connectString], schemaPrefix [${schemaPrefix}] rcuType [${rcuType}]"
 
-max=20
+max=100
 counter=0
 while [ $counter -le ${max} ]
 do
@@ -29,16 +29,34 @@ else
  java utils.dbping ORACLE_THIN scott tiger ${connectString}
 fi
 
-# SOA needs extra component(s) SOAINFRA and ESS
+# SOA needs extra component(s) SOAINFRA ESS (optional)
 # SOA needs variables param(s) SOA_PROFILE_TYPE=SMALL,HEALTHCARE_INTEGRATION=NO
 
-extComponents=""
-extVariables=""
-if [ "x$rcuType" == "xsoa" ]; then
-  extComponents="-component SOAINFRA -component ESS"
-  extVariables="-variables SOA_PROFILE_TYPE=SMALL,HEALTHCARE_INTEGRATION=NO"
-  echo "Creating RCU Schema for SOA Infra .."
-fi
+case $rcuType in
+ fmw)
+   extComponents=""
+   extVariables=""
+   echo "Creating RCU Schema for FMW Domain ..."
+   ;;
+ soa|soaosb|osb)
+   extComponents="-component SOAINFRA"
+   extVariables="-variables SOA_PROFILE_TYPE=SMALL,HEALTHCARE_INTEGRATION=NO"
+   echo "Creating RCU Schema for SOA Domain [$rcuType] ..."
+   ;;
+ soaess|soaessosb)
+    extComponents="-component SOAINFRA -component ESS"
+    extVariables="-variables SOA_PROFILE_TYPE=SMALL,HEALTHCARE_INTEGRATION=NO"
+    echo "Creating RCU Schema for SOA Domain w/ESS [$rcuType] ..."
+  ;;
+  * )
+    echo "[ERROR] Unknown RCU Schema Type [$rcuType]"
+    echo "Supported values: fmw(default),soa,osb,soaosb,soaess,soaessosb"
+    exit -1
+  ;;
+esac
+
+echo "Extra RCU Schema Component Choosen[${extComponents}]" 
+echo "Extra RCU Schema Variable Choosen[${extVariables}]" 
 
 #Debug 
 #export DISPLAY=0.0

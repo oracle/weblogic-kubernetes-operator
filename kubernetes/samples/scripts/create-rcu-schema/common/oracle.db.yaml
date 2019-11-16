@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oracle-db
+  namespace: default
+spec:
+  ports:
+  - name: tns
+    port: 1521
+    protocol: TCP
+    targetPort: 1521
+    nodePort: 30011
+  selector:
+    app.kubernetes.io/instance: dev
+    app.kubernetes.io/name: oracle-db
+  sessionAffinity: None
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: oracle-db
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: dev
+      app.kubernetes.io/name: oracle-db
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: dev
+        app.kubernetes.io/name: oracle-db
+    spec:
+      containers:
+      - env:
+        - name: DB_SID
+          value: devcdb
+        - name: DB_PDB
+          value: devpdb
+        - name: DB_DOMAIN
+          value: k8s
+        - name: DB_BUNDLE
+          value: basic  
+        image: container-registry.oracle.com/database/enterprise:12.2.0.1-slim
+        imagePullPolicy: IfNotPresent
+        name: oracle-db
+        ports:
+        - containerPort: 1521
+          name: tns
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "2"
+            memory: "6Gi"
+          requests:
+            cpu: 500m
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+           - name: docker-store

@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
@@ -18,6 +17,7 @@ import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.apis.CustomObjectsApi;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.apis.RbacAuthorizationV1Api;
+import io.kubernetes.client.models.ExtensionsV1beta1IngressList;
 import io.kubernetes.client.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.models.V1ClusterRoleList;
 import io.kubernetes.client.models.V1ConfigMapList;
@@ -35,7 +35,6 @@ import io.kubernetes.client.models.V1SecretList;
 import io.kubernetes.client.models.V1ServiceAccountList;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import io.kubernetes.client.models.V1beta1IngressList;
 import io.kubernetes.client.util.ClientBuilder;
 
 import static org.junit.Assert.assertEquals;
@@ -97,7 +96,6 @@ public class K8sTestUtils {
     V1PodList v1PodList =
         coreV1Api.listNamespacedPod(
             namespace,
-            Boolean.FALSE,
             Boolean.FALSE.toString(),
             null,
             null,
@@ -116,7 +114,6 @@ public class K8sTestUtils {
         batchV1Api.listJobForAllNamespaces(
             null,
             null,
-            Boolean.TRUE,
             labelSelectors,
             null,
             Boolean.FALSE.toString(),
@@ -132,7 +129,6 @@ public class K8sTestUtils {
         appsV1Api.listDeploymentForAllNamespaces(
             null,
             null,
-            Boolean.TRUE,
             labelSelectors,
             null,
             Boolean.FALSE.toString(),
@@ -147,7 +143,6 @@ public class K8sTestUtils {
         appsV1Api.listReplicaSetForAllNamespaces(
             null,
             null,
-            Boolean.TRUE,
             labelSelectors,
             null,
             Boolean.FALSE.toString(),
@@ -163,7 +158,6 @@ public class K8sTestUtils {
         coreV1Api.listServiceForAllNamespaces(
             null,
             null,
-            Boolean.TRUE,
             labelSelectors,
             null,
             Boolean.FALSE.toString(),
@@ -182,7 +176,6 @@ public class K8sTestUtils {
         coreV1Api.listPersistentVolumeClaimForAllNamespaces(
             null,
             null,
-            Boolean.TRUE,
             labelSelectors,
             null,
             Boolean.FALSE.toString(),
@@ -196,11 +189,10 @@ public class K8sTestUtils {
   public void verifyIngresses(
       String domainNs, String domainUid, String labelSelectors, int expectedLabeled)
       throws Exception {
-    V1beta1IngressList labeledIngressList =
+    ExtensionsV1beta1IngressList labeledIngressList =
         extensionsV1beta1Api.listIngressForAllNamespaces(
             null,
             null,
-            Boolean.TRUE,
             labelSelectors,
             null,
             Boolean.FALSE.toString(),
@@ -212,11 +204,10 @@ public class K8sTestUtils {
         "Number of labeled ingress", labeledIngressList.getItems().size(), expectedLabeled);
     labeledIngressList.getItems().stream()
         .forEach(li -> li.getMetadata().getNamespace().equals(domainNs));
-    V1beta1IngressList traefikIngressList =
+    ExtensionsV1beta1IngressList traefikIngressList =
         extensionsV1beta1Api.listIngressForAllNamespaces(
             null,
             String.format("metadata.name=traefik-hostrouting-%s", domainUid),
-            Boolean.TRUE,
             null,
             null,
             Boolean.FALSE.toString(),
@@ -233,7 +224,6 @@ public class K8sTestUtils {
         coreV1Api.listConfigMapForAllNamespaces(
             null,
             null,
-            Boolean.TRUE,
             labelSelectors,
             null,
             Boolean.FALSE.toString(),
@@ -249,7 +239,6 @@ public class K8sTestUtils {
         coreV1Api.listServiceAccountForAllNamespaces(
             null,
             null,
-            Boolean.TRUE,
             labelSelectors,
             null,
             Boolean.FALSE.toString(),
@@ -264,7 +253,6 @@ public class K8sTestUtils {
         rbacAuthorizationV1Api.listRoleForAllNamespaces(
             null,
             null,
-            Boolean.TRUE,
             labelSelectors,
             null,
             Boolean.FALSE.toString(),
@@ -279,7 +267,6 @@ public class K8sTestUtils {
         rbacAuthorizationV1Api.listRoleBindingForAllNamespaces(
             null,
             null,
-            Boolean.TRUE,
             labelSelectors,
             null,
             Boolean.FALSE.toString(),
@@ -294,7 +281,6 @@ public class K8sTestUtils {
         coreV1Api.listSecretForAllNamespaces(
             null,
             "metadata.name=" + secretName,
-            Boolean.TRUE,
             null,
             null,
             Boolean.FALSE.toString(),
@@ -307,7 +293,6 @@ public class K8sTestUtils {
   public void verifyPvs(String labelSelectors, int expected) throws Exception {
     V1PersistentVolumeList v1PersistentVolumeList =
         coreV1Api.listPersistentVolume(
-            Boolean.TRUE,
             Boolean.FALSE.toString(),
             null,
             null,
@@ -322,7 +307,6 @@ public class K8sTestUtils {
   public void verifyNoClusterRoles(String domain1Ls) throws Exception {
     V1ClusterRoleList v1ClusterRoleList =
         rbacAuthorizationV1Api.listClusterRole(
-            Boolean.TRUE,
             Boolean.FALSE.toString(),
             null,
             null,
@@ -337,7 +321,6 @@ public class K8sTestUtils {
   public void verifyNoClusterRoleBindings(String labelSelectors) throws Exception {
     V1ClusterRoleBindingList v1ClusterRoleBindingList =
         rbacAuthorizationV1Api.listClusterRoleBinding(
-            Boolean.TRUE,
             Boolean.FALSE.toString(),
             null,
             null,
@@ -362,7 +345,6 @@ public class K8sTestUtils {
       v1PodList =
           coreV1Api.listNamespacedPod(
               namespace,
-              Boolean.FALSE,
               Boolean.FALSE.toString(),
               null,
               null,

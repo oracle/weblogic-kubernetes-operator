@@ -9,8 +9,7 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/common/utility.sh
 
 dbpod=`kubectl get po | grep oracle-db | cut -f1 -d " " `
-kubectl delete -f ${scriptDir}/common/oradb.yaml --ignore-not-found
-kubectl delete -f ${scriptDir}/common/orasvc.yaml --ignore-not-found
+kubectl delete -f ${scriptDir}/common/oracle.db.yaml  --ignore-not-found
 
 if [ -z ${dbpod} ]; then
   echo "Couldn't find oarcle-db pod in [default] namesapce"

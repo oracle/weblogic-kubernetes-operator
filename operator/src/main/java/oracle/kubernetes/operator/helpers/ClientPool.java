@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -15,7 +14,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.squareup.okhttp.Dispatcher;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.Configuration;
-import io.kubernetes.client.util.Config;
+import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.util.ClientBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -98,7 +98,7 @@ public class ClientPool extends Pool<ApiClient> {
     public ApiClient get() {
       ApiClient client;
       try {
-        client = Config.defaultClient();
+        client = ClientBuilder.standard().setOverridePatchFormat(V1Patch.PATCH_FORMAT_JSON_PATCH).build();
         if (first.getAndSet(false)) {
           Configuration.setDefaultApiClient(client);
         }

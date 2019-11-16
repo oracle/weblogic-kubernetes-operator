@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -118,7 +117,7 @@ public final class HealthCheckHelper {
 
     // Validate RBAC or ABAC policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
-    LOGGER.info(MessageKeys.VERIFY_ACCESS_START);
+    LOGGER.info(MessageKeys.VERIFY_ACCESS_START, ns);
 
     if (version.isRulesReviewSupported()) {
       boolean rulesReviewSuccessful = true;
@@ -150,7 +149,7 @@ public final class HealthCheckHelper {
       for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
 
         if (!ap.check(op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource(), ns);
         }
       }
     }
@@ -159,7 +158,7 @@ public final class HealthCheckHelper {
       for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
 
         if (!ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource(), ns);
         }
       }
     }

@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
@@ -345,7 +344,7 @@ public class Operator {
         .append(" --set \"")
         .append(upgradeSet)
         .append("\" --reuse-values ")
-        .append(" --wait --timeout 60");
+        .append(" --wait --timeout 120");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -500,8 +499,8 @@ public class Operator {
     }
     // customize the inputs yaml file to generate a self-signed cert for the external Operator REST
     // https port
-    externalRestEnabled =
-        (boolean) operatorMap.getOrDefault("externalRestEnabled", externalRestEnabled);
+    externalRestEnabled = operatorMap.containsKey("externalRestEnabled")
+        ? (new Boolean((operatorMap.get("externalRestEnabled")).toString()).booleanValue()) : externalRestEnabled;
     if (externalRestEnabled) {
       if (operatorMap.get("externalRestHttpsPort") != null) {
         try {

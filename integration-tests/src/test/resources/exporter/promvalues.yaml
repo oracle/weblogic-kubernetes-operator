@@ -1,0 +1,92 @@
+# Copyright (c) 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+serviceAccounts:
+  pushgateway:
+    create: false
+
+pushgateway:
+  enabled: false
+
+alertmanager:
+  enabled: true
+  persistentVolume:
+    existingClaim: pvc-alertmanager
+  service:
+    type: NodePort
+    nodePort: 32000
+  securityContext:
+    runAsNonRoot: false
+    runAsUser: 0
+
+server:
+  persistentVolume:
+    existingClaim: pvc-prometheus
+  service:
+    type: NodePort
+    nodePort: 30000
+  securityContext:
+    runAsNonRoot: false
+    runAsUser: 0
+  global:
+    evaluation_interval: 1m
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+alertmanagerFiles:
+  alertmanager.yml:
+    global:
+      resolve_timeout: 5m
+      #http_config:
+       # proxy_url: 'http://www-proxy-hqdc.us.oracle.com:80'
+
+    route:
+      group_by: ['alertname']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 1h
+      receiver: 'logging-webhook'
+    receivers:
+      - name: 'logging-webhook'
+        webhook_configs:
+        - url: 'http://webhook.webhook.svc.cluster.local:8080/log'
+
+serverFiles:
+  alerts:
+    groups:
+      - name: node_rules
+        rules:
+          - alert: ClusterWarning
+            for: 15s
+            expr: sum by(weblogic_domainUID, weblogic_clusterName) (up{weblogic_domainUID=~'.+'}) == 1
+            labels:
+              severity: page
+            annotations:
+              description: 'Some WLS cluster has only one running server for more than 1 minutes.'
+              summary: 'Some wls cluster is in warning state.'
+
+extraScrapeConfigs: |
+    - job_name: 'wls-domain1'
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_weblogic_domainUID, __meta_kubernetes_pod_label_weblogic_clusterName]
+        action: keep
+        regex: default;domain1;cluster-1
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod_name
+      basic_auth:
+        username: weblogic
+        password: welcome1

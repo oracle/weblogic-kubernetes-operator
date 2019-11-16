@@ -1,16 +1,18 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -20,39 +22,37 @@ import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
-import oracle.kubernetes.operator.work.ContainerResolver;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-/** Watches for Pods to become Ready or leave Ready state. */
-public class PodWatcher extends Watcher<V1Pod>
-    implements WatchListener<V1Pod>, PodAwaiterStepFactory {
+/**
+ * Watches for changes to pods.
+ */
+public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, PodAwaiterStepFactory {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final String ns;
+  private final String namespace;
   private final WatchListener<V1Pod> listener;
 
-  // Map of Pod name to callback
-  private final Map<String, Collection<Runnable>> readyCallbackRegistrations = new HashMap<>();
-  private final Map<String, Collection<Runnable>> deletedCallbackRegistrations = new HashMap<>();
+  // Map of Pod name to callback. Note that since each pod name can be mapped to multiple callback registrations,
+  // a concurrent map will not suffice; we therefore use an ordinary map and synchronous accesses.
+  private final Map<String, Collection<Consumer<V1Pod>>> modifiedCallbackRegistrations = new HashMap<>();
+  private final Map<String, Collection<Consumer<V1Pod>>> deletedCallbackRegistrations = new HashMap<>();
 
   private PodWatcher(
-      String ns,
+      String namespace,
       String initialResourceVersion,
       WatchTuning tuning,
       WatchListener<V1Pod> listener,
       AtomicBoolean isStopping) {
     super(initialResourceVersion, tuning, isStopping);
     setListener(this);
-    this.ns = ns;
+    this.namespace = namespace;
     this.listener = listener;
   }
 
@@ -79,55 +79,39 @@ public class PodWatcher extends Watcher<V1Pod>
     return watcher;
   }
 
-  private void registerOnReady(String podName, Runnable onReady) {
-    synchronized (readyCallbackRegistrations) {
-      Collection<Runnable> col = readyCallbackRegistrations.get(podName);
-      if (col == null) {
-        col = new ArrayList<>();
-        readyCallbackRegistrations.put(podName, col);
-      }
-      col.add(onReady);
+  private void addOnModifiedCallback(String podName, Consumer<V1Pod> callback) {
+    synchronized (modifiedCallbackRegistrations) {
+      modifiedCallbackRegistrations.computeIfAbsent(podName, k -> new ArrayList<>()).add(callback);
     }
   }
 
-  private Collection<Runnable> retrieveOnReady(String podName) {
-    synchronized (readyCallbackRegistrations) {
-      return readyCallbackRegistrations.remove(podName);
+  private @Nonnull Collection<Consumer<V1Pod>> getOnModifiedCallbacks(String podName) {
+    synchronized (modifiedCallbackRegistrations) {
+      return Optional.ofNullable(modifiedCallbackRegistrations.get(podName)).orElse(Collections.emptyList());
     }
   }
 
-  private void unregisterOnReady(String podName, Runnable onReady) {
-    synchronized (readyCallbackRegistrations) {
-      Collection<Runnable> col = readyCallbackRegistrations.get(podName);
-      if (col != null) {
-        col.remove(onReady);
-      }
+  private void removeOnModifiedCallback(String podName, Consumer<V1Pod> callback) {
+    synchronized (modifiedCallbackRegistrations) {
+      Optional.ofNullable(modifiedCallbackRegistrations.get(podName)).ifPresent(c -> c.remove(callback));
     }
   }
 
-  private void registerOnDelete(String podName, Runnable onReady) {
+  private void addOnDeleteCallback(String podName, Consumer<V1Pod> callback) {
     synchronized (deletedCallbackRegistrations) {
-      Collection<Runnable> col = deletedCallbackRegistrations.get(podName);
-      if (col == null) {
-        col = new ArrayList<>();
-        deletedCallbackRegistrations.put(podName, col);
-      }
-      col.add(onReady);
+      deletedCallbackRegistrations.computeIfAbsent(podName, k -> new ArrayList<>()).add(callback);
     }
   }
 
-  private Collection<Runnable> retrieveOnDelete(String podName) {
+  private @Nonnull Collection<Consumer<V1Pod>> getOnDeleteCallbacks(String podName) {
     synchronized (deletedCallbackRegistrations) {
-      return deletedCallbackRegistrations.remove(podName);
+      return Optional.ofNullable(deletedCallbackRegistrations.remove(podName)).orElse(Collections.emptyList());
     }
   }
 
-  private void unregisterOnDelete(String podName, Runnable onReady) {
+  private void removeOnDeleteCallback(String podName, Consumer<V1Pod> callback) {
     synchronized (deletedCallbackRegistrations) {
-      Collection<Runnable> col = deletedCallbackRegistrations.get(podName);
-      if (col != null) {
-        col.remove(onReady);
-      }
+      Optional.ofNullable(deletedCallbackRegistrations.get(podName)).ifPresent(c -> c.remove(callback));
     }
   }
 
@@ -135,7 +119,7 @@ public class PodWatcher extends Watcher<V1Pod>
   public WatchI<V1Pod> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder
         .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .createPodWatch(ns);
+        .createPodWatch(namespace);
   }
 
   public void receivedResponse(Watch.Response<V1Pod> item) {
@@ -143,39 +127,26 @@ public class PodWatcher extends Watcher<V1Pod>
 
     listener.receivedResponse(item);
 
-    V1Pod pod;
-    Boolean isReady;
-    String podName;
+    V1Pod pod = item.object;
+    String podName = pod.getMetadata().getName();
     switch (item.type) {
       case "ADDED":
       case "MODIFIED":
-        pod = item.object;
-        isReady = !PodHelper.isDeleting(pod) && PodHelper.isReady(pod);
-        podName = pod.getMetadata().getName();
-        if (isReady) {
-          Collection<Runnable> col = retrieveOnReady(podName);
-          if (col != null) {
-            for (Runnable ready : col) {
-              ready.run();
-            }
-          }
-        }
+        copyOf(getOnModifiedCallbacks(podName)).forEach(c -> c.accept(pod));
         break;
       case "DELETED":
-        pod = item.object;
-        podName = pod.getMetadata().getName();
-        Collection<Runnable> col = retrieveOnDelete(podName);
-        if (col != null) {
-          for (Runnable delete : col) {
-            delete.run();
-          }
-        }
+        getOnDeleteCallbacks(podName).forEach(c -> c.accept(pod));
         break;
       case "ERROR":
       default:
     }
 
     LOGGER.exiting();
+  }
+
+  // make a copy to avoid concurrent modification
+  private <T> Collection<T> copyOf(Collection<T> collection) {
+    return new ArrayList<>(collection);
   }
 
   /**
@@ -200,113 +171,54 @@ public class PodWatcher extends Watcher<V1Pod>
     return new WaitForPodDeleteStep(pod, next);
   }
 
-  private abstract class WaitForPodStatusStep extends Step {
-    private final V1Pod pod;
+  private abstract class WaitForPodStatusStep extends WaitForReadyStep<V1Pod> {
 
     private WaitForPodStatusStep(V1Pod pod, Step next) {
-      super(next);
-      this.pod = pod;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      if (!PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod)) {
-        return doNext(packet);
-      }
-
-      V1ObjectMeta metadata = pod.getMetadata();
-
-      log(metadata);
-
-      AtomicBoolean didResume = new AtomicBoolean(false);
-      return doSuspend(
-          (fiber) -> {
-            Runnable ready =
-                () -> {
-                  if (didResume.compareAndSet(false, true)) {
-                    fiber.resume(packet);
-                  }
-                };
-            register(metadata, ready);
-
-            // Timing window -- pod may have come ready before registration for callback
-            CallBuilderFactory factory =
-                ContainerResolver.getInstance().getContainer().getSpi(CallBuilderFactory.class);
-            fiber
-                .createChildFiber()
-                .start(
-                    factory
-                        .create()
-                        .readPodAsync(
-                            metadata.getName(),
-                            metadata.getNamespace(),
-                            new ResponseStep<V1Pod>(null) {
-                              @Override
-                              public NextAction onFailure(
-                                  Packet packet,
-                                  ApiException e,
-                                  int statusCode,
-                                  Map<String, List<String>> responseHeaders) {
-                                if (statusCode == CallBuilder.NOT_FOUND) {
-                                  return onSuccess(packet, null, statusCode, responseHeaders);
-                                }
-                                return super.onFailure(packet, e, statusCode, responseHeaders);
-                              }
-
-                              @Override
-                              public NextAction onSuccess(
-                                  Packet packet,
-                                  V1Pod result,
-                                  int statusCode,
-                                  Map<String, List<String>> responseHeaders) {
-                                if (testPod(result)) {
-                                  if (didResume.compareAndSet(false, true)) {
-                                    unregister(metadata, ready);
-                                    fiber.resume(packet);
-                                  }
-                                }
-                                return doNext(packet);
-                              }
-                            }),
-                    packet.clone(),
-                    null);
-          });
-    }
-
-    protected void log(V1ObjectMeta metadata) {
-      // no-op
-    }
-
-    protected abstract boolean testPod(V1Pod result);
-
-    protected abstract void register(V1ObjectMeta metadata, Runnable callback);
-
-    protected abstract void unregister(V1ObjectMeta metadata, Runnable callback);
-  }
-
-  private class WaitForPodReadyStep extends WaitForPodStatusStep {
-    private WaitForPodReadyStep(V1Pod pod, Step next) {
       super(pod, next);
     }
 
     @Override
-    protected void log(V1ObjectMeta metadata) {
-      LOGGER.info(MessageKeys.WAITING_FOR_POD_READY, metadata.getName());
+    V1ObjectMeta getMetadata(V1Pod pod) {
+      return pod.getMetadata();
+    }
+    
+    @Override
+    Step createReadAsyncStep(String name, String namespace, ResponseStep<V1Pod> responseStep) {
+      return new CallBuilder().readPodAsync(name, namespace, responseStep);
+    }
+  }
+
+  private class WaitForPodReadyStep extends WaitForPodStatusStep {
+
+    private WaitForPodReadyStep(V1Pod pod, Step next) {
+      super(pod, next);
+    }
+
+    // A pod is ready if it is not being deleted and has the ready status.
+    @Override
+    protected boolean isReady(V1Pod result) {
+      return result != null && !PodHelper.isDeleting(result) && PodHelper.isReady(result);
+    }
+
+    // Pods should be processed if ready.
+    @Override
+    boolean shouldProcessCallback(V1Pod resource) {
+      return isReady(resource);
     }
 
     @Override
-    protected boolean testPod(V1Pod result) {
-      return result != null && !PodHelper.isDeleting(result) && PodHelper.getReadyStatus(result);
+    protected void addCallback(String podName, Consumer<V1Pod> callback) {
+      addOnModifiedCallback(podName, callback);
     }
 
     @Override
-    protected void register(V1ObjectMeta metadata, Runnable callback) {
-      registerOnReady(metadata.getName(), callback);
+    protected void removeCallback(String podName, Consumer<V1Pod> callback) {
+      removeOnModifiedCallback(podName, callback);
     }
 
     @Override
-    protected void unregister(V1ObjectMeta metadata, Runnable callback) {
-      unregisterOnReady(metadata.getName(), callback);
+    protected void logWaiting(String name) {
+      LOGGER.info(MessageKeys.WAITING_FOR_POD_READY, name);
     }
   }
 
@@ -315,19 +227,20 @@ public class PodWatcher extends Watcher<V1Pod>
       super(pod, next);
     }
 
+    // A pod is considered deleted when reading its value from Kubernetes returns null.
     @Override
-    protected boolean testPod(V1Pod result) {
+    protected boolean isReady(V1Pod result) {
       return result == null;
     }
 
     @Override
-    protected void register(V1ObjectMeta metadata, Runnable callback) {
-      registerOnDelete(metadata.getName(), callback);
+    protected void addCallback(String podName, Consumer<V1Pod> callback) {
+      addOnDeleteCallback(podName, callback);
     }
 
     @Override
-    protected void unregister(V1ObjectMeta metadata, Runnable callback) {
-      unregisterOnDelete(metadata.getName(), callback);
+    protected void removeCallback(String podName, Consumer<V1Pod> callback) {
+      removeOnDeleteCallback(podName, callback);
     }
   }
 }

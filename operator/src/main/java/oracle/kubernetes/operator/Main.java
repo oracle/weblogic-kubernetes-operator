@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -26,6 +25,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.models.V1EventList;
@@ -86,6 +87,7 @@ public class Main {
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
   private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
   private static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
+  private static Function<String,String> getHelmVariable = System::getenv;
   private static final String operatorNamespace = computeOperatorNamespace();
   private static final AtomicReference<DateTime> lastFullRecheck =
       new AtomicReference<>(DateTime.now());
@@ -221,6 +223,11 @@ public class Main {
         stopping.set(true);
       }
       isNamespaceStarted.remove(ns);
+      domainWatchers.remove(ns);
+      eventWatchers.remove(ns);
+      podWatchers.remove(ns);
+      serviceWatchers.remove(ns);
+      JobWatcher.removeNamespace(ns);
     }
   }
 
@@ -241,7 +248,7 @@ public class Main {
     return new NullCompletionCallback(completionAction);
   }
 
-  private static Runnable recheckDomains() {
+  static Runnable recheckDomains() {
     return () -> {
       Collection<String> targetNamespaces = getTargetNamespaces();
 
@@ -335,7 +342,7 @@ public class Main {
 
   private static Collection<String> getTargetNamespaces() {
     return getTargetNamespaces(
-        Optional.ofNullable(System.getenv("OPERATOR_TARGET_NAMESPACES"))
+        Optional.ofNullable(getHelmVariable.apply("OPERATOR_TARGET_NAMESPACES"))
             .orElse(tuningAndConfig.get("targetNamespaces")),
         operatorNamespace);
   }
@@ -424,7 +431,7 @@ public class Main {
   }
 
   private static String computeOperatorNamespace() {
-    return Optional.ofNullable(System.getenv("OPERATOR_NAMESPACE")).orElse("default");
+    return Optional.ofNullable(getHelmVariable.apply("OPERATOR_NAMESPACE")).orElse("default");
   }
 
   private static class WrappedThreadFactory implements ThreadFactory {

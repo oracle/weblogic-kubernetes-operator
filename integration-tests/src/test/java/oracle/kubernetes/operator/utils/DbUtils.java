@@ -1,11 +1,12 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
 import java.util.Map;
 import java.util.logging.Logger;
+
+import oracle.kubernetes.operator.BaseTest;
 
 public class DbUtils {
   public static final String DEFAULT_FMWINFRA_DOCKER_IMAGENAME =
@@ -44,6 +45,79 @@ public class DbUtils {
     TestUtils.checkCmdInLoop(cmd, "The database is ready for use", podName);
 
     return oracledb;
+  }
+  
+  /**
+   * create Oracle DB pod and service in the k8s cluster default namespace.
+   *
+   * @throws Exception - if any error occurs when creating Oracle DB pod and service
+   */
+  public static void startOracleDB() throws Exception {
+    String cmd1 = "sh "
+        + BaseTest.getResultDir()
+        + "/create-rcu-schema/start-db-service.sh";
+    TestUtils.exec(cmd1, true);
+    String cmd2 = "kubectl get pod | grep oracle-db | cut -f1 -d \" \" ";
+    ExecResult result = TestUtils.exec(cmd2);
+    String podName = result.stdout();
+
+    logger.info("DEBUG: DB podname=" + podName);
+    TestUtils.checkPodReady(podName, "default");
+
+    // check the db is ready to use
+    String cmd3 = "kubectl logs " + podName + " -n " + "default";
+    TestUtils.checkCmdInLoop(cmd3, "The database is ready for use", podName);
+  
+  }
+  
+  /**
+   * stop oracle service.
+   *
+   * @throws Exception - if any error occurs when dropping Oracle DB service
+   */
+  public static void stopOracleDB() throws Exception {
+    String cmd = "sh " 
+        + BaseTest.getResultDir()
+        + "/create-rcu-schema/stop-db-service.sh";
+  
+    TestUtils.exec(cmd, true);
+  }
+  
+  /**
+   * create Oracle rcu pod and load database schema in the k8s cluster default namespace.
+   * @param rcuSchemaPrefix - rcu SchemaPrefixe
+   * @throws Exception - if any error occurs when creating Oracle rcu pod
+   */
+  public static void createRcuSchema(String rcuSchemaPrefix) throws Exception {
+    String cmd = "sh " 
+        + BaseTest.getResultDir()
+        + "/create-rcu-schema/create-rcu-schema.sh -s "
+        + rcuSchemaPrefix;
+    TestUtils.exec(cmd, true);
+  }
+  
+  /**
+   * drop Oracle rcu schema.
+   * @param rcuSchemaPrefix - rcu SchemaPrefixe
+   * @throws Exception - if any error occurs when dropping rcu schema
+   */
+  public static void dropRcuSchema(String rcuSchemaPrefix) throws Exception {
+    String cmd = "sh " 
+        + BaseTest.getResultDir()
+        + "/create-rcu-schema/drop-rcu-schema.sh -s rcuSchemaPrefix";
+    TestUtils.exec(cmd, true);
+  }
+  
+  /**
+   * delete RCU pod.
+   *
+   * @throws Exception - if any error occurs when deleting RCU pod
+   */
+  public static void deleteRcuPod() throws Exception {
+    String cmd = "kubectl delete -f " 
+        + BaseTest.getResultDir()
+        + "/create-rcu-schema/common/rcu.yaml";
+    TestUtils.exec(cmd, true);
   }
 
   /**
