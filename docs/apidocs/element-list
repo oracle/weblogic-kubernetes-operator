@@ -1,3 +1,5 @@
+oracle.kubernetes.json
+oracle.kubernetes.json.mojo
 oracle.kubernetes.operator
 oracle.kubernetes.operator.authentication
 oracle.kubernetes.operator.builders
