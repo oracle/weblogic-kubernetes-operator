@@ -12,18 +12,18 @@
     <title>SOA domain :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1572633076" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1572633076" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1572633076" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1572633076" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1572633076" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1572633076" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1572633076" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1572633076" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1572633076" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1573868776" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1573868776" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1573868776" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1573868776" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1573868776" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1573868776" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1573868776" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1573868776" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1573868776" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1572633076"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1573868776"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1572633076"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1572633076"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1573868776"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1573868776"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1572633076"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1573868776"></script>
 
     
   </div>
@@ -2559,6 +2559,8 @@ type: Opaque
 
 <h4 id="use-the-script-to-create-a-domain">Use the script to create a domain</h4>
 
+<p>Please note that the sample scripts for SOASuite domain deployment are available at  <code>&lt;weblogic-kubernetes-operator-project&gt;/kubernetes/samples/scripts/create-soa-domain</code>.</p>
+
 <p>Make a copy of the <code>create-domain-inputs.yaml</code> file, and run the create script, pointing it at
 your inputs file and an output directory:</p>
 
@@ -2595,11 +2597,11 @@ into the target directory, maintaining the original directory hierarchy.</p>
 <p>The default domain created by the script has the following characteristics:</p>
 
 <ul>
-<li>An Administration Server named <code>admin-server</code> listening on port <code>7001</code>.</li>
+<li>An Administration Server named <code>AdminServer</code> listening on port <code>7001</code>.</li>
 <li>A configured cluster named <code>soa_cluster-1</code> of size 5.</li>
-<li>Two Managed Servers, named <code>soa-server1</code> and <code>soa-server2</code>, listening on port <code>8001</code>.</li>
+<li>Two Managed Servers, named <code>soa_server1</code> and <code>soa_server2</code>, listening on port <code>8001</code>.</li>
 <li>Log files that are located in <code>/shared/logs/&lt;domainUID&gt;</code>.</li>
-<li>SOA Infra, BPM composer, and WorklistApp applications deployed.</li>
+<li>SOA Infra, SOA composer and WorklistApp applications deployed.</li>
 <li>No data sources or JMS resources.</li>
 <li>A T3 channel.</li>
 </ul>
@@ -2701,7 +2703,7 @@ into the target directory, maintaining the original directory hierarchy.</p>
 <tr>
 <td><code>exposeAdminT3Channel</code></td>
 <td>Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster.</td>
-<td><code>true</code></td>
+<td><code>false</code></td>
 </tr>
 
 <tr>
@@ -2749,7 +2751,7 @@ into the target directory, maintaining the original directory hierarchy.</p>
 <tr>
 <td><code>managedServerNameBase</code></td>
 <td>Base string used to generate Managed Server names.</td>
-<td><code>soa-server</code></td>
+<td><code>soa_server</code></td>
 </tr>
 
 <tr>
@@ -2807,6 +2809,12 @@ into the target directory, maintaining the original directory hierarchy.</p>
 </tr>
 
 <tr>
+<td><code>serverPodCpuRequest</code>, <code>serverPodMemoryRequest</code>, <code>serverPodCpuCLimit</code>, <code>serverPodMemoryLimit</code></td>
+<td>The maximum amount of compute resources allowed, and minimum amount of compute resources required, for each server pod. Please refer to the Kubernetes documentation on <code>Managing Compute Resources for Containers</code> for details.</td>
+<td>Resource requests and resource limits are not specified.</td>
+</tr>
+
+<tr>
 <td><code>rcuSchemaPrefix</code></td>
 <td>The schema prefix to use in the database, for example <code>SOA1</code>.  You may wish to make this the same as the domainUID in order to simplify matching domains to their RCU schemas.</td>
 <td><code>SOA1</code></td>
@@ -2856,7 +2864,7 @@ to create the domain home for other use cases. The generated domain YAML file co
 
 <p>Example:</p>
 
-<pre><code>kubectl label node 10.250.85.115 name=Test-Node
+<pre><code>kubectl label node TestNode name=Test-Node
 </code></pre>
 
 <p>Then you can edit the <code>domain.yaml</code>  file to add the <code>nodeSelector</code> to the <code>serverPod</code> definition, as shown below.</p>
@@ -2908,7 +2916,7 @@ spec:
   # If the domain home is in the image
   domainHomeInImage: false
   # The WebLogic Server Docker image that the Operator uses to start the domain
-  image: &quot;oracle/soa:12.2.1.3&quot;
+  image: &quot;container-registry.oracle.com/middleware/soasuite:12.2.1.3&quot;
   # imagePullPolicy defaults to &quot;Always&quot; if image version is :latest
   imagePullPolicy: &quot;IfNotPresent&quot;
   # Identify which Secret contains the credentials for pulling an image
@@ -3055,7 +3063,7 @@ Spec:
     Server Start State:           RUNNING
   Domain Home:                    /u01/oracle/user_projects/domains/soainfra
   Domain Home In Image:           false
-  Image:                          oracle/soa:12.2.1.3
+  Image:                          container-registry.oracle.com/middleware/soasuite:12.2.1.3
   Image Pull Policy:              IfNotPresent
   Include Server Out In Pod Log:  true
   Log Home:                       /u01/oracle/user_projects/domains/logs/soainfra
@@ -3099,11 +3107,11 @@ Status:
   Replicas:  2
   Servers:
     Cluster Name:  soa_cluster
-    Node Name:     10.250.85.115
+    Node Name:     TESTNODE
     Server Name:   soa_server2
     State:         UNKNOWN
     Cluster Name:  soa_cluster
-    Node Name:     10.250.85.115
+    Node Name:     TESTNODE
     Server Name:   soa_server1
     State:         UNKNOWN
     Server Name:   soa_server4
@@ -3114,7 +3122,7 @@ Status:
       Activation Time:  2019-07-04T14:16:34.780Z
       Overall Health:   ok
       Subsystems:
-    Node Name:    10.250.85.115
+    Node Name:    TESTNODE
     Server Name:  AdminServer
     State:        RUNNING
     Server Name:  soa_server5
@@ -3140,9 +3148,9 @@ before starting the Managed Servers.</p>
 
 <pre><code>$ kubectl get pods -n soans
 NAME                   READY     STATUS    RESTARTS   AGE
-soainfra-adminserver   1/1       Running   0          15h
-soainfra-soa-server1   1/1       Running   0          14h
-soainfra-soa-server2   1/1       Running   0          14h
+soainfra-adminserver   1/1       Running   0          1h
+soainfra-soa-server1   1/1       Running   0          1h
+soainfra-soa-server2   1/1       Running   0          1h
 </code></pre>
 
 <h4 id="verify-the-services">Verify the services</h4>
@@ -3156,14 +3164,14 @@ soainfra-soa-server2   1/1       Running   0          14h
 
 <pre><code>$ kubectl get services -n soans
 NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)              AGE
-soainfra-adminserver            ClusterIP   None             &lt;none&gt;        30012/TCP,7001/TCP   15h
-soainfra-adminserver-external   NodePort    10.99.147.149    &lt;none&gt;        30012:30012/TCP      15h
-soainfra-cluster-soa-cluster    ClusterIP   10.103.205.66    &lt;none&gt;        8001/TCP             15h
-soainfra-soa-server1            ClusterIP   None             &lt;none&gt;        8001/TCP             15h
-soainfra-soa-server2            ClusterIP   None             &lt;none&gt;        8001/TCP             15h
-soainfra-soa-server3            ClusterIP   10.109.227.78    &lt;none&gt;        8001/TCP             15h
-soainfra-soa-server4            ClusterIP   10.101.147.207   &lt;none&gt;        8001/TCP             15h
-soainfra-soa-server5            ClusterIP   10.105.14.5      &lt;none&gt;        8001/TCP             15h
+soainfra-adminserver            ClusterIP   None             &lt;none&gt;        30012/TCP,7001/TCP   1h
+soainfra-adminserver-external   NodePort    10.99.147.149    &lt;none&gt;        30012:30012/TCP      1h
+soainfra-cluster-soa-cluster    ClusterIP   10.103.205.66    &lt;none&gt;        8001/TCP             1h
+soainfra-soa-server1            ClusterIP   None             &lt;none&gt;        8001/TCP             1h
+soainfra-soa-server2            ClusterIP   None             &lt;none&gt;        8001/TCP             1h
+soainfra-soa-server3            ClusterIP   10.109.227.78    &lt;none&gt;        8001/TCP             1h
+soainfra-soa-server4            ClusterIP   10.101.147.207   &lt;none&gt;        8001/TCP             1h
+soainfra-soa-server5            ClusterIP   10.105.14.5      &lt;none&gt;        8001/TCP             1h
 </code></pre>
 
 <h4 id="delete-the-generated-domain-home">Delete the generated domain home</h4>
@@ -4820,19 +4828,19 @@ home that is generated using the <code>create-domain.sh</code> script. Do this b
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1572633076"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1572633076"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1572633076"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1572633076"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1572633076"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1572633076"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1573868776"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1573868776"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1573868776"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1573868776"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1573868776"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1573868776"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1572633076"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1572633076"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1572633076"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1573868776"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1573868776"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1573868776"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1572633076" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1572633076"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1573868776" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1573868776"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
