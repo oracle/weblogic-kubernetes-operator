@@ -6,7 +6,7 @@
     <description>Recent content on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 11 Oct 2019 17:20:00 -0500</lastBuildDate>
+    <lastBuildDate>Thu, 15 Aug 2019 13:30:04 -0400</lastBuildDate>
     
 	<atom:link href="/weblogic-kubernetes-operator/index.xml" rel="self" type="application/rss+xml" />
     
@@ -36,8 +36,7 @@ Why is it important to maintain the layering of images?</description>
       <pubDate>Fri, 08 Mar 2019 19:00:49 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/domain-security/image-protection/</guid>
-      <description>WebLogic domain in Docker image protection Oracle strongly recommends storing the Docker images that contain a WebLogic domain home as private in the Docker registry. In addition to any local registry, public Docker registries include Docker Hub and the Oracle Cloud Infrastructure Registry (OCIR).
- The WebLogic domain home that is part of a Docker image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, data source password).</description>
+      <description>WebLogic domain in Docker image protection Oracle strongly recommends storing the Docker images that contain a WebLogic domain home as private in the Docker registry. In addition to any local registry, public Docker registries include [Docker Hub](https://hub.docker.com/) and the [Oracle Cloud Infrastructure Registry](https://cloud.oracle.com/containers/registry) (OCIR).  The WebLogic domain home that is part of a Docker image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, data source password).</description>
     </item>
     
     <item>
@@ -129,7 +128,8 @@ You can have one or more operators in your Kubernetes cluster that manage one or
       
       <guid>/weblogic-kubernetes-operator/quickstart/introduction/</guid>
       <description>Use this Quick Start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production. These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please refer to the User guide.
-All Kubernetes distributions and managed services have small differences. In particular, the way that persistent storage and load balancers are managed varies significantly.</description>
+Important note for users of operator releases before 2.0  
+ Click here to expand &amp;lt;/span&amp;gt; &amp;lt;/div&amp;gt; &amp;lt;div class=&amp;quot;expand-content&amp;quot; style=&amp;quot;display: none;&amp;quot;&amp;gt;  If you have an older version of the operator installed on your cluster, for example, a 1.</description>
     </item>
     
     <item>
@@ -149,8 +149,7 @@ You might want to update the domain by:
       <pubDate>Fri, 08 Mar 2019 19:07:36 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/</guid>
-      <description>WebLogic T3 channels Oracle recommends not to expose any administrative, RMI, or T3 channels outside the Kubernetes cluster unless absolutely necessary. If exposing any of these channels, limit access using controls like security lists or set up a Bastion to provide access.
- When accessing T3/RMI based channels, the preferred approach is to kubectl exec into the Kubernetes pod and then run wlst or set up Bastion access and then run wlst from the Bastion host to connect to the Kubernetes cluster.</description>
+      <description>WebLogic T3 channels Oracle recommends not to expose any administrative, RMI, or T3 channels outside the Kubernetes cluster unless absolutely necessary. If exposing any of these channels, limit access using controls like security lists or set up a Bastion to provide access.  When accessing T3/RMI based channels, the preferred approach is to kubectl exec into the Kubernetes pod and then run wlst or set up Bastion access and then run wlst from the Bastion host to connect to the Kubernetes cluster.</description>
     </item>
     
     <item>
@@ -249,7 +248,7 @@ domain1-admin-server-external  This service will be in the same namespace as the
       <pubDate>Sat, 23 Feb 2019 17:36:29 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/encryption/</guid>
-      <description>Contents  WebLogic Kubernetes Operator introspector encryption Encryption of Kubernetes secrets Additional reading  WebLogic Kubernetes Operator introspector encryption The WebLogic Kubernetes Operator has an introspection job that handles WebLogic domain encryption. The introspection also addresses use of Kubernetes secrets for use with configuration overrides. For additional information on the configuration handling, see the configuration overrides documentation.
+      <description>Contents  WebLogic operator introspector encryption Encryption of Kubernetes secrets Additional reading  WebLogic operator introspector encryption The WebLogic operator has an introspection job that handles WebLogic domain encryption. The introspection also addresses use of Kubernetes secrets for use with configuration overrides. For additional information on the configuration handling, see the configuration overrides documentation.
 The introspection also creates a boot.properties file that is made available to the pods in the WebLogic domain.</description>
     </item>
     
@@ -292,7 +291,7 @@ You can access most of the REST services using GET, for example:
       
       <guid>/weblogic-kubernetes-operator/userguide/overview/database/</guid>
       <description>Run the Oracle database in Kubernetes If you wish to run the Oracle database inside your Kubernetes cluster, in order to place your state store, leasing tables, and such, in that database, then you can use this sample to install the database.
-The Oracle Database Docker images are only supported for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.</description>
+You must configure your database to store its DB files on persistent storage. Refer to your cloud vendor&amp;rsquo;s documentation for details of available storage providers and how to create a persistent volume and attach it to a pod.</description>
     </item>
     
     <item>
@@ -343,8 +342,8 @@ Human operators are normally responsible for starting and stopping environments,
       <pubDate>Sat, 23 Feb 2019 17:36:12 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/service-accounts/</guid>
-      <description>WebLogic Kubernetes Operator service account When the operator is installed, the Helm chart property, serviceAccount, can be specified where the value contains the name of the Kubernetes ServiceAccount in the namespace in which the operator will be installed. For more information about the Helm chart, see the operator Helm configuration values.
-The operator will use this ServiceAccount when calling the Kubernetes API server and the appropriate access controls will be created for this ServiceAccount by the operator&amp;rsquo;s Helm chart.</description>
+      <description>WebLogic operator service account When the WebLogic operator is installed, the Helm chart property, serviceAccount, can be specified where the value contains the name of the Kubernetes ServiceAccount in the namespace in which the WebLogic operator will be installed. For more information about the Helm chart, see the operator Helm configuration values.
+The WebLogic operator will use this ServiceAccount when calling the Kubernetes API server and the appropriate access controls will be created for this ServiceAccount by the operator&amp;rsquo;s Helm chart.</description>
     </item>
     
     <item>
@@ -434,7 +433,7 @@ $ helm upgrade \ --reuse-values \ --set &amp;quot;kubernetes.namespaces={traefik
       <pubDate>Sat, 23 Feb 2019 17:36:33 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/secrets/</guid>
-      <description>Contents  WebLogic domain credentials secret WebLogic domain image pull secret WebLogic Kubernetes Operator image pull secret WebLogic Kubernetes Operator configuration override secrets WebLogic Kubernetes Operator external REST interface secret WebLogic Kubernetes Operator internal REST interface secret  WebLogic domain credentials secret The credentials for the WebLogic domain are kept in a Kubernetes Secret where the name of the secret is specified using webLogicCredentialsSecret in the WebLogic Domain resource. Also, the domain credentials secret must be created in the namespace where the Domain will be running.</description>
+      <description>Contents  WebLogic domain credentials secret WebLogic domain image pull secret WebLogic operator image pull secret WebLogic operator configuration override secrets WebLogic operator external REST interface secret WebLogic operator internal REST interface secret  WebLogic domain credentials secret The credentials for the WebLogic domain are kept in a Kubernetes Secret where the name of the secret is specified using webLogicCredentialsSecret in the WebLogic Domain resource. Also, the domain credentials secret must be created in the namespace where the Domain will be running.</description>
     </item>
     
     <item>
@@ -456,16 +455,6 @@ $ helm upgrade \ --reuse-values \ --set &amp;quot;kubernetes.namespaces={traefik
       <description>For use in the following steps:
  Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character). Pick or create a directory to which you can write output.  Create a Kubernetes secret for the WebLogic administrator credentials containing the username and password for the domain, using the create-weblogic-credentials script:
 $ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \ -u &amp;lt;username&amp;gt; -p &amp;lt;password&amp;gt; -n sample-domain1-ns -d sample-domain1  The sample will create a secret named domainUID-weblogic-credentials where the domainUID is replaced with the value you provided.</description>
-    </item>
-    
-    <item>
-      <title>OpenShift</title>
-      <link>/weblogic-kubernetes-operator/security/openshift/</link>
-      <pubDate>Fri, 04 Oct 2019 08:08:08 -0500</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/security/openshift/</guid>
-      <description>OpenShift anyuid security context The Docker images that Oracle publishes default to the container user as oracle, which is UID 1000 and GID 1000. When running the Oracle images or layered images that retain the default user as oracle with OpenShift, the anyuid security context constraint is required to ensure proper access to the file system within the Docker image. This means that the administrator must:
- Ensure the anyuid security content is granted Ensure that WebLogic containers are annotated with openshift.</description>
     </item>
     
     <item>
@@ -518,36 +507,6 @@ git checkout master git pull origin master git checkout -b your-branch  Make you
       
       <guid>/weblogic-kubernetes-operator/developerguide/backwards-compatibility/</guid>
       <description>Starting with the 2.0.1 release, operator releases must be backward compatible with respect to the domain resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We will maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be maintained for one release after a replacement is available.</description>
-    </item>
-    
-    <item>
-      <title>Disabling Fast Application Notifications</title>
-      <link>/weblogic-kubernetes-operator/faq/fan/</link>
-      <pubDate>Fri, 11 Oct 2019 17:20:00 -0500</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/faq/fan/</guid>
-      <description>To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure). GRID is typically associated with (and required by) Oracle RAC databases but can also be used in other configurations. Oracle Autonomous Database-Serverless (ATP-S) does not provide GRID.
-When connecting to a database that does not have GRID, the only type of WebLogic Server data source that is supported is the Generic Data Sources. Multi Data Sources and Active GridLink data sources cannot be used because they work with RAC.</description>
-    </item>
-    
-    <item>
-      <title>Using an OCI Load Balancer</title>
-      <link>/weblogic-kubernetes-operator/faq/oci-lb/</link>
-      <pubDate>Wed, 25 Sep 2019 12:41:38 -0400</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/faq/oci-lb/</guid>
-      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), you can have OCI automatically provision load balancers for you by creating a Service of type LoadBalancer instead of (or in addition to) installing an ingress controller like Traefik or Voyager.
-OKE Kubernetes worker nodes normally do not have public IP addresses. This means that the NodePort services created by the operator are not usable, because they would expose ports on the worker node&amp;rsquo;s private IP addresses only, which are not reachable from outside the cluster.</description>
-    </item>
-    
-    <item>
-      <title>Managing Domain Namespaces</title>
-      <link>/weblogic-kubernetes-operator/faq/namespace-management/</link>
-      <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/faq/namespace-management/</guid>
-      <description>Each WebLogic operator deployment manages a number of Kubernetes namespaces (for information about setting domain namespaces, see Operator Helm configuration values). A number of Kubernetes resources must be present in a namespace before any WebLogic domain custom resources can be successfully deployed into it. Those Kubernetes resources are created either as part of the installation of the operator&amp;rsquo;s Helm chart, or created by the operator at runtime.
-This FAQ describes some considerations to be aware of when you manage the namespaces while the WebLogic operator is running.</description>
     </item>
     
     <item>
