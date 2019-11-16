@@ -1,6 +1,6 @@
 #!/bin/bash -x
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 function setup_shared_cluster {
   echo "Perform setup for running on shared cluster"
@@ -98,10 +98,11 @@ export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
 export BRANCH_NAME="${BRANCH_NAME:-$SHARED_CLUSTER_GIT_BRANCH}"
 export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
+export OPENSHIFT=${OPENSHIFT:-false}
 
 if [ "$JRF_ENABLED" = true ] ; then
   export FMWINFRA_IMAGE_URI=/middleware/fmw-infrastructure
-  export IMAGE_TAG_FMWINFRA=12.2.1.3
+  export IMAGE_TAG_FMWINFRA="${IMAGE_TAG_FMWINFRA:-12.2.1.3}"
   export DB_IMAGE_URI=/database/enterprise
   export IMAGE_NAME_ORACLEDB="${IMAGE_NAME_ORACLEDB:-`echo ${OCR_SERVER}``echo ${DB_IMAGE_URI}`}"
   export IMAGE_TAG_ORACLEDB="${IMAGE_TAG_ORACLEDB:-12.2.0.1-slim}"
@@ -140,11 +141,9 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
   
   clean_shared_cluster
     
-  if [ "$JRF_ENABLED" = true ] ; then
-	pull_tag_images_jrf
-  else
-  	export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
-	export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC  
+  
+  export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
+  export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC  
   
   	if [ "$IMAGE_PULL_POLICY_OPERATOR" = "Always" ]; then 
 		if [ -z "$REPO_REGISTRY" ] || [ -z "$REPO_USERNAME" ] || [ -z "$REPO_PASSWORD" ] || [ -z "$REPO_EMAIL" ]; then
@@ -174,7 +173,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	fi
     create_image_pull_secret_wl
 	
-  fi
+  #fi
   setup_shared_cluster
   docker images
     

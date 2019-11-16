@@ -18,19 +18,11 @@
 #    * The kubernetes persistent volume claim must already be created
 #
 
-echo ""
-echo "WARNING"
-echo "-------"
-echo "Oracle SOA Suite is currently only supported for non-production use in Docker and Kubernetes. "
-echo "The information provided in this sample is a preview for early adopters who wish to experiment "
-echo "with Oracle SOA Suite in Kubernetes before it is supported for production use."
-echo ""
-
 # Initialize
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/../common/utility.sh
-source ${scriptDir}/../common/validate.sh
+source ${scriptDir}/../../common/utility.sh
+source ${scriptDir}/../../common/validate.sh
 
 function usage {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
@@ -126,7 +118,7 @@ function initialize {
     validationError "The template file ${deleteJobInput} for deleting a WebLogic domain was not found"
   fi
 
-  dcrInput="${scriptDir}/../common/domain-template.yaml"
+  dcrInput="${scriptDir}/../../common/domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain resource was not found"
   fi

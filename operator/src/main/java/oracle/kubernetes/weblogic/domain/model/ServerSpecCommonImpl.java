@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
@@ -128,6 +127,11 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
     }
   }
 
+  @Override
+  public boolean isShuttingDown() {
+    return !shouldStart(0);
+  }
+
   boolean isStartAdminServerOnly() {
     return domainSpec.isStartAdminServerOnly();
   }
@@ -190,6 +194,11 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   @Override
   public String getNodeName() {
     return server.getNodeName();
+  }
+
+  @Override
+  public String getServiceAccountName() {
+    return server.getServiceAccountName();
   }
 
   @Override

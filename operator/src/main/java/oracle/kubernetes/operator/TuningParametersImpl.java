@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -34,9 +33,8 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
       ScheduledExecutorService executorService, String mountPoint) throws IOException {
     if (INSTANCE == null) {
       INSTANCE = new TuningParametersImpl(executorService, mountPoint);
-      return INSTANCE;
     }
-    throw new IllegalStateException();
+    return INSTANCE;
   }
 
   public static synchronized TuningParameters getInstance() {

@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -98,7 +97,6 @@ public class DomainProcessorTest {
     mementos.add(UnitTestHash.install());
 
     domainConfigurator = DomainConfiguratorFactory.forDomain(domain);
-    domain.setStatus(new DomainStatus());
     testSupport.defineResources(domain);
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig());
   }
@@ -132,6 +130,20 @@ public class DomainProcessorTest {
     processor.makeRightDomainPresence(info, true, false, false);
 
     assertThat((int) getServerServices().count(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS));
+    assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
+  }
+
+  @Test
+  public void whenDomainScaledDown_withPreCreateServerService_doesNotRemoveServices() {
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(true);
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.makeRightDomainPresence(info, true, false, false);
+
+    assertThat((int) getServerServices().count(), equalTo(MAX_SERVERS + NUM_ADMIN_SERVERS));
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
   }
 

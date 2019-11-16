@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -55,5 +54,10 @@ public abstract class TuningParametersStub implements TuningParameters {
   @Override
   public String get(Object key) {
     return namedParameters.get(key);
+  }
+
+  @Override
+  public String put(String key, String value) {
+    return namedParameters.put(key, value);
   }
 }

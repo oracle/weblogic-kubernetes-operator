@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
@@ -47,16 +46,16 @@ public class ItSessionMigration extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
-
+  
       // Create operator1
       if (operator == null) {
         logger.info("Creating Operator & waiting for the script to complete execution");
         operator = TestUtils.createOperator(OPERATOR1_YAML);
       }
-
+  
       // create domain
       if (domain == null) {
         logger.info("Creating WLS Domain & waiting for the script to complete execution");
@@ -65,7 +64,7 @@ public class ItSessionMigration extends BaseTest {
         domain = TestUtils.createDomain(wlstDomainMap);
         domain.verifyDomainCreated();
       }
-
+  
       httpHeaderFile = BaseTest.getResultDir() + "/headers";
       httpAttrMap = new HashMap<String, String>();
       httpAttrMap.put("sessioncreatetime", "(.*)sessioncreatetime>(.*)</sessioncreatetime(.*)");
@@ -73,14 +72,15 @@ public class ItSessionMigration extends BaseTest {
       httpAttrMap.put("primary", "(.*)primary>(.*)</primary(.*)");
       httpAttrMap.put("secondary", "(.*)secondary>(.*)</secondary(.*)");
       httpAttrMap.put("count", "(.*)countattribute>(.*)</countattribute(.*)");
-
+  
       // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-
+  
       // Wait some time for deployment gets ready
       Thread.sleep(10 * 1000);
     }
+    
   }
 
   /**
@@ -90,14 +90,14 @@ public class ItSessionMigration extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (FULLTEST) {
       logger.info("++++++++++++++++++++++++++++++++++");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
-
+  
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-
-      logger.info("SUCCESS");
+  
+      logger.info("SUCCESS");    
     }
   }
 
@@ -109,7 +109,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @Test
   public void testRepickPrimary() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -162,7 +162,7 @@ public class ItSessionMigration extends BaseTest {
    */
   @Test
   public void testHttpSessionMigr() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(FULLTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 

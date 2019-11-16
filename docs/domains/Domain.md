@@ -20,6 +20,7 @@ DomainSpec is a description of a domain.
 | `clusters` | array of [Cluster](#cluster) | Configuration for the clusters. |
 | `configOverrides` | string | The name of the config map for optional WebLogic configuration overrides. |
 | `configOverrideSecrets` | array of string | A list of names of the secrets for optional WebLogic configuration overrides. |
+| `dataHome` | string | An optional, in-pod location for data storage of default and custom file stores. If dataHome is not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage directories are determined from the WebLogic domain home configuration. |
 | `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false. Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true. |
 | `domainHomeInImage` | Boolean | True if this domain's home is defined in the Docker image for the domain. Defaults to true. |
 | `domainUID` | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name. |
@@ -125,6 +126,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | `restartPolicy` | string | Restart policy for all containers within the pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy |
 | `runtimeClassName` | string | RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, the "legacy" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an alpha feature and may change in the future. |
 | `schedulerName` | string | If specified, the pod will be dispatched by specified scheduler. If not specified, the pod will be dispatched by default scheduler. |
+| `serviceAccountName` | string | Name of the ServiceAccount to be used to run this pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the pod is created. |
 | `shutdown` | [Shutdown](#shutdown) | Configures how the operator should shutdown the server instance. |
 | `tolerations` | array of [Toleration](k8s1.13.5.md#toleration) | If specified, the pod's tolerations. |
 | `volumeMounts` | array of [Volume Mount](k8s1.13.5.md#volume-mount) | Additional volume mounts for the server pod. |
