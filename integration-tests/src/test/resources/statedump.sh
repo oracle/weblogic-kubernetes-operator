@@ -1,6 +1,6 @@
 #!/bin/bash
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
  
 # 
@@ -25,6 +25,13 @@ function state_dump {
         return
      fi
 
+  local kubectlcmd
+  if ["$OPENSHIFT" = "true"]; then
+    kubectlcmd="oc"
+  else
+    kubectlcmd="kubectl"
+  fi
+
   local DUMP_DIR=$RESULT_DIR/state-dump-logs
   echo Starting state dump.   Dumping state to directory ${DUMP_DIR}
 
@@ -39,27 +46,27 @@ function state_dump {
   #   get domains is in its own command since this can fail if domain CRD undefined
 
   echo Dumping kubectl gets to kgetmany.out and kgetdomains.out in ${DUMP_DIR}
-  kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true > ${DUMP_DIR}/kgetmany.out
-  kubectl get domains --show-labels=true --all-namespaces=true > ${DUMP_DIR}/kgetdomains.out
+  $kubectlcmd get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true > ${DUMP_DIR}/kgetmany.out
+  $kubectlcmd get domains --show-labels=true --all-namespaces=true > ${DUMP_DIR}/kgetdomains.out
 
   # Get all pod logs/describes and redirect/copy to files 
 
   set +x
-  local namespaces="`kubectl get namespaces | egrep -v -e "(STATUS|kube)" | awk '{ print $1 }'`"
+  local namespaces="`$kubectlcmd get namespaces | egrep -v -e "(STATUS|kube)" | awk '{ print $1 }'`"
   set -x
 
   local namespace
   echo "Copying logs and describes to pod-log.NAMESPACE.PODNAME and pod-describe.NAMESPACE.PODNAME in ${DUMP_DIR}"
   for namespace in $namespaces; do
     set +x
-    local pods="`kubectl get pods -n $namespace --ignore-not-found | egrep -v -e "(STATUS)" | awk '{print $1}'`"
+    local pods="`$kubectlcmd get pods -n $namespace --ignore-not-found | egrep -v -e "(STATUS)" | awk '{print $1}'`"
     set -x
     local pod
     for pod in $pods; do
       local logfile=${DUMP_DIR}/pod-log.${namespace}.${pod}
       local descfile=${DUMP_DIR}/pod-describe.${namespace}.${pod}
-      kubectl log $pod -n $namespace > $logfile
-      kubectl describe pod $pod -n $namespace > $descfile
+      $kubectlcmd log $pod -n $namespace > $logfile
+      $kubectlcmd describe pod $pod -n $namespace > $descfile
     done
   done
 
@@ -72,21 +79,34 @@ function state_dump {
   local kobj
   local fname
   for namespace in $namespaces; do
-    for ktype in pod job deploy rs service pvc ingress cm secret domain; do
-      for kobj in `kubectl get $ktype -n $namespace -o=jsonpath='{range .items[*]}{" "}{.metadata.name}{end}'`; do
+    for ktype in pod job deploy rs service pvc ingress cm domain; do
+      for kobj in `$kubectlcmd get $ktype -n $namespace -o=jsonpath='{range .items[*]}{" "}{.metadata.name}{end}'`; do
         fname="${DUMP_DIR}/kubectl.describe.$ktype.$kobj.ns-$namespace"
         echo "Generating $fname"
-        kubectl describe $ktype $kobj -n $namespace > $fname
+        $kubectlcmd describe $ktype $kobj -n $namespace > $fname
       done
     done
   done
 
+  # Getting  and describing secrets hangs for some of the tests in openshift. So, moving it out to its own loop for other platforms
+  if [ -z "${OPENSHIFT}" ]; then
+    for namespace in $namespaces; do
+      for ktype in secret; do
+        for kobj in `$kubectlcmd get $ktype -n $namespace -o=jsonpath='{range .items[*]}{" "}{.metadata.name}{end}'`; do
+          fname="${DUMP_DIR}/kubectl.describe.$ktype.$kobj.ns-$namespace"
+          echo "Generating $fname"
+          $kubectlcmd describe $ktype $kobj -n $namespace > $fname
+        done
+      done
+    done
+  fi
+
   # treat pv differently as a pv is not namespaced:
   for ktype in pv; do
-    for kobj in `kubectl get $ktype -o=jsonpath='{range .items[*]}{" "}{.metadata.name}{end}'`; do
+    for kobj in `$kubectlcmd get $ktype -o=jsonpath='{range .items[*]}{" "}{.metadata.name}{end}'`; do
       fname="${DUMP_DIR}/kubectl.describe.$ktype.$kobj"
       echo "Generating $fname"
-      kubectl describe $ktype $kobj > $fname
+      $kubectlcmd describe $ktype $kobj > $fname
     done
   done
   set -x

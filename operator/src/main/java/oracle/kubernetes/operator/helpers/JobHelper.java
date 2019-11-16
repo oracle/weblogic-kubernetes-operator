@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -167,11 +166,9 @@ public class JobHelper {
   }
 
   static class DomainIntrospectorJobStepContext extends JobStepContext {
-    private final DomainPresenceInfo info;
 
-    DomainIntrospectorJobStepContext(DomainPresenceInfo info, Packet packet) {
+    DomainIntrospectorJobStepContext(Packet packet) {
       super(packet);
-      this.info = info;
 
       init();
     }
@@ -195,10 +192,6 @@ public class JobHelper {
     @Override
     String getJobName() {
       return LegalNames.toJobIntrospectorName(getDomainUid());
-    }
-
-    Domain getDomain() {
-      return info.getDomain();
     }
 
     @Override
@@ -225,6 +218,10 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());
       addEnvVar(vars, IntrospectorJobEnvVars.INTROSPECT_HOME, getIntrospectHome());
       addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
+      String dataHome = getDataHome();
+      if (dataHome != null && !dataHome.isEmpty()) {
+        addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
+      }
 
       return vars;
     }
@@ -240,7 +237,7 @@ public class JobHelper {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       if (runIntrospector(packet, info)) {
-        JobStepContext context = new DomainIntrospectorJobStepContext(info, packet);
+        JobStepContext context = new DomainIntrospectorJobStepContext(packet);
 
         packet.putIfAbsent(START_TIME, System.currentTimeMillis());
 
@@ -408,8 +405,8 @@ public class JobHelper {
     }
 
     private void updateStatus(DomainPresenceInfo domainPresenceInfo) {
-      DomainStatusPatch.updateDomainStatus(
-            domainPresenceInfo.getDomain(), "ErrIntrospector", onSeparateLines(severeStatuses));
+      DomainStatusPatch.updateSynchronously(
+            domainPresenceInfo.getDomain(), DomainStatusPatch.ERR_INTROSPECTOR, onSeparateLines(severeStatuses));
     }
 
     private String onSeparateLines(List<String> lines) {

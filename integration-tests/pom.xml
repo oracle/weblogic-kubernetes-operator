@@ -1,6 +1,6 @@
-<!-- Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights
+<!-- Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights
 	reserved. -->
-<!-- Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl. -->
+<!-- Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -8,7 +8,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>2.3.0</version>
+        <version>2.4.0</version>
     </parent>
 
     <artifactId>operator-integration-tests</artifactId>
@@ -248,6 +248,11 @@
                             ${includes-failsafe}
                         </include>
                     </includes>
+                    <excludes>
+                        <exclude>
+                            ${excludes-failsafe}
+                        </exclude>
+                    </excludes>
                 </configuration>
 
                 <executions>
@@ -275,10 +280,10 @@
 
     <profiles>
         <profile>
-            <id>java-integration-tests</id>
+            <id>wls-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/It*</includes-failsafe>
+                <excludes-failsafe>**/*Jrf*</excludes-failsafe>
                 <jrf_enabled>false</jrf_enabled>
             </properties>
         </profile>
@@ -286,7 +291,7 @@
             <id>jrf-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/JrfInOperator*Test.java</includes-failsafe>
+                <includes-failsafe>**/ItJrfDomain*</includes-failsafe>
                 <jrf_enabled>true</jrf_enabled>
             </properties>
         </profile>
@@ -303,10 +308,10 @@
             </properties>
         </profile>
         <profile>
-            <id>full-integration-tests</id>
+            <id>wls-jrf-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/*.java</includes-failsafe>
+                <includes-failsafe>**/It*</includes-failsafe>
                 <jrf_enabled>true</jrf_enabled>
             </properties>
         </profile>

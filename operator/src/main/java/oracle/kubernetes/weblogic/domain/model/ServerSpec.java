@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
@@ -67,6 +66,13 @@ public interface ServerSpec {
    * @return whether to start the server
    */
   boolean shouldStart(int currentReplicas);
+
+  /**
+   * Returns true if the server is shutting down, or not configured to be started.
+   *
+   * @return whether the server is shutting down, or not configured to be started.
+   */
+  boolean isShuttingDown();
 
   /**
    * Returns the volume mounts to be defined for this server.
@@ -150,6 +156,8 @@ public interface ServerSpec {
   String getRuntimeClassName();
 
   String getNodeName();
+
+  String getServiceAccountName();
 
   String getSchedulerName();
 

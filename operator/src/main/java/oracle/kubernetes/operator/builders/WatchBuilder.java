@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
 
@@ -154,12 +153,6 @@ public class WatchBuilder {
     return this;
   }
 
-  @SuppressWarnings("SameParameterValue")
-  WatchBuilder withIncludeUninitialized(Boolean includeUninitialized) {
-    callParams.setIncludeUninitialized(includeUninitialized);
-    return this;
-  }
-
   public WatchBuilder withLabelSelector(String labelSelector) {
     callParams.setLabelSelector(labelSelector);
     return this;
@@ -232,7 +225,6 @@ public class WatchBuilder {
         return new CoreV1Api(client)
             .listNamespacedServiceCall(
                 namespace,
-                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
@@ -265,7 +257,6 @@ public class WatchBuilder {
         return new CoreV1Api(client)
             .listNamespacedPodCall(
                 namespace,
-                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
@@ -298,7 +289,6 @@ public class WatchBuilder {
         return new BatchV1Api(client)
             .listNamespacedJobCall(
                 namespace,
-                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
@@ -331,7 +321,6 @@ public class WatchBuilder {
         return new CoreV1Api(client)
             .listNamespacedEventCall(
                 namespace,
-                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
@@ -364,7 +353,6 @@ public class WatchBuilder {
         return new WeblogicApi(client)
             .listNamespacedDomainCall(
                 namespace,
-                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
@@ -397,7 +385,6 @@ public class WatchBuilder {
         return new CoreV1Api(client)
             .listNamespacedConfigMapCall(
                 namespace,
-                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),

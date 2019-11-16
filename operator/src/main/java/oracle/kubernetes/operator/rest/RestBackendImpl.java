@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
 
@@ -22,6 +21,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1TokenReviewStatus;
 import io.kubernetes.client.models.V1UserInfo;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
@@ -252,7 +252,8 @@ public class RestBackendImpl implements RestBackend {
 
       new CallBuilder()
           .patchDomain(
-              domain.getDomainUid(), domain.getMetadata().getNamespace(), patchBuilder.build());
+              domain.getDomainUid(), domain.getMetadata().getNamespace(),
+              new V1Patch(patchBuilder.build().toString()));
     } catch (ApiException e) {
       throw handleApiException(e);
     }
