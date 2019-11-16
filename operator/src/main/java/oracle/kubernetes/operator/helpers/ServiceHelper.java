@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -611,7 +610,14 @@ public class ServiceHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
-        return onFailure(getConflictStep(), packet, callResponse);
+        if (DomainStatusPatch.isUnprocessableEntityFailure(callResponse))
+          return updateDomainStatus(packet, callResponse);
+        else
+          return onFailure(getConflictStep(), packet, callResponse);
+      }
+
+      private NextAction updateDomainStatus(Packet packet, CallResponse<V1Service> callResponse) {
+        return doNext(DomainStatusPatch.createStep(getDomain(), callResponse.getE()), packet);
       }
 
       @Override

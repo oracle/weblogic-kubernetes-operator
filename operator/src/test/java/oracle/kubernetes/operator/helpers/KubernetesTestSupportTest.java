@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -13,6 +12,7 @@ import javax.json.JsonPatchBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Event;
 import io.kubernetes.client.models.V1EventList;
@@ -245,7 +245,8 @@ public class KubernetesTestSupportTest {
 
     TestResponseStep<V1Pod> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
-        new CallBuilder().patchPodAsync("pod1", "ns1", patchBuilder.build(), responseStep));
+        new CallBuilder().patchPodAsync("pod1", "ns1",
+            new V1Patch(patchBuilder.build().toString()), responseStep));
 
     V1Pod pod2 = (V1Pod) testSupport.getResources(POD).stream().findFirst().orElse(pod1);
     assertThat(pod2.getMetadata().getLabels(), hasEntry("k1", "v2"));
@@ -260,7 +261,8 @@ public class KubernetesTestSupportTest {
 
     TestResponseStep<V1Pod> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
-        new CallBuilder().patchPodAsync("pod1", "ns1", patchBuilder.build(), responseStep));
+        new CallBuilder().patchPodAsync("pod1", "ns1",
+            new V1Patch(patchBuilder.build().toString()), responseStep));
 
     V1Pod pod2 = (V1Pod) testSupport.getResources(POD).stream().findFirst().orElse(pod1);
     assertThat(pod2.getMetadata().getLabels(), hasEntry("k1", "v2"));

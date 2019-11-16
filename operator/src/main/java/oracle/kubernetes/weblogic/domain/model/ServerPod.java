@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
@@ -23,6 +22,7 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1NodeAffinity;
 import io.kubernetes.client.models.V1NodeSelector;
+import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.models.V1PodAffinity;
 import io.kubernetes.client.models.V1PodAntiAffinity;
 import io.kubernetes.client.models.V1PodReadinessGate;
@@ -122,6 +122,10 @@ class ServerPod extends KubernetesResource {
 
   @Description("If specified, the pod's tolerations.")
   private List<V1Toleration> tolerations = new ArrayList<>();
+
+  @Description("Name of the ServiceAccount to be used to run this pod. If it is not set, default "
+      + "ServiceAccount will be used. The ServiceAccount has to exist at the time the pod is created.")
+  private String serviceAccountName = null;
 
   /**
    * Defines the requirements and limits for the pod server.
@@ -430,6 +434,9 @@ class ServerPod extends KubernetesResource {
     if (nodeName == null) {
       nodeName = serverPod1.nodeName;
     }
+    if (serviceAccountName == null) {
+      serviceAccountName = serverPod1.serviceAccountName;
+    }
     if (schedulerName == null) {
       schedulerName = serverPod1.schedulerName;
     }
@@ -602,6 +609,13 @@ class ServerPod extends KubernetesResource {
     volumes.add(var);
   }
 
+  void addAdditionalPVClaimVolume(String name, String claimName) {
+    addAdditionalVolume(
+        new V1Volume().name(name).persistentVolumeClaim(
+            new V1PersistentVolumeClaimVolumeSource().claimName(claimName))
+    );
+  }
+
   void addAdditionalVolumeMount(String name, String path) {
     addAdditionalVolumeMount(new V1VolumeMount().name(name).mountPath(path));
   }
@@ -630,12 +644,12 @@ class ServerPod extends KubernetesResource {
     return priorityClassName;
   }
 
-  void setPriorityClassName(String priorityClassName) {
-    this.priorityClassName = priorityClassName;
-  }
-
   List<V1PodReadinessGate> getReadinessGates() {
     return readinessGates;
+  }
+
+  void setPriorityClassName(String priorityClassName) {
+    this.priorityClassName = priorityClassName;
   }
 
   void setReadinessGates(List<V1PodReadinessGate> readinessGates) {
@@ -678,6 +692,14 @@ class ServerPod extends KubernetesResource {
     this.schedulerName = schedulerName;
   }
 
+  String getServiceAccountName() {
+    return serviceAccountName;
+  }
+
+  void setServiceAccountName(String serviceAccountName) {
+    this.serviceAccountName = serviceAccountName;
+  }
+
   List<V1Toleration> getTolerations() {
     return tolerations;
   }
@@ -714,6 +736,7 @@ class ServerPod extends KubernetesResource {
         .append("nodeName", nodeName)
         .append("schedulerName", schedulerName)
         .append("tolerations", tolerations)
+        .append("serviceAccountName", serviceAccountName)
         .toString();
   }
 
@@ -757,6 +780,7 @@ class ServerPod extends KubernetesResource {
         .append(nodeName, that.nodeName)
         .append(schedulerName, that.schedulerName)
         .append(tolerations, that.tolerations)
+        .append(serviceAccountName, that.serviceAccountName)
         .isEquals();
   }
 
@@ -784,6 +808,7 @@ class ServerPod extends KubernetesResource {
         .append(nodeName)
         .append(schedulerName)
         .append(tolerations)
+        .append(serviceAccountName)
         .toHashCode();
   }
 }

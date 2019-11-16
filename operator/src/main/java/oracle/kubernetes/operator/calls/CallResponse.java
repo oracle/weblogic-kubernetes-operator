@@ -1,11 +1,11 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.kubernetes.client.ApiException;
 
@@ -13,7 +13,24 @@ public final class CallResponse<T> {
   private final T result;
   private final ApiException ex;
   private final int statusCode;
-  private final Map<String, List<String>> responseHeaders;
+  private Map<String, List<String>> responseHeaders;
+
+  public static <R> CallResponse createSuccess(R result, int statusCode) {
+    return new CallResponse<>(result, null, statusCode);
+  }
+
+  public static CallResponse createFailure(ApiException ex, int statusCode) {
+    return new CallResponse<Void>(null, ex, statusCode);
+  }
+
+  public static <R> CallResponse<R> createNull() {
+    return new CallResponse<>(null, null, 0);
+  }
+
+  CallResponse<T> withResponseHeaders(Map<String, List<String>> responseHeaders) {
+    this.responseHeaders = responseHeaders;
+    return this;
+  }
 
   /**
    * Constructor for CallResponse.
@@ -21,14 +38,11 @@ public final class CallResponse<T> {
    * @param result Result
    * @param ex API exception
    * @param statusCode Status code
-   * @param responseHeaders Response headers
    */
-  public CallResponse(
-      T result, ApiException ex, int statusCode, Map<String, List<String>> responseHeaders) {
+  private CallResponse(T result, ApiException ex, int statusCode) {
     this.result = result;
     this.ex = ex;
     this.statusCode = statusCode;
-    this.responseHeaders = responseHeaders;
   }
 
   public boolean isFailure() {
@@ -43,11 +57,15 @@ public final class CallResponse<T> {
     return ex;
   }
 
+  public String getExceptionString() {
+    return Optional.ofNullable(ex).map(Throwable::toString).orElse("");
+  }
+
   public int getStatusCode() {
     return statusCode;
   }
 
-  public Map<String, List<String>> getResponseHeaders() {
-    return responseHeaders;
+  public String getHeadersString() {
+    return Optional.ofNullable(responseHeaders).map(Object::toString).orElse("");
   }
 }

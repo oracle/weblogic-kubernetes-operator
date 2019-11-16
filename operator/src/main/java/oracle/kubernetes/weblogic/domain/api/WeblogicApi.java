@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.api;
 
@@ -53,8 +52,6 @@ public class WeblogicApi {
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
    *     unrecognized dryRun directive will result in an error response and no further processing of
@@ -67,7 +64,6 @@ public class WeblogicApi {
   public com.squareup.okhttp.Call createNamespacedDomainCall(
       String namespace,
       Domain body,
-      Boolean includeUninitialized,
       String pretty,
       String dryRun,
       final ProgressResponseBody.ProgressListener progressListener,
@@ -87,9 +83,6 @@ public class WeblogicApi {
 
     final List<Pair> localVarQueryParams = new ArrayList<Pair>();
     final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (includeUninitialized != null)
-      localVarQueryParams.addAll(
-          apiClient.parameterToPair("includeUninitialized", includeUninitialized));
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
     if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
 
@@ -142,7 +135,6 @@ public class WeblogicApi {
   private com.squareup.okhttp.Call createNamespacedDomainValidateBeforeCall(
       String namespace,
       Domain body,
-      Boolean includeUninitialized,
       String pretty,
       String dryRun,
       final ProgressResponseBody.ProgressListener progressListener,
@@ -165,7 +157,6 @@ public class WeblogicApi {
         createNamespacedDomainCall(
             namespace,
             body,
-            includeUninitialized,
             pretty,
             dryRun,
             progressListener,
@@ -178,8 +169,6 @@ public class WeblogicApi {
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
    *     unrecognized dryRun directive will result in an error response and no further processing of
@@ -189,10 +178,10 @@ public class WeblogicApi {
    *     response body
    */
   public Domain createNamespacedDomain(
-      String namespace, Domain body, Boolean includeUninitialized, String pretty, String dryRun)
+      String namespace, Domain body, String pretty, String dryRun)
       throws ApiException {
     ApiResponse<Domain> resp =
-        createNamespacedDomainWithHttpInfo(namespace, body, includeUninitialized, pretty, dryRun);
+        createNamespacedDomainWithHttpInfo(namespace, body, pretty, dryRun);
     return resp.getData();
   }
 
@@ -201,8 +190,6 @@ public class WeblogicApi {
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
    *     unrecognized dryRun directive will result in an error response and no further processing of
@@ -212,11 +199,11 @@ public class WeblogicApi {
    *     response body
    */
   public ApiResponse<Domain> createNamespacedDomainWithHttpInfo(
-      String namespace, Domain body, Boolean includeUninitialized, String pretty, String dryRun)
+      String namespace, Domain body, String pretty, String dryRun)
       throws ApiException {
     com.squareup.okhttp.Call call =
         createNamespacedDomainValidateBeforeCall(
-            namespace, body, includeUninitialized, pretty, dryRun, null, null);
+            namespace, body, pretty, dryRun, null, null);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     return apiClient.execute(call, localVarReturnType);
   }
@@ -226,8 +213,6 @@ public class WeblogicApi {
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
    *     unrecognized dryRun directive will result in an error response and no further processing of
@@ -239,7 +224,6 @@ public class WeblogicApi {
   public com.squareup.okhttp.Call createNamespacedDomainAsync(
       String namespace,
       Domain body,
-      Boolean includeUninitialized,
       String pretty,
       String dryRun,
       final ApiCallback<Domain> callback)
@@ -270,7 +254,6 @@ public class WeblogicApi {
         createNamespacedDomainValidateBeforeCall(
             namespace,
             body,
-            includeUninitialized,
             pretty,
             dryRun,
             progressListener,
@@ -284,8 +267,6 @@ public class WeblogicApi {
    * Build call for deleteCollectionNamespacedDomain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param ctue The continue option should be set when retrieving more results from the server.
    *     Since this value is server defined, clients may only use the continue value from a previous
@@ -339,7 +320,6 @@ public class WeblogicApi {
    */
   public com.squareup.okhttp.Call deleteCollectionNamespacedDomainCall(
       String namespace,
-      Boolean includeUninitialized,
       String pretty,
       String ctue,
       String fieldSelector,
@@ -365,9 +345,6 @@ public class WeblogicApi {
 
     final List<Pair> localVarQueryParams = new ArrayList<Pair>();
     final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (includeUninitialized != null)
-      localVarQueryParams.addAll(
-          apiClient.parameterToPair("includeUninitialized", includeUninitialized));
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
     if (ctue != null) localVarQueryParams.addAll(apiClient.parameterToPair("continue", ctue));
     if (fieldSelector != null)
@@ -429,7 +406,6 @@ public class WeblogicApi {
   @SuppressWarnings("rawtypes")
   private com.squareup.okhttp.Call deleteCollectionNamespacedDomainValidateBeforeCall(
       String namespace,
-      Boolean includeUninitialized,
       String pretty,
       String ctue,
       String fieldSelector,
@@ -451,7 +427,6 @@ public class WeblogicApi {
     com.squareup.okhttp.Call call =
         deleteCollectionNamespacedDomainCall(
             namespace,
-            includeUninitialized,
             pretty,
             ctue,
             fieldSelector,
@@ -469,8 +444,6 @@ public class WeblogicApi {
    * delete collection of Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param ctue The continue option should be set when retrieving more results from the server.
    *     Since this value is server defined, clients may only use the continue value from a previous
@@ -523,7 +496,6 @@ public class WeblogicApi {
    */
   public V1Status deleteCollectionNamespacedDomain(
       String namespace,
-      Boolean includeUninitialized,
       String pretty,
       String ctue,
       String fieldSelector,
@@ -536,7 +508,6 @@ public class WeblogicApi {
     ApiResponse<V1Status> resp =
         deleteCollectionNamespacedDomainWithHttpInfo(
             namespace,
-            includeUninitialized,
             pretty,
             ctue,
             fieldSelector,
@@ -552,8 +523,6 @@ public class WeblogicApi {
    * delete collection of Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param ctue The continue option should be set when retrieving more results from the server.
    *     Since this value is server defined, clients may only use the continue value from a previous
@@ -606,7 +575,6 @@ public class WeblogicApi {
    */
   public ApiResponse<V1Status> deleteCollectionNamespacedDomainWithHttpInfo(
       String namespace,
-      Boolean includeUninitialized,
       String pretty,
       String ctue,
       String fieldSelector,
@@ -619,7 +587,6 @@ public class WeblogicApi {
     com.squareup.okhttp.Call call =
         deleteCollectionNamespacedDomainValidateBeforeCall(
             namespace,
-            includeUninitialized,
             pretty,
             ctue,
             fieldSelector,
@@ -638,8 +605,6 @@ public class WeblogicApi {
    * (asynchronously) delete collection of Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param ctue The continue option should be set when retrieving more results from the server.
    *     Since this value is server defined, clients may only use the continue value from a previous
@@ -692,7 +657,6 @@ public class WeblogicApi {
    */
   public com.squareup.okhttp.Call deleteCollectionNamespacedDomainAsync(
       String namespace,
-      Boolean includeUninitialized,
       String pretty,
       String ctue,
       String fieldSelector,
@@ -728,7 +692,6 @@ public class WeblogicApi {
     com.squareup.okhttp.Call call =
         deleteCollectionNamespacedDomainValidateBeforeCall(
             namespace,
-            includeUninitialized,
             pretty,
             ctue,
             fieldSelector,
@@ -1094,8 +1057,6 @@ public class WeblogicApi {
    * Build call for listNamespacedDomain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param ctue The continue option should be set when retrieving more results from the server.
    *     Since this value is server defined, clients may only use the continue value from a previous
@@ -1149,7 +1110,6 @@ public class WeblogicApi {
    */
   public com.squareup.okhttp.Call listNamespacedDomainCall(
       String namespace,
-      Boolean includeUninitialized,
       String pretty,
       String ctue,
       String fieldSelector,
@@ -1175,9 +1135,6 @@ public class WeblogicApi {
 
     final List<Pair> localVarQueryParams = new ArrayList<Pair>();
     final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (includeUninitialized != null)
-      localVarQueryParams.addAll(
-          apiClient.parameterToPair("includeUninitialized", includeUninitialized));
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
     if (ctue != null) localVarQueryParams.addAll(apiClient.parameterToPair("continue", ctue));
     if (fieldSelector != null)
@@ -1243,7 +1200,6 @@ public class WeblogicApi {
   @SuppressWarnings("rawtypes")
   private com.squareup.okhttp.Call listNamespacedDomainValidateBeforeCall(
       String namespace,
-      Boolean includeUninitialized,
       String pretty,
       String ctue,
       String fieldSelector,
@@ -1265,7 +1221,6 @@ public class WeblogicApi {
     com.squareup.okhttp.Call call =
         listNamespacedDomainCall(
             namespace,
-            includeUninitialized,
             pretty,
             ctue,
             fieldSelector,
@@ -1283,8 +1238,6 @@ public class WeblogicApi {
    * list or watch objects of kind Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param ctue The continue option should be set when retrieving more results from the server.
    *     Since this value is server defined, clients may only use the continue value from a previous
@@ -1337,7 +1290,6 @@ public class WeblogicApi {
    */
   public DomainList listNamespacedDomain(
       String namespace,
-      Boolean includeUninitialized,
       String pretty,
       String ctue,
       String fieldSelector,
@@ -1350,7 +1302,6 @@ public class WeblogicApi {
     ApiResponse<DomainList> resp =
         listNamespacedDomainWithHttpInfo(
             namespace,
-            includeUninitialized,
             pretty,
             ctue,
             fieldSelector,
@@ -1366,8 +1317,6 @@ public class WeblogicApi {
    * list or watch objects of kind Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param ctue The continue option should be set when retrieving more results from the server.
    *     Since this value is server defined, clients may only use the continue value from a previous
@@ -1420,7 +1369,6 @@ public class WeblogicApi {
    */
   public ApiResponse<DomainList> listNamespacedDomainWithHttpInfo(
       String namespace,
-      Boolean includeUninitialized,
       String pretty,
       String ctue,
       String fieldSelector,
@@ -1433,7 +1381,6 @@ public class WeblogicApi {
     com.squareup.okhttp.Call call =
         listNamespacedDomainValidateBeforeCall(
             namespace,
-            includeUninitialized,
             pretty,
             ctue,
             fieldSelector,
@@ -1452,8 +1399,6 @@ public class WeblogicApi {
    * (asynchronously) list or watch objects of kind Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param ctue The continue option should be set when retrieving more results from the server.
    *     Since this value is server defined, clients may only use the continue value from a previous
@@ -1506,7 +1451,6 @@ public class WeblogicApi {
    */
   public com.squareup.okhttp.Call listNamespacedDomainAsync(
       String namespace,
-      Boolean includeUninitialized,
       String pretty,
       String ctue,
       String fieldSelector,
@@ -1542,7 +1486,6 @@ public class WeblogicApi {
     com.squareup.okhttp.Call call =
         listNamespacedDomainValidateBeforeCall(
             namespace,
-            includeUninitialized,
             pretty,
             ctue,
             fieldSelector,

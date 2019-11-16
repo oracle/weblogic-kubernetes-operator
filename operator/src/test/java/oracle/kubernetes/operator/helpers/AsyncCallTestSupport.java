@@ -1,11 +1,9 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import java.net.HttpURLConnection;
-import java.util.Collections;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
@@ -82,7 +80,7 @@ public class AsyncCallTestSupport extends FiberTestSupport {
    * Throws an exception if any of the defined responses were not invoked during the test. This
    * should generally be called during tearDown().
    */
-  public void verifyAllDefinedResponsesInvoked() {
+  void verifyAllDefinedResponsesInvoked() {
     callTestSupport.verifyAllDefinedResponsesInvoked();
   }
 
@@ -137,9 +135,7 @@ public class AsyncCallTestSupport extends FiberTestSupport {
           .getComponents()
           .put(
               RESPONSE_COMPONENT_NAME,
-              Component.createFor(
-                  new CallResponse<>(
-                      result, null, HttpURLConnection.HTTP_OK, Collections.emptyMap())));
+              Component.createFor(CallResponse.createSuccess(result, HttpURLConnection.HTTP_OK)));
 
       return doNext(packet);
     }
@@ -153,15 +149,13 @@ public class AsyncCallTestSupport extends FiberTestSupport {
       this.status = status;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public NextAction apply(Packet packet) {
       packet
           .getComponents()
           .put(
               RESPONSE_COMPONENT_NAME,
-              Component.createFor(
-                  new CallResponse(null, new ApiException(), status, Collections.emptyMap())));
+              Component.createFor(CallResponse.createFailure(new ApiException(), status)));
 
       return doNext(packet);
     }

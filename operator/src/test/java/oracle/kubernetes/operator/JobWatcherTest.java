@@ -1,13 +1,11 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1JobCondition;
@@ -15,20 +13,20 @@ import io.kubernetes.client.models.V1JobStatus;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.watcher.WatchListener;
-import oracle.kubernetes.operator.work.FiberTestSupport;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
+import org.junit.After;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -41,13 +39,32 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   private static final int INITIAL_RESOURCE_VERSION = 234;
   private static final String NS = "ns1";
   private static final String VERSION = "123";
-  private Packet packet;
-  private V1Job job = new V1Job().metadata(new V1ObjectMeta().name("test").creationTimestamp(new DateTime()));
-  private FiberTestSupport fiberTestSupport = new FiberTestSupport();
+  private V1Job cachedJob = createJob();
+  private long clock;
 
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final TerminalStep terminalStep = new TerminalStep();
+
+  @Override
   public void setUp() throws Exception {
     super.setUp();
-    packet = new Packet();
+    addMemento(testSupport.install());
+  }
+
+  @Override
+  @After
+  public void tearDown() throws Exception {
+    super.tearDown();
+
+    testSupport.throwOnCompletionFailure();
+  }
+
+  private V1Job createJob() {
+    return new V1Job().metadata(new V1ObjectMeta().name("test").creationTimestamp(getCurrentTime()));
+  }
+
+  private DateTime getCurrentTime() {
+    return new DateTime(clock);
   }
 
   @Override
@@ -80,155 +97,263 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     return JobWatcher.create(this, ns, Integer.toString(rv), tuning, stopping);
   }
 
+  private JobWatcher createWatcher(AtomicBoolean stopping) {
+    return JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);
+  }
+
   @Test
   public void whenJobHasNoStatus_reportNotComplete() {
-    assertThat(JobWatcher.isComplete(job), is(false));
+    assertThat(JobWatcher.isComplete(cachedJob), is(false));
   }
 
   @Test
   public void whenJobHasNoCondition_reportNotComplete() {
-    job.status(new V1JobStatus());
+    cachedJob.status(new V1JobStatus());
 
-    assertThat(JobWatcher.isComplete(job), is(false));
+    assertThat(JobWatcher.isComplete(cachedJob), is(false));
   }
 
   @Test
   public void whenJobConditionTypeFailed_reportNotComplete() {
-    job.status(new V1JobStatus().addConditionsItem(new V1JobCondition().type("Failed")));
+    cachedJob.status(new V1JobStatus().addConditionsItem(new V1JobCondition().type("Failed")));
 
-    assertThat(JobWatcher.isComplete(job), is(false));
+    assertThat(JobWatcher.isComplete(cachedJob), is(false));
   }
 
   @Test
   public void whenJobConditionStatusFalse_reportNotComplete() {
-    job.status(
+    cachedJob.status(
         new V1JobStatus().addConditionsItem(new V1JobCondition().type("Complete").status("False")));
 
-    assertThat(JobWatcher.isComplete(job), is(false));
+    assertThat(JobWatcher.isComplete(cachedJob), is(false));
   }
 
   @Test
   public void whenJobRunningAndReadyConditionIsTrue_reportComplete() {
-    makeJobReady(job);
+    markJobCompleted(cachedJob);
 
-    assertThat(JobWatcher.isComplete(job), is(true));
+    assertThat(JobWatcher.isComplete(cachedJob), is(true));
   }
 
-  private void makeJobReady(V1Job job) {
-    List<V1JobCondition> conditions =
-        Collections.singletonList(new V1JobCondition().type("Complete").status("True"));
-    job.status(new V1JobStatus().conditions(conditions));
+  private V1Job dontChangeJob(V1Job job) {
+    return job;
   }
 
-  private void makeJobFailed(V1Job job, String reason) {
-    List<V1JobCondition> conditions =
-        Collections.singletonList(new V1JobCondition().type("Failed").status("True").reason(reason));
-    job.status(new V1JobStatus().failed(1).conditions(conditions));
+  private V1Job markJobCompleted(V1Job job) {
+    return job.status(new V1JobStatus().addConditionsItem(createCondition("Complete")));
+  }
+
+  private V1JobCondition createCondition(String type) {
+    return new V1JobCondition().type(type).status("True");
+  }
+
+  private V1Job markJobFailed(V1Job job) {
+    return setFailedWithReason(job, null);
+  }
+
+  private V1Job markJobTimedOut(V1Job job) {
+    return setFailedWithReason(job, "DeadlineExceeded");
+  }
+
+  private V1Job setFailedWithReason(V1Job job, String reason) {
+    return job.status(new V1JobStatus().failed(1).addConditionsItem(createCondition("Failed").reason(reason)));
   }
 
   @Test
   public void whenJobHasNoStatus_reportNotFailed() {
-    assertThat(JobWatcher.isFailed(job), is(false));
+    assertThat(JobWatcher.isFailed(cachedJob), is(false));
   }
 
   @Test
   public void whenJobHasFailedCount_reportFailed() {
-    job.status(new V1JobStatus().failed(1));
+    cachedJob.status(new V1JobStatus().failed(1));
 
-    assertThat(JobWatcher.isFailed(job), is(true));
+    assertThat(JobWatcher.isFailed(cachedJob), is(true));
   }
 
   @Test
   public void whenJobHasFailedReason_getFailedReasonReturnsIt() {
-    makeJobFailed(job, "DeadlineExceeded");
+    setFailedWithReason(cachedJob, "AReason");
 
-    assertThat(JobWatcher.getFailedReason(job), is("DeadlineExceeded"));
+    assertThat(JobWatcher.getFailedReason(cachedJob), is("AReason"));
   }
 
   @Test
   public void whenJobHasNoFailedReason_getFailedReasonReturnsNull() {
-    makeJobFailed(job, null);
+    setFailedWithReason(cachedJob, null);
 
-    assertThat(JobWatcher.getFailedReason(job), nullValue());
+    assertThat(JobWatcher.getFailedReason(cachedJob), nullValue());
   }
 
   @Test
   public void whenJobHasNoFailedCondition_getFailedReasonReturnsNull() {
-    job.status(new V1JobStatus().addConditionsItem(new V1JobCondition().type("Complete").status("True")));
+    cachedJob.status(new V1JobStatus().addConditionsItem(createCondition("Complete")));
 
-    assertThat(JobWatcher.getFailedReason(job), nullValue());
+    assertThat(JobWatcher.getFailedReason(cachedJob), nullValue());
   }
 
   @Test
   public void whenJobHasNoJobCondition_getFailedReasonReturnsNull() {
-    job.status(new V1JobStatus().conditions(Collections.EMPTY_LIST));
+    cachedJob.status(new V1JobStatus().conditions(Collections.emptyList()));
 
-    assertThat(JobWatcher.getFailedReason(job), nullValue());
+    assertThat(JobWatcher.getFailedReason(cachedJob), nullValue());
   }
 
   @Test
   public void waitForReady_returnsAStep() {
-    AtomicBoolean stopping = new AtomicBoolean(true);
-    JobWatcher watcher =
-        JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);
+    JobWatcher watcher = createWatcher(new AtomicBoolean(true));
 
-    assertThat(watcher.waitForReady(job, null), Matchers.instanceOf(Step.class));
+    assertThat(watcher.waitForReady(cachedJob, null), instanceOf(Step.class));
   }
 
   @Test
   public void whenWaitForReadyAppliedToReadyJob_performNextStep() {
-    AtomicBoolean stopping = new AtomicBoolean(false);
-    JobWatcher watcher =
-        JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);
+    startWaitForReady(this::markJobCompleted);
 
-    makeJobReady(job);
-
-    ListeningTerminalStep listeningStep = new ListeningTerminalStep(stopping);
-    Step step = watcher.waitForReady(job, listeningStep);
-    NextAction nextAction = step.apply(packet);
-    nextAction.getNext().apply(packet);
-
-    assertThat(listeningStep.wasPerformed, is(true));
+    assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenReceivedDeadlineExceededResponse_doNotPerformNextStep() {
-    doReceivedResponseTest((j) -> makeJobFailed(j, "DeadlineExceeded"), false);
+  public void whenWaitForReadyAppliedToIncompleteJob_dontPerformNextStep() {
+    startWaitForReady(this::dontChangeJob);
+
+    assertThat(terminalStep.wasRun(), is(false));
+  }
+
+  @Test
+  public void whenWaitForReadyAppliedToTimedOutJob_terminateWithException() {
+    startWaitForReady(this::markJobTimedOut);
+
+    assertThat(terminalStep.wasRun(), is(false));
+    testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
+  }
+
+  @Test
+  public void whenWaitForReadyAppliedToFailedJob_performNextStep() {
+    startWaitForReady(this::markJobFailed);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  // Starts the waitForReady step with job modified as needed
+  private void startWaitForReady(Function<V1Job,V1Job> jobFunction) {
+    AtomicBoolean stopping = new AtomicBoolean(false);
+    JobWatcher watcher = createWatcher(stopping);
+
+    V1Job cachedJob = jobFunction.apply(createJob());
+
+    try {
+      testSupport.runSteps(watcher.waitForReady(cachedJob, terminalStep));
+    } finally {
+      stopping.set(true);
+    }
+  }
+
+  @Test
+  public void whenJobCompletedOnFirstRead_performNextStep() {
+    startWaitForReadyThenReadJob(this::markJobCompleted);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  public void whenJobInProcessOnFirstRead_dontPerformNextStep() {
+    startWaitForReadyThenReadJob(this::dontChangeJob);
+
+    assertThat(terminalStep.wasRun(), is(false));
+  }
+
+  @Test
+  public void whenJobTimedOutOnFirstRead_terminateWithException() {
+    startWaitForReadyThenReadJob(this::markJobTimedOut);
+
+    assertThat(terminalStep.wasRun(), is(false));
+    testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
+  }
+
+  @Test
+  public void whenJobFailedOnFirstRead_performNextStep() {
+    startWaitForReadyThenReadJob(this::markJobFailed);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  // Starts the waitForReady step with an incomplete job cached, but a modified one in kubernetes
+  private void startWaitForReadyThenReadJob(Function<V1Job,V1Job> jobFunction) {
+    AtomicBoolean stopping = new AtomicBoolean(false);
+    JobWatcher watcher = createWatcher(stopping);
+
+    V1Job persistedJob = jobFunction.apply(createJob());
+    testSupport.defineResources(persistedJob);
+
+    try {
+      testSupport.runSteps(watcher.waitForReady(cachedJob, terminalStep));
+    } finally {
+      stopping.set(true);
+    }
+  }
+
+  @Test
+  public void whenReceivedDeadlineExceededResponse_terminateWithException() {
+    sendJobModifiedWatchAfterWaitForReady(this::markJobTimedOut);
+
+    assertThat(terminalStep.wasRun(), is(false));
+    testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
   }
 
   @Test
   public void whenReceivedFailedWithNoReasonResponse_performNextStep() {
-    doReceivedResponseTest((j) -> makeJobFailed(j, null), true);
+    sendJobModifiedWatchAfterWaitForReady(this::markJobFailed);
+
+    assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
   public void whenReceivedCompleteResponse_performNextStep() {
-    doReceivedResponseTest((j) -> makeJobReady(j), true);
+    sendJobModifiedWatchAfterWaitForReady(this::markJobCompleted);
+
+    assertThat(terminalStep.wasRun(), is(true));
   }
 
-  private void doReceivedResponseTest(Consumer<V1Job> jobStatusUpdater, final boolean expectedResult) {
+  @Test
+  public void whenReceivedCallbackForDifferentCompletedJob_ignoreIt() {
+    sendJobModifiedWatchAfterWaitForReady(this::createCompletedJobWithDifferentTimestamp);
+
+    assertThat(terminalStep.wasRun(), is(false));
+  }
+
+  @Test
+  public void whenReceivedCallbackForIncompleteJob_ignoreIt() {
+    sendJobModifiedWatchAfterWaitForReady(this::dontChangeJob);
+
+    assertThat(terminalStep.wasRun(), is(false));
+  }
+
+  @SuppressWarnings("unused")
+  private V1Job createCompletedJobWithDifferentTimestamp(V1Job job) {
+    clock++;
+    return markJobCompleted(createJob());
+  }
+
+  // Starts the waitForReady step with an incomplete job and sends a watch indicating that the job has changed
+  private void sendJobModifiedWatchAfterWaitForReady(Function<V1Job,V1Job> modifier) {
     AtomicBoolean stopping = new AtomicBoolean(false);
-    JobWatcher watcher =
-        JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);
+    JobWatcher watcher = createWatcher(stopping);
+    testSupport.defineResources(cachedJob);
 
-    ListeningTerminalStep listeningStep = new ListeningTerminalStep(stopping);
-    Step step = watcher.waitForReady(job, listeningStep);
-
-    // run WaitForReadyStep.apply() and the doSuspend() inside apply() to set up Complete callback
-    fiberTestSupport.runSteps(step);
-
-    jobStatusUpdater.accept(job);
-
-    watcher.receivedResponse(new Watch.Response<>("MODIFIED", job));
-    assertThat(listeningStep.wasPerformed, is(expectedResult));
+    try {
+      testSupport.runSteps(watcher.waitForReady(cachedJob, terminalStep));
+      watcher.receivedResponse(new Watch.Response<>("MODIFIED", modifier.apply(createJob())));
+    } finally {
+      stopping.set(true);
+    }
   }
 
   @Test
   public void afterFactoryDefined_createWatcherForDomain() {
     AtomicBoolean stopping = new AtomicBoolean(true);
-    JobWatcher.defineFactory(this, tuning, ns -> stopping);
-    Domain domain =
-        new Domain().withMetadata(new V1ObjectMeta().namespace(NS).resourceVersion(VERSION));
+    JobWatcher.defineFactory(this, tuning, s -> stopping);
+    Domain domain = new Domain().withMetadata(new V1ObjectMeta().namespace(NS).resourceVersion(VERSION));
 
     assertThat(JobWatcher.getOrCreateFor(domain), notNullValue());
   }
@@ -249,18 +374,4 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     // Override as JobWatcher doesn't currently implement listener for callback
   }
 
-  static class ListeningTerminalStep extends Step {
-    private boolean wasPerformed = false;
-
-    ListeningTerminalStep(AtomicBoolean stopping) {
-      super(null);
-      stopping.set(true);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      wasPerformed = true;
-      return doEnd(packet);
-    }
-  }
 }

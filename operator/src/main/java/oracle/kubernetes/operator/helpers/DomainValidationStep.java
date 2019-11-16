@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -12,6 +11,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.helpers.DomainStatusPatch.BAD_DOMAIN;
 
 public class DomainValidationStep extends Step {
   private Domain domain;
@@ -27,7 +27,11 @@ public class DomainValidationStep extends Step {
 
     if (validationFailures.isEmpty()) return doNext(packet);
 
-    DomainStatusPatch.updateDomainStatus(domain, "ErrBadDomain", String.join(lineSeparator(), validationFailures));
-    return doEnd(packet);
+    Step step = DomainStatusPatch.createStep(domain, BAD_DOMAIN, perLine(validationFailures));
+    return doNext(step, packet);
+  }
+
+  private String perLine(List<String> validationFailures) {
+    return String.join(lineSeparator(), validationFailures);
   }
 }
