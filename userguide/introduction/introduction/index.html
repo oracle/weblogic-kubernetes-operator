@@ -12,18 +12,18 @@
     <title>Get started :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1573868776" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1573868776" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1573868776" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1573868776" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1573868776" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1573868776" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1573868776" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1573868776" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1573868776" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1573869076" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1573869076" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1573869076" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1573869076" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1573869076" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1573869076" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1573869076" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1573869076" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1573869076" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1573868776"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1573869076"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1573868776"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1573868776"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1573869076"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1573869076"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1573868776"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1573869076"></script>
 
     
   </div>
@@ -2360,10 +2360,14 @@
     <section id="footer">
       <p>Created with <i class="fas fa-heart"></i> from <a href="https://www.oracle.com">Oracle</a></p>
 <p>&nbsp;</p>
+<p>You are viewing the archived documentation for version 2.3.0. To view the documentation for the current release, please 
+[click here](https://oracle.github.io/weblogic-kubernetes-operator)</p>
+<p>&nbsp;</p>
 <p><a href="https://github.com/oracle/weblogic-kubernetes-operator"><i class="fab fa-github"></i> GitHub repo</a></p>
 <p><a href="https://weblogic-slack-inviter.herokuapp.com/"><i class="fab fa-slack"></i> Public Slack #operator</a></p>
 <p>&nbsp;</p>
 <img src="http://build.weblogick8s.org:8080/buildStatus/icon?job=weblogic-kubernetes-operator">
+
     </section>
   </div>
 </nav>
@@ -2429,7 +2433,9 @@
 <li>
 <ul>
 <li><a href="#operator-prerequisites">Operator prerequisites</a></li>
+<li><a href="#important-note-about-kubernetes-1-16">Important note about Kubernetes 1.16</a></li>
 <li><a href="#cloud-providers">Cloud providers</a></li>
+<li><a href="#oracle-linux-cloud-native-environment">Oracle Linux Cloud Native Environment</a></li>
 <li><a href="#openshift">OpenShift</a></li>
 <li><a href="#important-note-about-development-focused-kubernetes-distributions">Important note about development-focused Kubernetes distributions</a></li>
 <li><a href="#operator-docker-image">Operator Docker image</a></li>
@@ -2473,7 +2479,7 @@ Detailed instructions are available <a href="/weblogic-kubernetes-operator/userg
 <h3 id="operator-prerequisites">Operator prerequisites</h3>
 
 <ul>
-<li>Kubernetes 1.11.5+, 1.12.3+, 1.13.0+, and 1.14.0+  (check with <code>kubectl version</code>).</li>
+<li>Kubernetes 1.11.5+, 1.12.3+, 1.13.0+, 1.14.0+, and 1.15.0+  (check with <code>kubectl version</code>).</li>
 <li>Flannel networking v0.9.1-amd64 (check with <code>docker images | grep flannel</code>).</li>
 <li>Docker 18.9.1 (check with <code>docker version</code>) <em>or</em> CRI-O 1.14.7 (check with <code>crictl version | grep RuntimeVersion</code>).</li>
 <li>Helm 2.14.3+ (check with <code>helm version</code>).</li>
@@ -2489,6 +2495,13 @@ has all the necessary patches applied.</li>
 <li>We do not currently support running WebLogic in non-Linux containers.</li>
 </ul>
 
+<h3 id="important-note-about-kubernetes-1-16">Important note about Kubernetes 1.16</h3>
+
+<p>Kubernetes 1.16 introduced changes to some Kubernetes APIs that are used by the operator.
+At this time, the operator is not guaranteed to work on Kubernetes 1.16.
+When we have completed testing and made any necessary code changes, we will update this
+page to confirm support of 1.16.</p>
+
 <h3 id="cloud-providers">Cloud providers</h3>
 
 <p>The Oracle <a href="https://www.oracle.com/corporate/pricing/specialty-topics.html">Global Pricing and Licensing site</a>
@@ -2501,7 +2514,13 @@ WebLogic Server and the operator are supported on &ldquo;Authorized Cloud Enviro
 
 <p>In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud
 Infrastructure using <em>Oracle Container Engine for Kubernetes</em>, or in a cluster running <em>Oracle Linux
-Container Servies for use with Kubernetes</em> on OCI Compute; and on &ldquo;authorized cloud environments&rdquo;.</p>
+Container Services for use with Kubernetes</em> on OCI Compute, and on &ldquo;authorized cloud environments&rdquo;.</p>
+
+<h3 id="oracle-linux-cloud-native-environment">Oracle Linux Cloud Native Environment</h3>
+
+<p><a href="https://docs.oracle.com/en/operating-systems/olcne/">Oracle Linux Cloud Native Environment</a> is a fully integrated suite for the development and management of cloud-native applications. Based on the Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.</p>
+
+<p>WebLogic Server and the WebLogic Kubernetes operator are certified and supported on Oracle Linux Cloud Native Environment.</p>
 
 <h3 id="openshift">OpenShift</h3>
 
@@ -2517,17 +2536,17 @@ Often these run Kubernetes in a virtual machine on your development machine.  We
 present some extra challenges in areas like:</p>
 
 <ul>
-<li>Separate Docker image stores, making it necessary to save/load images to move them between Docker file systems,</li>
-<li>Default virtual machine file sizes and resource limits that are too small to run WebLogic or hold the necessary images,</li>
-<li>Storage providers that do not always support the features that the operator and/or WebLogic rely on,</li>
-<li>Load balancing implementations that do not always support the features that the operator and/or WebLogic rely on.</li>
+<li>Separate Docker image stores, making it necessary to save/load images to move them between Docker file systems</li>
+<li>Default virtual machine file sizes and resource limits that are too small to run WebLogic or hold the necessary images</li>
+<li>Storage providers that do not always support the features that the operator and/or WebLogic rely on</li>
+<li>Load balancing implementations that do not always support the features that the operator and/or WebLogic rely on</li>
 </ul>
 
 <p>As such, we <em>do not</em> recommend using these distributions to run the operator and/or WebLogic, and we do not
 provide support for WebLogic or the operator running in these distributions.</p>
 
 <p>We have found that Docker for Desktop does not seem to suffer the same limitations, and we do support that as a
-dev/test option.</p>
+development/test option.</p>
 
 <h3 id="operator-docker-image">Operator Docker image</h3>
 
@@ -4169,19 +4188,19 @@ dev/test option.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1573868776"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1573868776"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1573868776"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1573868776"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1573868776"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1573868776"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1573869076"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1573869076"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1573869076"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1573869076"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1573869076"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1573869076"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1573868776"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1573868776"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1573868776"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1573869076"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1573869076"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1573869076"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1573868776" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1573868776"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1573869076" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1573869076"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

@@ -313,7 +313,7 @@ The Oracle Database Docker images are only supported for non-production use. For
       <description>Get these images and put them into your local registry.  If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store and accept the license agreement for the WebLogic Server image.
  Log in to the Docker store from your Docker client:
 $ docker login  Pull the operator image:
-$ docker pull oracle/weblogic-kubernetes-operator:2.3.0  Pull the Traefik load balancer image:
+$ docker pull oracle/weblogic-kubernetes-operator:2.4.0  Pull the Traefik load balancer image:
 $ docker pull traefik:1.</description>
     </item>
     
@@ -578,8 +578,7 @@ Unicast and Well Known Address When the first Coherence process starts, it will 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Recent changes    Date Version Introduces backward incompatibilities Change     August 27, 2019 v2.3.0 no Added support for Coherence cluster rolling, pod templating and additional pod content, and experimental support for running under an Istio service mesh.   June 20, 2019 v2.2.1 no The operator now supports Kubernetes 1.14.0+. This release is primarily a bug fix release and resolves the following issues:
-Servers in domains, where the domain home is on a persistent volume, would sometimes fail to start.</description>
+      <description>Recent changes    Date Version Introduces backward incompatibilities Change     November 15, 2019 v2.4.0 no Includes fixes for a variety of issues related to FMW infrastructure domains and pod variable substitution. Operator now uses WebLogic Deploy Tooling 1.6.0 and the latest version of the Kubernetes Java Client.   August 27, 2019 v2.3.0 no Added support for Coherence cluster rolling, pod templating and additional pod content, and experimental support for running under an Istio service mesh.</description>
     </item>
     
   </channel>
