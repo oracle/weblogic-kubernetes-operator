@@ -403,22 +403,6 @@ public class Domain {
     return spec.getDataHome();
   }
 
-  public boolean isRollbackIfRequireRestart() {
-    return spec.isRollbackIfRequireStart();
-  }
-
-  public boolean isUseOnlineUpdate() {
-    return spec.isUseOnlineUpdate();
-  }
-
-  public boolean isKeepJRFSchema() {
-    return spec.isKeepJRFSchema();
-  }
-
-  public String getWdtDomainType() {
-    return spec.getWdtDomainType();
-  }
-
   public boolean isIncludeServerOutInPodLog() {
     return spec.getIncludeServerOutInPodLog();
   }

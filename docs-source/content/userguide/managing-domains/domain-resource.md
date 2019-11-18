@@ -26,7 +26,7 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 
 Domain resources are defined using the domain resource YAML files. For each WLS domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample script, `create-domain.sh`, generates a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WLS domain parameters that define your WLS domain.
 
-See the [WebLogic sample domain home on a persistent volume README]({{< relref "/samples/simple/domains/domain-home-on-pv/_index.md" >}}).
+See the WebLogic sample [Domain home on a persistent volume]({{< relref "/samples/simple/domains/domain-home-on-pv/_index.md" >}}) README.
 
 #### Kubernetes resources
 
@@ -77,7 +77,7 @@ Elements related to security:
 
 * `webLogicCredentialsSecret`: The name of a pre-created Kubernetes secret, in the domain resource's namespace, that holds the user name and password needed to boot WebLogic Server under the `username` and `password` fields.
 
-Elements related to domain [startup and shutdown](domain-lifecycle/startup.md):
+Elements related to domain [startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}):
 
 * `serverStartPolicy`: The strategy for deciding whether to start a server. Legal values are `ADMIN_ONLY`, `NEVER`, or `IF_NEEDED`.
 * `serverStartState`: The state in which the server is to be started. Use `ADMIN` if the server should start in the admin state. Defaults to `RUNNING`.
@@ -100,7 +100,7 @@ Sub-sections related to the Administration Server, specific clusters, or specifi
 * `clusters`: Configuration for specific clusters.
 * `managedServers`: Configuration for specific Managed Servers.
 
-The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec` set the defaults for the entire domain.  The values under a specific entry under `clusters` set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers` set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See the [startup and shutdown](domain-lifecycle/startup.md) documentation for details about `serverStartPolicy` combination.
+The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec` set the defaults for the entire domain.  The values under a specific entry under `clusters` set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers` set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See the [startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}) documentation for details about `serverStartPolicy` combination.
 
 ### Pod generation
 
@@ -121,7 +121,7 @@ This example domain YAML file specifies that pods for WebLogic Server instances 
 # Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
-apiVersion: "weblogic.oracle/v5"
+apiVersion: "weblogic.oracle/v6"
 kind: Domain
 metadata:
   name: domain1

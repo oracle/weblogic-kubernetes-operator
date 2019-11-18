@@ -57,7 +57,9 @@ function createFolder {
 
 trace "Introspecting the domain"
 
-env | tracePipe "Current environment:"
+# list potentially interesting env-vars before they're updated by export.*Homes
+
+traceEnv before
 
 # set defaults
 # set ORACLE_HOME/WL_HOME/MW_HOME to defaults if needed
@@ -66,7 +68,8 @@ exportInstallHomes
 
 # check if prereq env-vars, files, and directories exist
 
-checkEnv DOMAIN_UID \
+checkEnv -q \
+         DOMAIN_UID \
          NAMESPACE \
          ORACLE_HOME \
          JAVA_HOME \
@@ -85,8 +88,6 @@ for dir_var in JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
   [ ! -d "${!dir_var}" ] && trace SEVERE "Missing ${dir_var} directory '${!dir_var}'." && exit 1
 done
 
-trace "DATA_HOME=${DATA_HOME}"
-
 #
 # DATA_HOME env variable exists implies override directory specified.  Attempt to create directory
 #
@@ -96,29 +97,13 @@ if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
 fi
 
 
-source ${SCRIPTPATH}/model-in-image.sh
-
-if [ ! -d "${DOMAIN_HOME}" ]; then
-    command -v gzip
-    if [ $? -ne 0 ] ; then
-      trace "gzip is missing - image must have gzip installed " && exit 1
-    fi
-    command -v tar
-    if [ $? -ne 0 ] ; then
-        trace "tar is missing - image must have tar installed " && exit 1
-    fi
-    mkdir -p ${DOMAIN_HOME}
-    createWLDomain
-    created_domain=$?
-    trace "created domain " ${created_domain}
-else
-    created_domain=1
-fi
-
-
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
 
 exportEffectiveDomainHome || exit 1
+
+# list potentially interesting env-vars after they're updated by export.*Homes
+
+traceEnv after
 
 # check if we're using a supported WebLogic version
 # (the check  will log a message if it fails)

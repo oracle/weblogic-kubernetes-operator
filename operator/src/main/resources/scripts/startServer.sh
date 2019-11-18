@@ -14,8 +14,6 @@ source ${SCRIPTPATH}/utils.sh
 
 trace "Starting WebLogic Server '${SERVER_NAME}'."
 
-source ${SCRIPTPATH}/model-in-image.sh
-
 
 #
 # Define helper fn to copy a file only if src & tgt differ
@@ -122,23 +120,9 @@ function copySitCfg() {
   fi
 }
 
+# trace env vars before export.*Home calls
 
-if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
-  cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
-  chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
-
-  mkdir -p ${DOMAIN_HOME}/lib
-  for file in $(sort_files ${archive_root} "*.zip")
-    do
-        cd ${DOMAIN_HOME}/lib
-        jar xvf ${archive_root}/${file} wlsdeploy/domainLibraries/
-        cd ${DOMAIN_HOME}
-        jar xvf ${archive_root}/${file} wlsdeploy/
-        rm -fr wlsdeploy/domainLibraries
-    done
-
-fi
-
+traceEnv before
 
 #
 # Configure startup mode
@@ -149,10 +133,10 @@ if [ ! -z "$STARTUP_MODE" ] && [[ $JAVA_OPTIONS != *"-Dweblogic.management.start
 fi
 
 #
-# Check and display input env vars
+# Check input env vars
 #
 
-checkEnv \
+checkEnv -q \
   DOMAIN_UID \
   DOMAIN_NAME \
   DOMAIN_HOME \
@@ -164,14 +148,6 @@ checkEnv \
   ADMIN_PORT \
   SERVER_OUT_IN_POD_LOG \
   AS_SERVICE_NAME || exitOrLoop
-
-trace "LOG_HOME=${LOG_HOME}"
-trace "DATA_HOME=${DATA_HOME}"
-trace "SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG}"
-trace "USER_MEM_ARGS=${USER_MEM_ARGS}"
-trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
-trace "KEEP_DEFAULT_DATA_HOME=${KEEP_DEFAULT_DATA_HOME}"
-trace "EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR=${EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR}"
 
 # If DATA_HOME env variable exists than this implies override directory (dataHome attribute of CRD) specified
 # so we need to try and link the server's 'data' directory to the centralized DATA_HOME directory
@@ -198,13 +174,15 @@ if [ ! -z ${DATA_HOME} ]; then
   fi
 fi
 
-
-
 #
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HdOME if needed:
 #
 
 exportEffectiveDomainHome || exitOrLoop
+
+# trace env vars after export.*Home calls
+
+traceEnv after
 
 #
 # Check if introspector actually ran.  This should never fail since

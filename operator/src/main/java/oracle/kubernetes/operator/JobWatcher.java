@@ -76,6 +76,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return JOB_WATCHERS.computeIfAbsent(getNamespace(domain), n -> factory.createFor(domain));
   }
 
+  static void removeNamespace(String ns) {
+    JOB_WATCHERS.remove(ns);
+  }
+
   private static String getNamespace(Domain domain) {
     return domain.getMetadata().getNamespace();
   }
@@ -112,7 +116,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     if (job == null) return false;
 
     V1JobStatus status = job.getStatus();
-    LOGGER.fine("JobWatcher.isComplete status of job " + job.getMetadata().getName() + ": " + status);
+    LOGGER.fine(
+        "JobWatcher.isComplete status of job " + job.getMetadata().getName() + ": " + status);
     if (status != null) {
       List<V1JobCondition> conds = status.getConditions();
       if (conds != null) {

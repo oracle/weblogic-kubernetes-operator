@@ -200,6 +200,84 @@
       "description": "DomainSpec is a description of a domain.",
       "type": "object",
       "properties": {
+        "keepJRFSchema": {
+          "description": "Keep JRF schema between lifecycle updates",
+          "type": "boolean"
+        },
+        "configOverrideSecrets": {
+          "description": "A list of names of the secrets for optional WebLogic configuration overrides.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "imagePullSecrets": {
+          "description": "A list of image pull secrets for the WebLogic Docker image.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+          }
+        },
+        "domainUID": {
+          "pattern": "^[a-z0-9-.]{1,253}$",
+          "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name.",
+          "type": "string"
+        },
+        "experimental": {
+          "description": "Experimental feature configurations.",
+          "$ref": "#/definitions/Experimental"
+        },
+        "opssKeyPassPhrase": {
+          "description": "opss key passphrase.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
+        },
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerService"
+        },
+        "domainHome": {
+          "description": "The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false. Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true.",
+          "type": "string"
+        },
+        "webLogicCredentialsSecret": {
+          "description": "The name of a pre-created Kubernetes secret, in the domain\u0027s namespace, that holds the username and password needed to boot WebLogic Server under the \u0027username\u0027 and \u0027password\u0027 fields.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
+        },
+        "adminServer": {
+          "description": "Configuration for the Administration Server.",
+          "$ref": "#/definitions/AdminServer"
+        },
+        "useOnlineUpdate": {
+          "description": "Use Online update during lifecycle changes",
+          "type": "boolean"
+        },
+        "rollbackIfRequireStart": {
+          "description": "Rollback dynamic changes if the updates require restart",
+          "type": "boolean"
+        },
+        "logHome": {
+          "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files",
+          "type": "string"
+        },
+        "wdtConfigMap": {
+          "description": "The name of the wdt config map used for optional wdt tool.",
+          "type": "string"
+        },
+        "includeServerOutInPodLog": {
+          "description": "If true (the default), the server .out file will be included in the pod\u0027s stdout.",
+          "type": "boolean"
+        },
+        "clusters": {
+          "description": "Configuration for the clusters.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Cluster"
+          }
+        },
+        "wdtDomainType": {
+          "description": "wdt domain type",
+          "type": "string"
+        },
         "serverStartState": {
           "description": "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.",
           "type": "string",
@@ -226,36 +304,17 @@
           "type": "number",
           "minimum": 0
         },
-        "configOverrideSecrets": {
-          "description": "A list of names of the secrets for optional WebLogic configuration overrides.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "imagePullSecrets": {
-          "description": "A list of image pull secrets for the WebLogic Docker image.",
-          "type": "array",
-          "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
-          }
+        "opssKeyWalletConfigMap": {
+          "description": "The name of the config map to store the opss key wallet file",
+          "type": "string"
         },
         "domainHomeInImage": {
           "description": "True if this domain\u0027s home is defined in the Docker image for the domain. Defaults to true.",
           "type": "boolean"
         },
-        "wdtConfigMapSecret": {
-          "description": "The name of the wdt model encryption passphrase  used for optional wdt tool.",
-          "type": "string"
-        },
-        "domainUID": {
-          "pattern": "^[a-z0-9-.]{1,253}$",
-          "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name.",
-          "type": "string"
-        },
-        "experimental": {
-          "description": "Experimental feature configurations.",
-          "$ref": "#/definitions/Experimental"
+        "wdtEncryptionPassPhrase": {
+          "description": "wdt model encryption key passphrase.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
         },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.",
@@ -278,54 +337,19 @@
           "description": "The name of the config map for optional WebLogic configuration overrides.",
           "type": "string"
         },
-        "serverService": {
-          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.",
-          "$ref": "#/definitions/ServerService"
-        },
-        "domainHome": {
-          "description": "The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false. Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true.",
-          "type": "string"
-        },
         "logHomeEnabled": {
           "description": "Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true. ",
           "type": "boolean"
         },
-        "webLogicCredentialsSecret": {
-          "description": "The name of a pre-created Kubernetes secret, in the domain\u0027s namespace, that holds the username and password needed to boot WebLogic Server under the \u0027username\u0027 and \u0027password\u0027 fields.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
-        },
-        "adminServer": {
-          "description": "Configuration for the Administration Server.",
-          "$ref": "#/definitions/AdminServer"
-        },
         "serverPod": {
           "description": "Configuration affecting server pods.",
           "$ref": "#/definitions/ServerPod"
-        },
-        "logHome": {
-          "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files",
-          "type": "string"
-        },
-        "wdtConfigMap": {
-          "description": "The name of the wdt config map used for optional wdt tool.",
-          "type": "string"
-        },
-        "includeServerOutInPodLog": {
-          "description": "If true (the default), the server .out file will be included in the pod\u0027s stdout.",
-          "type": "boolean"
         },
         "managedServers": {
           "description": "Configuration for individual Managed Servers.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/ManagedServer"
-          }
-        },
-        "clusters": {
-          "description": "Configuration for the clusters.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Cluster"
           }
         }
       }

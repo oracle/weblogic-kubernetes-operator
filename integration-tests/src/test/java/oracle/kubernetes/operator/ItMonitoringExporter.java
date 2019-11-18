@@ -890,8 +890,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if could not run the command successfully to create WLSImage and deploy
    */
   private static void createWlsImageAndDeploy() throws Exception {
-    //operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    addRestOptToYaml(monitoringExporterEndToEndDir + "/dashboard/exporter-config.yaml", "restPort", 8001);
+    logger.info(" Starting to create WLS Image");
 
     String command =
         "cd "
@@ -903,6 +902,7 @@ public class ItMonitoringExporter extends BaseTest {
             + " wluser1 wlpwd123";
     TestUtils.exec(command);
 
+    logger.info(" Starting to create WLS secret");
     command =
         "kubectl -n default create secret generic domain1-weblogic-credentials "
             + "  --from-literal=username="

@@ -149,6 +149,14 @@ class OfflineWlstEnv(object):
     # domains
     self.ALLOW_DYNAMIC_CLUSTER_IN_FMW = self.getEnvOrDef('ALLOW_DYNAMIC_CLUSTER_IN_FMW', "False")
 
+    # Set IS_FMW_INFRA to True if the image contains a FMW infrastructure domain
+    # (dectected by checking the RCUPREFIX environment variable)
+    self.IS_FMW_INFRA_DOMAIN = self.isEnvSet('RCUPREFIX')
+
+    # Check environment variable that allows dynamic clusters in FMW infrastructure
+    # domains
+    self.ALLOW_DYNAMIC_CLUSTER_IN_FMW = self.getEnvOrDef('ALLOW_DYNAMIC_CLUSTER_IN_FMW', "False")
+
     # maintain a list of errors that we include in topology.yaml on completion, if any
 
     self.errors             = []

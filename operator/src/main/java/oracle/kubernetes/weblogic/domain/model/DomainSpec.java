@@ -529,69 +529,6 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * isRollbackIfRequireStart.
-   *
-   * <p>An optional, For model in image, this attribute determines the lifecycle update behavior
-   *
-   * @return value of the rollback if require restart.
-   */
-  boolean isRollbackIfRequireStart() {
-    return Optional.ofNullable(rollbackIfRequireStart).orElse(false);
-  }
-
-  public void setRollbackIfRequireStart(boolean rollbackIfRequireStart) {
-    this.rollbackIfRequireStart = rollbackIfRequireStart;
-  }
-
-
-  /**
-   * useOnlineUpdate.
-   *
-   * <p>An optional, For model in image, this attribute set to use online updates
-   *
-   * @return whether to use online updates or not.
-   */
-  boolean isUseOnlineUpdate() {
-    return Optional.ofNullable(useOnlineUpdate).orElse(false);
-  }
-
-  public void setUseOnlineUpdate(boolean useOnlineUpdate) {
-    this.useOnlineUpdate = useOnlineUpdate;
-  }
-
-  /**
-   * keepJRFSchema
-   *
-   * <p>An optional, For model in image, this attribute determines keeping the jrf schema between updates.
-   *
-   * @return true or false.
-   */
-  boolean isKeepJRFSchema() {
-    return Optional.ofNullable(keepJRFSchema).orElse(true);
-  }
-
-  public void setKeepJRFSchema(boolean keepJRFSchema) {
-    this.keepJRFSchema = keepJRFSchema;
-  }
-
-
-  /**
-   * wdtDomainType.
-   *
-   * <p>An optional, For model in image, this attribute set the domain type
-   * @return domain type (WLS|JRF|RestrictedJRF)
-   */
-  @Nullable
-  public String getWdtDomainType() {
-    return Optional.ofNullable(wdtDomainType).orElse("WLS");
-  }
-
-  public void setWdtDomainType(@Nullable String wdtDomainType) {
-    this.wdtDomainType = wdtDomainType;
-  }
-
-
-  /**
    * Data Home.
    *
    * <p>An optional, in-pod location for data storage of default and custom file stores. If dataHome
@@ -972,7 +909,7 @@ public class DomainSpec extends BaseConfiguration {
 
     @Override
     public boolean isShuttingDown() {
-      return !getAdminServerSpec().shouldStart(0);
+      return getAdminServerSpec().isShuttingDown();
     }
 
     @Override
