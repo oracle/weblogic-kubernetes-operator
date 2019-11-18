@@ -993,7 +993,7 @@ public class ItMonitoringExporter extends BaseTest {
         + "/buidImage.log";
     ExecResult result = ExecCommand.exec(crdCmd);
     assertFalse(
-        "Shell script failed: " + result.stdout(), result.stdout().contains("BUILD FAILURE"));
+        result.stdout().contains("BUILD FAILURE"), "Shell script failed: " + result.stdout());
     LoggerHelper.getLocal().log(Level.INFO, "Result output from  the command " + crdCmd + " : " + result.stdout());
     
     LoggerHelper.getLocal().log(Level.INFO, " Starting to create secret");
