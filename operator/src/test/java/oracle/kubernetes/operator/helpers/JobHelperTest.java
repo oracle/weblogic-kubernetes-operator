@@ -204,7 +204,7 @@ public class JobHelperTest {
         .getComponents()
         .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
     DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
-        new DomainIntrospectorJobStepContext(packet);
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
     return domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
   }
 

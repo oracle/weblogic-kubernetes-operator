@@ -97,6 +97,26 @@ if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
 fi
 
 
+source ${SCRIPTPATH}/model-in-image.sh
+
+if [ ! -d "${DOMAIN_HOME}" ]; then
+    command -v gzip
+    if [ $? -ne 0 ] ; then
+      trace "gzip is missing - image must have gzip installed " && exit 1
+    fi
+    command -v tar
+    if [ $? -ne 0 ] ; then
+        trace "tar is missing - image must have tar installed " && exit 1
+    fi
+    mkdir -p ${DOMAIN_HOME}
+    createWLDomain
+    created_domain=$?
+    trace "created domain " ${created_domain}
+else
+    created_domain=1
+fi
+
+
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
 
 exportEffectiveDomainHome || exit 1

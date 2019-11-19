@@ -154,6 +154,22 @@ public abstract class JobStepContext extends BasePodStepContext {
     return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
   }
 
+  protected boolean isRollBackIfRequireRestart() {
+    return getDomain().isRollbackIfRequireRestart();
+  }
+
+  protected boolean isUseOnlineUpdate() {
+    return getDomain().isUseOnlineUpdate();
+  }
+
+  protected boolean isKeepJRFSchema() {
+    return getDomain().isKeepJRFSchema();
+  }
+
+  protected String getWdtDomainType() {
+    return getDomain().getWdtDomainType();
+  }
+
   private boolean isIstioEnabled() {
     return getDomain().isIstioEnabled();
   }
@@ -251,7 +267,21 @@ public abstract class JobStepContext extends BasePodStepContext {
             .serviceAccountName(info.getDomain().getSpec().getServiceAccountName())
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
-                new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
+                new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()))
+            .addVolumesItem(
+                new V1Volume()
+                    .name(getDomainUid() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+                    .configMap(getIntrospectMD5VolumeSource()));
+    if (getOpssKeyPassPhraseVolume() != null) {
+      podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
+          getOpssKeyPassPhraseVolume()));
+    }
+    if (getWdtEncryptPassPhraseVolume() != null) {
+      podSpec.addVolumesItem(new V1Volume().name(WDT_ENCRYPT_PASSPHRASE_VOLUME)
+          .secret(getWdtEncryptPassPhraseVolume()));
+    }
+
+    podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
     for (V1Volume additionalVolume : getAdditionalVolumes()) {
       podSpec.addVolumesItem(additionalVolume);
@@ -291,8 +321,21 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   protected V1Container createContainer(TuningParameters tuningParameters) {
     V1Container container = super.createContainer(tuningParameters)
-            .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-            .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+        .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
+        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
+        .addVolumeMountsItem(
+          volumeMount(
+              getDomainUid() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX,
+              "/weblogic-operator/introspectormd5")
+              .readOnly(false));
+
+    if (getOpssKeyPassPhraseVolume() != null) {
+      container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_KEYPASSPHRASE_VOLUME, OPSS_KEY_MOUNT_PATH));
+    }
+    if (getWdtEncryptPassPhraseVolume() != null) {
+      container.addVolumeMountsItem(readOnlyVolumeMount(WDT_ENCRYPT_PASSPHRASE_VOLUME, WDT_ENCRYPT_KEY_MOUNT_PATH));
+    }
+
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       container.addVolumeMountsItem(additionalVolumeMount);
@@ -300,14 +343,27 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
       container.addVolumeMountsItem(
-              readOnlyVolumeMount(getConfigOverrides() + "-volume", OVERRIDES_CM_MOUNT_PATH));
+            readOnlyVolumeMount(getConfigOverrides() + "-volume", OVERRIDES_CM_MOUNT_PATH));
     }
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
       container.addVolumeMountsItem(
-              readOnlyVolumeMount(
-                      secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
+            readOnlyVolumeMount(
+                  secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
+    }
+
+    if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+      container.addVolumeMountsItem(
+          readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
+    }
+
+    String opssKeyWalletConfigMap = getOpssKeyWalletConfigMap();
+    if (opssKeyWalletConfigMap != null) {
+      container.addVolumeMountsItem(
+          readOnlyVolumeMount(
+              opssKeyWalletConfigMap + "-volume",
+              OPSS_KEY_WALLET_CM_MOUNT_PATH + '/' + opssKeyWalletConfigMap));
     }
 
     return container;

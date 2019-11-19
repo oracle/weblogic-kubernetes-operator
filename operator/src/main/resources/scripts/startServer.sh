@@ -14,6 +14,8 @@ source ${SCRIPTPATH}/utils.sh
 
 trace "Starting WebLogic Server '${SERVER_NAME}'."
 
+source ${SCRIPTPATH}/model-in-image.sh
+
 
 #
 # Define helper fn to copy a file only if src & tgt differ
@@ -123,6 +125,23 @@ function copySitCfg() {
 # trace env vars before export.*Home calls
 
 traceEnv before
+
+if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
+  cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
+  chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
+
+  mkdir -p ${DOMAIN_HOME}/lib
+  for file in $(sort_files ${archive_root} "*.zip")
+    do
+        cd ${DOMAIN_HOME}/lib
+        jar xvf ${archive_root}/${file} wlsdeploy/domainLibraries/
+        cd ${DOMAIN_HOME}
+        jar xvf ${archive_root}/${file} wlsdeploy/
+        rm -fr wlsdeploy/domainLibraries
+    done
+
+fi
+
 
 #
 # Configure startup mode
