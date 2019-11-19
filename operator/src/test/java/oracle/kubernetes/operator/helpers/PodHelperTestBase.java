@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -421,6 +422,32 @@ public abstract class PodHelperTestBase {
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(terminalStep.wasRun(), is(false));
+  }
+
+  @Test
+  public void whenPodCreationFailsDueToQuotaExceeded_reportInDomainStatus() {
+    testSupport.failOnResource(POD, getPodName(), NS, createQuotaExceededException());
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(getDomain(), hasStatus("Forbidden", getQuotaExceededMessage()));
+  }
+
+  private ApiException createQuotaExceededException() {
+    return new ApiException(HttpURLConnection.HTTP_FORBIDDEN, getQuotaExceededMessage());
+  }
+
+  private String getQuotaExceededMessage() {
+    return "pod " + getPodName() + " is forbidden: quota exceeded";
+  }
+
+  @Test
+  public void whenPodCreationFailsDueToQuotaExceeded_abortFiber() {
+    testSupport.failOnResource(POD, getPodName(), NS, createQuotaExceededException());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
