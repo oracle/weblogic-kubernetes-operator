@@ -7,8 +7,9 @@ import java.util.Collections;
 
 import com.google.gson.Gson;
 import io.kubernetes.client.ApiException;
+import oracle.kubernetes.operator.calls.FailureStatusSource;
 
-public class UnprocessableEntityBuilder {
+public class UnprocessableEntityBuilder implements FailureStatusSource {
   static final int HTTP_UNPROCESSABLE_ENTITY = 422;
   private ErrorBody errorBody;
 
@@ -31,10 +32,12 @@ public class UnprocessableEntityBuilder {
     errorBody = new ErrorBody();
   }
 
+  @Override
   public String getMessage() {
     return errorBody.getMessage();
   }
 
+  @Override
   public String getReason() {
     return errorBody.getDetails().getCauses()[0].getReason();
   }
