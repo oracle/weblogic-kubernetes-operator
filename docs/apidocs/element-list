@@ -4,6 +4,7 @@ oracle.kubernetes.operator
 oracle.kubernetes.operator.authentication
 oracle.kubernetes.operator.builders
 oracle.kubernetes.operator.calls
+oracle.kubernetes.operator.calls.unprocessable
 oracle.kubernetes.operator.helpers
 oracle.kubernetes.operator.http
 oracle.kubernetes.operator.logging

@@ -21,6 +21,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -610,7 +611,7 @@ public class ServiceHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
-        if (DomainStatusPatch.isUnprocessableEntityFailure(callResponse))
+        if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse))
           return updateDomainStatus(packet, callResponse);
         else
           return onFailure(getConflictStep(), packet, callResponse);

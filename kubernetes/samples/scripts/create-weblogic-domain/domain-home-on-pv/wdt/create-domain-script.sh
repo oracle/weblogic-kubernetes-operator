@@ -45,7 +45,7 @@
 #                  default:  weblogic-deploy.zip
 #
 #   WDT_INSTALL_ZIP_URL   URL for downloading WDT install zip
-#                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.4.0/$WDT_INSTALL_ZIP_FILE
+#                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.6.0/$WDT_INSTALL_ZIP_FILE
 #
 #   https_proxy    Proxy for downloading WDT_INSTALL_ZIP_URL.
 #                  default: "http://www-proxy-hqdc.us.oracle.com:80"
@@ -60,7 +60,7 @@
 #                  of WDT log files.
 #                  default:  /shared/wdt
 #   WDT_VERSION    WDT version to download.
-#                  default:  1.4.0
+#                  default:  1.6.0
 #
 #   DOMAIN_HOME_DIR  Target location for generated domain. 
 #
@@ -74,7 +74,7 @@ WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
 WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
-WDT_VERSION=${WDT_VERSION:-1.4.0}
+WDT_VERSION=${WDT_VERSION:-1.6.0}
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
@@ -166,6 +166,7 @@ function run_wdt {
   fi 
 
   echo domain_home_dir = $domain_home_dir
+  mkdir -p $domain_home_dir
 
   # Output files and directories.
 
