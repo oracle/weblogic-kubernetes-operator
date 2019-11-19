@@ -17,15 +17,15 @@ import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ItManagedCoherence extends BaseTest {
 
@@ -52,7 +52,7 @@ public class ItManagedCoherence extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       testClassName = new Object() {
@@ -67,7 +67,7 @@ public class ItManagedCoherence extends BaseTest {
    *
    * @throws Exception exception if result/pv/operator/domain creation fails
    */
-  @Before
+  @BeforeEach
   public void prepare() throws Exception {
 
     if (FULLTEST) {
@@ -91,7 +91,7 @@ public class ItManagedCoherence extends BaseTest {
         Map<String, Object> operatorMap = createOperatorMap(
             getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator1);
+        Assertions.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
         namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS1);
@@ -106,7 +106,7 @@ public class ItManagedCoherence extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       if (operator1 != null && (JENKINS || testCompletedSuccessfully)) {
@@ -130,7 +130,8 @@ public class ItManagedCoherence extends BaseTest {
     String namespace = domain.getDomainNs();
     for (String pod : pods) {
       assertTrue(
-          pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
+          testUtil.isPodRunning(namespace, domain1LabelSelector, pod), pod + " Pod not running");
+      //pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
     }
   }
 
@@ -144,7 +145,7 @@ public class ItManagedCoherence extends BaseTest {
    */
   @Test
   public void testCreateCoherenceDomainOnPvUsingWlst() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
 
@@ -186,7 +187,7 @@ public class ItManagedCoherence extends BaseTest {
    */
   @Test
   public void testCreateCoherenceDomainInImageUsingWlst() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
 
@@ -253,14 +254,14 @@ public class ItManagedCoherence extends BaseTest {
     for (int i = 0; i < firstNameList.length; i++) {
       result = addDataToCache(firstNameList[i], secondNameList[i]);
       LoggerHelper.getLocal().log(Level.INFO, "addDataToCache returned" + result.stdout());
-      assertTrue("Did not add the expected record", result.stdout().contains(firstNameList[i]));
+      assertTrue(result.stdout().contains(firstNameList[i]), "Did not add the expected record");
     }
     // check if cache size is 6
     result = getCacheSize();
     LoggerHelper.getLocal().log(Level.INFO, "number of records in cache = " + result.stdout());
     if (!(result.stdout().equals("6"))) {
       LoggerHelper.getLocal().log(Level.INFO, "number of records in cache = " + result.stdout());
-      assertTrue("Expected 6 records", "6".equals(result.stdout()));
+      assertTrue("6".equals(result.stdout()), "Expected 6 records");
     }
     // get the data from cache
     result = getCacheContents();
@@ -273,7 +274,7 @@ public class ItManagedCoherence extends BaseTest {
         "Cache is cleared and should be empty" + result.stdout());
     if (!(result.stdout().trim().equals("0"))) {
       LoggerHelper.getLocal().log(Level.INFO,"number of records in cache = " + result.stdout());
-      assertFalse("Expected 0 records", "0".equals(result.stdout()));
+      assertFalse("0".equals(result.stdout()), "Expected 0 records");
     }
     
   }

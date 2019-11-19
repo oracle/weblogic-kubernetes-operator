@@ -13,12 +13,14 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * JUnit test class used for testing configuration override use cases for domain in pv WLS.
@@ -41,7 +43,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    * @throws Exception when the initialization fails.
    */
 
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       testClassName = new Object() {
@@ -59,7 +61,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    * @throws Exception if results/pv directory or operator or domain creation fails.
    */
 
-  @Before
+  @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
       // create operator1
@@ -67,7 +69,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
         createResultAndPvDirs(testClassName);
         Map<String, Object> operatorMap = createOperatorMap(testNumber, true, testprefix);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator1);
+        Assertions.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
         namespaceList = new StringBuffer((String) operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS);
@@ -75,7 +77,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
         domain = prepareDomainAndDB(false, domainNS, mysqldbport);
         mysqlYamlFile = getResultDir() + "/sitconfigtemp" + testprefix + "/mysql/mysql-dbservices.yml";
         JDBC_URL = "jdbc:mysql://" + fqdn + ":" + mysqldbport + "/";
-        Assert.assertNotNull(domain);
+        Assertions.assertNotNull(domain);
       }
     }
   }
@@ -85,7 +87,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    *
    * @throws Exception when domain destruction or MySQL container destruction fails
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
@@ -113,7 +115,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -132,7 +134,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainMsInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -156,7 +158,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJdbcInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -176,7 +178,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJmsInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -198,7 +200,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForWldfInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -215,7 +217,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testConfigOverrideAfterDomainStartupInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -232,7 +234,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testOverrideJdbcResourceAfterDomainStartInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -248,7 +250,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
    */
   @Test
   public void testOverrideJdbcResourceWithNewSecretInPV() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);

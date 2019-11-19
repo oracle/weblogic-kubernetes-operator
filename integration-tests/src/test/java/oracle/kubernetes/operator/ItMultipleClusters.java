@@ -16,20 +16,23 @@ import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Multiple clusters in a domain tests.
  *
  * <p>More than 1 cluster is created in a domain , like configured and dynamic
  */
+@TestMethodOrder(Alphanumeric.class)
 public class ItMultipleClusters extends BaseTest {
 
   private static final String TWO_CONFIGURED_CLUSTER_SCRIPT =
@@ -49,7 +52,7 @@ public class ItMultipleClusters extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       testClassName = new Object() {
@@ -64,7 +67,7 @@ public class ItMultipleClusters extends BaseTest {
    *
    * @throws Exception exception if result/pv/operator/domain creation fails
    */
-  @Before
+  @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
       createResultAndPvDirs(testClassName);
@@ -86,7 +89,7 @@ public class ItMultipleClusters extends BaseTest {
         Map<String, Object> operatorMap =
             createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator1);
+        Assertions.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
         namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS1);
@@ -100,7 +103,7 @@ public class ItMultipleClusters extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       tearDown(new Object() {
@@ -118,7 +121,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoConfiguredCluster() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
 
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -166,7 +169,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoMixedCluster() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String domainuid = "twomixedclusterdomain";
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -212,7 +215,7 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoClusterWdtInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String domainuid = "twoclusterdomainwdt";
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -263,7 +266,7 @@ public class ItMultipleClusters extends BaseTest {
     String namespace = domain.getDomainNs();
     for (String pod : pods) {
       assertTrue(
-          pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
+          testUtil.isPodRunning(namespace, domain1LabelSelector, pod), pod + " Pod not running");
     }
   }
 }

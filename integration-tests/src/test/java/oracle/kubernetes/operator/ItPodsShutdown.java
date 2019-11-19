@@ -20,18 +20,21 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Simple JUnit test file used for testing Operator.
  *
  * <p>This test is used for testing pods being shutdowned by some properties change.
  */
+@TestMethodOrder(Alphanumeric.class)
 public class ItPodsShutdown extends BaseTest {
 
   private static final String testAppName = "httpsessionreptestapp";
@@ -57,7 +60,7 @@ public class ItPodsShutdown extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       testClassName = new Object() {
@@ -72,7 +75,7 @@ public class ItPodsShutdown extends BaseTest {
    *
    * @throws Exception exception if result/pv/operator/domain creation fails
    */
-  @Before
+  @BeforeEach
   public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (FULLTEST) {
@@ -83,7 +86,7 @@ public class ItPodsShutdown extends BaseTest {
       if (operator1 == null) {
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator1);
+        Assertions.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
         namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS1);
@@ -99,7 +102,7 @@ public class ItPodsShutdown extends BaseTest {
                 + "/weblogic-domains/"
                 + domain.getDomainUid()
                 + "/domain.yaml";
-        Assert.assertNotNull(domain);
+        Assertions.assertNotNull(domain);
       }
       domainUid = domain.getDomainUid();
       domainNS = domain.getDomainNs();
@@ -113,7 +116,7 @@ public class ItPodsShutdown extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       destroyDomain();
@@ -160,12 +163,12 @@ public class ItPodsShutdown extends BaseTest {
     TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
     TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
 
-    Assert.assertTrue(
-        "Property value was not found in the updated domain crd ",
-        checkShutdownUpdatedProp(domainUid + "-admin-server", "30", "false", "Graceful"));
-    Assert.assertTrue(
-        "Property value was not found in the updated domain crd ",
-        checkShutdownUpdatedProp(domainUid + "-managed-server1", "30", "false", "Graceful"));
+    Assertions.assertTrue(
+        checkShutdownUpdatedProp(domainUid + "-admin-server", "30", "false", "Graceful"),
+        "Property value was not found in the updated domain crd ");
+    Assertions.assertTrue(
+        checkShutdownUpdatedProp(domainUid + "-managed-server1", "30", "false", "Graceful"),
+        "Property value was not found in the updated domain crd ");
   }
 
   private static void destroyDomain() throws Exception {
@@ -272,7 +275,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testAddShutdownOptionsToMS() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -288,8 +291,8 @@ public class ItPodsShutdown extends BaseTest {
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
     try {
       updateCrdYamlVerifyShutdown(crd, 0);
-      Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-admin-server", "Graceful"));
-      Assert.assertTrue(
+      Assertions.assertTrue(checkShutdownUpdatedProp(domainUid + "-admin-server", "Graceful"));
+      Assertions.assertTrue(
           checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced", "160", "true"));
     } finally {
       LoggerHelper.getLocal().log(
@@ -306,7 +309,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testAddShutdownOptionToCluster() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -324,8 +327,8 @@ public class ItPodsShutdown extends BaseTest {
     crd.addShutdownOptionsToCluster(domain.getClusterName(), shutdownProps);
     try {
       updateCrdYamlVerifyShutdown(crd, 0);
-      Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-admin-server", "Graceful"));
-      Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
+      Assertions.assertTrue(checkShutdownUpdatedProp(domainUid + "-admin-server", "Graceful"));
+      Assertions.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
     } finally {
       LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
@@ -342,7 +345,7 @@ public class ItPodsShutdown extends BaseTest {
   @Test
   public void testAddShutdownOptionsToDomain() throws Exception {
 
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -356,8 +359,8 @@ public class ItPodsShutdown extends BaseTest {
     crd.addShutdownOptionToDomain(shutdownProps);
     try {
       updateCrdYamlVerifyShutdown(crd, 0);
-      Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-admin-server", "160"));
-      Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "160"));
+      Assertions.assertTrue(checkShutdownUpdatedProp(domainUid + "-admin-server", "160"));
+      Assertions.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "160"));
     } finally {
       LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
@@ -376,7 +379,7 @@ public class ItPodsShutdown extends BaseTest {
   // @Test
   public void testAddShutdownOptionsToMsIgnoreSessions() throws Exception {
 
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -392,7 +395,7 @@ public class ItPodsShutdown extends BaseTest {
     long delayTime = 50 * 1000;
     updateCrdYamlVerifyShutdown(crd, delayTime);
 
-    Assert.assertTrue(
+    Assertions.assertTrue(
         checkShutdownUpdatedProp(domainUid + "-managed-server1", "160", "false", "Graceful"));
     if (terminationTime < delayTime) {
       LoggerHelper.getLocal().log(Level.INFO, "FAILURE: ignored opened session during shutdown");
@@ -409,7 +412,7 @@ public class ItPodsShutdown extends BaseTest {
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
     try {
       updateCrdYamlVerifyShutdown(crd, delayTime);
-      Assert.assertTrue(
+      Assertions.assertTrue(
           checkShutdownUpdatedProp(domainUid + "-managed-server1", "160", "true", "Graceful"));
 
       long terminationTimeWithIgnoreSessionTrue = terminationTime;
@@ -438,7 +441,7 @@ public class ItPodsShutdown extends BaseTest {
   @Test
   public void testAddShutdownOptionsToMsTimeout() throws Exception {
 
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -455,7 +458,7 @@ public class ItPodsShutdown extends BaseTest {
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
     try {
       updateCrdYamlVerifyShutdown(crd, delayTime);
-      Assert.assertTrue(
+      Assertions.assertTrue(
           checkShutdownUpdatedProp(domainUid + "-managed-server1", "20", "false", "Graceful"));
       if (terminationTime > (3 * 20 * 1000)) {
         LoggerHelper.getLocal().log(Level.INFO, "\"FAILURE: ignored timeoutValue during shutdown");
@@ -478,7 +481,7 @@ public class ItPodsShutdown extends BaseTest {
   @Test
   public void testAddShutdownOptionsToMsForced() throws Exception {
 
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -498,7 +501,7 @@ public class ItPodsShutdown extends BaseTest {
     try {
       updateCrdYamlVerifyShutdown(crd, delayTime);
 
-      Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
+      Assertions.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
       if ((2 * terminationDefaultOptionsTime < terminationTime)) {
         LoggerHelper.getLocal().log(Level.INFO, "\"FAILURE: ignored timeout Forced value during shutdown");
         throw new Exception("FAILURE: ignored timeout Forced during shutdown");
@@ -518,7 +521,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testAddEnvShutdownOptions() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -551,7 +554,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testShutdownOptionsOverrideViaEnv() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -593,7 +596,7 @@ public class ItPodsShutdown extends BaseTest {
    */
   @Test
   public void testShutdownOptionsOverrideClusterLevel() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);

@@ -20,7 +20,7 @@ import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * JUnit test class used for testing configuration override use cases.
@@ -130,7 +130,7 @@ public class SitConfig extends BaseTest {
       domainScript = "integration-tests/src/test/resources/sitconfig/scripts/"
           + "create-domain-auto-custom-sit-config-inimage.py";
     Domain domain = createSitConfigDomain(domainInImage, domainScript, domainNS);
-    Assert.assertNotNull(domain);
+    Assertions.assertNotNull(domain);
     // copy the jmx test client file the administratioin server weblogic server pod
     String adminpodName = domain.getDomainUid() + "-" + domain.getAdminServerName();
     TestUtils.copyFileViaCat(
@@ -217,7 +217,7 @@ public class SitConfig extends BaseTest {
     content = content.replaceAll("@MYSQLPORT@", mysqldbport);
     Files.write(dst, content.getBytes(charset));
     ExecResult result = TestUtils.exec("kubectl create -f " + mysqlYamlFile);
-    Assert.assertEquals(0, result.exitValue());
+    Assertions.assertEquals(0, result.exitValue());
   }
 
   /**
@@ -621,8 +621,8 @@ public class SitConfig extends BaseTest {
    */
   protected void assertResult(ExecResult result) {
     LoggerHelper.getLocal().log(Level.INFO, result.stdout().trim());
-    Assert.assertFalse(result.stdout().toLowerCase().contains("error"));
-    Assert.assertFalse(result.stderr().toLowerCase().contains("error"));
-    Assert.assertEquals(0, result.exitValue());
+    Assertions.assertFalse(result.stdout().toLowerCase().contains("error"));
+    Assertions.assertFalse(result.stderr().toLowerCase().contains("error"));
+    Assertions.assertEquals(0, result.exitValue());
   }
 }

@@ -37,23 +37,23 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test is used for testing Monitoring Exporter with Operator(s) .
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItMonitoringExporter extends BaseTest {
 
   private static int number = 5;
@@ -95,7 +95,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       testClassName = new Object() {
@@ -110,7 +110,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception if result/pv/operator/domain creation fails
    */
-  @Before
+  @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
       createResultAndPvDirs(testClassName);
@@ -132,7 +132,7 @@ public class ItMonitoringExporter extends BaseTest {
         domainNS2 = "monexp-domainns-" + getNewSuffixCount();
         ((ArrayList<String>) operatorMap.get("domainNamespaces")).add(domainNS2);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator);
+        Assertions.assertNotNull(operator);
 
         namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS1).append(" ").append(domainNS2);
@@ -164,7 +164,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       if (domain != null) {
@@ -242,7 +242,7 @@ public class ItMonitoringExporter extends BaseTest {
     crdCmd = " cat " + destLoc + "/script.log";
     ExecResult result = ExecCommand.exec(crdCmd);
     assertFalse(
-        "Shel script failed: " + result.stdout(), result.stdout().contains("BUILD FAILURE"));
+        result.stdout().contains("BUILD FAILURE"), "Shell script failed: " + result.stdout());
     LoggerHelper.getLocal().log(Level.INFO, "Result output from  the command " + crdCmd + " : " + result.stdout());
   }
 
@@ -370,7 +370,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test01_CheckMetricsViaPrometheus() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -387,7 +387,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test02_ReplaceConfiguration() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -404,7 +404,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test03_AppendConfiguration() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -434,7 +434,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test04_ReplaceOneAttributeValueAsArrayConfiguration() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -454,7 +454,7 @@ public class ItMonitoringExporter extends BaseTest {
   @Test
   public void test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration()
       throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -473,7 +473,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test06_ReplaceWithEmptyConfiguration() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -489,7 +489,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test07_AppendWithEmptyConfiguration() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -508,7 +508,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test08_1AppendWithNotYmlConfiguration() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -525,7 +525,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test08_2ReplaceWithNotYmlConfiguration() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -540,7 +540,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   public void test09_AppendWithCorruptedYmlConfiguration() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -559,7 +559,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test10_ReplaceWithCorruptedYmlConfiguration() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -578,7 +578,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test11_ReplaceWithDublicatedValuesConfiguration() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -596,7 +596,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test12_AppendWithDuplicatedValuesConfiguration() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -615,7 +615,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test13_ReplaceMetricsNameSnakeCaseFalseConfiguration() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -639,7 +639,7 @@ public class ItMonitoringExporter extends BaseTest {
   // verify that change configuration fails without authentication
   @Test
   public void test14_ChangeConfigNoCredentials() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -663,7 +663,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test15_ChangeConfigInvalidUser() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -683,7 +683,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test16_ChangeConfigInvalidPass() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -702,7 +702,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test17_ChangeConfigEmptyUser() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -722,7 +722,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test18_ChangeConfigEmptyPass() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -742,7 +742,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test19_CheckPromGrafanaLatestVersion() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -763,7 +763,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test01_1_EndToEndViaChart() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -815,8 +815,8 @@ public class ItMonitoringExporter extends BaseTest {
     BaseTest.setWaitTimePod(10);
     // BaseTest.setMaxIterationsPod(50);
     assertTrue(
-        "Can't find expected metrics",
-        checkMetricsViaPrometheus("webapp_config_open_sessions_current_count", domainNS1));
+        checkMetricsViaPrometheus("webapp_config_open_sessions_current_count", domainNS1),
+        "Can't find expected metrics");
   }
 
   private static void configureDomainInPrometheus(String oldDomainNS,
@@ -993,7 +993,7 @@ public class ItMonitoringExporter extends BaseTest {
         + "/buidImage.log";
     ExecResult result = ExecCommand.exec(crdCmd);
     assertFalse(
-        "Shell script failed: " + result.stdout(), result.stdout().contains("BUILD FAILURE"));
+        result.stdout().contains("BUILD FAILURE"), "Shell script failed: " + result.stdout());
     LoggerHelper.getLocal().log(Level.INFO, "Result output from  the command " + crdCmd + " : " + result.stdout());
     
     LoggerHelper.getLocal().log(Level.INFO, " Starting to create secret");
@@ -1085,9 +1085,9 @@ public class ItMonitoringExporter extends BaseTest {
 
 
     assertFalse(
-        "Can't create prometheus pods",
         resultStatus.stdout().contains("CrashLoopBackOff")
-            || resultStatus.stdout().contains("Error"));
+            || resultStatus.stdout().contains("Error"),
+        "Can't create prometheus pods");
 
     podName = getPodName("app=grafana", "monitoring");
     TestUtils.checkPodReady(podName, "monitoring");
@@ -1118,8 +1118,8 @@ public class ItMonitoringExporter extends BaseTest {
     ExecResult result = ExecCommand.exec(crdCmd);
     assertTrue(result.stdout().contains("wls_jvm_uptime"));
     assertTrue(
-        "Can't find expected metrics",
-        checkMetricsViaPrometheus("wls_servlet_execution_time_average", "test-webapp"));
+        checkMetricsViaPrometheus("wls_servlet_execution_time_average", "test-webapp"),
+        "Can't find expected metrics");
   }
 
 

@@ -20,17 +20,17 @@ import oracle.kubernetes.operator.utils.JrfDomain;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 
 public class ItJrfPvWlst extends BaseTest {
   private static String rcuSchemaPrefix = "jrfdomain";
@@ -50,7 +50,7 @@ public class ItJrfPvWlst extends BaseTest {
   *
   * @throws Exception - if an error occurs when load property file or create DB pod
   */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
@@ -58,7 +58,7 @@ public class ItJrfPvWlst extends BaseTest {
     initialize(APP_PROPS_FILE, testClassName);  
   }
   
-  @Before
+  @BeforeEach
   public void prepare() throws Exception {
     if (QUICKTEST) {
       createResultAndPvDirs(testClassName);
@@ -78,7 +78,7 @@ public class ItJrfPvWlst extends BaseTest {
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
             true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator1);
+        Assertions.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
         namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS);
@@ -86,7 +86,7 @@ public class ItJrfPvWlst extends BaseTest {
     }  
   }
   
-  @After
+  @AfterEach
   public void unPrepare() throws Exception {
     DbUtils.deleteRcuPod(getResultDir());
     DbUtils.stopOracleDB(getResultDir());
@@ -98,7 +98,7 @@ public class ItJrfPvWlst extends BaseTest {
   *
   * @throws Exception - if any error occurs
   */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     tearDown(new Object() {
     }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());

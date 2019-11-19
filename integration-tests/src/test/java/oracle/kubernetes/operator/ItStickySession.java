@@ -15,14 +15,14 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Simple JUnit test file used for testing Operator.
@@ -30,7 +30,7 @@ import org.junit.runners.MethodSorters;
  * <p>This test is used for testing the affinity between a web client and a Weblogic server for the
  * duration of a HTTP session created by Voyager load balancer.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItStickySession extends BaseTest {
   private static final String testAppName = "stickysessionapp";
   private static final String testAppPath = testAppName + "/StickySessionCounterServlet";
@@ -53,7 +53,7 @@ public class ItStickySession extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       testClassName = new Object() {
@@ -70,7 +70,7 @@ public class ItStickySession extends BaseTest {
    * @throws Exception exception if result/pv/operator/domain creation fails
    */
 
-  @Before
+  @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
       createResultAndPvDirs(testClassName);
@@ -83,7 +83,7 @@ public class ItStickySession extends BaseTest {
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassNameShort);
         //operator = TestUtils.createOperator(OPERATOR1_YAML);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator);
+        Assertions.assertNotNull(operator);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
         namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS);
@@ -125,7 +125,7 @@ public class ItStickySession extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       tearDown(new Object() {
@@ -146,7 +146,7 @@ public class ItStickySession extends BaseTest {
    */
   @Test
   public void testSameSessionStickiness() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -166,8 +166,8 @@ public class ItStickySession extends BaseTest {
     String serverName1 = getHttpResponseAttribute(result.stdout(), serverNameAttr);
     String serverID1 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
 
-    Assume.assumeNotNull(serverName1);
-    Assume.assumeNotNull(serverID1);
+    Assertions.assertNotNull(serverName1);
+    Assertions.assertNotNull(serverID1);
 
     LoggerHelper.getLocal().log(Level.INFO,
         "The first HTTP request established a connection with server <"
@@ -184,9 +184,9 @@ public class ItStickySession extends BaseTest {
     String serverID2 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
     String count = getHttpResponseAttribute(result.stdout(), countAttr);
 
-    Assume.assumeNotNull(serverName2);
-    Assume.assumeNotNull(serverID2);
-    Assume.assumeNotNull(count);
+    Assertions.assertNotNull(serverName2);
+    Assertions.assertNotNull(serverID2);
+    Assertions.assertNotNull(count);
 
     LoggerHelper.getLocal().log(Level.INFO,
         "The second HTTP request connected to server <"
@@ -196,17 +196,17 @@ public class ItStickySession extends BaseTest {
             + ">");
 
     // Verify that the same session info is used
-    Assume.assumeTrue("HTTP session should NOT change!", serverID1.equals(serverID2));
+    Assumptions.assumeTrue(serverID1.equals(serverID2), "HTTP session should NOT change!");
     LoggerHelper.getLocal().log(Level.INFO, "Same HTTP session id <" + serverID1 + "> is used");
 
     // Verify server-affinity
-    Assume.assumeTrue("Weblogic server name should NOT change!", serverName1.equals(serverName2));
+    Assumptions.assumeTrue(serverName1.equals(serverName2), "Weblogic server name should NOT change!");
     LoggerHelper.getLocal().log(
         Level.INFO, "Two HTTP requests are directed to same Weblogic server <"
             + serverName1 + ">");
 
     // Verify that count numbers from two HTTP responses match
-    Assume.assumeTrue("Count number does not match", Integer.parseInt(count) == counterNum);
+    Assumptions.assumeTrue(Integer.parseInt(count) == counterNum, "Count number does not match");
     LoggerHelper.getLocal().log(Level.INFO,
         "Count number <"
             + count
@@ -228,7 +228,7 @@ public class ItStickySession extends BaseTest {
    */
   @Test
   public void testDiffSessionsNoSharing() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -249,7 +249,7 @@ public class ItStickySession extends BaseTest {
 
     // Retrieve the session id from HTTP response
     String serverIdClient1 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
-    Assume.assumeNotNull(serverIdClient1);
+    Assertions.assertNotNull(serverIdClient1);
 
     LoggerHelper.getLocal().log(Level.INFO,
         "Client1 created a connection with HTTP session id <"
@@ -265,8 +265,8 @@ public class ItStickySession extends BaseTest {
     String serverIdClient2 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
     String count = getHttpResponseAttribute(result.stdout(), countAttr);
 
-    Assume.assumeNotNull(serverIdClient2);
-    Assume.assumeNotNull(count);
+    Assertions.assertNotNull(serverIdClient2);
+    Assertions.assertNotNull(count);
 
     LoggerHelper.getLocal().log(Level.INFO,
         "Client2 created a connection with HTTP session id <"
@@ -276,12 +276,12 @@ public class ItStickySession extends BaseTest {
             + ">");
 
     // Verify that each client session has its own session ID
-    Assume.assumeFalse("HTTP session should NOT be same!", serverIdClient1.equals(serverIdClient2));
+    Assumptions.assumeFalse(serverIdClient1.equals(serverIdClient2), "HTTP session should NOT be same!");
 
     // Verify that count number retrieved from session state is not shared between two clients
-    Assume.assumeTrue(
-        "Count number <" + counterNum + "> set by client1 should be invisible to client2",
-        count.equals("0"));
+    Assumptions.assumeTrue(
+        count.equals("0"),
+        "Count number <" + counterNum + "> set by client1 should be invisible to client2");
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -290,7 +290,7 @@ public class ItStickySession extends BaseTest {
       throws Exception {
     String attrPatn = httpAttrMap.get(attribute);
 
-    Assume.assumeNotNull(attrPatn);
+    Assertions.assertNotNull(attrPatn);
 
     String httpAttribute = null;
     Pattern pattern = Pattern.compile(attrPatn);

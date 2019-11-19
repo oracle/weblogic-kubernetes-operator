@@ -13,14 +13,14 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * JUnit test class used for testing configuration override use cases for Domain In Image.
@@ -43,7 +43,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    * @throws Exception when the initialization fails.
    */
 
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       testClassName = new Object() {
@@ -61,7 +61,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    * @throws Exception if results/pv directory or operator or domain creation fails.
    */
 
-  @Before
+  @BeforeEach
   public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (FULLTEST) {
@@ -70,7 +70,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
         createResultAndPvDirs(testClassName);
         Map<String, Object> operatorMap = createOperatorMap(testNumber, true, testprefix);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator1);
+        Assertions.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
         namespaceList = new StringBuffer((String) operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS);
@@ -78,7 +78,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
         domain = prepareDomainAndDB(true, domainNS, mysqldbport);
         JDBC_URL = "jdbc:mysql://" + fqdn + ":" + mysqldbport + "/";
         mysqlYamlFile = getResultDir() + "/sitconfigtemp" + testprefix + "/mysql/mysql-dbservices.yml";
-        Assert.assertNotNull(domain);
+        Assertions.assertNotNull(domain);
       }
     }
   }
@@ -88,7 +88,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    *
    * @throws Exception when domain destruction or MySQL container destruction fails
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
@@ -116,7 +116,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -136,7 +136,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainMsInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -160,7 +160,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJdbcInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -180,7 +180,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJmsInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -202,7 +202,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForWldfInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
