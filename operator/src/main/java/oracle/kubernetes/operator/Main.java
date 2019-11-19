@@ -461,31 +461,40 @@ public class Main {
         case "ADDED":
           LOGGER.info(MessageKeys.ENTER_METHOD, "Adding namespace " + ns
               + " isrunning = " + delegate.isNamespaceRunning(ns));
-          if (targetNamespaces.contains(ns)) {
-            LOGGER.info(MessageKeys.ENTER_METHOD, "Before creating config map for namespace " 
-                + ns);
-            // if (targetNamespaces.contains(ns) && ! delegate.isNamespaceRunning(ns)) {
-            // runSteps(Step.chain(
-            //     ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
-            //     createConfigMapStep(ns)));
-            Collection<String> nsToStart = new ArrayList<>();
-            nsToStart.add(ns);
-            runSteps(new StartNamespacesStep(nsToStart));
-            LOGGER.info(MessageKeys.ENTER_METHOD, "After creating config map for namespace " 
-                + ns);
+          // We only create the config map when a namespace is added
+          // the rest of the operations to standup domains in a new namespace
+          // will continue to be handled in recheckDomain method, which periodcally
+          // checks for new domain resources in the target name spaces.
+          if (targetNamespaces.contains(ns) && ! delegate.isNamespaceRunning(ns)) {
+            runSteps(Step.chain(
+                ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
+                createConfigMapStep(ns)));
           }
+          // if (targetNamespaces.contains(ns)) {
+            // LOGGER.info(MessageKeys.ENTER_METHOD, "Before creating config map for namespace " 
+            //  + ns);
+            // Collection<String> nsToStart = new ArrayList<>();
+            // nsToStart.add(ns);
+            // runSteps(new StartNamespacesStep(nsToStart));
+            // LOGGER.info(MessageKeys.ENTER_METHOD, "After creating config map for namespace " 
+            //     + ns);
+          // }
           break;
 
         case "DELETED":
           // mark the namespace is stopping and it will be stopped the next time 
           // when recheckDomains is triggered
           LOGGER.info(MessageKeys.ENTER_METHOD, "Deleting namespace " + ns);
-          if (targetNamespaces.contains(ns)) {
-            stopNamespace(ns);
+          if (targetNamespaces.contains(ns) && delegate.isNamespaceRunning(ns)) {
+            isNamespaceStopping.put(ns, new AtomicBoolean(true));
+          }
+     
+          // if (targetNamespaces.contains(ns)) {
+          //   stopNamespace(ns);
             // if (targetNamespaces.contains(ns) && delegate.isNamespaceRunning(ns)) {
             // isNamespaceStopping.put(ns, new AtomicBoolean(true));
-            LOGGER.info(MessageKeys.ENTER_METHOD, "Deleted namespace " + ns);
-          }
+            // LOGGER.info(MessageKeys.ENTER_METHOD, "Deleted namespace " + ns);
+          // }
           break;
 
         case "MODIFIED":
