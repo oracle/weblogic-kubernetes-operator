@@ -1,7 +1,7 @@
 ---
 title: "Domain home on a PV"
 date: 2019-02-23T17:32:31-05:00
-weight: 2
+weight: 4
 description: "Sample for creating a WebLogic domain home on an existing PV or PVC, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
@@ -19,6 +19,28 @@ The following prerequisites must be handled prior to running the create domain s
 * Create a Kubernetes namespace for the domain unless you intend to use the default namespace.
 * In the same Kubernetes namespace, create the Kubernetes persistent volume (PV) where the domain home will be hosted, and the Kubernetes persistent volume claim (PVC) for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}). By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1` and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create `domain1-weblogic-sample-pvc` using [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh) with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes secrets `username` and `password` of the administrative account in the same Kubernetes namespace as the domain.
+
+{{% notice note %}}
+Please note the following important considerations about using persistent storage.
+{{% /notice %}}
+
+There are a number of different Kubernetes storage providers that can be used to create persistent
+volumes.  Depending on which variant and version of Kubernetes you are using, there will be different
+steps required to create persistent volumes.  You must use a storage provider that suppports
+the `ReadWriteMany` option.
+
+Many storage providers will create a file system on
+the persistent volume which is owned by the `root` user.  In those cases, you will need to update the
+file permissions and/or ownership so that the `oracle` user (`uid 1000`) that is used in the standard
+WebLogic Server Docker images can write to the file system in the persistent volume.
+ 
+This sample will automatically set the owner of all files on the persistent
+volume to `uid 1000`.  If you want to change that behavior, please edit `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml` and edit or remove the
+`initContainer` section.
+ 
+In some variants of Kubernetes (for example OpenShift) you may also need to configure your pods
+to run with user 1000 to make sure that the WebLogic processes can access the file system on the
+persistent volume.
 
 #### Use the script to create a domain
 

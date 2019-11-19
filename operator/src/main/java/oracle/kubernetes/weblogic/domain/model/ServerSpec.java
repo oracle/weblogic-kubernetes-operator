@@ -85,6 +85,13 @@ public interface ServerSpec {
   boolean shouldStart(int currentReplicas);
 
   /**
+   * Returns true if the server is shutting down, or not configured to be started.
+   *
+   * @return whether the server is shutting down, or not configured to be started.
+   */
+  boolean isShuttingDown();
+
+  /**
    * Returns the volume mounts to be defined for this server.
    *
    * @return a list of environment volume mounts

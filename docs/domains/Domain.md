@@ -29,17 +29,23 @@ DomainSpec is a description of a domain.
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
 | `includeServerOutInPodLog` | Boolean | If true (the default), the server .out file will be included in the pod's stdout. |
+| `keepJRFSchema` | Boolean | Keep JRF schema between lifecycle updates |
 | `logHome` | string | The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files |
 | `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true.  |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
+| `opssKeyPassPhrase` | [Secret Reference](k8s1.13.5.md#secret-reference) | opss key passphrase. |
+| `opssKeyWalletConfigMap` | string | The name of the config map to store the opss key wallet file |
 | `replicas` | number | The number of managed servers to run in any cluster that does not specify a replica count. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
+| `rollbackIfRequireStart` | Boolean | Rollback dynamic changes if the updates require restart |
 | `serverPod` | [Server Pod](#server-pod) | Configuration affecting server pods. |
 | `serverService` | [Server Service](#server-service) | Customization affecting ClusterIP Kubernetes services for WebLogic Server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. |
 | `serverStartState` | string | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
+| `useOnlineUpdate` | Boolean | Use Online update during lifecycle changes |
 | `wdtConfigMap` | string | The name of the wdt config map used for optional wdt tool. |
-| `opssKeyWalletConfigMap` | string | The name of the wdt model encryption passphrase  used for optional wdt tool. |
+| `wdtDomainType` | string | wdt domain type |
+| `wdtEncryptionPassPhrase` | [Secret Reference](k8s1.13.5.md#secret-reference) | wdt model encryption key passphrase. |
 | `webLogicCredentialsSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | The name of a pre-created Kubernetes secret, in the domain's namespace, that holds the username and password needed to boot WebLogic Server under the 'username' and 'password' fields. |
 
 ### Domain Status

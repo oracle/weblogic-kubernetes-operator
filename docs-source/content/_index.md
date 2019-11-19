@@ -17,9 +17,13 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 The fastest way to experience the operator is to follow the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}), or you can peruse our [documentation]({{< relref "/userguide/_index.md" >}}), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples]({{< relref "/samples/_index.md" >}}).
 
 ***
-The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.3.0.
-This release was published on August 27th, 2019.
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.4.0.
+This release was published on November 15th, 2019.
 ***
+
+{{% notice note %}}
+Please review the prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction" >}}).
+{{% /notice %}}
 
 #### Operator earlier versions
 
