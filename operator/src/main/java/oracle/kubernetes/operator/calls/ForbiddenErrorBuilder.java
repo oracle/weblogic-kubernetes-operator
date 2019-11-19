@@ -8,7 +8,7 @@ import java.net.HttpURLConnection;
 import io.kubernetes.client.ApiException;
 
 /**
- * A builder for 'forbidden' async results
+ * A builder for 'forbidden' async results.
  */
 public class ForbiddenErrorBuilder implements FailureStatusSource {
   private static final String FORBIDDEN_REASON = "Forbidden";
