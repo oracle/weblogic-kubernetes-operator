@@ -233,10 +233,12 @@ public class ConfigMapHelper {
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
         V1ConfigMap existingMap = callResponse.getResult();
         LOGGER.info(MessageKeys.ENTER_METHOD, "ReadResponseStep.onSeccuss existingMap = " 
-            + existingMap + " isCompatible = " + isCompatibleMap(existingMap));
+            + existingMap);
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
         } else if (isCompatibleMap(existingMap)) {
+          LOGGER.info(MessageKeys.ENTER_METHOD, "ReadResponseStep.onSeccuss existingMap = " 
+              + existingMap + " isCompatible = " + isCompatibleMap(existingMap));
           logConfigMapExists();
           packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, existingMap);
           return doNext(packet);
