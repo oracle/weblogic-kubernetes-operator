@@ -10,7 +10,8 @@ import javax.json.JsonValue;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.custom.V1Patch;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
+import oracle.kubernetes.operator.calls.FailureStatusSource;
+import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -23,15 +24,6 @@ public class DomainStatusPatch extends Step {
   private final String name;
   private final String namespace;
   private JsonPatchBuilder patchBuilder;
-
-  /**
-   * Returns true if the specified call response indicates an unprocessable entity response from Kubernetes.
-   * @param callResponse the response from a Kubernetes call
-   * @return true if an unprocessable entity failure has been reported
-   */
-  static <T> boolean isUnprocessableEntityFailure(CallResponse<T> callResponse) {
-    return callResponse.isFailure() && UnprocessableEntityBuilder.isUnprocessableEntity(callResponse.getE());
-  }
 
   /**
    * Update the domain status. This may involve either replacing the current status or adding to it.
@@ -50,8 +42,8 @@ public class DomainStatusPatch extends Step {
    * @param apiException the exception reporting an unprocessable entity
    */
   static Step createStep(Domain domain, ApiException apiException) {
-    UnprocessableEntityBuilder builder = UnprocessableEntityBuilder.fromException(apiException);
-    return createStep(domain, builder.getReason(), builder.getMessage());
+    FailureStatusSource failure = UnrecoverableErrorBuilder.fromException(apiException);
+    return createStep(domain, failure.getReason(), failure.getMessage());
   }
 
   /**

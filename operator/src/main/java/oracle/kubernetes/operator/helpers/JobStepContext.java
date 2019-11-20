@@ -26,6 +26,7 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.NextAction;
@@ -445,7 +446,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Job> callResponse) {
-      if (DomainStatusPatch.isUnprocessableEntityFailure(callResponse))
+      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse))
         return updateDomainStatus(packet, callResponse);
       else
         return super.onFailure(packet, callResponse);

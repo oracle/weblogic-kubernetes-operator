@@ -142,7 +142,6 @@ if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
 
 fi
 
-
 #
 # Configure startup mode
 #
@@ -194,7 +193,7 @@ if [ ! -z ${DATA_HOME} ]; then
 fi
 
 #
-# check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HdOME if needed:
+# check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed:
 #
 
 exportEffectiveDomainHome || exitOrLoop
