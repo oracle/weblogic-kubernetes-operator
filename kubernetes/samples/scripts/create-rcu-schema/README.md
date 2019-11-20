@@ -161,6 +161,8 @@ usage: ./drop-rcu-schema.sh -s <schemaPrefix> -d <dburl>  [-h]
   -s RCU Schema Prefix (required)
   -d Oracle Database URL
       (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s)
+  -t RCU Schema Type (optional)
+      Supported values: fmw(default),soa,osb,soaosb,soaess,soaessosb
   -h Help
 
 $ ./drop-rcu-schema.sh -s domain1
