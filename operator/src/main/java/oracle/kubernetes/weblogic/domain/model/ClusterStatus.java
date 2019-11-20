@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import javax.annotation.Nonnull;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
@@ -11,8 +13,10 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
+
 /** ServerStatus describes the current status of a specific WebLogic Server. */
-public class ClusterStatus implements Comparable<ClusterStatus> {
+public class ClusterStatus implements Comparable<ClusterStatus>, PatchableComponent<ClusterStatus> {
 
   @Description("WebLogic cluster name. Required.")
   @SerializedName("clusterName")
@@ -33,6 +37,16 @@ public class ClusterStatus implements Comparable<ClusterStatus> {
   @Description("The maximum number of cluster members. Required.")
   @Range(minimum = 0)
   private Integer maximumReplicas;
+
+  public ClusterStatus() {
+  }
+
+  ClusterStatus(ClusterStatus other) {
+    this.clusterName = other.clusterName;
+    this.replicas = other.replicas;
+    this.readyReplicas = other.readyReplicas;
+    this.maximumReplicas = other.maximumReplicas;
+  }
 
   /**
    * WebLogic cluster name. Required.
@@ -76,12 +90,8 @@ public class ClusterStatus implements Comparable<ClusterStatus> {
     return this;
   }
 
-  public Integer getReadyReplicas() {
+  Integer getReadyReplicas() {
     return readyReplicas;
-  }
-
-  public void setReadyReplicas(Integer readyReplicas) {
-    this.readyReplicas = readyReplicas;
   }
 
   public ClusterStatus withReadyReplicas(Integer readyReplicas) {
@@ -89,12 +99,8 @@ public class ClusterStatus implements Comparable<ClusterStatus> {
     return this;
   }
 
-  public Integer getMaximumReplicas() {
+  Integer getMaximumReplicas() {
     return maximumReplicas;
-  }
-
-  public void setMaximumReplicas(Integer maximumReplicas) {
-    this.maximumReplicas = maximumReplicas;
   }
 
   public ClusterStatus withMaximumReplicas(Integer maximumReplicas) {
@@ -140,7 +146,22 @@ public class ClusterStatus implements Comparable<ClusterStatus> {
   }
 
   @Override
-  public int compareTo(ClusterStatus o) {
+  public int compareTo(@Nonnull ClusterStatus o) {
     return clusterName.compareTo(o.clusterName);
+  }
+
+  @Override
+  public boolean isPatchableFrom(ClusterStatus other) {
+    return other.getClusterName() != null && other.getClusterName().equals(clusterName);
+  }
+
+  private static ObjectPatch<ClusterStatus> clusterPatch = createObjectPatch(ClusterStatus.class)
+        .withStringField("clusterName", ClusterStatus::getClusterName)
+        .withIntegerField("maximumReplicas", ClusterStatus::getMaximumReplicas)
+        .withIntegerField("readyReplicas", ClusterStatus::getReadyReplicas)
+        .withIntegerField("replicas", ClusterStatus::getReplicas);
+
+  static ObjectPatch<ClusterStatus> getObjectPatch() {
+    return clusterPatch;
   }
 }

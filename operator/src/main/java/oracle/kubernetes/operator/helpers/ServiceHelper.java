@@ -17,6 +17,7 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
 import io.kubernetes.client.models.V1Status;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -618,7 +619,7 @@ public class ServiceHelper {
       }
 
       private NextAction updateDomainStatus(Packet packet, CallResponse<V1Service> callResponse) {
-        return doNext(DomainStatusPatch.createStep(getDomain(), callResponse.getE()), packet);
+        return doNext(DomainStatusUpdater.createFailedStep(callResponse, null), packet);
       }
 
       @Override

@@ -10,18 +10,23 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.json.Json;
+import javax.json.JsonPatchBuilder;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.FailureStatusSource;
+import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -56,7 +61,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progre
  * processing flow can use to explicitly set the condition to Progressing or Failed.
  */
 public class DomainStatusUpdater {
-  public static final String INSPECTING_DOMAIN_PROGRESS_REASON = "InspectingDomainPrescence";
+  public static final String INSPECTING_DOMAIN_PROGRESS_REASON = "InspectingDomainPresence";
   public static final String MANAGED_SERVERS_STARTING_PROGRESS_REASON = "ManagedServersStarting";
   public static final String SERVERS_READY_REASON = "ServersReady";
   public static final String ALL_STOPPED_AVAILABLE_REASON = "AllServersStopped";
@@ -68,15 +73,12 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain status to indicate WebLogic server status.
-   *
-   * @param timeoutSeconds Timeout in seconds
-   * @param next Next step
-   * @return Step
+   * Creates an asynchronous step to update domain status from the topology in the current packet.
+   * @param next the next step
+   * @return the new step
    */
-  @SuppressWarnings("SameParameterValue")
-  static Step createStatusStep(int timeoutSeconds, Step next) {
-    return new StatusUpdateHookStep(timeoutSeconds, next);
+  static Step createStatusUpdateStep(Step next) {
+    return new StatusUpdateStep(next);
   }
 
   /**
@@ -112,59 +114,16 @@ public class DomainStatusUpdater {
     return new AvailableStep(reason, next);
   }
 
-  private static NextAction doDomainUpdate(
-      Domain dom, DomainPresenceInfo info, Packet packet, Step conflictStep, Step next) {
-    V1ObjectMeta meta = dom.getMetadata();
-    NextAction na = new NextAction();
-
-    // *NOTE* See the note in KubernetesVersion
-    // If we update the CrdHelper to include the status subresource, then this code
-    // needs to be modified to use replaceDomainStatusAsync.  Then, validate if onSuccess
-    // should update info.
-
-    na.invoke(
-        new CallBuilder()
-            .replaceDomainAsync(
-                meta.getName(),
-                meta.getNamespace(),
-                dom,
-                new DefaultResponseStep<Domain>(next) {
-                  @Override
-                  public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
-                    if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
-                      return doNext(packet); // Just ignore update
-                    }
-                    return super.onFailure(
-                        getRereadDomainConflictStep(info, meta, conflictStep),
-                        packet,
-                        callResponse);
-                  }
-
-                  @Override
-                  public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
-                    // Update info only if using replaceDomain
-                    // Skip, if we switch to using replaceDomainStatus
-                    info.setDomain(callResponse.getResult());
-                    return doNext(packet);
-                  }
-                }),
-        packet);
-    return na;
-  }
-
-  private static Step getRereadDomainConflictStep(
-      DomainPresenceInfo info, V1ObjectMeta meta, Step next) {
-    return new CallBuilder()
-        .readDomainAsync(
-            meta.getName(),
-            meta.getNamespace(),
-            new DefaultResponseStep<Domain>(next) {
-              @Override
-              public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
-                info.setDomain(callResponse.getResult());
-                return doNext(packet);
-              }
-            });
+  /**
+   * Asynchronous step to set Domain condition to Failed after an asynchronous call failure.
+   *
+   * @param callResponse the response from an unrecoverable call
+   * @param next Next step
+   * @return Step
+   */
+  public static Step createFailedStep(CallResponse<?> callResponse, Step next) {
+    FailureStatusSource failure = UnrecoverableErrorBuilder.fromException(callResponse.getE());
+    return createFailedStep(failure.getReason(), failure.getMessage(), next);
   }
 
   /**
@@ -175,14 +134,92 @@ public class DomainStatusUpdater {
    * @return Step
    */
   static Step createFailedStep(Throwable throwable, Step next) {
-    return new FailedStep(throwable, next);
+    return createFailedStep("Exception", throwable.getMessage(), next);
   }
 
-  static class DomainConditionStepContext {
-    private final DomainPresenceInfo info;
+  /**
+   * Asynchronous step to set Domain condition to Failed.
+   *
+   * @param reason the reason for the failure
+   * @param message a fuller description of the problem
+   * @param next Next step
+   * @return Step
+   */
+  private static Step createFailedStep(String reason, String message, Step next) {
+    return new FailedStep(reason, message, next);
+  }
 
-    DomainConditionStepContext(Packet packet) {
+  abstract static class DomainStatusUpdaterStep extends Step {
+
+    DomainStatusUpdaterStep(Step next) {
+      super(next);
+    }
+
+    DomainStatusUpdaterContext createContext(Packet packet) {
+      return new DomainStatusUpdaterContext(packet, this);
+    }
+
+    void modifyStatus(DomainStatus domainStatus) {
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainStatusUpdaterContext context = createContext(packet);
+
+      DomainStatus newStatus = context.getNewStatus();
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
+
+      return context.isStatusChanged(newStatus)
+            ? doNext(packet)
+            : doNext(createDomainStatusPatchStep(context, newStatus), packet);
+    }
+
+    private Step createDomainStatusPatchStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {
+      JsonPatchBuilder builder = Json.createPatchBuilder();
+      newStatus.createPatchFrom(builder, context.getStatus());
+
+      return new CallBuilder().patchDomainAsync(
+            context.getDomainName(),
+            context.getNamespace(),
+            new V1Patch(builder.build().toString()),
+            createResponseStep());
+    }
+
+    private ResponseStep<Domain> createResponseStep() {
+      return new DefaultResponseStep<>(getNext());
+    }
+
+  }
+
+  static class DomainStatusUpdaterContext {
+    private final DomainPresenceInfo info;
+    private DomainStatusUpdaterStep domainStatusUpdaterStep;
+
+    DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = packet.getSpi(DomainPresenceInfo.class);
+      this.domainStatusUpdaterStep = domainStatusUpdaterStep;
+    }
+
+    DomainStatus getNewStatus() {
+      DomainStatus newStatus = cloneStatus();
+      modifyStatus(newStatus);
+      return newStatus;
+    }
+
+    String getDomainUid() {
+      return getDomain().getDomainUid();
+    }
+
+    boolean isStatusChanged(DomainStatus newStatus) {
+      return newStatus.equals(getStatus());
+    }
+
+    private String getNamespace() {
+      return getMetadata().getNamespace();
+    }
+
+    private V1ObjectMeta getMetadata() {
+      return getDomain().getMetadata();
     }
 
     DomainPresenceInfo getInfo() {
@@ -196,89 +233,63 @@ public class DomainStatusUpdater {
     Domain getDomain() {
       return info.getDomain();
     }
-  }
 
-  private static class StatusUpdateHookStep extends Step {
-    private final int timeoutSeconds;
-
-    StatusUpdateHookStep(int timeoutSeconds, Step next) {
-      super(next);
-      this.timeoutSeconds = timeoutSeconds;
+    void modifyStatus(DomainStatus status) {
+      domainStatusUpdaterStep.modifyStatus(status);
     }
 
-    @Override
-    public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      return doNext(
-          ServerStatusReader.createDomainStatusReaderStep(
-              info, timeoutSeconds, new StatusUpdateStep(getNext())),
-          packet);
+    private String getDomainName() {
+      return getMetadata().getName();
+    }
+
+    DomainStatus cloneStatus() {
+      return new DomainStatus(getStatus());
     }
   }
 
-  static class StatusUpdateStep extends Step {
+  /**
+   * A step which updates the domain status from the domain topology in the current packet.
+   */
+  private static class StatusUpdateStep extends DomainStatusUpdaterStep {
     StatusUpdateStep(Step next) {
       super(next);
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      LOGGER.entering();
-
-      final StatusUpdateContext context = new StatusUpdateContext(packet);
-
-      DomainStatus status = context.getStatus();
-
-      boolean isStatusModified =
-          modifyDomainStatus(
-              status,
-              s -> {
-                if (context.getDomain() != null) {
-                  if (context.getDomainConfig().isPresent()) {
-                    s.setServers(new ArrayList<>(context.getServerStatuses().values()));
-                    s.setClusters(new ArrayList<>(context.getClusterStatuses().values()));
-                    s.setReplicas(context.getReplicaSetting());
-                  }
-
-                  if (context.isHasFailedPod()) {
-                    s.removeConditionIf(c -> c.getType() == Available);
-                    s.removeConditionIf(c -> c.getType() == Progressing);
-                    s.addCondition(
-                        new DomainCondition(Failed).withStatus(TRUE).withReason("PodFailed"));
-                  } else {
-                    s.removeConditionIf(c -> c.getType() == Failed);
-                    if (context.allIntendedServersRunning()) {
-                      s.removeConditionIf(c -> c.getType() == Progressing);
-                      s.addCondition(
-                          new DomainCondition(Available)
-                              .withStatus(TRUE)
-                              .withReason(SERVERS_READY_REASON));
-                    }
-                  }
-                }
-              });
-
-      if (isStatusModified) {
-        LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getInfo().getDomainUid(), status);
-      }
-      LOGGER.exiting();
-
-      return isStatusModified
-          ? doDomainUpdate(
-              context.getDomain(), context.getInfo(), packet, StatusUpdateStep.this, getNext())
-          : doNext(packet);
+    DomainStatusUpdaterContext createContext(Packet packet) {
+      return new StatusUpdateContext(packet, this);
     }
 
-    static class StatusUpdateContext extends DomainConditionStepContext {
+    static class StatusUpdateContext extends DomainStatusUpdaterContext {
       private final WlsDomainConfig config;
       private final Map<String, String> serverState;
       private final Map<String, ServerHealth> serverHealth;
 
-      StatusUpdateContext(Packet packet) {
-        super(packet);
+      StatusUpdateContext(Packet packet, StatusUpdateStep statusUpdateStep) {
+        super(packet, statusUpdateStep);
         config = packet.getValue(DOMAIN_TOPOLOGY);
         serverState = packet.getValue(SERVER_STATE_MAP);
         serverHealth = packet.getValue(SERVER_HEALTH_MAP);
+      }
+
+      @Override
+      void modifyStatus(DomainStatus status) {
+        if (getDomain() == null) return;
+        
+        if (getDomainConfig().isPresent()) {
+          status.setServers(new ArrayList<>(getServerStatuses().values()));
+          status.setClusters(new ArrayList<>(getClusterStatuses().values()));
+          status.setReplicas(getReplicaSetting());
+        }
+
+        if (isHasFailedPod()) {
+          status.addCondition(new DomainCondition(Failed).withStatus(TRUE).withReason("PodFailed"));
+        } else if (allIntendedServersRunning()) {
+          status.addCondition(new DomainCondition(Available).withStatus(TRUE).withReason(SERVERS_READY_REASON));
+        } else if (!status.hasConditionWith(c -> c.hasType(Progressing))) {
+          status.addCondition(new DomainCondition(Progressing).withStatus(TRUE)
+                .withReason(MANAGED_SERVERS_STARTING_PROGRESS_REASON));
+        }
       }
 
       private boolean allIntendedServersRunning() {
@@ -289,9 +300,7 @@ public class DomainStatusUpdater {
       }
 
       private Stream<ServerStartupInfo> getServerStartupInfos() {
-        return Optional.ofNullable(getInfo().getServerStartupInfo())
-            .map(Collection::stream)
-            .orElse(Stream.empty());
+        return Optional.ofNullable(getInfo().getServerStartupInfo()).stream().flatMap(Collection::stream);
       }
 
       private Optional<WlsDomainConfig> getDomainConfig() {
@@ -301,7 +310,7 @@ public class DomainStatusUpdater {
       private Optional<WlsDomainConfig> getScanCacheDomainConfig() {
         DomainPresenceInfo info = getInfo();
         Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
-        return Optional.ofNullable(scan).map(s -> s.getWlsDomainConfig());
+        return Optional.ofNullable(scan).map(Scan::getWlsDomainConfig);
       }
 
       private boolean shouldBeRunning(ServerStartupInfo startupInfo) {
@@ -402,12 +411,12 @@ public class DomainStatusUpdater {
 
       private Collection<String> getServerNames() {
         Set<String> result = new HashSet<>();
-        getDomainConfig().stream().forEach(config -> {
+        getDomainConfig().ifPresent(config -> {
           result.addAll(config.getServerConfigs().keySet());
           for (WlsClusterConfig cluster : config.getConfiguredClusters()) {
             Optional.ofNullable(cluster.getDynamicServersConfig())
                 .ifPresent(dynamicConfig -> Optional.ofNullable(dynamicConfig.getServerConfigs())
-                    .ifPresent(servers -> servers.stream().forEach(item -> result.add(item.getName()))));
+                    .ifPresent(servers -> servers.forEach(item -> result.add(item.getName()))));
           }
         });
         return result;
@@ -415,18 +424,18 @@ public class DomainStatusUpdater {
 
       private Collection<String> getClusterNames() {
         Set<String> result = new HashSet<>();
-        getDomainConfig().stream().forEach(config -> result.addAll(config.getClusterConfigs().keySet()));
+        getDomainConfig().ifPresent(config -> result.addAll(config.getClusterConfigs().keySet()));
         return result;
       }
 
       private Integer getClusterMaximumSize(String clusterName) {
         return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
-            .map(cluster -> cluster.map(c -> c.getMaxClusterSize()).orElse(0)).get();
+            .map(cluster -> cluster.map(WlsClusterConfig::getMaxClusterSize).orElse(0)).get();
       }
     }
   }
 
-  private static class ProgressingStep extends Step {
+  private static class ProgressingStep extends DomainStatusUpdaterStep {
     private final String reason;
     private final boolean isPreserveAvailable;
 
@@ -437,65 +446,26 @@ public class DomainStatusUpdater {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      LOGGER.entering();
-
-      DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus();
-
-      boolean isStatusModified =
-          modifyDomainStatus(
-              status,
-              s -> {
-                s.addCondition(
-                    new DomainCondition(Progressing).withStatus(TRUE).withReason(reason));
-                s.removeConditionIf(c -> c.getType() == Failed);
-                if (!isPreserveAvailable) {
-                  s.removeConditionIf(c -> c.getType() == Available);
-                }
-              });
-
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
-      LOGGER.exiting();
-
-      return isStatusModified
-          ? doDomainUpdate(
-              context.getDomain(), context.getInfo(), packet, ProgressingStep.this, getNext())
-          : doNext(packet);
+    void modifyStatus(DomainStatus status) {
+      status.addCondition(new DomainCondition(Progressing).withStatus(TRUE).withReason(reason));
+      if (!isPreserveAvailable) status.removeConditionIf(c -> c.getType() == Available);
     }
   }
 
-  private static class EndProgressingStep extends Step {
+  private static class EndProgressingStep extends DomainStatusUpdaterStep {
 
     EndProgressingStep(Step next) {
       super(next);
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      LOGGER.entering();
-
-      DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus();
-
-      boolean isStatusModified =
-          modifyDomainStatus(
-              status,
-              s ->
-                  s.removeConditionIf(
-                      c -> c.getType() == Progressing && TRUE.equals(c.getStatus())));
-
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
-      LOGGER.exiting();
-
-      return isStatusModified
-          ? doDomainUpdate(
-              context.getDomain(), context.getInfo(), packet, EndProgressingStep.this, getNext())
-          : doNext(packet);
+    void modifyStatus(DomainStatus status) {
+      status.removeConditionIf(
+          c -> c.getType() == Progressing && TRUE.equals(c.getStatus()));
     }
   }
 
-  private static class AvailableStep extends Step {
+  private static class AvailableStep extends DomainStatusUpdaterStep {
     private final String reason;
 
     private AvailableStep(String reason, Step next) {
@@ -504,75 +474,29 @@ public class DomainStatusUpdater {
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      LOGGER.entering();
-
-      DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus();
-
-      boolean isStatusModified =
-          modifyDomainStatus(
-              status,
-              s -> {
-                s.addCondition(new DomainCondition(Available).withStatus(TRUE).withReason(reason));
-                s.removeConditionIf(c -> c.getType() == Failed);
-              });
-
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
-      LOGGER.exiting();
-
-      return isStatusModified
-          ? doDomainUpdate(
-              context.getDomain(), context.getInfo(), packet, AvailableStep.this, getNext())
-          : doNext(packet);
+    void modifyStatus(DomainStatus status) {
+      status.addCondition(new DomainCondition(Available).withStatus(TRUE).withReason(reason));
     }
   }
 
-  private static boolean modifyDomainStatus(DomainStatus domainStatus, Consumer<DomainStatus> statusUpdateConsumer) {
-    final DomainStatus currentStatus = new DomainStatus(domainStatus);
-    synchronized (domainStatus) {
-      statusUpdateConsumer.accept(domainStatus);
-      return !domainStatus.equals(currentStatus);
-    }
-  }
+  private static class FailedStep extends DomainStatusUpdaterStep {
+    private final String reason;
+    private final String message;
 
-  private static class FailedStep extends Step {
-    private final Throwable throwable;
-
-    private FailedStep(Throwable throwable, Step next) {
+    private FailedStep(String reason, String message, Step next) {
       super(next);
-      this.throwable = throwable;
+      this.reason = reason;
+      this.message = message;
     }
 
     @Override
-    public NextAction apply(Packet packet) {
-      LOGGER.entering();
-
-      DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      final DomainStatus status = context.getStatus();
-
-      boolean isStatusModified =
-          modifyDomainStatus(
-              status,
-              s -> {
-                s.addCondition(
-                    new DomainCondition(Failed)
-                        .withStatus(TRUE)
-                        .withReason("Exception")
-                        .withMessage(throwable.getMessage()));
-                if (s.hasConditionWith(c -> c.hasType(Progressing))) {
-                  s.addCondition(new DomainCondition(Progressing).withStatus(FALSE));
-                }
-              });
-
-
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
-      LOGGER.exiting();
-
-      return isStatusModified
-          ? doDomainUpdate(
-              context.getDomain(), context.getInfo(), packet, FailedStep.this, getNext())
-          : doNext(packet);
+    void modifyStatus(DomainStatus s) {
+      s.setReason(reason);
+      s.setMessage(message);
+      s.addCondition(new DomainCondition(Failed).withStatus(TRUE).withReason(reason).withMessage(message));
+      if (s.hasConditionWith(c -> c.hasType(Progressing))) {
+        s.addCondition(new DomainCondition(Progressing).withStatus(FALSE));
+      }
     }
   }
 }

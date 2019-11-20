@@ -9,9 +9,6 @@ import javax.json.JsonValue;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.custom.V1Patch;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.FailureStatusSource;
-import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -21,6 +18,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 public class DomainStatusPatch extends Step {
   static final String BAD_DOMAIN = "ErrBadDomain";
   static final String ERR_INTROSPECTOR = "ErrIntrospector";
+
   private final String name;
   private final String namespace;
   private JsonPatchBuilder patchBuilder;
@@ -33,17 +31,6 @@ public class DomainStatusPatch extends Step {
    */
   static Step createStep(Domain domain, String reason, String message) {
     return new DomainStatusPatch(domain, reason, message);
-  }
-
-  /**
-   * Update the domain status in response to an unprocessable entity error. This may involve either replacing
-   * the current status or adding to it.
-   * @param domain the domain to update
-   * @param apiException the exception reporting an unprocessable entity
-   */
-  static Step createStep(Domain domain, ApiException apiException) {
-    FailureStatusSource failure = UnrecoverableErrorBuilder.fromException(apiException);
-    return createStep(domain, failure.getReason(), failure.getMessage());
   }
 
   /**
@@ -103,4 +90,5 @@ public class DomainStatusPatch extends Step {
   private V1Patch getPatchBody() {
     return new V1Patch(patchBuilder.build().toString());
   }
+
 }

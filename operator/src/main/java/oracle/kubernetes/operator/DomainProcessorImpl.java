@@ -384,7 +384,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                         Component.createFor(info, delegate.getVersion()));
                 packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
                 Step strategy =
-                    DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
+                    ServerStatusReader.createStatusStep(main.statusUpdateTimeoutSeconds, null);
                 FiberGate gate = getStatusFiberGate(info.getNamespace());
 
                 Fiber f =

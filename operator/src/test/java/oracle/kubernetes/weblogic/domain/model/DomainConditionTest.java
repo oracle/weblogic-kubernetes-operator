@@ -8,7 +8,6 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.utils.SystemClockTestSupport;
-import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,5 +49,14 @@ public class DomainConditionTest {
     SystemClockTestSupport.increment();
 
     assertThat(oldCondition.equals(new DomainCondition(Available).withStatus("True")), is(true));
+  }
+
+  @Test
+  public void mayNotPatchObjects() {
+    DomainCondition oldCondition = new DomainCondition(Available).withStatus("False");
+    DomainCondition newCondition = new DomainCondition(Available).withStatus("True");
+
+    assertThat(newCondition.isPatchableFrom(oldCondition), is(false));
+
   }
 }
