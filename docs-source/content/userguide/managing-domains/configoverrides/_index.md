@@ -106,7 +106,7 @@ Typical attributes for overrides include:
   * Node Manager access credentials
   * Any existing MBean name (for example, you cannot change the domain name)
 
-Note that it's OK, even expected, to override Network Access Point `public` or `external` addresses and ports. Also note that external access to JMX (mbean) or on-line WLST requires that the Network Access Point internal port and external port match (external t3 or http tunneling access to JMS, RMI, or EJBs don't require port matching).
+Note that it's OK, even expected, to override Network Access Point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the Network Access Point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
 
 The behavior when using an unsupported override is undefined.
 
