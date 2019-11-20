@@ -471,13 +471,13 @@ public class Main {
                 createConfigMapStep(ns)));
           }
           // if (targetNamespaces.contains(ns)) {
-            // LOGGER.info(MessageKeys.ENTER_METHOD, "Before creating config map for namespace " 
-            //  + ns);
-            // Collection<String> nsToStart = new ArrayList<>();
-            // nsToStart.add(ns);
-            // runSteps(new StartNamespacesStep(nsToStart));
-            // LOGGER.info(MessageKeys.ENTER_METHOD, "After creating config map for namespace " 
-            //     + ns);
+          // LOGGER.info(MessageKeys.ENTER_METHOD, "Before creating config map for namespace " 
+          //  + ns);
+          // Collection<String> nsToStart = new ArrayList<>();
+          // nsToStart.add(ns);
+          // runSteps(new StartNamespacesStep(nsToStart));
+          // LOGGER.info(MessageKeys.ENTER_METHOD, "After creating config map for namespace " 
+          //     + ns);
           // }
           break;
 
@@ -491,9 +491,7 @@ public class Main {
      
           // if (targetNamespaces.contains(ns)) {
           //   stopNamespace(ns);
-            // if (targetNamespaces.contains(ns) && delegate.isNamespaceRunning(ns)) {
-            // isNamespaceStopping.put(ns, new AtomicBoolean(true));
-            // LOGGER.info(MessageKeys.ENTER_METHOD, "Deleted namespace " + ns);
+          // LOGGER.info(MessageKeys.ENTER_METHOD, "Deleted namespace " + ns);
           // }
           break;
 

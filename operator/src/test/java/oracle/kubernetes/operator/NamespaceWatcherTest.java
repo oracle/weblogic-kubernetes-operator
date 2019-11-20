@@ -3,8 +3,9 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
@@ -17,7 +18,8 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** This test class verifies the behavior of the NamespaceWatcher. */
-public class NamespaceWatcherTest extends WatcherTestBase implements WatchListener<V1Namespace> {
+public class NamespaceWatcherTest extends WatcherTestBase 
+    implements WatchListener<V1Namespace> {
 
   private static final int INITIAL_RESOURCE_VERSION = 456;
 
@@ -44,6 +46,7 @@ public class NamespaceWatcherTest extends WatcherTestBase implements WatchListen
 
   @Override
   protected NamespaceWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
-    return NamespaceWatcher.create((ThreadFactory)this, Integer.toString(rv), tuning, (WatchListener<V1Namespace>)this, stopping);
+    return NamespaceWatcher.create((ThreadFactory)this, Integer.toString(rv), 
+        tuning, (WatchListener<V1Namespace>)this, stopping);
   }
 }
