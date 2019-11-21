@@ -842,11 +842,11 @@ public class Domain {
       // use krun.sh so that the dir check can work on shared cluster/remote k8s cluster env as well
       String cmd =
           BaseTest.getProjectRoot()
-              + "/src/integration-tests/bash/krun.sh -m "
+              + "/src/integration-tests/bash/krun.sh -t 180 -m "
               + domainMap.get("persistentVolumeClaimName")
               + ":/pvc-"
               + domainMap.get("domainUID")
-              + " -n " + domainNS + " -c \"ls -ltr /pvc-"
+              + " -p " + domainMap.get("domainUID") + " -n " + domainNS + " -c \"ls -ltr /pvc-"
               + domainMap.get("domainUID")
               + "/domains/"
               + domainMap.get("domainUID")
