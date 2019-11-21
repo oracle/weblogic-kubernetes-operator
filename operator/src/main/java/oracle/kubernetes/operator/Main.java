@@ -218,11 +218,14 @@ public class Main {
     }
   }
 
-  private static void stopNamespace(String ns) {
+  private static void stopNamespace(String ns, boolean remove) {
     processor.stopNamespace(ns);
-    AtomicBoolean stopping = isNamespaceStopping.remove(ns);
+    AtomicBoolean stopping = isNamespaceStopping.get(ns);
     if (stopping != null) {
       stopping.set(true);
+    }
+    if (remove) {
+      isNamespaceStopping.remove(ns);
     }
     isNamespaceStarted.remove(ns);
     domainWatchers.remove(ns);
@@ -232,9 +235,10 @@ public class Main {
     JobWatcher.removeNamespace(ns);
   }
 
-  private static void stopNamespaces(Collection<String> namespacesToStop) {
+  private static void stopNamespaces(Collection<String> targetNamespaces, 
+      Collection<String> namespacesToStop) {
     for (String ns : namespacesToStop) {
-      stopNamespace(ns);
+      stopNamespace(ns, (! targetNamespaces.contains(ns)));
     }
   }
 
@@ -261,8 +265,14 @@ public class Main {
 
       // Check for removed namespaces
       Set<String> namespacesToStop = new TreeSet<>(isNamespaceStopping.keySet());
-      namespacesToStop.removeAll(targetNamespaces);
-      stopNamespaces(namespacesToStop);
+      for (String ns : targetNamespaces) {
+        // now we also need to stop the namespaces that are deleted although
+        // these namespaces may still be in the targetNamespaces list
+        if (delegate.isNamespaceRunning(ns)) {
+          namespacesToStop.remove(ns);
+        }
+      }
+      stopNamespaces(targetNamespaces, namespacesToStop);
 
       Collection<String> namespacesToStart = targetNamespaces;
       int recheckInterval = tuningAndConfig.getMainTuning().domainPresenceRecheckIntervalSeconds;
@@ -272,8 +282,19 @@ public class Main {
       } else {
         namespacesToStart = new TreeSet<>(targetNamespaces);
         namespacesToStart.removeAll(isNamespaceStarted.keySet());
+        for (String ns : targetNamespaces) {
+          // now we also need to stop the namespaces that are deleted although
+          // these namespaces may still be in the targetNamespaces list
+          if (namespacesToStop.contains(ns)) {
+            namespacesToStart.remove(ns);
+          }
+        }
       }
 
+      LOGGER.info(MessageKeys.ENTER_METHOD, "recheckDomains", 
+          " targetNamespaces = " + targetNamespaces
+          + " namespacesToStop = " + namespacesToStop
+          + " namespacesToStart = " + namespacesToStart);
       if (!namespacesToStart.isEmpty()) {
         runSteps(new StartNamespacesStep(namespacesToStart));
       }
@@ -453,46 +474,38 @@ public class Main {
   private static void dispatchNamespaceWatch(Watch.Response<V1Namespace> item) {
     Collection<String> targetNamespaces = getTargetNamespaces();
     V1Namespace c = item.object;
-    LOGGER.info(MessageKeys.ENTER_METHOD, "dispatchNamespaceWatch", " type = " 
-        + item.type + " targetNamespaces = " + targetNamespaces + " c=" + c);
     if (c != null) {
       String ns = c.getMetadata().getName();
+
+      // We only care about namespaces that are in our targetNamespaces
+      if (!targetNamespaces.contains(ns)) return;
+
+      LOGGER.info(MessageKeys.ENTER_METHOD, "dispatchNamespaceWatch", " type = " 
+          + item.type + " targetNamespaces = " + targetNamespaces + " ns=" + ns);
       switch (item.type) {
         case "ADDED":
           LOGGER.info(MessageKeys.ENTER_METHOD, "Adding namespace " + ns
               + " isrunning = " + delegate.isNamespaceRunning(ns));
-          // We only create the config map when a namespace is added
-          // the rest of the operations to standup domains in a new namespace
+          // We only create the config map when a namespace is added.
+          // The rest of the operations to standup domains in a new namespace
           // will continue to be handled in recheckDomain method, which periodcally
           // checks for new domain resources in the target name spaces.
-          if (targetNamespaces.contains(ns) && ! delegate.isNamespaceRunning(ns)) {
+          if (!delegate.isNamespaceRunning(ns)) {
             runSteps(Step.chain(
                 ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
                 createConfigMapStep(ns)));
+            isNamespaceStopping.put(ns, new AtomicBoolean(false));
           }
-          // if (targetNamespaces.contains(ns)) {
-          // LOGGER.info(MessageKeys.ENTER_METHOD, "Before creating config map for namespace " 
-          //  + ns);
-          // Collection<String> nsToStart = new ArrayList<>();
-          // nsToStart.add(ns);
-          // runSteps(new StartNamespacesStep(nsToStart));
-          // LOGGER.info(MessageKeys.ENTER_METHOD, "After creating config map for namespace " 
-          //     + ns);
-          // }
           break;
 
         case "DELETED":
           // mark the namespace is stopping and it will be stopped the next time 
           // when recheckDomains is triggered
           LOGGER.info(MessageKeys.ENTER_METHOD, "Deleting namespace " + ns);
-          if (targetNamespaces.contains(ns) && delegate.isNamespaceRunning(ns)) {
+          if (delegate.isNamespaceRunning(ns)) {
             isNamespaceStopping.put(ns, new AtomicBoolean(true));
           }
      
-          // if (targetNamespaces.contains(ns)) {
-          //   stopNamespace(ns);
-          // LOGGER.info(MessageKeys.ENTER_METHOD, "Deleted namespace " + ns);
-          // }
           break;
 
         case "MODIFIED":

@@ -34,8 +34,7 @@ public class NamespaceWatcherTest extends WatcherTestBase
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(0),
-        both(hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)))
-            .and(hasEntry("labelSelector", LabelConstants.CREATEDBYOPERATOR_LABEL)));
+        hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION)));
   }
 
   @SuppressWarnings("unchecked")

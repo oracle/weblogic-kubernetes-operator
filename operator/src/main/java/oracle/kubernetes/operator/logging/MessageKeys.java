@@ -159,6 +159,7 @@ public class MessageKeys {
   public static final String ADD_DOMAIN_WATCHER = "WLSKO-0157";
   public static final String ENTER_METHOD = "WLSKO-0158";
   public static final String EXIT_METHOD = "WLSKO-0159";
+  public static final String VERIFY_ACCESS_DENIED_WITH_NS = "WLSKO-0160";
 
 
   // domain status messages

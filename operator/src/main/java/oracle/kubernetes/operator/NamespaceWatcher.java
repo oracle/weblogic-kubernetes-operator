@@ -48,7 +48,6 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
   @Override
   public WatchI<V1Namespace> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder
-        .withLabelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL)
         .createNamespacesWatch();
   }
 }
