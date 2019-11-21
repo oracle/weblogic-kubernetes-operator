@@ -21,8 +21,8 @@ public interface KubernetesConstants {
   String DOMAIN_PLURAL = "domains";
   String DOMAIN_SINGULAR = "domain";
   String DOMAIN_SHORT = "dom";
-  String DOMAIN_VERSION = "v6";
-  String[] DOMAIN_ALTERNATE_VERSIONS = {"v2", "v3", "v4", "v5"};
+  String DOMAIN_VERSION = "v7";
+  String[] DOMAIN_ALTERNATE_VERSIONS = {"v2", "v3", "v4", "v5", "v6"};
 
   boolean DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
