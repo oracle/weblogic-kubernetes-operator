@@ -1234,7 +1234,7 @@ public class TestUtils {
       dirPath = dirPath.replace(pvRoot, "/sharedparent/");
       String crdCmd =
           BaseTest.getProjectRoot()
-              + "/src/integration-tests/bash/krun.sh -t 180 -n createdir -m "
+              + "/src/integration-tests/bash/krun.sh -t 180 -m "
               + pvRoot + ":/sharedparent -c 'mkdir -m 777 -p "
               + dirPath
               + "'";
