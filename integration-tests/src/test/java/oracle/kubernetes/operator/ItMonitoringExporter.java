@@ -37,6 +37,7 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.Test;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -45,6 +46,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -53,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * This test is used for testing Monitoring Exporter with Operator(s) .
  */
-@TestMethodOrder(Alphanumeric.class)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ItMonitoringExporter extends BaseTest {
 
   private static int number = 5;
@@ -369,6 +372,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
+  @Order(2)
   public void test01_CheckMetricsViaPrometheus() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -386,6 +390,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
+  @Order(3)
   public void test02_ReplaceConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -403,6 +408,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
+  @Order(4)
   public void test03_AppendConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -433,6 +439,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
+  @Order(5)
   public void test04_ReplaceOneAttributeValueAsArrayConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -452,6 +459,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
+  @Order(6)
   public void test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration()
       throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -472,6 +480,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
+  @Order(7)
   public void test06_ReplaceWithEmptyConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -488,6 +497,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception exception
    */
   @Test
+  @Order(8)
   public void test07_AppendWithEmptyConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -507,6 +517,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
+  @Order(9)
   public void test08_1AppendWithNotYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -539,6 +550,8 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
+  @Test
+  @Order(10)
   public void test09_AppendWithCorruptedYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -558,6 +571,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception exception
    */
   @Test
+  @Order(11)
   public void test10_ReplaceWithCorruptedYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -577,6 +591,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
+  @Order(12)
   public void test11_ReplaceWithDublicatedValuesConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -595,6 +610,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
+  @Order(13)
   public void test12_AppendWithDuplicatedValuesConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -614,6 +630,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception exception
    */
   @Test
+  @Order(14)
   public void test13_ReplaceMetricsNameSnakeCaseFalseConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -638,6 +655,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   // verify that change configuration fails without authentication
   @Test
+  @Order(15)
   public void test14_ChangeConfigNoCredentials() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -662,6 +680,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception exception
    */
   @Test
+  @Order(16)
   public void test15_ChangeConfigInvalidUser() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -682,6 +701,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception exception
    */
   @Test
+  @Order(17)
   public void test16_ChangeConfigInvalidPass() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -721,6 +741,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
+  @Order(19)
   public void test18_ChangeConfigEmptyPass() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -741,6 +762,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
+  @Order(20)
   public void test19_CheckPromGrafanaLatestVersion() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -762,6 +784,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
+  @Order(1)
   public void test01_1_EndToEndViaChart() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {

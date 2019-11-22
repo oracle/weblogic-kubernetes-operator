@@ -225,7 +225,8 @@ public class ItPodsShutdown extends BaseTest {
    * @throws Exception exception
    */
   private static long shutdownServer(String serverName) throws Exception {
-    long startTime = System.currentTimeMillis();
+    long startTime;
+    startTime = System.currentTimeMillis();
     String cmd = "kubectl delete pod " + domainUid + "-" + serverName + " -n " + domainNS;
     LoggerHelper.getLocal().log(Level.INFO, "command to shutdown server <" + serverName + "> is: " + cmd);
     ExecResult result = ExecCommand.exec(cmd);
@@ -233,6 +234,8 @@ public class ItPodsShutdown extends BaseTest {
       terminationTime = 0;
       throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
     }
+    TestUtils.checkPodTerminating(domainUid + "-" + serverName, domainNS);
+    TestUtils.checkPodCreated(domainUid + "-" + serverName, domainNS);
     long endTime = System.currentTimeMillis();
     terminationTime = endTime - startTime;
     return terminationTime;
@@ -654,7 +657,7 @@ public class ItPodsShutdown extends BaseTest {
 
     // invoke servlet to keep sessions opened, terminate pod and check shutdown time
     if (delayTime > 0) {
-      String testAppPath = "httpsessionreptestapp/CounterServlet?invalidate";
+      String testAppPath = "httpsessionreptestapp/CounterServlet?delayTime=" + delayTime;
       callWebApp(testAppPath, this.domain, true);
       SessionDelayThread sessionDelay = new SessionDelayThread(delayTime, this.domain);
       new Thread(sessionDelay).start();
