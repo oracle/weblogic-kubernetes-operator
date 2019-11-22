@@ -381,11 +381,20 @@
             </properties>
         </profile>
         <profile>
-            <id>wls-jrf-integration-tests</id>
+            <id>wls-integration-tests1</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/It*</includes-failsafe>
-                <jrf_enabled>true</jrf_enabled>
+                <includes-failsafe>**/ItCoherenceTests</includes-failsafe>
+                <excludes-failsafe>**/ItS*</excludes-failsafe>
+
+            </properties>
+        </profile>
+        <profile>
+            <id>wls-integration-tests2</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>**/ItPodTemplates</includes-failsafe>
+
             </properties>
         </profile>
     </profiles>
