@@ -389,20 +389,19 @@
             </properties>
         </profile>
         <profile>
-            <id>wls-integration-tests1</id>
+            <id>wls-jrf-integration-tests1</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItCoherenceTests</includes-failsafe>
+                <includes-failsafe>**/It*</includes-failsafe>
                 <excludes-failsafe>**/ItS*</excludes-failsafe>
-
+                <jrf_enabled>true</jrf_enabled>
             </properties>
         </profile>
         <profile>
-            <id>wls-integration-tests2</id>
+            <id>wls-jrf-integration-tests2</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItPodTemplates</includes-failsafe>
-
+                <includes-failsafe>**/ItS*</includes-failsafe>
             </properties>
         </profile>
     </profiles>
