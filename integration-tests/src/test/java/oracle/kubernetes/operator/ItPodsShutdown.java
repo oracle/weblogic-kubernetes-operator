@@ -52,7 +52,6 @@ public class ItPodsShutdown extends BaseTest {
   private static String testClassName;
   private static String domainNS1;
   private static StringBuffer namespaceList;
-  private static boolean checkLongTermination = false;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -141,7 +140,7 @@ public class ItPodsShutdown extends BaseTest {
   }
 
   private static void getDefaultShutdownTime() throws Exception {
-    terminationDefaultOptionsTime = shutdownServer("managed-server1", checkLongTermination);
+    terminationDefaultOptionsTime = shutdownServer("managed-server1");
     LoggerHelper.getLocal().log(Level.INFO,
         " termination pod's time with default shutdown options is: "
             + terminationDefaultOptionsTime);
@@ -221,7 +220,7 @@ public class ItPodsShutdown extends BaseTest {
    *
    * @throws Exception exception
    */
-  private static long shutdownServer(String serverName, boolean checkLongTermination) throws Exception {
+  private static long shutdownServer(String serverName) throws Exception {
     long startTime;
     startTime = System.currentTimeMillis();
     String cmd = "kubectl delete pod " + domainUid + "-" + serverName + " -n " + domainNS;
@@ -231,16 +230,6 @@ public class ItPodsShutdown extends BaseTest {
       terminationTime = 0;
       throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
     }
-    /*
-    if(checkLongTermination) {
-      try {
-        TestUtils.checkPodTerminating(domainUid + "-" + serverName, domainNS);
-      } catch (Exception ex) {
-        //ignore, termination time might be too short to catch the status
-        startTime = 0;
-      }
-    }
-    */
     TestUtils.checkPodCreated(domainUid + "-" + serverName, domainNS);
     long endTime = System.currentTimeMillis();
     terminationTime = endTime - startTime;
@@ -669,11 +658,8 @@ public class ItPodsShutdown extends BaseTest {
       new Thread(sessionDelay).start();
       // sleep 5 secs before shutdown
       Thread.sleep(5 * 1000);
-      checkLongTermination = true;
     }
-    terminationTime = shutdownServer("managed-server1",checkLongTermination);
-    //reset
-    checkLongTermination = false;
+    terminationTime = shutdownServer("managed-server1");
     LoggerHelper.getLocal().log(Level.INFO, " termination time: " + terminationTime);
   }
 
