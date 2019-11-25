@@ -79,21 +79,19 @@ public class ItPodsShutdown extends BaseTest {
   public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (FULLTEST) {
-      createResultAndPvDirs(testClassName);
-
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
       // create operator1
       if (operator1 == null) {
+        createResultAndPvDirs(testClassName);
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
         namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS1);
+        shutdownTmpDir = getResultDir() + "/shutdowntemp";
+        Files.createDirectories(Paths.get(shutdownTmpDir));
       }
-
-      shutdownTmpDir = getResultDir() + "/shutdowntemp";
-      Files.createDirectories(Paths.get(shutdownTmpDir));
 
       if (domain == null) {
         domain = createDomain();
@@ -106,8 +104,6 @@ public class ItPodsShutdown extends BaseTest {
       }
       domainUid = domain.getDomainUid();
       domainNS = domain.getDomainNs();
-      // BaseTest.setWaitTimePod(5);
-      // BaseTest.setMaxIterationsPod(50);
     }
   }
 
@@ -225,7 +221,8 @@ public class ItPodsShutdown extends BaseTest {
    * @throws Exception exception
    */
   private static long shutdownServer(String serverName) throws Exception {
-    long startTime = System.currentTimeMillis();
+    long startTime;
+    startTime = System.currentTimeMillis();
     String cmd = "kubectl delete pod " + domainUid + "-" + serverName + " -n " + domainNS;
     LoggerHelper.getLocal().log(Level.INFO, "command to shutdown server <" + serverName + "> is: " + cmd);
     ExecResult result = ExecCommand.exec(cmd);
@@ -233,6 +230,7 @@ public class ItPodsShutdown extends BaseTest {
       terminationTime = 0;
       throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
     }
+    TestUtils.checkPodCreated(domainUid + "-" + serverName, domainNS);
     long endTime = System.currentTimeMillis();
     terminationTime = endTime - startTime;
     return terminationTime;
@@ -654,7 +652,7 @@ public class ItPodsShutdown extends BaseTest {
 
     // invoke servlet to keep sessions opened, terminate pod and check shutdown time
     if (delayTime > 0) {
-      String testAppPath = "httpsessionreptestapp/CounterServlet?invalidate";
+      String testAppPath = "httpsessionreptestapp/CounterServlet?delayTime=" + delayTime;
       callWebApp(testAppPath, this.domain, true);
       SessionDelayThread sessionDelay = new SessionDelayThread(delayTime, this.domain);
       new Thread(sessionDelay).start();
@@ -663,8 +661,6 @@ public class ItPodsShutdown extends BaseTest {
     }
     terminationTime = shutdownServer("managed-server1");
     LoggerHelper.getLocal().log(Level.INFO, " termination time: " + terminationTime);
-    TestUtils.checkPodCreated(domainUid + "-admin-server", domainNS);
-    TestUtils.checkPodCreated(domainUid + "-managed-server1", domainNS);
   }
 
   /**
