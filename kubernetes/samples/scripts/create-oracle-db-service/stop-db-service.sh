@@ -6,13 +6,39 @@
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/common/utility.sh
+source ${scriptDir}/../common/utility.sh
 
-dbpod=`kubectl get po | grep oracle-db | cut -f1 -d " " `
+function usage {
+  echo "usage: ${script} -n namespace  [-h]"
+  echo "  -n Kubernate Namespace for Oracle DB Service  (optional)"
+  echo "      (default: default) "
+  echo "  -h Help"
+  exit $1
+}
+
+while getopts ":h:n:" opt; do
+  case $opt in
+    n) namespace="${OPTARG}"
+    ;;
+    h) usage 0
+    ;;
+    *) usage 1
+    ;;
+  esac
+done
+
+
+if [ -z ${namespace} ]; then
+  namespace=default
+fi
+
+
+dbpod=`kubectl get po -n ${namespace}  | grep oracle-db | cut -f1 -d " " `
 kubectl delete -f ${scriptDir}/common/oracle.db.yaml  --ignore-not-found
 
 if [ -z ${dbpod} ]; then
-  echo "Couldn't find oarcle-db pod in [default] namesapce"
+  echo "Couldn't find oarcle-db pod in [${namespace}] namesapce"
 else
-  checkPodDelete  ${dbpod} default
+  checkPodDelete ${dbpod} ${namespace}
+  kubectl delete svc/oracle-db -n ${namespace}  --ignore-not-found
 fi

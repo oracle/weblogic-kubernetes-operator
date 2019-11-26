@@ -6,7 +6,7 @@
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/common/utility.sh
+source ${scriptDir}/../common/utility.sh
 
 function usage {
   echo "usage: ${script} -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -p <docker-store> [-h]"
