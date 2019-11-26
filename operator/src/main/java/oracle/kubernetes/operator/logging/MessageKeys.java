@@ -157,7 +157,6 @@ public class MessageKeys {
   public static final String JOB_LOG_PARSE_FAILURE = "WLSKO-0155";
   public static final String VERIFY_ACCESS_DENIED_WITH_NS = "WLSKO-0156";
 
-
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
   public static final String DUPLICATE_CLUSTER_NAME_FOUND = "WLSDO-0002";

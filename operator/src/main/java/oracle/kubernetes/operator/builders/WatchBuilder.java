@@ -26,7 +26,6 @@ import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class WatchBuilder {
-
   /** Always true for watches. */
   private static final boolean WATCH = true;
 
