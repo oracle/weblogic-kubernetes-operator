@@ -143,6 +143,21 @@ public class ManagedServersUpStep extends Step {
       this.domain = domain;
     }
 
+    /**
+     * Checks whether we should pre-create server service for the given server.
+     *
+     * @param server ServerSpec for the managed server
+     * @return True if we should pre-create server service for the given managed server, false
+     *         otherwise.
+     */
+    boolean shouldPrecreateServerService(ServerSpec server) {
+      if (server.isPrecreateServerService()) {
+        // skip pre-create if admin server and managed server are both shutting down
+        return ! (domain.getAdminServerSpec().isShuttingDown() && server.isShuttingDown());
+      }
+      return false;
+    }
+
     void addServerIfNeeded(@Nonnull WlsServerConfig serverConfig, WlsClusterConfig clusterConfig) {
       String serverName = serverConfig.getName();
       if (servers.contains(serverName) || serverName.equals(domainTopology.getAdminServerName())) {
@@ -156,7 +171,7 @@ public class ManagedServersUpStep extends Step {
         servers.add(serverName);
         addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server));
         addToCluster(clusterName);
-      } else if (server.isPrecreateServerService()) {
+      } else if (shouldPrecreateServerService(server)) {
         servers.add(serverName);
         addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server, true));
       }

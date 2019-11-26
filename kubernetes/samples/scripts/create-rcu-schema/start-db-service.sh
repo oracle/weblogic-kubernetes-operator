@@ -53,17 +53,16 @@ fi
 
 echo "NodePort[$nodeport] ImagePullSecret[$pullsecret] Image[${dbimage}]"
 
-# Modify the ImagePullSecret based on input 
-sed -i -e '$d' ${scriptDir}/common/oradb.yaml
-echo '           - name: docker-store' >> ${scriptDir}/common/oradb.yaml
-sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/oradb.yaml
-sed -i -e "s?name: pullsecret?name: ${pullsecret}?g" ${scriptDir}/common/oradb.yaml
-sed -i -e "s?image:.*?image: ${dbimage}?g" ${scriptDir}/common/oradb.yaml
-kubectl apply -f ${scriptDir}/common/oradb.yaml
+# Modify ImagePullSecret and DatabaseImage based on input
+sed -i -e '$d' ${scriptDir}/common/oracle.db.yaml
+echo '           - name: docker-store' >> ${scriptDir}/common/oracle.db.yaml
+sed -i -e "s?name: docker-store?name: ${pullsecret}?g" ${scriptDir}/common/oracle.db.yaml
+sed -i -e "s?image:.*?image: ${dbimage}?g" ${scriptDir}/common/oracle.db.yaml
+kubectl apply -f ${scriptDir}/common/oracle.db.yaml
 
 # Modify the NodePort based on input 
-sed -i -e "s?nodePort:.*?nodePort: ${nodeport}?g" ${scriptDir}/common/orasvc.yaml
-kubectl apply -f ${scriptDir}/common/orasvc.yaml
+sed -i -e "s?nodePort:.*?nodePort: ${nodeport}?g" ${scriptDir}/common/oracle.db.yaml
+kubectl apply -f ${scriptDir}/common/oracle.db.yaml
 dbpod=`kubectl get po | grep oracle-db | cut -f1 -d " " `
 checkPod ${dbpod} default
 checkPodState ${dbpod} default "1/1"
