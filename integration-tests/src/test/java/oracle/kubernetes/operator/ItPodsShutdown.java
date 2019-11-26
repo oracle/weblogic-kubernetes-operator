@@ -647,9 +647,11 @@ public class ItPodsShutdown extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
 
     LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
+    this.domain.verifyDomainCreated();
+    /*
     TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
     TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
-
+    */
     // invoke servlet to keep sessions opened, terminate pod and check shutdown time
     if (delayTime > 0) {
       String testAppPath = "httpsessionreptestapp/CounterServlet?delayTime=" + delayTime;
