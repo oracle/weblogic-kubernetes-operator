@@ -21,7 +21,6 @@ import oracle.kubernetes.operator.watcher.WatchListener;
  * the operator for processing.
  */
 public class NamespaceWatcher extends Watcher<V1Namespace> {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private NamespaceWatcher(
       String initialResourceVersion,
@@ -37,7 +36,6 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
       WatchTuning tuning,
       WatchListener<V1Namespace> listener,
       AtomicBoolean isStopping) {
-    LOGGER.info(MessageKeys.ENTER_METHOD, "NamespaceWatch.create", "version = " + initialResourceVersion);
 
     NamespaceWatcher watcher =
         new NamespaceWatcher(initialResourceVersion, tuning, listener, isStopping);

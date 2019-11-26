@@ -189,8 +189,10 @@ public class Main {
       version = HealthCheckHelper.performK8sVersionCheck();
 
       runSteps(
-          readExistingNamespaces(CrdHelper.createDomainCrdStep(version, 
-              new StartNamespacesStep(targetNamespaces))), 
+          Step.chain(
+              CrdHelper.createDomainCrdStep(version, 
+                  new StartNamespacesStep(targetNamespaces)),
+              readExistingNamespaces()), 
           Main::completeBegin);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -222,12 +224,11 @@ public class Main {
 
   private static void stopNamespace(String ns, boolean remove) {
     processor.stopNamespace(ns);
-    AtomicBoolean stopping = isNamespaceStopping.get(ns);
+    AtomicBoolean stopping = 
+        remove ? isNamespaceStopping.remove(ns) : isNamespaceStopping.get(ns);
+
     if (stopping != null) {
       stopping.set(true);
-    }
-    if (remove) {
-      isNamespaceStopping.remove(ns);
     }
     isNamespaceStarted.remove(ns);
     domainWatchers.remove(ns);
@@ -265,11 +266,11 @@ public class Main {
     return () -> {
       Collection<String> targetNamespaces = getTargetNamespaces();
 
-      // Check for removed namespaces
+      // Check for namespaces that are removed from the operator's
+      // targetNamespaces list, or that are deleted from the Kubernetes cluster. 
       Set<String> namespacesToStop = new TreeSet<>(isNamespaceStopping.keySet());
       for (String ns : targetNamespaces) {
-        // now we also need to stop the namespaces that are deleted although
-        // these namespaces may still be in the targetNamespaces list
+        // the active namespaces are the ones that willnot be stopped
         if (delegate.isNamespaceRunning(ns)) {
           namespacesToStop.remove(ns);
         }
@@ -282,21 +283,16 @@ public class Main {
       if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
         lastFullRecheck.set(now);
       } else {
+        // check for namespaces that need to be started
         namespacesToStart = new TreeSet<>(targetNamespaces);
         namespacesToStart.removeAll(isNamespaceStarted.keySet());
         for (String ns : targetNamespaces) {
-          // now we also need to stop the namespaces that are deleted although
-          // these namespaces may still be in the targetNamespaces list
           if (namespacesToStop.contains(ns)) {
             namespacesToStart.remove(ns);
           }
         }
       }
 
-      LOGGER.info(MessageKeys.ENTER_METHOD, "recheckDomains", 
-          " targetNamespaces = " + targetNamespaces
-          + " namespacesToStop = " + namespacesToStop
-          + " namespacesToStart = " + namespacesToStart);
       if (!namespacesToStart.isEmpty()) {
         runSteps(new StartNamespacesStep(namespacesToStart));
       }
@@ -337,9 +333,9 @@ public class Main {
         .listPodAsync(ns, new PodListStep(ns));
   }
 
-  private static Step readExistingNamespaces(Step next) {
+  private static Step readExistingNamespaces() {
     return new CallBuilder()
-        .listNamespaceAsync(new NamespaceListStep(next));
+        .listNamespaceAsync(new NamespaceListStep());
   }
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
@@ -487,12 +483,8 @@ public class Main {
       // We only care about namespaces that are in our targetNamespaces
       if (!targetNamespaces.contains(ns)) return;
 
-      LOGGER.info(MessageKeys.ENTER_METHOD, "dispatchNamespaceWatch", " type = " 
-          + item.type + " targetNamespaces = " + targetNamespaces + " ns=" + ns);
       switch (item.type) {
         case "ADDED":
-          LOGGER.info(MessageKeys.ENTER_METHOD, "Adding namespace " + ns
-              + " isrunning = " + delegate.isNamespaceRunning(ns));
           // We only create the config map when a namespace is added.
           // The rest of the operations to standup domains in a new namespace
           // will continue to be handled in recheckDomain method, which periodcally
@@ -508,7 +500,6 @@ public class Main {
         case "DELETED":
           // mark the namespace is stopping and it will be stopped the next time 
           // when recheckDomains is triggered
-          LOGGER.info(MessageKeys.ENTER_METHOD, "Deleting namespace " + ns);
           if (delegate.isNamespaceRunning(ns)) {
             isNamespaceStopping.put(ns, new AtomicBoolean(true));
           }
@@ -777,10 +768,6 @@ public class Main {
   }
 
   private static class NamespaceListStep extends ResponseStep<V1NamespaceList> {
-    NamespaceListStep(Step next) {
-      super(next); 
-    }
-
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1NamespaceList> callResponse) {
       return callResponse.getStatusCode() == CallBuilder.NOT_FOUND

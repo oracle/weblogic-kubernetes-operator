@@ -155,11 +155,7 @@ public class MessageKeys {
   public static final String WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT = "WLSKO-0153";
   public static final String JOB_DEADLINE_EXCEEDED_MESSAGE = "WLSKO-0154";
   public static final String JOB_LOG_PARSE_FAILURE = "WLSKO-0155";
-  public static final String RECHECK_DOMAIN = "WLSKO-0156";
-  public static final String ADD_DOMAIN_WATCHER = "WLSKO-0157";
-  public static final String ENTER_METHOD = "WLSKO-0158";
-  public static final String EXIT_METHOD = "WLSKO-0159";
-  public static final String VERIFY_ACCESS_DENIED_WITH_NS = "WLSKO-0160";
+  public static final String VERIFY_ACCESS_DENIED_WITH_NS = "WLSKO-0156";
 
 
   // domain status messages

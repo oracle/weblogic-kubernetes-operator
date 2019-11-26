@@ -126,7 +126,6 @@ abstract class Watcher<T> {
   }
 
   private void watchForEvents() {
-    LOGGER.info(MessageKeys.ENTER_METHOD, "watchForEvents");
     long now = System.currentTimeMillis();
     long delay = (tuning.watchMinimumDelay * 1000) - (now - lastInitialize);
     if (lastInitialize != 0 && delay > 0) {
