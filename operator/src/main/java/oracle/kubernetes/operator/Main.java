@@ -485,9 +485,9 @@ public class Main {
 
       switch (item.type) {
         case "ADDED":
-          // We only create the config map when a namespace is added.
-          // The rest of the operations to standup domains in a new namespace
-          // will continue to be handled in recheckDomain method, which periodcally
+          // We only create the domain config map when a namespace is added.
+          // The rest of the operations for standing up domains in a namespace
+          // will continue to be handled in recheckDomain method, which periodically
           // checks for new domain resources in the target name spaces.
           if (!delegate.isNamespaceRunning(ns)) {
             runSteps(Step.chain(
@@ -498,8 +498,8 @@ public class Main {
           break;
 
         case "DELETED":
-          // mark the namespace is stopping and it will be stopped the next time 
-          // when recheckDomains is triggered
+          // Mark the namespace as isStopping, which will cause the namespace be stopped 
+          // the next time when recheckDomains is triggered
           if (delegate.isNamespaceRunning(ns)) {
             isNamespaceStopping.put(ns, new AtomicBoolean(true));
           }
@@ -825,8 +825,7 @@ public class Main {
 
     @Override
     public boolean isNamespaceRunning(String namespace) {
-      AtomicBoolean isStopping = isNamespaceStopping.get(namespace);
-      return (isStopping == null ? true : !isStopping.get());
+      return !isNamespaceStopping.get(namespace).get();
     }
 
     @Override

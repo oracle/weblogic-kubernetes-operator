@@ -1362,7 +1362,7 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for listing events.
+   * Asynchronous step for listing namespaces.
    *
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
