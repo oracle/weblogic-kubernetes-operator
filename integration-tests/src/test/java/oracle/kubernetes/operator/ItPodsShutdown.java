@@ -156,8 +156,9 @@ public class ItPodsShutdown extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
     Thread.sleep(10 * 1000);
     // should restart domain
-    TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
-    TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
+    /* TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
+    TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS); */
+    domain.verifyDomainCreated();
 
     Assertions.assertTrue(
         checkShutdownUpdatedProp(domainUid + "-admin-server", "30", "false", "Graceful"),
@@ -647,8 +648,10 @@ public class ItPodsShutdown extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
 
     LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
-    TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
-    TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
+
+    /* TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
+    TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS); */
+    this.domain.verifyDomainCreated();
 
     // invoke servlet to keep sessions opened, terminate pod and check shutdown time
     if (delayTime > 0) {

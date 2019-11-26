@@ -174,13 +174,13 @@
                    <!--Added the following lines so we could toggle between parallel and 
                        sequential runs, but it doesn't work yet. The tests run in parallel
                        by default-->
-                   <properties>
+                   <!-- properties>
                         <configurationParameters>
                             junit.jupiter.execution.parallel.enabled = true
                             junit.jupiter.execution.parallel.mode.default = same_thread
                             junit.jupiter.execution.parallel.mode.classes.default = concurrent
                         </configurationParameters>
-                    </properties>
+                    </properties -->
                     <skipTests>true</skipTests>
                 </configuration>
                 <dependencies>
@@ -286,6 +286,7 @@
                             <resources>
                                 <resource>
                                     <directory>${resource-integration-test}</directory>
+                                    <filtering>true</filtering>
                                 </resource>
                             </resources>
                         </configuration>
