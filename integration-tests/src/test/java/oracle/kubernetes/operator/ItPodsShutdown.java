@@ -156,7 +156,7 @@ public class ItPodsShutdown extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
     Thread.sleep(10 * 1000);
     // should restart domain
-    this.domain.verifyDomainCreated();
+    domain.verifyDomainCreated();
     /*
     TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
     TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
