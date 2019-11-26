@@ -189,8 +189,9 @@ public class ItPodsShutdown extends BaseTest {
     if (deployApp) {
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-      domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
     }
+    domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
+
     String nodePortHost = domain.getHostNameForCurl();
     int nodePort = domain.getLoadBalancerWebPort();
 
@@ -209,7 +210,6 @@ public class ItPodsShutdown extends BaseTest {
     // Send a HTTP request to keep open session
     String curlCmd = webServiceUrl.toString();
     // LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
-
     ExecResult result = ExecCommand.exec(curlCmd);
     if (result.exitValue() != 0) {
       throw new Exception("FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
