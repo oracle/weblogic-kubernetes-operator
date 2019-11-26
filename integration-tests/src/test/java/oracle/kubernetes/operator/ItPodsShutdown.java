@@ -156,9 +156,11 @@ public class ItPodsShutdown extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
     Thread.sleep(10 * 1000);
     // should restart domain
+    this.domain.verifyDomainCreated();
+    /*
     TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
     TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
-
+    */
     Assertions.assertTrue(
         checkShutdownUpdatedProp(domainUid + "-admin-server", "30", "false", "Graceful"),
         "Property value was not found in the updated domain crd ");
