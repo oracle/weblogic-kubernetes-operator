@@ -22,6 +22,7 @@ import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EventList;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
@@ -237,6 +238,9 @@ public class CallBuilder {
   private final CallFactory<V1PersistentVolumeClaimList> listPersistentvolumeclaim =
       (requestParams, usage, cont, callback) ->
           wrap(listPersistentVolumeClaimAsync(usage, requestParams.namespace, cont, callback));
+  private final CallFactory<V1NamespaceList> listNamespace =
+      (requestParams, usage, cont, callback) ->
+          wrap(listNamespaceAsync(usage, cont, callback));
   private Boolean exact = Boolean.FALSE;
   private Boolean export = Boolean.FALSE;
   private final CallFactory<Domain> readDomain =
@@ -1339,6 +1343,33 @@ public class CallBuilder {
   public Step listEventAsync(String namespace, ResponseStep<V1EventList> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("listEvent", namespace, null, null), listEvent);
+  }
+
+  private com.squareup.okhttp.Call listNamespaceAsync(
+      ApiClient client, String cont, ApiCallback<V1NamespaceList> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .listNamespaceAsync(
+            pretty,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            resourceVersion,
+            timeoutSeconds,
+            watch,
+            callback);
+  }
+
+  /**
+   * Asynchronous step for listing events.
+   *
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listNamespaceAsync(ResponseStep<V1NamespaceList> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("listNamespace", null, null, null), listNamespace);
   }
 
   private com.squareup.okhttp.Call listPersistentVolumeAsync(

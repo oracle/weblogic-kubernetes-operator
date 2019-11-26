@@ -31,6 +31,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.models.V1EventList;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1NamespaceList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
@@ -89,6 +90,7 @@ public class Main {
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
   private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
   private static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
+  private static NamespaceWatcher namespaceWatcher = null;
   private static Function<String,String> getHelmVariable = System::getenv;
   private static final String operatorNamespace = computeOperatorNamespace();
   private static final AtomicReference<DateTime> lastFullRecheck =
@@ -187,7 +189,7 @@ public class Main {
       version = HealthCheckHelper.performK8sVersionCheck();
 
       runSteps(
-          new StartNamespaceWatcherStep(CrdHelper.createDomainCrdStep(version, 
+          readExistingNamespaces(CrdHelper.createDomainCrdStep(version, 
               new StartNamespacesStep(targetNamespaces))), 
           Main::completeBegin);
     } catch (Throwable e) {
@@ -333,6 +335,11 @@ public class Main {
     return new CallBuilder()
         .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listPodAsync(ns, new PodListStep(ns));
+  }
+
+  private static Step readExistingNamespaces(Step next) {
+    return new CallBuilder()
+        .listNamespaceAsync(new NamespaceListStep(next));
   }
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
@@ -525,19 +532,6 @@ public class Main {
             ContainerResolver.getDefault().enterContainer(container);
             r.run();
           });
-    }
-  }
-
-  private static class StartNamespaceWatcherStep extends Step {
-
-    StartNamespaceWatcherStep(Step next) {
-      super(next); 
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      createNamespaceWatcher("1");
-      return doNext(packet);
     }
   }
 
@@ -778,6 +772,34 @@ public class Main {
     }
 
     private String getInitialResourceVersion(V1PodList result) {
+      return result != null ? result.getMetadata().getResourceVersion() : "";
+    }
+  }
+
+  private static class NamespaceListStep extends ResponseStep<V1NamespaceList> {
+    NamespaceListStep(Step next) {
+      super(next); 
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1NamespaceList> callResponse) {
+      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+          ? onSuccess(packet, callResponse)
+          : super.onFailure(packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
+      V1NamespaceList result = callResponse.getResult();
+      // don't bother processing pre-existing events
+
+      if (namespaceWatcher == null) {
+        namespaceWatcher = createNamespaceWatcher(getInitialResourceVersion(result));
+      }
+      return doNext(packet);
+    }
+
+    private String getInitialResourceVersion(V1NamespaceList result) {
       return result != null ? result.getMetadata().getResourceVersion() : "";
     }
   }
