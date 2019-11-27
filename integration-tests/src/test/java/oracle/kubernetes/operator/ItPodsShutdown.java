@@ -189,10 +189,9 @@ public class ItPodsShutdown extends BaseTest {
     if (deployApp) {
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-
+      domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
     }
-    domain.callWebAppAndVerifyLoadBalancing(testAppPath, false);
-    /*
+
     String nodePortHost = domain.getHostNameForCurl();
     int nodePort = domain.getLoadBalancerWebPort();
 
@@ -217,7 +216,7 @@ public class ItPodsShutdown extends BaseTest {
     if (result.exitValue() != 0) {
       throw new Exception("FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
     }
-    */
+
     // LoggerHelper.getLocal().log(Level.INFO, result.stdout());
   }
 
@@ -396,7 +395,7 @@ public class ItPodsShutdown extends BaseTest {
     shutdownProps.put("timeoutSeconds", 160);
     shutdownProps.put("ignoreSessions", false);
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
-    long delayTime = 50 * 1000;
+    long delayTime = 30 * 1000;
     updateCrdYamlVerifyShutdown(crd, delayTime);
 
     Assertions.assertTrue(
@@ -423,7 +422,7 @@ public class ItPodsShutdown extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO,
           " Termination time with ignoreSessions=true :" + terminationTimeWithIgnoreSessionTrue);
 
-      if (terminationTimeWithIgnoreSessionFalse - (50 * 1000)
+      if (terminationTimeWithIgnoreSessionFalse - delayTime
           < terminationTimeWithIgnoreSessionTrue) {
         LoggerHelper.getLocal().log(Level.INFO, "FAILURE: did not ignore opened sessions during shutdown");
         throw new Exception("FAILURE: did not ignore opened sessions during shutdown");
@@ -454,7 +453,7 @@ public class ItPodsShutdown extends BaseTest {
     // Modify the original domain yaml to include shutdown options in domain spec node
     DomainCrd crd = new DomainCrd(originalYaml);
 
-    long delayTime = 50 * 1000;
+    long delayTime = 30 * 1000;
     // testing timeout
     Map<String, Object> shutdownProps = new HashMap();
     shutdownProps.put("timeoutSeconds", 20);
@@ -497,7 +496,7 @@ public class ItPodsShutdown extends BaseTest {
     // Modify the original domain yaml to include shutdown options in domain spec node
     DomainCrd crd = new DomainCrd(originalYaml);
 
-    long delayTime = 50 * 1000;
+    long delayTime = 30 * 1000;
     // testing timeout
     Map<String, Object> shutdownProps = new HashMap();
     shutdownProps.put("shutdownType", "Forced");
