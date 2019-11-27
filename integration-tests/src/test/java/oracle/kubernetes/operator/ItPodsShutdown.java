@@ -211,13 +211,6 @@ public class ItPodsShutdown extends BaseTest {
     String curlCmd = webServiceUrl.toString();
     // LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
     TestUtils.checkAnyCmdInLoop(curlCmd, "Ending to sleep");
-
-    ExecResult result = ExecCommand.exec(curlCmd);
-    if (result.exitValue() != 0) {
-      throw new Exception("FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
-    }
-
-    // LoggerHelper.getLocal().log(Level.INFO, result.stdout());
   }
 
   /**
