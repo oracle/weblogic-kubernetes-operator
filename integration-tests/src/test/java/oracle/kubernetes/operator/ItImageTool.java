@@ -3,12 +3,9 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.nio.file.Files;
 import java.util.Map;
-import java.util.Properties;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
@@ -34,6 +31,7 @@ public class ItImageTool extends BaseTest {
   private static final String WLS_IMAGE_NAME = "imagetool/build/weblogic";
   private static final String WLS_IMAGE_TAG = WLS_IMAGE_NAME + ":" + WLS_IMAGE_VERSION;
   private static final String TEST_RESOURCE_LOC = "integration-tests/src/test/resources";
+  private static String TEST_APP_PROPS_FILE = "OperatorIT.properties";
 
   private static Operator operator;
   private static Domain domain;
@@ -50,19 +48,18 @@ public class ItImageTool extends BaseTest {
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       // Set projecy root dir
-      final String projectRoot = System.getProperty("user.dir") + "/..";
-      BaseTest.setProjectRoot(projectRoot);
-
-      // Chamge image tag name
-      if (System.getenv("IMAGE_NAME_WEBLOGIC") == null && System.getenv("IMAGE_TAG_WEBLOGIC") == null) {
-        modifyImageNameinProps();
-      }
+      //final String projectRoot = System.getProperty("user.dir") + "/..";
+      //BaseTest.setProjectRoot(projectRoot);
 
       // Build WebLogic base image using imagetool
       buildWlsBaseInage();
 
       // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE);
+      if (System.getenv("IMAGE_NAME_WEBLOGIC") == null && System.getenv("IMAGE_TAG_WEBLOGIC") == null) {
+        TEST_APP_PROPS_FILE = "OperatorWIT.properties";
+      }
+      logger.info("Using <" + TEST_APP_PROPS_FILE + "> to create Operator and Domain");
+      initialize(TEST_APP_PROPS_FILE);
 
       // Create operator1
       if (operator == null) {
@@ -122,7 +119,6 @@ public class ItImageTool extends BaseTest {
 
     // Modify the values of weblogicImageName and weblogicImageTag in OperatorIT.properties
     // to use the WebLogic docker image created by WIT
-    //if (System.getenv("IMAGE_NAME_WEBLOGIC") == null && System.getenv("IMAGE_TAG_WEBLOGIC") == null) {
     StringBuffer getImageNameCmd = new StringBuffer();
     String cmd =
         getImageNameCmd
@@ -134,20 +130,14 @@ public class ItImageTool extends BaseTest {
           .toString();
     logger.info("Command to get pod's image name: " + cmd);
 
-    try {
-      result = TestUtils.exec(cmd);
-      logger.info("WebLogic docker image used by pod <"
-          + adminServerPodName + "> is <" + result.stdout() + ">");
-      //}
+    result = TestUtils.exec(cmd);
 
-      Assume.assumeNotNull("Failed to to get pod's image name ", result);
-      Assume.assumeTrue("Failed to use the image <" + WLS_IMAGE_TAG
-          + "built by imagetool", (result.stdout()).equals(WLS_IMAGE_TAG));
-    } finally {
-      if (System.getenv("IMAGE_NAME_WEBLOGIC") == null && System.getenv("IMAGE_TAG_WEBLOGIC") == null) {
-        restoreImageNameinProps();
-      }
-    }
+    Assume.assumeNotNull("Failed to to get pod's image name ", result);
+    Assume.assumeTrue("Failed to use the image <" + WLS_IMAGE_TAG
+        + "built by imagetool", (result.stdout()).equals(WLS_IMAGE_TAG));
+
+    logger.info("WebLogic docker image used by pod <"
+        + adminServerPodName + "> is <" + result.stdout() + ">");
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -155,6 +145,37 @@ public class ItImageTool extends BaseTest {
   private static void buildWlsBaseInage() throws Exception {
     //build wls base image using imagetool
     logger.info("Building a WebLogic base image using imagetool... ");
+    final String projectRoot = System.getProperty("user.dir") + "/..";
+
+    StringBuffer buildImage = new StringBuffer();
+    String cmd =
+        buildImage
+          .append(" sh ")
+          .append(projectRoot)
+          .append("/")
+          .append(TEST_RESOURCE_LOC)
+          .append("/imagetool/build.sh")
+          .toString();
+    logger.info("Command to build image name: " + cmd);
+
+    ExecResult result = ExecCommand.exec(cmd, true);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+        "FAILURE: Command "
+          + cmd
+          + " failed with stderr = "
+          + result.stderr()
+          + " \n stdout = "
+          + result.stdout());
+    }
+
+    logger.info("A WebLogic docker image created successfully!");
+  }
+  /*
+  private static void buildWlsBaseInage() throws Exception {
+    //build wls base image using imagetool
+    logger.info("Building a WebLogic base image using imagetool... ");
+    final String projectRoot = System.getProperty("user.dir") + "/..";
 
     StringBuffer buildImage = new StringBuffer();
     String cmd =
@@ -179,59 +200,5 @@ public class ItImageTool extends BaseTest {
     }
 
     logger.info("A WebLogic docker image created successfully!");
-  }
-
-  private static void modifyImageNameinProps() throws Exception {
-    StringBuffer testAppProps = new StringBuffer();
-    String testAppPropsFile =
-        testAppProps
-          .append(getProjectRoot())
-          .append("/")
-          .append(TEST_RESOURCE_LOC)
-          .append("/")
-          .append(APP_PROPS_FILE)
-          .toString();
-
-    try {
-      // Backup OperatorIT.properties
-      TestUtils.copyFile(testAppPropsFile, testAppPropsFile + ".bck");
-
-      // Overwrite image info
-      logger.info("Modify weblogicImageName to: " + WLS_IMAGE_NAME + " in file: " + testAppPropsFile);
-      logger.info("Modify weblogicImageTag to: " + WLS_IMAGE_VERSION + " in file: " + testAppPropsFile);
-
-      FileInputStream in = new FileInputStream(testAppPropsFile);
-      Properties props = new Properties();
-      props.load(in);
-      in.close();
-
-      FileOutputStream out = new FileOutputStream(testAppPropsFile);
-      props.setProperty("weblogicImageName", WLS_IMAGE_NAME);
-      props.setProperty("weblogicImageTag", WLS_IMAGE_VERSION);
-      props.store(out, null);
-      out.close();
-    } catch (Exception ex) {
-      restoreImageNameinProps();
-
-      throw new Exception(
-        "FAILURE: command to overwrite image tag:  "
-          + WLS_IMAGE_TAG
-          + " failed!!!");
-    }
-  }
-
-  private static void restoreImageNameinProps() throws Exception {
-    StringBuffer testAppProps = new StringBuffer();
-    String testAppPropsFile =
-        testAppProps
-          .append(getProjectRoot())
-          .append("/")
-          .append(TEST_RESOURCE_LOC)
-          .append("/")
-          .append(APP_PROPS_FILE)
-          .toString();
-
-    TestUtils.copyFile(testAppPropsFile + ".bck", testAppPropsFile);
-    Files.delete(new File(testAppPropsFile + ".bck").toPath());
-  }
+  }*/
 }

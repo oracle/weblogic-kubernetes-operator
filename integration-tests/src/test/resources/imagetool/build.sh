@@ -16,18 +16,6 @@ echo @@
 
 ls ${JDK_WLS_INSTALLER_DIR}
 
-if [ -z "${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}" ] ||
-   [ -z "${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME}" ] ||
-   [ -z "${JDK_WLS_INSTALLER_DIR}/p30386660_122130_Generic.zip" ] ||
-   [ -z "${JDK_WLS_INSTALLER_DIR}/p28186730_139400_Generic.zip" ] ||
-   [ -z "${JDK_WLS_INSTALLER_DIR}/p29135930_12213191004_Generic.zip" ]; then
-  echo @@
-  echo "@@ JDK or WLS installer or requiresd Patches is not installed. Please install them to ${JDK_WLS_INSTALLER_DIR} first! "
-  echo @@
-
-  exit 0
-fi
-
 # Get user info from a file if it exists. Use this info as default values
 if [ -f ${WIT_SCRIPT_DIR}/user_info.properties ] ; then
   echo @@

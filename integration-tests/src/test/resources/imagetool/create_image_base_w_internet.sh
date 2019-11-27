@@ -56,8 +56,8 @@ cleanup()
 
 prepare()
 {
-  if [ -z "${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}" ] ||
-     [ -z "${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME}" ]; then
+  if [ ! -f "${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}" ] &&
+     [ ! -f "${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME}" ]; then
     echo @@
     echo "@@ JDK or WLS installer is not installed. Please install tnhem to ${JDK_WLS_INSTALLER_DIR} first! "
     echo @@
