@@ -113,6 +113,17 @@ createImage()
   echo @@
   
   ${WIT_HOME_DIR}/bin/imagetool create --tag ${WLS_IMAGE_TAG} --latestPSU --version ${WLS_IMAGE_VERSION} --patches 29135930_12.2.1.3.191004 --httpProxyUrl ${http_proxy} --httpsProxyUrl ${https_proxy} --user ${ORACLE_SUPPORT_USERNAME} --password ${ORACLE_SUPPORT_PASSWORD}
+
+  if [ $? -eq 0 ]; then
+    echo @@
+    echo "@@ WebLogic docker image: ${WLS_IMAGE_TAG} created successfully!"
+    echo @@
+  else
+    echo @@
+    echo "@@ Failed to create WebLogic docker image"
+    echo @@
+  fi
+
   ${WIT_HOME_DIR}/bin/imagetool cache listItems
 }
 

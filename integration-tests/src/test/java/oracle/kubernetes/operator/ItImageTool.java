@@ -47,10 +47,6 @@ public class ItImageTool extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      // Set projecy root dir
-      //final String projectRoot = System.getProperty("user.dir") + "/..";
-      //BaseTest.setProjectRoot(projectRoot);
-
       // Build WebLogic base image using imagetool
       buildWlsBaseInage();
 
@@ -168,37 +164,5 @@ public class ItImageTool extends BaseTest {
           + " \n stdout = "
           + result.stdout());
     }
-
-    logger.info("A WebLogic docker image created successfully!");
   }
-  /*
-  private static void buildWlsBaseInage() throws Exception {
-    //build wls base image using imagetool
-    logger.info("Building a WebLogic base image using imagetool... ");
-    final String projectRoot = System.getProperty("user.dir") + "/..";
-
-    StringBuffer buildImage = new StringBuffer();
-    String cmd =
-        buildImage
-          .append(" sh ")
-          .append(getProjectRoot())
-          .append("/")
-          .append(TEST_RESOURCE_LOC)
-          .append("/imagetool/build.sh")
-          .toString();
-    logger.info("Command to build image name: " + cmd);
-
-    ExecResult result = ExecCommand.exec(cmd, true);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-        "FAILURE: Command "
-          + cmd
-          + " failed with stderr = "
-          + result.stderr()
-          + " \n stdout = "
-          + result.stdout());
-    }
-
-    logger.info("A WebLogic docker image created successfully!");
-  }*/
 }
