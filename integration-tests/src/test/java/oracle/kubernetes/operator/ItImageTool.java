@@ -47,8 +47,8 @@ public class ItImageTool extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      // Build WebLogic base image using imagetool
-      buildWlsBaseInage();
+      // Build WebLogic docker image using imagetool
+      buildWlsDockerImage();
 
       // initialize test properties and create the directories
       if (System.getenv("IMAGE_NAME_WEBLOGIC") == null && System.getenv("IMAGE_TAG_WEBLOGIC") == null) {
@@ -93,8 +93,8 @@ public class ItImageTool extends BaseTest {
   /**
    * Verify that WebLogic docker image created by using WebLogic Image Tool is used
    * to create WebLogic domain in Operator env.
-   * There are two ways to use the WLS base image created by imagetool
-   *  1. export IMAGE_NAME_WEBLOGIC = "name of your wls base image"
+   * There are two ways to use the WLS docker image created by imagetool
+   *  1. export IMAGE_NAME_WEBLOGIC = "name of your wls docker image"
    *     export IMAGE_TAG_WEBLOGIC = "version of the image"
    *  2. Modify the values of weblogicImageName and weblogicImageTag in OperatorIT.properties
    *
@@ -130,7 +130,7 @@ public class ItImageTool extends BaseTest {
 
     Assume.assumeNotNull("Failed to to get pod's image name ", result);
     Assume.assumeTrue("Failed to use the image <" + WLS_IMAGE_TAG
-        + "built by imagetool", (result.stdout()).equals(WLS_IMAGE_TAG));
+        + "> built by imagetool", (result.stdout()).equals(WLS_IMAGE_TAG));
 
     logger.info("WebLogic docker image used by pod <"
         + adminServerPodName + "> is <" + result.stdout() + ">");
@@ -138,9 +138,9 @@ public class ItImageTool extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
-  private static void buildWlsBaseInage() throws Exception {
-    //build wls base image using imagetool
-    logger.info("Building a WebLogic base image using imagetool... ");
+  private static void buildWlsDockerImage() throws Exception {
+    //build wls docker image using imagetool
+    logger.info("Building a WebLogic docker image using imagetool... ");
     final String projectRoot = System.getProperty("user.dir") + "/..";
 
     StringBuffer buildImage = new StringBuffer();
@@ -164,5 +164,15 @@ public class ItImageTool extends BaseTest {
           + " \n stdout = "
           + result.stdout());
     }
+
+    //check the image built successfully
+    cmd = "docker image ls |grep " + WLS_IMAGE_NAME;
+    result = TestUtils.exec(cmd);
+
+    Assume.assumeFalse("Failed to create the image <" + WLS_IMAGE_TAG
+        + "built by imagetool", (result.stdout()).isEmpty());
+
+    logger.info("A WebLogic docker image <" + WLS_IMAGE_TAG
+        + "> is created successfully by imagetool! ");
   }
 }
