@@ -59,6 +59,8 @@ public class BaseTest {
   public static boolean SHARED_CLUSTER;
   public static boolean OPENSHIFT;
   public static String WDT_VERSION;
+  //huizhao
+  public static String IMAGE_TOOL_VERSION;
   //currently certified chart versions of Prometheus and Grafana
   public static String PROMETHEUS_CHART_VERSION;
   public static String GRAFANA_CHART_VERSION;
@@ -352,6 +354,10 @@ public class BaseTest {
 
   public static String getProjectRoot() {
     return projectRoot;
+  }
+
+  public static void setProjectRoot(String projRoot) {
+    projectRoot = projRoot;
   }
 
   public static String getUsername() {
