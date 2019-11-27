@@ -210,7 +210,7 @@ public class ItPodsShutdown extends BaseTest {
     // Send a HTTP request to keep open session
     String curlCmd = webServiceUrl.toString();
     // LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
-    TestUtils.checkAnyCmdInLoop(curlCmd, "200");
+    TestUtils.checkAnyCmdInLoop(curlCmd, "Ending to sleep");
 
     ExecResult result = ExecCommand.exec(curlCmd);
     if (result.exitValue() != 0) {
