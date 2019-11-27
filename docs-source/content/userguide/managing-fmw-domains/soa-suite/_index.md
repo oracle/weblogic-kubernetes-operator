@@ -22,6 +22,8 @@ it is supported for production use.
 * [Running the Repository Creation Utility to set up your database schema](#running-the-repository-creation-utility-to-set-up-your-database-schema)
 * [Create a Kubernetes secret with the RCU credentials](#create-a-kubernetes-secret-with-the-rcu-credentials)
 * [Creating a SOA domain](#creating-a-soa-domain)
+* [Setup Logging Exporter for Logs monitoring](#setup-logging-exporter-for-logs-monitoring)
+* [Setup Monitor Exporter for Instance monitoring](#setup-monitor-exporter-for-instance-monitoring)
 
 
 #### Introduction
@@ -129,10 +131,10 @@ cd docker-images/OracleSOASuite/dockerfiles
 ./buildDockerImage.sh -v 12.2.1.3 -s
 ```
 
-The image produced will be named `middleware/soasuite/oracle/soasuite:12.2.1.3`.
+The image produced will be named `localhost/oracle/soasuite:12.2.1.3`.
 
 The Oracle SOA Suite image created through the above step needs to be retagged
-from `middleware/soasuite/oracle/soasuite:12.2.1.3` to `container-registry.oracle.com/middleware/soasuite:12.2.1.3` before continuing with the next steps.
+from `localhost/oracle/soasuite:12.2.1.3` to `container-registry.oracle.com/middleware/soasuite:12.2.1.3` before continuing with the next steps.
 
 ```bash
 $ docker tag middleware/soasuite/oracle/soasuite:12.2.1.3 container-registry.oracle.com/middleware/soasuite:12.2.1.3
@@ -175,7 +177,7 @@ by running the [create-pv-pvc.sh]({{< relref "/samples/simple/storage/_index.md"
 Follow the instructions for using the scripts to create a PV and PVC.  
 
 {{% notice note %}}
-When creating the PV and PVC for the database, make sure that you use a different name
+When creating the PV and PVC for the database, make sure that you use a different name 
 and storage class to the PV and PVC you create for the domain to use.
 {{% /notice %}}
 
@@ -188,7 +190,7 @@ $ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-soa-domain/d
 $ kubectl create -f db-with-pv.yaml
 ```
 
-The database will take several minutes to start the first time, since it has to
+The database will take several minutes to start the first time, since it has to 
 complete the setup operations.  You can watch the log to see its progress using
 this command:
 
@@ -350,3 +352,13 @@ $
 Now that you have your Docker images and you have created your RCU schemas, you are ready
 to create your domain.  A [sample]({{< relref "/samples/simple/domains/soa-domain/_index.md" >}})
 is provided that demonstrates how to create a SOA Suite domain.
+
+#### Setup Logging Exporter for Logs monitoring
+
+After the SOA Domain is setup, you can publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
+Follow the steps described in this [document](Logging-Exporter-Setup.md) to setup the Weblogic Logging Exporter and publish the logs to Elasticsearch.
+
+#### Setup Monitor Exporter for Instance monitoring
+
+The SOA instance can be monitored using Prometheus and Grapahna.
+Follow the steps described in this [document](Monitor-Exporter-setup.md) to setup the monitoring for SOA instance.
