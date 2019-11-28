@@ -31,7 +31,7 @@ public class ItImageTool extends BaseTest {
   private static final String WLS_IMAGE_NAME = "imagetool/build/weblogic";
   private static final String WLS_IMAGE_TAG = WLS_IMAGE_NAME + ":" + WLS_IMAGE_VERSION;
   private static final String TEST_RESOURCE_LOC = "integration-tests/src/test/resources";
-  private static String TEST_APP_PROPS_FILE = "OperatorIT.properties";
+  private static String TEST_APP_PROPS_FILE = "OperatorWIT.properties";
 
   private static Operator operator;
   private static Domain domain;
@@ -50,11 +50,14 @@ public class ItImageTool extends BaseTest {
       // Build WebLogic docker image using imagetool
       buildWlsDockerImage();
 
-      // initialize test properties and create the directories
-      if (System.getenv("IMAGE_NAME_WEBLOGIC") == null && System.getenv("IMAGE_TAG_WEBLOGIC") == null) {
-        TEST_APP_PROPS_FILE = "OperatorWIT.properties";
+      // env vars IMAGE_NAME_WEBLOGIC and IMAGE_TAG_WEBLOGIC overwrite the wls docker image
+      // specified in OperatorIT.properties
+      if (System.getenv("IMAGE_NAME_WEBLOGIC") != null && System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
+        TEST_APP_PROPS_FILE = APP_PROPS_FILE;
       }
       logger.info("Using <" + TEST_APP_PROPS_FILE + "> to create Operator and Domain");
+
+      // initialize test properties and create the directories
       initialize(TEST_APP_PROPS_FILE);
 
       // Create operator1
@@ -96,7 +99,7 @@ public class ItImageTool extends BaseTest {
    * There are two ways to use the WLS docker image created by imagetool
    *  1. export IMAGE_NAME_WEBLOGIC = "name of your wls docker image"
    *     export IMAGE_TAG_WEBLOGIC = "version of the image"
-   *  2. Modify the values of weblogicImageName and weblogicImageTag in OperatorIT.properties
+   *  2. use the values of weblogicImageName and weblogicImageTag in OperatorWIT.properties
    *
    * @throws Exception exception
    */
@@ -113,8 +116,7 @@ public class ItImageTool extends BaseTest {
     final String podNameSpace = (String) domainMap.get("namespace");
     ExecResult result = null;
 
-    // Modify the values of weblogicImageName and weblogicImageTag in OperatorIT.properties
-    // to use the WebLogic docker image created by WIT
+    // Verify that the WebLogic docker image created by WIT is used
     StringBuffer getImageNameCmd = new StringBuffer();
     String cmd =
         getImageNameCmd
@@ -167,10 +169,10 @@ public class ItImageTool extends BaseTest {
 
     //check the image built successfully
     cmd = "docker image ls |grep " + WLS_IMAGE_NAME;
-    result = TestUtils.exec(cmd);
+    result = ExecCommand.exec(cmd);
 
-    Assume.assumeFalse("Failed to create the image <" + WLS_IMAGE_TAG
-        + "built by imagetool", (result.stdout()).isEmpty());
+    Assume.assumeTrue("The image <" + WLS_IMAGE_TAG + "> doesn't exist!",
+        result.exitValue() == 0);
 
     logger.info("A WebLogic docker image <" + WLS_IMAGE_TAG
         + "> is created successfully by imagetool! ");
