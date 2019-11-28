@@ -27,11 +27,11 @@ import org.junit.runners.MethodSorters;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItImageTool extends BaseTest {
-  private static final String WLS_IMAGE_VERSION = "12.2.1.3.0";
-  private static final String WLS_IMAGE_NAME = "imagetool/build/weblogic";
-  private static final String WLS_IMAGE_TAG = WLS_IMAGE_NAME + ":" + WLS_IMAGE_VERSION;
   private static final String TEST_RESOURCE_LOC = "integration-tests/src/test/resources";
   private static String TEST_APP_PROPS_FILE = "OperatorWIT.properties";
+  private static String WLS_IMAGE_VERSION = "12.2.1.3.0";
+  private static String WLS_IMAGE_NAME = "imagetool/build/weblogic";
+  private static String WLS_IMAGE_TAG;
 
   private static Operator operator;
   private static Domain domain;
@@ -47,8 +47,17 @@ public class ItImageTool extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      // Build WebLogic docker image using imagetool
-      buildWlsDockerImage();
+      // Determine image name and version to be used
+      if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
+        WLS_IMAGE_NAME = System.getenv("IMAGE_NAME_WEBLOGIC");
+      }
+
+      if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
+        WLS_IMAGE_VERSION = System.getenv("IMAGE_TAG_WEBLOGIC");
+      }
+
+      WLS_IMAGE_TAG = WLS_IMAGE_NAME + ":" + WLS_IMAGE_VERSION;
+      logger.info("WebLogic image name is: " + WLS_IMAGE_TAG);
 
       // env vars IMAGE_NAME_WEBLOGIC and IMAGE_TAG_WEBLOGIC overwrite the wls docker image
       // specified in OperatorIT.properties
@@ -56,6 +65,9 @@ public class ItImageTool extends BaseTest {
         TEST_APP_PROPS_FILE = APP_PROPS_FILE;
       }
       logger.info("Using <" + TEST_APP_PROPS_FILE + "> to create Operator and Domain");
+
+      // Build WebLogic docker image using imagetool
+      buildWlsDockerImage();
 
       // initialize test properties and create the directories
       initialize(TEST_APP_PROPS_FILE);
