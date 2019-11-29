@@ -9,7 +9,7 @@ environment. You can do the following:
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 * Monitor the instance using Prometheus / Grafana
 
-The fastest way to experience the operator is to follow the [User guide](/docs-source/userguide/managing-fmw-domains/soa-suite/_index.md).
+The fastest way to experience the operator is to follow the [User guide](/docs-source/content/userguide/managing-fmw-domains/soa-suite/_index.md).
 
 ## Need more help? Have a suggestion? Come and say, "Hello!"
 We have a public Slack channel where you can get in touch with us to ask questions about using the operator or give us feedback or suggestions about
