@@ -18,31 +18,31 @@ By default when *exposeAdminT3Channel* is set WebLogic Kubernetes Operator Envir
 
 Note: Replace entries inside <xxxx> specific to your environment
 
-NOTE  : Opening the managed server port is not as secure as the default, where the port is not exposed. If you do not want to open this port, this solution does not work for you.
+NOTE  : The managed server t3 port is not exposed by default and opening this will have a security risk as the authentication method here is based on a userid/password. It is not recommended to do this on production instances.
 
 1.  Get the Kubernetes Cluster Master Address and verify the T3 port which will be used for creating application server connections. You can use below kubectl command to get the T3 port:
 
-        kubectl get service <domainUID>-<AdminServerName>-external -n  <namespace>-o jsonpath='{.spec.ports[0].nodePort}'
+        $ kubectl get service <domainUID>-<AdministrationServerName>-external -n  <namespace>-o jsonpath='{.spec.ports[0].nodePort}'
 
 2.  JDeveloper need to access Manged Server during deployment. In WebLogic Operator Environment each managed servers are pods and cannot be accessed directly by JDeveloper. Hence we need to configure the manage server's reachability:
 
     a. Decide on external IP address to be used to configure access of manage server ( soa cluster). Master or worker node IP address can be used to configure manage server accessibility. In case you decide to use some other external IP address, that need to be accessible from Kubernetes Cluster. Here we will be using Kubernetes Cluster Master IP.
     
-    b. Get the pod names of Admin and Managed Servers (i.e. "\<domainUID>-\<server name>") which will be used to map in /etc/hosts.
+    b. Get the pod names of Administration and Managed Servers (i.e. "\<domainUID>-\<server name>") which will be used to map in /etc/hosts.
     
-    c. Update /etc/hosts (or in Windows: C:\Windows\System32\Drivers\etc\hosts) on the host from where JDeveloper is running with below entires where
+    c. Update `/etc/hosts` (or in Windows: `C:\Windows\System32\Drivers\etc\hosts`) on the host from where JDeveloper is running with below entires where
         
-        <Master IP> <admin pod name>
+        <Master IP> <administration server pod name>
         <Master IP> <managed server1 pod name>
         <Master IP> <managed server2 pod name>
     
     d. Get the Kubernetes service name of the SOA Cluster so that we can make them access externally with Master IP ( or External IP).
         
-        kubectl get service <domainUID>-cluster-<soa-cluster> -n <namespace>
+        $ kubectl get service <domainUID>-cluster-<soa-cluster> -n <namespace>
     
-    e. Create a Kubernetes service to expose soa cluster service (“<domainUID>-cluster-<soa-cluster>”) to available externally with same port of managed server:
+    e. Create a Kubernetes service to expose SOA cluster service (“<domainUID>-cluster-<soa-cluster>”) to available externally with same port of managed server:
         
-        kubectl expose service  <domainUID>-cluster-<soa-cluster> --name <domainUID>-<soa-cluster>-ext --external-ip=<Master IP> -n <namespace>
+        $ kubectl expose service  <domainUID>-cluster-<soa-cluster> --name <domainUID>-<soa-cluster>-ext --external-ip=<Master IP> -n <namespace>
 
 ## Create an Application Server Connection in JDeveloper
 
@@ -69,20 +69,21 @@ NOTE  : Opening the managed server port is not as secure as the default, where t
 
     ![Deploy To Created Connection](images/DeployToCreatedConnection.jpg)
 
-3. Using the application server connection, managed servers (soa cluster) are discovered and get listed on the select servers page. Select the soa cluster and click Next.
+3. Using the application server connection, managed servers (SOA cluster) are discovered and get listed on the select servers page. Select the SOA cluster and click Next.
 
     ![Look Up Server](images/LookUpServer.jpg)
     
     ![Target Server](images/TargetServers.jpg)
 
-4. On Summary page, click Finish to start deploying the composites to soa cluster.
+4. On Summary page, click Finish to start deploying the composites to SOA cluster.
 
     ![Deploy Summary](images/DeploySummaryPage.jpg)
 
     ![Deploying Status](images/DeployingStatus.jpg)
     
-5. Once deployment is success, verify with soa-infra URL to confirm the composites are deployed on both servers:
+5. Once deployment is successful, verify with soa-infra URL to confirm the composites are deployed on both servers:
 
     ![SOA URL 1](images/SOAURLs1.jpg)
 
     ![SOA URL 2](images/SOAURL2.jpg)
+

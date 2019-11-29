@@ -10,7 +10,7 @@ With the following steps we will be creating T3 port at 30014 on all Managed Ser
 
 * Name: T3Channel_MS
 * Listen Port:  30014
-* External Listen Address: <Master IP Address> 
+* External Listen Address: \<Master IP Address> 
 * External Listen Port:  30014
 
 `Note: In case you are using different NodePort to expose T3 for Managed Server externally, then use same value for "External Listen Port"`
@@ -21,7 +21,7 @@ WebLogic Server supports several ways to configure T3 channel. Here we will prov
 
 ### Method 1 : Using WebLogic Server Administration Console
 
-1. Login to WebLogic Server Admin Console and obtain the configuration lock by clicking on **Lock & Edit**
+1. Login to WebLogic Server Administration  Console and obtain the configuration lock by clicking on **Lock & Edit**
 
 2. In the left pane of the Console, expand **Environment** and **select Servers**.
 
@@ -92,29 +92,32 @@ activate()
 disconnect()
 ```
 
-2. Copy `t3config_ms.py` into Domain Home (e.g., /u01/oracle/user_projects/domains/soainfra) of AdminServer pod (e.g., soainfra-adminserver in soans namespace)
+2. Copy `t3config_ms.py` into Domain Home (e.g., `/u01/oracle/user_projects/domains/soainfra`) of Administration server pod (e.g., soainfra-adminserver in soans namespace)
 
-        kubectl cp t3config_ms.py soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra
+        $ kubectl cp t3config_ms.py soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra
 
-3. Execute `wlst.sh t3config_ms.py` by exec into AdminServer pod with below parameters
+3. Execute `wlst.sh t3config_ms.py` by exec into Administration Server pod with below parameters
 
     * host: \<Master IP Address>
-    * port:  30012 #AdminServer T3 port
+    * port:  30012 *# Administration Server T3 port*
     * user_name: weblogic 
-    * password: Welcome1 #weblogic password
-    * listen_port: 30014 # New port for T3 managed servers
-    * public_port: 30014 # Kubernetes NodePort which will be used to expose T3 port externally
+    * password: Welcome1 *# weblogic password*
+    * listen_port: 30014 *# New port for T3 managed servers*
+    * public_port: 30014 *# Kubernetes NodePort which will be used to expose T3 port externally*
     * public_address: \<Master IP Address>    
-    * managedNameBase: soa_server # Give managed server base name. For osb_cluster this will be osb_server
-    * ms_count: 5 # Number of configured managed servers 
+    * managedNameBase: soa_server *# Give managed server base name. For osb_cluster this will be osb_server*
+    * ms_count: 5 *# Number of configured managed servers* 
 
-    kubectl exec -it \<AdminServer pod> -n \<namespace> -- /u01/oracle/oracle_common/common/bin/wlst.sh  \<domain_home>/t3config_ms.py \<master_ip>  \<t3 admin port>  weblogic \<password for weblogic> \<t3 port on managed server> \<t3 nodeport> \<master_ip> \<managedNameBase> \<ms_count>
-
-        kubectl exec -it soainfra-adminserver -n soans -- /u01/oracle/oracle_common/common/bin/wlst.sh /u01/oracle/user_projects/domains/soainfra/t3config_ms.py 100.111.150.3 30012 weblogic Welcome1 30014 30014 100.111.150.3 soa_server 5
+    ```
+    Command:
+    $ kubectl exec -it \<Administration Server pod> -n \<namespace> -- /u01/oracle/oracle_common/common/bin/wlst.sh  \<domain_home>/t3config_ms.py \<master_ip>  \<t3 port on administration server>  weblogic \<password for weblogic> \<t3 port on managed server> \<t3 nodeport> \<master_ip> \<managedNameBase> \<ms_count>
+    ```
+        Sample Command:
+        $ kubectl exec -it soainfra-adminserver -n soans -- /u01/oracle/oracle_common/common/bin/wlst.sh /u01/oracle/user_projects/domains/soainfra/t3config_ms.py 100.111.150.3 30012 weblogic Welcome1 30014 30014 100.111.150.3 soa_server 5
 
 ## Step 2 : Create Kubernetes Service to expose T3 port 30014 as NodePort Service
 
-1. Create t3_ms_svc.yaml with below contents to expose T3 at managed server port 30014 for domainName and domainUID as "soainfra" and  cluster as "soa_cluster" :
+1. Create `t3_ms_svc.yaml` with below contents to expose T3 at managed server port 30014 for domainName and domainUID as "soainfra" and  cluster as "soa_cluster" :
 
     ```
     apiVersion: v1
@@ -142,8 +145,9 @@ disconnect()
 
 2. Create the NodePort Service for port 30014 with command:
 
-        kubectl create -f t3_ms_svc.yaml
+        $ kubectl create -f t3_ms_svc.yaml
 
 3. Now you can access t3 for managed server with below URL
 
         t3://<master_ip>:30014
+
