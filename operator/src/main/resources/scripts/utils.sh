@@ -273,6 +273,29 @@ function traceEnv() {
   done
 }
 
+#
+# traceDirs before|after
+#   Trace contents and owner of DOMAIN_HOME/LOG_HOME/DATA_HOME directories
+#
+function traceDirs() {
+  trace "id = '`id`'"
+  local indir
+  for indir in DOMAIN_HOME LOG_HOME DATA_HOME; do
+    [ -z "${!indir}" ] && continue
+    trace "Directory trace for $indir=${!indir} ($1)"
+    local cnt=0
+    local odir=""
+    local cdir="${!indir}/*"
+    while [ ${cnt} -lt 30 ] && [ ! "$cdir" = "$odir" ]; do
+      echo "  ls -ld $cdir:"
+      ls -ld $cdir 2>&1 | sed 's/^/    /'
+      odir="$cdir"
+      cdir="`dirname "$cdir"`"
+      cnt=$((cnt + 1))
+    done
+  done
+}
+
 
 #
 # exportEffectiveDomainHome
