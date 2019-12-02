@@ -173,6 +173,7 @@ public class CrdHelper {
       V1beta1JSONSchemaProps status =
           gson.fromJson(jsonElementStatus, V1beta1JSONSchemaProps.class);
       return new V1beta1JSONSchemaProps()
+          .type("object")
           .putPropertiesItem("spec", spec)
           .putPropertiesItem("status", status);
     }
