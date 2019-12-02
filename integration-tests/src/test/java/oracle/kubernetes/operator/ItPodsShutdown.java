@@ -156,9 +156,11 @@ public class ItPodsShutdown extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
     Thread.sleep(10 * 1000);
     // should restart domain
+    domain.verifyDomainCreated();
+    /*
     TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
     TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
-
+    */
     Assertions.assertTrue(
         checkShutdownUpdatedProp(domainUid + "-admin-server", "30", "false", "Graceful"),
         "Property value was not found in the updated domain crd ");
@@ -189,6 +191,7 @@ public class ItPodsShutdown extends BaseTest {
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
       domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
     }
+
     String nodePortHost = domain.getHostNameForCurl();
     int nodePort = domain.getLoadBalancerWebPort();
 
@@ -207,12 +210,7 @@ public class ItPodsShutdown extends BaseTest {
     // Send a HTTP request to keep open session
     String curlCmd = webServiceUrl.toString();
     // LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
-
-    ExecResult result = ExecCommand.exec(curlCmd);
-    if (result.exitValue() != 0) {
-      throw new Exception("FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
-    }
-    // LoggerHelper.getLocal().log(Level.INFO, result.stdout());
+    TestUtils.checkAnyCmdInLoop(curlCmd, "Ending to sleep");
   }
 
   /**
@@ -390,7 +388,7 @@ public class ItPodsShutdown extends BaseTest {
     shutdownProps.put("timeoutSeconds", 160);
     shutdownProps.put("ignoreSessions", false);
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
-    long delayTime = 50 * 1000;
+    long delayTime = 30 * 1000;
     updateCrdYamlVerifyShutdown(crd, delayTime);
 
     Assertions.assertTrue(
@@ -417,7 +415,7 @@ public class ItPodsShutdown extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO,
           " Termination time with ignoreSessions=true :" + terminationTimeWithIgnoreSessionTrue);
 
-      if (terminationTimeWithIgnoreSessionFalse - (50 * 1000)
+      if (terminationTimeWithIgnoreSessionFalse - delayTime
           < terminationTimeWithIgnoreSessionTrue) {
         LoggerHelper.getLocal().log(Level.INFO, "FAILURE: did not ignore opened sessions during shutdown");
         throw new Exception("FAILURE: did not ignore opened sessions during shutdown");
@@ -448,7 +446,7 @@ public class ItPodsShutdown extends BaseTest {
     // Modify the original domain yaml to include shutdown options in domain spec node
     DomainCrd crd = new DomainCrd(originalYaml);
 
-    long delayTime = 50 * 1000;
+    long delayTime = 30 * 1000;
     // testing timeout
     Map<String, Object> shutdownProps = new HashMap();
     shutdownProps.put("timeoutSeconds", 20);
@@ -491,7 +489,7 @@ public class ItPodsShutdown extends BaseTest {
     // Modify the original domain yaml to include shutdown options in domain spec node
     DomainCrd crd = new DomainCrd(originalYaml);
 
-    long delayTime = 50 * 1000;
+    long delayTime = 30 * 1000;
     // testing timeout
     Map<String, Object> shutdownProps = new HashMap();
     shutdownProps.put("shutdownType", "Forced");
@@ -647,9 +645,11 @@ public class ItPodsShutdown extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
 
     LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
+    this.domain.verifyDomainCreated();
+    /*
     TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
     TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
-
+    */
     // invoke servlet to keep sessions opened, terminate pod and check shutdown time
     if (delayTime > 0) {
       String testAppPath = "httpsessionreptestapp/CounterServlet?delayTime=" + delayTime;

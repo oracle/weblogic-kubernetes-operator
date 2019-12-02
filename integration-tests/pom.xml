@@ -174,13 +174,13 @@
                    <!--Added the following lines so we could toggle between parallel and 
                        sequential runs, but it doesn't work yet. The tests run in parallel
                        by default-->
-                   <properties>
+                   <!-- properties>
                         <configurationParameters>
                             junit.jupiter.execution.parallel.enabled = true
                             junit.jupiter.execution.parallel.mode.default = same_thread
                             junit.jupiter.execution.parallel.mode.classes.default = concurrent
                         </configurationParameters>
-                    </properties>
+                    </properties -->
                     <skipTests>true</skipTests>
                 </configuration>
                 <dependencies>
@@ -258,6 +258,16 @@
                             <executable>${resource-integration-test}/setupenv.sh</executable>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>cleanup</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${resource-integration-test}/cleanup_success.sh</executable>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -286,6 +296,7 @@
                             <resources>
                                 <resource>
                                     <directory>${resource-integration-test}</directory>
+                                    <filtering>true</filtering>
                                 </resource>
                             </resources>
                         </configuration>
