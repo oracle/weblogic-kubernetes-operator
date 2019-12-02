@@ -78,7 +78,7 @@ public class DbUtils {
   public static void stopOracleDB() throws Exception {
     String cmd = "sh " 
         + BaseTest.getResultDir()
-        + "/create-oracle-db-service/stop-db-service.sh";
+        + "/scripts/create-oracle-db-service/stop-db-service.sh";
   
     TestUtils.exec(cmd, true);
   }
@@ -91,7 +91,7 @@ public class DbUtils {
   public static void createRcuSchema(String rcuSchemaPrefix) throws Exception {
     String cmd = "sh " 
         + BaseTest.getResultDir()
-        + "/create-rcu-schema/create-rcu-schema.sh -s "
+        + "/scripts/create-rcu-schema/create-rcu-schema.sh -s "
         + rcuSchemaPrefix;
     TestUtils.exec(cmd, true);
   }
@@ -104,7 +104,7 @@ public class DbUtils {
   public static void dropRcuSchema(String rcuSchemaPrefix) throws Exception {
     String cmd = "sh " 
         + BaseTest.getResultDir()
-        + "/create-rcu-schema/drop-rcu-schema.sh -s rcuSchemaPrefix";
+        + "/scripts/create-rcu-schema/drop-rcu-schema.sh -s rcuSchemaPrefix";
     TestUtils.exec(cmd, true);
   }
   
@@ -116,7 +116,7 @@ public class DbUtils {
   public static void deleteRcuPod() throws Exception {
     String cmd = "kubectl delete -f " 
         + BaseTest.getResultDir()
-        + "/create-rcu-schema/common/rcu.yaml";
+        + "/scripts/create-rcu-schema/common/rcu.yaml";
     TestUtils.exec(cmd, true);
   }
 
