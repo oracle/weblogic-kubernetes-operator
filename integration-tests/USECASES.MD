@@ -168,6 +168,6 @@ Configuration Overrides Usecases
 | Managed Coherence - Domain on PV | Sanity testing of managed coherence in domain on pv using WLST. The test adds data to be stored in the cache, retrieves it and clears the cache |
 | Managed Coherence - Domain in image | Sanity testing of managed coherence in domain in image using WLST. The test adds data to be stored in the cache, retrieves it and clears the cache |
 
-| Using WebLogic Image Tool(WIT) to Create WebLogic Domain | Use Case |
+| Using WebLogic Image Tool (WIT) to Create WebLogic Domain | Use Case |
 | --- | --- |
 | Create WebLogic Domain using an image built by WIT |  Download WIT, build a WebLogic docker image using WIT and then use the image to create WebLogic Domain  |
