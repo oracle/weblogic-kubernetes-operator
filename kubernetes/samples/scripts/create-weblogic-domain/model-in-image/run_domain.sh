@@ -73,7 +73,7 @@ cp k8s-domain.yaml.template k8s-domain.yaml
 sed -i s/@@DOMTYPE@@/${WDT_DOMAIN_TYPE}/ k8s-domain.yaml
 
 if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
-  sed -i 's/\#opssKeyPassPhrase:/opssKeyPassPhrase:/' k8s-domain.yaml
+  sed -i 's/\#opssWalletSecret:/opssWalletSecret:/' k8s-domain.yaml
   sed -i 's/\#  name: sample-domain1-opss-secrets/  name: sample-domain1-opss-secrets/' k8s-domain.yaml
 fi
 

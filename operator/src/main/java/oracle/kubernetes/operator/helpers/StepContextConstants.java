@@ -14,7 +14,7 @@ public interface StepContextConstants {
   static final String WDT_CONFIG_MAP_VOLUME_SUFFIX = "-weblogic-domain-introspect-wdt-cm-volume";
   static final String STORAGE_VOLUME = "weblogic-domain-storage-volume";
   static final String SECRETS_MOUNT_PATH = "/weblogic-operator/secrets";
-  static final String OPSS_KEY_MOUNT_PATH = "/weblogic-operator/opss-key-passphrase";
+  static final String OPSS_KEY_MOUNT_PATH = "/weblogic-operator/opss-wallet-secret";
   static final String WDT_ENCRYPT_KEY_MOUNT_PATH = "/weblogic-operator/wdt-encrypt-key-passphrase";
   static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
   static final String OVERRIDE_SECRETS_MOUNT_PATH = "/weblogic-operator/config-overrides-secrets";

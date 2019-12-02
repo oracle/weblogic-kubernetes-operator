@@ -357,8 +357,8 @@ public class Domain {
    *
    * @return opss key passphrase
    */
-  public V1SecretReference getOpssKeyPassPhrase() {
-    return spec.getOpssKeyPassPhrase();
+  public V1SecretReference getOpssWalletSecret() {
+    return spec.getOpssWalletSecret();
   }
 
   /**

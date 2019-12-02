@@ -101,9 +101,9 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWebLogicCredentialsSecret().getName();
   }
 
-  String getOpssKeyPassPhraseName() {
-    if (getDomain().getOpssKeyPassPhrase() != null)
-      return getDomain().getOpssKeyPassPhrase().getName();
+  String getOpssWalletSecretName() {
+    if (getDomain().getOpssWalletSecret() != null)
+      return getDomain().getOpssWalletSecret().getName();
     else
       return null;
   }
@@ -273,9 +273,9 @@ public abstract class JobStepContext extends BasePodStepContext {
                 new V1Volume()
                     .name(getDomainUid() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
                     .configMap(getIntrospectMD5VolumeSource()));
-    if (getOpssKeyPassPhraseVolume() != null) {
+    if (getOpssWalletSecretVolume() != null) {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
-          getOpssKeyPassPhraseVolume()));
+          getOpssWalletSecretVolume()));
     }
     if (getWdtEncryptPassPhraseVolume() != null) {
       podSpec.addVolumesItem(new V1Volume().name(WDT_ENCRYPT_PASSPHRASE_VOLUME)
@@ -330,7 +330,7 @@ public abstract class JobStepContext extends BasePodStepContext {
               "/weblogic-operator/introspectormd5")
               .readOnly(false));
 
-    if (getOpssKeyPassPhraseVolume() != null) {
+    if (getOpssWalletSecretVolume() != null) {
       container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_KEYPASSPHRASE_VOLUME, OPSS_KEY_MOUNT_PATH));
     }
     if (getWdtEncryptPassPhraseVolume() != null) {
@@ -394,10 +394,10 @@ public abstract class JobStepContext extends BasePodStepContext {
           .defaultMode(420);
   }
 
-  private V1SecretVolumeSource getOpssKeyPassPhraseVolume() {
-    if (getOpssKeyPassPhraseName() != null) {
+  private V1SecretVolumeSource getOpssWalletSecretVolume() {
+    if (getOpssWalletSecretName() != null) {
       V1SecretVolumeSource result =  new V1SecretVolumeSource()
-          .secretName(getOpssKeyPassPhraseName())
+          .secretName(getOpssWalletSecretName())
           .defaultMode(420);
       result.setOptional(true);
       return result;

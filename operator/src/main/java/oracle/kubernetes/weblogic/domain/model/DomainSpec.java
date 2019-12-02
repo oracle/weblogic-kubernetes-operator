@@ -83,7 +83,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description(
       "opss key passphrase.")
   @Valid
-  private V1SecretReference opssKeyPassPhrase;
+  private V1SecretReference opssWalletSecret;
 
   /**
    * Reference to wdt model encryption pass phrase.
@@ -404,13 +404,13 @@ public class DomainSpec extends BaseConfiguration {
   }
 
 
-  public V1SecretReference getOpssKeyPassPhrase() {
-    return opssKeyPassPhrase;
+  public V1SecretReference getOpssWalletSecret() {
+    return opssWalletSecret;
   }
 
   @SuppressWarnings("unused")
-  public void setOpssKeyPassPhrase(V1SecretReference opssKeyPassPhrase) {
-    this.opssKeyPassPhrase = opssKeyPassPhrase;
+  public void setOpssWalletSecret(V1SecretReference opssWalletSecret) {
+    this.opssWalletSecret = opssWalletSecret;
   }
 
   /**

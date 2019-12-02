@@ -33,7 +33,7 @@ DomainSpec is a description of a domain.
 | `logHome` | string | The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files |
 | `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true.  |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
-| `opssKeyPassPhrase` | [Secret Reference](k8s1.13.5.md#secret-reference) | opss key passphrase. |
+| `opssWalletSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | opss key passphrase. |
 | `opssKeyWalletConfigMap` | string | The name of the config map to store the opss key wallet file |
 | `replicas` | number | The number of managed servers to run in any cluster that does not specify a replica count. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |

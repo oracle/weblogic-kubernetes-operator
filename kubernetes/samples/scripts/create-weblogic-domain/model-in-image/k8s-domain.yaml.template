@@ -104,19 +104,11 @@ spec:
   #
   #keepJRFSchema: "true"
   #
-  # k8 secret name for the opss extract key (it should have a literal called passphrase)
+  # k8 secret name for the opss extract wallet.  It contains the key passphrase used to extract the
+  # opss wallet and optional key ewallet.p12 containing the base64 encoded opss wallet
   #
   #
-  # opss wallet config map name. Contains the waller file ewallet.p12 in base64 format
-  #
-  # Use this to store the saved ewallet.p12 file.  This file allows the same JRF infrastructure database to be shared
-  # across domain and also set the passphrase in opssKeyPassPhrase
-  #
-  # k8 secret name if the wdt model is encrypted (it should have a literal called passphrase)
-  #
-  #opssKeyWalletConfigMap : simple-domain1-opss-key
-  #
-  #opssKeyPassPhrase:
+  #opssWalletSecret:
   #  name: sample-domain1-opss-secrets
   #
   # Use this if the wdt model is encrypted

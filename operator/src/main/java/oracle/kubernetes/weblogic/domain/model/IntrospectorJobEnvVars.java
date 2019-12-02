@@ -28,7 +28,7 @@ public class IntrospectorJobEnvVars {
   /**
    * The credentials used by the introspection job - opss key passphrase.
    */
-  public static final String OPSS_KEY_PASSPHRASE_NAME = "OPSS_KEY_PASSPHRASE_NAME";
+  public static final String OPSS_WALLET_SECRET_NAME = "OPSS_WALLET_SECRET_NAME";
 
   /**
    * The credentials used by the introspection job - wdt encryption passphrase.

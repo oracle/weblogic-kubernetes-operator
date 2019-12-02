@@ -249,7 +249,7 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());
       addEnvVar(vars, IntrospectorJobEnvVars.INTROSPECT_HOME, getIntrospectHome());
       addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
-      addEnvVar(vars, IntrospectorJobEnvVars.OPSS_KEY_PASSPHRASE_NAME, getOpssKeyPassPhraseName());
+      addEnvVar(vars, IntrospectorJobEnvVars.OPSS_WALLET_SECRET_NAME, getOpssWalletSecretName());
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_ENCRYPTION_PASSPHRASE_NAME, getWdtEncryptPassPhraseName());
       addEnvVar(vars, IntrospectorJobEnvVars.ROLLBACK_IF_REQUIRE_RESTART,
           Boolean.toString(isRollBackIfRequireRestart()));

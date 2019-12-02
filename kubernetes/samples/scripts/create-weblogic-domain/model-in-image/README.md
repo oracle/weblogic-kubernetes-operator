@@ -150,22 +150,30 @@ It is helpful to understand the following high-level flow before running the sam
 
      | Attribute                | Usage                                                                          |
      | ------------------------ | ------------------------------------------------------------------------------| 
-     | opssKeyPassPhrase        | Kubernetes secret name for the opss key stored in opssKeyWalletconfigMap |
-     | | When this is set. The operator will use this value to extract the key and extract |
-     | | and store the opss|key. The key will store in the introspector configmap. This key |
-     | | can be optionally extracted and save in the same secret with file name ewallet.p12. |
+     | opssWalletSecret        | Kubernetes secret name for the opss wallet  |
+     | | When this is set. The operator will use the value of the ```passphrase``` key in the secret to extract the 
+     | | opss wallet and store it in the introspector config map.  | 
+     | | In situation if it is desirable to share the same infrastructure database across multiple domains, the |
+     | | wallet stored in the introspector config map can be extract and store in the same secret with key |
+     | | ```ewallet.p12``` |
 
 
-
+     Create secret with the passphrase 
+     
      ```
         kubectl -n sample-domain1-ns create secret generic opss-key-passphrase-secret --from-literal=passhrase=welcome1
      ```
             
-     You can extract the opss key from the introspect domain after it is created the very first time.
+     You can extract the opss wallet from the introspect domain after it is first deployed.
    
     ```
     kubectl -n <ns> describe configmap <domain-uid>-weblogic-domain-introspect-cm | sed -n '/ewallet.p12/ {n;n;p}' > 
     ewallet.p12
+    ```
+    
+    Create the secret with both passphrase and opss wallet
+    
+    ```
     kubectl -n sample-domain1-ns create secret generic opss-key-passphrase-secret --from-literal=passhrase=welcome1 
     --from-file=ewallet.p12
       
