@@ -117,7 +117,7 @@ spec:
   #opssKeyWalletConfigMap : simple-domain1-opss-key
   #
   #opssKeyPassPhrase:
-  #  name: opss-key-passphrase-secret
+  #  name: sample-domain1-opss-secrets
   #
   # Use this if the wdt model is encrypted
   #

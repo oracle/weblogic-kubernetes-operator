@@ -69,7 +69,7 @@ public class ConfigMapHelperTest {
     "tailLog.sh",
     "monitorLog.sh",
     "model_diff.py",
-    "model-in-image.sh"
+    "modelInImage.sh"
 
   };
   private static final String DOMAIN_NS = "namespace";

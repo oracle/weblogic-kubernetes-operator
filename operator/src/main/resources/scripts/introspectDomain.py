@@ -185,26 +185,30 @@ class OfflineWlstEnv(object):
     # this should only be done for model in image case
 
     if os.path.exists('/u01/wdt/models'):
-      self.WDT_DOMAIN_TYPE          = self.getEnvOrDef('WDT_DOMAIN_TYPE', 'WLS')
-      self.KEEP_JRF_SCHEMA          = self.getEnvOrDef('KEEP_JRF_SCHEMA', None)
-
-      if self.KEEP_JRF_SCHEMA is None:
-        self.KEEP_JRF_SCHEMA = 1
+      self.WDT_DOMAIN_TYPE = self.getEnvOrDef('WDT_DOMAIN_TYPE', 'WLS')
 
       try:
+        # find the em ear source path
         cd('Application/em')
         em_attrs = ls(returnMap='true', returnType='a')
         self.empath = em_attrs['SourcePath']
-
-        if self.WDT_DOMAIN_TYPE == 'JRF' and self.KEEP_JRF_SCHEMA:
-          # load domain home into WLST
-          opss_passphrase = self.getEnvOrDef('OPSS_PASSPHRASE', self.DOMAIN_NAME + "_welcome1")
-          os.mkdir('/tmp/opsswallet')
-          exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml',\
-                                               keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
       except:
         self.empath = None
         pass
+
+      if self.WDT_DOMAIN_TYPE == 'JRF':
+        try:
+          # Only export if it is not there already (i.e. have not been copied from the secrets
+          if not os.path.exists('/tmp/opsswallet/ewallet.p12'):
+            opss_passphrase = self.getEnv('OPSS_PASSPHRASE')
+            os.mkdir('/tmp/opsswallet')
+            exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml', \
+                              keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
+        except:
+          trace("SEVERE","Error in exporting OPSS key ")
+          dumpStack()
+          sys.exit(1)
+
 
   def getEmPath(self):
     return self.empath
@@ -271,7 +275,6 @@ class OfflineWlstEnv(object):
 
   def printFile(self, path):
     trace("Printing file " + path)
-    print 
     print ">>> ",path
     print self.readFile(path)
     print ">>> EOF"
@@ -1410,7 +1413,7 @@ class DomainIntrospector(SecretManager):
         trace("jdk_path")
         InventoryMD5Generator(self.env, self.env.SECRETS_MD5, '/tmp/secrets.md5').generate()
 
-        if self.env.WDT_DOMAIN_TYPE == 'JRF' and self.env.KEEP_JRF_SCHEMA:
+        if self.env.WDT_DOMAIN_TYPE == 'JRF':
           OpssKeyGenerator(self.env).generate()
 
 

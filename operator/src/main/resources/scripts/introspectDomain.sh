@@ -80,6 +80,7 @@ checkEnv -q \
 
 for script_file in "${SCRIPTPATH}/wlst.sh" \
                    "${SCRIPTPATH}/startNodeManager.sh"  \
+                   "${SCRIPTPATH}/modelInImage.sh"  \
                    "${SCRIPTPATH}/introspectDomain.py"; do
   [ ! -f "$script_file" ] && trace SEVERE "Missing file '${script_file}'." && exit 1 
 done 
@@ -97,21 +98,32 @@ if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
 fi
 
 
-source ${SCRIPTPATH}/model-in-image.sh
+source ${SCRIPTPATH}/modelInImage.sh
 
+if [ $? -ne 0 ]; then
+      trace SEVERE "Error sourcing modelInImage.sh" && exit 1
+fi
+# Add another env/attribute in domain yaml for model in image
+# log error if dir exists and attribute set
+DOMAIN_CREATED=0
+#OPSS_PASSPHRASE=""
 if [ ! -d "${DOMAIN_HOME}" ]; then
+    trace "Beginning Model In Image"
     command -v gzip
     if [ $? -ne 0 ] ; then
-      trace "gzip is missing - image must have gzip installed " && exit 1
+      trace SEVERE "gzip is missing - image must have gzip installed " && exit 1
     fi
     command -v tar
     if [ $? -ne 0 ] ; then
-        trace "tar is missing - image must have tar installed " && exit 1
+      trace SEVERE "tar is missing - image must have tar installed " && exit 1
     fi
     mkdir -p ${DOMAIN_HOME}
-    createWLDomain
-    created_domain=$?
-    trace "created domain " ${created_domain}
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "cannot create domain home directory '${DOMAIN_HOME}'" && exit 1
+    fi
+    createWLDomain || exit 1
+    created_domain=$DOMAIN_CREATED
+    trace "created domain return code = " ${created_domain}
 else
     created_domain=1
 fi
@@ -131,9 +143,7 @@ traceEnv after
 checkWebLogicVersion || exit 1
 
 # start node manager
-
 # run instrospector wlst script
-
 if [ ${created_domain} -ne 0 ]; then
     # start node manager -why ??
     trace "Starting node manager"

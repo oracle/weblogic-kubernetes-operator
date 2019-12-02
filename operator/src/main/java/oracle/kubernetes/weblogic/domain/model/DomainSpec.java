@@ -21,6 +21,7 @@ import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -260,7 +261,8 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.3.1
    */
-  @Description("wdt domain type")
+  @EnumClass(value = ModelInImageDomainType.class)
+  @Description("Model in image - wdt domain type: Legal values: WLS, RestrictedJRF, JRF")
   private String wdtDomainType;
 
 

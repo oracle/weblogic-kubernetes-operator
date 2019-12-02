@@ -143,37 +143,32 @@ It is helpful to understand the following high-level flow before running the sam
 
    - For JRF domain type, since the domain may be recreated in each life cycle deployment and you want to be able to 
    reuse the same infrastructure database.  WebLogic Kubernetes Operator will extract and store the OPSS wallet of 
-   the domain internally in the introspect domain configmap.  However, if the introspect configmap is deleted, the 
+   the domain and stored in the introspect domain configmap.  However, if the introspect configmap is deleted, the 
    OPSS is gone and you will not be able to attach any domain to that database. Oracle strongly recommends creating a passphrase 
    in a Kubernetes secret and extract the OPSS key from the introspect configmap and back up in a safe location.
-   There are additional attributes in the domain resource yaml file.
+   There are additional attributes in the domain resource yaml file that you must set.
 
      | Attribute                | Usage                                                                          |
      | ------------------------ | ------------------------------------------------------------------------------| 
-     | keepJRFSchema            | true or false. Default is true. keep jrf schema between updates.| 
-     | opssKeyWalletConfigMap   | name of the configmap with key ewallet.p12 in base64 format.  This can be used to 
-     store an extracted |
-     | | opss wallet key from the instrospector configmap after the first domain is created.|
      | opssKeyPassPhrase        | Kubernetes secret name for the opss key stored in opssKeyWalletconfigMap |
      | | When this is set. The operator will use this value to extract the key and extract |
      | | and store the opss|key. The key will store in the introspector configmap. This key |
-     | | can be optionally extracted and save in the opssKeyWalletConfigMap.  If this |
-     | | attribute is not set, the default password is domainid_welcome1  |
+     | | can be optionally extracted and save in the same secret with file name ewallet.p12. |
 
 
 
      ```
         kubectl -n sample-domain1-ns create secret generic opss-key-passphrase-secret --from-literal=passhrase=welcome1
      ```
-  
-          
+            
      You can extract the opss key from the introspect domain after it is created the very first time.
    
     ```
     kubectl -n <ns> describe configmap <domain-uid>-weblogic-domain-introspect-cm | sed -n '/ewallet.p12/ {n;n;p}' > 
     ewallet.p12
-    kubectl -n <ns> create configmap simple-domain1-opsskey-wallet --from-file=ewallet.p12
-    
+    kubectl -n sample-domain1-ns create secret generic opss-key-passphrase-secret --from-literal=passhrase=welcome1 
+    --from-file=ewallet.p12
+      
     ```
 
    - (Experimental) During lifecycle updates, specify the behavior of whether to use dynamic update (no rolling of 

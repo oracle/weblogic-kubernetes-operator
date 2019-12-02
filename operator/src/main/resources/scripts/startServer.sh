@@ -14,8 +14,11 @@ source ${SCRIPTPATH}/utils.sh
 
 trace "Starting WebLogic Server '${SERVER_NAME}'."
 
-source ${SCRIPTPATH}/model-in-image.sh
+source ${SCRIPTPATH}/modelInImage.sh
 
+if [ $? -ne 0 ]; then
+      trace SEVERE "Error sourcing modelInImage.sh" && exit 1
+fi
 
 #
 # Define helper fn to copy a file only if src & tgt differ

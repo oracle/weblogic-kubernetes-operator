@@ -52,6 +52,15 @@ kubectl -n sample-domain1-ns \
   weblogic.domainUID=sample-domain1 \
   weblogic.domainName=sample-domain1
 
+kubectl -n sample-domain1-ns \
+  create secret generic sample-domain1-opss-secrets \
+  --from-literal=passphrase=welcome1 
+
+kubectl -n sample-domain1-ns \
+  label secret sample-domain1-opss-secrets \
+  weblogic.domainUID=sample-domain1 \
+  weblogic.domainName=sample-domain1
+
 echo "@@ Info: Creating 'k8s-domain.yaml' from 'k8s-domain.yaml.template' and setting its Domain Type"
 
 if [ ! "${WDT_DOMAIN_TYPE}" == "WLS" ] \
@@ -62,6 +71,11 @@ fi
 
 cp k8s-domain.yaml.template k8s-domain.yaml
 sed -i s/@@DOMTYPE@@/${WDT_DOMAIN_TYPE}/ k8s-domain.yaml
+
+if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
+  sed -i 's/\#opssKeyPassPhrase:/opssKeyPassPhrase:/' k8s-domain.yaml
+  sed -i 's/\#  name: sample-domain1-opss-secrets/  name: sample-domain1-opss-secrets/' k8s-domain.yaml
+fi
 
 echo "@@ Info: Applying domain resource yaml 'k8s-domain.yaml'"
 
