@@ -67,9 +67,9 @@ public class ItCoherenceTests extends BaseTest {
   public void prepare() throws Exception {
     //create the directories
     if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
       // create operator1
       if (operator1 == null) {
-        createResultAndPvDirs(testClassName);
         Map<String, Object> operatorMap =
             createOperatorMap(getNewSuffixCount(),
                 true, testClassName);

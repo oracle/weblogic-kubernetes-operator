@@ -57,9 +57,10 @@ public class ItDomainInImage extends BaseTest {
   @Before
   public void prepare() throws Exception {
 
+    createResultAndPvDirs(testClassName);
+
     // create operator1
     if (operator1 == null) {
-      createResultAndPvDirs(testClassName);
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
           true, testClassName);
       operator1 = TestUtils.createOperator(operatorMap, RestCertType.SELF_SIGNED);

@@ -84,15 +84,16 @@ public class ItElasticLogging extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
       String testClassNameShort = "itelastic";
+
+      //Adding filter to WebLogicLoggingExporter.yaml
+      loggingYamlFileLoc = getResultDir() + "/loggingYamlFilehDir";
+      Files.createDirectories(Paths.get(loggingYamlFileLoc));
 
       // Create operator-elk
       if (operator == null) {
-        createResultAndPvDirs(testClassName);
-        
         //Adding filter to WebLogicLoggingExporter.yaml
-        loggingYamlFileLoc = getResultDir() + "/loggingYamlFilehDir";
-        Files.createDirectories(Paths.get(loggingYamlFileLoc));
         addFilterToElkFile();
 
         // Install Elastic Stack

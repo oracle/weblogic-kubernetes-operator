@@ -59,10 +59,10 @@ public class ItOperatorTwoDomains extends BaseTest {
   @Before
   public void prepare() throws Exception {
     if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
       testClassNameShort = "twooptwodomain";
       // create operator1
       if (operator1 == null) {
-        createResultAndPvDirs(testClassName);
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
             true, testClassNameShort);
         operator1 = TestUtils.createOperator(operatorMap, RestCertType.SELF_SIGNED);
