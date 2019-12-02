@@ -55,7 +55,7 @@ public class DbUtils {
   public static void startOracleDB() throws Exception {
     String cmd1 = "sh "
         + BaseTest.getResultDir()
-        + "/create-oracle-db-service/start-db-service.sh";
+        + "/scripts/create-oracle-db-service/start-db-service.sh";
     TestUtils.exec(cmd1, true);
     String cmd2 = "kubectl get pod | grep oracle-db | cut -f1 -d \" \" ";
     ExecResult result = TestUtils.exec(cmd2);
