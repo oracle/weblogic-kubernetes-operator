@@ -58,11 +58,9 @@ public class ItOperator extends BaseTest {
    */
   @BeforeEach
   public void prepare() throws Exception {
-
-    createResultAndPvDirs(testClassName);
-
     // create operator1
     if (operator1 == null) {
+      createResultAndPvDirs(testClassName);
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
           true, testClassName);
       operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);

@@ -73,11 +73,11 @@ public class ItStickySession extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
-      createResultAndPvDirs(testClassName);
       String testClassNameShort = "itstickysesn";
       
       // Create operator1
       if (operator == null) {
+        createResultAndPvDirs(testClassName);
         LoggerHelper.getLocal().log(Level.INFO,
             "Creating Operator & waiting for the script to complete execution");
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassNameShort);

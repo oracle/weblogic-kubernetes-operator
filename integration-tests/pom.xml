@@ -171,16 +171,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                   <!--Added the following lines so we could toggle between parallel and 
-                       sequential runs, but it doesn't work yet. The tests run in parallel
-                       by default-->
-                   <!-- properties>
-                        <configurationParameters>
-                            junit.jupiter.execution.parallel.enabled = true
-                            junit.jupiter.execution.parallel.mode.default = same_thread
-                            junit.jupiter.execution.parallel.mode.classes.default = concurrent
-                        </configurationParameters>
-                    </properties -->
                     <skipTests>true</skipTests>
                 </configuration>
                 <dependencies>
@@ -327,10 +317,6 @@
                             ${excludes-failsafe}
                         </exclude>
                     </excludes>
-                    <!--parallel>${PARALLEL_FAILSAFE}</parallel>
-          			<useUnlimitedThreads>true</useUnlimitedThreads>
-                    <threadCount>7</threadCount>
-                    <perCoreThreadCount>false</perCoreThreadCount-->
                 </configuration>
 
                 <executions>

@@ -70,9 +70,9 @@ public class ItMultipleClusters extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
-      createResultAndPvDirs(testClassName);
       // create operator1
       if (operator1 == null) {
+        createResultAndPvDirs(testClassName);
         String template =
             BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
         String add =

@@ -66,11 +66,9 @@ public class ItInitContainers extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
-      createResultAndPvDirs(testClassName);
-      LoggerHelper.getLocal().log(Level.INFO, "staticPrepare------Begin");
-
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
+        createResultAndPvDirs(testClassName);
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator);

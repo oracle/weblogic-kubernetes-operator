@@ -66,10 +66,10 @@ public class ItServerDiscovery extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
-      createResultAndPvDirs(testClassName);
       String testClassNameShort = "itdiscovery";
       // create operator1
       if (operator == null) {
+        createResultAndPvDirs(testClassName);
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassNameShort);
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator);

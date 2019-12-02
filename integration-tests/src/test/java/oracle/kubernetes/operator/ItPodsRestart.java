@@ -71,11 +71,9 @@ public class ItPodsRestart extends BaseTest {
   public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (QUICKTEST) {
-      createResultAndPvDirs(testClassName);
-      // setMaxIterationsPod(80);
-
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
       if (operator1 == null) {
+        createResultAndPvDirs(testClassName);
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
