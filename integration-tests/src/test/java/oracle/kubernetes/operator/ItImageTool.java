@@ -50,6 +50,7 @@ public class ItImageTool extends BaseTest {
     if (FULLTEST) {
       // Determine image name and version to be used
       // load app props defined
+      logger.info("Loading props from: " + APP_PROPS_FILE);
       Properties appProps = TestUtils.loadProps(APP_PROPS_FILE);
 
       WLS_IMAGE_VERSION =
@@ -71,7 +72,7 @@ public class ItImageTool extends BaseTest {
       System.setProperty("WIT_TEST", "true");
 
       WLS_IMAGE_TAG = WLS_IMAGE_NAME + ":" + WLS_IMAGE_VERSION;
-      logger.info("===WebLogic image name is: " + WLS_IMAGE_TAG);
+      logger.info("WebLogic image name is: " + WLS_IMAGE_TAG);
 
       // Build WebLogic Docker image using imagetool
       buildWlsDockerImage();

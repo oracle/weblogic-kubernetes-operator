@@ -35,26 +35,7 @@ userinfo_usage()
   printf "\n"
 }
 
-cleanup()
-{
-  echo @@
-  echo "@@ Cleanup WIT cache Entry and old WLS docker image"
-  echo @@
-
-  # Clean WIT cache
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key wls_12.2.1.3.0
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key jdk_8u202
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 330386660_12.2.1.3.0
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 28186730_opatch
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 29135930_12.2.1.3.191004
-
-  if [ ! -z $(docker images -q ${WLS_IMAGE_TAG}) ]; then
-    docker rmi ${WLS_IMAGE_TAG}
-    rm -rf ~/wlsimgbuilder_temp*
-  fi
-}
-
-prepare()
+checkCondition()
 {
   if [ ! -f "${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}" ] &&
      [ ! -f "${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME}" ]; then
@@ -77,7 +58,41 @@ prepare()
 
     exit 0
   fi
+}
 
+cleanup()
+{
+  echo @@
+  echo "@@ Cleanup WIT cache Entry and old WLS docker image"
+  echo @@
+
+  # Clean WIT cache
+  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key wls_12.2.1.3.0
+  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key jdk_8u202
+  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 330386660_12.2.1.3.0
+  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 28186730_opatch
+  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 29135930_12.2.1.3.191004
+
+  if [ -d ${WLSIMG_CACHEDIR} ] ; then
+    echo @@
+    echo "@@ rm -rf ${WLSIMG_CACHEDIR}"
+    rm -rf ${WLSIMG_CACHEDIR}
+  fi
+
+  if [ -d ${WLSIMG_BLDDIR} ] ; then
+    echo @@
+    echo "@@ rm -rf ${WLSIMG_BLDDIR}"
+    rm -rf ${WLSIMG_BLDDIR}
+  fi
+
+  if [ ! -z $(docker images -q ${WLS_IMAGE_TAG}) ]; then
+    docker rmi ${WLS_IMAGE_TAG}
+    rm -rf ~/wlsimgbuilder_temp*
+  fi
+}
+
+prepare()
+{
   if [ ! -d ${WLSIMG_CACHEDIR} ] ; then
     echo @@
     echo "@@ mkdir ${WLSIMG_CACHEDIR}"
@@ -93,26 +108,30 @@ prepare()
 
 setupCache()
 {
-  echo @@
+  add_jdk_installer="${WIT_HOME_DIR}/bin/imagetool cache addInstaller --type jdk --version ${JDK_INSTALLER_VERSION} --path ${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}"
+  add_wls_installer="${WIT_HOME_DIR}/bin/imagetool cache addInstaller --type wls --version ${WLS_IMAGE_VERSION} --path ${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME}"
+
   echo "@@ Add installers to WIT cache"
-  echo "@@ ${WIT_HOME_DIR}/bin/imagetool cache addInstaller --type jdk --path ${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME} --version ${JDK_INSTALLER_VERSION}"
-  echo "@@ ${WIT_HOME_DIR}/bin/imagetool cache addInstaller --type wls --path ${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME} --version ${WLS_IMAGE_VERSION}"
+  echo "@@ ${add_jdk_installer}"
+  echo "@@ ${add_wls_installer}"
   echo "@@ ${WIT_HOME_DIR}/bin/imagetool cache listItems"
   echo @@
 
   # Add installers to WIT cache
-  ${WIT_HOME_DIR}/bin/imagetool cache addInstaller --type jdk --path ${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME} --version ${JDK_INSTALLER_VERSION}
-  ${WIT_HOME_DIR}/bin/imagetool cache addInstaller --type wls --path ${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME} --version ${WLS_IMAGE_VERSION}
+  ${add_jdk_installer}
+  ${add_wls_installer}
   ${WIT_HOME_DIR}/bin/imagetool cache listItems
 }
 createImage()
 {
+  create_wls_image="${WIT_HOME_DIR}/bin/imagetool create --tag ${WLS_IMAGE_TAG} --latestPSU --version ${WLS_IMAGE_VERSION} --patches 29135930_12.2.1.3.191004 --httpProxyUrl ${http_proxy} --httpsProxyUrl ${https_proxy} --user ${ORACLE_SUPPORT_USERNAME} --password ${ORACLE_SUPPORT_PASSWORD}"
+
   echo @@
   echo "@@ Create WLS Docker image"
-  echo "@@ ${WIT_HOME_DIR}/bin/imagetool create --tag ${WLS_IMAGE_TAG} --latestPSU --version ${WLS_IMAGE_VERSION} --patches 29135930_12.2.1.3.191004 --httpProxyUrl ${http_proxy} --httpsProxyUrl ${https_proxy} --user ${ORACLE_SUPPORT_USERNAME} --password ${ORACLE_SUPPORT_PASSWORD}"
+  echo "@@ ${create_wls_image}"
   echo @@
   
-  ${WIT_HOME_DIR}/bin/imagetool create --tag ${WLS_IMAGE_TAG} --latestPSU --version ${WLS_IMAGE_VERSION} --patches 29135930_12.2.1.3.191004 --httpProxyUrl ${http_proxy} --httpsProxyUrl ${https_proxy} --user ${ORACLE_SUPPORT_USERNAME} --password ${ORACLE_SUPPORT_PASSWORD}
+  ${create_wls_image}
 
   if [ $? -eq 0 ]; then
     echo @@
@@ -123,8 +142,6 @@ createImage()
     echo "@@ Failed to create WebLogic docker image"
     echo @@
   fi
-
-  ${WIT_HOME_DIR}/bin/imagetool cache listItems
 }
 
 #### Main
@@ -136,7 +153,8 @@ source ${WIT_SCRIPT_DIR}/build_image_init.sh
 export WLSIMG_CACHEDIR=${WLSIMG_CACHEDIR}
 export WLSIMG_BLDDIR=${WLSIMG_BLDDIR}
 
-prepare
+checkCondition
 cleanup
+prepare
 setupCache
 createImage

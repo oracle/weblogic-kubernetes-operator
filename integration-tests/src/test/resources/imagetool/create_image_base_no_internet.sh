@@ -22,27 +22,7 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-cleanup()
-{
-  echo @@
-  echo "@@ Cleanup WIT cache Entry and old WLS docker image"
-  echo @@
-
-  # Clean WIT cache
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key wls_12.2.1.3.0
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key jdk_8u202
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 28186730_opatch
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 29135930_12.2.1.3.191004
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 30386660_12.2.1.3.0
-  ${WIT_HOME_DIR}/bin/imagetool cache listItems
-
-  if [ ! -z $(docker images -q ${WLS_IMAGE_TAG}) ]; then
-    docker rmi ${WLS_IMAGE_TAG}
-    rm -rf ~/wlsimgbuilder_temp*
-  fi
-}
-
-prepare()
+checkCondition()
 {
   if [ ! -f "${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}" ] &&
      [ ! -f "${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME}" ] &&
@@ -63,6 +43,47 @@ prepare()
 
     exit 0
   fi
+}
+
+cleanup()
+{
+  echo @@
+  echo "@@ Cleanup WIT cache Entry and old WLS docker image"
+  echo @@
+
+  # Clean WIT cache
+  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key wls_12.2.1.3.0
+  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key jdk_8u202
+  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 28186730_opatch
+  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 29135930_12.2.1.3.191004
+  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 30386660_12.2.1.3.0
+  ${WIT_HOME_DIR}/bin/imagetool cache listItems
+
+  if [ -d ${WLSIMG_CACHEDIR} ] ; then
+    echo @@
+    echo "@@ rm -rf ${WLSIMG_CACHEDIR}"
+    rm -rf ${WLSIMG_CACHEDIR}
+  fi
+
+  if [ -d ${WLSIMG_BLDDIR} ] ; then
+    echo @@
+    echo "@@ rm -rf ${WLSIMG_BLDDIR}"
+    rm -rf ${WLSIMG_BLDDIR}
+  fi
+
+  if [ ! -z $(docker images -q ${WLS_IMAGE_TAG}) ]; then
+    docker rmi ${WLS_IMAGE_TAG}
+    rm -rf ~/wlsimgbuilder_temp*
+  fi
+}
+
+prepare()
+{
+  if [ ! -d ${WLSIMG_CACHEDIR} ] ; then
+    echo @@
+    echo "@@ mkdir ${WLSIMG_CACHEDIR}"
+    mkdir -p ${WLSIMG_CACHEDIR}
+  fi
 
   if [ ! -d ${WLSIMG_BLDDIR} ] ; then
     echo @@
@@ -73,32 +94,40 @@ prepare()
 
 setupCache()
 {
-  #echo @@
+  add_jdk_installer="${WIT_HOME_DIR}/bin/imagetool cache addInstaller --type jdk --version ${JDK_INSTALLER_VERSION} --path ${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}"
+  add_wls_installer="${WIT_HOME_DIR}/bin/imagetool cache addInstaller --type wls --version ${WLS_IMAGE_VERSION} --path ${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME}"
+  add_patch_30386660="${WIT_HOME_DIR}/bin/imagetool cache addPatch --patchId 30386660_12.2.1.3.0 --path ${JDK_WLS_INSTALLER_DIR}/p30386660_122130_Generic.zip"
+  add_patch_28186730="${WIT_HOME_DIR}/bin/imagetool cache addPatch --patchId 28186730_13.9.4.0.0 --path ${JDK_WLS_INSTALLER_DIR}/p28186730_139400_Generic.zip"
+  add_patch_28186730_dep="${WIT_HOME_DIR}/bin/imagetool cache addPatch --patchId 29135930_12.2.1.3.191004 --path ${JDK_WLS_INSTALLER_DIR}/p29135930_12213191004_Generic.zip"
+
+  ${WIT_HOME_DIR}/bin/imagetool cache listItems
   echo "@@ Add installers to WIT cache"
-  echo "@@ ${WIT_HOME_DIR}/bin/imagetool cache addInstaller --type jdk --version ${JDK_INSTALLER_VERSION} --path ${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}"
-  echo "@@ ${WIT_HOME_DIR}/bin/imagetool cache addInstaller --type wls --version ${WLS_IMAGE_VERSION} --path ${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME}"
-  echo "@@ ${WIT_HOME_DIR}/bin/imagetool cache addPatch --patchId 30386660_12.2.1.3.0 --path ${JDK_WLS_INSTALLER_DIR}/p30386660_122130_Generic.zip"
-  echo "@@ ${WIT_HOME_DIR}/bin/imagetool cache addPatch --patchId 28186730_13.9.4.0.0 --path ${JDK_WLS_INSTALLER_DIR}/p28186730_139400_Generic.zip"
-  echo "@@ ${WIT_HOME_DIR}/bin/imagetool cache addPatch --patchId 29135930_12.2.1.3.191004 --path ${JDK_WLS_INSTALLER_DIR}/p29135930_12213191004_Generic.zip"
+  echo "@@ ${add_jdk_installer}"
+  echo "@@ ${add_wls_installer}"
+  echo "@@ ${add_patch_30386660}"
+  echo "@@ ${add_patch_28186730}"
+  echo "@@ ${add_patch_28186730_dep}"
   echo "@@ ${WIT_HOME_DIR}/bin/imagetool cache listItems"
   echo @@
   
   # Add installers to WIT cache
-  ${WIT_HOME_DIR}/bin/imagetool cache addInstaller --type jdk --version ${JDK_INSTALLER_VERSION} --path ${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}
-  ${WIT_HOME_DIR}/bin/imagetool cache addInstaller --type wls --version ${WLS_IMAGE_VERSION} --path ${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME}
-  ${WIT_HOME_DIR}/bin/imagetool cache addPatch --patchId 30386660_12.2.1.3.0 --path ${JDK_WLS_INSTALLER_DIR}/p30386660_122130_Generic.zip
-  ${WIT_HOME_DIR}/bin/imagetool cache addPatch --patchId 28186730_13.9.4.0.0 --path ${JDK_WLS_INSTALLER_DIR}/p28186730_139400_Generic.zip
-  ${WIT_HOME_DIR}/bin/imagetool cache addPatch --patchId 29135930_12.2.1.3.191004 --path ${JDK_WLS_INSTALLER_DIR}/p29135930_12213191004_Generic.zip
+  ${add_jdk_installer}
+  ${add_wls_installer}
+  ${add_patch_30386660}
+  ${add_patch_28186730}
+  ${add_patch_28186730_dep}
   ${WIT_HOME_DIR}/bin/imagetool cache listItems
 }
 
 createImage()
 {
+  create_wls_image="${WIT_HOME_DIR}/bin/imagetool create --tag ${WLS_IMAGE_TAG} --version ${WLS_IMAGE_VERSION} --patches 29135930_12.2.1.3.191004,30386660_12.2.1.3.0"
+
   echo "@@ Create WLS Docker image"
-  echo "@@ ${WIT_HOME_DIR}/bin/imagetool create --tag ${WLS_IMAGE_TAG} --version ${WLS_IMAGE_VERSION} --patches 29135930_12.2.1.3.191004,30386660_12.2.1.3.0"
+  echo "@@ ${create_wls_image}"
   echo @@
   
-  ${WIT_HOME_DIR}/bin/imagetool create --tag ${WLS_IMAGE_TAG} --version ${WLS_IMAGE_VERSION} --patches 29135930_12.2.1.3.191004,30386660_12.2.1.3.0
+  ${create_wls_image}
 
   if [ $? -eq 0 ]; then
     echo @@
@@ -109,8 +138,6 @@ createImage()
     echo "@@ Failed to create WebLogic docker image"
     echo @@
   fi
-
-  ${WIT_HOME_DIR}/bin/imagetool cache listItems
 }
 
 #### Main
@@ -119,9 +146,11 @@ cd ${WIT_SCRIPT_DIR}
 
 # Set up WIT cache env var
 source ${WIT_SCRIPT_DIR}/build_image_init.sh
+export WLSIMG_CACHEDIR=${WLSIMG_CACHEDIR}
 export WLSIMG_BLDDIR=${WLSIMG_BLDDIR}
 
-prepare
+checkCondition
 cleanup
+prepare
 setupCache
 createImage
