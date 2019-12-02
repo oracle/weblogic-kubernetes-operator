@@ -23,7 +23,7 @@ import org.junit.runners.MethodSorters;
  * Simple JUnit test file used for testing Operator.
  *
  * <p>This test is used for creating Operator(s) and domain(s) which are managed by the Operator(s).
- * WebLogic docker image is created by WebLogic Image Tool
+ * WebLogic Docker image is created by WebLogic Image Tool
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItImageTool extends BaseTest {
@@ -38,7 +38,7 @@ public class ItImageTool extends BaseTest {
 
   /**
    * This method gets called only once before any of the test methods are executed. It creates
-   * a WebLogic docker image using WebLogic Image Tool. It does the initialization of the integration
+   * a WebLogic Docker image using WebLogic Image Tool. It does the initialization of the integration
    * test properties defined in OperatorIT.properties and setting the resultRoot, pvRoot and projectRoot attributes.
    * It also creates Operator, domain and a test domain yaml file.
    *
@@ -66,7 +66,7 @@ public class ItImageTool extends BaseTest {
       }
       logger.info("Using <" + TEST_APP_PROPS_FILE + "> to create Operator and Domain");
 
-      // Build WebLogic docker image using imagetool
+      // Build WebLogic Docker image using imagetool
       buildWlsDockerImage();
 
       // initialize test properties and create the directories
@@ -106,10 +106,10 @@ public class ItImageTool extends BaseTest {
   }
 
   /**
-   * Verify that WebLogic docker image created by using WebLogic Image Tool is used
+   * Verify that WebLogic Docker image created by using WebLogic Image Tool is used
    * to create WebLogic domain in Operator env.
-   * There are two ways to use the WLS docker image created by imagetool
-   *  1. export IMAGE_NAME_WEBLOGIC = "name of your wls docker image"
+   * There are two ways to use the WLS Docker image created by imagetool
+   *  1. export IMAGE_NAME_WEBLOGIC = "name of your wls Docker image"
    *     export IMAGE_TAG_WEBLOGIC = "version of the image"
    *  2. use the values of weblogicImageName and weblogicImageTag in OperatorWIT.properties
    *
@@ -128,7 +128,7 @@ public class ItImageTool extends BaseTest {
     final String podNameSpace = (String) domainMap.get("namespace");
     ExecResult result = null;
 
-    // Verify that the WebLogic docker image created by WIT is used
+    // Verify that the WebLogic Docker image created by WIT is used
     StringBuffer getImageNameCmd = new StringBuffer();
     String cmd =
         getImageNameCmd
@@ -146,15 +146,15 @@ public class ItImageTool extends BaseTest {
     Assume.assumeTrue("Failed to use the image <" + WLS_IMAGE_TAG
         + "> built by imagetool", (result.stdout()).equals(WLS_IMAGE_TAG));
 
-    logger.info("WebLogic docker image used by pod <"
+    logger.info("WebLogic Docker image used by pod <"
         + adminServerPodName + "> is <" + result.stdout() + ">");
 
     logger.info("SUCCESS - " + testMethodName);
   }
 
   private static void buildWlsDockerImage() throws Exception {
-    //build wls docker image using imagetool
-    logger.info("Building a WebLogic docker image using imagetool... ");
+    //build wls Docker image using imagetool
+    logger.info("Building a WebLogic Docker image using imagetool... ");
     final String projectRoot = System.getProperty("user.dir") + "/..";
 
     StringBuffer buildImage = new StringBuffer();
@@ -186,7 +186,7 @@ public class ItImageTool extends BaseTest {
     Assume.assumeTrue("The image <" + WLS_IMAGE_TAG + "> doesn't exist!",
         result.exitValue() == 0);
 
-    logger.info("A WebLogic docker image <" + WLS_IMAGE_TAG
+    logger.info("A WebLogic Docker image <" + WLS_IMAGE_TAG
         + "> is created successfully by imagetool! ");
   }
 }

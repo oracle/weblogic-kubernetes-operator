@@ -170,4 +170,4 @@ Configuration Overrides Usecases
 
 | Using WebLogic Image Tool (WIT) to Create WebLogic Domain | Use Case |
 | --- | --- |
-| Create WebLogic Domain using an image built by WIT |  Download WIT, build a WebLogic docker image using WIT and then use the image to create WebLogic Domain  |
+| Create WebLogic Domain using an image built by WIT |  Download WIT, build a WebLogic Docker image using WIT and then use the image to create WebLogic Domain  |
