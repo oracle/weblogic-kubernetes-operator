@@ -198,7 +198,10 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
 		
 		
 * Command to run the tests: This will run the tests sequentially.
- 
+
+```
+mvn clean verify -P wls-integration-tests 2>&1 | tee log.txt
+```
 To run QUICKTEST, `export QUICKTEST=true`. 
 
 To run the test classes in parallel, 
@@ -206,10 +209,6 @@ To run the test classes in parallel,
 mvn -DPARALLEL=true clean verify -P wls-integration-tests 2>&1 | tee log.txt
 ```
 
-To run the test classes sequentially, 
-```
-mvn clean verify -P wls-integration-tests 2>&1 | tee log.txt
-```
 The tests accepts optional env var overrides:
 
 | Variable | Description |
