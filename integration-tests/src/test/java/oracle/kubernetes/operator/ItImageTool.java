@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Map;
+import java.util.Properties;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
@@ -28,9 +29,9 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItImageTool extends BaseTest {
   private static final String TEST_RESOURCE_LOC = "integration-tests/src/test/resources";
-  private static String TEST_APP_PROPS_FILE = "OperatorWIT.properties";
-  private static String WLS_IMAGE_VERSION = "12.2.1.3.0";
-  private static String WLS_IMAGE_NAME = "imagetool/build/weblogic";
+  private static String WLS_IMAGE_VERSION;
+  private static String WLS_IMAGE_DEV_VERSION;
+  private static String WLS_IMAGE_NAME;
   private static String WLS_IMAGE_TAG;
 
   private static Operator operator;
@@ -48,29 +49,35 @@ public class ItImageTool extends BaseTest {
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
       // Determine image name and version to be used
-      if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
-        WLS_IMAGE_NAME = System.getenv("IMAGE_NAME_WEBLOGIC");
-      }
+      // load app props defined
+      Properties appProps = TestUtils.loadProps(APP_PROPS_FILE);
 
-      if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
-        WLS_IMAGE_VERSION = System.getenv("IMAGE_TAG_WEBLOGIC");
-      }
+      WLS_IMAGE_VERSION =
+        System.getenv("IMAGE_TAG_WEBLOGIC") != null
+          ? System.getenv("IMAGE_TAG_WEBLOGIC")
+          : appProps.getProperty("weblogicImageTagWIT");
+      WLS_IMAGE_DEV_VERSION =
+        System.getenv("IMAGE_DEVTAG_WEBLOGIC") != null
+          ? System.getenv("IMAGE_DEVTAG_WEBLOGIC")
+          : appProps.getProperty("weblogicImageDevTagWIT");
+      WLS_IMAGE_NAME =
+        System.getenv("IMAGE_NAME_WEBLOGIC") != null
+          ? System.getenv("IMAGE_NAME_WEBLOGIC")
+          : appProps.getProperty("weblogicImageNameWIT");
+
+      BaseTest.setWeblogicImageTag(WLS_IMAGE_VERSION);
+      BaseTest.setWeblogicImageName(WLS_IMAGE_NAME);
+      BaseTest.setWeblogicImageDevTag(WLS_IMAGE_DEV_VERSION);
+      System.setProperty("WIT_TEST", "true");
 
       WLS_IMAGE_TAG = WLS_IMAGE_NAME + ":" + WLS_IMAGE_VERSION;
-      logger.info("WebLogic image name is: " + WLS_IMAGE_TAG);
-
-      // env vars IMAGE_NAME_WEBLOGIC and IMAGE_TAG_WEBLOGIC overwrite the wls docker image
-      // specified in OperatorIT.properties
-      if (System.getenv("IMAGE_NAME_WEBLOGIC") != null && System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
-        TEST_APP_PROPS_FILE = APP_PROPS_FILE;
-      }
-      logger.info("Using <" + TEST_APP_PROPS_FILE + "> to create Operator and Domain");
+      logger.info("===WebLogic image name is: " + WLS_IMAGE_TAG);
 
       // Build WebLogic Docker image using imagetool
       buildWlsDockerImage();
 
       // initialize test properties and create the directories
-      initialize(TEST_APP_PROPS_FILE);
+      initialize(APP_PROPS_FILE);
 
       // Create operator1
       if (operator == null) {
