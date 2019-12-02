@@ -73,14 +73,14 @@ function sort_files() {
 }
 
 #
-# checkExistInventory  checks the WDT artifacts MD5s in the introspect config map against the current introspect job
+# compareArtifactsMD5  checks the WDT artifacts MD5s in the introspect config map against the current introspect job
 # WDT artifacts MD5s
 #
 # If there are any differences, set WDT_ARTIFACTS_CHANGED=1
-# If there are any WDT archives changed set ARCHIVE_ZIP_CHANGED=1
+# If there are any WDT archives changed set ARCHIVE_ZIP_CHANGED=1 (for online update) (TODO)
 #
 
-function checkExistInventory() {
+function compareArtifactsMD5() {
 
   local has_md5=0
 
@@ -90,12 +90,13 @@ function checkExistInventory() {
   if [ -f ${INTROSPECTCM_IMAGE_MD5} ] ; then
     has_md5=1
     # introspectorDomain py put two blank lines in the configmap, use -B to ignore blank lines
-    diff -B ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5}
+    diff -B ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5} > /tmp/imgmd5diff
     if [ $? -ne 0 ] ; then
       trace "WDT artifacts in image changed: create domain again"
       WDT_ARTIFACTS_CHANGED=1
-      echoDifferences ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5}
+      echoFilesDifferences ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5}
     fi
+    # TODO check for archives changes  grep ".zip" /tmp/imgmd5diff | wc -l
   fi
 
   trace "Checking wdt artifacts in config map"
@@ -105,7 +106,7 @@ function checkExistInventory() {
     if [ $? -ne 0 ] ; then
       trace "WDT artifacts in wdt config map changed: create domain again"
       WDT_ARTIFACTS_CHANGED=1
-      echoDifferences ${INTROSPECTCM_CM_MD5} ${INTROSPECTJOB_CM_MD5}
+      echoFilesDifferences ${INTROSPECTCM_CM_MD5} ${INTROSPECTJOB_CM_MD5}
     fi
   else
     # if no config map before but adding one now
@@ -141,12 +142,12 @@ function checkExistInventory() {
 
 # echo file contents
 
-function echoDifferences() {
-  echo "------- from introspector cm -----------------"
+function echoFilesDifferences() {
+  trace "------- from introspector cm -----------------"
   cat $1
-  echo "------- from introspector job pod ------------"
+  trace "------- from introspector job pod ------------"
   cat $2
-  echo "----------------------------------------------"
+  trace "----------------------------------------------"
 }
 
 # get_opss_key_wallet   returns opss key wallet ewallet.p12 location
@@ -163,11 +164,12 @@ function get_opss_key_wallet() {
   fi
 }
 
-# setupInventoryList   Setup the MD5 inventory for comparison between updates and store in config map
+#
+# buildWDTParams_MD5   Setup the WDT artifacts MD5 for comparison between updates
 #  Also setup the wdt parameters
 #
 
-function setupInventoryList() {
+function buildWDTParams_MD5() {
 
 
   trace "Entering setupInventoryList"
@@ -309,6 +311,8 @@ function createWLDomain() {
   getSecretsMD5
   local current_secrets_md5=$(cat /tmp/secrets.md5)
 
+  trace "Checking changes in secrets and jdk path"
+
   if [ -f ${INTROSPECTCM_SECRETS_MD5} ] ; then
     previous_secrets_md5=$(cat ${INTROSPECTCM_SECRETS_MD5})
     if [ "${current_secrets_md5}" != "${previous_secrets_md5}" ]; then
@@ -317,6 +321,7 @@ function createWLDomain() {
     fi
   fi
 
+  # If No WDT artifacts changed but WLS version changed
 #  if [ -f ${INTROSPECTCM_WLS_VERSION} ] ; then
 #    previous_version=$(cat ${INTROSPECTCM_WLS_VERSION})
 #    if [ "${current_version}" != "${previous_version}" ]; then
@@ -340,9 +345,11 @@ function createWLDomain() {
 
   # setup wdt parameters and also associative array before calling comparing md5 in checkExistInventory
   #
-  setupInventoryList
+  trace "Building WDT parameters and MD5s"
 
-  checkExistInventory
+  buildWDTParams_MD5
+
+  compareArtifactsMD5
   DOMAIN_CREATED=0
 
   # something changed in the wdt artifacts or wls version changed
@@ -364,7 +371,7 @@ function createWLDomain() {
     # Experimental Phase 2 logic for handling dynamic online lifecycle update of weblogic configuration
 
     if [ -f ${INTROSPECTCM_MERGED_MODEL} ] && [ ${ARCHIVE_ZIP_CHANGED} -eq 0 ] && [ "true" == "${USE_ONLINE_UPDATE}" \
-            ] && [ ${version_change} -ne 1 ]; then
+            ] && [ ${version_changed} -ne 1 ]; then
 
       ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${DOMAIN_HOME}/wlsdeploy/domain_model.json \
           ${INTROSPECTCM_MERGED_MODEL}
