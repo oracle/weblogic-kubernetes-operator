@@ -205,6 +205,7 @@ public class ItMonitoringExporter extends BaseTest {
             + MONITORING_EXPORTER_VERSION
             + "running against branch "
             + MONITORING_EXPORTER_BRANCH);
+
     executeShelScript(
         resourceExporterDir,
         monitoringExporterScriptDir,
