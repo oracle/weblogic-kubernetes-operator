@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.utils;
 
 import java.util.Map;
+import java.util.logging.Level;
 
 import oracle.kubernetes.operator.BaseTest;
 
@@ -67,7 +68,7 @@ public class JrfDomain extends Domain {
     // update create-domain-script.sh if adminPortEnabled is true
     if (adminPortEnabled) {
       String createDomainScript =
-          BaseTest.getResultDir()
+          domainMap.get("resultDir")
               + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/wlst/create-domain-script.sh";
       TestUtils.replaceStringInFile(
           createDomainScript,
@@ -95,7 +96,7 @@ public class JrfDomain extends Domain {
         String.format(
             "kubectl label secret %s -n %s weblogic.domainUID=%s weblogic.domainName=%s",
             rucSecret.getSecretName(), domainNS, domainUid, domainUid);
-    logger.info("running command " + labelCmd);
+    LoggerHelper.getLocal().log(Level.INFO, "running command " + labelCmd);
     TestUtils.exec(labelCmd);
   }
 }
