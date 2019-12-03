@@ -272,7 +272,7 @@ public class ItPodsRestart extends BaseTest {
   /**
    * Modify/Add the containerSecurityContext section at ServerPod Level using kubectl apply -f
    * cont.security.context.domain.yaml. Verify all the pods re-started. The property tested is:
-   * serverPod: containerSecurityContext: runAsUser: 1000 fsGroup: 1000.
+   * serverPod: containerSecurityContext: runAsUser: 1000.
    *
    * @throws Exception - assertion fails due to unmatched value or errors occurred if tested servers
    *                   are not restarted or after restart the server yaml file doesn't include the new added
@@ -289,7 +289,7 @@ public class ItPodsRestart extends BaseTest {
     String domainFileName =
         getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
     boolean result =
-        (new String(Files.readAllBytes(Paths.get(domainFileName)))).contains("fsGroup: 1000");
+        (new String(Files.readAllBytes(Paths.get(domainFileName)))).contains("runAsUser: 1000");
     Assertions.assertFalse(result);
 
     // domainYaml: the yaml file name with changed property under resources dir
@@ -298,8 +298,7 @@ public class ItPodsRestart extends BaseTest {
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " change container securityContext:\n"
-            + " runAsUser: 1000\n"
-            + " fsGroup: 1000 ");
+            + " runAsUser: 1000 ");
     domain.verifyDomainServerPodRestart(domainYaml);
     domain.findServerPropertyChange("securityContext", "admin-server");
     domain.findServerPropertyChange("securityContext", "managed-server1");
