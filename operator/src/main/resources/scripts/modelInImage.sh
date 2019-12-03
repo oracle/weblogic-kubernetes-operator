@@ -81,6 +81,7 @@ function sort_files() {
 #
 
 function compareArtifactsMD5() {
+  trap 'error_handler There was an error at compareArtifactsMD5 line $LINENO' ERR
 
   local has_md5=0
 
@@ -138,6 +139,7 @@ function compareArtifactsMD5() {
   fi
 
   trace "Exiting checkExistInventory"
+  trap - ERR
 }
 
 # echo file contents
@@ -171,6 +173,7 @@ function get_opss_key_wallet() {
 
 function buildWDTParams_MD5() {
 
+  trap 'error_handler There was an error at buildWDTParams_MD5 line $LINENO' ERR
 
   trace "Entering setupInventoryList"
 
@@ -273,7 +276,7 @@ function buildWDTParams_MD5() {
   fi
 
   trace "Exiting setupInventoryList"
-
+  trap - ERR
 }
 
 # createWLDomain
@@ -293,6 +296,8 @@ function buildWDTParams_MD5() {
 
 
 function createWLDomain() {
+  trap 'error_handler There was an error at createWLDomain line $LINENO' ERR
+
   trace "Entering createWLDomain"
 
   # check to see if any model including changed (or first model in image deploy)
@@ -375,20 +380,22 @@ function createWLDomain() {
 
       ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${DOMAIN_HOME}/wlsdeploy/domain_model.json \
           ${INTROSPECTCM_MERGED_MODEL}
-      diff_rc=$?
-      trace "model diff returns "${diff_rc}
-      cat /tmp/diffed_model.json
 
+      diff_rc=$(cat /tmp/model_diff_rc)
       # 0 not safe
       # 1 safe for online changes
       # 2 fatal
       # 3 no difference
 
-      # Perform online changes
+      trace "model diff returns "${diff_rc}
+
+      cat /tmp/diffed_model.json
+
       if [ ${diff_rc} -eq ${SCRIPT_ERROR} ]; then
         exit 1
       fi
 
+      # Perform online changes
       if [ ${diff_rc} -eq ${SAFE_ONLINE_UPDATE} ] ; then
         trace "Using online update"
         handleOnlineUpdate
@@ -418,7 +425,7 @@ function createWLDomain() {
 
   fi
   trace "Exiting createWLDomain"
-
+  trap - ERR
 }
 
 # getSecretsMD5
@@ -429,6 +436,7 @@ function createWLDomain() {
 # output:  /tm/secrets.md5
 
 function getSecretsMD5() {
+  trap 'error_handler There was an error at getSecretsMD5 line $LINENO' ERR
   trace "Entering getSecretsMD5"
 
   local secrets_text="/tmp/secrets.txt"
@@ -455,6 +463,7 @@ function getSecretsMD5() {
   rm ${secrets_text}
 
   trace "Exiting getSecretsMD5"
+  trap - ERR
 }
 
 #
@@ -541,4 +550,12 @@ function handleOnlineUpdate() {
 
   mv  /tmp/domain_model.json.new ${DOMAIN_HOME}/wlsdeploy/domain_model.json
 
+}
+
+#
+# Generic error handler
+#
+function error_handler() {
+    echo $*
+    exit 1
 }

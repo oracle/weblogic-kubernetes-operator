@@ -490,7 +490,10 @@ def main():
     try:
         obj = ModelFileDiffer(sys.argv[1], sys.argv[2])
         rc=obj.compare()
-        exit(exitcode=rc)
+        rcfh = open('/tmp/model_diff_rc', 'w')
+        rcfh.write(str(rc))
+        rcfh.close()
+        exit(exitcode=0)
     except:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         eeString = traceback.format_exception(exc_type, exc_obj, exc_tb)
