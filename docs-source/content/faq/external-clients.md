@@ -5,13 +5,6 @@ draft: false
 weight: 6
 ---
 
-## WIP - This is a DRAFT!
-
-> __This document is an early draft.__
-> __Do not merge.__
-> __There is no need to review yet.__
-
-
 ### Approaches
 
 There are two supported approaches for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster: [Load Balancer Tunneling](#load-balancer-tunneling) and [Kubernetes Node Ports](#kubernetes-node-ports).
@@ -153,7 +146,7 @@ If an EJB or JMS service is running on an Admin Server, then you can skip the re
 
 #### Sample NodePort Resource
 
-The following NodePort YAML deploys an external node port of `30999` and internal port `7999` for a DomainUID of `DOMAIN_UID`, a domain name of `DOMAIN_NAME`, and a cluster name of `CLUSTER_NAME`. It assumes that `7999` corresponds to a `T3` protocol port of a channel that's configured on your WebLogic cluster.
+The following NodePort YAML deploys an external node port of `30999` and internal port `7999` for a domain UID of `DOMAIN_UID`, a domain name of `DOMAIN_NAME`, and a cluster name of `CLUSTER_NAME`. It assumes that `7999` corresponds to a `T3` protocol port of a channel that's configured on your WebLogic cluster.
 
 ```
 apiVersion: v1
@@ -184,7 +177,7 @@ spec:
 |---------|-----------|
 |metadata.name|For this particular use case, the NodePort name can be arbitrary as long as it is DNS compatible. But, as a convention it's recommended to use `DOMAIN_UID-cluster-CLUSTER_NAME-ext`. To ensure the name is DNS compatible, use all lower case and convert any underscores (`_`) to dashes (`-`).|
 |metadata.namespace|Must match the namespace of your WebLogic cluster.|
-|metadata.labels|Optional. It's helpful to set a weblogic.domainUid so that cleanup scripts can locate all Kubernetes resources associated with a particular DomainUID.|
+|metadata.labels|Optional. It's helpful to set a weblogic.domainUid so that cleanup scripts can locate all Kubernetes resources associated with a particular domain UID.|
 |spec.type|Must be `NodePort`|
 |spec.externalTrafficPolicy|Set to `Cluster` for most use cases. This may lower performance, but ensures that a client that attaches to a Node without any pods that match the `spec.selector` will be rerouted to a node with pods that do match. If set to `Local`, then connections to a particular Node will only route to that Node's pods and will fail if the Node doesn't host any pods with the given `spec.selector`. It's recommended for clients of a `spec.externalTrafficPolicy: Local` NodePort to use a URL that resolves to a list of all nodes such as `t3://mynode1,mynode2:30999` so that a client connect attempt will implicitly try mynode2 if mynode1 fails (alternatively, use a round-robin DNS address in place of `mynode1,mynode2`).|
 |spec.sessionAffinity|Set to `ClientIP` to ensure an HTTP tunneling connection always routes to the same pod, otherwise the connection may hang and fail.|
