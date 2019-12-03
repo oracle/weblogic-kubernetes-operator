@@ -37,12 +37,12 @@ import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class K8sTestUtils {
-  public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+
 
   static {
     try {
@@ -65,10 +65,10 @@ public class K8sTestUtils {
       V1beta1CustomResourceDefinition domainCrd =
           apiextensionsV1beta1Api.readCustomResourceDefinition(
               "domains.weblogic.oracle", null, null, null);
-      assertNotNull("Domain CRD exists", domainCrd);
+      assertNotNull(domainCrd, "Domain CRD exists");
     } catch (ApiException aex) {
       if (aex.getCode() == 404) {
-        assertTrue("Expected CRD domains.weblogic.oracle existed.", false);
+        assertTrue(false, "Expected CRD domains.weblogic.oracle existed.");
       } else {
         throw aex;
       }
@@ -82,10 +82,10 @@ public class K8sTestUtils {
           customObjectsApi.getNamespacedCustomObject(
               "weblogic.oracle", "v2", namespace, "domains", domainUid);
 
-      assertTrue("Domain exists", existed);
+      assertTrue(existed, "Domain exists");
     } catch (ApiException aex) {
       if (aex.getCode() == 404) {
-        assertTrue(String.format("Expected CRD domain existed in %s.", namespace), !existed);
+        assertTrue(!existed, String.format("Expected CRD domain existed in %s.", namespace));
       } else {
         throw aex;
       }
@@ -106,7 +106,7 @@ public class K8sTestUtils {
             Boolean.FALSE);
     // 1 AS, 2 MS', 1 job
     // TODO verify {domainUID}-admin-server, {domainUID}-managed-server#.
-    assertEquals("Number of Pods", v1PodList.getItems().size(), expected);
+    assertEquals(v1PodList.getItems().size(), expected, "Number of Pods");
   }
 
   public void verifyJobs(String labelSelectors, int expected) throws Exception {
@@ -121,7 +121,7 @@ public class K8sTestUtils {
             null,
             Boolean.FALSE);
     // TODO verify name pattern "{domainUID}-create-weblogic-sample-domain-job"
-    assertEquals("Number of jobs", v1JobList.getItems().size(), expected);
+    assertEquals(v1JobList.getItems().size(), expected, "Number of jobs");
   }
 
   public void verifyNoDeployments(String labelSelectors) throws Exception {
@@ -135,7 +135,7 @@ public class K8sTestUtils {
             null,
             null,
             Boolean.FALSE);
-    assertEquals("No deployments", v1DeploymentList.getItems().size(), 0);
+    assertEquals(v1DeploymentList.getItems().size(), 0, "No deployments");
   }
 
   public void verifyNoReplicaSets(String labelSelectors) throws Exception {
@@ -149,7 +149,7 @@ public class K8sTestUtils {
             null,
             null,
             Boolean.FALSE);
-    assertEquals("No ReplicaSets", v1ReplicaSetList.getItems().size(), 0);
+    assertEquals(v1ReplicaSetList.getItems().size(), 0, "No ReplicaSets");
   }
 
   public void verifyServices(String labelSelectors, int expected) throws Exception {
@@ -168,7 +168,7 @@ public class K8sTestUtils {
      * TODO verify name pattern {domainUID}-admin-server {domainUID}-admin-server-external
      * {domainUID}-cluster-cluster-1 {domainUID}-managed-server1 {domainUID}-managed-server2
      */
-    assertEquals("Number of services", v1ServiceList.getItems().size(), expected);
+    assertEquals(v1ServiceList.getItems().size(), expected, "Number of services");
   }
 
   public void verifyPvcs(String labelSelectors, int expected) throws Exception {
@@ -183,7 +183,7 @@ public class K8sTestUtils {
             null,
             Boolean.FALSE);
     // TODO verify {domainUID}-weblogic-sample-pvc
-    assertEquals("Number of PVCs", v1PersistentVolumeClaimList.getItems().size(), expected);
+    assertEquals(v1PersistentVolumeClaimList.getItems().size(), expected, "Number of PVCs");
   }
 
   public void verifyIngresses(
@@ -201,7 +201,7 @@ public class K8sTestUtils {
             Boolean.FALSE);
     // TODO verify {domainUID}-cluster-1
     assertEquals(
-        "Number of labeled ingress", labeledIngressList.getItems().size(), expectedLabeled);
+        labeledIngressList.getItems().size(), expectedLabeled, "Number of labeled ingress");
     labeledIngressList.getItems().stream()
         .forEach(li -> li.getMetadata().getNamespace().equals(domainNs));
     ExtensionsV1beta1IngressList traefikIngressList =
@@ -214,7 +214,7 @@ public class K8sTestUtils {
             null,
             null,
             Boolean.FALSE);
-    assertEquals("Number of Traefik ingress", traefikIngressList.getItems().size(), 1);
+    assertEquals(traefikIngressList.getItems().size(), 1, "Number of Traefik ingress");
     traefikIngressList.getItems().stream()
         .forEach(ti -> ti.getMetadata().getNamespace().equals(domainNs));
   }
@@ -231,7 +231,7 @@ public class K8sTestUtils {
             null,
             Boolean.FALSE);
     // TODO verify {domainUID}-create-weblogic-sample-domain-job-cm
-    assertEquals("Number of config maps", v1ConfigMapList.getItems().size(), expected);
+    assertEquals(v1ConfigMapList.getItems().size(), expected, "Number of config maps");
   }
 
   public void verifyNoServiceAccounts(String labelSelectors) throws Exception {
@@ -245,7 +245,7 @@ public class K8sTestUtils {
             null,
             null,
             Boolean.FALSE);
-    assertEquals("Number of service accounts", v1ServiceAccountList.getItems().size(), 0);
+    assertEquals(v1ServiceAccountList.getItems().size(), 0, "Number of service accounts");
   }
 
   public void verifyNoRoles(String labelSelectors) throws Exception {
@@ -259,7 +259,7 @@ public class K8sTestUtils {
             null,
             null,
             Boolean.FALSE);
-    assertEquals("Number of roles", v1RoleList.getItems().size(), 0);
+    assertEquals(v1RoleList.getItems().size(), 0, "Number of roles");
   }
 
   public void verifyNoRoleBindings(String labelSelectors) throws Exception {
@@ -273,7 +273,7 @@ public class K8sTestUtils {
             null,
             null,
             Boolean.FALSE);
-    assertEquals("Number of role bindings", v1RoleBindingList.getItems().size(), 0);
+    assertEquals(v1RoleBindingList.getItems().size(), 0, "Number of role bindings");
   }
 
   public void verifySecrets(String secretName, int expected) throws Exception {
@@ -287,7 +287,7 @@ public class K8sTestUtils {
             null,
             null,
             Boolean.FALSE);
-    assertEquals("Number of secrets", v1SecretList.getItems().size(), expected);
+    assertEquals(v1SecretList.getItems().size(), expected, "Number of secrets");
   }
 
   public void verifyPvs(String labelSelectors, int expected) throws Exception {
@@ -301,7 +301,7 @@ public class K8sTestUtils {
             null,
             null,
             Boolean.FALSE);
-    assertEquals("Number of PVs", v1PersistentVolumeList.getItems().size(), expected);
+    assertEquals(v1PersistentVolumeList.getItems().size(), expected, "Number of PVs");
   }
 
   public void verifyNoClusterRoles(String domain1Ls) throws Exception {
@@ -315,7 +315,7 @@ public class K8sTestUtils {
             null,
             null,
             Boolean.FALSE);
-    assertEquals("Number of cluster roles", v1ClusterRoleList.getItems().size(), 0);
+    assertEquals(v1ClusterRoleList.getItems().size(), 0, "Number of cluster roles");
   }
 
   public void verifyNoClusterRoleBindings(String labelSelectors) throws Exception {
@@ -329,13 +329,13 @@ public class K8sTestUtils {
             null,
             null,
             Boolean.FALSE);
-    assertEquals("Number of cluster role bindings", v1ClusterRoleBindingList.getItems().size(), 0);
+    assertEquals(v1ClusterRoleBindingList.getItems().size(), 0, "Number of cluster role bindings");
   }
 
   /**
    * Utility method to get the pods in a namespace filtered by given label.
    *
-   * @param namespace - String namespace in which to look for the pods
+   * @param namespace      - String namespace in which to look for the pods
    * @param labelSelectors - String selector to filter the pods in the name space
    * @return - V1PodList List of the pods in the given name space.
    */
@@ -355,21 +355,21 @@ public class K8sTestUtils {
               Boolean.FALSE);
 
     } catch (ApiException ex) {
-      Logger.getLogger(K8sTestUtils.class.getName()).log(Level.SEVERE, null, ex);
+      LoggerHelper.getLocal().log(Level.SEVERE, null, ex);
     }
-    logger.log(
+    LoggerHelper.getLocal().log(
         Level.INFO,
         "Pods in namespace :{0} and label :{1} :{2}",
-        new Object[] {namespace, labelSelectors, v1PodList.getItems().size()});
+        new Object[]{namespace, labelSelectors, v1PodList.getItems().size()});
     return v1PodList;
   }
 
   /**
    * Utility method to get a pod matching the given name.
    *
-   * @param namespace - String namespace in which to look for the pods
+   * @param namespace      - String namespace in which to look for the pods
    * @param labelSelectors - String selector to filter the pods in the name space
-   * @param podName - String name of the pod to query for
+   * @param podName        - String name of the pod to query for
    * @return V1Pod object matching the podName
    */
   public V1Pod getPod(String namespace, String labelSelectors, String podName) {
@@ -379,7 +379,7 @@ public class K8sTestUtils {
         return pod;
       }
     }
-    logger.info("POD NOT FOUND");
+    LoggerHelper.getLocal().log(Level.INFO, "POD NOT FOUND");
     return null;
   }
 
@@ -388,9 +388,9 @@ public class K8sTestUtils {
    * by looking at the metadata.getDeletionTimestamp field, a non null value means the pod is
    * terminating.
    *
-   * @param namespace - String namespace in which to look for the pods
+   * @param namespace      - String namespace in which to look for the pods
    * @param labelSelectors - String selector to filter the pods in the name space
-   * @param podName - String name of the pod to query for
+   * @param podName        - String name of the pod to query for
    * @return boolean true if the pod is in Terminating status
    */
   public boolean isPodTerminating(String namespace, String labelSelectors, String podName) {
@@ -401,9 +401,9 @@ public class K8sTestUtils {
       return false;
     }
     if (metadata.getDeletionTimestamp() != null) {
-      logger.info(metadata.getDeletionTimestamp().toString());
+      LoggerHelper.getLocal().log(Level.INFO, metadata.getDeletionTimestamp().toString());
     } else {
-      logger.info("DeletionTimestamp is null, which means pod is Running");
+      LoggerHelper.getLocal().log(Level.INFO, "DeletionTimestamp is null, which means pod is Running");
     }
     return metadata.getDeletionTimestamp() != null;
   }
@@ -412,12 +412,13 @@ public class K8sTestUtils {
    * Utility method to determine if a pod is in Running status It detects the Running status by
    * looking at the metadata.getDeletionTimestamp field, a null value means the pod is Running.
    *
-   * @param namespace - String namespace in which to look for the pods
+   * @param namespace      - String namespace in which to look for the pods
    * @param labelSelectors - String selector to filter the pods in the name space
-   * @param podName - String name of the pod to query for
+   * @param podName        - String name of the pod to query for
    * @return boolean true if the pod is in Terminating status
    */
   public boolean isPodRunning(String namespace, String labelSelectors, String podName) {
     return !isPodTerminating(namespace, labelSelectors, podName);
   }
+
 }
