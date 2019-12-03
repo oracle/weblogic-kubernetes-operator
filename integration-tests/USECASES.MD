@@ -74,7 +74,7 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Server pods restarted by changing imagePullPolicy | Verify  admin and managed server pods being restarted by property change: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never |
 | Server pods restarted by changing includeServerOutInPodLog | Verify admin and managed server pods being restarted by property change: includeServerOutInPodLog: true --> includeServerOutInPodLog: false |
 | Server pods restarted by changing logHomeEnable | Verify admin and managed server pods being restarted by property change: logHomeEnabled: true --> logHomeEnabled: false |
-| Server pods restarted by changing containerSecurityContext | Verify admin and managed server pods being restarted by adding property change: containerSecurityContext: runAsUser: 1000 fsGroup: 2000 |
+| Server pods restarted by changing containerSecurityContext | Verify admin and managed server pods being restarted by adding property change: containerSecurityContext: runAsUser: 1000 |
 | Server pods restarted by changing podSecurityContex | Verify admin and managed server pods being restarted by adding property change: podSecurityContext: runAsUser: 1000 fsGroup: 2000 |
 | Server pods restarted by changing resources | Verify admin and managed server pods being restarted by adding property change: resources: limits: cpu: "1" requests: cpu: "0.5" args: - -cpus - "2" |
 | Server pods restarted by changing restartVersion at admin level | Verify admin pod restarted by adding restartVersion property at admin server level: `restartVersion: "v1.1"` |
