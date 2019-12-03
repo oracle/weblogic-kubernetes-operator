@@ -101,7 +101,7 @@ Please consult the [README](https://github.com/oracle/docker-images/blob/master/
 such as building or pulling the Server JRE Docker image, Oracle FMW Infrastructure Docker image, and downloading the SOA Suite installer binary.
 
 
-You must also install the [required patch](/docs-source/content/userguide/introduction/introduction/_index.md#prerequisites)
+You must also install the [required patch](/docs-source/content/userguide/introduction/introduction.md#operator-prerequisites)
 to use this image with the operator.  A [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s)
 is provided that demonstrates how to create a Docker image with the necessary patch installed. Use this patched image for building the SOA Suite image.
 
@@ -173,7 +173,7 @@ $ docker pull container-registry.oracle.com/database/enterprise:12.2.0.1
 $ docker tag  container-registry.oracle.com/database/enterprise:12.2.0.1  oracle/database:12.2.0.1
 ```
 Create the PV and PVC for the database
-by running the [create-pv-pvc.sh](/docs-source/content/samples/simple/storage/_index.md) script.
+by running the [create-pv-pvc.sh](/docs-source/content/samples/simple/storage/_index.md#using-the-scripts-to-create-a-pv-and-pvc) script.
 Follow the instructions for using the scripts to create a PV and PVC.  
 
 {{% notice note %}}
