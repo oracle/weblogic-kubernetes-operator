@@ -125,7 +125,7 @@ After cloning the repository and downloading the installer from Oracle Technolog
 or e-delivery, you create your image by running the provided script:
 
 ```bash
-cd docker-images/OracleFMWInfrastructure/dockerfiles
+cd docker-images/OracleSOASuite/dockerfiles
 ./buildDockerImage.sh -v 12.2.1.3 -s
 ```
 
@@ -175,7 +175,7 @@ by running the [create-pv-pvc.sh]({{< relref "/samples/simple/storage/_index.md"
 Follow the instructions for using the scripts to create a PV and PVC.  
 
 {{% notice note %}}
-When creating the PV and PVC for the database, make sure that you use a different name 
+When creating the PV and PVC for the database, make sure that you use a different name
 and storage class to the PV and PVC you create for the domain to use.
 {{% /notice %}}
 
@@ -188,7 +188,7 @@ $ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-soa-domain/d
 $ kubectl create -f db-with-pv.yaml
 ```
 
-The database will take several minutes to start the first time, since it has to 
+The database will take several minutes to start the first time, since it has to
 complete the setup operations.  You can watch the log to see its progress using
 this command:
 
