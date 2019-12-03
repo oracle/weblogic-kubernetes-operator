@@ -39,7 +39,32 @@ function checkDomainSecret {
   fi
 }
 
+#
+# traceDirs before|after
+#   Trace contents and owner of DOMAIN_HOME/LOG_HOME/DATA_HOME directories
+#
+function traceDirs() {
+  echo "id = '`id`'"
+  local indir
+  for indir in DOMAIN_HOME_DIR DOMAIN_ROOT_DIR DOMAIN_LOGS_DIR; do
+    [ -z "${!indir}" ] && continue
+    echo "Directory trace for $indir=${!indir} ($1)"
+    local cnt=0
+    local odir=""
+    local cdir="${!indir}/*"
+    while [ ${cnt} -lt 30 ] && [ ! "$cdir" = "$odir" ]; do
+      echo "  ls -ld $cdir:"
+      ls -ld $cdir 2>&1 | sed 's/^/    /'
+      odir="$cdir"
+      cdir="`dirname "$cdir"`"
+      cnt=$((cnt + 1))
+    done
+  done
+}
+
 function prepareDomainHomeDir { 
+  traceDirs before
+
   # Do not proceed if the domain already exists
   local domainFolder=${DOMAIN_HOME_DIR}
   if [ -d ${domainFolder} ]; then
@@ -51,5 +76,6 @@ function prepareDomainHomeDir {
   createFolder ${DOMAIN_LOGS_DIR}
   createFolder ${DOMAIN_ROOT_DIR}/applications
   createFolder ${DOMAIN_ROOT_DIR}/stores
-}
 
+  traceDirs after
+}
