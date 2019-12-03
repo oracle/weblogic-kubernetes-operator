@@ -157,10 +157,6 @@ public class ItPodsShutdown extends BaseTest {
     Thread.sleep(10 * 1000);
     // should restart domain
     domain.verifyDomainCreated();
-    /*
-    TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
-    TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
-    */
     Assertions.assertTrue(
         checkShutdownUpdatedProp(domainUid + "-admin-server", "30", "false", "Graceful"),
         "Property value was not found in the updated domain crd ");
@@ -210,14 +206,7 @@ public class ItPodsShutdown extends BaseTest {
     // Send a HTTP request to keep open session
     String curlCmd = webServiceUrl.toString();
     // LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
-    TestUtils.checkAnyCmdInLoop(curlCmd, "200");
-
-    ExecResult result = ExecCommand.exec(curlCmd);
-    if (result.exitValue() != 0) {
-      throw new Exception("FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
-    }
-
-    // LoggerHelper.getLocal().log(Level.INFO, result.stdout());
+    TestUtils.checkAnyCmdInLoop(curlCmd, "Ending to sleep");
   }
 
   /**
@@ -653,10 +642,6 @@ public class ItPodsShutdown extends BaseTest {
 
     LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
     this.domain.verifyDomainCreated();
-    /*
-    TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
-    TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
-    */
     // invoke servlet to keep sessions opened, terminate pod and check shutdown time
     if (delayTime > 0) {
       String testAppPath = "httpsessionreptestapp/CounterServlet?delayTime=" + delayTime;

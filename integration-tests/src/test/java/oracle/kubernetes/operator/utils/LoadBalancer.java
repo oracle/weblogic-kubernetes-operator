@@ -121,7 +121,7 @@ public class LoadBalancer {
 
   private void upgradeTraefikNamespace() throws Exception {
 
-    String namespace = getKubernetesNamespaceToUpdate((String)lbMap.get("namespace"));
+    String namespace = getKubernetesNamespaceToUpdate((String) lbMap.get("namespace"));
     LoggerHelper.getLocal().log(Level.INFO, "namespace to update" + namespace);
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append("--reuse-values ")
@@ -129,7 +129,7 @@ public class LoadBalancer {
         .append("\"")
         .append("kubernetes.namespaces=")
         .append(namespace)
-        .append("\"")
+        .append("\" --wait")
         .append(" traefik-operator")
         .append(" stable/traefik ");
 
@@ -144,6 +144,7 @@ public class LoadBalancer {
 
   /**
    * append current namespace to existing namespaces.
+   *
    * @param domainNamespace namepace to append
    * @return string updated namespace list
    * @throws Exception when could not get values
@@ -247,7 +248,7 @@ public class LoadBalancer {
         .append(" voyager-operator")
         .append(" appscode/voyager");
     LoggerHelper.getLocal().log(Level.INFO, " upgradeVoyagerNamespace() Running " + cmd.toString());
-    
+
     String returnStr = null;
     int i = 0;
     // Wait max 300 seconds
@@ -269,7 +270,7 @@ public class LoadBalancer {
       Thread.sleep(waitTimePod * 1000);
       i++;
     }
-    
+
     if (null == returnStr) {
       executeHelmCommand(cmd.toString());
     }
@@ -295,17 +296,17 @@ public class LoadBalancer {
         .append("voyager.webPort=")
         .append(lbMap.get("loadBalancerWebPort"));
     LoggerHelper.getLocal().log(Level.INFO, "createVoyagerIngress() Running " + cmd.toString());
-    
+
     String returnStr = null;
     int i = 0;
     // Wait max 300 seconds
     while (i < maxIterationsPod) {
       try {
         returnStr = executeHelmCommand(cmd.toString());
-      } catch (RuntimeException rtex) { 
+      } catch (RuntimeException rtex) {
         LoggerHelper.getLocal().log(Level.INFO, "createVoyagerIngress() caight Exception. Retry");
       }
-      
+
       if (null != returnStr && !returnStr.contains("failed")) {
         LoggerHelper.getLocal().log(Level.INFO, "createVoyagerIngress() Result: " + returnStr);
         break;
@@ -322,7 +323,7 @@ public class LoadBalancer {
       Thread.sleep(waitTimePod * 1000);
       i++;
     }
-    
+
     if (null == returnStr) {
       executeHelmCommand(cmd.toString());
     }

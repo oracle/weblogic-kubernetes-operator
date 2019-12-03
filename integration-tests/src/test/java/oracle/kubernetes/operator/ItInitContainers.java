@@ -67,7 +67,6 @@ public class ItInitContainers extends BaseTest {
   public void prepare() throws Exception {
     if (FULLTEST) {
       createResultAndPvDirs(testClassName);
-      LoggerHelper.getLocal().log(Level.INFO, "staticPrepare------Begin");
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {

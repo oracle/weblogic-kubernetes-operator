@@ -139,7 +139,8 @@ public class ItElasticLogging extends BaseTest {
                 .append(" -n ")
                 .append(operator.getOperatorNamespace())
                 .append(" -c weblogic-operator ")
-                .append(" -- /bin/bash -c ")
+                .append("--request-timeout=\"20s\" ")
+                .append("-- /bin/bash -c ")
                 .append("'curl ")
                 .append(elasticSearchURL);
         k8sExecCmdPrefix = k8sExecCmdPrefixBuff.toString();
@@ -245,7 +246,7 @@ public class ItElasticLogging extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
+  // @Test
   public void testWebLogicLogSearch() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {

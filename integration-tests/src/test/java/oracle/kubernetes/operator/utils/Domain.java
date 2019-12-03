@@ -76,6 +76,7 @@ public class Domain {
   private String imageName;
   private boolean voyager;
   private boolean createDomainResource = true;
+  private boolean createLoadBalancer = true;
 
   public Domain() throws Exception {
     domainMap = new HashMap<String, Object>();
@@ -104,6 +105,7 @@ public class Domain {
       throws Exception {
     initialize(inputDomainMap);
     this.createDomainResource = createDomainResource;
+    this.createLoadBalancer = createLoadBalancer;
     createPv();
     createSecret();
     synchronized (Domain.class) {
@@ -130,6 +132,12 @@ public class Domain {
     verifyPodsCreated();
     verifyServicesCreated();
     verifyServersReady();
+    if (createLoadBalancer) {
+      String cmd = "curl --silent --noproxy '*' -H 'host: " + domainUid
+          + ".org' http://" + getHostNameForCurl() + ":" + getLoadBalancerWebPort()
+          + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+      callWebAppAndWaitTillReady(cmd);
+    }
   }
 
   /**
@@ -842,11 +850,11 @@ public class Domain {
       // use krun.sh so that the dir check can work on shared cluster/remote k8s cluster env as well
       String cmd =
           BaseTest.getProjectRoot()
-              + "/src/integration-tests/bash/krun.sh -m "
+              + "/src/integration-tests/bash/krun.sh -t 180 -m "
               + domainMap.get("persistentVolumeClaimName")
               + ":/pvc-"
               + domainMap.get("domainUID")
-              + " -n " + domainNS + " -c \"ls -ltr /pvc-"
+              + " -p " + domainMap.get("domainUID") + " -n " + domainNS + " -c \"ls -ltr /pvc-"
               + domainMap.get("domainUID")
               + "/domains/"
               + domainMap.get("domainUID")
@@ -1534,7 +1542,7 @@ public class Domain {
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
-      ExecResult result = TestUtils.exec(curlCmd);
+      ExecResult result = TestUtils.exec(curlCmd, true);
       String responseCode = result.stdout().trim();
       if (!responseCode.equals("200")) {
         LoggerHelper.getLocal().log(Level.INFO,
