@@ -140,7 +140,7 @@ In this example:
 
 A Kubernetes NodePort exposes a port on each machine that hosts the Kubernetes cluster where the port is accessible from outside of a Kubernetes cluster. This port redirects network traffic to pods within the Kubernetes cluster. Setting up a Kubernetes NodePort is one approaches for giving external WebLogic clients access to JMS or EJBs.
 
-If an EJB or JMS service is running on an Admin Server, then you can skip the rest of this section and use the `spec.adminServer.adminService.channels` domain resource attribute to have the operator create a Node Port for you. See [Reference - Domain resource]({{<relref "/reference/domain-resource/_index.md">}}). Otherwise, if the EJB or JMS service is running in a WebLogic cluster or stand-alone WebLogic managed server, and you desire to provide access to the service using a NodePort, then the NodePort must be deployed 'manually' - see the following sample and table.
+If an EJB or JMS service is running on an Admin Server, then you can skip the rest of this section and use the `spec.adminServer.adminService.channels` domain resource attribute to have the operator create a Node Port for you. See [Reference - Domain resource]({{<relref "/reference/domain-resource/_index.md">}}). Otherwise, if the EJB or JMS service is running in a WebLogic cluster or standalone WebLogic managed server, and you desire to provide access to the service using a NodePort, then the NodePort must be deployed 'manually' - see the following sample and table.
 
 > __NOTE:__ Setting up a NodePort usually also requires setting up a custom network channel. See [Adding a WebLogic Custom Channel](#adding-a-weblogic-custom-channel) above.
 
