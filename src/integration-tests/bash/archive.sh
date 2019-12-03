@@ -41,7 +41,7 @@ function archive {
   # Jenkins log cleanup is managed on Jenkins job config
   if [ ! "$JENKINS" = "true" ]; then
 	  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite.${IT_CLASS}.PV.*jar" | sort -r | awk '{ if (NR>5) print $NF }' | xargs rm -f
-	  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite.${IT_CLASS}.TMP.*jar" | sort -r | awk '{ if (NR>5) print $NF }' | xargs rm -f
+    find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite.${IT_CLASS}.TMP.*jar" | sort -r | awk '{ if (NR>5) print $NF }' | xargs rm -f
   fi
  
    

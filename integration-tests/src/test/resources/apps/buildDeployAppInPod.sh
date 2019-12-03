@@ -48,7 +48,8 @@ echo -e "cp -r ${APP_INFO_DIR}/* stagedir/${APP_INFO_DIR}/\n"
 cp -r ${APP_INFO_DIR}/* stagedir/${APP_INFO_DIR}/
 
 echo -e "javac -d stagedir/${APP_INFO_DIR}/classes *.java\n"
-javac -d stagedir/${APP_INFO_DIR}/classes *.java
+javac -d stagedir/${APP_INFO_DIR}/classes *.java | tee compile.out
+cat compile.out
 
 echo -e "jar -cvf ${ARCHIVE_FILE_NAME} -C stagedir .\n"
 jar -cvf ${ARCHIVE_FILE_NAME} -C stagedir .
