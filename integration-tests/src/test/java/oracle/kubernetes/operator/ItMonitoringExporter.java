@@ -82,8 +82,6 @@ public class ItMonitoringExporter extends BaseTest {
       "weblogic_servlet_invocation_total_count%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
   String oprelease = "op" + number;
   private int waitTime = 5;
-  //update with specific branch name if not master
-
   private static String testClassName;
   private static StringBuffer namespaceList;
   private static String domainNS1;
@@ -203,7 +201,10 @@ public class ItMonitoringExporter extends BaseTest {
   private static void gitCloneBuildMonitoringExporter() throws Exception {
 
     LoggerHelper.getLocal().log(Level.INFO,
-        "installing monitoring exporter version: " + MONITORING_EXPORTER_VERSION);
+        "installing monitoring exporter version: "
+            + MONITORING_EXPORTER_VERSION
+            + "running against branch "
+            + MONITORING_EXPORTER_BRANCH);
     executeShelScript(
         resourceExporterDir,
         monitoringExporterScriptDir,
