@@ -1,12 +1,12 @@
-# Expose T3 protocol for managed servers in SOA Domain
+# Expose T3 protocol for Managed Servers in SOA Domain
 
-T3 ports for Managed Servers in Oracle SOA deployed in WebLogic Kubernetes Operator Environment are not available by default.
+T3 ports for Managed Servers in Oracle SOA deployed in WebLogic Kubernetes operator Environment are not available by default.
 
-This document provides steps to create T3 channel and the corresponding Kubernetes Service to expose the T3 protocol for managed servers in SOA Domain.
+This document provides steps to create T3 channel and the corresponding Kubernetes Service to expose the T3 protocol for Managed Servers in SOA Domain.
 
 ![Exposing SOA Managed Server T3 Ports](images/ExposeSOAMST3.png)
 
-With the following steps we will be creating T3 port at 30014 on all Managed Servers for soa_cluster with below details:
+With the following steps you will be creating T3 port at 30014 on all Managed Servers for soa_cluster with below details:
 
 * Name: T3Channel_MS
 * Listen Port:  30014
@@ -17,7 +17,7 @@ With the following steps we will be creating T3 port at 30014 on all Managed Ser
 
 ## Step 1 : Create T3 Channels for Managed Servers
 
-WebLogic Server supports several ways to configure T3 channel. Here we will provide steps to create T3 channel using WebLogic Server Administration Console or using WLST Scripts.
+WebLogic Server supports several ways to configure T3 channel. Below steps describe the methods to create T3 channel using WebLogic Server Administration Console or using WLST Scripts.
 
 ### Method 1 : Using WebLogic Server Administration Console
 
@@ -39,7 +39,7 @@ WebLogic Server supports several ways to configure T3 channel. Here we will prov
 
     ![New Channel 2](images/soa_server1_t3_newchannel2.jpg)
 
-7. Perform step 3 to 6 for all managed servers in soa_cluster. When creating Network Channel for other managed servers, make sure to use same values as for all parameters including "Network Channel Name".
+7. Perform step 3 to 6 for all Managed Servers in soa_cluster. When creating Network Channel for other Managed Servers, make sure to use same values as for all parameters including "Network Channel Name".
 
 8. To activate these changes, in the Change Center of the Administration Console, click **Activate Changes**. 
 
@@ -49,7 +49,7 @@ WebLogic Server supports several ways to configure T3 channel. Here we will prov
 
 ### Method 2 : Using WLST Script
 
-The following steps creates a custom T3 channel for all managed servers with name **T3Channel_MS** that has a listen port **listen_port** and a paired public port **public_port**.
+The following steps creates a custom T3 channel for all Managed Servers with name **T3Channel_MS** that has a listen port **listen_port** and a paired public port **public_port**.
 
 1. Create `t3config_ms.py` with below content:
 
@@ -92,7 +92,7 @@ activate()
 disconnect()
 ```
 
-2. Copy `t3config_ms.py` into Domain Home (e.g., `/u01/oracle/user_projects/domains/soainfra`) of Administration server pod (e.g., soainfra-adminserver in soans namespace)
+2. Copy `t3config_ms.py` into Domain Home (e.g., `/u01/oracle/user_projects/domains/soainfra`) of Administration Server pod (e.g., soainfra-adminserver in soans namespace)
 
         $ kubectl cp t3config_ms.py soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra
 
@@ -102,22 +102,22 @@ disconnect()
     * port:  30012 *# Administration Server T3 port*
     * user_name: weblogic 
     * password: Welcome1 *# weblogic password*
-    * listen_port: 30014 *# New port for T3 managed servers*
+    * listen_port: 30014 *# New port for T3 Managed Servers*
     * public_port: 30014 *# Kubernetes NodePort which will be used to expose T3 port externally*
     * public_address: \<Master IP Address>    
-    * managedNameBase: soa_server *# Give managed server base name. For osb_cluster this will be osb_server*
-    * ms_count: 5 *# Number of configured managed servers* 
+    * managedNameBase: soa_server *# Give Managed Server base name. For osb_cluster this will be osb_server*
+    * ms_count: 5 *# Number of configured Managed Servers* 
 
     ```
     Command:
-    $ kubectl exec -it \<Administration Server pod> -n \<namespace> -- /u01/oracle/oracle_common/common/bin/wlst.sh  \<domain_home>/t3config_ms.py \<master_ip>  \<t3 port on administration server>  weblogic \<password for weblogic> \<t3 port on managed server> \<t3 nodeport> \<master_ip> \<managedNameBase> \<ms_count>
+    $ kubectl exec -it \<Administration Server pod> -n \<namespace> -- /u01/oracle/oracle_common/common/bin/wlst.sh  \<domain_home>/t3config_ms.py \<master_ip>  \<t3 port on Administration Server>  weblogic \<password for weblogic> \<t3 port on Managed Server> \<t3 nodeport> \<master_ip> \<managedNameBase> \<ms_count>
     ```
         Sample Command:
         $ kubectl exec -it soainfra-adminserver -n soans -- /u01/oracle/oracle_common/common/bin/wlst.sh /u01/oracle/user_projects/domains/soainfra/t3config_ms.py 100.111.150.3 30012 weblogic Welcome1 30014 30014 100.111.150.3 soa_server 5
 
 ## Step 2 : Create Kubernetes Service to expose T3 port 30014 as NodePort Service
 
-1. Create `t3_ms_svc.yaml` with below contents to expose T3 at managed server port 30014 for domainName and domainUID as "soainfra" and  cluster as "soa_cluster" :
+1. Create `t3_ms_svc.yaml` with below contents to expose T3 at Managed Server port 30014 for domainName and domainUID as "soainfra" and  cluster as "soa_cluster" :
 
     ```
     apiVersion: v1
@@ -147,7 +147,7 @@ disconnect()
 
         $ kubectl create -f t3_ms_svc.yaml
 
-3. Now you can access t3 for managed server with below URL
+3. Now you can access t3 for Managed Server with below URL
 
         t3://<master_ip>:30014
 

@@ -40,7 +40,7 @@ This document provides details about the special considerations for deploying an
 Other than those considerations listed here, SOA Suite domains work in the same way as FMW Infrastructure domains and WebLogic Server domains.
 
 In this release, SOA Suite domains are supported using the “domain on a persistent volume”
-[model]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) only, where the domain home is located in a persistent volume (PV).
+[model](/docs-source/content/userguide/managing-domains/choosing-a-model/_index.md) only, where the domain home is located in a persistent volume (PV).
 
 
 #### Limitations
@@ -65,7 +65,7 @@ following limitations currently exist for SOA Suite domains:
 #### Obtaining the SOA Suite Docker Image
 
 The Oracle WebLogic Server Kubernetes Operator requires a SOA Suite 12.2.1.3.0 image with patch 29135930 applied.
-The standard pre-built SOA Suite image, `container-registry.oracle.com/middleware/soasuite:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
+The standard pre-built SOA Suite image, `container-registry.oracle.com/middleware/soasuite:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document](/docs-source/content/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry).
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
 using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.  
@@ -101,7 +101,7 @@ Please consult the [README](https://github.com/oracle/docker-images/blob/master/
 such as building or pulling the Server JRE Docker image, Oracle FMW Infrastructure Docker image, and downloading the SOA Suite installer binary.
 
 
-You must also install the [required patch]({{< relref "/userguide/introduction/introduction/_index.md#prerequisites" >}})
+You must also install the [required patch](/docs-source/content/userguide/introduction/introduction/_index.md#prerequisites)
 to use this image with the operator.  A [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s)
 is provided that demonstrates how to create a Docker image with the necessary patch installed. Use this patched image for building the SOA Suite image.
 
@@ -164,7 +164,7 @@ The following documentation and samples are for creating a container-based datab
 
 ##### Running the database inside Kubernetes
 
-Follow these instructions for a basic database setup inside Kubernetes that uses PV (persistent volume) and PVC (persistent volume claim) to persist the data. For more details about database setup and configuration, refer to this [page]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#running-the-database-inside-kubernetes" >}}).
+Follow these instructions for a basic database setup inside Kubernetes that uses PV (persistent volume) and PVC (persistent volume claim) to persist the data. For more details about database setup and configuration, refer to this [page](/docs-source/content/userguide/managing-fmw-domains/fmw-infra/_index.md#running-the-database-inside-kubernetes).
 
 Pull the database image:
 
@@ -173,7 +173,7 @@ $ docker pull container-registry.oracle.com/database/enterprise:12.2.0.1
 $ docker tag  container-registry.oracle.com/database/enterprise:12.2.0.1  oracle/database:12.2.0.1
 ```
 Create the PV and PVC for the database
-by running the [create-pv-pvc.sh]({{< relref "/samples/simple/storage/_index.md" >}}) script.
+by running the [create-pv-pvc.sh](/docs-source/content/samples/simple/storage/_index.md) script.
 Follow the instructions for using the scripts to create a PV and PVC.  
 
 {{% notice note %}}
@@ -350,7 +350,7 @@ $
 #### Creating a SOA domain
 
 Now that you have your Docker images and you have created your RCU schemas, you are ready
-to create your domain.  A [sample]({{< relref "/samples/simple/domains/soa-domain/_index.md" >}})
+to create your domain.  A [sample](/docs-source/content/samples/simple/domains/soa-domain/_index.md)
 is provided that demonstrates how to create a SOA Suite domain.
 
 #### Setup WebLogic Logging Exporter for Logs Monitoring

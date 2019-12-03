@@ -6,11 +6,17 @@ WebLogic Server logs can be pushed into Elasticsearch in Kubernetes directly, by
 
 This documents provides the steps to publish WebLogic Server logs into Elasticsearch and interact with them in Kibana. 
 
-Please follow the below steps to push the server server logs into Elasticsearch.  
+## Prerequisite
+
+This document assumes that you have already setup Elasticsearch/Kibana for logs collection. If you have not, please refer this [document](/kubernetes/samples/scripts/elasticsearch-and-kibana/README.md) to setup Elasticsearch/Kibana from WebLogic operator samples.
+
+---  
+
+Please follow the below steps to push the server logs into Elasticsearch.  
 
 ## Download WebLogic Logging Exporter Binaries
 
-The WebLogic logging exporter pre-built binaries are available in the release page of the [weblogic-logging-exporter](https://github.com/oracle/weblogic-logging-exporter/releases) project.  
+The WebLogic Logging Exporter pre-built binaries are available in the release page of the [weblogic-logging-exporter](https://github.com/oracle/weblogic-logging-exporter/releases) project.  
 You need to download the 
 * `weblogic-logging-exporter-0.1.1.jar` from this [link](https://github.com/oracle/weblogic-logging-exporter/releases)
 * `snakeyaml-1.23.jar` from [Maven Central](https://search.maven.org/artifact/org.yaml/snakeyaml/1.23/bundle).  
@@ -22,14 +28,15 @@ NOTE: Please note that below are the identifiers used in the sample commands in 
 
 * soans: is the SOA Domain namespace.
 * soainfra: is the domainUID
-* soainfra-adminserver: is the Administration server pod name
+* soainfra-adminserver: is the Administration Server pod name
 ```
 
-Copy the `weblogic-logging-exporter-0.1.1.jar` and `snakeyaml-1.23.jar` files to the domain home folder in the Administration server pod.
+Copy the `weblogic-logging-exporter-0.1.1.jar` and `snakeyaml-1.23.jar` files to the domain home folder in the Administration Server pod.
 
 ```
 Command:
-$ kubectl cp <file-to-copy> <namespace>/<Administration-server-pod>:<domainhome>
+$ kubectl cp <file-to-copy> <namespace>/<Administration-Server-pod>:<domainhome>
+
 ```
 
 ```
@@ -79,7 +86,7 @@ $ kubectl cp setDomainEnv.sh soans/soainfra-adminserver:/u01/oracle/user_project
 
 ## Create a Configuration File for the WebLogic Logging Exporter  
 
-Create a file named `WebLogicLoggingExporter.yaml`. Specify the elasticseach server host and port number.
+Create a file named `WebLogicLoggingExporter.yaml`. Specify the Elasticseach server host and port number.
 ```
 weblogicLoggingIndexName: wls
 publishHost: elasticsearch.default.svc.cluster.local
@@ -90,7 +97,7 @@ weblogicLoggingExporterSeverity: TRACE
 weblogicLoggingExporterBulkSize: 1
 ```  
 
-Copy `WebLogicLoggingExporter.yaml` to the domain home directory in the WebLogic Administration server pod.  
+Copy `WebLogicLoggingExporter.yaml` to the domain home directory in the WebLogic Administration Server pod.  
 ```
 $ kubectl cp WebLogicLoggingExporter.yaml soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra/config/
 ```  

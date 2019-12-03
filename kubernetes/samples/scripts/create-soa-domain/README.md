@@ -17,7 +17,7 @@ what features and improvements you would like to see. We would love to hear from
 invitation email will include details of how to access our Slack workspace. After you are logged in, please come to `#soa-k8s` and say, "hello!"
 
 ## Additional Resources
-* [Using Jdeveloper to deploy composites](docs-source/supportJDEV.md)
-* [Expose T3 protocol for managed servers in SOA Domain](docs-source/enablingT3.md) 
-* [Persisting SOA adapters customizations](docs-source/Persisting-SOA-Adapters-Customizations.md)
+* [Using JDeveloper to Deploy Composites](docs-source/supportJDEV.md)
+* [Expose T3 protocol for Managed Servers in SOA Domain](docs-source/enablingT3.md) 
+* [Persisting SOA Adapters Customizations](docs-source/Persisting-SOA-Adapters-Customizations.md)
 

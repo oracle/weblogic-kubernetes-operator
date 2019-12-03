@@ -35,21 +35,21 @@ If you need to persist the customizations for any of the adpater files under SOA
 * Go back to deployments : select the ABC.rar -> Update 
   This step asks for `Plan.xml` location. This location by default will be in `${MW_HOME}/soa/soa` which is not under Persistent Volume.   
   Hence when you specify above location, provide the domains PV location such as `{DOMAIN_HOME}/soainfra/servers` etc.  
-  Now the `Plan.xml` will be persisted under this location for each managed servers.
+  Now the `Plan.xml` will be persisted under this location for each Managed Servers.
 
 ## Method 2: Customize the Adapter file on the Worker Node:
     
 * Copy the `ABC.rar` from the server pod to a PV path:
   ```
   command:
-  $ kubectl cp <namespace>/<SOA managed server pod name>:<full path of .rar file>  <destination path inside PV>
+  $ kubectl cp <namespace>/<SOA Managed Server pod name>:<full path of .rar file>  <destination path inside PV>
   ```
   ```
   Sample command:
   $ kubectl cp soans/soainfra-soa-server1:/u01/oracle/soa/soa/connectors/ABC.rar ${DockerVolume}/domains/soainfra/servers/ABC.rar
   ```
   or 
-  You can do a normal file copy between these locations after entering (kubectl exec) in to the managed server pod.
+  You can do a normal file copy between these locations after entering (kubectl exec) in to the Managed Server pod.
 * Unrar the ABC.rar.
 * Update the new connection details in `weblogic-ra.xml` file under META_INF.
 * In WebLogic Administration console, Under Deployments -> select `ABC.rar` and click update.

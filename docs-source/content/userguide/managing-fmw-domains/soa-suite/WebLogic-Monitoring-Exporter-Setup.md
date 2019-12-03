@@ -2,9 +2,52 @@
 
 You can monitor the SOA instance using Prometheus and Grafana by exporting the metrics from the domain instance using the WebLogic Monitoring Exporter to the Prometheus.
 
-This document provides the steps to setup the WebLogic Monitoring exporter to push the data to Prometheus in order to monitor the SOA instance.
+This document provides the steps to setup the WebLogic Monitoring Exporter to push the data to Prometheus in order to monitor the SOA instance.
 
-Follow the instructions below to setup WebLogic Monitoring Exporter in a SOA domain environment for the collection of WebLogic server metrics and monitoring.
+## Prerequisite
+
+This document assumes that Prometheus operator is deployed on the Kubernetes cluster. If it is not already deployed, please follow the below quick start steps for Prometheus Operator deployment. 
+
+#### Clone Kube-Prometheus Project
+
+```bash
+$ git clone https://github.com/coreos/kube-prometheus.git
+```
+
+#### Create Kube-Prometheus Resources
+
+Change to folder `kube-prometheus` and execute the following commands to create the namespace and CRDs, and then wait for their availability before creating the remaining resources.
+
+```bash
+$ cd kube-prometheus
+
+$ kubectl create -f manifests/setup
+$ until kubectl get servicemonitors --all-namespaces ; do date; sleep 1; echo ""; done
+$ kubectl create -f manifests/
+```
+
+#### Label the nodes
+Kube-Prometheus requires all exporter nodes to be labelled with `kubernetes.io/os=linux`. If a node is not labelled with this, then you need to label it using the following command:
+
+```
+$ kubectl label nodes --all kubernetes.io/os=linux
+```
+#### Provide external access
+To provide external access for Grafana/Prometheus/Alertmanager, you need to execute the following commands:
+
+```bash
+$ kubectl patch svc grafana -n monitoring --type=json -p '[{"op": "replace", "path": "/spec/type", "value": "NodePort" },{"op": "replace", "path": "/spec/ports/0/nodePort", "value": 32100 }]'
+$ kubectl patch svc prometheus-k8s -n monitoring --type=json -p '[{"op": "replace", "path": "/spec/type", "value": "NodePort" },{"op": "replace", "path": "/spec/ports/0/nodePort", "value": 32101 }]'
+$ kubectl patch svc alertmanager-main -n monitoring --type=json -p '[{"op": "replace", "path": "/spec/type", "value": "NodePort" },{"op": "replace", "path": "/spec/ports/0/nodePort", "value": 32102 }]'
+
+NOTE: Here
+# 32100 is the external port for Grafana
+# 32101 is the external port for Prometheus
+# 32102 is the external port for Alertmanager
+```
+---  
+
+Follow the instructions below to setup WebLogic Monitoring Exporter in a SOA domain environment for the collection of WebLogic Server metrics and monitoring.
 
 ## 1. Download WebLogic Monitoring Exporter
 
@@ -13,7 +56,7 @@ You need to download `wls-exporter.war` and `getX.X.X.sh` files from above locat
 
 ## 2. Create Configuration File for WebLogic Monitoring Exporter
 
-In this step you need to create the configuration file for WebLogic Monitoring Exporter.This configuration file will have the server port for serving the webapp, metrics to be scraped from the WebLogic server etc.
+In this step you need to create the configuration file for WebLogic Monitoring Exporter. This configuration file will have the server port for serving the webapp, metrics to be scraped from the WebLogic Server etc.
 
 Below is the sample snippet of the configuration:
 
@@ -82,7 +125,7 @@ queries:
 
 ## 3. Generate the Deployment Package
 
-In this step you will generate the deployemt package. You need to generate two separate packages with restPort as 7001 and 8001 in `config.yaml`. The two packages are required as the listening ports are different for Administration Server and Managed Servers.
+In this step you will generate the deployment package. You need to generate two separate packages with restPort as 7001 and 8001 in `config.yaml`. The two packages are required as the listening ports are different for Administration Server and Managed Servers.
 
 Use `getX.X.X.sh` script to update the configuration file into `wls-exporter` package.  
 Below is the sample usage:
@@ -193,7 +236,7 @@ relabelings:
 
 ## 6. Add RoleBinding/Role for WebLogic Domain namespace
 
-You need to add RoleBinding for the namespace under which the WebLogic servers pods are running in the Kubernetes cluster. This RoleBinding is required for the Prometheus to access the endpoints provided by the WebLogic Monitoring Exporter. Edit "prometheus-roleBindingSpecificNamespaces.yaml" in the Prometheus operator deployment manifests and add the RoleBinding for the namespace ("soans") similar to example as below,
+You need to add RoleBinding for the namespace under which the WebLogic Servers pods are running in the Kubernetes cluster. This RoleBinding is required for the Prometheus to access the endpoints provided by the WebLogic Monitoring Exporter. Edit "prometheus-roleBindingSpecificNamespaces.yaml" in the Prometheus operator deployment manifests and add the RoleBinding for the namespace ("soans") similar to example as below,
 
 ```
 - apiVersion: rbac.authorization.k8s.io/v1
@@ -210,7 +253,7 @@ You need to add RoleBinding for the namespace under which the WebLogic servers p
  name: prometheus-k8s
  namespace: monitoring
 ```
-Similarly you need to add Role for the namespace under which the WebLogic servers pods are running in the Kubernetes cluster. Edit "prometheus-roleSpecificNamespaces.yaml" in the Prometheus operator deployment manifests and add the Role for the namespace ("soans") similar to example as below,
+Similarly you need to add Role for the namespace under which the WebLogic Servers pods are running in the Kubernetes cluster. Edit "prometheus-roleSpecificNamespaces.yaml" in the Prometheus operator deployment manifests and add the Role for the namespace ("soans") similar to example as below,
 ```
 - apiVersion: rbac.authorization.k8s.io/v1
  kind: Role
