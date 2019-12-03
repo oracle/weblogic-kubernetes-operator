@@ -1,12 +1,12 @@
-# Creating an Oracle database service and RCU schema for a Fusion Middleware domain
+# Creating an Oracle Database service and RCU schema for a Fusion Middleware domain
 
 The sample scripts in this directory demonstrate how to:
-* Start an Oracle database (DB) service in a Kubernetes cluster.
+* Start an Oracle Database (DB) service in a Kubernetes cluster.
 * Stop an Oracle DB service in a Kubernetes cluster.
 
-## Start an Oracle database service in a Kubernetes cluster
+## Start an Oracle Database service in a Kubernetes cluster
 
-Use this script to create an Oracle DB service in the default namespace, with the default credentials, in the Oracle Database Slim image.
+Use this script to create an Oracle Database service in a Kubernate Namespace with the default credentials, in the Oracle Database Slim image.
 
 The script assumes that either the image, `container-registry.oracle.com/database/enterprise:12.2.0.1-slim`, is available in the Docker repository, or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
 
@@ -46,9 +46,9 @@ You can access the database through the NodePort outside of the Kubernetes clust
 
 **Note**: To create a Fusion Middleware domain image, the domain-in-image model needs a public database URL as an `rcuDatabaseURL` parameter.
 
-## Stop an Oracle database service in a Kubernetes cluster
+## Stop an Oracle Database service in a Kubernetes cluster
 
-Use this script to stop the Oracle DB service you created using the `start-db-service.sh` script.
+Use this script to stop the Oracle Database service you created using the `start-db-service.sh` script.
 
 ```
 $ ./stop-db-service.sh  

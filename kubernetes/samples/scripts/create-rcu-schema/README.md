@@ -6,11 +6,11 @@ The sample scripts in this directory demonstrate how to:
 * Create an RCU schema in the Oracle DB that will be used by a Fusion Middleware domain.
 * Delete the RCU schema in the Oracle DB used by a Fusion Middleware domain.
 
+
 ## Start an Oracle database service in a Kubernetes cluster
 
-Use this script to create an Oracle DB service in the default namespace, with the default credentials, in the Oracle Database Slim image.
+Use the script samples/scripts/create-oracle-db-service/start-db-service.sh
 
-The script assumes that either the image, `container-registry.oracle.com/database/enterprise:12.2.0.1-slim`, is available in the Docker repository, or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
 
 ```
 For creating a Fusion Middleware domain, you can use the database connection string, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, as an `rcuDatabaseURL` parameter in the `domain.input.yaml` file.

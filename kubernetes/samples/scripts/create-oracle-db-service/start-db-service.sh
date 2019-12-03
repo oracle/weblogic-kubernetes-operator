@@ -16,7 +16,7 @@ function usage {
   echo "      (default: 30011) "
   echo "  -s DB Image PullSecret  (optional)"
   echo "      (default: docker-store) "
-  echo "  -n Kubernate Namespace for Oracle DB Service  (optional)"
+  echo "  -n Configurable Kubernate Namespace for Oracle DB Service  (optional)"
   echo "      (default: default) "
   echo "  -h Help"
   exit $1
