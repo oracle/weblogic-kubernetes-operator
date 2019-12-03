@@ -16,7 +16,7 @@ weight: 6
 
 There are at least three approaches for external WebLogic EJB or JMS client access to a Kubernetes hosted WebLogic cluster. These include [Federation](#federation), [Load Balancer Tunneling](#load-balancer-tunneling), and [Kubernetes Node Ports](#kubernetes-node-ports).
 
-> __NOTE:__ This FAQ is for remote EJB and JMS clients - not JTA clients. The Operator does not currently support external WebLogic JTA access to a WebLogic cluster, as (a) external JTA access requires each server in the cluster to be individually addressable by the client while (b) the Operator currently requires that a network channel in a cluster have the same address and port across all servers in the cluster.
+> __NOTE:__ This FAQ is for remote EJB and JMS clients - not JTA clients. The Operator does not currently support external WebLogic JTA access to a WebLogic cluster, as (a) external JTA access requires each server in the cluster to be individually addressable by the client, but this conflicts with (b) the current Operator requirement that a network channel in a cluster have the same port across all servers in the cluster.
 
 #### Federation
 
@@ -57,7 +57,7 @@ WebLogic implicitly creates a multi-protocol default network channel that spans 
 
 - A default channel exposes multiple protocols but it's a best practice to limit the protocols that can be accessed by external clients.
 
-- A default channel may often be left insecure if it is only accessible internally, but it is often desirable to secure externally accessable channels (two-way SSL).
+- A default channel may often be left insecure if it is only accessible internally, but it is often desirable to secure externally accessible channels (two-way SSL).
 
 #### Configuring a WebLogic Custom Channel
 
@@ -190,7 +190,7 @@ spec:
 |metadata.namespace|Must match the namespace of your WebLogic cluster.|
 |metadata.labels|Optional. It's helpful to set a weblogic.domainUid so that cleanup scripts can locate all Kubernetes resources associated with a particular domain UID.|
 |spec.type|Must be `NodePort`|
-|spec.externalTrafficPolicy|`Cluster` may lower performance, but is recommended. If set to `Local`, then connections to a Node will only route to the Node's pods and will fail if the Node doesn't host any pods with the given `spec.selector`.|
+|spec.externalTrafficPolicy|Set to `Cluster` for most use cases. This may lower performance, but ensures that a client that attaches to a Node without any pods that match the `spec.selector` will be rerouted to a node with pods that do match. If set to `Local`, then connections to a particular Node will only route to that Node's pods and will fail if the Node doesn't host any pods with the given `spec.selector`. It's recommended for clients of a `spec.externalTrafficPolicy: Local` NodePort to use a URL that resolves to a list of all nodes such as `t3://mynode1,mynode2:30999` so that a client connect attempt will implicitly try mynode2 if mynode1 fails (alternatively, use a round-robin DNS address in place of `mynode1,mynode2`).|
 |spec.sessionAffinity|Set to `ClientIP` to ensure an HTTP tunneling connection always routes to the same pod, otherwise the connection may hang and fail.|
 |spec.selector|Specify a weblogic.domainUID and weblogic.clusterName to associate the NodePort resource with your cluster's pods. The operator automatically sets these labels on the WebLogic cluster pods that it deploys for you.|
 |spec.ports.name|This name is arbitrary.|
@@ -201,9 +201,9 @@ spec:
 
 - With some cloud providers, a load balancer or NodePort may implicitly expose a port to the public Internet. 
 
-- WebLogic allows access to JNDI entries, EJB/RMI applications, and JMS by anonymous users by default.
+- If such a port supports a protocol suitable for WebLogic clients, note that WebLogic allows access to JNDI entries, EJB/RMI applications, and JMS by anonymous users by default.
 
-- Use a custom channel with a secure protocol and two-way SSL to help prevent external access by unwanted clients.
+- You can configure a custom channel with a secure protocol and two-way SSL to help prevent external access by unwanted clients.
 
 
 ### References
