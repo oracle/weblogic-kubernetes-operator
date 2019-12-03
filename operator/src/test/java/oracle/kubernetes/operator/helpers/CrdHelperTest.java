@@ -245,6 +245,11 @@ public class CrdHelperTest {
       V1beta1JSONSchemaProps openApiV3Schema = validation.getOpenAPIV3Schema();
       if (openApiV3Schema == null || openApiV3Schema.getProperties().size() != 2) return false;
 
+      // check for structural schema condition 1 -- top level type value
+      // https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/
+      //     custom-resource-definitions/#specifying-a-structural-schema
+      if (openApiV3Schema == null || !openApiV3Schema.getType().equals("object")) return false;
+
       V1beta1JSONSchemaProps spec = openApiV3Schema.getProperties().get("spec");
       if (spec == null || spec.getProperties().isEmpty()) return false;
 

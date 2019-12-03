@@ -57,9 +57,10 @@ function createFolder {
 
 trace "Introspecting the domain"
 
-# list potentially interesting env-vars before they're updated by export.*Homes
+# list potentially interesting env-vars and dirs before they're updated by export.*Homes
 
 traceEnv before
+traceDirs before
 
 # set defaults
 # set ORACLE_HOME/WL_HOME/MW_HOME to defaults if needed
@@ -133,9 +134,10 @@ fi
 
 exportEffectiveDomainHome || exit 1
 
-# list potentially interesting env-vars after they're updated by export.*Homes
+# list potentially interesting env-vars and dirs after they're updated by export.*Homes
 
 traceEnv after
+traceDirs after
 
 # check if we're using a supported WebLogic version
 # (the check  will log a message if it fails)

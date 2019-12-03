@@ -125,9 +125,10 @@ function copySitCfg() {
   fi
 }
 
-# trace env vars before export.*Home calls
+# trace env vars and dirs before export.*Home calls
 
 traceEnv before
+traceDirs before
 
 if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
   cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
@@ -201,9 +202,10 @@ fi
 
 exportEffectiveDomainHome || exitOrLoop
 
-# trace env vars after export.*Home calls
+# trace env vars and dirs after export.*Home calls
 
 traceEnv after
+traceDirs after
 
 #
 # Check if introspector actually ran.  This should never fail since
