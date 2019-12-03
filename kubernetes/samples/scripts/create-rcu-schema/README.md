@@ -1,26 +1,19 @@
-# Creating an Oracle Database service and RCU schema for a Fusion Middleware domain
+# Managing RCU schema for a Fusion Middleware domain
 
 The sample scripts in this directory demonstrate how to:
-* Start an Oracle Database (DB) service in a Kubernetes cluster.
-* Stop an Oracle DB service in a Kubernetes cluster.
 * Create an RCU schema in the Oracle DB that will be used by a Fusion Middleware domain.
 * Delete the RCU schema in the Oracle DB used by a Fusion Middleware domain.
-
 
 ## Start an Oracle Database service in a Kubernetes cluster
 
 Use the script samples/scripts/create-oracle-db-service/start-db-service.sh
 
-## Stop an Oracle Database service in a Kubernetes cluster
-
-Use the script samples/scripts/create-oracle-db-service/stop-db-service.sh
-
-```
 For creating a Fusion Middleware domain, you can use the Database connection string, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, as an `rcuDatabaseURL` parameter in the `domain.input.yaml` file.
 
 You can access the Database through the NodePort outside of the Kubernetes cluster, using the URL  `<hostmachine>:30011/devpdb.k8s`.
 
 **Note**: To create a Fusion Middleware domain image, the domain-in-image model needs a public Database URL as an `rcuDatabaseURL` parameter.
+
 
 ## Create the RCU schema in the Oracle Database
 
@@ -202,6 +195,4 @@ Pod [rcu] removed from nameSpace [default]
 
 ## Stop an Oracle Database service in a Kubernetes cluster
 
-Use this script to stop the Oracle DB service you created using the `start-db-service.sh` script.
-
-```
+Use the script samples/scripts/create-oracle-db-service/stop-db-service.sh

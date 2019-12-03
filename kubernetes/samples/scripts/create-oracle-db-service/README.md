@@ -1,4 +1,4 @@
-# Creating an Oracle Database Service for Fusion Middleware domain
+# Managing Oracle Database Service for Fusion Middleware domain
 
 The sample scripts in this directory demonstrate how to:
 * Start an Oracle Database (DB) service in a Kubernetes cluster.
@@ -42,7 +42,9 @@ Oracle DB service is RUNNING with NodePort [30011]
 
 ```
 
-For creating a Fusion Middleware domain, you can use the database connection string, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, as an `rcuDatabaseURL` parameter in the `domain.input.yaml` file.
+For creating a Fusion Middleware domain, you can use the database connection string, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`,as `rcuDatabaseURL` parameter in the `domain.input.yaml` file.
+
+Note: oracle-db.default.svc.cluster.local:1521/devpdb.k8s can be used as rcuDatabaseURL if the Oracle DB Service is started in `default` NameSpace. For cutom NameSpace the URL need to be modified accrodingly e.g. oracle-db.[namespace].svc.cluster.local:1521/devpdb.k8s 
 
 You can access the database through the NodePort outside of the Kubernetes cluster, using the URL  `<hostmachine>:30011/devpdb.k8s`.
 
