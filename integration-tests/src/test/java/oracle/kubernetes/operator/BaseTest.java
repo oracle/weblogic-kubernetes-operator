@@ -125,25 +125,18 @@ public class BaseTest {
     }
     username = appProps.getProperty("username", username);
     password = appProps.getProperty("password", password);
-    if (System.getenv("RESULT_ROOT") != null) {
-      resultRoot = System.getenv("RESULT_ROOT");
-    } else {
-      resultRoot = baseDir + "/" + System.getProperty("user.name") + "/wl_k8s_test_results";
-    }
-    if (System.getProperty("WIT_TEST") == null) {
-      weblogicImageTag =
+    weblogicImageTag =
         System.getenv("IMAGE_TAG_WEBLOGIC") != null
-          ? System.getenv("IMAGE_TAG_WEBLOGIC")
-          : appProps.getProperty("weblogicImageTag");
-      weblogicImageDevTag =
+            ? System.getenv("IMAGE_TAG_WEBLOGIC")
+            : appProps.getProperty("weblogicImageTag");
+    weblogicImageDevTag =
         System.getenv("IMAGE_DEVTAG_WEBLOGIC") != null
-          ? System.getenv("IMAGE_DEVTAG_WEBLOGIC")
-          : appProps.getProperty("weblogicImageDevTag");
-      weblogicImageName =
+            ? System.getenv("IMAGE_DEVTAG_WEBLOGIC")
+            : appProps.getProperty("weblogicImageDevTag");
+    weblogicImageName =
         System.getenv("IMAGE_NAME_WEBLOGIC") != null
-          ? System.getenv("IMAGE_NAME_WEBLOGIC")
-          : appProps.getProperty("weblogicImageName");
-    }
+            ? System.getenv("IMAGE_NAME_WEBLOGIC")
+            : appProps.getProperty("weblogicImageName");
     weblogicImageServer =
         System.getenv("OCR_SERVER") != null
             ? System.getenv("OCR_SERVER")
@@ -300,13 +293,6 @@ public class BaseTest {
   public static String getWeblogicImageTag() {
     return weblogicImageTag;
   }
-
-  /**
-   * setter method for weblogicImageTag field.
-   */
-  public static void setWeblogicImageTag(String wlsImageTag) {
-    weblogicImageTag = wlsImageTag;
-  }
   
   /**
    * getter method for weblogicImageDevTag field.
@@ -318,26 +304,12 @@ public class BaseTest {
   }
 
   /**
-   * setter method for weblogicImageDevTag field.
-   */
-  public static void setWeblogicImageDevTag(String wlsImageDevTag) {
-    weblogicImageDevTag = wlsImageDevTag;
-  }
-
-  /**
    * getter method for weblogicImageName.
    *
    * @return image name of the WLS docker image
    */
   public static String getWeblogicImageName() {
     return weblogicImageName;
-  }
-
-  /**
-   * setter method for weblogicImageName field.
-   */
-  public static void setWeblogicImageName(String wlsImageName) {
-    weblogicImageName = wlsImageName;
   }
 
   /**
