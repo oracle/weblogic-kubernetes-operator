@@ -1,25 +1,28 @@
-# Creating an Oracle database service and RCU schema for a Fusion Middleware domain
+# Creating an Oracle Database service and RCU schema for a Fusion Middleware domain
 
 The sample scripts in this directory demonstrate how to:
-* Start an Oracle database (DB) service in a Kubernetes cluster.
+* Start an Oracle Database (DB) service in a Kubernetes cluster.
 * Stop an Oracle DB service in a Kubernetes cluster.
 * Create an RCU schema in the Oracle DB that will be used by a Fusion Middleware domain.
 * Delete the RCU schema in the Oracle DB used by a Fusion Middleware domain.
 
 
-## Start an Oracle database service in a Kubernetes cluster
+## Start an Oracle Database service in a Kubernetes cluster
 
 Use the script samples/scripts/create-oracle-db-service/start-db-service.sh
 
+## Stop an Oracle Database service in a Kubernetes cluster
+
+Use the script samples/scripts/create-oracle-db-service/stop-db-service.sh
 
 ```
-For creating a Fusion Middleware domain, you can use the database connection string, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, as an `rcuDatabaseURL` parameter in the `domain.input.yaml` file.
+For creating a Fusion Middleware domain, you can use the Database connection string, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, as an `rcuDatabaseURL` parameter in the `domain.input.yaml` file.
 
-You can access the database through the NodePort outside of the Kubernetes cluster, using the URL  `<hostmachine>:30011/devpdb.k8s`.
+You can access the Database through the NodePort outside of the Kubernetes cluster, using the URL  `<hostmachine>:30011/devpdb.k8s`.
 
-**Note**: To create a Fusion Middleware domain image, the domain-in-image model needs a public database URL as an `rcuDatabaseURL` parameter.
+**Note**: To create a Fusion Middleware domain image, the domain-in-image model needs a public Database URL as an `rcuDatabaseURL` parameter.
 
-## Create the RCU schema in the Oracle database
+## Create the RCU schema in the Oracle Database
 
 This script generates the RCU schema based `schemaPrefix` and `dburl`.
 
@@ -120,7 +123,7 @@ Repository Creation Utility - Create : Operation Completed
 [INFO] Modify the domain.input.yaml to use [oracle-db.default.svc.cluster.local:1521/devpdb.k8s] as rcuDatabaseURL and [domain1] as rcuSchemaPrefix
 ```
 
-## Drop the RCU schema from the Oracle database
+## Drop the RCU schema from the Oracle Database
 
 Use this script to drop the RCU schema based `schemaPrefix` and `dburl`.
 
@@ -197,7 +200,7 @@ Error from server (NotFound): pods "rcu" not found
 Pod [rcu] removed from nameSpace [default]
 ```
 
-## Stop an Oracle database service in a Kubernetes cluster
+## Stop an Oracle Database service in a Kubernetes cluster
 
 Use this script to stop the Oracle DB service you created using the `start-db-service.sh` script.
 

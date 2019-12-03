@@ -50,7 +50,7 @@ fi
 
 rcupod=`kubectl get po | grep rcu | cut -f1 -d " " `
 if [ -z ${rcupod} ]; then
-  echo "RCU deployment pod not found in [default] namespace"
+  echo "RCU deployment pod not found in [default] NameSpace"
   exit -2
 fi
 

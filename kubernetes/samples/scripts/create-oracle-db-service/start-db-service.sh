@@ -9,14 +9,14 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../common/utility.sh
 
 function usage {
-  echo "usage: ${script} -p <nodeport> -i <image> -s <docker-store> -n <name-space>  [-h]"
+  echo "usage: ${script} -p <nodeport> -i <image> -s <pullsecret> -n <namespace>  [-h]"
   echo "  -i  Oracle DB Image (optional)"
   echo "      (default: container-registry.oracle.com/database/enterprise:12.2.0.1-slim ) "
   echo "  -p DB Service NodePort (optional)"
   echo "      (default: 30011) "
-  echo "  -s DB Image PullSecret  (optional)"
+  echo "  -s DB Image PullSecret (optional)"
   echo "      (default: docker-store) "
-  echo "  -n Configurable Kubernate Namespace for Oracle DB Service  (optional)"
+  echo "  -n Configurable Kubernates NameSpace for Oracle DB Service (optional)"
   echo "      (default: default) "
   echo "  -h Help"
   exit $1
@@ -54,7 +54,7 @@ fi
 echo "Checking Status for NameSpace [$namespace]"
 domns=`kubectl get ns ${namespace} | grep ${namespace} | awk '{print $1}'`
 if [ -z ${domns} ]; then
- echo "Adding NameSpace[$namespace] to Kubernate Cluster"
+ echo "Adding NameSpace[$namespace] to Kubernates Cluster"
  kubectl create namespace ${namespace}
  sleep 5
 else

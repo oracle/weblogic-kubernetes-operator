@@ -154,15 +154,15 @@ function checkPvExists {
 #
 # Function to check if a persistent volume claim exists
 # $1 - name of persistent volume claim
-# $2 - namespace
+# $2 - NameSpace
 function checkPvcExists {
-  echo "Checking if the persistent volume claim ${1} in namespace ${2} exists"
+  echo "Checking if the persistent volume claim ${1} in NameSpace ${2} exists"
   PVC_EXISTS=`kubectl get pvc -n ${2} | grep ${1} | wc | awk ' { print $1; } '`
   if [ "${PVC_EXISTS}" = "1" ]; then
-    echo "The persistent volume claim ${1} already exists in namespace ${2}"
+    echo "The persistent volume claim ${1} already exists in NameSpace ${2}"
     PVC_EXISTS="true"
   else
-    echo "The persistent volume claim ${1} does not exist in namespace ${2}"
+    echo "The persistent volume claim ${1} does not exist in NameSpace ${2}"
     PVC_EXISTS="false"
   fi
 }
@@ -563,7 +563,7 @@ function createDomain {
   printSummary
 }
 
-# checks if a given pod in a namespace has been deleted
+# checks if a given pod in a NameSpace has been deleted
 function checkPodDelete(){
 
  pod=$1
@@ -576,7 +576,7 @@ function checkPodDelete(){
  fi
 
  if [ -z ${2} ]; then 
-  echo "No namespace provided "
+  echo "No NameSpace provided "
   exit -2 
  fi
 
@@ -596,7 +596,7 @@ function checkPodDelete(){
  done
 
  if [ $count -gt $max ] ; then
-   echo "[ERROR] The Pod[$1] in namespace [$ns] could not be deleted in 50s"; 
+   echo "[ERROR] The Pod[$1] in NameSpace [$ns] could not be deleted in 50s"; 
    exit 1
  fi 
 }
