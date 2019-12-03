@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.util.logging.Level;
+
 public class RcuSecret extends Secret {
 
   private String sysUsername;
@@ -40,9 +42,9 @@ public class RcuSecret extends Secret {
             + this.sysUsername
             + " --from-literal=sys_password="
             + this.sysPassword;
-    logger.info("Running " + command);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
     ExecResult result = TestUtils.exec(command);
-    logger.info("command result " + result.stdout().trim());
+    LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
   }
 
   public String getSysUsername() {
@@ -55,7 +57,8 @@ public class RcuSecret extends Secret {
 
   private void deleteSecret() throws Exception {
     String command = "kubectl -n " + namespace + " delete secret " + secretName;
-    logger.info("Running " + command);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
     ExecCommand.exec(command);
   }
+
 }
