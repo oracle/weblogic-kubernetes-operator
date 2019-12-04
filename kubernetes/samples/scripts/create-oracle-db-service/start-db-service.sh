@@ -16,7 +16,7 @@ function usage {
   echo "      (default: 30011) "
   echo "  -s DB Image PullSecret (optional)"
   echo "      (default: docker-store) "
-  echo "  -n Configurable Kubernates NameSpace for Oracle DB Service (optional)"
+  echo "  -n Configurable Kubernetes NameSpace for Oracle DB Service (optional)"
   echo "      (default: default) "
   echo "  -h Help"
   exit $1
@@ -54,7 +54,7 @@ fi
 echo "Checking Status for NameSpace [$namespace]"
 domns=`kubectl get ns ${namespace} | grep ${namespace} | awk '{print $1}'`
 if [ -z ${domns} ]; then
- echo "Adding NameSpace[$namespace] to Kubernates Cluster"
+ echo "Adding NameSpace[$namespace] to Kubernetes Cluster"
  kubectl create namespace ${namespace}
  sleep 5
 else

@@ -10,7 +10,7 @@ source ${scriptDir}/../common/utility.sh
 
 function usage {
   echo "usage: ${script} -n namespace  [-h]"
-  echo " -n Kubernates NameSpace for Oracle DB Service to be Stopped (optional)"
+  echo " -n Kubernetes NameSpace for Oracle DB Service to be Stopped (optional)"
   echo "     (default: default) "
   echo " -h Help"
   exit $1

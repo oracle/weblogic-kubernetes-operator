@@ -6,7 +6,7 @@ The sample scripts in this directory demonstrate how to:
 
 ## Start an Oracle Database service in a Kubernetes cluster
 
-Use the script samples/scripts/create-oracle-db-service/start-db-service.sh
+Use the script ``samples/scripts/create-oracle-db-service/start-db-service.sh``
 
 For creating a Fusion Middleware domain, you can use the Database connection string, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, as an `rcuDatabaseURL` parameter in the `domain.input.yaml` file.
 
@@ -195,4 +195,4 @@ Pod [rcu] removed from nameSpace [default]
 
 ## Stop an Oracle Database service in a Kubernetes cluster
 
-Use the script samples/scripts/create-oracle-db-service/stop-db-service.sh
+Use the script ``samples/scripts/create-oracle-db-service/stop-db-service.sh``

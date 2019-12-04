@@ -6,7 +6,7 @@ The sample scripts in this directory demonstrate how to:
 
 ## Start an Oracle Database service in a Kubernetes cluster
 
-Use this script to create an Oracle Database service in a Kubernates Namespace with the default credentials, in the Oracle Database Slim image.
+Use this script to create an Oracle Database service in a Kubernetes Namespace with the default credentials, in the Oracle Database Slim image.
 
 The script assumes that either the image, `container-registry.oracle.com/database/enterprise:12.2.0.1-slim`, is available in the Docker repository, or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
 
@@ -20,7 +20,7 @@ usage: ./start-db-service.sh -p <nodeport> -i <image> -s <pullsecret> -n <namesp
     (default: 30011)
   -s DB Image PullSecret (optional)
     (default: docker-store)
-  -n Configurable Kubernates NameSpace for Oracle DB Service (optional)"
+  -n Configurable Kubernetes NameSpace for Oracle DB Service (optional)"
     (default: default)
   -h Help
 
@@ -44,7 +44,7 @@ Oracle DB service is RUNNING with NodePort [30011]
 
 For creating a Fusion Middleware domain, you can use the database connection string, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`,as `rcuDatabaseURL` parameter in the `domain.input.yaml` file.
 
-Note: oracle-db.default.svc.cluster.local:1521/devpdb.k8s can be used as rcuDatabaseURL if the Oracle DB Service is started in `default` NameSpace. For cutom NameSpace the URL need to be modified accrodingly e.g. oracle-db.[namespace].svc.cluster.local:1521/devpdb.k8s 
+Note: oracle-db.default.svc.cluster.local:1521/devpdb.k8s can be used as rcuDatabaseURL if the Oracle DB Service is started in `default` NameSpace. For custom NameSpace the URL need to be modified accrodingly e.g. oracle-db.[namespace].svc.cluster.local:1521/devpdb.k8s 
 
 You can access the database through the NodePort outside of the Kubernetes cluster, using the URL  `<hostmachine>:30011/devpdb.k8s`.
 
@@ -57,7 +57,7 @@ Use this script to stop the Oracle Database service you created using the `start
 ```
 $ ./stop-db-service.sh -h 
 usage: stop-db-service.sh -n namespace  [-h]
- -n Kubernates NameSpace for Oracle DB Service to be Stopped (optional)
+ -n Kubernetes NameSpace for Oracle DB Service to be Stopped (optional)
      (default: default) 
  -h Help
 
