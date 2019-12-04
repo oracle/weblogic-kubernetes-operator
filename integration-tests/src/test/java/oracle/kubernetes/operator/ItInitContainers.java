@@ -8,24 +8,29 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
 import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
-/** Integration tests for testing the init container for WebLogic server pods. */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+/**
+ * Integration tests for testing the init container for WebLogic server pods.
+ */
+@TestMethodOrder(Alphanumeric.class)
 public class ItInitContainers extends BaseTest {
 
   private static Domain domain = null;
@@ -33,37 +38,60 @@ public class ItInitContainers extends BaseTest {
   private static String domainUid = "domaininitcont";
   private static String initContainerTmpDir = "";
   private static String originalYaml;
+  private static String testClassName;
+  private static String domainNS;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
-   * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes. Create Operator1 and domainOnPVUsingWLST
+   * initialization of the integration test properties defined in OperatorIT.properties.
    *
-   * @throws Exception exception
+   * @throws Exception exception if initialization of properties fails
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
-    logger.info("staticPrepare------Begin");
-    // initialize test properties and create the directories
     if (FULLTEST) {
-      initialize(APP_PROPS_FILE);
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
+      initialize(APP_PROPS_FILE, testClassName);
+    }
+  }
 
-      logger.info("Checking if operator and domain are running, if not creating");
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
+  @BeforeEach
+  public void prepare() throws Exception {
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
+
+      LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
-        operator = TestUtils.createOperator(OPERATOR1_YAML);
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
+        operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assertions.assertNotNull(operator);
+        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS);
       }
-      initContainerTmpDir = BaseTest.getResultDir() + "/initconttemp";
+      initContainerTmpDir = getResultDir() + "/initconttemp";
       Files.createDirectories(Paths.get(initContainerTmpDir));
 
-      domain = createInitContdomain();
-      originalYaml =
-          BaseTest.getUserProjectsDir()
-              + "/weblogic-domains/"
-              + domain.getDomainUid()
-              + "/domain.yaml";
-      Assert.assertNotNull(domain);
+      if (domain == null) {
+        domain = createInitContdomain();
+        originalYaml =
+            getUserProjectsDir()
+                + "/weblogic-domains/"
+                + domain.getDomainUid()
+                + "/domain.yaml";
+        Assertions.assertNotNull(domain);
+      }
+      LoggerHelper.getLocal().log(Level.INFO, "staticPrepare------End");
     }
-    logger.info("staticPrepare------End");
+
   }
 
   /**
@@ -71,18 +99,19 @@ public class ItInitContainers extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      logger.info("staticUnPrepare------Begin");
+      LoggerHelper.getLocal().log(Level.INFO, "staticUnPrepare------Begin");
       if (domain != null) {
         destroyInitContdomain();
       }
       if (operator != null) {
         operator.destroy();
       }
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-      logger.info("staticUnPrepare------End");
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "staticUnPrepare------End");
     }
   }
 
@@ -92,11 +121,11 @@ public class ItInitContainers extends BaseTest {
    * @return created domain Domain
    * @throws Exception when domain creation fails
    */
-  private static Domain createInitContdomain() throws Exception {
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+  private Domain createInitContdomain() throws Exception {
+    Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
+    domainMap.put("namespace", domainNS);
     domainMap.put("domainUID", domainUid);
-    domainUid = (String) domainMap.get("domainUID");
-    logger.info("Creating and verifying the domain creation with domainUid: " + domainUid);
+    LoggerHelper.getLocal().log(Level.INFO, "Creating and verifying the domain creation with domainUid: " + domainUid);
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
     return domain;
@@ -118,12 +147,13 @@ public class ItInitContainers extends BaseTest {
    * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     WebLogic server pod doesn't go through initialization and ready state
+   *                   WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testDomainInitContainer() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
 
@@ -131,13 +161,13 @@ public class ItInitContainers extends BaseTest {
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("spec", null, null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().log(Level.INFO, modYaml);
     testInitContainer(modYaml);
     for (String pod : pods) {
-      logger.info("Verifying if the pods are recreated with initialization");
+      LoggerHelper.getLocal().log(Level.INFO, "Verifying if the pods are recreated with initialization");
       verifyPodInitialized(pod);
     }
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -145,12 +175,13 @@ public class ItInitContainers extends BaseTest {
    * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *                   weblogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testAdminServerInitContainer() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();
 
@@ -158,11 +189,11 @@ public class ItInitContainers extends BaseTest {
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("adminServer", null, null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().log(Level.INFO, modYaml);
     testInitContainer(modYaml);
-    logger.info("Verifying if the admin server pod is recreated with initialization");
+    LoggerHelper.getLocal().log(Level.INFO, "Verifying if the admin server pod is recreated with initialization");
     verifyPodInitialized(adminPodName);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -170,12 +201,13 @@ public class ItInitContainers extends BaseTest {
    * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *                   weblogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testClusterInitContainer() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();
     final String ms2PodName = domainUid + "-managed-server2";
@@ -184,12 +216,12 @@ public class ItInitContainers extends BaseTest {
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("clusters", "cluster-1", null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().log(Level.INFO, modYaml);
     testInitContainer(modYaml);
     TestUtils.checkPodReady(adminPodName, domain.getDomainNs());
-    logger.info("Verifying if the managed server pods are recreated with initialization");
+    LoggerHelper.getLocal().log(Level.INFO, "Verifying if the managed server pods are recreated with initialization");
     verifyPodInitialized(ms2PodName);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -197,12 +229,13 @@ public class ItInitContainers extends BaseTest {
    * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     WebLogic server pod doesn't go through initialization and ready state
+   *                   WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testMsInitContainer() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();
     final String ms1PodName = domainUid + "-managed-server1";
@@ -211,12 +244,12 @@ public class ItInitContainers extends BaseTest {
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("managedServers", "cluster-1", "managed-server1", "busybox", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().log(Level.INFO, modYaml);
     testInitContainer(modYaml);
     TestUtils.checkPodReady(adminPodName, domain.getDomainNs());
-    logger.info("Verifying if the managed server pod is recreated with initialization");
+    LoggerHelper.getLocal().log(Level.INFO, "Verifying if the managed server pod is recreated with initialization");
     verifyPodInitialized(ms1PodName);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -224,12 +257,13 @@ public class ItInitContainers extends BaseTest {
    * started as result of it.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *                   weblogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testDomainInitContainerNegative() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String adminPodName = domainUid + "-" + domain.getAdminServerName();
 
@@ -238,11 +272,11 @@ public class ItInitContainers extends BaseTest {
     crd.addInitContNode("spec", null, null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
     modYaml = modYaml.replaceAll("sleep", "foo");
-    logger.info(modYaml);
+    LoggerHelper.getLocal().log(Level.INFO, modYaml);
     testInitContainer(modYaml);
     String cmd = "kubectl get pod " + adminPodName + " -n " + domain.getDomainNs();
     TestUtils.checkCmdInLoop(cmd, "Init:CrashLoopBackOff", adminPodName);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -250,12 +284,13 @@ public class ItInitContainers extends BaseTest {
    * level when the names are different.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     WebLogic server pod doesn't go through initialization and ready state
+   *                   WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testInitContainerDiffLevelDiffName() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server2"};
 
@@ -264,7 +299,7 @@ public class ItInitContainers extends BaseTest {
     crd.addInitContNode("spec", null, null, "busybox1", "sleep");
     crd.addInitContNode("adminServer", null, null, "busybox2", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().log(Level.INFO, modYaml);
     testInitContainer(modYaml);
     String cmd = "kubectl get pod " + pods[0] + " -n " + domain.getDomainNs();
 
@@ -272,9 +307,9 @@ public class ItInitContainers extends BaseTest {
     TestUtils.checkCmdInLoop(cmd, "Init:1/2", pods[0]);
     TestUtils.checkPodReady(pods[0], domain.getDomainNs());
 
-    logger.info("Verifying if the pods are recreated with initialization");
+    LoggerHelper.getLocal().log(Level.INFO, "Verifying if the pods are recreated with initialization");
     verifyPodInitialized(pods[1]);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -282,12 +317,13 @@ public class ItInitContainers extends BaseTest {
    * both level when the names are same.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     WebLogic server pod doesn't go through initialization and ready state
+   *                   WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testInitContainerDiffLevelSameName() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server2"};
 
@@ -297,25 +333,26 @@ public class ItInitContainers extends BaseTest {
     crd.addInitContNode("adminServer", null, null, "busybox", "sleep");
     crd.addInitContNode("clusters", "cluster-1", null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().log(Level.INFO, modYaml);
     testInitContainer(modYaml);
     for (String pod : pods) {
-      logger.info("Verifying if the pods are recreated with initialization");
+      LoggerHelper.getLocal().log(Level.INFO, "Verifying if the pods are recreated with initialization");
       verifyPodInitialized(pod);
     }
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
    * Add multiple initContainers at domain level and verify all of the init containers are run.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     WebLogic server pod doesn't go through initialization and ready state
+   *                   WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testInitContainerMultiple() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final String[] pods = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
 
@@ -324,7 +361,7 @@ public class ItInitContainers extends BaseTest {
     crd.addInitContNode("spec", null, null, "busybox1", "sleep");
     crd.addInitContNode("spec", null, null, "busybox2", "sleep");
     String modYaml = crd.getYamlTree();
-    logger.info(modYaml);
+    LoggerHelper.getLocal().log(Level.INFO, modYaml);
     testInitContainer(modYaml);
     String cmd;
     for (String pod : pods) {
@@ -333,7 +370,7 @@ public class ItInitContainers extends BaseTest {
       TestUtils.checkCmdInLoop(cmd, "Init:1/2", pod);
       TestUtils.checkPodReady(pod, domain.getDomainNs());
     }
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -341,21 +378,21 @@ public class ItInitContainers extends BaseTest {
    * before starting the admin server pod.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     WebLogic server pod doesn't go through initialization and ready state
+   *                   WebLogic server pod doesn't go through initialization and ready state
    */
   private void testInitContainer(String modYaml) throws Exception {
     // Write the modified yaml to a new file
     Path path = Paths.get(initContainerTmpDir, "domain.yaml");
-    logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
     Charset charset = StandardCharsets.UTF_8;
     Files.write(path, modYaml.getBytes(charset));
 
     destroyInitContdomain();
 
     // Apply the new yaml to update the domain
-    logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
     ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-    logger.info(exec.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
   }
 
   /**

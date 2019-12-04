@@ -83,6 +83,7 @@ cp $sfilename $tfilename || exit 1
 
 env | awk -F= '{ print $1 }' | sort -r | while read ii; do
   [ "$ii" = "KHELP" ] && continue
+  [ "$ii" = "LS_COLORS" ] && continue
   varstr1="\${$ii:-[^}]*}"
   varstr2="\${$ii}"
   newstr="${!ii}"

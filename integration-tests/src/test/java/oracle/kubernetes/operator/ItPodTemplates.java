@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -15,24 +16,30 @@ import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
 import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Simple JUnit test file used for testing domain pod templates.
  *
  * <p>This test is used for creating Operator(s) and domain which uses pod templates.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItPodTemplates extends BaseTest {
 
   private static Operator operator1;
+  private static String domainNS;
+  private static String testClassName;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -41,12 +48,36 @@ public class ItPodTemplates extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
+  }
+
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
+  @BeforeEach
+  public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (QUICKTEST) {
-      initialize(APP_PROPS_FILE);
+      createResultAndPvDirs(testClassName);
+      // create operator1
+      if (operator1 == null) {
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
+        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assertions.assertNotNull(operator1);
+        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS);
+      }
     }
+
+
   }
 
   /**
@@ -54,16 +85,13 @@ public class ItPodTemplates extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (QUICKTEST) {
-      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
-  
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-  
-      logger.info("SUCCESS");
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+
+      LoggerHelper.getLocal().info("SUCCESS");
     }
   }
 
@@ -73,28 +101,25 @@ public class ItPodTemplates extends BaseTest {
    * successfully.
    *
    * @throws Exception when the domain crd creation fails or when updating the serverPod with
-   *     variables
+   *                   variables
    */
   @Test
   public void testPodTemplateUsingVariables() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(QUICKTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Creating Operator & waiting for the script to complete execution");
-    // create operator1
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
+    LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
-      domainMap.put("domainUID", "podtemplatedomain");
-      domainMap.put("adminNodePort", new Integer("30713"));
+      Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
+      // domainMap.put("domainUID", "podtemplatedomain");
+      domainMap.put("namespace", domainNS);
       // just create domain yaml, dont apply
       domain = TestUtils.createDomain(domainMap, false);
       String originalYaml =
-          BaseTest.getUserProjectsDir()
+          getUserProjectsDir()
               + "/weblogic-domains/"
               + domain.getDomainUid()
               + "/domain.yaml";
@@ -122,30 +147,32 @@ public class ItPodTemplates extends BaseTest {
       crd.addObjectNodeToClusterServerPod(domain.getClusterName(), "labels", clusterLabelKeyValue);
 
       String modYaml = crd.getYamlTree();
-      logger.info(modYaml);
+      LoggerHelper.getLocal().log(Level.INFO, modYaml);
 
       // Write the modified yaml to a new file
       Path path =
           Paths.get(
-              BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domain.getDomainUid(),
+              getUserProjectsDir() + "/weblogic-domains/" + domain.getDomainUid(),
               "domain.modified.yaml");
-      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, modYaml.getBytes(charset));
 
       // Apply the new yaml to update the domain
-      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-      logger.info(exec.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
 
       domain.verifyDomainCreated();
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         domain.shutdownUsingServerStartPolicy();
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        TestUtils.verifyAfterDeletion(domain);
       }
     }
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 }

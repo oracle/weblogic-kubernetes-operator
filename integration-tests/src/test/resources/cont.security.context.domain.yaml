@@ -3,7 +3,6 @@
 #serverPod:
 # containerSecurityContext:
 #   runAsUser: 1000
-#   fsGroup: 1000
 # The generated server pods should look like:
 #spec:
 # containers:
@@ -13,7 +12,6 @@
   serverPod:
     containerSecurityContext:
       runAsUser: 1000
-      fsGroup: 1000
     env:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
