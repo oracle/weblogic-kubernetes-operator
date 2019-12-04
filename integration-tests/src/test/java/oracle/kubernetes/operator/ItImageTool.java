@@ -29,11 +29,9 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItImageTool extends BaseTest {
   private static final String TEST_RESOURCE_LOC = "integration-tests/src/test/resources";
-  private static String TEST_APP_PROPS_FILE = "OperatorWIT.properties";
-  private static String WLS_IMAGE_VERSION;
-  private static String WLS_IMAGE_DEV_VERSION;
-  private static String WLS_IMAGE_NAME;
-  private static String WLS_IMAGE_TAG;
+  private static String weblogicImageVersionWIT;
+  private static String weblogicImageNameWIT;
+  private static String weblogicImageTagWIT;
 
   private static Operator operator;
   private static Domain domain;
@@ -49,34 +47,28 @@ public class ItImageTool extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      // env vars IMAGE_NAME_WEBLOGIC and IMAGE_TAG_WEBLOGIC overwrite the wls docker image
-      // specified in OperatorIT.properties
-      if (System.getenv("IMAGE_NAME_WEBLOGIC") != null && System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
-        TEST_APP_PROPS_FILE = APP_PROPS_FILE;
-      }
-      logger.info("Using <" + TEST_APP_PROPS_FILE + "> to create Operator and Domain");
-
       // Determine image name and version to be used
       // load app props defined
-      logger.info("Loading props from: " + TEST_APP_PROPS_FILE);
-      Properties appProps = TestUtils.loadProps(TEST_APP_PROPS_FILE);
+      logger.info("Loading props from: " + APP_PROPS_FILE);
+      Properties appProps = TestUtils.loadProps(APP_PROPS_FILE);
+      System.setProperty("WIT_TEST", "true");
 
-      WLS_IMAGE_VERSION =
-        System.getenv("IMAGE_TAG_WEBLOGIC") != null
-          ? System.getenv("IMAGE_TAG_WEBLOGIC")
-          : appProps.getProperty("weblogicImageTag");
-      WLS_IMAGE_NAME =
-        System.getenv("IMAGE_NAME_WEBLOGIC") != null
-          ? System.getenv("IMAGE_NAME_WEBLOGIC")
-          : appProps.getProperty("weblogicImageName");
+      weblogicImageVersionWIT =
+        System.getenv("IMAGE_TAG_WEBLOGIC_WIT") != null
+          ? System.getenv("IMAGE_TAG_WEBLOGIC_WIT")
+          : appProps.getProperty("weblogicImageTagWIT");
+      weblogicImageNameWIT =
+        System.getenv("IMAGE_NAME_WEBLOGIC_WIT") != null
+          ? System.getenv("IMAGE_NAME_WEBLOGIC_WIT")
+          : appProps.getProperty("weblogicImageNameWIT");
 
-      WLS_IMAGE_TAG = WLS_IMAGE_NAME + ":" + WLS_IMAGE_VERSION;
-      logger.info("WebLogic image name is: " + WLS_IMAGE_TAG);
+      weblogicImageTagWIT = weblogicImageNameWIT + ":" + weblogicImageVersionWIT;
+      logger.info("WebLogic image name is: " + weblogicImageTagWIT);
       // Build WebLogic Docker image using imagetool
       buildWlsDockerImage();
 
       // initialize test properties and create the directories
-      initialize(TEST_APP_PROPS_FILE);
+      initialize(APP_PROPS_FILE);
 
       // Create operator1
       if (operator == null) {
@@ -148,9 +140,8 @@ public class ItImageTool extends BaseTest {
 
     result = TestUtils.exec(cmd);
 
-    Assume.assumeNotNull("Failed to to get pod's image name ", result);
-    Assume.assumeTrue("Failed to use the image <" + WLS_IMAGE_TAG
-        + "> built by imagetool", (result.stdout()).equals(WLS_IMAGE_TAG));
+    Assume.assumeTrue("Failed to use the image <" + weblogicImageTagWIT
+        + "> built by imagetool", (result.stdout()).equals(weblogicImageTagWIT));
 
     logger.info("WebLogic Docker image used by pod <"
         + adminServerPodName + "> is <" + result.stdout() + ">");
@@ -186,13 +177,13 @@ public class ItImageTool extends BaseTest {
     }
 
     //check the image built successfully
-    cmd = "docker image ls |grep " + WLS_IMAGE_NAME;
+    cmd = "docker image ls |grep " + weblogicImageNameWIT;
     result = ExecCommand.exec(cmd);
 
-    Assume.assumeTrue("The image <" + WLS_IMAGE_TAG + "> doesn't exist!",
+    Assume.assumeTrue("The image <" + weblogicImageTagWIT + "> doesn't exist!",
         result.exitValue() == 0);
 
-    logger.info("A WebLogic Docker image <" + WLS_IMAGE_TAG
+    logger.info("A WebLogic Docker image <" + weblogicImageTagWIT
         + "> is created successfully by imagetool! ");
   }
 }
