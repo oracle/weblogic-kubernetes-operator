@@ -45,7 +45,7 @@ Here are the specific steps:
 
 #### When is a WebLogic Custom Channel Needed?
 
-WebLogic implicitly creates a multi-protocol default network channel that spans the `Listen Address` and `Port` fields specified on each server in the cluster, but this is usually undesirable for handling external network traffic from EJB and JMS clients. Instead, you may need to configure an additional dedicated WebLogic custom channel to handle remote EJB or JMS client network traffic. 
+WebLogic implicitly creates a multi-protocol default channel that spans the `Listen Address` and `Port` fields specified on each server in the cluster, but this channel is usually unsuitable for external network traffic from EJB and JMS clients. Instead, you may need to configure an additional dedicated WebLogic custom channel to handle remote EJB or JMS client network traffic. 
 
 A custom channel provides a way to configure an external listen address and port for use by external clients, unlike a default channel. External listen address and/or port configuration is needed when a channel's configured listen address and/or port would not work if used to form a URL in the remote client. This is because remote EJB and JMS clients internally use their client's channel's configured network information to reconnect to WebLogic when needed. (The EJB and JMS clients do not always use the initial URL specified in the client's JNDI context.)
 
