@@ -16,6 +16,7 @@ import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Event;
 import io.kubernetes.client.models.V1Job;
+import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Watch;
@@ -135,6 +136,20 @@ public class WatchBuilder {
         callParams,
         V1ConfigMap.class,
         new ListNamespacedConfigMapCall(namespace));
+  }
+
+  /**
+   * Creates a web hook object to track namespace calls.
+   *
+   * @return the active web hook
+   * @throws ApiException if there is an error on the call that sets up the web hook.
+   */
+  public WatchI<V1Namespace> createNamespacesWatch() throws ApiException {
+    return FACTORY.createWatch(
+        ClientPool.getInstance(),
+        callParams,
+        V1Namespace.class,
+        new ListNamespaceCall());
   }
 
   private Integer getSocketTimeout(CallParams callParams) {
@@ -400,4 +415,31 @@ public class WatchBuilder {
       }
     }
   }
+
+  private class ListNamespaceCall implements BiFunction<ApiClient, CallParams, Call> {
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
+      try {
+        return new CoreV1Api(client)
+            .listNamespaceCall(
+                callParams.getPretty(),
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null,
+                null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
+      }
+    }
+  }
+
 }
