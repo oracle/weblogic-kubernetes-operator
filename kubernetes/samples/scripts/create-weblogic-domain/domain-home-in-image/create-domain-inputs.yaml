@@ -12,7 +12,7 @@ sslEnabled: false
 adminServerPort: 7001
 
 # SSL Port number for admin server
-adminServerPort: 7002
+adminServerSSLPort: 7002
 
 # Name of the Admin Server
 adminServerName: admin-server
