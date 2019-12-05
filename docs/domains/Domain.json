@@ -227,7 +227,7 @@
           "description": "Experimental feature configurations.",
           "$ref": "#/definitions/Experimental"
         },
-        "opssKeyPassPhrase": {
+        "opssWalletSecret": {
           "description": "opss key passphrase.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
         },
@@ -275,8 +275,13 @@
           }
         },
         "wdtDomainType": {
-          "description": "wdt domain type",
-          "type": "string"
+          "description": "Model in image - wdt domain type: Legal values: WLS, RestrictedJRF, JRF",
+          "type": "string",
+          "enum": [
+            "WLS",
+            "RestrictedJRF",
+            "JRF"
+          ]
         },
         "serverStartState": {
           "description": "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.",
