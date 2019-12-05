@@ -1,6 +1,11 @@
-# Deploying SOA Composites from Oracle JDeveloper to Oracle SOA in WebLogic Kubernetes Operator Environment
+---
+title: "Deploying SOA Composites from Oracle JDeveloper to Oracle SOA Servers in WebLogic Kubernetes Operator Environment"
+date: 2019-12-05T06:46:23-05:00
+weight: 2
+description: "SOA composites and applications can be deployed to a SOA domain using Oracle JDeveloper IDE."
+---
 
-This documents provides steps to deploy SOA composites/applications from Oracle JDeveloper (that runs outside the Kubernetes network) to the SOA instance in WebLogic Kubernetes Operator Environment.
+This document provides steps to deploy SOA composites and applications from Oracle JDeveloper (that runs outside the Kubernetes network) to the SOA instance in WebLogic Kubernetes Operator Environment.
 
 ```
 Note: Dev and Test environment only. For production you should deploy using Application Control and WLST methods.
@@ -8,7 +13,7 @@ Note: Dev and Test environment only. For production you should deploy using Appl
 
 ## Deploy to SOA from JDeveloper
 
-To deploy SOA composites/applications from Oracle JDeveloper, Administration Server should have been configured to expose a T3 channel using the *exposeAdminT3Channel* setting when creating the domain, then the matching T3 service can be used to connect.
+To deploy SOA composites and applications from Oracle JDeveloper, Administration Server should have been configured to expose a T3 channel using the *exposeAdminT3Channel* setting when creating the domain, then the matching T3 service can be used to connect.
 
 By default when *exposeAdminT3Channel* is set WebLogic Kubernetes Operator Environment will expose NodePort for the T3 channel of the NetworkAccessPoint at 30012 (Use *t3ChannelPort* to configure port to different value).
 
@@ -18,7 +23,7 @@ By default when *exposeAdminT3Channel* is set WebLogic Kubernetes Operator Envir
 
 Note: Replace entries inside <xxxx> specific to your environment
 
-NOTE  : The Managed Server t3 port is not exposed by default and opening this will have a security risk as the authentication method here is based on a userid/password. It is not recommended to do this on production instances.
+NOTE  : The Managed Server t3 port is not exposed by default and opening this will have a security risk as the authentication method here is based on a username and password. It is not recommended to do this on production instances.
 
 1.  Get the Kubernetes Cluster Master Address and verify the T3 port which will be used for creating application server connections. You can use below kubectl command to get the T3 port:
 
@@ -28,7 +33,7 @@ NOTE  : The Managed Server t3 port is not exposed by default and opening this wi
 
     a. Decide on external IP address to be used to configure access of Managed Server ( soa cluster). Master or worker node IP address can be used to configure Managed Server accessibility. In case you decide to use some other external IP address, that need to be accessible from Kubernetes Cluster. Here we will be using Kubernetes Cluster Master IP.
     
-    b. Get the pod names of Administration and Managed Servers (i.e. "\<domainUID>-\<server name>") which will be used to map in /etc/hosts.
+    b. Get the pod names of Administration and Managed Servers (i.e. "\<domainUID>-\<server name>") which will be used to map in `/etc/hosts`.
     
     c. Update `/etc/hosts` (or in Windows: `C:\Windows\System32\Drivers\etc\hosts`) on the host from where JDeveloper is running with below entires where
         

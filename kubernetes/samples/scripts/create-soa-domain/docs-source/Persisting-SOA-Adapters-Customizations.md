@@ -1,4 +1,10 @@
-# Persisting SOA Adapters Customizations
+---
+title: "Persisting SOA Adapters Customizations"
+date: 2019-12-05T06:46:23-05:00
+weight: 2
+description: "The adapters (such as DB Adapter, File Adapter etc) in a SOA domain can be customized based on users requirement"
+---
+
 The lifetime for any customization done in a file on a server pod is upto the lifetime of that pod, the changes are not persisted once the pod goes down or restarted.
 
 For example: Below configuration updates `DbAdapter.rar` to create a new connection instance and creates DatasSource CoffeeShop on Administration Console for the same with jdbc/CoffeeShopDS.

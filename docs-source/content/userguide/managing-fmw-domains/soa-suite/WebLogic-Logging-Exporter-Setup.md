@@ -1,4 +1,9 @@
-# WebLogic Logging Exporter Setup to Publish Logs into Elasticsearch
+---
+title: "Use the WebLogic Logging Exporter to publish logs to Elasticsearch"
+date: 2019-12-05T06:46:23-05:00
+weight: 2
+description: "WebLogic Logging Exporter is used to publish the WebLogic operator and WebLogic server logs to Elasticsearch"
+---
 
 The WebLogic Logging Exporter adds a log event handler to WebLogic Server. 
 
@@ -8,17 +13,15 @@ This documents provides the steps to publish WebLogic Server logs into Elasticse
 
 ## Prerequisite
 
-This document assumes that you have already setup Elasticsearch/Kibana for logs collection. If you have not, please refer this [document](/kubernetes/samples/scripts/elasticsearch-and-kibana/README.md) to setup Elasticsearch/Kibana from WebLogic operator samples.
+This document assumes that you have already set up Elasticsearch and Kibana for logs collection. If you have not, please refer this [document](/kubernetes/samples/scripts/elasticsearch-and-kibana/README.md) to set up Elasticsearch and Kibana from WebLogic operator samples.
 
 ---  
 
-Please follow the below steps to push the server logs into Elasticsearch.  
-
 ## Download WebLogic Logging Exporter Binaries
 
-The WebLogic Logging Exporter pre-built binaries are available in the release page of the [weblogic-logging-exporter](https://github.com/oracle/weblogic-logging-exporter/releases) project.  
+The WebLogic Logging Exporter pre-built binaries are available on the release page of the [WebLogic-Logging-Exporter](https://github.com/oracle/weblogic-logging-exporter/releases) project.  
 You need to download the 
-* `weblogic-logging-exporter-0.1.1.jar` from this [link](https://github.com/oracle/weblogic-logging-exporter/releases)
+* `weblogic-logging-exporter-0.1.1.jar` from [here](https://github.com/oracle/weblogic-logging-exporter/releases) and
 * `snakeyaml-1.23.jar` from [Maven Central](https://search.maven.org/artifact/org.yaml/snakeyaml/1.23/bundle).  
 
 ## Copy downloaded JAR Files to the WebLogic Domain Home
@@ -104,15 +107,15 @@ $ kubectl cp WebLogicLoggingExporter.yaml soans/soainfra-adminserver:/u01/oracle
 
 ## Restart All Servers in the Domain
 
-To restart the servers, you need to stop and start them using below commands:
+To restart the servers, you need to stop and start them using the commands below:
 
-To Stop the servers:
+To stop the servers:
 ```
 $ kubectl patch domain soainfra -n soans --type='json' -p='[{"op": "replace", "path": "/spec/serverStartPolicy", "value": "NEVER" }]'
 
 ```
 
-To Start the servers:
+To start the servers:
 ```
 $ kubectl patch domain soainfra -n soans --type='json' -p='[{"op": "replace", "path": "/spec/serverStartPolicy", "value": "IF_NEEDED" }]'
 ```

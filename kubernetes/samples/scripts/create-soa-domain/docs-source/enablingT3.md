@@ -1,4 +1,9 @@
-# Expose T3 protocol for Managed Servers in SOA Domain
+---
+title: "Expose T3 protocol for Managed Servers in a SOA Domain"
+date: 2019-12-05T06:46:23-05:00
+weight: 2
+description: "T3 is the protocol used to transport information between WebLogic Servers and other types of Java programs."
+---
 
 T3 ports for Managed Servers in Oracle SOA deployed in WebLogic Kubernetes operator Environment are not available by default.
 

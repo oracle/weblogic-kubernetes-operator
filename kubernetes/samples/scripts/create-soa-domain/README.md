@@ -1,4 +1,10 @@
-# Oracle SOA on Kubernetes
+---
+title: "Oracle SOA on Kubernetes"
+date: 2019-12-05T06:46:23-05:00
+weight: 2
+description: "Deployment of SOA domains on Kubernetes cluster using Oralce WebLogic operator"
+---
+
 This folder provides the open-source samples which has several key features to assist you with deploying and managing SOA in a Kubernetes
 environment. You can do the following:
 

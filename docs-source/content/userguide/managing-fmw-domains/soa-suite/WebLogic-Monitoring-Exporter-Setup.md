@@ -1,8 +1,13 @@
-# WebLogic Monitoring Exporter Setup to Monitor the SOA Domain Instance
+---
+title: "Use the WebLogic Monitoring Exporter to monitor a SOA domain"
+date: 2019-12-05T06:46:23-05:00
+weight: 2
+description: "WebLogic Monitoring Exporter is used to publish the WebLogic Server metrics to Prometheus for domain monitoring"
+---
 
-You can monitor the SOA instance using Prometheus and Grafana by exporting the metrics from the domain instance using the WebLogic Monitoring Exporter to the Prometheus.
+You can monitor a SOA domain using Prometheus and Grafana by exporting the metrics from the domain instance using the WebLogic Monitoring Exporter.
 
-This document provides the steps to setup the WebLogic Monitoring Exporter to push the data to Prometheus in order to monitor the SOA instance.
+This document provides the steps to set up the WebLogic Monitoring Exporter to push the data to Prometheus in order to monitor a SOA domain.
 
 ## Prerequisite
 
@@ -33,7 +38,7 @@ Kube-Prometheus requires all exporter nodes to be labelled with `kubernetes.io/o
 $ kubectl label nodes --all kubernetes.io/os=linux
 ```
 #### Provide external access
-To provide external access for Grafana/Prometheus/Alertmanager, you need to execute the following commands:
+To provide external access for Grafana, Prometheus and Alertmanager, you need to execute the commands below:
 
 ```bash
 $ kubectl patch svc grafana -n monitoring --type=json -p '[{"op": "replace", "path": "/spec/type", "value": "NodePort" },{"op": "replace", "path": "/spec/ports/0/nodePort", "value": 32100 }]'
@@ -47,7 +52,7 @@ NOTE: Here
 ```
 ---  
 
-Follow the instructions below to setup WebLogic Monitoring Exporter in a SOA domain environment for the collection of WebLogic Server metrics and monitoring.
+Follow the instructions below to set up WebLogic Monitoring Exporter in a SOA domain environment for the collection of WebLogic Server metrics and monitoring.
 
 ## 1. Download WebLogic Monitoring Exporter
 
@@ -216,9 +221,9 @@ spec:
     path: /wls-exporter/metrics
 ```
 
-The scraping of metrics from wls-exporter requires basic auth. So a secret is created with username/password are base64 encoded.
+The scraping of metrics from wls-exporter requires basic auth. So a secret is created with username and password are base64 encoded.
 
-NOTE :- Be careful in the generation of base64 encoded string of user and password. New line character could be included in the encoded string and cause authentication failure. To avoid new line string, use the following sample,
+NOTE :- Be careful in the generation of base64 encoded string of username and password. A new line character might get appended in the encoded string and causes authentication failure. To avoid new line string, use the following sample:
 
 ```
 $ echo -n "Welcome1" | base64
