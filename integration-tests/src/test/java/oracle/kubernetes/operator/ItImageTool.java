@@ -123,8 +123,12 @@ public class ItImageTool extends BaseTest {
   @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      tearDown(new Object() {}.getClass()
-          .getEnclosingClass().getSimpleName(), namespaceList.toString());
+      if (namespaceList != null) {
+        tearDown(new Object() {}.getClass()
+            .getEnclosingClass().getSimpleName(), namespaceList.toString());
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO, "namespaceList is null!!");
+      }
 
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
