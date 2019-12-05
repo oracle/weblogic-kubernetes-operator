@@ -127,18 +127,33 @@ public class BaseTest {
     }
     username = appProps.getProperty("username", username);
     password = appProps.getProperty("password", password);
-    weblogicImageTag =
+    if (System.getProperty("WIT_TEST") == null) {
+      weblogicImageTag =
         System.getenv("IMAGE_TAG_WEBLOGIC") != null
-            ? System.getenv("IMAGE_TAG_WEBLOGIC")
-            : appProps.getProperty("weblogicImageTag");
-    weblogicImageDevTag =
+          ? System.getenv("IMAGE_TAG_WEBLOGIC")
+          : appProps.getProperty("weblogicImageTag");
+      weblogicImageDevTag =
         System.getenv("IMAGE_DEVTAG_WEBLOGIC") != null
-            ? System.getenv("IMAGE_DEVTAG_WEBLOGIC")
-            : appProps.getProperty("weblogicImageDevTag");
-    weblogicImageName =
+          ? System.getenv("IMAGE_DEVTAG_WEBLOGIC")
+          : appProps.getProperty("weblogicImageDevTag");
+      weblogicImageName =
         System.getenv("IMAGE_NAME_WEBLOGIC") != null
-            ? System.getenv("IMAGE_NAME_WEBLOGIC")
-            : appProps.getProperty("weblogicImageName");
+          ? System.getenv("IMAGE_NAME_WEBLOGIC")
+          : appProps.getProperty("weblogicImageName");
+    } else {
+      weblogicImageTag =
+        System.getenv("IMAGE_TAG_WEBLOGIC_WIT") != null
+          ? System.getenv("IMAGE_TAG_WEBLOGIC_WIT")
+          : appProps.getProperty("weblogicImageTagWIT");
+      weblogicImageDevTag =
+        System.getenv("IMAGE_DEVTAG_WEBLOGIC") != null
+          ? System.getenv("IMAGE_DEVTAG_WEBLOGIC")
+          : appProps.getProperty("weblogicImageDevTagWIT");
+      weblogicImageName =
+        System.getenv("IMAGE_NAME_WEBLOGIC_WIT") != null
+          ? System.getenv("IMAGE_NAME_WEBLOGIC_WIT")
+          : appProps.getProperty("weblogicImageNameWIT");
+    }
     weblogicImageServer =
         System.getenv("OCR_SERVER") != null
             ? System.getenv("OCR_SERVER")
