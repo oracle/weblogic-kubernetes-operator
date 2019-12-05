@@ -86,11 +86,21 @@ public class DbUtils {
    * @param rcuSchemaPrefix - rcu SchemaPrefixe
    * @throws Exception - if any error occurs when creating Oracle rcu pod
    */
-  public static void createRcuSchema(String scriptsDir, String rcuSchemaPrefix) throws Exception {
-    String cmd = "sh " 
+  public static void createRcuSchema(String scriptsDir, String rcuSchemaPrefix, String dbUrl) throws Exception {
+    String cmd;
+    if (dbUrl == null) {
+      cmd = "sh " 
         + scriptsDir
         + "/create-rcu-schema/create-rcu-schema.sh -s "
         + rcuSchemaPrefix;
+    } else {
+      cmd = "sh " 
+          + scriptsDir
+          + "/create-rcu-schema/create-rcu-schema.sh -s "
+          + rcuSchemaPrefix
+          + " -d "
+          + dbUrl;
+    }
     TestUtils.exec(cmd, true);
   }
   

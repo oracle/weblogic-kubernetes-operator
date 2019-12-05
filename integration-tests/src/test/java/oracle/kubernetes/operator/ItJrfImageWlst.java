@@ -32,8 +32,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 @TestMethodOrder(Alphanumeric.class)
 
-public class ItJrfPvWlst extends BaseTest {
-  private static String rcuSchemaPrefix = "jrfdomain";
+public class ItJrfImageWlst extends BaseTest {
+  private static String rcuSchemaPrefix = "jrfImage";
   private static Operator operator1;
   private static String domainNS;
   private static String domainUid = "";
@@ -41,6 +41,7 @@ public class ItJrfPvWlst extends BaseTest {
   private static boolean testCompletedSuccessfully;
   private static String testClassName;
   private static StringBuffer namespaceList;
+  private String dbUrl;
 
   /**
   * This method gets called only once before any of the test methods are executed. It does the
@@ -69,9 +70,10 @@ public class ItJrfPvWlst extends BaseTest {
           + "/kubernetes/samples/scripts/create-rcu-schema " 
           + getResultDir(),
           true);
-   
+      
+      dbUrl = TestUtils.getHostName() + ":30011/devpdb.k8s";
       DbUtils.startOracleDB(getResultDir());
-      DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix, null);
+      DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix, dbUrl);
     
       // create operator1
       if (operator1 == null) {
@@ -107,7 +109,7 @@ public class ItJrfPvWlst extends BaseTest {
   }
  
   @Test
-  public void testJrfDomainOnPvUsingWlst() throws Exception {
+  public void testJrfDomainInImageUsingWlst() throws Exception {
     if (QUICKTEST) {
       String testMethodName = new Object() {
       }.getClass().getEnclosingMethod().getName();
@@ -120,14 +122,17 @@ public class ItJrfPvWlst extends BaseTest {
 
       try {
         // create JRF domain
-        Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
+        Map<String, Object> domainMap = createDomainInImageMap(
+            getNewSuffixCount(), "jrf", false, testClassName);
         domainMap.put("namespace", domainNS);
+        domainMap.remove("clusterType");
         domainMap.put("initialManagedServerReplicas", new Integer("2"));
-        domainMap.put("image", "container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3");
+        //domainMap.put("domainHomeImageBase", "container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3");
         domainMap.put("clusterName", "infra-cluster");
         domainMap.put("managedServerNameBase", "infraserver");
-        domainMap.put("rcuSchemaPrefix", "jrfdomain");
-        domainMap.put("rcuDatabaseURL", "oracle-db.default.svc.cluster.local:1521/devpdb.k8s");
+        domainMap.put("rcuSchemaPrefix", rcuSchemaPrefix);
+        LoggerHelper.getLocal().log(Level.INFO, "DEBUG: dbUrl: " + dbUrl);
+        domainMap.put("rcuDatabaseURL", dbUrl);
         domainUid = (String) domainMap.get("domainUID");
         LoggerHelper.getLocal().log(Level.INFO,
             "Creating and verifying the domain creation with domainUid: " + domainUid);
@@ -149,3 +154,4 @@ public class ItJrfPvWlst extends BaseTest {
     }
   }
 }
+

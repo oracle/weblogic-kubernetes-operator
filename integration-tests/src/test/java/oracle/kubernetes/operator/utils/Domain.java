@@ -1663,16 +1663,24 @@ public class Domain {
     domainMap.put("domainName", domainMap.get("domainUID"));
 
     // read sample domain inputs
-    String sampleDomainInputsFile =
-        "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml";
-    if (domainMap.containsKey("domainHomeImageBase")) {
+    String sampleDomainInputsFile = null;
+    if (!domainMap.containsKey("rcuDatabaseURL")) {
       sampleDomainInputsFile =
-          "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml";
+          "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml";
+      if (domainMap.containsKey("domainHomeImageBase")) {
+        sampleDomainInputsFile =
+            "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml";
+      }
     } else if (domainMap.containsKey("rcuDatabaseURL")) {
       sampleDomainInputsFile =
           "/samples/scripts/create-fmw-infrastructure-domain/"
               + "domain-home-on-pv/create-domain-inputs.yaml";
-    }
+      if (domainMap.containsKey("domainHomeImageBase")) {
+        sampleDomainInputsFile =
+            "/samples/scripts/create-fmw-infrastructure-domain/"
+                + "domain-home-in-image/create-domain-inputs.yaml";
+      }  
+    } 
     LoggerHelper.getLocal().log(
         Level.INFO, "For this domain sampleDomainInputsFile is: " + sampleDomainInputsFile);
     Yaml dyaml = new Yaml();
@@ -1751,8 +1759,8 @@ public class Domain {
               + "/"
               + ((String) domainMap.get("domainHomeImageBuildPath")).trim());
 
-      domainMap.put("domainHomeImageBase",
-          BaseTest.getWeblogicImageName() + ":" + BaseTest.getWeblogicImageTag());
+      //domainMap.put("domainHomeImageBase",
+      //BaseTest.getWeblogicImageName() + ":" + BaseTest.getWeblogicImageTag());
     }
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
@@ -1917,37 +1925,51 @@ public class Domain {
   private void copyCreateDomainPy() throws IOException {
 
     if (domainMap.containsKey("createDomainPyScript")) {
-      if (domainMap.containsKey("domainHomeImageBase")) {
-        // copy create domain py script to cloned location for domain in image case
-        if (domainMap.containsKey("createDomainPyScript")) {
+      if (!domainMap.containsKey("rcuDatabaseURL")) {
+        if (domainMap.containsKey("domainHomeImageBase")) {
+          // copy create domain py script to cloned location for domain in image case
+          if (domainMap.containsKey("createDomainPyScript")) {
+            Files.copy(
+                new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
+                    .toPath(),
+                new File(domainHomeImageBuildPath + "/container-scripts/create-wls-domain.py")
+                    .toPath(),
+                StandardCopyOption.REPLACE_EXISTING);
+          }
+        } else {
+          // domain on pv case
           Files.copy(
               new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
                   .toPath(),
-              new File(domainHomeImageBuildPath + "/container-scripts/create-wls-domain.py")
+              new File(
+                  resultsDir
+                      + "/samples/scripts/create-weblogic-domain/domain-home-on-pv/wlst/create-domain.py")
                   .toPath(),
               StandardCopyOption.REPLACE_EXISTING);
         }
       } else if (domainMap.containsKey("rcuDatabaseURL")) {
-        Files.copy(
-            new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
-                .toPath(),
-            new File(
-                resultsDir
-                    + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/"
-                    + "common/createFMWDomain.py")
-                .toPath(),
-            StandardCopyOption.REPLACE_EXISTING);
-      } else {
-        // domain on pv case
-        Files.copy(
-            new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
-                .toPath(),
-            new File(
-                resultsDir
-                    + "/samples/scripts/create-weblogic-domain/domain-home-on-pv/wlst/create-domain.py")
-                .toPath(),
-            StandardCopyOption.REPLACE_EXISTING);
-      }
+        if (domainMap.containsKey("domainHomeImageBase")) {
+          Files.copy(
+              new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
+                  .toPath(),
+              new File(
+                  resultsDir
+                      + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-in-image/"
+                      + "common/createFMWDomain.py")
+                  .toPath(),
+              StandardCopyOption.REPLACE_EXISTING);
+        } else {
+          Files.copy(
+              new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
+                  .toPath(),
+              new File(
+                  resultsDir
+                      + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/"
+                      + "common/createFMWDomain.py")
+                  .toPath(),
+              StandardCopyOption.REPLACE_EXISTING);
+        }
+      } 
     }
   }
 
@@ -1964,22 +1986,34 @@ public class Domain {
     createDomainScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
         .append(resultsDir);
     // call different create-domain.sh based on the domain type
-    if (domainMap.containsKey("domainHomeImageBase")) {
-      createDomainScriptCmd
-          .append(
-              "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
-          .append(BaseTest.getUsername())
-          .append(" -p ")
-          .append(BaseTest.getPassword())
-          .append(" -k -i ");
+    if (!domainMap.containsKey("rcuDatabaseURL")) {
+      if (domainMap.containsKey("domainHomeImageBase")) {
+        createDomainScriptCmd
+            .append(
+                "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
+            .append(BaseTest.getUsername())
+            .append(" -p ")
+            .append(BaseTest.getPassword())
+            .append(" -k -i ");
+      } else {
+        createDomainScriptCmd.append(
+            "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");      
+      }
     } else if (domainMap.containsKey("rcuDatabaseURL")) {
-      createDomainScriptCmd.append(
-          "/samples/scripts/create-fmw-infrastructure-domain/"
-              + "domain-home-on-pv/create-domain.sh -v -i ");
-    } else {
-      createDomainScriptCmd.append(
-          "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");
-    }
+      if (domainMap.containsKey("domainHomeImageBase")) {
+        createDomainScriptCmd
+            .append(
+                "/samples/scripts/create-fmw-infrastructure-domain/domain-home-in-image/create-domain.sh -u ")
+            .append(BaseTest.getUsername())
+            .append(" -p ")
+            .append(BaseTest.getPassword())
+            .append(" -k -i ");
+      } else {
+        createDomainScriptCmd.append(
+            "/samples/scripts/create-fmw-infrastructure-domain/"
+                + "domain-home-on-pv/create-domain.sh -v -i ");
+      }
+    } 
     createDomainScriptCmd.append(generatedInputYamlFile);
 
     // skip executing yaml if configOverrides or domain in image

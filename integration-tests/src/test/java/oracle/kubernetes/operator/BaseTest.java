@@ -943,18 +943,46 @@ public class BaseTest {
    */
   public Map<String, Object> createDomainInImageMap(
       int suffixCount, boolean wdt, String prefix) {
+    return createDomainInImageMap(suffixCount, "wls", wdt, prefix);
+  }
+  
+  /**
+   * Creates a map with commonly used domain in image input attributes using suffixCount and prefix
+   * to make the namespaces and ports unique.
+   *
+   * @param suffixCount unique numeric value
+   * @param prefix      prefix for the artifact names
+   * @param domainType  either "wls" or "jrf" domain
+   * @param wdt         if the domain is created by wdt
+   * @return map with domain input attributes
+   */
+  public Map<String, Object> createDomainInImageMap(
+      int suffixCount, String domainType, boolean wdt, String prefix) {
     Map<String, Object> domainMap = createDomainMap(suffixCount, prefix);
-    if (wdt) {
-      domainMap.put("domainHomeImageBuildPath",
-          "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");
-      domainMap.put("createDomainFilesDir", "wdt");
-    } else {
-      domainMap.put("domainHomeImageBuildPath",
-          "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
+    if (domainType.equalsIgnoreCase("wls")) {
+      LoggerHelper.getLocal().log(Level.INFO, "This is WLS domain");
+      if (wdt) {
+        domainMap.put("domainHomeImageBuildPath",
+            "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");
+        domainMap.put("createDomainFilesDir", "wdt");
+      } else {
+        domainMap.put("domainHomeImageBuildPath",
+            "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
+      }
+      domainMap.put("domainHomeImageBase",
+          getWeblogicImageName() + ":" + getWeblogicImageTag());
+      domainMap.put("logHomeOnPV", "true");
+    } else if (domainType.equalsIgnoreCase("jrf")) {
+      LoggerHelper.getLocal().log(Level.INFO, "This is JRF domain");
+      if (!wdt) {
+        domainMap.put("domainHomeImageBuildPath",
+            "./docker-images/OracleFMWInfrastructure/samples/12213-domain-home-in-image");
+      }
+      domainMap.put("domainHomeImageBase",
+          "container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3");
+      domainMap.put("logHomeOnPV", "true");
     }
-    domainMap.put("domainHomeImageBase",
-        "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
-    domainMap.put("logHomeOnPV", "true");
+    
     domainMap.put("clusterType", "CONFIGURED");
     if (prefix != null && !prefix.trim().equals("")) {
       domainMap.put("image", prefix.toLowerCase() + "-dominimage-" + suffixCount + ":latest");
