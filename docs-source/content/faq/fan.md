@@ -2,6 +2,7 @@
 title: "Disabling Fast Application Notifications"
 date: 2019-10-11T17:20:00-05:00
 draft: false
+weight: 5
 ---
 
 To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure).

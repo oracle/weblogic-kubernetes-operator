@@ -3,24 +3,28 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * This class contains Coherence related integration tests.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItCoherenceTests extends BaseTest {
 
   private static Domain domain = null;
@@ -32,20 +36,50 @@ public class ItCoherenceTests extends BaseTest {
   private static final String OP_CACHE_LOAD = "load";
   private static final String OP_CACHE_VALIDATE = "validate";
   private static final String PROXY_PORT = "9000";
+  private static String domainNS1;
+  private static String testClassName;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
-   * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes. Also, create the operator.
+   * initialization of the integration test properties defined in OperatorIT.properties.
    *
-   * @throws Exception exception
+   * @throws Exception exception if initialization of properties fails
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
-    // initialize test properties and create the directories
     if (FULLTEST) {
-      initialize(APP_PROPS_FILE);
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
+      //initialize test properties
+      initialize(APP_PROPS_FILE, testClassName);
+    }
+
+  }
+
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
+  @BeforeEach
+  public void prepare() throws Exception {
+    //create the directories
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
+      // create operator1
+      if (operator1 == null) {
+        Map<String, Object> operatorMap =
+            createOperatorMap(getNewSuffixCount(),
+                true, testClassName);
+        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assertions.assertNotNull(operator1);
+        domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS1);
+      }
+
     }
   }
 
@@ -54,23 +88,25 @@ public class ItCoherenceTests extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       operator1.destroy();
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      tearDown(new Object() {}.getClass()
+          .getEnclosingClass().getSimpleName(), namespaceList.toString());
     }
   }
 
   @Test
   public void testRollingRestart() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
 
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     domain = createDomain();
-    Assert.assertNotNull(domain);
+    Assertions.assertNotNull(domain);
 
     try {
       // Build and run the proxy client on the admin VM to load the cache
@@ -84,17 +120,18 @@ public class ItCoherenceTests extends BaseTest {
     } finally {
       destroyDomain();
     }
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
-   * Since the coherence.jar is not open source, we need to build the proxy client on the admin VM, which has the
-   * coherence.jar.  Copy the shell script file and all coherence app files over to the admin pod.
+   * Since the coherence.jar is not open source, we need to build the proxy client on the
+   * admin VM, which has the coherence.jar.  Copy the shell script file and all coherence
+   * app files over to the admin pod.
    * Then run the script to build the proxy client and run the proxy test.
    *
    * @param cacheOp - cache operation
    */
-  private static void copyAndExecuteProxyClientInPod(String cacheOp) {
+  private void copyAndExecuteProxyClientInPod(String cacheOp) {
     try {
       final String adminServerPod = domain.getDomainUid() + "-" + domain.getAdminServerName();
 
@@ -110,7 +147,8 @@ public class ItCoherenceTests extends BaseTest {
       final String cohScriptPathInPod = cohAppLocationInPod + "/" + PROXY_CLIENT_SCRIPT;
       final String successMarker = "CACHE-SUCCESS";
 
-      logger.info("Copying files to admin pod for App " + PROXY_CLIENT_APP_NAME);
+      LoggerHelper.getLocal().log(
+          Level.INFO, "Copying files to admin pod for App " + PROXY_CLIENT_APP_NAME);
 
       // Create app dir in the admin pod
       StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
@@ -124,7 +162,7 @@ public class ItCoherenceTests extends BaseTest {
       TestUtils.copyAppFilesToPod(
           cohAppLocationOnHost, cohAppLocationInPod, adminServerPod, domainNS);
 
-      logger.info(
+      LoggerHelper.getLocal().log(Level.INFO,
           "Executing script "
               + PROXY_CLIENT_SCRIPT
               + " for App "
@@ -153,11 +191,11 @@ public class ItCoherenceTests extends BaseTest {
     envMap.put("CUSTOM_WDT_ARCHIVE", buildProxyServerWdtZip());
 
     // create domain
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
-    domainMap.put("namespace", "test1");
-    domainMap.put("domainUID", "coh");
+    Map<String, Object> domainMap =
+        createDomainInImageMap(getNewSuffixCount(),
+            true, testClassName);
+    domainMap.put("namespace", domainNS1);
     domainMap.put("additionalEnvMap", envMap);
-
     domainMap.put(
         "customWdtTemplate",
         BaseTest.getProjectRoot()
@@ -174,7 +212,8 @@ public class ItCoherenceTests extends BaseTest {
    */
   private static void destroyDomain() throws Exception {
     if (domain != null) {
-      domain.destroy();
+      TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      TestUtils.verifyAfterDeletion(domain);
     }
   }
 
@@ -191,8 +230,8 @@ public class ItCoherenceTests extends BaseTest {
     // the
     // sleep and iterations
     //
-    setWaitTimePod(2);
-    setMaxIterationsPod(150);
+    // setWaitTimePod(2);
+    // setMaxIterationsPod(150);
 
     domain.verifyDomainServerPodRestart(
         "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
@@ -203,7 +242,7 @@ public class ItCoherenceTests extends BaseTest {
    *
    * @return the WDT zip path
    */
-  private static String buildProxyServerWdtZip() {
+  private String buildProxyServerWdtZip() {
 
     // Build the proxy server gar file
     String garPath = getResultDir() + "/coh-proxy-server.gar";
@@ -212,7 +251,7 @@ public class ItCoherenceTests extends BaseTest {
 
     // Build the WDT zip
     String wdtArchivePath = getResultDir() + "/coh-wdt-archive.zip";
-    TestUtils.buildWdtZip(wdtArchivePath, new String[] {garPath}, getResultDir());
+    TestUtils.buildWdtZip(wdtArchivePath, new String[]{garPath}, getResultDir());
     return wdtArchivePath;
   }
 }
