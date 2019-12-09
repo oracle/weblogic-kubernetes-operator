@@ -53,7 +53,7 @@ public class DbUtils {
   public static void startOracleDB(String scriptsDir) throws Exception {
     String cmd1 = "sh "
         + scriptsDir
-        + "/create-rcu-schema/start-db-service.sh";
+        + "/scripts/create-oracle-db-service/start-db-service.sh";
     TestUtils.exec(cmd1, true);
     String cmd2 = "kubectl get pod | grep oracle-db | cut -f1 -d \" \" ";
     ExecResult result = TestUtils.exec(cmd2);
@@ -76,8 +76,7 @@ public class DbUtils {
   public static void stopOracleDB(String scriptsDir) throws Exception {
     String cmd = "sh " 
         + scriptsDir
-        + "/create-rcu-schema/stop-db-service.sh";
-  
+        + "/scripts/create-oracle-db-service/stop-db-service.sh";
     TestUtils.exec(cmd, true);
   }
   
@@ -89,7 +88,7 @@ public class DbUtils {
   public static void createRcuSchema(String scriptsDir, String rcuSchemaPrefix) throws Exception {
     String cmd = "sh " 
         + scriptsDir
-        + "/create-rcu-schema/create-rcu-schema.sh -s "
+        + "/scripts/create-rcu-schema/create-rcu-schema.sh -s "
         + rcuSchemaPrefix;
     TestUtils.exec(cmd, true);
   }
@@ -102,7 +101,7 @@ public class DbUtils {
   public static void dropRcuSchema(String scriptsDir, String rcuSchemaPrefix) throws Exception {
     String cmd = "sh " 
         + scriptsDir
-        + "/create-rcu-schema/drop-rcu-schema.sh -s rcuSchemaPrefix";
+        + "/scripts/create-rcu-schema/drop-rcu-schema.sh -s rcuSchemaPrefix";
     TestUtils.exec(cmd, true);
   }
   
@@ -114,7 +113,7 @@ public class DbUtils {
   public static void deleteRcuPod(String scriptsDir) throws Exception {
     String cmd = "kubectl delete -f " 
         + scriptsDir
-        + "/create-rcu-schema/common/rcu.yaml";
+        + "/scripts/create-rcu-schema/common/rcu.yaml";
     TestUtils.exec(cmd, true);
   }
 

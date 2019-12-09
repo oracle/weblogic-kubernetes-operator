@@ -6,27 +6,31 @@
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/common/utility.sh
+source ${scriptDir}/../common/utility.sh
 
 function usage {
-  echo "usage: ${script} -p <nodeport> -i <image> -s <docker-store> [-h]"
+  echo "usage: ${script} -p <nodeport> -i <image> -s <pullsecret> -n <namespace>  [-h]"
   echo "  -i  Oracle DB Image (optional)"
   echo "      (default: container-registry.oracle.com/database/enterprise:12.2.0.1-slim ) "
   echo "  -p DB Service NodePort (optional)"
   echo "      (default: 30011) "
-  echo "  -s DB Image PullSecret  (optional)"
+  echo "  -s DB Image PullSecret (optional)"
   echo "      (default: docker-store) "
+  echo "  -n Configurable Kubernetes NameSpace for Oracle DB Service (optional)"
+  echo "      (default: default) "
   echo "  -h Help"
   exit $1
 }
 
-while getopts ":h:p:s:i:" opt; do
+while getopts ":h:p:s:i:n:" opt; do
   case $opt in
     p) nodeport="${OPTARG}"
     ;;
     s) pullsecret="${OPTARG}"
     ;;
     i) dbimage="${OPTARG}"
+    ;;
+    n) namespace="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -43,30 +47,51 @@ if [ -z ${pullsecret} ]; then
   pullsecret="docker-store"
 fi
 
-if [ -z ${cenodeport} ]; then
-  nodeport=30011
+if [ -z ${namespace} ]; then
+  namespace="default"
+fi
+
+echo "Checking Status for NameSpace [$namespace]"
+domns=`kubectl get ns ${namespace} | grep ${namespace} | awk '{print $1}'`
+if [ -z ${domns} ]; then
+ echo "Adding NameSpace[$namespace] to Kubernetes Cluster"
+ kubectl create namespace ${namespace}
+ sleep 5
+else
+ echo "Skipping the NameSpace[$namespace] Creation ..."
 fi
 
 if [ -z ${dbimage} ]; then
   dbimage="container-registry.oracle.com/database/enterprise:12.2.0.1-slim"
 fi
 
-echo "NodePort[$nodeport] ImagePullSecret[$pullsecret] Image[${dbimage}]"
+echo "NodePort[$nodeport] ImagePullSecret[$pullsecret] Image[${dbimage}] NameSpace[${namespace}]"
 
 # Modify ImagePullSecret and DatabaseImage based on input
 sed -i -e '$d' ${scriptDir}/common/oracle.db.yaml
 echo '           - name: docker-store' >> ${scriptDir}/common/oracle.db.yaml
 sed -i -e "s?name: docker-store?name: ${pullsecret}?g" ${scriptDir}/common/oracle.db.yaml
 sed -i -e "s?image:.*?image: ${dbimage}?g" ${scriptDir}/common/oracle.db.yaml
+sed -i -e "s?namespace:.*?namespace: ${namespace}?g" ${scriptDir}/common/oracle.db.yaml
 kubectl apply -f ${scriptDir}/common/oracle.db.yaml
 
 # Modify the NodePort based on input 
 sed -i -e "s?nodePort:.*?nodePort: ${nodeport}?g" ${scriptDir}/common/oracle.db.yaml
 kubectl apply -f ${scriptDir}/common/oracle.db.yaml
-dbpod=`kubectl get po | grep oracle-db | cut -f1 -d " " `
-checkPod ${dbpod} default
-checkPodState ${dbpod} default "1/1"
-kubectl get po
-kubectl get service
+dbpod=`kubectl get po -n ${namespace} | grep oracle-db | cut -f1 -d " " `
+checkPod ${dbpod} ${namespace}
+checkPodState ${dbpod} ${namespace} "1/1"
+kubectl get po -n ${namespace}
+kubectl get service -n ${namespace}
 
-echo "Oracle DB service is RUNNING with NodePort [${nodeport}]"
+kubectl cp ${scriptDir}/common/checkDbState.sh -n ${namespace} ${dbpod}:/home/oracle/
+kubectl exec -it ${dbpod} -n ${namespace} /bin/bash /home/oracle/checkDbState.sh
+if [ $? != 0  ]; then
+ echo "######################";
+ echo "[ERROR] Could not create Oracle DB Service";
+ echo "######################";
+ exit -3;
+fi
+
+echo "Oracle DB Service is RUNNING with NodePort [${nodeport}]"
+echo "Oracle DB Service URL [oracle-db.${namespace}.svc.cluster.local:1521/devpdb.k8s]"
