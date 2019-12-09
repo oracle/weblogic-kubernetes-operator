@@ -246,7 +246,7 @@ public class ItElasticLogging extends BaseTest {
    *
    * @throws Exception exception
    */
-  // @Test
+  @Test
   public void testWebLogicLogSearch() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
