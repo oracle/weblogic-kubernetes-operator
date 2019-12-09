@@ -1842,9 +1842,14 @@ public class Domain {
             .append(resultsDir)
             .append("/docker-images && ");
       }
+      String dockerImagesUrl = System.getenv("DOCKER_IMAGES_URL") != null
+                ? System.getenv("DOCKER_IMAGES_URL")
+                : "https://github.com/oracle/docker-images.git";
       // git clone docker-images project
       removeAndClone
-          .append(" git clone https://github.com/oracle/docker-images.git ")
+          .append(" git clone ")
+          .append(dockerImagesUrl)
+          .append(" ")
           .append(resultsDir)
           .append("/docker-images");
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + removeAndClone);
