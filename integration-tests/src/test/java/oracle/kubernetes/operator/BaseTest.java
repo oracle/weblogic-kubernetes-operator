@@ -50,6 +50,7 @@ public class BaseTest {
   public static String PROMETHEUS_CHART_VERSION;
   public static String GRAFANA_CHART_VERSION;
   public static String MONITORING_EXPORTER_VERSION;
+  public static String MONITORING_EXPORTER_BRANCH;
   public static boolean INGRESSPERDOMAIN = true;
   protected static String appLocationInPod = "/u01/oracle/apps";
   private static String resultRootCommon = "";
@@ -163,6 +164,11 @@ public class BaseTest {
         System.getenv("MONITORING_EXPORTER_VERSION") != null
             ? System.getenv("MONITORING_EXPORTER_VERSION")
             : appProps.getProperty("MONITORING_EXPORTER_VERSION");
+
+    MONITORING_EXPORTER_BRANCH =
+        System.getenv("MONITORING_EXPORTER_BRANCH") != null
+            ? System.getenv("MONITORING_EXPORTER_BRANCH")
+            : appProps.getProperty("MONITORING_EXPORTER_BRANCH", "master");
 
     maxIterationsPod =
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();

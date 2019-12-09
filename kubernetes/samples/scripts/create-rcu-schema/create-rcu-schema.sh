@@ -6,7 +6,7 @@
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/common/utility.sh
+source ${scriptDir}/../common/utility.sh
 
 function usage {
   echo "usage: ${script} -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -p <docker-store> [-h]"
@@ -64,17 +64,6 @@ if [ -z ${fmwimage} ]; then
 fi
 
 echo "ImagePullSecret[$pullsecret] Image[${fmwimage}] dburl[${dburl}] rcuType[${rcuType}]"
-
-dbpod=`kubectl get po | grep oracle | cut -f1 -d " " `
-if [ -z ${dbpod} ]; then
-  echo "Oracle deployment pod not found in [default] namespace"
-  echo "Execute the script start-db-service.sh"
-  exit -2
-fi
-
-# Make sure the DB deployment Pod is RUNNING
-checkPod ${dbpod} default
-checkPodState ${dbpod} default "1/1"
 
 #kubectl run rcu --generator=run-pod/v1 --image ${jrf_image} -- sleep infinity
 # Modify the ImagePullSecret based on input

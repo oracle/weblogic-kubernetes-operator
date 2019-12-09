@@ -149,7 +149,7 @@ public final class HealthCheckHelper {
       for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
 
         if (!ap.check(op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource(), ns);
+          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
         }
       }
     }
@@ -158,7 +158,7 @@ public final class HealthCheckHelper {
       for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
 
         if (!ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource(), ns);
+          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
         }
       }
     }
