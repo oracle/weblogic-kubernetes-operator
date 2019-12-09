@@ -67,7 +67,7 @@ public class ItJrfImageWlst extends BaseTest {
       TestUtils.exec(
           "cp -rf " 
           + BaseTest.getProjectRoot() 
-          + "/kubernetes/samples/scripts/create-rcu-schema " 
+          + "/kubernetes/samples/scripts " 
           + getResultDir(),
           true);
       

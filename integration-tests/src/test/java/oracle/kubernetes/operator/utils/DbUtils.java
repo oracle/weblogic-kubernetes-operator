@@ -95,7 +95,7 @@ public class DbUtils {
     } else {
       cmd = "sh " 
           + scriptsDir
-          + "/create-rcu-schema/create-rcu-schema.sh -s "
+          + "/scripts/create-rcu-schema/create-rcu-schema.sh -s "
           + rcuSchemaPrefix
           + " -d "
           + dbUrl;
