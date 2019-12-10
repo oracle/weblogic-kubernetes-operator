@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainStatusTest {
@@ -146,6 +147,25 @@ public class DomainStatusTest {
     domainStatus.addCondition(new DomainCondition(Available));
 
     assertThat(domainStatus.hasConditionWith(c -> c.hasType(Available)), is(true));
+  }
+
+  @Test
+  public void afterFailedConditionAdded_copyMessageAndReasonToStatus() {
+    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message").withReason("reason"));
+
+    assertThat(domainStatus.getMessage(), equalTo("message"));
+    assertThat(domainStatus.getReason(), equalTo("reason"));
+  }
+
+  @Test
+  public void afterNonFailedConditionAdded_clearStatusMessageAndReason() {
+    domainStatus.setMessage("old message");
+    domainStatus.setReason("old reason");
+
+    domainStatus.addCondition(new DomainCondition(Progressing).withMessage("message").withReason("reason"));
+
+    assertThat(domainStatus.getMessage(), nullValue());
+    assertThat(domainStatus.getReason(), nullValue());
   }
 
   @Test

@@ -104,6 +104,8 @@ public class DomainStatus {
     conditions = conditions.stream().filter(c -> preserve(c, newCondition.getType())).collect(Collectors.toList());
 
     conditions.add(newCondition);
+    reason = newCondition.getStatusReason();
+    message = newCondition.getStatusMessage();
     return this;
   }
 

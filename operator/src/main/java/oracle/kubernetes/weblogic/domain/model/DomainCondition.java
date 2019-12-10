@@ -66,6 +66,22 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   }
 
   /**
+   * Returns the reason to set on the domain status when this condition is added.
+   * @return a reason or null
+   */
+  String getStatusReason() {
+    return getType().getStatusReason(this);
+  }
+
+  /**
+   * Returns the message to set on the domain status when this condition is added.
+   * @return a message or null
+   */
+  String getStatusMessage() {
+    return getType().getStatusMessage(this);
+  }
+
+  /**
    * Last time we probed the condition.
    *
    * @return time

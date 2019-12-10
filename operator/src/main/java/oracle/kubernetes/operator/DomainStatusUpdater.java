@@ -146,7 +146,7 @@ public class DomainStatusUpdater {
    * @param next Next step
    * @return Step
    */
-  private static Step createFailedStep(String reason, String message, Step next) {
+  public static Step createFailedStep(String reason, String message, Step next) {
     return new FailedStep(reason, message, next);
   }
 
@@ -492,8 +492,6 @@ public class DomainStatusUpdater {
 
     @Override
     void modifyStatus(DomainStatus s) {
-      s.setReason(reason);
-      s.setMessage(message);
       s.addCondition(new DomainCondition(Failed).withStatus(TRUE).withReason(reason).withMessage(message));
       if (s.hasConditionWith(c -> c.hasType(Progressing))) {
         s.addCondition(new DomainCondition(Progressing).withStatus(FALSE));

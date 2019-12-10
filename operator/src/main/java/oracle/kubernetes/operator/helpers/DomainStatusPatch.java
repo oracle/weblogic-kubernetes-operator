@@ -9,29 +9,15 @@ import javax.json.JsonValue;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.custom.V1Patch;
-import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
-public class DomainStatusPatch extends Step {
+public class DomainStatusPatch {
   static final String BAD_DOMAIN = "ErrBadDomain";
   static final String ERR_INTROSPECTOR = "ErrIntrospector";
 
   private final String name;
   private final String namespace;
   private JsonPatchBuilder patchBuilder;
-
-  /**
-   * Update the domain status. This may involve either replacing the current status or adding to it.
-   * @param domain the domain to update
-   * @param reason the reason, a camel-cased string with no spaces
-   * @param message a text description of the new status; may include multiple lines
-   */
-  static Step createStep(Domain domain, String reason, String message) {
-    return new DomainStatusPatch(domain, reason, message);
-  }
 
   /**
    * Update the domain status synchronously. This may involve either replacing the current status or adding to it.
@@ -47,16 +33,6 @@ public class DomainStatusPatch extends Step {
     name = domain.getMetadata().getName();
     namespace = domain.getMetadata().getNamespace();
     patchBuilder = getPatchBuilder(domain, reason, message);
-  }
-
-  @Override
-  public NextAction apply(Packet packet) {
-    Step step = new CallBuilder().patchDomainAsync(name, namespace, getPatchBody(), createResponseStep());
-    return doNext(step, packet);
-  }
-
-  private DefaultResponseStep<Domain> createResponseStep() {
-    return new DefaultResponseStep<>(getNext());
   }
 
   private static JsonPatchBuilder getPatchBuilder(Domain domain, String reason, String message) {
