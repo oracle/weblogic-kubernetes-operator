@@ -177,7 +177,7 @@ function createDomainConfigmap {
  
   # create the configmap and label it properly
   local cmName=${domainUID}-create-fmw-infra-sample-domain-job-cm
-  kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir
+  kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir --dry-run -o yaml | kubectl apply -f -
 
   echo Checking the configmap $cmName was created
   local num=`kubectl get cm -n $namespace | grep ${cmName} | wc | awk ' { print $1; } '`
