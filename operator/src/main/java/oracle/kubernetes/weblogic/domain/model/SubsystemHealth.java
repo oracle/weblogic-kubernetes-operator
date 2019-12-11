@@ -4,54 +4,58 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
+
 /** SubsystemHealth describes the current health of a specific subsystem. */
-public class SubsystemHealth implements Comparable<SubsystemHealth> {
+public class SubsystemHealth implements Comparable<SubsystemHealth>, PatchableComponent<SubsystemHealth> {
 
   @Description("Server health of this WebLogic Server. Required.")
-  @SerializedName("health")
   @Expose
   @NotNull
   private String health;
 
   @Description("Name of subsystem providing symptom information. Required.")
-  @SerializedName("subsystemName")
   @Expose
   @NotNull
   private String subsystemName;
 
   @Description("Symptoms provided by the reporting subsystem.")
-  @SerializedName("symptoms")
   @Expose
   @Valid
   private List<String> symptoms = new ArrayList<>();
+
+  public SubsystemHealth() {
+  }
+
+  /**
+   * Copy constructor.
+   * @param other the object to copy
+   */
+  SubsystemHealth(SubsystemHealth other) {
+    this.health = other.health;
+    this.subsystemName = other.subsystemName;
+    this.symptoms = new ArrayList<>(other.symptoms);
+  }
 
   /**
    * Server health of this WebLogic Server. Required.
    *
    * @return health
    */
-  public String getHealth() {
+  private String getHealth() {
     return health;
-  }
-
-  /**
-   * Server health of this WebLogic Server. Required.
-   *
-   * @param health health
-   */
-  public void setHealth(String health) {
-    this.health = health;
   }
 
   /**
@@ -70,17 +74,8 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
    *
    * @return subsystem name
    */
-  public String getSubsystemName() {
+  private String getSubsystemName() {
     return subsystemName;
-  }
-
-  /**
-   * Name of subsystem providing symptom information. Required.
-   *
-   * @param subsystemName subsystem name
-   */
-  public void setSubsystemName(String subsystemName) {
-    this.subsystemName = subsystemName;
   }
 
   /**
@@ -99,17 +94,8 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
    *
    * @return symptoms
    */
-  public List<String> getSymptoms() {
+  private List<String> getSymptoms() {
     return symptoms;
-  }
-
-  /**
-   * Symptoms provided by the reporting subsystem.
-   *
-   * @param symptoms symptoms
-   */
-  public void setSymptoms(List<String> symptoms) {
-    this.symptoms = symptoms;
   }
 
   /**
@@ -120,6 +106,17 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
    */
   public SubsystemHealth withSymptoms(List<String> symptoms) {
     this.symptoms = symptoms;
+    return this;
+  }
+
+  /**
+   * Symptoms provided by the reporting subsystem.
+   *
+   * @param symptoms symptoms
+   * @return this
+   */
+  public SubsystemHealth withSymptoms(String... symptoms) {
+    this.symptoms = Arrays.asList(symptoms);
     return this;
   }
 
@@ -158,7 +155,21 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
   }
 
   @Override
-  public int compareTo(SubsystemHealth o) {
+  public int compareTo(@Nonnull SubsystemHealth o) {
     return subsystemName.compareTo(o.subsystemName);
+  }
+
+  @Override
+  public boolean isPatchableFrom(SubsystemHealth other) {
+    return other.subsystemName != null && other.subsystemName.equals(subsystemName);
+  }
+
+  private static ObjectPatch<SubsystemHealth> healthPatch = createObjectPatch(SubsystemHealth.class)
+        .withStringField("health", SubsystemHealth::getHealth)
+        .withStringField("subsystemName", SubsystemHealth::getSubsystemName)
+        .withListField("symptoms", SubsystemHealth::getSymptoms);
+
+  static ObjectPatch<SubsystemHealth> getObjectPatch() {
+    return healthPatch;
   }
 }
