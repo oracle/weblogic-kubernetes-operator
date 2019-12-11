@@ -1226,7 +1226,8 @@ public class TestUtils {
     }
   }
 
-  public static void createDirUnderDomainPV(String dirPath, String pvRoot) throws Exception {
+  public static void createDirUnderDomainPV(String dirPath, String pvRoot,
+                                            String domainUid) throws Exception {
     if (BaseTest.OPENSHIFT) {
       String crdCmd = "mkdir -m 777 -p " + dirPath;
       ExecResult result = TestUtils.exec(crdCmd, true);
@@ -1234,7 +1235,8 @@ public class TestUtils {
       dirPath = dirPath.replace(pvRoot, "/sharedparent/");
       String crdCmd =
           BaseTest.getProjectRoot()
-              + "/src/integration-tests/bash/krun.sh -t 180 -m "
+              + "/src/integration-tests/bash/krun.sh -t 180 -p pod-"
+              + domainUid + " -m "
               + pvRoot + ":/sharedparent -c 'mkdir -m 777 -p "
               + dirPath
               + "'";

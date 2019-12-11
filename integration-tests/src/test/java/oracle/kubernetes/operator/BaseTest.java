@@ -780,7 +780,7 @@ public class BaseTest {
     String scriptsDir = pvDir + "/domains/" + domainUid + "/bin/scripts";
 
     // create scripts dir under domain pv
-    TestUtils.createDirUnderDomainPV(scriptsDir, pvRoot);
+    TestUtils.createDirUnderDomainPV(scriptsDir, pvRoot, domainUid);
     if (OPENSHIFT) {
       Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
           Paths.get(scriptsDir + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
