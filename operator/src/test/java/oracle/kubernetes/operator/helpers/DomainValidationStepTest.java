@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -21,6 +22,8 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
+import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -29,17 +32,22 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainValidationStepTest {
   private Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private TerminalStep terminalStep = new TerminalStep();
-  private DomainValidationStep step = new DomainValidationStep(domain, terminalStep);
+  private DomainValidationStep step = new DomainValidationStep(terminalStep);
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private List<Memento> mementos = new ArrayList<>();
+  private List<LogRecord> logRecords = new ArrayList<>();
+  private TestUtils.ConsoleHandlerMemento consoleControl;
 
   @Before
   public void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, DOMAIN_VALIDATION_FAILED);
+    mementos.add(consoleControl);
     mementos.add(testSupport.install());
 
     testSupport.defineResources(domain);
+    testSupport.addDomainPresenceInfo(info);
   }
 
   @After
@@ -61,6 +69,7 @@ public class DomainValidationStepTest {
 
   @Test
   public void whenDomainIsNotValid_dontRunNextStep() {
+    consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     defineDuplicateServerNames();
 
     testSupport.runStepsToCompletion(step);
@@ -70,6 +79,7 @@ public class DomainValidationStepTest {
 
   @Test
   public void whenDomainIsNotValid_updateStatus() {
+    consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     defineDuplicateServerNames();
 
     testSupport.runStepsToCompletion(step);
@@ -77,6 +87,15 @@ public class DomainValidationStepTest {
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
     assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("managedServers", "ms1"));
+  }
+
+  @Test
+  public void whenDomainIsNotValid_logSevereMessage() {
+    defineDuplicateServerNames();
+
+    testSupport.runStepsToCompletion(step);
+
+    assertThat(logRecords, containsSevere(DOMAIN_VALIDATION_FAILED));
   }
 
   private String getStatusReason(Domain updatedDomain) {

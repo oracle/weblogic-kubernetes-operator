@@ -22,17 +22,14 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.json.Json;
 import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
 import javax.json.JsonPatch;
 import javax.json.JsonStructure;
-import javax.json.JsonValue;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
@@ -71,6 +68,7 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.joda.time.DateTime;
@@ -96,10 +94,13 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String SERVICE = "Service";
   public static final String SUBJECT_ACCESS_REVIEW = "SubjectAccessReview";
   public static final String TOKEN_REVIEW = "TokenReview";
+
   private Map<String, DataRepository<?>> repositories = new HashMap<>();
   private Map<Class<?>, String> dataTypes = new HashMap<>();
   private Failure failure;
   private long resourceVersion;
+  private int numCalls;
+  private boolean addCreationTimestamp;
 
   /**
    * Installs a factory into CallBuilder to use canned responses.
@@ -182,6 +183,25 @@ public class KubernetesTestSupport extends FiberTestSupport {
       String resourceName, Class<T> resourceClass, Function<List<T>, Object> toList) {
     dataTypes.put(resourceClass, resourceName);
     repositories.put(resourceName, new NamespacedDataRepository<>(resourceClass, toList));
+  }
+
+  /**
+   * Clears the number of calls made to Kubernetes.
+   */
+  public void clearNumCalls() {
+    numCalls = 0;
+  }
+
+  /**
+   * Returns the number of calls made to Kubernetes.
+   * @return a non-negative integer
+   */
+  public int getNumCalls() {
+    return numCalls;
+  }
+
+  public void setAddCreationTimestamp(boolean addCreationTimestamp) {
+    this.addCreationTimestamp = addCreationTimestamp;
   }
 
   @SuppressWarnings("unchecked")
@@ -446,7 +466,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
     public DateTime deserialize(
         final JsonElement je, final Type type, final JsonDeserializationContext jdc)
         throws JsonParseException {
-      return new DateTime(Long.parseLong(je.getAsJsonObject().get("iMillis").getAsString()));
+      return je.isJsonObject()
+            ? new DateTime(Long.parseLong(je.getAsJsonObject().get("iMillis").getAsString()))
+            : DateTime.parse(je.getAsString());
     }
 
     @Override
@@ -483,13 +505,19 @@ public class KubernetesTestSupport extends FiberTestSupport {
       onUpdateActions = ((DataRepository<T>) parent).onUpdateActions;
     }
 
-    void createResourceInNamespace(T resource) {
-      createResource(getMetadata(resource).getNamespace(), resource);
-    }
-
     @SuppressWarnings("unchecked")
     void createResourceInNamespace(String name, String namespace, Object resource) {
       data.put(name, (T) resource);
+    }
+
+    void createResourceInNamespace(T resource) {
+      createResource(getMetadata(resource).getNamespace(), withOptionalCreationTimeStamp(resource));
+    }
+
+    private T withOptionalCreationTimeStamp(T resource) {
+      if (addCreationTimestamp)
+        getMetadata(resource).setCreationTimestamp(SystemClock.now());
+      return resource;
     }
 
     T createResource(String namespace, T resource) {
@@ -557,7 +585,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     T replaceResource(String name, T resource) {
       setName(resource, name);
 
-      data.put(name, resource);
+      data.put(name, withOptionalCreationTimeStamp(resource));
       onUpdateActions.forEach(a -> a.accept(resource));
       return resource;
     }
@@ -611,16 +639,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return Json.createReader(new StringReader(json)).read();
     }
 
-    JsonArray toJsonArray(List<JsonObject> patch) {
-      JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
-      for (JsonObject jsonObject : patch) arrayBuilder.add(toJsonValue(jsonObject));
-      return arrayBuilder.build();
-    }
-
-    private JsonValue toJsonValue(JsonObject jsonObject) {
-      return Json.createReader(new StringReader(jsonObject.toString())).readValue();
-    }
-
     boolean hasElementWithName(String name) {
       return data.containsKey(name);
     }
@@ -629,7 +647,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return Optional.ofNullable(getMetadata(resource)).map(V1ObjectMeta::getName).orElse(null);
     }
 
-    private V1ObjectMeta getMetadata(@Nonnull Object resource) {
+    V1ObjectMeta getMetadata(@Nonnull Object resource) {
       return KubernetesUtils.getResourceMetadata(resource);
     }
 
@@ -711,6 +729,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private DataRepository<T> inNamespace(String namespace) {
       return repositories.computeIfAbsent(namespace, n -> new DataRepository<>(resourceType, this));
+    }
+
+    @Override
+    T replaceResource(String name, T resource) {
+      return inNamespace(getMetadata(resource).getNamespace()).replaceResource(name, resource);
     }
 
     @Override
@@ -811,11 +834,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return dataRepository.deleteResource(requestParams.name, requestParams.namespace);
     }
 
-    @SuppressWarnings("unchecked")
-    private List<JsonObject> asJsonObject(Object body) {
-      return (List<JsonObject>) body;
-    }
-
     private Object patchResource(DataRepository dataRepository) {
       return dataRepository.patchResource(
           requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
@@ -846,6 +864,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     @Override
     public NextAction apply(Packet packet) {
+      numCalls++;
       try {
         Object callResult = callContext.execute();
         CallResponse callResponse = createResponse(callResult);
