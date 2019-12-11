@@ -1,10 +1,8 @@
 # Model in Image Sample
 
-This sample demonstrates the WebLogic Kubernetes Operator "Model in Image" feature. This feature supports specifying a Weblogic Deploy Tool (WDT) model for a domain resource so that the operator generates a domain home directly from the model during runtime. The Model in Image feature is an alternative to pre-creating a WebLogic domain home prior to deploying your domain resource. 
+This sample demonstrates the WebLogic Kubernetes Operator "Model in Image" feature. Model in Image enables specifying a Weblogic Deploy Tool (WDT) model that the operator uses to generate a full domain home during runtime. This eliminates the need to pre-create a WebLogic domain home prior to deploying your domain resource. 
 
-
-WDT models are a convenient and succinct alternative to WebLogic configuration scripts. WDT models compactly define a
- WebLogic domain via yaml files, plus support for application archives. The WDT model 
+WDT models are a convenient and succinct alternative to WebLogic configuration scripts. They compactly define a WebLogic domain via yaml files, plus support for application archives. The WDT model 
  format is 
  described in [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling).
  

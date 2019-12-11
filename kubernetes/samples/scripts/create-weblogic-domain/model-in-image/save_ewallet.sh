@@ -6,6 +6,9 @@
 # Usage: save_ewallet.sh <domain uid> <namespace> <secret name> <opss paasphase>
 #
 #
+
+# TBD - refactor - make this 'save only' and move wallet to a dedicated secret
+
 if [ "$#" -ne 4 ]; then
     echo "Usage: save_ewallet.sh <domain uid> <namespace> <secret name> <opss paasphase>"
     exit 1

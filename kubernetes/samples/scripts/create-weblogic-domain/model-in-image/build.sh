@@ -18,16 +18,15 @@ set -eu
 
 ./build_download.sh
 
-# This step builds a base image (WebLogic Installer with patches) using the WebLogic Image Tool
-# If you are using your own image, you can skip this step
-
-./build_image_base.sh
-
-# This step builds the sample application
+# This step populates the model. It places a sample application and WDT files in the WORKDIR/model directory.
 
 ./build_app.sh
 
+# This step obtains a base image using a docker pull (WebLogic with patches).
+
+./build_image_base.sh
+
 # This step builds a model image for deploying to the Kubernetes Cluster using the base
-# image and the model files in ./models
+# image and the model files in WORKDIR/models
 
 ./build_image_model.sh
