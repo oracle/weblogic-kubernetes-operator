@@ -4,7 +4,34 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 public enum DomainConditionType {
-  Progressing,
+  Progressing {
+    @Override
+    DomainConditionType[] typesToRemove() {
+      return new DomainConditionType[] {Progressing, Failed};
+    }
+  },
   Available,
-  Failed
+  Failed {
+    @Override
+    String getStatusMessage(DomainCondition condition) {
+      return condition.getMessage();
+    }
+
+    @Override
+    String getStatusReason(DomainCondition condition) {
+      return condition.getReason();
+    }
+  };
+
+  DomainConditionType[] typesToRemove() {
+    return new DomainConditionType[] {Progressing, Available, Failed};
+  }
+
+  String getStatusMessage(DomainCondition condition) {
+    return null;
+  }
+
+  String getStatusReason(DomainCondition condition) {
+    return null;
+  }
 }
