@@ -90,4 +90,8 @@ class DomainValidationMessages {
   static String noSuchSecret(String secretName, String namespace, SecretHelper.SecretType type) {
     return getMessage(MessageKeys.SECRET_NOT_FOUND, secretName, namespace, type);
   }
+
+  static String illegalSecretNamespace(String namespace) {
+    return getMessage(MessageKeys.ILLEGAL_SECRET_NAMESPACE, namespace);
+  }
 }

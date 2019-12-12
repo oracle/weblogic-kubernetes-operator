@@ -211,6 +211,10 @@ public class Domain {
     return this;
   }
 
+  public String getNamespace() {
+    return metadata.getNamespace();
+  }
+
   public AdminServerSpec getAdminServerSpec() {
     return getEffectiveConfigurationFactory().getAdminServerSpec();
   }
@@ -332,12 +336,12 @@ public class Domain {
   }
 
   /**
-   * Reference to secret containing WebLogic startup credentials username and password.
+   * Name of the secret containing WebLogic startup credentials username and password.
    *
-   * @return credentials secret
+   * @return the secret name
    */
-  public V1SecretReference getWebLogicCredentialsSecret() {
-    return spec.getWebLogicCredentialsSecret();
+  public String getWebLogicCredentialsSecretName() {
+    return spec.getWebLogicCredentialsSecret().getName();
   }
 
   /**
@@ -490,7 +494,8 @@ public class Domain {
       addUnmappedLogHome();
       addReservedEnvironmentVariables();
       addMissingSecrets(kubernetesResources);
-
+      verifyNoAlternateSecretNamespaceSpecified();
+      
       return failures;
     }
 
@@ -598,13 +603,24 @@ public class Domain {
     }
 
     private void addMissingSecrets(KubernetesResourceLookup resourceLookup) {
-      verifySecretExists(resourceLookup, getSpec().getWebLogicCredentialsSecret(), SecretType.WebLogicCredentials);
+      verifySecretExists(resourceLookup, getWebLogicCredentialsSecretName(), SecretType.WebLogicCredentials);
     }
 
     @SuppressWarnings("SameParameterValue")
-    private void verifySecretExists(KubernetesResourceLookup resources, V1SecretReference reference, SecretType type) {
-      if (reference != null && !resources.isSecretExists(reference.getName(), reference.getNamespace()))
-        failures.add(DomainValidationMessages.noSuchSecret(reference.getName(), reference.getNamespace(), type));
+    private void verifySecretExists(KubernetesResourceLookup resources, String secretName, SecretType type) {
+      if (!resources.isSecretExists(secretName, getNamespace()))
+        failures.add(DomainValidationMessages.noSuchSecret(secretName, getNamespace(), type));
+    }
+
+    private void verifyNoAlternateSecretNamespaceSpecified() {
+      if (!getSpecifiedWebLogicCredentialsNamespace().equals(getNamespace()))
+        failures.add(DomainValidationMessages.illegalSecretNamespace(getSpecifiedWebLogicCredentialsNamespace()));
+    }
+
+    private String getSpecifiedWebLogicCredentialsNamespace() {
+      return Optional.ofNullable(spec.getWebLogicCredentialsSecret())
+            .map(V1SecretReference::getNamespace)
+            .orElse(getNamespace());
     }
 
   }

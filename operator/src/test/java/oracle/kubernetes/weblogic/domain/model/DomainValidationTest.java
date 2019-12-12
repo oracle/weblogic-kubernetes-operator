@@ -24,15 +24,14 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class DomainValidationTest {
 
   private static final String SECRET_NAME = "mysecret";
-  private static final String SECRET_NAMESPACE = NS;
   private Domain domain = createTestDomain();
   private KubernetesResourceLookupStub resourceLookup = new KubernetesResourceLookupStub();
 
   @Before
   public void setUp() throws Exception {
-    resourceLookup.defineSecret(SECRET_NAME, SECRET_NAMESPACE);
+    resourceLookup.defineSecret(SECRET_NAME, NS);
     configureDomain(domain)
-        .withWebLogicCredentialsSecret(SECRET_NAME, SECRET_NAMESPACE);
+        .withWebLogicCredentialsSecret(SECRET_NAME, null);
   }
 
   @Test
@@ -181,11 +180,38 @@ public class DomainValidationTest {
   }
 
   @Test
+  public void whenWebLogicCredentialsSecretNameFoundWithExplicitNamespace_dontReportError() {
+    configureDomain(domain)
+        .withWebLogicCredentialsSecret(SECRET_NAME, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenWebLogicCredentialsSecretNamespaceUndefined_useDomainNamespace() {
+    configureDomain(domain)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
   public void whenWebLogicCredentialsSecretNameNotFound_reportError() {
-    resourceLookup.undefineSecret(SECRET_NAME, SECRET_NAMESPACE);
+    resourceLookup.undefineSecret(SECRET_NAME, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
-        contains(stringContainsInOrder(SECRET_NAME, "not found", SECRET_NAMESPACE)));
+        contains(stringContainsInOrder(SECRET_NAME, "not found", NS)));
+  }
+
+  @Test
+  public void whenBadWebLogicCredentialsSecretNamespaceSpecified_reportError() {
+    resourceLookup.defineSecret(SECRET_NAME, "badNamespace");
+    configureDomain(domain)
+        .withWebLogicCredentialsSecret(SECRET_NAME, "badNamespace");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Bad namespace", "badNamespace")));
+
   }
 
   private DomainConfigurator configureDomain(Domain domain) {

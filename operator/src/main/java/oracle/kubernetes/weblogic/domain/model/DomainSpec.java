@@ -205,6 +205,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters.")
   protected List<Cluster> clusters = new ArrayList<>();
 
+  @SuppressWarnings("unused")
   @Description("Experimental feature configurations.")
   private Experimental experimental;
 
@@ -312,12 +313,13 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  public V1SecretReference getWebLogicCredentialsSecret() {
+  // NOTE: we ignore the namespace, which could be confusing. We should change it with the next schema update.
+  V1SecretReference getWebLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
   }
 
   @SuppressWarnings("unused")
-  public void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+  void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
   }
 

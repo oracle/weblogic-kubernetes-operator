@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.ServiceHelperTestBase.NS;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static org.hamcrest.Matchers.equalTo;
@@ -125,7 +126,7 @@ public class DomainValidationStepTest {
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
-    assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("name", "not found", "ns"));
+    assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("name", "not found", NS));
   }
 
   @Test
@@ -140,9 +141,8 @@ public class DomainValidationStepTest {
 
   @Test
   public void whenDomainRefersToDefinedSecret_runNextStep() {
-    consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
-    domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name").namespace("ns"));
-    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("name").namespace("ns")));
+    domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name"));
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("name").namespace(NS)));
 
     testSupport.runStepsToCompletion(domainValidationSteps);
 
