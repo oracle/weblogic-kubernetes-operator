@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
+import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.Before;
@@ -200,7 +201,7 @@ public class DomainValidationTest {
     resourceLookup.undefineSecret(SECRET_NAME, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
-        contains(stringContainsInOrder(SECRET_NAME, "not found", NS)));
+        contains(stringContainsInOrder("WebLogicCredentials", SECRET_NAME, "not found", NS)));
   }
 
   @Test
@@ -211,7 +212,40 @@ public class DomainValidationTest {
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("Bad namespace", "badNamespace")));
+  }
 
+  @Test
+  public void whenImagePullSecretSpecifiedButDoesNotExist_reportError() {
+    configureDomain(domain).withDefaultImagePullSecret(new V1LocalObjectReference().name("no-such-secret"));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("ImagePull", "no-such-secret", "not found", NS)));
+
+  }
+
+  @Test
+  public void whenImagePullSecretExists_dontReportError() {
+    resourceLookup.defineSecret("a-secret", NS);
+    configureDomain(domain).withDefaultImagePullSecret(new V1LocalObjectReference().name("a-secret"));
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenConfigOverrideSecretSpecifiedButDoesNotExist_reportError() {
+    configureDomain(domain).withConfigOverrideSecrets("override-secret");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("ConfigOverride", "override-secret", "not found", NS)));
+
+  }
+
+  @Test
+  public void whenConfigOverrideSecretExists_dontReportError() {
+    resourceLookup.defineSecret("override-secret", NS);
+    configureDomain(domain).withConfigOverrideSecrets("override-secret");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   private DomainConfigurator configureDomain(Domain domain) {

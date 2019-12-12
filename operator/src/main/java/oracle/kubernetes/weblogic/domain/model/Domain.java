@@ -20,13 +20,14 @@ import javax.validation.Valid;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
-import oracle.kubernetes.operator.helpers.SecretHelper.SecretType;
+import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -604,6 +605,18 @@ public class Domain {
 
     private void addMissingSecrets(KubernetesResourceLookup resourceLookup) {
       verifySecretExists(resourceLookup, getWebLogicCredentialsSecretName(), SecretType.WebLogicCredentials);
+      for (V1LocalObjectReference reference : getImagePullSecrets())
+        verifySecretExists(resourceLookup, reference.getName(), SecretType.ImagePull);
+      for (String secretName : getConfigOverrideSecrets())
+        verifySecretExists(resourceLookup, secretName, SecretType.ConfigOverride);
+    }
+
+    private List<V1LocalObjectReference> getImagePullSecrets() {
+      return spec.getImagePullSecrets();
+    }
+
+    private List<String> getConfigOverrideSecrets() {
+      return spec.getConfigOverrideSecrets();
     }
 
     @SuppressWarnings("SameParameterValue")

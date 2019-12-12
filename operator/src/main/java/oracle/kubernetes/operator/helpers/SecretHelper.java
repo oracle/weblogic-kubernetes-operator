@@ -69,10 +69,6 @@ public class SecretHelper {
     return secretData;
   }
 
-  public enum SecretType {
-    WebLogicCredentials
-  }
-
   private static class SecretDataStep extends Step {
     private final SecretType secretType;
     private final String secretName;
