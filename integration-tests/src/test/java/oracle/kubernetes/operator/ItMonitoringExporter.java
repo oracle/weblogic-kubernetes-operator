@@ -87,6 +87,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static String domainNS1;
   private static String domainNS2;
 
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -112,19 +113,20 @@ public class ItMonitoringExporter extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
-      createResultAndPvDirs(testClassName);
-      wlsUser = BaseTest.getUsername();
-      wlsPassword = BaseTest.getPassword();
-
-      metricsUrl = exporterUrl + "metrics";
-      monitoringExporterDir = getResultDir() + "/monitoring";
-      monitoringExporterScriptDir = getResultDir() + "/scripts";
-      resourceExporterDir =
-          BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
-      configPath = resourceExporterDir;
-      monitoringExporterEndToEndDir = monitoringExporterDir + "/src/samples/kubernetes/end2end/";
-      LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
+        createResultAndPvDirs(testClassName);
+        wlsUser = BaseTest.getUsername();
+        wlsPassword = BaseTest.getPassword();
+
+        metricsUrl = exporterUrl + "metrics";
+        monitoringExporterDir = getResultDir() + "/monitoring";
+        monitoringExporterScriptDir = getResultDir() + "/scripts";
+        resourceExporterDir =
+            BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
+        configPath = resourceExporterDir;
+        monitoringExporterEndToEndDir = monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+        LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
+
         Map<String, Object> operatorMap =
             createOperatorMap(getNewSuffixCount(), true, "monexp");
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -155,6 +157,8 @@ public class ItMonitoringExporter extends BaseTest {
         domain.buildDeployJavaAppInPod(
             testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
       }
+      domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
+
     }
   }
 
@@ -170,13 +174,15 @@ public class ItMonitoringExporter extends BaseTest {
         domain.destroy();
         TestUtils.deleteWeblogicDomainResources(domainNS1);
       }
-
+      /*
       String crdCmd =
           " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
       ExecCommand.exec(crdCmd);
       crdCmd = "kubectl delete secret " + domainNS2 + "-weblogic-credentials";
       ExecCommand.exec(crdCmd);
       TestUtils.deleteWeblogicDomainResources(domainNS2);
+
+      */
       if (operator != null) {
         operator.destroy();
       }
@@ -790,12 +796,19 @@ public class ItMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-
-    setupPv();
-    installPrometheusGrafanaWebHookMySqlCoordinatorWlsImage();
-    fireAlert();
-    addMonitoringToExistedDomain();
-
+    try {
+      setupPv();
+      installPrometheusGrafanaWebHookMySqlCoordinatorWlsImage();
+      fireAlert();
+      addMonitoringToExistedDomain();
+    } finally {
+      String crdCmd =
+          " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
+      ExecCommand.exec(crdCmd);
+      crdCmd = "kubectl delete secret " + domainNS2 + "-weblogic-credentials";
+      ExecCommand.exec(crdCmd);
+      TestUtils.deleteWeblogicDomainResources(domainNS2);
+    }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
 
   }
@@ -821,10 +834,13 @@ public class ItMonitoringExporter extends BaseTest {
   private static void addMonitoringToExistedDomain() throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Add monitoring to the running domain");
     String exporterAppPath = monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
+    /*
     domain.deployWebAppViaWlst(
         "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true);
     // check if exporter is up
     domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
+    */
+
     // apply new domain yaml and verify pod restart
     String crdCmd =
         " kubectl -n monitoring get cm prometheus-server -oyaml > "
@@ -1028,7 +1044,7 @@ public class ItMonitoringExporter extends BaseTest {
             + wlsPassword;
     TestUtils.exec(command);
     //update with current WDT version
-    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "v3", "v5");
+    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "v3", "v6");
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "domain1", domainNS2);
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "default", domainNS2);
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml",
