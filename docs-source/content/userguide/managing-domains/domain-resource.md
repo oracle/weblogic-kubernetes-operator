@@ -145,7 +145,7 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+      value: "-Djava.security.egd=file:/dev/./urandom "
 
   adminServer:
     serverStartState: "RUNNING"
