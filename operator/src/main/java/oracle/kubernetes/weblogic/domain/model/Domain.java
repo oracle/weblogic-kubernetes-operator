@@ -331,19 +331,6 @@ public class Domain {
   }
 
   /**
-   * DomainStatus represents information about the status of a domain. Status may trail the actual
-   * state of a system.
-   *
-   * @return Status
-   */
-  public DomainStatus getOrCreateStatus() {
-    if (status == null) {
-      status = new DomainStatus();
-    }
-    return status;
-  }
-
-  /**
    * Reference to secret containing WebLogic startup credentials username and password.
    *
    * @return credentials secret

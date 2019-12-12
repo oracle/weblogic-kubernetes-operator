@@ -70,6 +70,18 @@ public class ServerStatusReader {
         info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, pod, null));
   }
 
+  /**
+   * Asynchronous step to set Domain status to indicate WebLogic server status.
+   *
+   * @param timeoutSeconds Timeout in seconds
+   * @param next Next step
+   * @return Step
+   */
+  @SuppressWarnings("SameParameterValue")
+  static Step createStatusStep(int timeoutSeconds, Step next) {
+    return new StatusUpdateHookStep(timeoutSeconds, next);
+  }
+
   private static class DomainStatusReaderStep extends Step {
     private final DomainPresenceInfo info;
     private final long timeoutSeconds;
@@ -245,6 +257,24 @@ public class ServerStatusReader {
       }
 
       return doNext(packet);
+    }
+  }
+
+  static class StatusUpdateHookStep extends Step {
+    private final int timeoutSeconds;
+
+    StatusUpdateHookStep(int timeoutSeconds, Step next) {
+      super(next);
+      this.timeoutSeconds = timeoutSeconds;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      return doNext(
+          createDomainStatusReaderStep(
+              info, timeoutSeconds, DomainStatusUpdater.createStatusUpdateStep(getNext())),
+          packet);
     }
   }
 }

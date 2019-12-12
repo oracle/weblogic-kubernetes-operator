@@ -6,9 +6,13 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.json.JsonPatchBuilder;
 import javax.validation.Valid;
 
 import oracle.kubernetes.json.Description;
@@ -18,6 +22,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
+
+import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
  * DomainStatus represents information about the status of a domain. Status may trail the actual
@@ -64,12 +70,16 @@ public class DomainStatus {
   public DomainStatus() {
   }
 
+  /**
+   * A copy constructor that creates a deep copy.
+   * @param that the object to copy
+   */
   public DomainStatus(DomainStatus that) {
-    conditions.addAll(that.conditions);
     message = that.message;
     reason = that.reason;
-    servers.addAll(that.servers);
-    clusters.addAll(that.clusters);
+    conditions = that.conditions.stream().map(DomainCondition::new).collect(Collectors.toList());
+    servers = that.servers.stream().map(ServerStatus::new).collect(Collectors.toList());
+    clusters = that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList());
     startTime = that.startTime;
     replicas = that.replicas;
   }
@@ -84,18 +94,26 @@ public class DomainStatus {
   }
 
   /**
-   * Adds a condition to the status, replacing any existing conditions with the same type.
+   * Adds a condition to the status, replacing any existing conditions with the same type, and removing other
+   * conditions according to the domain rules.
    *
-   * @param condition the condition to add.
+   * @param newCondition the condition to add.
    * @return this object.
    */
-  public DomainStatus addCondition(DomainCondition condition) {
-    if (!isNewCondition(condition)) {
-      return this;
-    }
+  public DomainStatus addCondition(DomainCondition newCondition) {
+    conditions = conditions.stream().filter(c -> preserve(c, newCondition.getType())).collect(Collectors.toList());
 
-    conditions.add(condition);
+    conditions.add(newCondition);
+    reason = newCondition.getStatusReason();
+    message = newCondition.getStatusMessage();
     return this;
+  }
+
+  private boolean preserve(DomainCondition condition, DomainConditionType newType) {
+    for (DomainConditionType type : newType.typesToRemove())
+      if (condition.getType() == type) return false;
+
+    return true;
   }
 
   /**
@@ -283,6 +301,19 @@ public class DomainStatus {
     return this;
   }
 
+  /**
+   * Add the status for a server.
+   * @param server the status for one server
+   * @return this object
+   */
+  public DomainStatus addServer(ServerStatus server) {
+    for (ListIterator<ServerStatus> it = servers.listIterator(); it.hasNext(); )
+      if (Objects.equals(it.next().getServerName(), server.getServerName())) it.remove();
+
+    servers.add(server);
+    return this;
+  }
+
   public List<ClusterStatus> getClusters() {
     return clusters;
   }
@@ -299,8 +330,16 @@ public class DomainStatus {
     return new HashSet<>(clusters1).equals(new HashSet<>(clusters2));
   }
 
-  public DomainStatus withClusters(List<ClusterStatus> clusters) {
-    this.clusters = clusters;
+  /**
+   * Add the status for a cluster.
+   * @param cluster the status for one cluster
+   * @return this object
+   */
+  public DomainStatus addCluster(ClusterStatus cluster) {
+    for (ListIterator<ClusterStatus> it = clusters.listIterator(); it.hasNext(); )
+      if (Objects.equals(it.next().getClusterName(), cluster.getClusterName())) it.remove();
+
+    clusters.add(cluster);
     return this;
   }
 
@@ -356,4 +395,18 @@ public class DomainStatus {
         .append(message, rhs.message)
         .isEquals();
   }
+
+  private static ObjectPatch<DomainStatus> statusPatch = createObjectPatch(DomainStatus.class)
+        .withConstructor(DomainStatus::new)
+        .withStringField("message", DomainStatus::getMessage)
+        .withStringField("reason", DomainStatus::getReason)
+        .withIntegerField("replicas", DomainStatus::getReplicas)
+        .withListField("conditions", DomainCondition.getObjectPatch(), DomainStatus::getConditions)
+        .withListField("clusters", ClusterStatus.getObjectPatch(), DomainStatus::getClusters)
+        .withListField("servers", ServerStatus.getObjectPatch(), DomainStatus::getServers);
+
+  public void createPatchFrom(JsonPatchBuilder builder, @Nullable DomainStatus oldStatus) {
+    statusPatch.createPatch(builder, "/status", oldStatus, this);
+  }
+
 }

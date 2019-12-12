@@ -13,12 +13,12 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Simple JUnit test file used for testing Operator.
@@ -40,7 +40,7 @@ public class ItDomainInImage extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
@@ -54,7 +54,7 @@ public class ItDomainInImage extends BaseTest {
    *
    * @throws Exception exception if result/pv/operator/domain creation fails
    */
-  @Before
+  @BeforeEach
   public void prepare() throws Exception {
 
     createResultAndPvDirs(testClassName);
@@ -64,7 +64,7 @@ public class ItDomainInImage extends BaseTest {
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
           true, testClassName);
       operator1 = TestUtils.createOperator(operatorMap, RestCertType.SELF_SIGNED);
-      Assert.assertNotNull(operator1);
+      Assertions.assertNotNull(operator1);
       domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
       namespaceList.append(" ").append(domainNS1);
@@ -76,7 +76,7 @@ public class ItDomainInImage extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     tearDown(new Object() {
     }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
@@ -93,7 +93,7 @@ public class ItDomainInImage extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWlst() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -128,7 +128,7 @@ public class ItDomainInImage extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWdt() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(QUICKTEST);
 
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
