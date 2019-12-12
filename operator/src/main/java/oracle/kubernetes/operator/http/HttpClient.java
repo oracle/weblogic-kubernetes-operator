@@ -217,7 +217,7 @@ public class HttpClient {
     public NextAction apply(Packet packet) {
       Step readSecret =
           SecretHelper.getSecretData(
-              SecretHelper.SecretType.AdminCredentials, adminSecretName, namespace, getNext());
+              SecretHelper.SecretType.WebLogicCredentials, adminSecretName, namespace, getNext());
       return doNext(readSecret, packet);
     }
   }

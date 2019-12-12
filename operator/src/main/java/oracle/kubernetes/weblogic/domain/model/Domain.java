@@ -26,6 +26,7 @@ import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -474,8 +475,8 @@ public class Domain {
         .isEquals();
   }
 
-  public List<String> getValidationFailures() {
-    return new Validator().getValidationFailures();
+  public List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
+    return new Validator().getValidationFailures(kubernetesResources);
   }
 
   class Validator {
@@ -483,11 +484,12 @@ public class Domain {
     private Set<String> clusterNames = new HashSet<>();
     private Set<String> serverNames = new HashSet<>();
 
-    List<String> getValidationFailures() {
+    List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
       addDuplicateNames();
       addInvalidMountPaths();
       addUnmappedLogHome();
       addReservedEnvironmentVariables();
+      addMissingSecrets(kubernetesResources);
 
       return failures;
     }
@@ -558,7 +560,7 @@ public class Domain {
       checkReservedIntrospectorVariables(spec, "spec");
       Optional.ofNullable(spec.getAdminServer())
           .ifPresent(a -> checkReservedIntrospectorVariables(a, "spec.adminServer"));
-      
+
       spec.getManagedServers()
           .forEach(s -> checkReservedEnvironmentVariables(s, "spec.managedServers[" + s.getServerName() + "]"));
       spec.getClusters()
@@ -593,6 +595,15 @@ public class Domain {
     @SuppressWarnings("SameParameterValue")
     private void checkReservedIntrospectorVariables(BaseConfiguration configuration, String prefix) {
       new EnvironmentVariableCheck(IntrospectorJobEnvVars::isReserved).checkEnvironmentVariables(configuration, prefix);
+    }
+
+    private void addMissingSecrets(KubernetesResourceLookup resourceLookup) {
+      verifySecretExists(resourceLookup, getSpec().getWebLogicCredentialsSecret(), SecretHelper.SecretType.WebLogicCredentials);
+    }
+
+    private void verifySecretExists(KubernetesResourceLookup resources, V1SecretReference reference, SecretHelper.SecretType type) {
+      if (reference != null && !resources.isSecretExists(reference.getName(), reference.getNamespace()))
+        failures.add(DomainValidationMessages.noSuchSecret(reference.getName(), reference.getNamespace(), type));
     }
 
   }

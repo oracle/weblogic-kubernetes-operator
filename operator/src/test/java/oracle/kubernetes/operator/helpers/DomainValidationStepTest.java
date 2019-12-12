@@ -9,6 +9,9 @@ import java.util.Optional;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -34,7 +37,7 @@ public class DomainValidationStepTest {
   private Domain domain = DomainProcessorTestSetup.createTestDomain();
   private DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private TerminalStep terminalStep = new TerminalStep();
-  private DomainValidationStep step = new DomainValidationStep(terminalStep);
+  private Step domainValidationSteps;
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private List<Memento> mementos = new ArrayList<>();
   private List<LogRecord> logRecords = new ArrayList<>();
@@ -48,6 +51,8 @@ public class DomainValidationStepTest {
 
     testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(info);
+    DomainProcessorTestSetup.defineRequiredResources(testSupport);
+    domainValidationSteps = DomainValidationSteps.createDomainValidationSteps(terminalStep);
   }
 
   @After
@@ -57,12 +62,12 @@ public class DomainValidationStepTest {
 
   @Test
   public void stepImplementsStepClass() {
-    assertThat(step, instanceOf(Step.class));
+    assertThat(domainValidationSteps, instanceOf(Step.class));
   }
 
   @Test
   public void whenDomainIsValid_runNextStep() {
-    testSupport.runStepsToCompletion(step);
+    testSupport.runStepsToCompletion(domainValidationSteps);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
@@ -72,7 +77,7 @@ public class DomainValidationStepTest {
     consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     defineDuplicateServerNames();
 
-    testSupport.runStepsToCompletion(step);
+    testSupport.runStepsToCompletion(domainValidationSteps);
 
     assertThat(terminalStep.wasRun(), is(false));
   }
@@ -82,7 +87,7 @@ public class DomainValidationStepTest {
     consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     defineDuplicateServerNames();
 
-    testSupport.runStepsToCompletion(step);
+    testSupport.runStepsToCompletion(domainValidationSteps);
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
@@ -93,7 +98,7 @@ public class DomainValidationStepTest {
   public void whenDomainIsNotValid_logSevereMessage() {
     defineDuplicateServerNames();
 
-    testSupport.runStepsToCompletion(step);
+    testSupport.runStepsToCompletion(domainValidationSteps);
 
     assertThat(logRecords, containsSevere(DOMAIN_VALIDATION_FAILED));
   }
@@ -109,5 +114,38 @@ public class DomainValidationStepTest {
   private void defineDuplicateServerNames() {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
+  }
+
+  @Test
+  public void whenDomainRefersToUnknownSecret_updateStatus() {
+    consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
+    domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name").namespace("ns"));
+
+    testSupport.runStepsToCompletion(domainValidationSteps);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
+    assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("name", "not found", "ns"));
+  }
+
+  @Test
+  public void whenDomainRefersToUnknownSecret_dontRunNextStep() {
+    consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
+    domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name").namespace("ns"));
+
+    testSupport.runStepsToCompletion(domainValidationSteps);
+
+    assertThat(terminalStep.wasRun(), is(false));
+  }
+
+  @Test
+  public void whenDomainRefersToDefinedSecret_runNextStep() {
+    consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
+    domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name").namespace("ns"));
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("name").namespace("ns")));
+
+    testSupport.runStepsToCompletion(domainValidationSteps);
+
+    assertThat(terminalStep.wasRun(), is(true));
   }
 }
