@@ -3,15 +3,15 @@ domainInfo:
     AdminPassword: '@@FILE:/u01/oracle/properties/adminpass.properties@@'
 topology:
     Name: '@@PROP:DOMAIN_NAME@@'
-    AdminServerName: '@@PROP:ADMIN_NAME@@'
+    AdminServerName: '@@PROP:ADMIN_SERVER_NAME@@'
     ProductionModeEnabled: '@@PROP:PRODUCTION_MODE_ENABLED@@'
     Log:
         FileName: '@@PROP:DOMAIN_NAME@@.log'
     Cluster:
         '@@PROP:CLUSTER_NAME@@':
     Server:
-        '@@PROP:ADMIN_NAME@@':
-            ListenPort: '@@PROP:ADMIN_PORT@@'
+        '@@PROP:ADMIN_SERVER_NAME@@':
+            ListenPort: '@@PROP:ADMIN_SERVER_PORT@@'
             NetworkAccessPoint:
                 T3Channel:
                     ListenPort: '@@PROP:T3_CHANNEL_PORT@@'
