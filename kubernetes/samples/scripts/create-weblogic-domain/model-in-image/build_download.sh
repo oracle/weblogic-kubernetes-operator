@@ -3,12 +3,16 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
-# This script downloads the latest WebLogic Deploy Tool and WebLogic Image Tool in the current directory
-# If this is run behind a proxy.  Environment varibale http_proxy and https_proxy must be set
+# This script downloads the latest WebLogic Deploy Tool and WebLogic Image Tool 
+# to the WORKDIR directory.
 #
 # Expects the following env vars to already be set:
 #    
-#    WORKDIR - working directory for the sample with at least 10g of space
+#    WORKDIR 
+#      working directory for the sample with at least 10g of space
+#
+#    http_proxy https_proxy
+#      if running behind a proxy, then set as needed to allow curl access to github.com
 #
 
 set -eu

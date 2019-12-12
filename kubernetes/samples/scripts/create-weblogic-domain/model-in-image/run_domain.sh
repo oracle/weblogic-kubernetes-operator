@@ -15,33 +15,23 @@ set -eu
 
 cd ${WORKDIR}
 
+echo "@@ Info: Deleting weblogic domain 'domain1' if it already exists"
+kubectl -n sample-domain1-ns \
+  delete domain domain --ignore-not-found
+
 echo "@@ Info: Creating weblogic domain secret"
-
-kubectl -n sample-domain1-ns \
-  create secret generic sample-domain1-weblogic-credentials \
-  --from-literal=username=weblogic \
-  --from-literal=password=welcome1
-
-kubectl -n sample-domain1-ns \
-  label secret sample-domain1-weblogic-credentials \
-  weblogic.domainUID=sample-domain1 \
-  weblogic.domainName=sample-domain1
+./create_weblogic_domain_secret.sh
 
 echo "@@ Info: Creating rcu access secret (ignored unless domain type is JRF or RestrictedJRF)"
+./create_rcu_access_secret.sh
 
-kubectl -n sample-domain1-ns \
-  create secret generic sample-domain1-rcu-access \
-  --from-literal=rcu_prefix=FMW1 \
-  --from-literal=rcu_schema_password=Oradoc_db1 \
-  --from-literal=rcu_admin_password=Oradoc_db1 \
-  --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
-
-kubectl -n sample-domain1-ns \
-  label secret sample-domain1-rcu-access \
-  weblogic.domainUID=sample-domain1 \
-  weblogic.domainName=sample-domain1
+echo "@@ Info: Creating OPSS passphrase secret (ignored unless domain type is JRF)"
+./create_opss_key_secret.sh
 
 echo "@@ Info: Creating sample wdt configmap (optional)"
+
+kubectl -n sample-domain1-ns \
+  delete configmap wdt-config-map --ignore-not-found
 
 kubectl -n sample-domain1-ns \
   create configmap wdt-config-map \
@@ -49,17 +39,7 @@ kubectl -n sample-domain1-ns \
 
 kubectl -n sample-domain1-ns \
   label  configmap wdt-config-map \
-  weblogic.domainUID=sample-domain1 \
-  weblogic.domainName=sample-domain1
-
-kubectl -n sample-domain1-ns \
-  create secret generic sample-domain1-opss-secrets \
-  --from-literal=passphrase=welcome1 
-
-kubectl -n sample-domain1-ns \
-  label secret sample-domain1-opss-secrets \
-  weblogic.domainUID=sample-domain1 \
-  weblogic.domainName=sample-domain1
+  weblogic.domainUID=domain1
 
 echo "@@ Info: Creating 'k8s-domain.yaml' from 'k8s-domain.yaml.template' and setting its Domain Type"
 
