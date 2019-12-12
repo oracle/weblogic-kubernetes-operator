@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.List;
 import java.util.Objects;
 
+import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1SecretList;
 import oracle.kubernetes.operator.DomainStatusUpdater;
@@ -80,7 +81,15 @@ public class DomainValidationSteps {
 
     @Override
     public boolean isSecretExists(String name, String namespace) {
-      return getSecrets(packet).stream().anyMatch(s -> Objects.equals(name, s.getMetadata().getName()) && Objects.equals(namespace, s.getMetadata().getNamespace()));
+      return getSecrets(packet).stream().anyMatch(s -> isSpecifiedSecret(s, name, namespace));
+    }
+
+    boolean isSpecifiedSecret(V1Secret secret, String name, String namespace) {
+      return hasMatchingMetadata(secret.getMetadata(), name, namespace);
+    }
+
+    private boolean hasMatchingMetadata(V1ObjectMeta metadata, String name, String namespace) {
+      return Objects.equals(name, metadata.getName()) && Objects.equals(namespace, metadata.getNamespace());
     }
 
     @SuppressWarnings("unchecked")

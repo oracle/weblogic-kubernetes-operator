@@ -48,7 +48,8 @@ public class DomainValidationTest {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
 
-    assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder("managedServers", "ms1")));
+    assertThat(domain.getValidationFailures(resourceLookup),
+               contains(stringContainsInOrder("managedServers", "ms1")));
   }
 
   @Test
@@ -56,7 +57,8 @@ public class DomainValidationTest {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("Server-1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("server_1"));
 
-    assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder("managedServers", "server-1")));
+    assertThat(domain.getValidationFailures(resourceLookup),
+               contains(stringContainsInOrder("managedServers", "server-1")));
   }
 
   @Test
@@ -72,7 +74,8 @@ public class DomainValidationTest {
     domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster1"));
     domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster1"));
 
-    assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder("clusters", "cluster1")));
+    assertThat(domain.getValidationFailures(resourceLookup),
+               contains(stringContainsInOrder("clusters", "cluster1")));
   }
 
   @Test
@@ -80,7 +83,8 @@ public class DomainValidationTest {
     domain.getSpec().getClusters().add(new Cluster().withClusterName("Cluster-1"));
     domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster_1"));
 
-    assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder("clusters", "cluster-1")));
+    assertThat(domain.getValidationFailures(resourceLookup),
+               contains(stringContainsInOrder("clusters", "cluster-1")));
   }
 
   @Test
@@ -94,7 +98,8 @@ public class DomainValidationTest {
   public void whenVolumeMountHasNonValidPath_reportError() {
     configureDomain(domain).withAdditionalVolumeMount("sharedlogs", "shared/logs");
 
-    assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder("shared/logs", "sharedlogs")));
+    assertThat(domain.getValidationFailures(resourceLookup),
+               contains(stringContainsInOrder("shared/logs", "sharedlogs")));
   }
 
   @Test
@@ -110,14 +115,16 @@ public class DomainValidationTest {
     configureDomain(domain).withLogHomeEnabled(true).withLogHome("/private/log/mydomain");
     configureDomain(domain).withAdditionalVolumeMount("sharedlogs", "/shared/logs");
 
-    assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder("log home", "/private/log/mydomain")));
+    assertThat(domain.getValidationFailures(resourceLookup),
+               contains(stringContainsInOrder("log home", "/private/log/mydomain")));
   }
 
   @Test
   public void whenNoVolumeMountHasImplicitLogHomeDirectory_reportError() {
     configureDomain(domain).withLogHomeEnabled(true);
 
-    assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder("log home", "/shared/logs/" + UID)));
+    assertThat(domain.getValidationFailures(resourceLookup),
+               contains(stringContainsInOrder("log home", "/shared/logs/" + UID)));
   }
 
   @Test
@@ -185,6 +192,7 @@ public class DomainValidationTest {
     return new DomainCommonConfigurator(domain);
   }
 
+  @SuppressWarnings("SameParameterValue")
   private class KubernetesResourceLookupStub implements KubernetesResourceLookup {
     private List<V1ObjectMeta> definedSecrets = new ArrayList<>();
 

@@ -26,7 +26,7 @@ import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
-import oracle.kubernetes.operator.helpers.SecretHelper;
+import oracle.kubernetes.operator.helpers.SecretHelper.SecretType;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -598,10 +598,11 @@ public class Domain {
     }
 
     private void addMissingSecrets(KubernetesResourceLookup resourceLookup) {
-      verifySecretExists(resourceLookup, getSpec().getWebLogicCredentialsSecret(), SecretHelper.SecretType.WebLogicCredentials);
+      verifySecretExists(resourceLookup, getSpec().getWebLogicCredentialsSecret(), SecretType.WebLogicCredentials);
     }
 
-    private void verifySecretExists(KubernetesResourceLookup resources, V1SecretReference reference, SecretHelper.SecretType type) {
+    @SuppressWarnings("SameParameterValue")
+    private void verifySecretExists(KubernetesResourceLookup resources, V1SecretReference reference, SecretType type) {
       if (reference != null && !resources.isSecretExists(reference.getName(), reference.getNamespace()))
         failures.add(DomainValidationMessages.noSuchSecret(reference.getName(), reference.getNamespace(), type));
     }
