@@ -442,16 +442,15 @@ function getSecretsMD5() {
   local secrets_text="/tmp/secrets.txt"
   local override_secrets="/weblogic-operator/config-overrides-secrets/"
   local weblogic_secrets="/weblogic-operator/secrets/"
-  local tmp_secrets="/tmp/tmpsecrets"
 
   if [ -d "${override_secrets}" ] ; then
     # find the link and exclude ..data so that the normalized file name will be found
     # otherwise it will return ../data/xxx ..etc. Note: the actual file is in a timestamp linked directory
-    find $override_secrets -type l -not -name "..data" -print  | xargs cat > ${tmp_secrets}
+    find $override_secrets -type l -not -name "..data" -print  | xargs cat > ${secrets_text}
   fi
 
   if [ -d "${weblogic_secrets}" ] ; then
-    find ${weblogic_secrets} -type l -not -name "..data" -print | xargs cat >> ${tmp_secrets}
+    find ${weblogic_secrets} -type l -not -name "..data" -print | xargs cat >> ${secrets_text}
   fi
 
   if [ ! -f "${secrets_text}" ] ; then
