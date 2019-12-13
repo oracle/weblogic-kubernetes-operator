@@ -487,7 +487,7 @@ function wdtCreateDomain() {
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "Create Domain Failed "
-    if [ -d ${LOG_HOME} ] ; then
+    if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
       cp ${WDT_BINDIR}/../logs/createDomain.log ${LOG_HOME}/introspectJob_createDomain.log
     else
       tail -100 ${WDT_BINDIR}/../logs/createDomain.log
