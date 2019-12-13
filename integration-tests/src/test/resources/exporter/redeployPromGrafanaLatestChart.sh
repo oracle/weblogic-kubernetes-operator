@@ -3,6 +3,8 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upload
 monitoringExporterDir=$1
 resourceExporterDir=$2
+domainNS1=$3
+domainNS2=$4
 monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/end2end
 
 helm delete prometheus --purge
@@ -12,6 +14,8 @@ for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kub
 
 export appname=prometheus
 for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
+
+sed -i "s/${domainNS2};${domainNS2}/${domainNS1};${domainNS1}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
 
 helm install --wait --name prometheus --namespace monitoring --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus
 

@@ -780,8 +780,9 @@ public class ItMonitoringExporter extends BaseTest {
         resourceExporterDir,
         monitoringExporterScriptDir,
         "redeployPromGrafanaLatestChart.sh",
-        monitoringExporterDir + " " + resourceExporterDir);
-    checkPromGrafana();
+        monitoringExporterDir + " " + resourceExporterDir + " " + domainNS1
+        + " " + domainNS2);
+    checkPromGrafana("weblogic_servlet_executionTimeAverage", "httpsessionreptestapp");
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -1113,10 +1114,10 @@ public class ItMonitoringExporter extends BaseTest {
         "1.1.1", MONITORING_EXPORTER_VERSION);
 
     createWlsImageAndDeploy();
-    checkPromGrafana();
+    checkPromGrafana("wls_servlet_execution_time_average","test-webapp");
   }
 
-  static void checkPromGrafana() throws Exception {
+  static void checkPromGrafana(String searchKey, String expectedVal) throws Exception {
     String podName = getPodName("app=prometheus", "monitoring");
     TestUtils.checkPodReady(podName, "monitoring", "2/2");
 
@@ -1159,7 +1160,7 @@ public class ItMonitoringExporter extends BaseTest {
     ExecResult result = ExecCommand.exec(crdCmd);
     assertTrue(result.stdout().contains("wls_jvm_uptime"));
     assertTrue(
-        checkMetricsViaPrometheus("wls_servlet_execution_time_average", "test-webapp"),
+        checkMetricsViaPrometheus(searchKey, expectedVal),
         "Can't find expected metrics");
   }
 
