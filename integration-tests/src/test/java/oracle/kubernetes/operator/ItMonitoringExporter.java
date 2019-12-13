@@ -156,6 +156,8 @@ public class ItMonitoringExporter extends BaseTest {
         String scriptName = "buildDeployAppInPod.sh";
         domain.buildDeployJavaAppInPod(
             testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
+        setupPv();
+        installPrometheusGrafanaWebHookMySqlCoordinator();
       }
       domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
 
@@ -773,8 +775,10 @@ public class ItMonitoringExporter extends BaseTest {
         "redeployPromGrafanaLatestChart.sh",
         monitoringExporterDir + " " + resourceExporterDir + " " + domainNS1
         + " " + domainNS2);
-    checkPromGrafana("weblogic_servlet_executionTimeAverage", "httpsessionreptestapp");
 
+
+    HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_webapp.yml");
+    checkPromGrafana(testappPrometheusSearchKey, "httpsessionreptestapp");
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -791,10 +795,15 @@ public class ItMonitoringExporter extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     try {
-      setupPv();
-      installPrometheusGrafanaWebHookMySqlCoordinatorWlsImage();
+      configureDomainInPrometheus(domainNS1, domainNS1, domainNS2, domainNS2);
+      createWlsImageAndDeploy();
+      checkPromGrafana("wls_servlet_execution_time_average", "test-webapp");
       fireAlert();
       addMonitoringToExistedDomain();
+    } catch (Exception ex) {
+      //switch Perforce to use domain in pv
+      configureDomainInPrometheus(domainNS2, domainNS2, domainNS1, domainNS1);
+      throw ex;
     } finally {
       String crdCmd =
           " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
@@ -830,6 +839,7 @@ public class ItMonitoringExporter extends BaseTest {
     String exporterAppPath = monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
 
     // apply new domain yaml and verify pod restart
+    /*
     String crdCmd =
         " kubectl -n monitoring get cm prometheus-server -oyaml > "
             + monitoringExporterEndToEndDir
@@ -837,6 +847,8 @@ public class ItMonitoringExporter extends BaseTest {
     TestUtils.exec(crdCmd);
     ExecResult result = ExecCommand.exec("cat " + monitoringExporterEndToEndDir + "/cm.yaml");
     LoggerHelper.getLocal().log(Level.INFO, " output for cm " + result.stdout());
+
+     */
     configureDomainInPrometheus(domainNS2, domainNS2, domainNS1, domainNS1);
 
     BaseTest.setWaitTimePod(10);
@@ -1074,11 +1086,11 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Install Prometheus and Grafana using helm chart, MySql, webhook, coordinator, create WLS image and deploy.
+   * Install Prometheus and Grafana using helm chart, MySql, webhook, coordinator.
    *
    * @throws Exception if could not run the command successfully to install Prometheus and Grafana
    */
-  private static void installPrometheusGrafanaWebHookMySqlCoordinatorWlsImage() throws Exception {
+  private static void installPrometheusGrafanaWebHookMySqlCoordinator() throws Exception {
     prometheusPort = "30000";
 
     executeShelScript(
@@ -1098,8 +1110,6 @@ public class ItMonitoringExporter extends BaseTest {
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domainBuilder/build.sh",
         "1.1.1", MONITORING_EXPORTER_VERSION);
 
-    createWlsImageAndDeploy();
-    checkPromGrafana("wls_servlet_execution_time_average","test-webapp");
   }
 
   static void checkPromGrafana(String searchKey, String expectedVal) throws Exception {
