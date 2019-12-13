@@ -16,8 +16,6 @@ spec:
     env:
     - name: JAVA_OPTIONS
       value: "-Djava.security.egd=file:/dev/./urandom "
-    - name: USER_MEM_ARGS
-      value: "-XX:+UseContainerSupport "
     - name: NAMESPACE
       value: "${NAMESPACE}"
     - name: DOMAIN_UID
