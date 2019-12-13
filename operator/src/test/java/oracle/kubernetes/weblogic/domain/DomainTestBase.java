@@ -382,7 +382,7 @@ public abstract class DomainTestBase {
                 hasItem(
                     envVar(
                         "USER_MEM_ARGS",
-                        "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "))));
+                        "-Djava.security.egd=file:/dev/./urandom "))));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
   }
 
