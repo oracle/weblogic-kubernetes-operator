@@ -174,15 +174,6 @@ public class ItMonitoringExporter extends BaseTest {
         domain.destroy();
         TestUtils.deleteWeblogicDomainResources(domainNS1);
       }
-      /*
-      String crdCmd =
-          " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
-      ExecCommand.exec(crdCmd);
-      crdCmd = "kubectl delete secret " + domainNS2 + "-weblogic-credentials";
-      ExecCommand.exec(crdCmd);
-      TestUtils.deleteWeblogicDomainResources(domainNS2);
-
-      */
       if (operator != null) {
         operator.destroy();
       }
@@ -837,12 +828,6 @@ public class ItMonitoringExporter extends BaseTest {
   private static void addMonitoringToExistedDomain() throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Add monitoring to the running domain");
     String exporterAppPath = monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
-    /*
-    domain.deployWebAppViaWlst(
-        "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true);
-    // check if exporter is up
-    domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
-    */
 
     // apply new domain yaml and verify pod restart
     String crdCmd =
