@@ -503,7 +503,7 @@ public abstract class PodHelperTestBase {
             hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)),
             hasEnvVar(
                 "USER_MEM_ARGS",
-                "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom")));
+                "-Djava.security.egd=file:/dev/./urandom")));
   }
 
   @Test
@@ -971,7 +971,7 @@ public abstract class PodHelperTestBase {
         .addEnvItem(
             envItem(
                 "USER_MEM_ARGS",
-                "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom"))
+                "-Djava.security.egd=file:/dev/./urandom"))
         .livenessProbe(createLivenessProbe())
         .readinessProbe(createReadinessProbe());
   }
