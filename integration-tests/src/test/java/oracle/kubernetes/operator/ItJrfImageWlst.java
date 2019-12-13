@@ -41,7 +41,9 @@ public class ItJrfImageWlst extends BaseTest {
   private static boolean testCompletedSuccessfully;
   private static String testClassName;
   private static StringBuffer namespaceList;
-  private String dbUrl;
+  private static String dbUrl;
+  private static int dbPort;
+  private static String dbNamespace;
 
   /**
   * This method gets called only once before any of the test methods are executed. It does the
@@ -71,9 +73,14 @@ public class ItJrfImageWlst extends BaseTest {
           + getResultDir(),
           true);
       
-      dbUrl = TestUtils.getHostName() + ":30011/devpdb.k8s";
-      DbUtils.startOracleDB(getResultDir());
-      DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix, dbUrl);
+      dbNamespace = "db" + String.valueOf(getNewSuffixCount());
+      dbPort = 30011 + getNewSuffixCount();
+      //dbUrl = TestUtils.getHostName() + ":30011/devpdb.k8s";
+      dbUrl = TestUtils.getHostName() + ":" + String.valueOf(dbPort) + "/devpdb.k8s";
+      LoggerHelper.getLocal().log(Level.INFO,"For test: " + testClassName 
+          + " dbNamespace is: " + dbNamespace + " dbUrl:" + dbUrl);
+      DbUtils.startOracleDB(getResultDir(), String.valueOf(dbPort), dbNamespace);
+      DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix, dbUrl, dbNamespace);
     
       // create operator1
       if (operator1 == null) {
@@ -91,7 +98,7 @@ public class ItJrfImageWlst extends BaseTest {
   @AfterEach
   public void unPrepare() throws Exception {
     DbUtils.deleteRcuPod(getResultDir());
-    DbUtils.stopOracleDB(getResultDir());
+    DbUtils.stopOracleDB(getResultDir(), dbNamespace);
   }
   
   /**

@@ -41,6 +41,8 @@ public class ItJrfPvWlst extends BaseTest {
   private static boolean testCompletedSuccessfully;
   private static String testClassName;
   private static StringBuffer namespaceList;
+  private static int dbPort;
+  private static String dbNamespace;
 
   /**
   * This method gets called only once before any of the test methods are executed. It does the
@@ -69,9 +71,14 @@ public class ItJrfPvWlst extends BaseTest {
           + "/kubernetes/samples/scripts " 
           + getResultDir(),
           true);
-   
-      DbUtils.startOracleDB(getResultDir());
-      DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix, null);
+      
+      dbNamespace = "db" + String.valueOf(getNewSuffixCount());
+      dbPort = 30011 + getNewSuffixCount();
+      
+      LoggerHelper.getLocal().log(Level.INFO,"For test: " + testClassName 
+          + " dbNamespace is: " + dbNamespace);
+      DbUtils.startOracleDB(getResultDir(), String.valueOf(dbPort), dbNamespace);
+      DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix, null, dbNamespace);
     
       // create operator1
       if (operator1 == null) {
@@ -86,10 +93,10 @@ public class ItJrfPvWlst extends BaseTest {
     }  
   }
   
-  @AfterEach
+  //s@AfterEach
   public void unPrepare() throws Exception {
     DbUtils.deleteRcuPod(getResultDir());
-    DbUtils.stopOracleDB(getResultDir());
+    DbUtils.stopOracleDB(getResultDir(), dbNamespace);
   }
   
   /**
@@ -98,7 +105,7 @@ public class ItJrfPvWlst extends BaseTest {
   *
   * @throws Exception - if any error occurs
   */
-  @AfterAll
+  //@AfterAll
   public static void staticUnPrepare() throws Exception {
     tearDown(new Object() {
     }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
