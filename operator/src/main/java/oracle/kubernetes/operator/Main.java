@@ -271,7 +271,7 @@ public class Main {
       // targetNamespaces list, or that are deleted from the Kubernetes cluster. 
       Set<String> namespacesToStop = new TreeSet<>(isNamespaceStopping.keySet());
       for (String ns : targetNamespaces) {
-        // the active namespaces are the ones that willnot be stopped
+        // the active namespaces are the ones that will not be stopped
         if (delegate.isNamespaceRunning(ns)) {
           namespacesToStop.remove(ns);
         }
@@ -826,6 +826,9 @@ public class Main {
 
     @Override
     public boolean isNamespaceRunning(String namespace) {
+      // initialize the value to "false" if absent so that we don't get NPE next
+      isNamespaceStopping(namespace);
+
       return !isNamespaceStopping.get(namespace).get();
     }
 
