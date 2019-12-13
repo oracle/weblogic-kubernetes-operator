@@ -235,6 +235,7 @@ public class Main {
     eventWatchers.remove(ns);
     podWatchers.remove(ns);
     serviceWatchers.remove(ns);
+    configMapWatchers.remove(ns);
     JobWatcher.removeNamespace(ns);
   }
 
@@ -482,7 +483,7 @@ public class Main {
 
       // We only care about namespaces that are in our targetNamespaces
       if (!targetNamespaces.contains(ns)) return;
-
+      
       switch (item.type) {
         case "ADDED":
           // We only create the domain config map when a namespace is added.
