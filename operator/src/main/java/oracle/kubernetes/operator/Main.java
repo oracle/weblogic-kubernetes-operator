@@ -826,7 +826,7 @@ public class Main {
 
     @Override
     public boolean isNamespaceRunning(String namespace) {
-      // initialize the value to "false" if absent so that we don't get NPE next
+      // make sure the map entry is initialized the value to "false" if absent
       isNamespaceStopping(namespace);
 
       return !isNamespaceStopping.get(namespace).get();
