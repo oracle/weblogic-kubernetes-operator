@@ -366,13 +366,41 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Check that configuration can be reviewed via Prometheus.
+   * Checking basic functionality of Monitoring Exporter.
    *
    * @throws Exception if test fails
    */
   @Test
   @Order(2)
-  public void test01_CheckMetricsViaPrometheus() throws Exception {
+  public void testBasicFunctionality() throws Exception {
+    test01_CheckMetricsViaPrometheus();
+    test02_ReplaceConfiguration();
+    test03_AppendConfiguration();
+    test04_ReplaceOneAttributeValueAsArrayConfiguration();
+    test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration();
+    test06_ReplaceWithEmptyConfiguration();
+    test07_AppendWithEmptyConfiguration();
+    test08_1AppendWithNotYmlConfiguration();
+    test08_2ReplaceWithNotYmlConfiguration();
+    test09_AppendWithCorruptedYmlConfiguration();
+    test10_ReplaceWithCorruptedYmlConfiguration();
+    test11_ReplaceWithDublicatedValuesConfiguration();
+    test12_AppendWithDuplicatedValuesConfiguration();
+    test13_ReplaceMetricsNameSnakeCaseFalseConfiguration();
+    test14_ChangeConfigNoCredentials();
+    test15_ChangeConfigInvalidUser();
+    test16_ChangeConfigInvalidPass();
+    test17_ChangeConfigEmptyUser();
+    test18_ChangeConfigEmptyPass();
+  }
+
+
+  /**
+   * Check that configuration can be reviewed via Prometheus.
+   *
+   * @throws Exception if test fails
+   */
+  private void test01_CheckMetricsViaPrometheus() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -388,9 +416,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(3)
-  public void test02_ReplaceConfiguration() throws Exception {
+  private void test02_ReplaceConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -406,9 +432,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(4)
-  public void test03_AppendConfiguration() throws Exception {
+  private void test03_AppendConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -437,9 +461,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(5)
-  public void test04_ReplaceOneAttributeValueAsArrayConfiguration() throws Exception {
+  private void test04_ReplaceOneAttributeValueAsArrayConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -457,9 +479,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(6)
-  public void test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration()
+  private void test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration()
       throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -478,9 +498,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(7)
-  public void test06_ReplaceWithEmptyConfiguration() throws Exception {
+  private void test06_ReplaceWithEmptyConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -495,9 +513,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
-  @Order(8)
-  public void test07_AppendWithEmptyConfiguration() throws Exception {
+  private void test07_AppendWithEmptyConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -515,9 +531,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(9)
-  public void test08_1AppendWithNotYmlConfiguration() throws Exception {
+  private void test08_1AppendWithNotYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -533,9 +547,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
-  @Order(10)
-  public void test08_2ReplaceWithNotYmlConfiguration() throws Exception {
+  private void test08_2ReplaceWithNotYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -550,9 +562,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(11)
-  public void test09_AppendWithCorruptedYmlConfiguration() throws Exception {
+  private void test09_AppendWithCorruptedYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -570,9 +580,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
-  @Order(12)
-  public void test10_ReplaceWithCorruptedYmlConfiguration() throws Exception {
+  private void test10_ReplaceWithCorruptedYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -590,9 +598,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(13)
-  public void test11_ReplaceWithDublicatedValuesConfiguration() throws Exception {
+  private void test11_ReplaceWithDublicatedValuesConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -609,9 +615,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(14)
-  public void test12_AppendWithDuplicatedValuesConfiguration() throws Exception {
+  private void test12_AppendWithDuplicatedValuesConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -629,9 +633,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
-  @Order(15)
-  public void test13_ReplaceMetricsNameSnakeCaseFalseConfiguration() throws Exception {
+  private void test13_ReplaceMetricsNameSnakeCaseFalseConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -654,9 +656,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception exception
    */
   // verify that change configuration fails without authentication
-  @Test
-  @Order(16)
-  public void test14_ChangeConfigNoCredentials() throws Exception {
+  private void test14_ChangeConfigNoCredentials() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -679,9 +679,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
-  @Order(17)
-  public void test15_ChangeConfigInvalidUser() throws Exception {
+  private void test15_ChangeConfigInvalidUser() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -700,9 +698,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
-  @Order(18)
-  public void test16_ChangeConfigInvalidPass() throws Exception {
+  private void test16_ChangeConfigInvalidPass() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -720,9 +716,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(19)
-  public void test17_ChangeConfigEmptyUser() throws Exception {
+  private void test17_ChangeConfigEmptyUser() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -741,9 +735,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(20)
-  public void test18_ChangeConfigEmptyPass() throws Exception {
+  private void test18_ChangeConfigEmptyPass() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -763,8 +755,8 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
-  @Order(21)
-  public void test19_CheckPromGrafanaLatestVersion() throws Exception {
+  @Order(3)
+  public void testCheckPromGrafanaLatestVersion() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -789,7 +781,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   @Order(1)
-  public void test01_1_EndToEndViaChart() throws Exception {
+  public void testEndToEndViaChart() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
