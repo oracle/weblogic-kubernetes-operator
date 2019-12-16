@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.jms.ConnectionFactory;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
@@ -1724,6 +1725,8 @@ public class Domain {
       domainMap.put("image", imageName + ":" + imageTag);
       if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
         domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
+      } else {
+        domainMap.put("imagePullSecretName", "docker-store");
       }
     } else {
       // use default image attibute value for JENKINS and standalone runs and for SHARED_CLUSTER use
