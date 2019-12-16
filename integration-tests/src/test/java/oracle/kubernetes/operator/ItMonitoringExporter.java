@@ -837,22 +837,8 @@ public class ItMonitoringExporter extends BaseTest {
   private static void addMonitoringToExistedDomain() throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Add monitoring to the running domain");
     String exporterAppPath = monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
-
-    // apply new domain yaml and verify pod restart
-    /*
-    String crdCmd =
-        " kubectl -n monitoring get cm prometheus-server -oyaml > "
-            + monitoringExporterEndToEndDir
-            + "/cm.yaml";
-    TestUtils.exec(crdCmd);
-    ExecResult result = ExecCommand.exec("cat " + monitoringExporterEndToEndDir + "/cm.yaml");
-    LoggerHelper.getLocal().log(Level.INFO, " output for cm " + result.stdout());
-
-     */
     configureDomainInPrometheus(domainNS2, domainNS2, domainNS1, domainNS1);
-
     BaseTest.setWaitTimePod(10);
-    // BaseTest.setMaxIterationsPod(50);
     assertTrue(
         checkMetricsViaPrometheus("webapp_config_open_sessions_current_count", domainNS1),
         "Can't find expected metrics");
