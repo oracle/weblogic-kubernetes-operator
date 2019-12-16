@@ -227,9 +227,9 @@ public class CallBuilder {
   private final CallFactory<V1Status> deletecollectionPod =
       (requestParams, usage, cont, callback) ->
           wrap(deleteCollectionPodAsync(usage, requestParams.namespace, cont, callback));
-  private final CallFactory<V1SecretList> listAllSecrets =
+  private final CallFactory<V1SecretList> listSecrets =
       (requestParams, usage, cont, callback) ->
-          wrap(listAllSecretsAsync(usage, cont, callback));
+          wrap(listSecretsAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1ServiceList> listService =
       (requestParams, usage, cont, callback) ->
           wrap(listServiceAsync(usage, requestParams.namespace, cont, callback));
@@ -1606,16 +1606,17 @@ public class CallBuilder {
     }
   }
 
-  private com.squareup.okhttp.Call listAllSecretsAsync(
-      ApiClient client, String cont, ApiCallback<V1SecretList> callback)
+  private com.squareup.okhttp.Call listSecretsAsync(
+      ApiClient client, String namespace, String cont, ApiCallback<V1SecretList> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .listSecretForAllNamespacesAsync(
+        .listNamespacedSecretAsync(
+            namespace,
+            pretty,
             cont,
             fieldSelector,
             labelSelector,
             limit,
-            pretty,
             resourceVersion,
             timeoutSeconds,
             watch,
@@ -1623,16 +1624,17 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for listing secrets across namespaces.
+   * Asynchronous step for listing secrets in a namespace.
    *
+   * @param namespace the namespace from which to list secrets
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step listAllSecretsAsync(ResponseStep<V1SecretList> responseStep) {
+  public Step listSecretsAsync(String namespace, ResponseStep<V1SecretList> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("listSecret", null, null, null),
-        listAllSecrets);
+        new RequestParams("listSecret", namespace, null, null),
+          listSecrets);
   }
 
   /**

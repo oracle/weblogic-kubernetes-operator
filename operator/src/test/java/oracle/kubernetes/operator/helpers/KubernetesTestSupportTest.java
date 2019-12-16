@@ -395,7 +395,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void listSecrets_returnsAllAcrossNamespaces() {
+  public void listSecrets_returnsAllInNamespace() {
     V1Secret s1 = createSecret("ns1", "secret1");
     V1Secret s2 = createSecret("ns1", "secret2");
     V1Secret s3 = createSecret("ns2", "secret3");
@@ -404,9 +404,9 @@ public class KubernetesTestSupportTest {
     TestResponseStep<V1SecretList> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
           new CallBuilder()
-                .listAllSecretsAsync(responseStep));
+                .listSecretsAsync("ns1", responseStep));
 
-    assertThat(responseStep.callResponse.getResult().getItems(), containsInAnyOrder(s1, s2, s3));
+    assertThat(responseStep.callResponse.getResult().getItems(), containsInAnyOrder(s1, s2));
 
   }
 

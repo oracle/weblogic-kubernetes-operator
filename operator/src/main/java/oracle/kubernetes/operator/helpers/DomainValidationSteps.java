@@ -29,12 +29,12 @@ public class DomainValidationSteps {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String SECRETS = "secrets";
 
-  public static Step createDomainValidationSteps(Step next) {
-    return Step.chain(createListSecretsStep(), new DomainValidationStep(next));
+  public static Step createDomainValidationSteps(String namespace, Step next) {
+    return Step.chain(createListSecretsStep(namespace), new DomainValidationStep(next));
   }
 
-  private static Step createListSecretsStep() {
-    return new CallBuilder().listAllSecretsAsync(new ListSecretsResponseStep());
+  private static Step createListSecretsStep(String domainNamespace) {
+    return new CallBuilder().listSecretsAsync(domainNamespace, new ListSecretsResponseStep());
   }
 
   static class ListSecretsResponseStep extends DefaultResponseStep<V1SecretList> {

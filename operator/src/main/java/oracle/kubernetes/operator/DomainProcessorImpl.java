@@ -473,7 +473,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           new StartPlanStep(
               info, isDeleting ? createDomainDownPlan(info) : createDomainUpPlan(info));
       if (!isDeleting && dom != null)
-        strategy = DomainValidationSteps.createDomainValidationSteps(strategy);
+        strategy = DomainValidationSteps.createDomainValidationSteps(ns, strategy);
 
       Packet packet = new Packet();
       packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));

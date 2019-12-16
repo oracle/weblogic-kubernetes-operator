@@ -115,7 +115,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
     support(SUBJECT_ACCESS_REVIEW, V1SubjectAccessReview.class);
     support(TOKEN_REVIEW, V1TokenReview.class);
     support(PV, V1PersistentVolume.class, this::createPvList);
-    support(SECRET, V1Secret.class, this::createSecretList);
 
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
     supportNamespaced(DOMAIN, Domain.class, this::createDomainList);
@@ -124,6 +123,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     supportNamespaced(POD, V1Pod.class, this::createPodList);
     supportNamespaced(PODLOG, String.class);
     supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPvcList);
+    supportNamespaced(SECRET, V1Secret.class, this::createSecretList);
     supportNamespaced(SERVICE, V1Service.class, this::createServiceList);
 
     return new KubernetesTestSupportMemento();

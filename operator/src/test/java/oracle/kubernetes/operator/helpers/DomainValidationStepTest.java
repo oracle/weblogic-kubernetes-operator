@@ -53,7 +53,7 @@ public class DomainValidationStepTest {
     testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(info);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
-    domainValidationSteps = DomainValidationSteps.createDomainValidationSteps(terminalStep);
+    domainValidationSteps = DomainValidationSteps.createDomainValidationSteps(NS, terminalStep);
   }
 
   @After
