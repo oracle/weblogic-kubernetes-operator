@@ -2,13 +2,13 @@
 title: "Publish logs to Elasticsearch"
 date: 2019-12-05T06:46:23-05:00
 weight: 4
-description: "Use the WebLogic Logging Exporter to publish the operator and WebLogic Server logs to Elasticsearch."
+description: "Use the WebLogic Logging Exporter to publish the WebLogic Server logs to Elasticsearch."
 ---
 
 The WebLogic Logging Exporter adds a log event handler to WebLogic Server. WebLogic Server logs can be pushed to Elasticsearch in Kubernetes directly
 by using the Elasticsearch REST API. For more details, refer to the [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter) project.  
 
-This sample shows you how to publish WebLogic Server logs to Elasticsearch and view them in Kibana.
+This sample shows you how to publish WebLogic Server logs to Elasticsearch and view them in Kibana. For publishing operator logs, see this [sample]({{< relref "/samples/simple/elastic-stack/operator/_index.md" >}}).
 
 #### Prerequisites
 
