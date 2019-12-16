@@ -288,32 +288,27 @@ export NODEMGR_HOME="${NODEMGR_HOME?}"
 export DOMAIN_HOME="${DOMAIN_HOME?}"
 
 # Apply JAVA_OPTIONS to Node Manager if NODEMGR_JAVA_OPTIONS not specified
-trace "pre-NODEMGR_JAVA_OPTIONS='${NODEMGR_JAVA_OPTIONS}'"
 if [ -z ${NODEMGR_JAVA_OPTIONS} ]; then
   NODEMGR_JAVA_OPTIONS="${JAVA_OPTIONS}"
 fi
 
-trace "NODEMGR_MEM_ARGS='${NODEMGR_MEM_ARGS}'"
 if [ -z "${NODEMGR_MEM_ARGS}" ]; then
   # Default JVM memory arguments for Node Manager
   NODEMGR_MEM_ARGS="-Xms64m -Xmx100m"
 fi
 
 # USER_MEM_ARGS is not applied to Node Manager.  Use NODEMGR_MEM_ARGS
-# (or NODEMGR_JAVA_OPTIONS) to specify JVM memory arguments for Node Manager
+# (or NODEMGR_JAVA_OPTIONS) to specify JVM memory arguments for Node Manager.
 # Specifying a non-empty USER_MEM_ARGS environment variable prevents MEM_ARGS
 # from being specified in the common WebLogic environment scripts in the WebLogic
-# installation.  NOTE: Specifying USER_MEM_ARGS with ' ' (not empty string)
-# prevents WLS from caluculating default values (see commBaseEnv.sh)
-trace "startNodeManager.sh USER_MEM_ARGS='${USER_MEM_ARGS}'"
+# installation.  NOTE: Specifying USER_MEM_ARGS with ' ' (space, not empty string)
+# prevents WLS from calculating default values (see commBaseEnv.sh)
 USER_MEM_ARGS=" "
 export USER_MEM_ARGS
 
 # NODEMGR_MEM_ARGS and NODEMGR_JAVA_OPTIONS are exported to Node Manager as JAVA_OPTIONS
 # environment variable.
-trace "post startNodeManager.sh USER_MEM_ARGS='${USER_MEM_ARGS}'"
 export JAVA_OPTIONS="${NODEMGR_MEM_ARGS} ${NODEMGR_JAVA_OPTIONS} -Dweblogic.RootDirectory=${DOMAIN_HOME}"
-trace "post-startNodeManager.sh JAVA_OPTIONS='${JAVA_OPTIONS}'"
 
 ###############################################################################
 #

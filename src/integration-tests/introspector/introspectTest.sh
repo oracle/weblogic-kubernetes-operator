@@ -750,13 +750,13 @@ function checkFileStores() {
 
 function checkNodeManagerMemArg() {
 
+  trace "Verifying node manager memory arguments"
+
   # Verify that NODEMGR_MEM_ARGS environment value was applied to the Node Manager command line
   linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
        grep "\-Xms64m -Xmx100m" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
   logstatus=0
-
-  trace "linecount: $linecount"
 
   if [ "$linecount" != "1" ]; then
     trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep '-Xms64m -Xmx100m' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
@@ -772,8 +772,6 @@ function checkNodeManagerMemArg() {
        grep "MaxRAMFraction=1" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "JAVA_OPTIONS" | wc -l`"
   logstatus=0
-
-  trace "maxRamlinecount: $maxRamlinecount"
 
   if [ "$maxRamlinecount" != "0" ]; then
     trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep 'MaxRAMFraction=1' ', this probably means that it's reporting USER_MEM_ARGS was applied"
@@ -792,13 +790,13 @@ function checkNodeManagerMemArg() {
 #
 function checkManagedServer1MemArg() {
 
+  trace "Verifying managed server memory arguments"
+
   # Verify that USER_MEM_ARGS environment value was applied to the Managed Server 1 command line
   maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
        grep "MaxRAMFraction=1"  /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
        | grep -v "JAVA_OPTIONS" | wc -l`"
   logstatus=0
-
-  trace "maxRamlinecount: $maxRamlinecount"
 
   if [ "$maxRamlinecount" != "1" ]; then
     trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep 'MaxRAMFraction=1' ', this probably means that it's reporting USER_MEM_ARGS not applied"
@@ -814,8 +812,6 @@ function checkManagedServer1MemArg() {
        grep "\-Xms64m -Xmx100m" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
        | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
   logstatus=0
-
-  trace "linecount: $linecount"
 
   if [ "$linecount" != "0" ]; then
     trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep '-Xms64m -Xmx100m' ', this probably means that it's reporting NODEMGR_MEM_ARGS was applied"
@@ -835,13 +831,13 @@ function checkManagedServer1MemArg() {
 
 function checkNodeManagerJavaOptions() {
 
+  trace "Verifying node manager java options"
+
   # Verify that NODEMGR_JAVA_OPTIONS environment value was applied to the Node Manager command line
   nodeMgrlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
        grep "\-Dnodemgr.java.options" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "NODEMGR_JAVA_OPTIONS"  | wc -l`"
   logstatus=0
-
-  trace "nodeMgrlinecount: $nodeMgrlinecount"
 
   if [ "$nodeMgrlinecount" != "1" ]; then
     trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep '-Dnodemgr.java.options' ', this probably means that it's reporting NODEMGR_JAVA_OPTIONS not applied"
@@ -857,8 +853,6 @@ function checkNodeManagerJavaOptions() {
        grep "\-Dnodemgr.java.options" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
        | grep -v "NODEMGR_JAVA_OPTIONS" | wc -l`"
   logstatus=0
-
-  trace "nmJavaOptlinecount: $nmJavaOptlinecount"
 
   if [ "$nmJavaOptlinecount" != "0" ]; then
     trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep 'M-Dnodemgr.java.options' ', this probably means that it's reporting NODEMGR_JAVA_OPTIONS was applied"
