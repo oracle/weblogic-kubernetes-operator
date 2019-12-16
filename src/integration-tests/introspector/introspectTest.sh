@@ -742,6 +742,134 @@ function checkFileStores() {
   fi
 }
 
+#############################################################################
+#
+# Validate NODEMGR_MEM_ARGS environment variable values (-Xms64m -Xmx100m)
+# applied to Node Manager command line.
+#
+
+function checkNodeManagerMemArg() {
+
+  # Verify that NODEMGR_MEM_ARGS environment value was applied to the Node Manager command line
+  linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "\-Xms64m -Xmx100m" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
+       | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
+  logstatus=0
+
+  trace "linecount: $linecount"
+
+  if [ "$linecount" != "1" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep '-Xms64m -Xmx100m' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+
+  # Verify that USER_MEM_ARGS environment value did not get applied to the Node Manager command line
+  maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "MaxRAMFraction=1" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
+       | grep -v "JAVA_OPTIONS" | wc -l`"
+  logstatus=0
+
+  trace "maxRamlinecount: $maxRamlinecount"
+
+  if [ "$maxRamlinecount" != "0" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep 'MaxRAMFraction=1' ', this probably means that it's reporting USER_MEM_ARGS was applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+}
+
+#############################################################################
+#
+# Validate USER_MEM_ARGS environment variable values (-MaxRAMFraction)
+# applied to Managed Server command line.
+#
+function checkManagedServer1MemArg() {
+
+  # Verify that USER_MEM_ARGS environment value was applied to the Managed Server 1 command line
+  maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "MaxRAMFraction=1"  /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
+       | grep -v "JAVA_OPTIONS" | wc -l`"
+  logstatus=0
+
+  trace "maxRamlinecount: $maxRamlinecount"
+
+  if [ "$maxRamlinecount" != "1" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep 'MaxRAMFraction=1' ', this probably means that it's reporting USER_MEM_ARGS not applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+
+  # Verify that USER_MEM_ARGS environment value did not get applied to the Node Manager command line
+  linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "\-Xms64m -Xmx100m" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
+       | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
+  logstatus=0
+
+  trace "linecount: $linecount"
+
+  if [ "$linecount" != "0" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep '-Xms64m -Xmx100m' ', this probably means that it's reporting NODEMGR_MEM_ARGS was applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+}
+
+#############################################################################
+#
+# Validate NODEMGR_JAVA_OPTIONS environment variable values (-Dnodemgr.java.options)
+# applied to Node Manager command line.
+#
+
+function checkNodeManagerJavaOptions() {
+
+  # Verify that NODEMGR_JAVA_OPTIONS environment value was applied to the Node Manager command line
+  nodeMgrlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "\-Dnodemgr.java.options" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
+       | grep -v "NODEMGR_JAVA_OPTIONS"  | wc -l`"
+  logstatus=0
+
+  trace "nodeMgrlinecount: $nodeMgrlinecount"
+
+  if [ "$nodeMgrlinecount" != "1" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep '-Dnodemgr.java.options' ', this probably means that it's reporting NODEMGR_JAVA_OPTIONS not applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+
+  # Verify that NODEMGR_JAVA_OPTIONS environment value did not get applied to the Managed Server command line
+  nmJavaOptlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "\-Dnodemgr.java.options" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
+       | grep -v "NODEMGR_JAVA_OPTIONS" | wc -l`"
+  logstatus=0
+
+  trace "nmJavaOptlinecount: $nmJavaOptlinecount"
+
+  if [ "$nmJavaOptlinecount" != "0" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep 'M-Dnodemgr.java.options' ', this probably means that it's reporting NODEMGR_JAVA_OPTIONS was applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+}
+
 
 #############################################################################
 #
@@ -810,5 +938,14 @@ checkFileStores util_test_adminfilestores.sh ${ADMIN_NAME}
 
 # Verify default file store was created for managed-server1
 checkFileStores util_test_ms1filestores.sh ${MANAGED_SERVER_NAME_BASE?}1
+
+# Verify node manager memory args
+checkNodeManagerMemArg
+
+# Verify Managed Server memory args
+checkManagedServer1MemArg
+
+# Verify node manager java options
+checkNodeManagerJavaOptions
 
 trace "Info: Success!"
