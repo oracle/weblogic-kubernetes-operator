@@ -43,6 +43,7 @@ public class ItJrfPvWlst extends BaseTest {
   private static StringBuffer namespaceList;
   private static int dbPort;
   private static String dbNamespace;
+  private static String dbUrl;
 
   /**
   * This method gets called only once before any of the test methods are executed. It does the
@@ -74,11 +75,14 @@ public class ItJrfPvWlst extends BaseTest {
       
       dbNamespace = "db" + String.valueOf(getNewSuffixCount());
       dbPort = 30011 + getNewSuffixCount();
+      dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
+      LoggerHelper.getLocal().log(Level.INFO,"For test: " + testClassName 
+          + " dbNamespace is: " + dbNamespace + " dbUrl:" + dbUrl);
       
       LoggerHelper.getLocal().log(Level.INFO,"For test: " + testClassName 
           + " dbNamespace is: " + dbNamespace);
       DbUtils.startOracleDB(getResultDir(), String.valueOf(dbPort), dbNamespace);
-      DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix, null, dbNamespace);
+      DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix, dbUrl, dbNamespace);
     
       // create operator1
       if (operator1 == null) {
@@ -93,7 +97,7 @@ public class ItJrfPvWlst extends BaseTest {
     }  
   }
   
-  //s@AfterEach
+  @AfterEach
   public void unPrepare() throws Exception {
     DbUtils.deleteRcuPod(getResultDir());
     DbUtils.stopOracleDB(getResultDir(), dbNamespace);
@@ -134,7 +138,8 @@ public class ItJrfPvWlst extends BaseTest {
         domainMap.put("clusterName", "infra-cluster");
         domainMap.put("managedServerNameBase", "infraserver");
         domainMap.put("rcuSchemaPrefix", "jrfdomain");
-        domainMap.put("rcuDatabaseURL", "oracle-db.default.svc.cluster.local:1521/devpdb.k8s");
+        LoggerHelper.getLocal().log(Level.INFO, "DEBUG " + testClassName + "domain: dbUrl: " + dbUrl);
+        domainMap.put("rcuDatabaseURL", dbUrl);
         domainUid = (String) domainMap.get("domainUID");
         LoggerHelper.getLocal().log(Level.INFO,
             "Creating and verifying the domain creation with domainUid: " + domainUid);

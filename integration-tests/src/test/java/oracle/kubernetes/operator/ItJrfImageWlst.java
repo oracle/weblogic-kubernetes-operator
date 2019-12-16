@@ -138,7 +138,7 @@ public class ItJrfImageWlst extends BaseTest {
         domainMap.put("clusterName", "infra-cluster");
         domainMap.put("managedServerNameBase", "infraserver");
         domainMap.put("rcuSchemaPrefix", rcuSchemaPrefix);
-        LoggerHelper.getLocal().log(Level.INFO, "DEBUG: dbUrl: " + dbUrl);
+        LoggerHelper.getLocal().log(Level.INFO, "DEBUG " + testClassName + "domain: dbUrl: " + dbUrl);
         domainMap.put("rcuDatabaseURL", dbUrl);
         domainUid = (String) domainMap.get("domainUID");
         LoggerHelper.getLocal().log(Level.INFO,
