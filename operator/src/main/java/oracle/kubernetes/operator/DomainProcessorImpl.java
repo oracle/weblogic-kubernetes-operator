@@ -33,7 +33,7 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainStatusPatch;
-import oracle.kubernetes.operator.helpers.DomainValidationStep;
+import oracle.kubernetes.operator.helpers.DomainValidationSteps;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -473,7 +473,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           new StartPlanStep(
               info, isDeleting ? createDomainDownPlan(info) : createDomainUpPlan(info));
       if (!isDeleting && dom != null)
-        strategy = new DomainValidationStep(strategy);
+        strategy = DomainValidationSteps.createDomainValidationSteps(ns, strategy);
 
       Packet packet = new Packet();
       packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));

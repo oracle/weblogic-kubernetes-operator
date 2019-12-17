@@ -52,6 +52,8 @@ import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1SecretList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1Status;
@@ -91,6 +93,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String PVC = "PersistentVolumeClaim";
   public static final String POD = "Pod";
   public static final String PODLOG = "PodLog";
+  public static final String SECRET = "Secret";
   public static final String SERVICE = "Service";
   public static final String SUBJECT_ACCESS_REVIEW = "SubjectAccessReview";
   public static final String TOKEN_REVIEW = "TokenReview";
@@ -120,6 +123,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     supportNamespaced(POD, V1Pod.class, this::createPodList);
     supportNamespaced(PODLOG, String.class);
     supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPvcList);
+    supportNamespaced(SECRET, V1Secret.class, this::createSecretList);
     supportNamespaced(SERVICE, V1Service.class, this::createServiceList);
 
     return new KubernetesTestSupportMemento();
@@ -151,6 +155,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private V1JobList createJobList(List<V1Job> items) {
     return new V1JobList().metadata(createListMeta()).items(items);
+  }
+
+  private V1SecretList createSecretList(List<V1Secret> items) {
+    return new V1SecretList().metadata(createListMeta()).items(items);
   }
 
   private V1ServiceList createServiceList(List<V1Service> items) {
