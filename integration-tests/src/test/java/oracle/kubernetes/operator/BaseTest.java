@@ -776,27 +776,15 @@ public class BaseTest {
   private void copyScalingScriptToPod(String domainUid, String podName, String domainNS)
       throws Exception {
 
-    String pvDir = getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid;
-    String scriptsDir = pvDir + "/domains/" + domainUid + "/bin/scripts";
-
     // create scripts dir under domain pv
-    TestUtils.createDirUnderDomainPV(scriptsDir, pvRoot, domainUid);
-    if (OPENSHIFT) {
-      Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
-          Paths.get(scriptsDir + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
-    } else {
-      // workaround for the issue with not allowing .. in the host-path in krun.sh
-      /* Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
-          Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
-      // copy script to pod
-      String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
-          + getResultDir() + ":/tmpdir -m " + pvDir
-          + ":/pvdir -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/domainonpvwdt/bin/scripts' -n "
-          + domainNS;
-      TestUtils.exec(cpUsingKrunCmd, true); */
-      TestUtils.kubectlcp(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
-              "/shared/domains/" + domainUid + "/bin/scripts", podName, domainNS);
-    }
+    // TestUtils.createDirUnderDomainPV(scriptsDir, pvRoot, domainUid);
+    String cmd = "kubectl exec " + podName + " -n "
+        + domainNS + " mkdir -p /shared/domains/"+domainUid+"/bin/scripts" ;
+    TestUtils.exec(cmd, true);
+
+    // copy scalingAction.sh to pod
+    TestUtils.kubectlcp(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
+        "/shared/domains/" + domainUid + "/bin/scripts", podName, domainNS);
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
