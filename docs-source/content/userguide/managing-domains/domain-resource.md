@@ -102,19 +102,19 @@ Sub-sections related to the Administration Server, specific clusters, or specifi
 
 The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec` set the defaults for the entire domain.  The values under a specific entry under `clusters` set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers` set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See the [startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}) documentation for details about `serverStartPolicy` combination.
 
-### JVM Memory and Java Option Environment Variables
+### JVM memory and Java option environment variables
 
-The following environment variables can be used to specify JVM Memory and JVM Option arguments to WLS managed server and node manager instances:
+You can use the following environment variables to specify JVM memory and JVM option arguments to WebLogic Server Managed Server and Node Manager instances:
 
-* JAVA_OPTIONS : Java options for starting WebLogic server.
-* USER_MEM_ARGS : JVM memory arguments for starting WebLogic server.
-* NODEMGR_JAVA_OPTIONS : Java options for starting Node Manager instance.
-* NODEMGR_MEM_ARGS : JVM memory arguments for starting Node Manager instance.
+* `JAVA_OPTIONS` : Java options for starting WebLogic Server.
+* `USER_MEM_ARGS` : JVM memory arguments for starting WebLogic Server.
+* `NODEMGR_JAVA_OPTIONS` : Java options for starting Node Manager instance.
+* `NODEMGR_MEM_ARGS` : JVM memory arguments for starting Node Manager instance.
 
-The following behavior occurs depending on whether or not NODEMGR_JAVA_OPTIONS and NODEMGR_MEM_ARGS is defined:
+The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS` and `NODEMGR_MEM_ARGS` are defined:
 
-* If NODEMGR_JAVA_OPTIONS is not defined AND JAVA_OPTIONS is defined then the JAVA_OPTIONS value will be applied to the Node Manager instance.
-* If NODEMGR_MEM_ARGS is not defined then default (-Xms64m -Xmx100m) memory values will be applied to the Node Manager instance.
+* If `NODEMGR_JAVA_OPTIONS` is not defined and `JAVA_OPTIONS` is defined, then the `JAVA_OPTIONS` value will be applied to the Node Manager instance.
+* If `NODEMGR_MEM_ARGS` is not defined, then default memory values (-Xms64m -Xmx100m) will be applied to the Node Manager instance.
 
 This example snippet illustrates how to add the above environment variables using the `env` attribute under the `serverPod` configuration in your domain resource YAML file. 
 ```
