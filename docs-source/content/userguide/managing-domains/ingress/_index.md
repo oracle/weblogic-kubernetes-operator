@@ -70,6 +70,10 @@ Information about how to install and configure these to load balance WebLogic cl
  - [Traefik guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md)
  - [Voyager guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/voyager/README.md)
 
+ {{% notice note %}}
+ Traefik is recommended for development and test environments only.  For production environments, we recommend Apache or Voyager Ingress controllers, or the load balancer provided by your cloud provider.
+ {{% /notice %}}
+
 Samples are also provided for these two Ingress controllers, showing how to manage multiple WebLogic clusters as the backends, using different routing rules, host-routing and path-routing; and TLS termination:
 
 - [Traefik samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/samples)
