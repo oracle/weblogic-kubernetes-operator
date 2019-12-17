@@ -101,6 +101,7 @@ public class DomainProcessorTest {
     domainConfigurator = DomainConfiguratorFactory.forDomain(domain);
     testSupport.defineResources(domain);
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig());
+    DomainProcessorTestSetup.defineRequiredResources(testSupport);
   }
 
   @After

@@ -69,10 +69,6 @@ public class SecretHelper {
     return secretData;
   }
 
-  public enum SecretType {
-    AdminCredentials
-  }
-
   private static class SecretDataStep extends Step {
     private final SecretType secretType;
     private final String secretName;
@@ -87,7 +83,7 @@ public class SecretHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (secretType != SecretType.AdminCredentials) {
+      if (secretType != SecretType.WebLogicCredentials) {
         throw new IllegalArgumentException("Invalid secret type");
       } else if (secretName == null) {
         throw new IllegalArgumentException("Invalid secret name");
@@ -112,7 +108,7 @@ public class SecretHelper {
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Secret> callResponse) {
         if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
-          LOGGER.warning(loggingFilter, MessageKeys.SECRET_NOT_FOUND, secretName);
+          LOGGER.warning(loggingFilter, MessageKeys.SECRET_NOT_FOUND, secretName, namespace, secretType);
           return doNext(packet);
         }
         return super.onFailure(packet, callResponse);
