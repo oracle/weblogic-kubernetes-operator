@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.jms.ConnectionFactory;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
@@ -1760,7 +1759,7 @@ public class Domain {
     // create config map and secret for custom sit config
     createConfigMapAndSecretForSitConfig();
     
-    if (BaseTest.SHARED_CLUSTER && !domainMap.containsKey("domainHomeImageBase")) {
+    if (!domainMap.containsKey("domainHomeImageBase")) {
       createDockerRegistrySecret();
     }
   }
