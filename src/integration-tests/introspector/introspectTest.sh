@@ -522,10 +522,12 @@ function deployPod() {
       export LOCAL_SERVER_DEFAULT_PORT=$ADMIN_PORT
       export KEEP_DEFAULT_DATA_HOME="true"
       export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR=""
+      export NODEMGR_MEM_ARGS="-Xms32m -Xmx200m "
     else
       export LOCAL_SERVER_DEFAULT_PORT=$MANAGED_SERVER_PORT
       export KEEP_DEFAULT_DATA_HOME=""
       export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR="true"
+      export NODEMGR_MEM_ARGS=""
     fi
     ${SCRIPTPATH}/util_subst.sh -g wl-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
@@ -752,7 +754,8 @@ function checkNodeManagerMemArg() {
 
   trace "Verifying node manager memory arguments"
 
-  # Verify that NODEMGR_MEM_ARGS environment value was applied to the Node Manager command line
+  # Verify that default NODEMGR_MEM_ARGS environment value (-Xms64m -Xmx100m) was applied to the Node Manager
+  # command line when NODEMGR_MEM_ARGS was not defined.
   linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
        grep "\-Xms64m -Xmx100m" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
@@ -760,6 +763,22 @@ function checkNodeManagerMemArg() {
 
   if [ "$linecount" != "1" ]; then
     trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep '-Xms64m -Xmx100m' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+
+  # Verify that NODEMGR_MEM_ARGS environment value (-Xms32m -Xmx200m) was applied to the Node Manager
+  # command line, of the Admin Server pod, when NODEMGR_MEM_ARGS was explicitly defined.
+  adminLinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "\-Xms32m -Xmx200m" /shared/logs/${ADMIN_NAME?}_nodemanager.out \
+       | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
+  logstatus=0
+
+  if [ "$adminLinecount" != "1" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN-NAME?}' does not contain exactly 1 line that match ' grep '-Xms32m -Xmx200m' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
     logstatus=1
   fi
 
@@ -807,7 +826,7 @@ function checkManagedServer1MemArg() {
     exit 1
   fi
 
-  # Verify that USER_MEM_ARGS environment value did not get applied to the Node Manager command line
+  # Verify that NODEMGR_MEM_ARGS environment value did not get applied to the Managed Server 1 command line
   linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
        grep "\-Xms64m -Xmx100m" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
        | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"

@@ -32,6 +32,8 @@
 #   FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR = "true" if WebLogic server should fail to 
 #                       boot if situational configuration related errors are 
 #                       found. Default to "true" if unspecified.
+#   NODEMGR_MEM_ARGS  = JVM mem args for starting the Node Manager instance
+#   NODEMGR_JAVA_OPTIONS  = Java options for starting the Node Manager instance
 #
 # If SERVER_NAME is set, then this NM is for a WL Server and these must also be set:
 # 
@@ -297,12 +299,14 @@ if [ -z "${NODEMGR_MEM_ARGS}" ]; then
   NODEMGR_MEM_ARGS="-Xms64m -Xmx100m"
 fi
 
-# USER_MEM_ARGS is not applied to Node Manager.  Use NODEMGR_MEM_ARGS
-# (or NODEMGR_JAVA_OPTIONS) to specify JVM memory arguments for Node Manager.
-# Specifying a non-empty USER_MEM_ARGS environment variable prevents MEM_ARGS
-# from being specified in the common WebLogic environment scripts in the WebLogic
-# installation.  NOTE: Specifying USER_MEM_ARGS with ' ' (space, not empty string)
-# prevents WLS from calculating default values (see commBaseEnv.sh)
+# We prevent USER_MEM_ARGS from being applied to the NM here and only pass
+# USER_MEM_ARGS to WL Servers via the WL Server startup properties file above.
+# This is so that WL Servers and NM can have different tuning. Use NODEMGR_MEM_ARGS or
+# NODEMGR_JAVA_OPTIONS to specify JVM memory arguments for NMs.
+# NOTE: Specifying USER_MEM_ARGS with ' ' (space, not empty string)
+# prevents MEM_ARGS from being implicitly set by the WebLogic env
+# scripts in the WebLogic installation and WLS from inserting default
+# values for memory arguments. (See commBaseEnv.sh).
 USER_MEM_ARGS=" "
 export USER_MEM_ARGS
 

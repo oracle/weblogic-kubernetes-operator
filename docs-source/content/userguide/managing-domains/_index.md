@@ -65,6 +65,15 @@ Please be aware of the following important considerations for WebLogic domains r
 
 * _Security Note:_ The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
 
+* _JVM Memory and Java Option Arguments:_ The following environment variables can be used to customize the JVM memory and Java options for both the WebLogic managed servers and node manager instances:
+ 
+    * JAVA_OPTIONS - Java options for starting WL server
+    * USER_MEM_ARGS - JVM mem args for starting WL server
+    * NODEMGR_JAVA_OPTIONS - Java options for starting Node Manager instance
+    * NODEMGR_MEM_ARGS - JVM mem args for starting Node Manager instance
+    
+    See [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}) for more information on `JVM Memory and Java Option Environment Variables`.
+
 The following features are **not** certified or supported in this release:
 
 * Whole server migration
@@ -73,7 +82,7 @@ The following features are **not** certified or supported in this release:
 * Multicast
 * Multitenancy
 * Production redeployment
-
+.
 Please consult My Oracle Support Doc ID 2349228.1 for up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments.
 
 
