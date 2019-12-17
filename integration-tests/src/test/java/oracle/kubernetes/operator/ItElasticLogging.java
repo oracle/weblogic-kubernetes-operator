@@ -84,6 +84,7 @@ public class ItElasticLogging extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       createResultAndPvDirs(testClassName);
       String testClassNameShort = "itelastic";
 
@@ -117,7 +118,7 @@ public class ItElasticLogging extends BaseTest {
         }
         operator = TestUtils.createOperator(operatorMap, "2/2", Operator.RestCertType.SELF_SIGNED);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS);
 
         // Get Elasticsearch host and port from yaml file and build Elasticsearch URL

@@ -73,6 +73,7 @@ public class ItStickySession extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       createResultAndPvDirs(testClassName);
       String testClassNameShort = "itstickysesn";
       
@@ -85,7 +86,7 @@ public class ItStickySession extends BaseTest {
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS);
       }
       

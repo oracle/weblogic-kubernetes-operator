@@ -65,6 +65,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
   public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       // create operator1
       if (operator1 == null) {
         createResultAndPvDirs(testClassName);
@@ -72,7 +73,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-        namespaceList = new StringBuffer((String) operatorMap.get("namespace"));
+        namespaceList.append((String) operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS);
         mysqldbport = String.valueOf(31306 + testNumber);
         domain = prepareDomainAndDB(true, domainNS, mysqldbport);

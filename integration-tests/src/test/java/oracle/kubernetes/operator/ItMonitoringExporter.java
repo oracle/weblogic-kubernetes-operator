@@ -112,6 +112,7 @@ public class ItMonitoringExporter extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       createResultAndPvDirs(testClassName);
       wlsUser = BaseTest.getUsername();
       wlsPassword = BaseTest.getPassword();
@@ -133,7 +134,7 @@ public class ItMonitoringExporter extends BaseTest {
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator);
 
-        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS1).append(" ").append(domainNS2);
       }
       if (domain == null) {

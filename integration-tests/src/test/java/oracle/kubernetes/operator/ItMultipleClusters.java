@@ -70,6 +70,7 @@ public class ItMultipleClusters extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       createResultAndPvDirs(testClassName);
       // create operator1
       if (operator1 == null) {
@@ -91,7 +92,7 @@ public class ItMultipleClusters extends BaseTest {
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS1);
       }
 

@@ -71,6 +71,7 @@ public class ItPodsRestart extends BaseTest {
   public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (QUICKTEST) {
+      namespaceList = new StringBuffer();
       createResultAndPvDirs(testClassName);
       // setMaxIterationsPod(80);
 
@@ -80,7 +81,7 @@ public class ItPodsRestart extends BaseTest {
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS);
       }
       restartTmpDir = getResultDir() + "/restarttemp";

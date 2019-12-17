@@ -786,14 +786,16 @@ public class BaseTest {
           Paths.get(scriptsDir + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
     } else {
       // workaround for the issue with not allowing .. in the host-path in krun.sh
-      Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
+      /* Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
           Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
       // copy script to pod
       String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
           + getResultDir() + ":/tmpdir -m " + pvDir
           + ":/pvdir -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/domainonpvwdt/bin/scripts' -n "
           + domainNS;
-      TestUtils.exec(cpUsingKrunCmd, true);
+      TestUtils.exec(cpUsingKrunCmd, true); */
+      TestUtils.kubectlcp(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
+              "/shared/domains/" + domainUid + "/bin/scripts", podName, domainNS);
     }
   }
 

@@ -80,6 +80,7 @@ public class ItPodsShutdown extends BaseTest {
     // initialize test properties and create the directories
     if (FULLTEST) {
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
+      namespaceList = new StringBuffer();
       // create operator1
       if (operator1 == null) {
         createResultAndPvDirs(testClassName);
@@ -87,7 +88,7 @@ public class ItPodsShutdown extends BaseTest {
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS1);
         shutdownTmpDir = getResultDir() + "/shutdowntemp";
         Files.createDirectories(Paths.get(shutdownTmpDir));
