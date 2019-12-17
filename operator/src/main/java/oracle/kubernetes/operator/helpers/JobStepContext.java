@@ -98,7 +98,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   String getWebLogicCredentialsSecretName() {
-    return getDomain().getWebLogicCredentialsSecret().getName();
+    return getDomain().getWebLogicCredentialsSecretName();
   }
 
   // ----------------------- step methods ------------------------------

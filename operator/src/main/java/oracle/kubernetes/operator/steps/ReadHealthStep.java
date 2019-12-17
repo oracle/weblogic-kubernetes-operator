@@ -34,7 +34,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.SubsystemHealth;
 import org.joda.time.DateTime;
@@ -79,15 +78,11 @@ public class ReadHealthStep extends Step {
 
     Domain dom = info.getDomain();
     V1ObjectMeta meta = dom.getMetadata();
-    DomainSpec spec = dom.getSpec();
     String namespace = meta.getNamespace();
 
     String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
 
-    String secretName =
-        spec.getWebLogicCredentialsSecret() == null
-            ? null
-            : spec.getWebLogicCredentialsSecret().getName();
+    String secretName = dom.getWebLogicCredentialsSecretName();
 
     V1Service service = info.getServerService(serverName);
     V1Pod pod = info.getServerPod(serverName);

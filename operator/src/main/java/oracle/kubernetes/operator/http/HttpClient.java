@@ -17,6 +17,7 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
 import oracle.kubernetes.operator.helpers.SecretHelper;
+import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -217,7 +218,7 @@ public class HttpClient {
     public NextAction apply(Packet packet) {
       Step readSecret =
           SecretHelper.getSecretData(
-              SecretHelper.SecretType.AdminCredentials, adminSecretName, namespace, getNext());
+              SecretType.WebLogicCredentials, adminSecretName, namespace, getNext());
       return doNext(readSecret, packet);
     }
   }
