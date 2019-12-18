@@ -65,7 +65,8 @@ Download these WebLogic Monitoring Exporter files from the [Releases](https://gi
 
 #### Create a configuration file for the WebLogic Monitoring Exporter
 
-The configuration file will have the server port for the web application metrics to be exported from the WebLogic Server.
+The configuration file will have the server port of the WebLogic Server instance
+where the monitoring exporter application will be deployed.
 
 See the following sample snippet of the configuration:
 
@@ -155,7 +156,7 @@ $ ls
 config-admin.yaml get1.1.0.sh wls-exporter.war
 ```
 
-Similarly, you must generate the deployment package for the Managed Servers and cluster with a different configuration file.
+Similarly, you must generate the deployment package for the Managed Servers with a different configuration file.
 
 #### Deploy the WebLogic Monitoring Exporter
 
@@ -226,7 +227,7 @@ spec:
     path: /wls-exporter/metrics
 ```
 
-The exporting of metrics from `wls-exporter` requires basic authorization so a secret, created with the user name and password, are base64 encoded.
+The exporting of metrics from `wls-exporter` requires `basicAuth` so a Kubernetes `Secret` is created with the user name and password that are base64 encoded. This `Secret` will be used in the `ServiceMonitor` deployment.
 
 {{% notice note %}} Be careful in the generation of the base64 encoded strings for the user name and password. A new line character might get appended in the encoded string and cause an authentication failure. To avoid a new line string, use the following example:
 

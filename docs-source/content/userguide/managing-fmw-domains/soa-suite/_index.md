@@ -27,7 +27,7 @@ it is supported for production use.
 
 #### Introduction
 
-Starting with the 2.2.1 release, the operator supports deployment of SOA Suite components such as Oracle Service-Oriented Architecture (SOA), Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS). Currently the operator supports these different domain types:
+The operator supports deployment of SOA Suite components such as Oracle Service-Oriented Architecture (SOA), Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS). Currently the operator supports these different domain types:
 
 * `soa`: Deploys a SOA domain
 * `osb`: Deploys an OSB (Oracle Service Bus) domain

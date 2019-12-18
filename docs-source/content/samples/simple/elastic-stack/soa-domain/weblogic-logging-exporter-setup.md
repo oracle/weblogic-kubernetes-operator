@@ -84,7 +84,7 @@ $ kubectl cp setDomainEnv.sh soans/soainfra-adminserver:/u01/oracle/user_project
 
 #### Create a configuration file for the WebLogic Logging Exporter  
 
-Create a file named `WebLogicLoggingExporter.yaml`. Specify the Elasticseach server host and port number.
+Create a file named `WebLogicLoggingExporter.yaml`. Specify the Elasticsearch server host and port number.
 ```
 weblogicLoggingIndexName: wls
 publishHost: elasticsearch.default.svc.cluster.local
@@ -102,7 +102,7 @@ $ kubectl cp WebLogicLoggingExporter.yaml soans/soainfra-adminserver:/u01/oracle
 
 #### Restart all the servers in the domain
 
-To restart the servers, stop and then restart them using the following commands.
+To restart the servers, stop and then start them using the following commands.
 
 To stop the servers:
 ```
@@ -110,7 +110,7 @@ $ kubectl patch domain soainfra -n soans --type='json' -p='[{"op": "replace", "p
 
 ```
 
-To restart the servers:
+To start the servers:
 ```
 $ kubectl patch domain soainfra -n soans --type='json' -p='[{"op": "replace", "path": "/spec/serverStartPolicy", "value": "IF_NEEDED" }]'
 ```
