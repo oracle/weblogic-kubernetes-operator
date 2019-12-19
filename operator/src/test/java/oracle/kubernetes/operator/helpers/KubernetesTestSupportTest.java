@@ -20,6 +20,8 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1SecretList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1Status;
@@ -390,6 +392,26 @@ public class KubernetesTestSupportTest {
 
   private V1Event createEvent(String namespace, String name, String act) {
     return new V1Event().metadata(new V1ObjectMeta().name(name).namespace(namespace)).action(act);
+  }
+
+  @Test
+  public void listSecrets_returnsAllInNamespace() {
+    V1Secret s1 = createSecret("ns1", "secret1");
+    V1Secret s2 = createSecret("ns1", "secret2");
+    V1Secret s3 = createSecret("ns2", "secret3");
+    testSupport.defineResources(s1, s2, s3);
+    
+    TestResponseStep<V1SecretList> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(
+          new CallBuilder()
+                .listSecretsAsync("ns1", responseStep));
+
+    assertThat(responseStep.callResponse.getResult().getItems(), containsInAnyOrder(s1, s2));
+
+  }
+
+  private V1Secret createSecret(String namespace, String name) {
+    return new V1Secret().metadata(new V1ObjectMeta().name(name).namespace(namespace));
   }
 
   @Test
