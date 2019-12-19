@@ -235,6 +235,7 @@ public class Main {
     eventWatchers.remove(ns);
     podWatchers.remove(ns);
     serviceWatchers.remove(ns);
+    configMapWatchers.remove(ns);
     JobWatcher.removeNamespace(ns);
   }
 
@@ -270,7 +271,7 @@ public class Main {
       // targetNamespaces list, or that are deleted from the Kubernetes cluster. 
       Set<String> namespacesToStop = new TreeSet<>(isNamespaceStopping.keySet());
       for (String ns : targetNamespaces) {
-        // the active namespaces are the ones that willnot be stopped
+        // the active namespaces are the ones that will not be stopped
         if (delegate.isNamespaceRunning(ns)) {
           namespacesToStop.remove(ns);
         }
@@ -482,7 +483,7 @@ public class Main {
 
       // We only care about namespaces that are in our targetNamespaces
       if (!targetNamespaces.contains(ns)) return;
-
+      
       switch (item.type) {
         case "ADDED":
           // We only create the domain config map when a namespace is added.
@@ -825,6 +826,9 @@ public class Main {
 
     @Override
     public boolean isNamespaceRunning(String namespace) {
+      // make sure the map entry is initialized the value to "false" if absent
+      isNamespaceStopping(namespace);
+
       return !isNamespaceStopping.get(namespace).get();
     }
 
