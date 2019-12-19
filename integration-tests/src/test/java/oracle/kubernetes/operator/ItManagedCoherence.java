@@ -55,6 +55,7 @@ public class ItManagedCoherence extends BaseTest {
   @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
@@ -71,7 +72,6 @@ public class ItManagedCoherence extends BaseTest {
   public void prepare() throws Exception {
 
     if (FULLTEST) {
-      namespaceList = new StringBuffer();
       createResultAndPvDirs(testClassName);
       String template =
           BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";

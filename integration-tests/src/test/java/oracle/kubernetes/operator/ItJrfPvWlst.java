@@ -52,6 +52,7 @@ public class ItJrfPvWlst extends BaseTest {
   */
   @BeforeAll
   public static void staticPrepare() throws Exception {
+    namespaceList = new StringBuffer();
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
     // initialize test properties 
@@ -61,7 +62,6 @@ public class ItJrfPvWlst extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (QUICKTEST) {
-      namespaceList = new StringBuffer();
       createResultAndPvDirs(testClassName);
       
       TestUtils.exec(

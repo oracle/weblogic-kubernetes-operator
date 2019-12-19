@@ -63,6 +63,7 @@ public class ItPodsShutdown extends BaseTest {
   @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
@@ -80,7 +81,6 @@ public class ItPodsShutdown extends BaseTest {
     // initialize test properties and create the directories
     if (FULLTEST) {
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
-      namespaceList = new StringBuffer();
       // create operator1
       if (operator1 == null) {
         createResultAndPvDirs(testClassName);

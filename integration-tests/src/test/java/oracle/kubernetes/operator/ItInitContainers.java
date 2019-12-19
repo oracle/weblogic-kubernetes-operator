@@ -51,6 +51,7 @@ public class ItInitContainers extends BaseTest {
   @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
@@ -66,7 +67,6 @@ public class ItInitContainers extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
-      namespaceList = new StringBuffer();
       createResultAndPvDirs(testClassName);
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");

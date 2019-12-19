@@ -46,6 +46,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
@@ -64,7 +65,6 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
-      namespaceList = new StringBuffer();
       // create operator1
       if (operator1 == null) {
         createResultAndPvDirs(testClassName);

@@ -56,6 +56,7 @@ public class ItStickySession extends BaseTest {
   @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
@@ -73,7 +74,6 @@ public class ItStickySession extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
-      namespaceList = new StringBuffer();
       createResultAndPvDirs(testClassName);
       String testClassNameShort = "itstickysesn";
       

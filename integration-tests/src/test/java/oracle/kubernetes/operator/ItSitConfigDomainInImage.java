@@ -46,6 +46,7 @@ public class ItSitConfigDomainInImage extends SitConfig {
   @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
@@ -65,7 +66,6 @@ public class ItSitConfigDomainInImage extends SitConfig {
   public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (FULLTEST) {
-      namespaceList = new StringBuffer();
       // create operator1
       if (operator1 == null) {
         createResultAndPvDirs(testClassName);

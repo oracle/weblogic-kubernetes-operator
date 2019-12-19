@@ -419,35 +419,39 @@ public class BaseTest {
     LoggerHelper.getLocal().info("BEGIN");
     LoggerHelper.getLocal().info("Run once");
 
-    LoggerHelper.getLocal().log(
-        Level.INFO,
-        "TEARDOWN: Starting Test Run TearDown (state-dump)."
-            + " Note that if the test failed previous to tearDown, "
-            + " the error that caused the test failure may be reported "
-            + "after the tearDown completes. Note that tearDown itself may report errors,"
-            + " but this won't affect the outcome of the test results.");
-    StringBuffer cmd = new StringBuffer("export RESULT_ROOT=");
-    cmd.append(resultRootCommon).append(" && export PV_ROOT=")
-        .append(pvRootCommon).append(" && export IT_CLASS=");
-    cmd.append(itClassName)
-        .append(" && export NAMESPACE_LIST=\"")
-        .append(namespaceList)
-        .append("\" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} && ")
-        .append(getProjectRoot())
-        .append("/integration-tests/src/test/resources/statedump.sh");
-    LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
+    if (!namespaceList.trim().equals("")) {
+      LoggerHelper.getLocal().log(
+          Level.INFO,
+          "TEARDOWN: Starting Test Run TearDown (state-dump)."
+              + " Note that if the test failed previous to tearDown, "
+              + " the error that caused the test failure may be reported "
+              + "after the tearDown completes. Note that tearDown itself may report errors,"
+              + " but this won't affect the outcome of the test results.");
+      StringBuffer cmd = new StringBuffer("export RESULT_ROOT=");
+      cmd.append(resultRootCommon).append(" && export PV_ROOT=")
+          .append(pvRootCommon).append(" && export IT_CLASS=");
+      cmd.append(itClassName)
+          .append(" && export NAMESPACE_LIST=\"")
+          .append(namespaceList)
+          .append("\" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} && ")
+          .append(getProjectRoot())
+          .append("/integration-tests/src/test/resources/statedump.sh");
+      LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
 
-    // renew lease before callin statedump.sh
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+      // renew lease before callin statedump.sh
+      TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() == 0) {
-      LoggerHelper.getLocal().log(Level.INFO, "Executed statedump.sh " + result.stdout());
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() == 0) {
+        LoggerHelper.getLocal().log(Level.INFO, "Executed statedump.sh " + result.stdout());
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO, "Execution of statedump.sh failed, "
+            + result.stderr() + "\n" + result.stdout());
+      }
     } else {
-      LoggerHelper.getLocal().log(Level.INFO, "Execution of statedump.sh failed, "
-          + result.stderr() + "\n" + result.stdout());
+      LoggerHelper.getLocal().log(Level.INFO,
+          "namespaceList is empty, skipping statedump");
     }
-
   }
 
   /**

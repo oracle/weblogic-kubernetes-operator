@@ -56,6 +56,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
+    namespaceList = new StringBuffer();
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
     initialize(APP_PROPS_FILE, testClassName);
@@ -71,7 +72,6 @@ public class ItPodsRestart extends BaseTest {
   public void prepare() throws Exception {
     // initialize test properties and create the directories
     if (QUICKTEST) {
-      namespaceList = new StringBuffer();
       createResultAndPvDirs(testClassName);
       // setMaxIterationsPod(80);
 

@@ -44,6 +44,7 @@ public class ItOperator extends BaseTest {
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
+    namespaceList = new StringBuffer();
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
     // initialize test properties and create the directories
@@ -58,7 +59,6 @@ public class ItOperator extends BaseTest {
    */
   @BeforeEach
   public void prepare() throws Exception {
-    namespaceList = new StringBuffer();
     createResultAndPvDirs(testClassName);
 
     // create operator1
