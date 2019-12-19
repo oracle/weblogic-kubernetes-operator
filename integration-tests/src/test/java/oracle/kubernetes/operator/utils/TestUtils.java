@@ -1731,10 +1731,16 @@ public class TestUtils {
             + System.getenv("REPO_PASSWORD")
             + "\" && docker push "
             + image;
+    String cmdForDebug =
+        "docker login "
+            + System.getenv("REPO_REGISTRY")
+            + " -u ****** -p ******* "
+            + "\" && docker push "
+            + image;
     ExecResult result = TestUtils.exec(dockerLoginAndPushCmd);
     LoggerHelper.getLocal().log(Level.INFO,
         "cmd "
-            + dockerLoginAndPushCmd
+            + cmdForDebug
             + "\n result "
             + result.stdout()
             + "\n err "
