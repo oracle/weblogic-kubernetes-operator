@@ -22,11 +22,12 @@ it is supported for production use.
 * [Running the Repository Creation Utility to set up your database schema](#running-the-repository-creation-utility-to-set-up-your-database-schema)
 * [Create a Kubernetes secret with the RCU credentials](#create-a-kubernetes-secret-with-the-rcu-credentials)
 * [Creating a SOA domain](#creating-a-soa-domain)
+* [Monitoring a SOA domain](#monitoring-a-soa-domain)
 
 
 #### Introduction
 
-Starting with the 2.2.1 release, the operator supports deployment of SOA Suite components such as Oracle Service-Oriented Architecture (SOA), Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS). Currently the operator supports these different domain types:
+The operator supports deployment of SOA Suite components such as Oracle Service-Oriented Architecture (SOA), Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS). Currently the operator supports these different domain types:
 
 * `soa`: Deploys a SOA domain
 * `osb`: Deploys an OSB (Oracle Service Bus) domain
@@ -350,3 +351,11 @@ $
 Now that you have your Docker images and you have created your RCU schemas, you are ready
 to create your domain.  A [sample]({{< relref "/samples/simple/domains/soa-domain/_index.md" >}})
 is provided that demonstrates how to create a SOA Suite domain.
+
+#### Monitoring a SOA domain
+
+After the SOA domain is set up, you can:
+
+* Monitor the SOA instance using Prometheus and Grafana. See [Monitor a SOA domain]({{< relref "/samples/simple/elastic-stack/soa-domain/weblogic-monitoring-exporter-setup.md" >}}).
+* Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
+See [Publish logs to Elasticsearch]({{< relref "/samples/simple/elastic-stack/soa-domain/weblogic-logging-exporter-setup.md" >}}).
