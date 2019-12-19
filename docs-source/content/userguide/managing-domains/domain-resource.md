@@ -111,7 +111,7 @@ You can use the following environment variables to specify JVM memory and JVM op
 * `NODEMGR_JAVA_OPTIONS` : Java options for starting Node Manager instance.
 * `NODEMGR_MEM_ARGS` : JVM memory arguments for starting Node Manager instance.
 
-Note:_ The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
+Note: The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
 
 The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS` and `NODEMGR_MEM_ARGS` are defined:
 
