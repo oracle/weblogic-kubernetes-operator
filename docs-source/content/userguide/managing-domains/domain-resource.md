@@ -111,6 +111,8 @@ You can use the following environment variables to specify JVM memory and JVM op
 * `NODEMGR_JAVA_OPTIONS` : Java options for starting Node Manager instance.
 * `NODEMGR_MEM_ARGS` : JVM memory arguments for starting Node Manager instance.
 
+Note:_ The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
+
 The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS` and `NODEMGR_MEM_ARGS` are defined:
 
 * If `NODEMGR_JAVA_OPTIONS` is not defined and `JAVA_OPTIONS` is defined, then the `JAVA_OPTIONS` value will be applied to the Node Manager instance.
@@ -136,9 +138,9 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false "
     - name: USER_MEM_ARGS
-      value: "-XX:MaxRAMFraction=1 -Djava.security.egd=file:/dev/./urandom "
+      value: "-Djava.security.egd=file:/dev/./urandom "
     - name: NODEMGR_JAVA_OPTIONS
-      value: "-Dweblogic.StdoutDebugEnabled=false -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap "
+      value: "-Dweblogic.StdoutDebugEnabled=false "
     - name: NODEMGR_MEM_ARGS
       value: "-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom "
 ```
