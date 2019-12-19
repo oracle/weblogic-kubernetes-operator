@@ -781,7 +781,6 @@ public class BaseTest {
       throws Exception {
 
     // create scripts dir under domain pv
-    // TestUtils.createDirUnderDomainPV(scriptsDir, pvRoot, domainUid);
     String cmd = "kubectl exec " + podName + " -n "
         + domainNS + " mkdir /shared/domains/" + domainUid + "/bin/scripts";
     TestUtils.exec(cmd, true);
