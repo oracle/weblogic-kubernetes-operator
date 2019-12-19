@@ -2,7 +2,7 @@
 title: "WebLogic domain"
 date: 2019-10-01T14:32:31-05:00
 weight: 2
-description: "Sample for using Fluentd for WebLogic domain and operator's logs"
+description: "Sample for using Fluentd for WebLogic domain and operator's logs."
 ---
 
 
