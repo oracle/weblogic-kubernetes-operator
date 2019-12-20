@@ -446,11 +446,11 @@ function getSecretsMD5() {
   if [ -d "${override_secrets}" ] ; then
     # find the link and exclude ..data so that the normalized file name will be found
     # otherwise it will return ../data/xxx ..etc. Note: the actual file is in a timestamp linked directory
-    find $override_secrets -type l -not -name "..data" -print  | xargs cat > ${secrets_text}
+    find ${override_secrets} -type l -not -name "..data" -print  | sort  | xargs cat >> ${secrets_text}
   fi
 
   if [ -d "${weblogic_secrets}" ] ; then
-    find ${weblogic_secrets} -type l -not -name "..data" -print | xargs cat >> ${secrets_text}
+    find ${weblogic_secrets} -type l -not -name "..data" -print |  sort  | xargs cat >> ${secrets_text}
   fi
 
   if [ ! -f "${secrets_text}" ] ; then
@@ -460,7 +460,6 @@ function getSecretsMD5() {
   echo ${secrets_md5} > /tmp/secrets.md5
   trace "Found secrets ${secrets_md5}"
   rm ${secrets_text}
-
   trace "Exiting getSecretsMD5"
   trap - ERR
 }
