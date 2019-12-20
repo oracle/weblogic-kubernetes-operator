@@ -1386,13 +1386,13 @@ public class Domain {
     if (ocrserver == null) {
       ocrserver = "container-registry.oracle.com";
     }
-    
+
     TestUtils.createDockerRegistrySecret(
         secret,
         ocrserver,
         System.getenv("OCR_USERNAME"),
         System.getenv("OCR_PASSWORD"),
-        null,
+        System.getenv("OCR_USERNAME") + "@oracle.com",
         domainNS);
   }
 
