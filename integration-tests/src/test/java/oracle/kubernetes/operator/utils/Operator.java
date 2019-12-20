@@ -522,6 +522,13 @@ public class Operator {
     // customize the inputs yaml file to use our pre-built docker image
     // IMAGE_NAME_OPERATOR & IMAGE_TAG_OPERATOR variables are used for shared cluster
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
+        && System.getenv("IMAGE_TAG_OPERATOR") != null
+        && operatorMap.containsKey("operatorImageName")
+        && operatorMap.containsKey("operatorImageTag")) {
+      operatorMap.put(
+          "image",
+          operatorMap.get("operatorImageName") + ":" + operatorMap.get("operatorImageTag"));
+    } else if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       operatorMap.put(
           "image",
