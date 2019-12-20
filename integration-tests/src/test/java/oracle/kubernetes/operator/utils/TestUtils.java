@@ -1226,24 +1226,6 @@ public class TestUtils {
     }
   }
 
-  public static void createDirUnderDomainPV(String dirPath, String pvRoot) throws Exception {
-    if (BaseTest.OPENSHIFT) {
-      String crdCmd = "mkdir -m 777 -p " + dirPath;
-      ExecResult result = TestUtils.exec(crdCmd, true);
-    } else {
-      dirPath = dirPath.replace(pvRoot, "/sharedparent/");
-      String crdCmd =
-          BaseTest.getProjectRoot()
-              + "/src/integration-tests/bash/krun.sh -t 180 -m "
-              + pvRoot + ":/sharedparent -c 'mkdir -m 777 -p "
-              + dirPath
-              + "'";
-
-      ExecResult result = TestUtils.exec(crdCmd, true);
-    }
-
-  }
-
   public static void createWldfModule(String adminPodName, String domainNS, int t3ChannelPort)
       throws Exception {
 
@@ -1749,10 +1731,16 @@ public class TestUtils {
             + System.getenv("REPO_PASSWORD")
             + "\" && docker push "
             + image;
+    String cmdForDebug =
+        "docker login "
+            + System.getenv("REPO_REGISTRY")
+            + " -u ****** -p ******* "
+            + "\" && docker push "
+            + image;
     ExecResult result = TestUtils.exec(dockerLoginAndPushCmd);
     LoggerHelper.getLocal().log(Level.INFO,
         "cmd "
-            + dockerLoginAndPushCmd
+            + cmdForDebug
             + "\n result "
             + result.stdout()
             + "\n err "
