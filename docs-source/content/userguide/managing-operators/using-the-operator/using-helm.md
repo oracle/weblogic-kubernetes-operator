@@ -111,7 +111,7 @@ javaLoggingLevel:  "FINE"
 
 Specifies the Docker image containing the operator code.
 
-Defaults to `weblogic-kubernetes-operator:2.3.0`.
+Defaults to `weblogic-kubernetes-operator:2.4.0`.
 
 Example:
 ```
@@ -488,6 +488,3 @@ To recover:
 If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
 
 Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about the problem and solutions.
-
-
-

@@ -3,21 +3,26 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Simple JUnit test file used for testing Operator.
@@ -25,7 +30,7 @@ import org.junit.runners.MethodSorters;
  * <p>This test is used for testing the affinity between a web client and a Weblogic server for the
  * duration of a HTTP session created by Voyager load balancer.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItStickySession extends BaseTest {
   private static final String testAppName = "stickysessionapp";
   private static final String testAppPath = testAppName + "/StickySessionCounterServlet";
@@ -37,54 +42,82 @@ public class ItStickySession extends BaseTest {
 
   private static Operator operator;
   private static Domain domain;
+  private static String domainNS;
+  private static String testClassName;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes. It creates an operator, a Weblogic domain
-   * and deploy a web application with persistent-store-type configured to replicated_if_clustered.
+   * the resultRoot, pvRoot and projectRoot attributes.
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE);
-  
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
+      initialize(APP_PROPS_FILE, testClassName);
+    }
+  }
+
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. It creates an operator, a Weblogic domain if not running
+   * and deploy a web application with persistent-store-type configured to replicated_if_clustered
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
+
+  @BeforeEach
+  public void prepare() throws Exception {
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
+      String testClassNameShort = "itstickysesn";
+      
       // Create operator1
       if (operator == null) {
-        logger.info("Creating Operator & waiting for the script to complete execution");
-        operator = TestUtils.createOperator(OPERATOR1_YAML);
+        LoggerHelper.getLocal().log(Level.INFO,
+            "Creating Operator & waiting for the script to complete execution");
+        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassNameShort);
+        //operator = TestUtils.createOperator(OPERATOR1_YAML);
+        operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assertions.assertNotNull(operator);
+        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS);
       }
-  
+      
       // create domain
       if (domain == null) {
-        logger.info("Creating WLS Domain & waiting for the script to complete execution");
-        Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+        LoggerHelper.getLocal().log(Level.INFO, "Creating WLS Domain & waiting for the script to complete execution");
+        int number = getNewSuffixCount();
+        Map<String, Object> domainMap = createDomainMap(number, testClassNameShort);
+        domainMap.put("namespace", domainNS);
         // Treafik doesn't work due to the bug 28050300. Use Voyager instead
         domainMap.put("loadBalancer", "VOYAGER");
-        domainMap.put("voyagerWebPort", new Integer("30355"));
+        domainMap.put("voyagerWebPort", 30944 + number);
+        LoggerHelper.getLocal().log(Level.INFO, "For this domain voyagerWebPort is set to: 30944 + " + number);
         domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
       }
-  
-      httpHeaderFile = BaseTest.getResultDir() + "/headers";
-  
+
+      httpHeaderFile = getResultDir() + "/headers";
+
       httpAttrMap = new HashMap<String, String>();
       httpAttrMap.put("sessioncreatetime", "(.*)sessioncreatetime>(.*)</sessioncreatetime(.*)");
       httpAttrMap.put("sessionid", "(.*)sessionid>(.*)</sessionid(.*)");
       httpAttrMap.put("servername", "(.*)connectedservername>(.*)</connectedservername(.*)");
       httpAttrMap.put("count", "(.*)countattribute>(.*)</countattribute(.*)");
-  
+
       // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-  
+
       // Wait some time for deployment gets ready
       Thread.sleep(10 * 1000);
     }
-    
   }
 
   /**
@@ -92,36 +125,31 @@ public class ItStickySession extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
-  
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-  
-      logger.info("SUCCESS");
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+
+      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
 
   /**
-   * Use a web application deployed on Weblogic cluster to track HTTP session. In-memory replication
-   * persistence method is configured to implement session persistence. server-affinity is achieved
-   * by Voyager load balancer based on HTTP session information. This test sends two HTTP requests
+   * Use a web application deployed on Weblogic cluster to track HTTP session.
+   * In-memory replication persistence method is configured to implement session persistence.
+   * server-affinity is achieved by Voyager load balancer based on HTTP session information.
+   * This test sends two HTTP requests
    * to Weblogic and verify that all requests are directed to same Weblogic server.
    *
    * @throws Exception exception
    */
   @Test
   public void testSameSessionStickiness() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-
-    Map<String, Object> domainMap = domain.getDomainMap();
-    String domainNS = domainMap.get("namespace").toString();
-    String domainUid = domain.getDomainUid();
 
     int counterNum = 4;
     String webServiceSetUrl = testAppPath + "?setCounter=" + counterNum;
@@ -138,10 +166,10 @@ public class ItStickySession extends BaseTest {
     String serverName1 = getHttpResponseAttribute(result.stdout(), serverNameAttr);
     String serverID1 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
 
-    Assume.assumeNotNull(serverName1);
-    Assume.assumeNotNull(serverID1);
+    Assertions.assertNotNull(serverName1);
+    Assertions.assertNotNull(serverID1);
 
-    logger.info(
+    LoggerHelper.getLocal().log(Level.INFO,
         "The first HTTP request established a connection with server <"
             + serverName1
             + ">, HTTP session id is <"
@@ -156,11 +184,11 @@ public class ItStickySession extends BaseTest {
     String serverID2 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
     String count = getHttpResponseAttribute(result.stdout(), countAttr);
 
-    Assume.assumeNotNull(serverName2);
-    Assume.assumeNotNull(serverID2);
-    Assume.assumeNotNull(count);
+    Assertions.assertNotNull(serverName2);
+    Assertions.assertNotNull(serverID2);
+    Assertions.assertNotNull(count);
 
-    logger.info(
+    LoggerHelper.getLocal().log(Level.INFO,
         "The second HTTP request connected to server <"
             + serverName2
             + "> with HTTP session id <"
@@ -168,16 +196,18 @@ public class ItStickySession extends BaseTest {
             + ">");
 
     // Verify that the same session info is used
-    Assume.assumeTrue("HTTP session should NOT change!", serverID1.equals(serverID2));
-    logger.info("Same HTTP session id <" + serverID1 + "> is used");
+    Assumptions.assumeTrue(serverID1.equals(serverID2), "HTTP session should NOT change!");
+    LoggerHelper.getLocal().log(Level.INFO, "Same HTTP session id <" + serverID1 + "> is used");
 
     // Verify server-affinity
-    Assume.assumeTrue("Weblogic server name should NOT change!", serverName1.equals(serverName2));
-    logger.info("Two HTTP requests are directed to same Weblogic server <" + serverName1 + ">");
+    Assumptions.assumeTrue(serverName1.equals(serverName2), "Weblogic server name should NOT change!");
+    LoggerHelper.getLocal().log(
+        Level.INFO, "Two HTTP requests are directed to same Weblogic server <"
+            + serverName1 + ">");
 
     // Verify that count numbers from two HTTP responses match
-    Assume.assumeTrue("Count number does not match", Integer.parseInt(count) == counterNum);
-    logger.info(
+    Assumptions.assumeTrue(Integer.parseInt(count) == counterNum, "Count number does not match");
+    LoggerHelper.getLocal().log(Level.INFO,
         "Count number <"
             + count
             + "> got from HTTP response matches "
@@ -185,7 +215,7 @@ public class ItStickySession extends BaseTest {
             + counterNum
             + ">");
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -198,8 +228,9 @@ public class ItStickySession extends BaseTest {
    */
   @Test
   public void testDiffSessionsNoSharing() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
     Map<String, Object> domainMap = domain.getDomainMap();
@@ -218,9 +249,9 @@ public class ItStickySession extends BaseTest {
 
     // Retrieve the session id from HTTP response
     String serverIdClient1 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
-    Assume.assumeNotNull(serverIdClient1);
+    Assertions.assertNotNull(serverIdClient1);
 
-    logger.info(
+    LoggerHelper.getLocal().log(Level.INFO,
         "Client1 created a connection with HTTP session id <"
             + serverIdClient1
             + "> and set a count number to <"
@@ -234,10 +265,10 @@ public class ItStickySession extends BaseTest {
     String serverIdClient2 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
     String count = getHttpResponseAttribute(result.stdout(), countAttr);
 
-    Assume.assumeNotNull(serverIdClient2);
-    Assume.assumeNotNull(count);
+    Assertions.assertNotNull(serverIdClient2);
+    Assertions.assertNotNull(count);
 
-    logger.info(
+    LoggerHelper.getLocal().log(Level.INFO,
         "Client2 created a connection with HTTP session id <"
             + serverIdClient2
             + "> and retrieved a count number <"
@@ -245,21 +276,21 @@ public class ItStickySession extends BaseTest {
             + ">");
 
     // Verify that each client session has its own session ID
-    Assume.assumeFalse("HTTP session should NOT be same!", serverIdClient1.equals(serverIdClient2));
+    Assumptions.assumeFalse(serverIdClient1.equals(serverIdClient2), "HTTP session should NOT be same!");
 
     // Verify that count number retrieved from session state is not shared between two clients
-    Assume.assumeTrue(
-        "Count number <" + counterNum + "> set by client1 should be invisible to client2",
-        count.equals("0"));
+    Assumptions.assumeTrue(
+        count.equals("0"),
+        "Count number <" + counterNum + "> set by client1 should be invisible to client2");
 
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   private String getHttpResponseAttribute(String httpResponseString, String attribute)
       throws Exception {
     String attrPatn = httpAttrMap.get(attribute);
 
-    Assume.assumeNotNull(attrPatn);
+    Assertions.assertNotNull(attrPatn);
 
     String httpAttribute = null;
     Pattern pattern = Pattern.compile(attrPatn);
@@ -277,7 +308,7 @@ public class ItStickySession extends BaseTest {
 
     // Send a HTTP request
     String curlCmd = buildWebServiceUrl(webServiceUrl, headerOption);
-    logger.info("Send a HTTP request: " + curlCmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
     ExecResult result = TestUtils.exec(curlCmd);
 
     return result;

@@ -29,6 +29,7 @@ import io.kubernetes.client.models.V1beta1JSONSchemaProps;
 import io.kubernetes.client.util.Yaml;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -119,6 +120,12 @@ public class CrdHelper {
 
     @Override
     public NextAction apply(Packet packet) {
+
+      if (!HealthCheckHelper.isClusterResourceAccessAllowed(Main.computeOperatorNamespace(),
+          AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get)) {
+        return doNext(packet);
+      }
+
       return doNext(context.verifyCrd(getNext()), packet);
     }
   }
@@ -207,6 +214,7 @@ public class CrdHelper {
       V1beta1JSONSchemaProps status =
           gson.fromJson(jsonElementStatus, V1beta1JSONSchemaProps.class);
       return new V1beta1JSONSchemaProps()
+          .type("object")
           .putPropertiesItem("spec", spec)
           .putPropertiesItem("status", status);
     }
@@ -309,15 +317,39 @@ public class CrdHelper {
       public NextAction onSuccess(
           Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
         V1beta1CustomResourceDefinition existingCrd = callResponse.getResult();
+        RuntimeException  exception = null;
+        
         if (existingCrd == null) {
-          return doNext(createCrd(getNext()), packet);
+          if (Main.isDedicated()) {
+          // if (Main.isDedicated() &&
+          //     ! HealthCheckHelper.isClusterResourceAccessAllowed(Main.computeOperatorNamespace(),
+          //     AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.create)) {
+            exception = new RuntimeException("Failed to find CRD");
+          } else {
+            return doNext(createCrd(getNext()), packet);
+          }
         } else if (isOutdatedCrd(existingCrd)) {
-          return doNext(updateCrd(getNext(), existingCrd), packet);
+          if (Main.isDedicated()) {
+          // if (Main.isDedicated() &&
+          //     ! HealthCheckHelper.isClusterResourceAccessAllowed(Main.computeOperatorNamespace(),
+          //     AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.update)) {
+            exception = new RuntimeException("Found an outdated CRD");
+          } else {
+            return doNext(updateCrd(getNext(), existingCrd), packet);
+          }
         } else if (!existingCrdContainsVersion(existingCrd)) {
-          return doNext(updateExistingCrd(getNext(), existingCrd), packet);
+          if (Main.isDedicated()) {
+          // if (Main.isDedicated() &&
+          //     ! HealthCheckHelper.isClusterResourceAccessAllowed(Main.computeOperatorNamespace(),
+          //     AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.update)) {
+            exception = new RuntimeException("Not permitted to update the existing CRD");
+          } else {
+            return doNext(updateExistingCrd(getNext(), existingCrd), packet);
+          }
         } else {
           return doNext(packet);
         }
+        return super.doTerminate(exception, packet);
       }
     }
 

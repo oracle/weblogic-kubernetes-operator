@@ -25,8 +25,7 @@ function setup_shared_cluster {
   echo "Completed setup_shared_cluster"
 }
 
-function clean_shared_cluster {
-	echo "Clean shared cluster"
+function cleanup {
 	${PROJECT_ROOT}/src/integration-tests/bash/cleanup.sh
 }
 
@@ -46,6 +45,7 @@ function create_image_pull_secret_wl {
 	    --docker-server=${OCR_SERVER}/ \
 	    --docker-username=$OCR_USERNAME \
 	    --docker-password=$OCR_PASSWORD \
+	    --docker-email=$OCR_USERNAME@oracle.com \
             --dry-run -o yaml | kubectl apply -f -
 	  
 	  echo "Checking Secret"
@@ -98,6 +98,7 @@ export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
 export BRANCH_NAME="${BRANCH_NAME:-$SHARED_CLUSTER_GIT_BRANCH}"
 export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
+export SKIP_BUILD_OPERATOR="${SKIP_BUILD_OPERATOR:-false}"
 export OPENSHIFT=${OPENSHIFT:-false}
 
 if [ "$JRF_ENABLED" = true ] ; then
@@ -138,8 +139,8 @@ echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPER
 if [ "$SHARED_CLUSTER" = "true" ]; then
   
   echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
-  
-  clean_shared_cluster
+  echo "Clean shared cluster"
+  cleanup
     
   
   export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
@@ -187,15 +188,17 @@ elif [ "$JENKINS" = "true" ]; then
   else
   	create_image_pull_secret_wl
   fi
-
-  export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
-  # create a docker image for the operator code being tested
-  docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
+  if [ "$SKIP_BUILD_OPERATOR" = false ] ; then
+    export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
+    # create a docker image for the operator code being tested
+    docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
+  fi
   docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
   
   docker images
 
 else
+  cleanup
   if [ "$JRF_ENABLED" = true ] ; then
 	pull_tag_images_jrf	
   else
@@ -206,9 +209,11 @@ else
   docker images --quiet --filter=dangling=true | xargs --no-run-if-empty docker rmi  -f
   
   docker images	
-	
-  export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
-  docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
+
+  if [ "$SKIP_BUILD_OPERATOR" = false ] ; then	
+    export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
+    docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
+  fi  
   docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
  
 fi

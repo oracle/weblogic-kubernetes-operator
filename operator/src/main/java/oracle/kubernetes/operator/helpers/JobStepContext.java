@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.io.File;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,12 +19,14 @@ import io.kubernetes.client.models.V1PodTemplateSpec;
 import io.kubernetes.client.models.V1SecretVolumeSource;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.NextAction;
@@ -97,7 +98,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   String getWebLogicCredentialsSecretName() {
-    return getDomain().getWebLogicCredentialsSecret().getName();
+    return getDomain().getWebLogicCredentialsSecretName();
   }
 
   // ----------------------- step methods ------------------------------
@@ -320,14 +321,14 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Job> callResponse) {
-      if (DomainStatusPatch.isUnprocessableEntityFailure(callResponse))
+      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse))
         return updateDomainStatus(packet, callResponse);
       else
         return super.onFailure(packet, callResponse);
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {
-      return doNext(DomainStatusPatch.createStep(getDomain(), callResponse.getE()), packet);
+      return doNext(DomainStatusUpdater.createFailedStep(callResponse, null), packet);
     }
 
     @Override

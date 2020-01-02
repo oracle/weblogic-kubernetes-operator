@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
+import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -95,10 +96,12 @@ public class DomainProcessorTest {
     mementos.add(TuningParametersStub.install());
     mementos.add(InMemoryCertificates.install());
     mementos.add(UnitTestHash.install());
+    mementos.add(ScanCacheStub.install());
 
     domainConfigurator = DomainConfiguratorFactory.forDomain(domain);
     testSupport.defineResources(domain);
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig());
+    DomainProcessorTestSetup.defineRequiredResources(testSupport);
   }
 
   @After
@@ -130,6 +133,20 @@ public class DomainProcessorTest {
     processor.makeRightDomainPresence(info, true, false, false);
 
     assertThat((int) getServerServices().count(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS));
+    assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
+  }
+
+  @Test
+  public void whenDomainScaledDown_withPreCreateServerService_doesNotRemoveServices() {
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(true);
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.makeRightDomainPresence(info, true, false, false);
+
+    assertThat((int) getServerServices().count(), equalTo(MAX_SERVERS + NUM_ADMIN_SERVERS));
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
   }
 

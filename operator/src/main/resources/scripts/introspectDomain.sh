@@ -56,7 +56,10 @@ function createFolder {
 
 trace "Introspecting the domain"
 
-env | tracePipe "Current environment:"
+# list potentially interesting env-vars and dirs before they're updated by export.*Homes
+
+traceEnv before
+traceDirs before
 
 # set defaults
 # set ORACLE_HOME/WL_HOME/MW_HOME to defaults if needed
@@ -65,7 +68,8 @@ exportInstallHomes
 
 # check if prereq env-vars, files, and directories exist
 
-checkEnv DOMAIN_UID \
+checkEnv -q \
+         DOMAIN_UID \
          NAMESPACE \
          DOMAIN_HOME \
          ORACLE_HOME \
@@ -85,8 +89,6 @@ for dir_var in DOMAIN_HOME JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
   [ ! -d "${!dir_var}" ] && trace SEVERE "Missing ${dir_var} directory '${!dir_var}'." && exit 1
 done
 
-trace "DATA_HOME=${DATA_HOME}"
-
 #
 # DATA_HOME env variable exists implies override directory specified.  Attempt to create directory
 #
@@ -99,6 +101,11 @@ fi
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
 
 exportEffectiveDomainHome || exit 1
+
+# list potentially interesting env-vars and dirs after they're updated by export.*Homes
+
+traceEnv after
+traceDirs after
 
 # check if we're using a supported WebLogic version
 # (the check  will log a message if it fails)

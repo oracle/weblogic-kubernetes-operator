@@ -26,7 +26,7 @@ source ${scriptDir}/../../common/validate.sh
 function usage {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
   echo "  -i Parameter inputs file, must be specified."
-  echo "  -o Ouput directory for the generated yaml files, must be specified."
+  echo "  -o Output directory for the generated yaml files, must be specified."
   echo "  -e Also create the resources in the generated yaml files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -h Help"
@@ -158,7 +158,7 @@ function createDomainConfigmap {
  
   # create the configmap and label it properly
   local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
-  kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir
+  kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir --dry-run -o yaml | kubectl apply -f -
 
   echo Checking the configmap $cmName was created
   local num=`kubectl get cm -n $namespace | grep ${cmName} | wc | awk ' { print $1; } '`

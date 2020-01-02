@@ -6,8 +6,6 @@ package oracle.kubernetes.operator.utils;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import oracle.kubernetes.operator.BaseTest;
-
 public class DbUtils {
   public static final String DEFAULT_FMWINFRA_DOCKER_IMAGENAME =
       "container-registry.oracle.com/middleware/fmw-infrastructure";
@@ -52,10 +50,10 @@ public class DbUtils {
    *
    * @throws Exception - if any error occurs when creating Oracle DB pod and service
    */
-  public static void startOracleDB() throws Exception {
+  public static void startOracleDB(String scriptsDir) throws Exception {
     String cmd1 = "sh "
-        + BaseTest.getResultDir()
-        + "/create-rcu-schema/start-db-service.sh";
+        + scriptsDir
+        + "/scripts/create-oracle-db-service/start-db-service.sh";
     TestUtils.exec(cmd1, true);
     String cmd2 = "kubectl get pod | grep oracle-db | cut -f1 -d \" \" ";
     ExecResult result = TestUtils.exec(cmd2);
@@ -75,11 +73,10 @@ public class DbUtils {
    *
    * @throws Exception - if any error occurs when dropping Oracle DB service
    */
-  public static void stopOracleDB() throws Exception {
+  public static void stopOracleDB(String scriptsDir) throws Exception {
     String cmd = "sh " 
-        + BaseTest.getResultDir()
-        + "/create-rcu-schema/stop-db-service.sh";
-  
+        + scriptsDir
+        + "/scripts/create-oracle-db-service/stop-db-service.sh";
     TestUtils.exec(cmd, true);
   }
   
@@ -88,10 +85,10 @@ public class DbUtils {
    * @param rcuSchemaPrefix - rcu SchemaPrefixe
    * @throws Exception - if any error occurs when creating Oracle rcu pod
    */
-  public static void createRcuSchema(String rcuSchemaPrefix) throws Exception {
+  public static void createRcuSchema(String scriptsDir, String rcuSchemaPrefix) throws Exception {
     String cmd = "sh " 
-        + BaseTest.getResultDir()
-        + "/create-rcu-schema/create-rcu-schema.sh -s "
+        + scriptsDir
+        + "/scripts/create-rcu-schema/create-rcu-schema.sh -s "
         + rcuSchemaPrefix;
     TestUtils.exec(cmd, true);
   }
@@ -101,10 +98,10 @@ public class DbUtils {
    * @param rcuSchemaPrefix - rcu SchemaPrefixe
    * @throws Exception - if any error occurs when dropping rcu schema
    */
-  public static void dropRcuSchema(String rcuSchemaPrefix) throws Exception {
+  public static void dropRcuSchema(String scriptsDir, String rcuSchemaPrefix) throws Exception {
     String cmd = "sh " 
-        + BaseTest.getResultDir()
-        + "/create-rcu-schema/drop-rcu-schema.sh -s rcuSchemaPrefix";
+        + scriptsDir
+        + "/scripts/create-rcu-schema/drop-rcu-schema.sh -s rcuSchemaPrefix";
     TestUtils.exec(cmd, true);
   }
   
@@ -113,10 +110,10 @@ public class DbUtils {
    *
    * @throws Exception - if any error occurs when deleting RCU pod
    */
-  public static void deleteRcuPod() throws Exception {
+  public static void deleteRcuPod(String scriptsDir) throws Exception {
     String cmd = "kubectl delete -f " 
-        + BaseTest.getResultDir()
-        + "/create-rcu-schema/common/rcu.yaml";
+        + scriptsDir
+        + "/scripts/create-rcu-schema/common/rcu.yaml";
     TestUtils.exec(cmd, true);
   }
 
@@ -124,7 +121,7 @@ public class DbUtils {
    * run RCU script to load database schema.
    *
    * @param rcuPodName - rcu pod name
-   * @param inputYaml - create domain input file
+   * @param inputYaml  - create domain input file
    * @throws Exception - if any error occurs
    */
   public static void runRcu(String rcuPodName, String inputYaml) throws Exception {
@@ -136,7 +133,7 @@ public class DbUtils {
    * run RCU script to load database schema.
    *
    * @param rcuPodName - rcu pod name
-   * @param inputMap - domain input map
+   * @param inputMap   - domain input map
    * @throws Exception - if any error occurs
    */
   public static void runRcu(String rcuPodName, Map<String, Object> inputMap) throws Exception {
@@ -148,9 +145,9 @@ public class DbUtils {
   /**
    * run RCU script to load database schema.
    *
-   * @param rcuNamespace - namespace for rcu pod
+   * @param rcuNamespace    - namespace for rcu pod
    * @param dbConnectString - db connect string to load the database schema
-   * @param rcuPrefix - rcu prefix for the db schema name
+   * @param rcuPrefix       - rcu prefix for the db schema name
    * @throws Exception - if any error occurs
    */
   private static void runRcu(

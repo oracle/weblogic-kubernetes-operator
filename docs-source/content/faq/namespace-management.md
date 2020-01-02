@@ -2,6 +2,7 @@
 title: "Managing Domain Namespaces"
 date: 2019-09-19T10:41:32-05:00
 draft: false
+weight: 1
 ---
 
 Each WebLogic operator deployment manages a number of Kubernetes namespaces (for information about setting domain namespaces, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values">}})). A number of Kubernetes resources
@@ -34,7 +35,7 @@ elkIntegrationEnabled: false
 externalDebugHttpPort: 30999
 externalRestEnabled: false
 externalRestHttpsPort: 31001
-image: oracle/weblogic-kubernetes-operator:2.3.1
+image: oracle/weblogic-kubernetes-operator:2.4.0
 imagePullPolicy: IfNotPresent
 internalDebugHttpPort: 30999
 istioEnabled: false

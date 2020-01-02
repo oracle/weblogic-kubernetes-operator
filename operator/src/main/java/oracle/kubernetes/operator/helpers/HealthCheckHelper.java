@@ -100,6 +100,11 @@ public final class HealthCheckHelper {
   private HealthCheckHelper() {
   }
 
+  public static void performSecurityChecks(
+      KubernetesVersion version, String operatorNamespace, String ns) {
+    performSecurityChecks(version, operatorNamespace, ns, false);
+  }
+
   /**
    * Verify Access.
    *
@@ -108,7 +113,7 @@ public final class HealthCheckHelper {
    * @param ns target namespace
    */
   public static void performSecurityChecks(
-      KubernetesVersion version, String operatorNamespace, String ns) {
+      KubernetesVersion version, String operatorNamespace, String ns, boolean dedicated) {
 
     // Validate namespace
     if (DEFAULT_NAMESPACE.equals(operatorNamespace)) {
@@ -130,12 +135,14 @@ public final class HealthCheckHelper {
 
         for (AuthorizationProxy.Resource r : namespaceAccessChecks.keySet()) {
           for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
-            check(rules, r, op);
+            check(rules, r, op, dedicated);
           }
         }
-        for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
-          for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-            check(rules, r, op);
+        if (!dedicated) {
+          for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
+            for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
+              check(rules, r, op, dedicated);
+            }
           }
         }
       }
@@ -149,23 +156,83 @@ public final class HealthCheckHelper {
       for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
 
         if (!ap.check(op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource(), ns);
+          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
         }
       }
     }
 
-    for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
-      for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
+    if (!dedicated) {
+      for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
+        for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
 
-        if (!ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource(), ns);
+          if (!ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
+            LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+          }
         }
       }
     }
   }
 
-  private static void check(
-      List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op) {
+  /**
+   * Verify View (get, list, and watch) Access.
+   *
+   * @param version Kubernetes version
+   * @param operatorNamespace operator namespace
+   * @param ns target namespace
+   */
+  public static boolean isClusterResourceAccessAllowed(String ns, AuthorizationProxy.Resource resource, AuthorizationProxy.Operation operation) {
+
+    // Validate RBAC or ABAC policies allow service account to perform required operations
+    AuthorizationProxy ap = new AuthorizationProxy();
+    // TODO DONGBO !!! 
+    // LOGGER.info(MessageKeys.VERIFY_CLUSTER_VIEW_ACCESS_START, r);
+
+    KubernetesVersion version = performK8sVersionCheck();
+
+    boolean result = true;
+
+    if (version.isRulesReviewSupported()) {
+      boolean rulesReviewSuccessful = true;
+      V1SelfSubjectRulesReview review = ap.review(ns);
+
+      if (review == null) {
+        rulesReviewSuccessful = false;
+      } else {
+        V1SubjectRulesReviewStatus status = review.getStatus();
+        List<V1ResourceRule> rules = status.getResourceRules();
+
+        for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
+          if (r.equals(resource)) {
+            for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
+              if (op.equals(operation) && !check(rules, r, op, false)) { 
+                result = false;
+              }
+            }
+          }
+        }
+      }
+
+      if (rulesReviewSuccessful) {
+        return result;
+      }
+    }
+
+    for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
+      if (r.equals(resource)) {
+        for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
+
+          if (op.equals(operation) && 
+              !ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
+            result = false;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  private static boolean check(
+      List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op, boolean log) {
     String verb = op.name();
     String apiGroup = r.getApiGroup();
     String resource = r.getResource();
@@ -180,13 +247,14 @@ public final class HealthCheckHelper {
         if (ruleResources != null && ruleResources.contains(resource)) {
           List<String> ruleVerbs = rule.getVerbs();
           if (ruleVerbs != null && ruleVerbs.contains(verb)) {
-            return;
+            return true;
           }
         }
       }
     }
+    if (log) LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
 
-    LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+    return false;
   }
 
   private static boolean apiGroupMatch(List<String> ruleApiGroups, String apiGroup) {

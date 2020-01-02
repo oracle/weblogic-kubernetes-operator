@@ -121,7 +121,7 @@ This example domain YAML file specifies that pods for WebLogic Server instances 
 # Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
-apiVersion: "weblogic.oracle/v5"
+apiVersion: "weblogic.oracle/v6"
 kind: Domain
 metadata:
   name: domain1
@@ -145,7 +145,7 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+      value: "-Djava.security.egd=file:/dev/./urandom "
 
   adminServer:
     serverStartState: "RUNNING"

@@ -8,7 +8,7 @@
 
   <groupId>oracle.kubernetes</groupId>
   <artifactId>operator-parent</artifactId>
-  <version>2.3.1</version>
+  <version>2.4.0</version>
 
   <modules>
     <module>build-tools</module>
@@ -209,6 +209,12 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin-version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>surefire-logger-api</artifactId>
+          <version>${surefire-logger-api-version}</version>
         </plugin>
 
         <plugin>
@@ -542,6 +548,37 @@
         <version>${junit-version}</version>
       </dependency>
       <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit.jupiter.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit.jupiter.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+        <version>${junit.vintage.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-launcher</artifactId>
+        <version>${junit.platform.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-surefire-provider</artifactId>
+        <version>${junit.platform.surefire.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-engine</artifactId>
+        <version>${junit.platform.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.meterware.simplestub</groupId>
         <artifactId>simplestub</artifactId>
         <version>1.2.12</version>
@@ -712,6 +749,7 @@
     <maven-resources-plugin-version>3.1.0</maven-resources-plugin-version>
     <maven-site-plugin-version>3.7.1</maven-site-plugin-version>
     <maven-surefire-plugin-version>3.0.0-M3</maven-surefire-plugin-version>
+    <surefire-logger-api-version>3.0.0-M3</surefire-logger-api-version>
     <maven-checkstyle-plugin-version>3.1.0</maven-checkstyle-plugin-version>
     <maven-pmd-plugin-version>3.12.0</maven-pmd-plugin-version>
     <maven-release-plugin-version>2.5.3</maven-release-plugin-version>
@@ -724,6 +762,10 @@
     <jodatime-version>2.10.3</jodatime-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
     <junit-version>4.12</junit-version>
+    <junit.jupiter.version>5.5.2</junit.jupiter.version>
+    <junit.vintage.version>5.5.2</junit.vintage.version>
+    <junit.platform.version>1.5.0</junit.platform.version>
+    <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jersey-version>2.29</jersey-version> <!-- switched from 2.23 to 2.26 to get the RestServer to work -->
     <jackson-version>2.9.9</jackson-version>

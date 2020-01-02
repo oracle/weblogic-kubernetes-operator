@@ -11,6 +11,7 @@ import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1SecurityContext;
 import io.kubernetes.client.models.V1Toleration;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -205,6 +206,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withRestartVersion(String restartVersion) {
     getDomainSpec().setRestartVersion(restartVersion);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withWebLogicCredentialsSecret(String secretName, String namespace) {
+    getDomainSpec().setWebLogicCredentialsSecret(new V1SecretReference().name(secretName).namespace(namespace));
     return this;
   }
 
@@ -655,6 +662,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withToleration(V1Toleration toleration) {
       getDomainSpec().addToleration(toleration);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withPrecreateServerService(boolean precreateServerService) {
+      getDomainSpec().setPrecreateServerService(precreateServerService);
       return this;
     }
   }

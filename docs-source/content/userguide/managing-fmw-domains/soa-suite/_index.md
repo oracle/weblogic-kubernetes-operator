@@ -82,7 +82,6 @@ Then, you can pull the image with these commands:
 
 ```
 $ docker pull container-registry.oracle.com/middleware/soasuite:12.2.1.3
-$ docker tag  container-registry.oracle.com/middleware/soasuite:12.2.1.3 oracle/soa:12.2.1.3
 ```
 
 Additional information about using this image is available in the
@@ -126,17 +125,17 @@ After cloning the repository and downloading the installer from Oracle Technolog
 or e-delivery, you create your image by running the provided script:
 
 ```bash
-cd docker-images/OracleFMWInfrastructure/dockerfiles
+cd docker-images/OracleSOASuite/dockerfiles
 ./buildDockerImage.sh -v 12.2.1.3 -s
 ```
 
 The image produced will be named `middleware/soasuite/oracle/soasuite:12.2.1.3`.
 
 The Oracle SOA Suite image created through the above step needs to be retagged
-from `middleware/soasuite/oracle/soasuite:12.2.1.3` to `oracle/soa:12.2.1.3` before continuing with the next steps.
+from `middleware/soasuite/oracle/soasuite:12.2.1.3` to `container-registry.oracle.com/middleware/soasuite:12.2.1.3` before continuing with the next steps.
 
 ```bash
-$ docker tag middleware/soasuite/oracle/soasuite:12.2.1.3 oracle/soa:12.2.1.3
+$ docker tag middleware/soasuite/oracle/soasuite:12.2.1.3 container-registry.oracle.com/middleware/soasuite:12.2.1.3
 ```
 
 You can use this image to run the Repository Creation Utility and to run your domain using the “domain on a persistent volume” model.
@@ -176,7 +175,7 @@ by running the [create-pv-pvc.sh]({{< relref "/samples/simple/storage/_index.md"
 Follow the instructions for using the scripts to create a PV and PVC.  
 
 {{% notice note %}}
-When creating the PV and PVC for the database, make sure that you use a different name 
+When creating the PV and PVC for the database, make sure that you use a different name
 and storage class to the PV and PVC you create for the domain to use.
 {{% /notice %}}
 
@@ -185,11 +184,11 @@ Bring up the database and database service using the following commands:
 **NOTE**: Make sure you update `db-with-pv.yaml` with the name of the PVC you created in the previous step.
 
 ```bash
-$ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-soa-domain/create-database
+$ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-soa-domain/domain-home-on-pv/create-database
 $ kubectl create -f db-with-pv.yaml
 ```
 
-The database will take several minutes to start the first time, since it has to 
+The database will take several minutes to start the first time, since it has to
 complete the setup operations.  You can watch the log to see its progress using
 this command:
 
@@ -214,7 +213,7 @@ image that you built earlier as a "service" pod to run RCU.  To do this, start u
 pod using that image as follows:
 
 ```bash
-kubectl run rcu --generator=run-pod/v1 --image oracle/soa:12.2.1.3 -n soans  -- sleep infinity
+kubectl run rcu --generator=run-pod/v1 --image container-registry.oracle.com/middleware/soasuite:12.2.1.3 -n soans  -- sleep infinity
 ```
 
 This will create a Kubernetes deployment called `rcu` containing a pod running a container

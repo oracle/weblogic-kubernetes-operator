@@ -77,6 +77,8 @@ Follow the instructions for using the scripts to create a PV and PVC.
 
 #### Use the script to create a domain
 
+Please note that the sample scripts for SOASuite domain deployment are available at  `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts/create-soa-domain`.
+  
 Make a copy of the `create-domain-inputs.yaml` file, and run the create script, pointing it at
 your inputs file and an output directory:
 
@@ -111,11 +113,11 @@ into the target directory, maintaining the original directory hierarchy.
 
 The default domain created by the script has the following characteristics:
 
-* An Administration Server named `admin-server` listening on port `7001`.
+* An Administration Server named `AdminServer` listening on port `7001`.
 * A configured cluster named `soa_cluster-1` of size 5.
-* Two Managed Servers, named `soa-server1` and `soa-server2`, listening on port `8001`.
+* Two Managed Servers, named `soa_server1` and `soa_server2`, listening on port `8001`.
 * Log files that are located in `/shared/logs/<domainUID>`.
-* SOA Infra, BPM composer, and WorklistApp applications deployed.
+* SOA Infra, SOA composer and WorklistApp applications deployed.
 * No data sources or JMS resources.
 * A T3 channel.
 
@@ -139,7 +141,7 @@ The following parameters can be provided in the inputs file.
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `soainfra` |
 | `domainType` | Type of the domain. Mandatory input for SOA Suite domains. You must provide one of the supported domain type values: `soa` (deploys a SOA domain),`osb` (deploys an OSB (Oracle Service Bus) domain),`soaess` (deploys a SOA domain with Enterprise Scheduler (ESS)),`soaosb` (deploys a domain with SOA and OSB), and `soaessosb` (deploys a domain with SOA, OSB, and ESS). | `soa`
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
-| `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `true` |
+| `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `image` | SOA Suite Docker image. The operator requires SOA Suite 12.2.1.3.0 with patch 29135930 applied. Refer to [SOA domains]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md#obtaining-the-soa-suite-docker-image" >}}) for details on how to obtain or create the image. | `container-registry.oracle.com/middleware/soasuite:12.2.1.3` |
 | `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never` | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified. |  |
@@ -147,7 +149,7 @@ The following parameters can be provided in the inputs file.
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration Server and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
 | `logHome` | The in-pod location for the domain log, server logs, server out, and Node Manager log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/u01/oracle/user_projects/domains/logs/soainfra` |
-| `managedServerNameBase` | Base string used to generate Managed Server names. | `soa-server` |
+| `managedServerNameBase` | Base string used to generate Managed Server names. | `soa_server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `soans` |
 | `persistentVolumeClaimName` | Name of the persistent volume claim created to host the domain home. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-sample-pvc`. | `soainfra-domain-pvc` |
@@ -157,6 +159,7 @@ The following parameters can be provided in the inputs file.
 | `t3PublicAddress` | Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would typically be a load balancer address. <p/>For development environments only: In a single server (all-in-one) Kubernetes deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes. | If not provided, the script will attempt to set it to the IP address of the Kubernetes cluster |
 | `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's user name and password. If not specified, then the value is derived from the `domainUID` as `<domainUID>-weblogic-credentials`. | `soainfra-domain-credentials` |
 | `weblogicImagePullSecretName` | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. |   |
+| `serverPodCpuRequest`, `serverPodMemoryRequest`, `serverPodCpuCLimit`, `serverPodMemoryLimit` |  The maximum amount of compute resources allowed, and minimum amount of compute resources required, for each server pod. Please refer to the Kubernetes documentation on `Managing Compute Resources for Containers` for details. | Resource requests and resource limits are not specified. |
 | `rcuSchemaPrefix` | The schema prefix to use in the database, for example `SOA1`.  You may wish to make this the same as the domainUID in order to simplify matching domains to their RCU schemas. | `SOA1` |
 | `rcuDatabaseURL` | The database URL. | `soadb.soans:1521/soapdb.my.domain.com` |
 | `rcuCredentialsSecret` | The Kubernetes secret containing the database credentials. | `soainfra-rcu-credentials` |
@@ -192,7 +195,7 @@ kubectl label node <node-name>  <label-with-value>
 
 Example:
 ```
-kubectl label node 10.250.85.115 name=Test-Node
+kubectl label node TestNode name=Test-Node
 ```
 
 Then you can edit the `domain.yaml`  file to add the `nodeSelector` to the `serverPod` definition, as shown below.
@@ -248,7 +251,7 @@ spec:
   # If the domain home is in the image
   domainHomeInImage: false
   # The WebLogic Server Docker image that the Operator uses to start the domain
-  image: "oracle/soa:12.2.1.3"
+  image: "container-registry.oracle.com/middleware/soasuite:12.2.1.3"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
   # Identify which Secret contains the credentials for pulling an image
@@ -276,7 +279,7 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+      value: "-Djava.security.egd=file:/dev/./urandom "
     volumes:
     - name: weblogic-domain-storage-volume
       persistentVolumeClaim:
@@ -397,7 +400,7 @@ Spec:
     Server Start State:           RUNNING
   Domain Home:                    /u01/oracle/user_projects/domains/soainfra
   Domain Home In Image:           false
-  Image:                          oracle/soa:12.2.1.3
+  Image:                          container-registry.oracle.com/middleware/soasuite:12.2.1.3
   Image Pull Policy:              IfNotPresent
   Include Server Out In Pod Log:  true
   Log Home:                       /u01/oracle/user_projects/domains/logs/soainfra
@@ -411,7 +414,7 @@ Spec:
       Name:   JAVA_OPTIONS
       Value:  -Dweblogic.StdoutDebugEnabled=false
       Name:   USER_MEM_ARGS
-      Value:  -XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom
+      Value:  -Djava.security.egd=file:/dev/./urandom
     Init Containers:
     Labels:
     Liveness Probe:
@@ -441,11 +444,11 @@ Status:
   Replicas:  2
   Servers:
     Cluster Name:  soa_cluster
-    Node Name:     10.250.85.115
+    Node Name:     TESTNODE
     Server Name:   soa_server2
     State:         UNKNOWN
     Cluster Name:  soa_cluster
-    Node Name:     10.250.85.115
+    Node Name:     TESTNODE
     Server Name:   soa_server1
     State:         UNKNOWN
     Server Name:   soa_server4
@@ -456,7 +459,7 @@ Status:
       Activation Time:  2019-07-04T14:16:34.780Z
       Overall Health:   ok
       Subsystems:
-    Node Name:    10.250.85.115
+    Node Name:    TESTNODE
     Server Name:  AdminServer
     State:        RUNNING
     Server Name:  soa_server5
@@ -484,9 +487,9 @@ Here is an example of the output of this command:
 ```
 $ kubectl get pods -n soans
 NAME                   READY     STATUS    RESTARTS   AGE
-soainfra-adminserver   1/1       Running   0          15h
-soainfra-soa-server1   1/1       Running   0          14h
-soainfra-soa-server2   1/1       Running   0          14h
+soainfra-adminserver   1/1       Running   0          1h
+soainfra-soa-server1   1/1       Running   0          1h
+soainfra-soa-server2   1/1       Running   0          1h
 ```
 
 #### Verify the services
@@ -501,14 +504,14 @@ Here is an example of the output of this command:
 ```
 $ kubectl get services -n soans
 NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)              AGE
-soainfra-adminserver            ClusterIP   None             <none>        30012/TCP,7001/TCP   15h
-soainfra-adminserver-external   NodePort    10.99.147.149    <none>        30012:30012/TCP      15h
-soainfra-cluster-soa-cluster    ClusterIP   10.103.205.66    <none>        8001/TCP             15h
-soainfra-soa-server1            ClusterIP   None             <none>        8001/TCP             15h
-soainfra-soa-server2            ClusterIP   None             <none>        8001/TCP             15h
-soainfra-soa-server3            ClusterIP   10.109.227.78    <none>        8001/TCP             15h
-soainfra-soa-server4            ClusterIP   10.101.147.207   <none>        8001/TCP             15h
-soainfra-soa-server5            ClusterIP   10.105.14.5      <none>        8001/TCP             15h
+soainfra-adminserver            ClusterIP   None             <none>        30012/TCP,7001/TCP   1h
+soainfra-adminserver-external   NodePort    10.99.147.149    <none>        30012:30012/TCP      1h
+soainfra-cluster-soa-cluster    ClusterIP   10.103.205.66    <none>        8001/TCP             1h
+soainfra-soa-server1            ClusterIP   None             <none>        8001/TCP             1h
+soainfra-soa-server2            ClusterIP   None             <none>        8001/TCP             1h
+soainfra-soa-server3            ClusterIP   10.109.227.78    <none>        8001/TCP             1h
+soainfra-soa-server4            ClusterIP   10.101.147.207   <none>        8001/TCP             1h
+soainfra-soa-server5            ClusterIP   10.105.14.5      <none>        8001/TCP             1h
 ```
 
 #### Delete the generated domain home

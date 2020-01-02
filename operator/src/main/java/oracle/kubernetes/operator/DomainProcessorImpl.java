@@ -33,7 +33,7 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainStatusPatch;
-import oracle.kubernetes.operator.helpers.DomainValidationStep;
+import oracle.kubernetes.operator.helpers.DomainValidationSteps;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -63,6 +63,7 @@ import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 
 public class DomainProcessorImpl implements DomainProcessor {
@@ -384,7 +385,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                         Component.createFor(info, delegate.getVersion()));
                 packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
                 Step strategy =
-                    DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
+                    ServerStatusReader.createStatusStep(main.statusUpdateTimeoutSeconds, null);
                 FiberGate gate = getStatusFiberGate(info.getNamespace());
 
                 Fiber f =
@@ -472,13 +473,15 @@ public class DomainProcessorImpl implements DomainProcessor {
           new StartPlanStep(
               info, isDeleting ? createDomainDownPlan(info) : createDomainUpPlan(info));
       if (!isDeleting && dom != null)
-        strategy = new DomainValidationStep(dom, strategy);
+        strategy = DomainValidationSteps.createDomainValidationSteps(ns, strategy);
 
+      Packet packet = new Packet();
+      packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
       runDomainPlan(
           dom,
           domainUid,
           ns,
-          new StepAndPacket(strategy, new Packet()),
+          new StepAndPacket(strategy, packet),
           isDeleting,
           isWillInterrupt);
     }
