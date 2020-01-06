@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.jms.ConnectionFactory;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
@@ -1387,13 +1386,13 @@ public class Domain {
     if (ocrserver == null) {
       ocrserver = "container-registry.oracle.com";
     }
-    
+
     TestUtils.createDockerRegistrySecret(
         secret,
         ocrserver,
         System.getenv("OCR_USERNAME"),
         System.getenv("OCR_PASSWORD"),
-        null,
+        System.getenv("OCR_USERNAME") + "@oracle.com",
         domainNS);
   }
 
@@ -1760,7 +1759,7 @@ public class Domain {
     // create config map and secret for custom sit config
     createConfigMapAndSecretForSitConfig();
     
-    if (BaseTest.SHARED_CLUSTER && !domainMap.containsKey("domainHomeImageBase")) {
+    if (!domainMap.containsKey("domainHomeImageBase")) {
       createDockerRegistrySecret();
     }
   }

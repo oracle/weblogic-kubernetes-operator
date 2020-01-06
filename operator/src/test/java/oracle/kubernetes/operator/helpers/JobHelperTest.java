@@ -215,19 +215,7 @@ public class JobHelperTest {
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
         hasEnvVar(
-            "USER_MEM_ARGS", "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom"));
-  }
-
-  @Test
-  public void whenDomainHasUser_Mem_Args_EnvironmentItem_introspectorPodStartupWithIt() {
-    configureDomain()
-        .withEnvironmentVariable("USER_MEM_ARGS", "-XX:+UseContainerSupport");
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        hasEnvVar("USER_MEM_ARGS", "-XX:+UseContainerSupport"));
+            "USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom"));
   }
 
   @Test

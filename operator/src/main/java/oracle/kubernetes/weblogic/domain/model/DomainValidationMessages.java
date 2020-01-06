@@ -11,6 +11,7 @@ import java.util.ResourceBundle;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.models.V1VolumeMount;
+import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.utils.OperatorUtils;
 
@@ -86,4 +87,11 @@ class DomainValidationMessages {
                             new String[] {getBundleString("singularToBe"), getBundleString("pluralToBe")});
   }
 
+  static String noSuchSecret(String secretName, String namespace, SecretType type) {
+    return getMessage(MessageKeys.SECRET_NOT_FOUND, secretName, namespace, type);
+  }
+
+  static String illegalSecretNamespace(String namespace) {
+    return getMessage(MessageKeys.ILLEGAL_SECRET_NAMESPACE, namespace);
+  }
 }

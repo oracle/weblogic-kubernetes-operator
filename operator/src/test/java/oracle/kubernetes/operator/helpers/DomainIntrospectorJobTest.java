@@ -19,6 +19,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
+import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -86,6 +87,7 @@ public class DomainIntrospectorJobTest {
             .withLogLevel(Level.INFO));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
+    mementos.add(ScanCacheStub.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
   }

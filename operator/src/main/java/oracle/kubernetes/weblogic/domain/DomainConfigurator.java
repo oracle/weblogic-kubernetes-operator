@@ -369,6 +369,14 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withRestartVersion(String restartVersion);
 
   /**
+   * Defines a secret reference for the domain.
+   * @param secretName the name of the secret
+   * @param namespace the namespace containing the secret
+   * @return this object
+   */
+  public abstract DomainConfigurator withWebLogicCredentialsSecret(String secretName, String namespace);
+
+  /**
    * Set affinity for the pod configuration.
    *
    * @param affinity affinity to be set to this DomainConfigurator

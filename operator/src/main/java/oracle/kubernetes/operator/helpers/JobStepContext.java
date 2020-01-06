@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.io.File;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,6 +19,7 @@ import io.kubernetes.client.models.V1PodTemplateSpec;
 import io.kubernetes.client.models.V1SecretVolumeSource;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -98,7 +98,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   String getWebLogicCredentialsSecretName() {
-    return getDomain().getWebLogicCredentialsSecret().getName();
+    return getDomain().getWebLogicCredentialsSecretName();
   }
 
   String getOpssWalletSecretName() {
@@ -453,7 +453,7 @@ public abstract class JobStepContext extends BasePodStepContext {
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {
-      return doNext(DomainStatusPatch.createStep(getDomain(), callResponse.getE()), packet);
+      return doNext(DomainStatusUpdater.createFailedStep(callResponse, null), packet);
     }
 
     @Override
