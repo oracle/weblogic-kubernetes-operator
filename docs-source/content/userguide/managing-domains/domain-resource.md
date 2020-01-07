@@ -117,6 +117,7 @@ The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS`
 
 * If `NODEMGR_JAVA_OPTIONS` is not defined and `JAVA_OPTIONS` is defined, then the `JAVA_OPTIONS` value will be applied to the Node Manager instance.
 * If `NODEMGR_MEM_ARGS` is not defined, then default memory values (-Xms64m -Xmx100m) will be applied to the Node Manager instance.
+* If `NODEMGR_MEM_ARGS` environment variable does not define `-Djava.security.egd=file:/dev/./urandom` security property then it will be added in order to speed up Node Manager startup.
 
 This example snippet illustrates how to add the above environment variables using the `env` attribute under the `serverPod` configuration in your domain resource YAML file. 
 ```
