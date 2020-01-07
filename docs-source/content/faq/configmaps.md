@@ -1,12 +1,22 @@
-> I need to provide an instance with access to a Config Map
+---
+title: "Providing access to a Config Map"
+date: 2020-01-07T15:02:28-05:00
+draft: false
+weight: 11
+---
+> I need to provide an instance with access to a Config Map.
 
-Configuration information in Kubernetes may be provided by a 
+Configuration files can be supplied to Kubernetes pods and jobs by a 
 [ConfigMap](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#create-a-configmap), 
 which consists of a set of key-value pairs. Each entry may be accessed by one or more operator-managed nodes
 as a read-only text file. Access can be provided across the domain, within a single cluster, or for a single server.
-In each case, the access is configured within the ``ServerPod`` element of the configuration. For example, given
+In each case, the access is configured within the `serverPod` element of the desired scope. 
+
+For example, given
 a ConfigMap named `my-map` with entries `key-1` and `key-2`, you can provide access to both values as separate files
-in the same directory within the `cluster-1` cluster with the following: 
+in the same directory within the `cluster-1` cluster with the following
+in your [domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md):
+ 
 
 ```
   clusters:
