@@ -135,12 +135,12 @@ if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
   chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
 
   mkdir -p ${DOMAIN_HOME}/lib
-  for file in $(sort_files ${archive_root} "*.zip")
+  for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
         cd ${DOMAIN_HOME}/lib
-        jar xvf ${archive_root}/${file} wlsdeploy/domainLibraries/
+        jar xvf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
         cd ${DOMAIN_HOME}
-        jar xvf ${archive_root}/${file} wlsdeploy/
+        jar xvf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
         rm -fr wlsdeploy/domainLibraries
     done
 
