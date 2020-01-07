@@ -44,6 +44,7 @@ public class ItOperator extends BaseTest {
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
+    namespaceList = new StringBuffer();
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
     // initialize test properties and create the directories
@@ -68,7 +69,7 @@ public class ItOperator extends BaseTest {
       operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       Assertions.assertNotNull(operator1);
       domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-      namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+      namespaceList.append((String)operatorMap.get("namespace"));
       namespaceList.append(" ").append(domainNS1);
     }
   }
@@ -361,84 +362,6 @@ public class ItOperator extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO,
         "Operator using legacy REST identity created successfully");
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - testOperatorRestUsingCertificateChain");
-  }
-
-  /**
-   * Create Operator and create domain using domain-in-image option. Verify the domain is started
-   * successfully and web application can be deployed and accessed.
-   *
-   * @throws Exception exception
-   */
-  @Test
-  public void testDomainInImageUsingWlst() throws Exception {
-    Assumptions.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {
-    }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain & verifing the domain creation");
-    // create domain
-    Domain domain = null;
-    boolean testCompletedSuccessfully = false;
-    try {
-      Map<String, Object> domainMap = createDomainInImageMap(
-                getNewSuffixCount(), false, testClassName);
-      domainMap.put("namespace", domainNS1);
-      domainMap.remove("clusterType");
-      domain = TestUtils.createDomain(domainMap);
-      domain.verifyDomainCreated();
-      testBasicUseCases(domain, true);
-      testClusterScaling(operator1, domain, false);
-      testCompletedSuccessfully = true;
-    } finally {
-      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-      }
-    }
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Create Operator and create domain using domain-in-image option. Verify the domain is started
-   * successfully and web application can be deployed and accessed.
-   *
-   * @throws Exception exception
-   */
-  @Test
-  public void testDomainInImageUsingWdt() throws Exception {
-    Assumptions.assumeTrue(QUICKTEST);
-
-    String testMethodName = new Object() {
-    }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain & verifing the domain creation");
-    // create domain
-    Domain domain = null;
-    boolean testCompletedSuccessfully = false;
-    try {
-      Map<String, Object> domainMap = createDomainInImageMap(
-                  getNewSuffixCount(), true, testClassName);
-      domainMap.put("namespace", domainNS1);
-      domainMap.put(
-          "customWdtTemplate",
-          BaseTest.getProjectRoot()
-              + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml");
-      domainMap.put("createDomainFilesDir", "wdt");
-      domain = TestUtils.createDomain(domainMap);
-      domain.verifyDomainCreated();
-
-      testBasicUseCases(domain, false);
-      testClusterScaling(operator1, domain, true);
-      testCompletedSuccessfully = true;
-    } finally {
-      // if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-      if (domain != null && testCompletedSuccessfully) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-        TestUtils.verifyAfterDeletion(domain);
-      }
-    }
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {

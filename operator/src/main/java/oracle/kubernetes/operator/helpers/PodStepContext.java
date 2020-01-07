@@ -31,6 +31,7 @@ import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -792,7 +793,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Pod> callResponse) {
-      return doNext(DomainStatusPatch.createStep(getDomain(), callResponse.getE()), packet);
+      return doNext(DomainStatusUpdater.createFailedStep(callResponse, null), packet);
     }
   }
 

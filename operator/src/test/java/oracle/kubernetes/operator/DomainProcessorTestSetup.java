@@ -11,6 +11,7 @@ import io.kubernetes.client.models.V1JobCondition;
 import io.kubernetes.client.models.V1JobStatus;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1SecretReference;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -30,6 +31,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 public class DomainProcessorTestSetup {
   public static final String UID = "test-domain";
   public static final String NS = "namespace";
+  public static final String SECRET_NAME = "secret-name";
 
   private static final String INTROSPECTION_JOB = LegalNames.toJobIntrospectorName(UID);
   private static final String INTROSPECT_RESULT =
@@ -62,6 +64,14 @@ public class DomainProcessorTestSetup {
     this.testSupport = testSupport;
   }
 
+  public static void defineRequiredResources(KubernetesTestSupport testSupport) {
+    testSupport.defineResources(createSecret());
+  }
+
+  private static V1Secret createSecret() {
+    return new V1Secret().metadata(new V1ObjectMeta().name(SECRET_NAME).namespace(NS));
+  }
+
   /**
    * Update the specified object metadata with usable time stamp and resource version data.
    *
@@ -82,7 +92,7 @@ public class DomainProcessorTestSetup {
         .withMetadata(withTimestamps(new V1ObjectMeta().name(UID).namespace(NS)))
         .withSpec(
             new DomainSpec()
-                .withWebLogicCredentialsSecret(new V1SecretReference().name("secret-name")));
+                .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME).namespace(NS)));
   }
 
   /**

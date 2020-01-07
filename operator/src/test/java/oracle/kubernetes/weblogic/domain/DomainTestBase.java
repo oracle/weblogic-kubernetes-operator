@@ -38,18 +38,21 @@ public abstract class DomainTestBase {
   private static final String NAME2 = "name2";
   private static final String VALUE1 = "value1";
   private static final String VALUE2 = "value2";
-  private static final V1SecretReference SECRET = new V1SecretReference().name("secret");
   private static final String NS = "test-namespace";
   protected static final String DOMAIN_UID = "uid1";
   private static final String DOMAIN_V2_SAMPLE_YAML = "model/domain-sample.yaml";
   private static final String IMAGE = "myimage";
   private static final String PULL_SECRET_NAME = "pull-secret";
+  private static final String SECRET_NAME = "secret";
   protected final Domain domain = createDomain();
 
   protected static Domain createDomain() {
     return new Domain()
         .withMetadata(new V1ObjectMeta().namespace(NS))
-        .withSpec(new DomainSpec().withWebLogicCredentialsSecret(SECRET).withDomainUid(DOMAIN_UID));
+        .withSpec(
+              new DomainSpec()
+                    .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME))
+                    .withDomainUid(DOMAIN_UID));
   }
 
   protected static String getDomainUid() {
@@ -64,7 +67,7 @@ public abstract class DomainTestBase {
 
   @Test
   public void canGetAdminServerInfoFromDomain() {
-    assertThat(domain.getWebLogicCredentialsSecret(), equalTo(SECRET));
+    assertThat(domain.getWebLogicCredentialsSecretName(), equalTo(SECRET_NAME));
   }
 
   @Test
@@ -382,7 +385,7 @@ public abstract class DomainTestBase {
                 hasItem(
                     envVar(
                         "USER_MEM_ARGS",
-                        "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "))));
+                        "-Djava.security.egd=file:/dev/./urandom "))));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
   }
 

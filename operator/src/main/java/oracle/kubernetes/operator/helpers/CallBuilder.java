@@ -30,6 +30,7 @@ import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1SecretList;
 import io.kubernetes.client.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.models.V1Service;
@@ -226,6 +227,9 @@ public class CallBuilder {
   private final CallFactory<V1Status> deletecollectionPod =
       (requestParams, usage, cont, callback) ->
           wrap(deleteCollectionPodAsync(usage, requestParams.namespace, cont, callback));
+  private final CallFactory<V1SecretList> listSecrets =
+      (requestParams, usage, cont, callback) ->
+          wrap(listSecretsAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1ServiceList> listService =
       (requestParams, usage, cont, callback) ->
           wrap(listServiceAsync(usage, requestParams.namespace, cont, callback));
@@ -1600,6 +1604,37 @@ public class CallBuilder {
     } finally {
       helper.recycle(client);
     }
+  }
+
+  private com.squareup.okhttp.Call listSecretsAsync(
+      ApiClient client, String namespace, String cont, ApiCallback<V1SecretList> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .listNamespacedSecretAsync(
+            namespace,
+            pretty,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            resourceVersion,
+            timeoutSeconds,
+            watch,
+            callback);
+  }
+
+  /**
+   * Asynchronous step for listing secrets in a namespace.
+   *
+   * @param namespace the namespace from which to list secrets
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listSecretsAsync(String namespace, ResponseStep<V1SecretList> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("listSecret", namespace, null, null),
+          listSecrets);
   }
 
   /**

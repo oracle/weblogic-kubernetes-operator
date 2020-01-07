@@ -56,6 +56,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
+    namespaceList = new StringBuffer();
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
     initialize(APP_PROPS_FILE, testClassName);
@@ -80,7 +81,7 @@ public class ItPodsRestart extends BaseTest {
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS);
       }
       restartTmpDir = getResultDir() + "/restarttemp";

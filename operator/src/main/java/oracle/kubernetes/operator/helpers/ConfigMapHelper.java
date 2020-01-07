@@ -256,7 +256,8 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_CREATED, domainNamespace);
+        LOGGER.info(MessageKeys.CM_CREATED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME,
+            domainNamespace);
         packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }
@@ -274,7 +275,8 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_REPLACED, domainNamespace);
+        LOGGER.info(MessageKeys.CM_REPLACED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME,
+            domainNamespace);
         packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }
@@ -322,7 +324,8 @@ public class ConfigMapHelper {
     }
 
     void logConfigMapExists() {
-      LOGGER.fine(MessageKeys.CM_EXISTS, domainNamespace);
+      LOGGER.fine(MessageKeys.CM_EXISTS, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME, 
+          domainNamespace);
     }
   }
 
@@ -490,7 +493,8 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_CREATED, domainNamespace);
+        LOGGER.info(MessageKeys.CM_CREATED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME, 
+            domainNamespace);
         packet.put(ProcessingConstants.SIT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }
@@ -508,7 +512,8 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_REPLACED, domainNamespace);
+        LOGGER.info(MessageKeys.CM_REPLACED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME,
+            domainNamespace);
         packet.put(ProcessingConstants.SIT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }

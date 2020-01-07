@@ -17,12 +17,9 @@ sed -i "s/default/${domainNS1}/g"  ${monitoringExporterEndToEndDir}/demo-domains
 sed -i "s/3306\/@@PROP:DOMAIN_NAME@@/3306\/domain1/g" ${monitoringExporterEndToEndDir}/demo-domains/domainBuilder/scripts/simple-topology.yaml
 cp ${resourceExporterDir}/promvalues.yaml ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
 
-sed -i "s/default;domain1/${domainNS1};${domainNS1}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
-cp ${resourceExporterDir}/mysql.yaml ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml
-sed -i "s/NAMESPACE/${domainNS1}/g" ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml
-sed -i "s/DOMAIN_UID/${domainNS1}/g" ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml
+sed -i "s/default;domain1/${domainNS};${domainNS}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
 kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/persistence.yaml
-kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml
+kubectl apply -f ${monitoringExporterEndToEndDir}/mysql/mysql.yaml
 
 sleep 30
 

@@ -104,7 +104,7 @@ spec:
           - name: JAVA_OPTIONS
             value: "-server"
           - name: USER_MEM_ARGS
-            value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+            value: "-Djava.security.egd=file:/dev/./urandom "
         nodeSelector:
           os_arch: arm64
         resources:

@@ -87,6 +87,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static String domainNS1;
   private static String domainNS2;
 
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -97,6 +98,7 @@ public class ItMonitoringExporter extends BaseTest {
   @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
@@ -112,19 +114,20 @@ public class ItMonitoringExporter extends BaseTest {
   @BeforeEach
   public void prepare() throws Exception {
     if (FULLTEST) {
-      createResultAndPvDirs(testClassName);
-      wlsUser = BaseTest.getUsername();
-      wlsPassword = BaseTest.getPassword();
-
-      metricsUrl = exporterUrl + "metrics";
-      monitoringExporterDir = getResultDir() + "/monitoring";
-      monitoringExporterScriptDir = getResultDir() + "/scripts";
-      resourceExporterDir =
-          BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
-      configPath = resourceExporterDir;
-      monitoringExporterEndToEndDir = monitoringExporterDir + "/src/samples/kubernetes/end2end/";
-      LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
       if (operator == null) {
+        createResultAndPvDirs(testClassName);
+        wlsUser = BaseTest.getUsername();
+        wlsPassword = BaseTest.getPassword();
+
+        metricsUrl = exporterUrl + "metrics";
+        monitoringExporterDir = getResultDir() + "/monitoring";
+        monitoringExporterScriptDir = getResultDir() + "/scripts";
+        resourceExporterDir =
+            BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
+        configPath = resourceExporterDir;
+        monitoringExporterEndToEndDir = monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+        LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
+
         Map<String, Object> operatorMap =
             createOperatorMap(getNewSuffixCount(), true, "monexp");
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -133,7 +136,7 @@ public class ItMonitoringExporter extends BaseTest {
         operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator);
 
-        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS1).append(" ").append(domainNS2);
       }
       if (domain == null) {
@@ -154,7 +157,11 @@ public class ItMonitoringExporter extends BaseTest {
         String scriptName = "buildDeployAppInPod.sh";
         domain.buildDeployJavaAppInPod(
             testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
+        setupPv();
+        installPrometheusGrafanaWebHookMySqlCoordinator();
       }
+      domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
+
     }
   }
 
@@ -170,13 +177,6 @@ public class ItMonitoringExporter extends BaseTest {
         domain.destroy();
         TestUtils.deleteWeblogicDomainResources(domainNS1);
       }
-
-      String crdCmd =
-          " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
-      ExecCommand.exec(crdCmd);
-      crdCmd = "kubectl delete secret " + domainNS2 + "-weblogic-credentials";
-      ExecCommand.exec(crdCmd);
-      TestUtils.deleteWeblogicDomainResources(domainNS2);
       if (operator != null) {
         operator.destroy();
       }
@@ -367,13 +367,41 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Check that configuration can be reviewed via Prometheus.
+   * Checking basic functionality of Monitoring Exporter.
    *
    * @throws Exception if test fails
    */
   @Test
   @Order(2)
-  public void test01_CheckMetricsViaPrometheus() throws Exception {
+  public void testBasicFunctionality() throws Exception {
+    test01_CheckMetricsViaPrometheus();
+    test02_ReplaceConfiguration();
+    test03_AppendConfiguration();
+    test04_ReplaceOneAttributeValueAsArrayConfiguration();
+    test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration();
+    test06_ReplaceWithEmptyConfiguration();
+    test07_AppendWithEmptyConfiguration();
+    test08_1AppendWithNotYmlConfiguration();
+    test08_2ReplaceWithNotYmlConfiguration();
+    test09_AppendWithCorruptedYmlConfiguration();
+    test10_ReplaceWithCorruptedYmlConfiguration();
+    test11_ReplaceWithDublicatedValuesConfiguration();
+    test12_AppendWithDuplicatedValuesConfiguration();
+    test13_ReplaceMetricsNameSnakeCaseFalseConfiguration();
+    test14_ChangeConfigNoCredentials();
+    test15_ChangeConfigInvalidUser();
+    test16_ChangeConfigInvalidPass();
+    test17_ChangeConfigEmptyUser();
+    test18_ChangeConfigEmptyPass();
+  }
+
+
+  /**
+   * Check that configuration can be reviewed via Prometheus.
+   *
+   * @throws Exception if test fails
+   */
+  private void test01_CheckMetricsViaPrometheus() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -389,9 +417,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(3)
-  public void test02_ReplaceConfiguration() throws Exception {
+  private void test02_ReplaceConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -407,9 +433,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(4)
-  public void test03_AppendConfiguration() throws Exception {
+  private void test03_AppendConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -438,9 +462,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(5)
-  public void test04_ReplaceOneAttributeValueAsArrayConfiguration() throws Exception {
+  private void test04_ReplaceOneAttributeValueAsArrayConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -458,9 +480,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(6)
-  public void test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration()
+  private void test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration()
       throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -479,9 +499,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(7)
-  public void test06_ReplaceWithEmptyConfiguration() throws Exception {
+  private void test06_ReplaceWithEmptyConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -496,9 +514,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
-  @Order(8)
-  public void test07_AppendWithEmptyConfiguration() throws Exception {
+  private void test07_AppendWithEmptyConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -516,9 +532,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(9)
-  public void test08_1AppendWithNotYmlConfiguration() throws Exception {
+  private void test08_1AppendWithNotYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -534,8 +548,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
-  public void test08_2ReplaceWithNotYmlConfiguration() throws Exception {
+  private void test08_2ReplaceWithNotYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -550,9 +563,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(10)
-  public void test09_AppendWithCorruptedYmlConfiguration() throws Exception {
+  private void test09_AppendWithCorruptedYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -570,9 +581,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
-  @Order(11)
-  public void test10_ReplaceWithCorruptedYmlConfiguration() throws Exception {
+  private void test10_ReplaceWithCorruptedYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -590,9 +599,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(12)
-  public void test11_ReplaceWithDublicatedValuesConfiguration() throws Exception {
+  private void test11_ReplaceWithDublicatedValuesConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -609,9 +616,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(13)
-  public void test12_AppendWithDuplicatedValuesConfiguration() throws Exception {
+  private void test12_AppendWithDuplicatedValuesConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -629,9 +634,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
-  @Order(14)
-  public void test13_ReplaceMetricsNameSnakeCaseFalseConfiguration() throws Exception {
+  private void test13_ReplaceMetricsNameSnakeCaseFalseConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -654,9 +657,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception exception
    */
   // verify that change configuration fails without authentication
-  @Test
-  @Order(15)
-  public void test14_ChangeConfigNoCredentials() throws Exception {
+  private void test14_ChangeConfigNoCredentials() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -679,9 +680,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
-  @Order(16)
-  public void test15_ChangeConfigInvalidUser() throws Exception {
+  private void test15_ChangeConfigInvalidUser() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -700,9 +699,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
-  @Order(17)
-  public void test16_ChangeConfigInvalidPass() throws Exception {
+  private void test16_ChangeConfigInvalidPass() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -720,8 +717,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  public void test17_ChangeConfigEmptyUser() throws Exception {
+  private void test17_ChangeConfigEmptyUser() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -740,9 +736,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if test fails
    */
-  @Test
-  @Order(19)
-  public void test18_ChangeConfigEmptyPass() throws Exception {
+  private void test18_ChangeConfigEmptyPass() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -762,8 +756,8 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if test fails
    */
   @Test
-  @Order(20)
-  public void test19_CheckPromGrafanaLatestVersion() throws Exception {
+  @Order(3)
+  public void testCheckPromGrafanaLatestVersion() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -772,9 +766,12 @@ public class ItMonitoringExporter extends BaseTest {
         resourceExporterDir,
         monitoringExporterScriptDir,
         "redeployPromGrafanaLatestChart.sh",
-        monitoringExporterDir + " " + resourceExporterDir);
-    checkPromGrafana();
+        monitoringExporterDir + " " + resourceExporterDir + " " + domainNS1
+        + " " + domainNS2);
 
+
+    HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_webapp.yml");
+    checkPromGrafana(testappPrometheusSearchKey, "httpsessionreptestapp");
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -785,17 +782,29 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   @Order(1)
-  public void test01_1_EndToEndViaChart() throws Exception {
+  public void testEndToEndViaChart() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-
-    setupPv();
-    installPrometheusGrafanaWebHookMySqlCoordinatorWlsImage();
-    fireAlert();
-    addMonitoringToExistedDomain();
-
+    try {
+      configureDomainInPrometheus(domainNS1, domainNS1, domainNS2, domainNS2);
+      createWlsImageAndDeploy();
+      checkPromGrafana("wls_servlet_execution_time_average", "test-webapp");
+      fireAlert();
+      addMonitoringToExistedDomain();
+    } catch (Exception ex) {
+      //switch Perforce to use domain in pv
+      configureDomainInPrometheus(domainNS2, domainNS2, domainNS1, domainNS1);
+      throw ex;
+    } finally {
+      String crdCmd =
+          " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
+      ExecCommand.exec(crdCmd);
+      crdCmd = "kubectl delete secret " + domainNS2 + "-weblogic-credentials";
+      ExecCommand.exec(crdCmd);
+      TestUtils.deleteWeblogicDomainResources(domainNS2);
+    }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
 
   }
@@ -821,22 +830,8 @@ public class ItMonitoringExporter extends BaseTest {
   private static void addMonitoringToExistedDomain() throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Add monitoring to the running domain");
     String exporterAppPath = monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
-    domain.deployWebAppViaWlst(
-        "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true);
-    // check if exporter is up
-    domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
-    // apply new domain yaml and verify pod restart
-    String crdCmd =
-        " kubectl -n monitoring get cm prometheus-server -oyaml > "
-            + monitoringExporterEndToEndDir
-            + "/cm.yaml";
-    TestUtils.exec(crdCmd);
-    ExecResult result = ExecCommand.exec("cat " + monitoringExporterEndToEndDir + "/cm.yaml");
-    LoggerHelper.getLocal().log(Level.INFO, " output for cm " + result.stdout());
     configureDomainInPrometheus(domainNS2, domainNS2, domainNS1, domainNS1);
-
     BaseTest.setWaitTimePod(10);
-    // BaseTest.setMaxIterationsPod(50);
     assertTrue(
         checkMetricsViaPrometheus("webapp_config_open_sessions_current_count", domainNS1),
         "Can't find expected metrics");
@@ -1028,7 +1023,7 @@ public class ItMonitoringExporter extends BaseTest {
             + wlsPassword;
     TestUtils.exec(command);
     //update with current WDT version
-    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "v3", "v5");
+    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "v3", "v6");
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "domain1", domainNS2);
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "default", domainNS2);
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml",
@@ -1070,11 +1065,11 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Install Prometheus and Grafana using helm chart, MySql, webhook, coordinator, create WLS image and deploy.
+   * Install Prometheus and Grafana using helm chart, MySql, webhook, coordinator.
    *
    * @throws Exception if could not run the command successfully to install Prometheus and Grafana
    */
-  private static void installPrometheusGrafanaWebHookMySqlCoordinatorWlsImage() throws Exception {
+  private static void installPrometheusGrafanaWebHookMySqlCoordinator() throws Exception {
     prometheusPort = "30000";
 
     executeShelScript(
@@ -1094,11 +1089,9 @@ public class ItMonitoringExporter extends BaseTest {
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domainBuilder/build.sh",
         "1.1.1", MONITORING_EXPORTER_VERSION);
 
-    createWlsImageAndDeploy();
-    checkPromGrafana();
   }
 
-  static void checkPromGrafana() throws Exception {
+  static void checkPromGrafana(String searchKey, String expectedVal) throws Exception {
     String podName = getPodName("app=prometheus", "monitoring");
     TestUtils.checkPodReady(podName, "monitoring", "2/2");
 
@@ -1141,7 +1134,7 @@ public class ItMonitoringExporter extends BaseTest {
     ExecResult result = ExecCommand.exec(crdCmd);
     assertTrue(result.stdout().contains("wls_jvm_uptime"));
     assertTrue(
-        checkMetricsViaPrometheus("wls_servlet_execution_time_average", "test-webapp"),
+        checkMetricsViaPrometheus(searchKey, expectedVal),
         "Can't find expected metrics");
   }
 
