@@ -786,6 +786,22 @@ function checkNodeManagerMemArg() {
     exit 1
   fi
 
+  # Verify that NODEMGR_MEM_ARGS environment value contains "-Djava.security.egd=file:/dev/./urandom" in the Node Manager
+  # command line of the Admin Server pod.
+  adminLinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "urandom" /shared/logs/${ADMIN_NAME?}_nodemanager.out \
+       | grep -v "NODEMGR_MEM_ARGS"  |  grep -v "JAVA_OPTIONS" | wc -l`"
+  logstatus=0
+
+  if [ "$adminLinecount" != "1" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN-NAME?}' does not contain exactly 1 line that match ' grep '-Djava.security.egd=file:/dev/./urandom' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+
   # Verify that USER_MEM_ARGS environment value did not get applied to the Node Manager command line
   maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
        grep "MaxRAMFraction=1" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
