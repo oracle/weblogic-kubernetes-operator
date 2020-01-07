@@ -522,7 +522,7 @@ function deployPod() {
       export LOCAL_SERVER_DEFAULT_PORT=$ADMIN_PORT
       export KEEP_DEFAULT_DATA_HOME="true"
       export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR=""
-      export NODEMGR_MEM_ARGS="-Xms32m -Xmx200m "
+      export NODEMGR_MEM_ARGS="-Xms32m -Xmx200m -Djava.security.egd=file:/dev/./urandom"
     else
       export LOCAL_SERVER_DEFAULT_PORT=$MANAGED_SERVER_PORT
       export KEEP_DEFAULT_DATA_HOME=""
@@ -787,9 +787,9 @@ function checkNodeManagerMemArg() {
   fi
 
   # Verify that NODEMGR_MEM_ARGS environment value contains "-Djava.security.egd=file:/dev/./urandom" in the Node Manager
-  # command line of the Admin Server pod.
+  # command line of the Managed Server pod.
   adminLinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
-       grep "urandom" /shared/logs/${ADMIN_NAME?}_nodemanager.out \
+       grep "urandom" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "NODEMGR_MEM_ARGS"  |  grep -v "JAVA_OPTIONS" | wc -l`"
   logstatus=0
 

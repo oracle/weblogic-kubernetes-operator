@@ -296,14 +296,7 @@ fi
 
 if [ -z "${NODEMGR_MEM_ARGS}" ]; then
   # Default JVM memory arguments for Node Manager
-  NODEMGR_MEM_ARGS="-Xms64m -Xmx100m"
-fi
-
-# If not already defined, set 'java.security.egd' option to /dev/urandom for
-# Node Manager JVM for low entropy.  Speeds up boot process of Node Manager.
-if [[ ! "${NODEMGR_MEM_ARGS}" =~ .*urandom* ]]
-then
-  NODEMGR_MEM_ARGS="${NODEMGR_MEM_ARGS} -Djava.security.egd=file:/dev/./urandom "
+  NODEMGR_MEM_ARGS="-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom "
 fi
 
 # We prevent USER_MEM_ARGS from being applied to the NM here and only pass
