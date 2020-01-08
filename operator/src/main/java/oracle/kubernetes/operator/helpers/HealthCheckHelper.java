@@ -253,8 +253,6 @@ public final class HealthCheckHelper {
       }
     }
     if (log) LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
-
-    return false;
   }
 
   private static boolean apiGroupMatch(List<String> ruleApiGroups, String apiGroup) {

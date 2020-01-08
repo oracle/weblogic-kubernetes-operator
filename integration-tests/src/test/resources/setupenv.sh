@@ -33,11 +33,9 @@ function create_image_pull_secret_wl {
 
   set +x 
   if [ -z "$OCR_USERNAME" ] || [ -z "$OCR_PASSWORD" ]; then
-	if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
-		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables OCR_USERNAME and OCR_PASSWORD to pull the image."
-	  	exit 1
+		echo "Provide Docker login details using env variables OCR_USERNAME and OCR_PASSWORD to pull the WebLogic image."
+	  exit 1
 	fi
-  fi
   
   if [ -n "$OCR_USERNAME" ] && [ -n "$OCR_PASSWORD" ]; then  
 	  echo "Creating Docker Secret"

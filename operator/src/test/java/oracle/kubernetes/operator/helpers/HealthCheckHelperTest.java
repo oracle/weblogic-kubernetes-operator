@@ -39,6 +39,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_UID_UNIQUENE
 import static oracle.kubernetes.operator.logging.MessageKeys.PV_ACCESS_MODE_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID;
 import static oracle.kubernetes.operator.logging.MessageKeys.VERIFY_ACCESS_DENIED;
+import static oracle.kubernetes.operator.logging.MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -50,7 +51,8 @@ public class HealthCheckHelperTest {
     DOMAIN_UID_UNIQUENESS_FAILED,
     PV_ACCESS_MODE_FAILED,
     PV_NOT_FOUND_FOR_DOMAIN_UID,
-    VERIFY_ACCESS_DENIED
+    VERIFY_ACCESS_DENIED,
+    VERIFY_ACCESS_DENIED_WITH_NS
   };
 
   private static final String OPERATOR_NAMESPACE = "operator";
@@ -144,6 +146,7 @@ public class HealthCheckHelperTest {
     }
 
     assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED));
+    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
   }
 
   @Test
@@ -159,6 +162,7 @@ public class HealthCheckHelperTest {
     }
 
     assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED));
+    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
   }
 
   @Test
@@ -179,7 +183,7 @@ public class HealthCheckHelperTest {
       HealthCheckHelper.performSecurityChecks(RULES_REVIEW_VERSION, OPERATOR_NAMESPACE, ns);
     }
 
-    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED));
+    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
   }
 
   private void expectSelfSubjectRulesReview() {

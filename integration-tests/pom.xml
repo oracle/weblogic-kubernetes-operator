@@ -255,6 +255,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
+                            <skip>${skipITs}</skip>
                             <executable>${resource-integration-test}/cleanup_success.sh</executable>
                         </configuration>
                     </execution>
