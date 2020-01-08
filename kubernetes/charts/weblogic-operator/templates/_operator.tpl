@@ -2,7 +2,6 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operator" -}}
-{{- include "operator.operatorCustomResourceDefinition" . }}
 {{- include "operator.operatorClusterRoleGeneral" . }}
 {{- include "operator.operatorClusterRoleNamespace" . }}
 {{- if .dedicated }}

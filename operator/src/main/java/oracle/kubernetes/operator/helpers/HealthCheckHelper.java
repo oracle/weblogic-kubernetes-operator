@@ -135,13 +135,13 @@ public final class HealthCheckHelper {
 
         for (AuthorizationProxy.Resource r : namespaceAccessChecks.keySet()) {
           for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
-            check(rules, r, op, dedicated);
+            check(rules, r, op, !dedicated);
           }
         }
         if (!dedicated) {
           for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
             for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-              check(rules, r, op, dedicated);
+              check(rules, r, op, !dedicated);
             }
           }
         }
@@ -176,11 +176,12 @@ public final class HealthCheckHelper {
   /**
    * Verify View (get, list, and watch) Access.
    *
-   * @param version Kubernetes version
-   * @param operatorNamespace operator namespace
-   * @param ns target namespace
+   * @param ns namespace
+   * @param resource Kubernetes resource
+   * @param operation Kubernetes operation
    */
-  public static boolean isClusterResourceAccessAllowed(String ns, AuthorizationProxy.Resource resource, AuthorizationProxy.Operation operation) {
+  public static boolean isClusterResourceAccessAllowed(String ns, 
+      AuthorizationProxy.Resource resource, AuthorizationProxy.Operation operation) {
 
     // Validate RBAC or ABAC policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
@@ -220,9 +221,8 @@ public final class HealthCheckHelper {
     for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
       if (r.equals(resource)) {
         for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-
-          if (op.equals(operation) && 
-              !ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
+          if (op.equals(operation)
+              && !ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
             result = false;
           }
         }
