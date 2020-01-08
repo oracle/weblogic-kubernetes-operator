@@ -317,6 +317,9 @@
                         <exclude>
                             ${excludes-failsafe}
                         </exclude>
+                        <exclude>
+                            ItMonitoringExporter
+                        </exclude>
                     </excludes>
                 </configuration>
 
