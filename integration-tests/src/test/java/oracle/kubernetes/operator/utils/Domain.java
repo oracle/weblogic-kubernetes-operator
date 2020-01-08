@@ -860,7 +860,7 @@ public class Domain {
               + "\"";
       LoggerHelper.getLocal().log(Level.INFO,
           "making sure the domain directory exists by running " + cmd);
-      ExecResult result = TestUtils.exec(cmd);
+      ExecResult result = TestUtils.exec(cmd, true);
       LoggerHelper.getLocal().log(Level.INFO, "Run the script to create domain");
     } else {
       String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
@@ -1541,9 +1541,9 @@ public class Domain {
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
-      ExecResult result = TestUtils.exec(curlCmd, true);
+      ExecResult result = ExecCommand.exec(curlCmd);
       String responseCode = result.stdout().trim();
-      if (!responseCode.equals("200")) {
+      if (result.exitValue() != 0 || !responseCode.equals("200")) {
         LoggerHelper.getLocal().log(Level.INFO,
             "callWebApp did not return 200 status code, got "
                 + responseCode
@@ -1560,7 +1560,7 @@ public class Domain {
         } catch (InterruptedException ignore) {
           // no-op
         }
-      } else {
+      } else if (responseCode.equals("200")) {
         LoggerHelper.getLocal().log(Level.INFO,
             "callWebApp returned 200 response code, iteration " + i);
         break;
