@@ -22,7 +22,7 @@ spec:
     - name: USER_MEM_ARGS
       value: "-XX:MaxRAMFraction=1 "
     - name: NODEMGR_JAVA_OPTIONS
-      value: "-Dnodemgr.java.options -Djava.security.egd=file:/dev/./urandom "
+      value: "-Dnodemgr.java.options"
     - name: NODEMGR_MEM_ARGS
       value: "${NODEMGR_MEM_ARGS}"
     - name: DOMAIN_NAME
