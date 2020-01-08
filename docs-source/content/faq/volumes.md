@@ -15,7 +15,7 @@ In each case, the access is configured within the ``serverPod`` element of the c
 desired scope. 
 
 For example, here is
-a read-only PersistentVolumeClaim specification. Note that its name is `myclaim`.
+a read-only `PersistentVolumeClaim` specification. Note that its name is `myclaim`.
 
 ```
 apiVersion: v1

@@ -37,7 +37,7 @@ in your [domain resource](https://github.com/oracle/weblogic-kubernetes-operator
 
 ```
 This provides access to two files, found at paths `/weblogic-operator/my/first` and `/weblogic-operator/my/second`. 
-Both a volume and a volumeMount entry are required, and must have the same name. The name of the ConfigMap is 
+Both a `volume` and a `volumeMount` entry are required, and must have the same name. The name of the `ConfigMap` is 
 specified in the `name` field under the `configMap` entry. The `items` entry is an array,
-in which each entry maps a ConfigMap key to a file name under the directory specified as `mountPath` under a volumeMount.
+in which each entry maps a `ConfigMap` key to a file name under the directory specified as `mountPath` under a `volumeMount`.
 
