@@ -1712,12 +1712,19 @@ public class Domain {
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
       LoggerHelper.getLocal().log(Level.INFO, "IMAGE_NAME_WEBLOGIC " + imageName);
+    } else if (domainMap.containsKey("weblogicImageNameWIT")) {
+      imageName = (String) domainMap.get("weblogicImageNameWIT");
+      LoggerHelper.getLocal().log(Level.INFO, "IMAGE_NAME_WEBLOGIC " + imageName);
     }
 
     if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
       imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
       LoggerHelper.getLocal().log(Level.INFO, "IMAGE_TAG_WEBLOGIC " + imageTag);
+    } else if (domainMap.containsKey("weblogicImageTagWIT")) {
+      imageTag = (String) domainMap.get("weblogicImageTagWIT");
+      LoggerHelper.getLocal().log(Level.INFO, "IMAGE_TAG_WEBLOGIC " + imageTag);
     }
+
     domainMap.put("logHome", "/shared/logs/" + domainUid);
     if (!domainMap.containsKey("domainHomeImageBase")) {
       domainMap.put("domainHome", "/shared/domains/" + domainUid);
