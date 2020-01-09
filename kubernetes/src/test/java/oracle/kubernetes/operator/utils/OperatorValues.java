@@ -21,6 +21,7 @@ public class OperatorValues {
   private static final String EXTERNAL_CUSTOM_CERT_PEM = "test-external-custom-certificate-pem";
   private static final String EXTERNAL_CUSTOM_KEY_PEM = "test-external-custom-private-key-pem";
   private String version = "";
+  private String dedicated = "";
   private String serviceAccount = "";
   private String namespace = "";
   private String targetNamespaces = "";
@@ -86,6 +87,14 @@ public class OperatorValues {
   public OperatorValues version(String val) {
     setVersion(val);
     return this;
+  }
+
+  public String getDedicated() {
+    return dedicated;
+  }
+
+  public void setDedicated(String val) {
+    dedicated = convertNullToEmptyString(val);
   }
 
   public String getServiceAccount() {
