@@ -300,7 +300,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
     @Override
     public AdminService configureAdminService() {
-      return adminServer.getAdminService();
+      return adminServer.createAdminService();
     }
   }
 
