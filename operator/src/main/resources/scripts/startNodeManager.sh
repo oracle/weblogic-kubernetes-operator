@@ -296,7 +296,7 @@ fi
 
 if [ -z "${NODEMGR_MEM_ARGS}" ]; then
   # Default JVM memory arguments for Node Manager
-  NODEMGR_MEM_ARGS="-Xms64m -Xmx100m"
+  NODEMGR_MEM_ARGS="-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom "
 fi
 
 # We prevent USER_MEM_ARGS from being applied to the NM here and only pass
