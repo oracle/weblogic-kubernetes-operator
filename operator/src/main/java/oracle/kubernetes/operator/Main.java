@@ -382,7 +382,7 @@ public class Main {
   public static boolean isDedicated() {
     String result = Optional.ofNullable(getHelmVariable.apply("OPERATOR_DEDICATED"))
             .orElse(tuningAndConfig.get("dedicated"));
-    return result == null ? false: result.equals("") ? false: "true".equals(result);
+    return result == null ? false : result.equals("") ? false : "true".equals(result);
   }
 
   private static void startRestServer(String principal, Collection<String> targetNamespaces)
@@ -573,7 +573,7 @@ public class Main {
       AtomicBoolean a = isNamespaceStarted.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
       if (!a.getAndSet(true)) {
         try {
-          HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns, isDedicated());
+          HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns, Main.isDedicated());
         } catch (Throwable e) {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
         }

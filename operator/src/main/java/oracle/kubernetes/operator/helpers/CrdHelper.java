@@ -102,6 +102,12 @@ public class CrdHelper {
     return versions;
   }
 
+  private static boolean crdValidationNotAllowed() {
+    return (Main.isDedicated()
+          && !HealthCheckHelper.isClusterResourceAccessAllowed(Main.computeOperatorNamespace(),
+          AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get));
+  }
+
   interface CrdComparator {
     boolean isOutdatedCrd(
         V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected);
@@ -118,9 +124,7 @@ public class CrdHelper {
     @Override
     public NextAction apply(Packet packet) {
 
-      if (Main.isDedicated()
-          && !HealthCheckHelper.isClusterResourceAccessAllowed(Main.computeOperatorNamespace(),
-          AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get)) {
+      if (crdValidationNotAllowed()) {
         return doNext(packet);
       }
 
@@ -161,12 +165,6 @@ public class CrdHelper {
               .scope("Namespaced")
               .names(getCrdNames())
               .validation(createSchemaValidation());
-      LOGGER.info(MessageKeys.ENTER_METHOD, "CreateSpec", 
-           " version = " + version + " is CrdSubresourcesSupproted" 
-           + (version == null ? "null" : version.isCrdSubresourcesSupported()));
-      System.out.println("CreateSpec"
-           + " version = " + version + " is CrdSubresourcesSupproted" 
-           + (version == null ? "null" : version.isCrdSubresourcesSupported()));
       if (version == null || version.isCrdSubresourcesSupported()) {
         spec.setSubresources(
             new V1beta1CustomResourceSubresources()
@@ -323,48 +321,22 @@ public class CrdHelper {
         V1beta1CustomResourceDefinition existingCrd = callResponse.getResult();
         RuntimeException  exception = null;
         
-        LOGGER.info(MessageKeys.ENTER_METHOD, "CreateCrd ReadResponseStep.onSuccess", 
-             " isDedicated = " + Main.isDedicated());
-        //    "existingCrd= " + existingCrd + " isDedicated = " + Main.isDedicated());
-        System.out.println("CreateCrd ReadResponseStep.onSuccess existingCrd= " 
-            + existingCrd + " isDedicated = " + Main.isDedicated());
-
         if (existingCrd == null) {
-          // if (Main.isDedicated() &&
-          //     ! HealthCheckHelper.isClusterResourceAccessAllowed(Main.computeOperatorNamespace(),
-          //     AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.create)) {
-          if (Main.isDedicated()) {
+          if (crdValidationNotAllowed()) {
             exception = new RuntimeException("Failed to find CRD. In the dedicated mode, "
               + "the custom resource definition of domains.weblogic.oracle has to exist");
           } else {
             return doNext(createCrd(getNext()), packet);
           }
         } else if (isOutdatedCrd(existingCrd)) {
-          LOGGER.info(MessageKeys.ENTER_METHOD, "CreateCrd ReadResponseStep.onSuccess2", 
-              "existingCrd is outDated, and isDedicated = "
-              + Main.isDedicated());
-          System.out.println("CreateCrd ReadResponseStep.onSuccess2 existingCrd= "
-              + existingCrd + " is outDated, and isDedicated = " + Main.isDedicated());
-          // if (Main.isDedicated() &&
-          //     ! HealthCheckHelper.isClusterResourceAccessAllowed(Main.computeOperatorNamespace(),
-          //     AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.update)) {
-          if (Main.isDedicated()) {
+          if (crdValidationNotAllowed()) {
             exception = new RuntimeException("Found an outdated CRD. In the dedicated mode, "
               + "the expected custom resource definition of domains.weblogic.oracle has to exist");
-            exception = new RuntimeException("Found an outdated CRD");
           } else {
             return doNext(updateCrd(getNext(), existingCrd), packet);
           }
         } else if (!existingCrdContainsVersion(existingCrd)) {
-          LOGGER.info(MessageKeys.ENTER_METHOD, "CreateCrd ReadResponseStep.onSuccess2", 
-              "existingCrd does not exist, and isDedicated = " 
-              + Main.isDedicated());
-          System.out.println("CreateCrd ReadResponseStep.onSuccess3 existingCrd= " 
-              + existingCrd + " does not exist, and isDedicated = " + Main.isDedicated());
-          // if (Main.isDedicated() &&
-          //     ! HealthCheckHelper.isClusterResourceAccessAllowed(Main.computeOperatorNamespace(),
-          //     AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.update)) {
-          if (Main.isDedicated()) {
+          if (crdValidationNotAllowed()) {
             exception = new RuntimeException("Failed to find the right version of the crd. "
               + "In the dedicated mode, the expected version of the custom resource "
               + "definition of domains.weblogic.oracle has to exist");
@@ -372,14 +344,14 @@ public class CrdHelper {
             return doNext(updateExistingCrd(getNext(), existingCrd), packet);
           }
         } else {
-          LOGGER.info(MessageKeys.ENTER_METHOD, "CreateCrd ReadResponseStep.onSuccess3", 
-              "existingCrd is good, and isDedicated = " + Main.isDedicated());
-          System.out.println("CreateCrd ReadResponseStep.onSuccess4 existingCrd=" 
-              + existingCrd + " is new, and isDedicated = " + Main.isDedicated());
           return doNext(packet);
         }
         // we'll be here only if we have an exception
-        return super.doTerminate(exception, packet);
+        // TODO DONGBO
+        // we don't act on the validation result for now
+        // when we do, we need to log too
+        // return super.doTerminate(exception, packet);
+        return doNext(packet);
       }
     }
 
@@ -430,18 +402,11 @@ public class CrdHelper {
       List<ResourceVersion> actualVersions = getVersions(actual);
 
       for (ResourceVersion v : actualVersions) {
-        LOGGER.info(MessageKeys.ENTER_METHOD, "isOutdatedCrd", 
-             " v = " + v + " current = " + current + " isLaterOrQueals = " + isLaterOrEqual(v, current));
         if (!isLaterOrEqual(v, current)) {
           return false;
         }
       }
 
-      LOGGER.info(MessageKeys.ENTER_METHOD, "isOutdatedCrd", 
-           " actual's schemaValidation = " + getSchemaValidation(actual) 
-           + " expected schema validation = " + getSchemaValidation(expected) 
-           + " actual's SchemaSubresources = " + getSchemaSubresources(actual) 
-           + " expected SchemaSubresources =" + getSchemaSubresources(expected));
       return getSchemaValidation(actual) == null
           || !getSchemaValidation(expected).equals(getSchemaValidation(actual))
           || !getSchemaSubresources(expected).equals(getSchemaSubresources(actual));
@@ -481,11 +446,7 @@ public class CrdHelper {
 
     private V1beta1CustomResourceSubresources getSchemaSubresources(
         V1beta1CustomResourceDefinition crd) {
-      LOGGER.info(MessageKeys.ENTER_METHOD, "getSchemaSubresources", 
-          " crd == null? " + (crd == null));
       if (crd != null && crd.getSpec() != null) {
-        LOGGER.info(MessageKeys.ENTER_METHOD, "getSchemaSubresources", 
-            " crd != null and spec != null subresource" + crd.getSpec().getSubresources());
         return crd.getSpec().getSubresources();
       }
       return null;

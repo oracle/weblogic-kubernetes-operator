@@ -135,13 +135,13 @@ public final class HealthCheckHelper {
 
         for (AuthorizationProxy.Resource r : namespaceAccessChecks.keySet()) {
           for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
-            check(rules, r, op, !dedicated);
+            check(rules, r, op, ns, !dedicated);
           }
         }
         if (!dedicated) {
           for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
             for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-              check(rules, r, op, !dedicated);
+              check(rules, r, op, ns, !dedicated);
             }
           }
         }
@@ -205,7 +205,7 @@ public final class HealthCheckHelper {
         for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
           if (r.equals(resource)) {
             for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-              if (op.equals(operation) && !check(rules, r, op, false)) { 
+              if (op.equals(operation) && !check(rules, r, op, ns, false)) { 
                 result = false;
               }
             }
@@ -232,7 +232,8 @@ public final class HealthCheckHelper {
   }
 
   private static boolean check(
-      List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op, boolean log) {
+      List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op, 
+      String ns, boolean log) {
     String verb = op.name();
     String apiGroup = r.getApiGroup();
     String resource = r.getResource();
@@ -252,7 +253,8 @@ public final class HealthCheckHelper {
         }
       }
     }
-    if (log) LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+    if (log) LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
+    return false;
   }
 
   private static boolean apiGroupMatch(List<String> ruleApiGroups, String apiGroup) {

@@ -511,7 +511,8 @@ public class HelmOperatorValuesTest {
 
   private String getExpectedOperatorHelmChartDefaultValues() {
     StringBuilder sb = new StringBuilder();
-    sb.append("domainNamespaces:\n")
+    sb.append("dedicated: false\n")
+        .append("domainNamespaces:\n")
         .append("- default\n")
         .append("elasticSearchHost: elasticsearch.default.svc.cluster.local\n")
         .append("elasticSearchPort: 9200\n")
