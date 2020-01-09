@@ -22,8 +22,7 @@ it is supported for production use.
 * [Running the Repository Creation Utility to set up your database schema](#running-the-repository-creation-utility-to-set-up-your-database-schema)
 * [Create a Kubernetes secret with the RCU credentials](#create-a-kubernetes-secret-with-the-rcu-credentials)
 * [Creating a SOA domain](#creating-a-soa-domain)
-* [Setup WebLogic Logging Exporter for Logs Monitoring](#setup-weblogic-logging-exporter-for-logs-monitoring)
-* [Setup WebLogic Monitoring Exporter for Instance Monitoring](#setup-weblogic-monitoring-exporter-for-instance-monitoring)
+* [Monitoring a SOA domain](#monitoring-a-soa-domain)
 
 
 #### Introduction
@@ -40,7 +39,7 @@ This document provides details about the special considerations for deploying an
 Other than those considerations listed here, SOA Suite domains work in the same way as FMW Infrastructure domains and WebLogic Server domains.
 
 In this release, SOA Suite domains are supported using the “domain on a persistent volume”
-[model](/docs-source/content/userguide/managing-domains/choosing-a-model/_index.md) only, where the domain home is located in a persistent volume (PV).
+[model]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) only, where the domain home is located in a persistent volume (PV).
 
 
 #### Limitations
@@ -65,7 +64,7 @@ following limitations currently exist for SOA Suite domains:
 #### Obtaining the SOA Suite Docker Image
 
 The Oracle WebLogic Server Kubernetes Operator requires a SOA Suite 12.2.1.3.0 image with patch 29135930 applied.
-The standard pre-built SOA Suite image, `container-registry.oracle.com/middleware/soasuite:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document](/docs-source/content/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry).
+The standard pre-built SOA Suite image, `container-registry.oracle.com/middleware/soasuite:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
 using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.  
@@ -101,7 +100,7 @@ Please consult the [README](https://github.com/oracle/docker-images/blob/master/
 such as building or pulling the Server JRE Docker image, Oracle FMW Infrastructure Docker image, and downloading the SOA Suite installer binary.
 
 
-You must also install the [required patch](/docs-source/content/userguide/introduction/introduction.md#operator-prerequisites)
+You must also install the [required patch]({{< relref "/userguide/introduction/introduction/_index.md#prerequisites" >}})
 to use this image with the operator.  A [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s)
 is provided that demonstrates how to create a Docker image with the necessary patch installed. Use this patched image for building the SOA Suite image.
 
@@ -131,10 +130,10 @@ cd docker-images/OracleSOASuite/dockerfiles
 ./buildDockerImage.sh -v 12.2.1.3 -s
 ```
 
-The image produced will be named `localhost/oracle/soasuite:12.2.1.3`.
+The image produced will be named `middleware/soasuite/oracle/soasuite:12.2.1.3`.
 
 The Oracle SOA Suite image created through the above step needs to be retagged
-from `localhost/oracle/soasuite:12.2.1.3` to `container-registry.oracle.com/middleware/soasuite:12.2.1.3` before continuing with the next steps.
+from `middleware/soasuite/oracle/soasuite:12.2.1.3` to `container-registry.oracle.com/middleware/soasuite:12.2.1.3` before continuing with the next steps.
 
 ```bash
 $ docker tag middleware/soasuite/oracle/soasuite:12.2.1.3 container-registry.oracle.com/middleware/soasuite:12.2.1.3
@@ -164,7 +163,7 @@ The following documentation and samples are for creating a container-based datab
 
 ##### Running the database inside Kubernetes
 
-Follow these instructions for a basic database setup inside Kubernetes that uses PV (persistent volume) and PVC (persistent volume claim) to persist the data. For more details about database setup and configuration, refer to this [page](/docs-source/content/userguide/managing-fmw-domains/fmw-infra/_index.md#running-the-database-inside-kubernetes).
+Follow these instructions for a basic database setup inside Kubernetes that uses PV (persistent volume) and PVC (persistent volume claim) to persist the data. For more details about database setup and configuration, refer to this [page]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#running-the-database-inside-kubernetes" >}}).
 
 Pull the database image:
 
@@ -173,11 +172,11 @@ $ docker pull container-registry.oracle.com/database/enterprise:12.2.0.1
 $ docker tag  container-registry.oracle.com/database/enterprise:12.2.0.1  oracle/database:12.2.0.1
 ```
 Create the PV and PVC for the database
-by running the [create-pv-pvc.sh](/docs-source/content/samples/simple/storage/_index.md#using-the-scripts-to-create-a-pv-and-pvc) script.
+by running the [create-pv-pvc.sh]({{< relref "/samples/simple/storage/_index.md" >}}) script.
 Follow the instructions for using the scripts to create a PV and PVC.  
 
 {{% notice note %}}
-When creating the PV and PVC for the database, make sure that you use a different name 
+When creating the PV and PVC for the database, make sure that you use a different name
 and storage class to the PV and PVC you create for the domain to use.
 {{% /notice %}}
 
@@ -190,7 +189,7 @@ $ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-soa-domain/d
 $ kubectl create -f db-with-pv.yaml
 ```
 
-The database will take several minutes to start the first time, since it has to 
+The database will take several minutes to start the first time, since it has to
 complete the setup operations.  You can watch the log to see its progress using
 this command:
 
@@ -350,16 +349,14 @@ $
 #### Creating a SOA domain
 
 Now that you have your Docker images and you have created your RCU schemas, you are ready
-to create your domain.  A [sample](/docs-source/content/samples/simple/domains/soa-domain/_index.md)
+to create your domain.  A [sample]({{< relref "/samples/simple/domains/soa-domain/_index.md" >}})
 is provided that demonstrates how to create a SOA Suite domain.
 
-#### Setup WebLogic Logging Exporter for Logs Monitoring
+#### Monitoring a SOA domain
 
-After the SOA Domain is setup, you can publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
-Follow the steps described in this [document](WebLogic-Logging-Exporter-Setup.md) to setup the WebLogic Logging Exporter and publish the logs to Elasticsearch.
+After the SOA domain is set up, you can:
 
-#### Setup WebLogic Monitoring Exporter for Instance Monitoring
-
-The SOA instance can be monitored using Prometheus and Grafana.
-Follow the steps described in this [document](WebLogic-Monitoring-Exporter-Setup.md) to setup the monitoring for SOA instance.
+* Monitor the SOA instance using Prometheus and Grafana. See [Monitor a SOA domain]({{< relref "/samples/simple/elastic-stack/soa-domain/weblogic-monitoring-exporter-setup.md" >}}).
+* Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
+See [Publish logs to Elasticsearch]({{< relref "/samples/simple/elastic-stack/soa-domain/weblogic-logging-exporter-setup.md" >}}).
 
