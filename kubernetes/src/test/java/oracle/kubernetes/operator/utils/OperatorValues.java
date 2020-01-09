@@ -45,6 +45,7 @@ public class OperatorValues {
 
   public OperatorValues withTestDefaults() {
     return this.namespace("test-operator-namespace")
+        .dedicated("false")
         .serviceAccount("test-operator-service-account")
         .targetNamespaces("test-target-namespace1,test-target-namespace2")
         .weblogicOperatorImage("test-operator-image")
