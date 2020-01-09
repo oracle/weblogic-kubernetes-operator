@@ -166,9 +166,7 @@ public class DomainStatusUpdater {
     @Override
     public NextAction apply(Packet packet) {
       DomainStatusUpdaterContext context = createContext(packet);
-
       DomainStatus newStatus = context.getNewStatus();
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
 
       return context.isStatusChanged(newStatus)
             ? doNext(packet)
@@ -178,6 +176,7 @@ public class DomainStatusUpdater {
     private Step createDomainStatusPatchStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {
       JsonPatchBuilder builder = Json.createPatchBuilder();
       newStatus.createPatchFrom(builder, context.getStatus());
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
 
       return new CallBuilder().patchDomainAsync(
             context.getDomainName(),
