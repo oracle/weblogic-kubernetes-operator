@@ -4,7 +4,7 @@
 {{- define "operator.operator" -}}
 {{- include "operator.operatorClusterRoleGeneral" . }}
 {{- include "operator.operatorClusterRoleNamespace" . }}
-{{- if .dedicated }}
+{{- if not .dedicated }}
 {{- include "operator.operatorClusterRoleNonResource" . }}
 {{- end }}
 {{- include "operator.operatorClusterRoleOperatorAdmin" . }}
@@ -12,7 +12,7 @@
 {{- include "operator.clusterRoleBindingGeneral" . }}
 {{- include "operator.clusterRoleBindingAuthDelegator" . }}
 {{- include "operator.clusterRoleBindingDiscovery" . }}
-{{- if .dedicated }}
+{{- if not .dedicated }}
 {{- include "operator.clusterRoleBindingNonResource" . }}
 {{- end }}
 {{- include "operator.operatorRole" . }}
