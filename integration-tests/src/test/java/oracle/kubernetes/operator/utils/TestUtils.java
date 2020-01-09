@@ -670,7 +670,8 @@ public class TestUtils {
       } catch (Exception ex) {
         LoggerHelper.getLocal().log(Level.INFO, "Got exception, iteration " + i + " " + ex.getMessage());
         i++;
-        if (ex.getMessage().contains("java.net.ConnectException: Connection refused")) {
+        if (ex.getMessage().contains("java.net.ConnectException: Connection refused") ||
+            ex.getMessage().contains("java.net.NoRouteToHostException: No route to host") ) {
           if (i == (BaseTest.getMaxIterationsPod() - 1)) {
             throw ex;
           }
