@@ -860,7 +860,12 @@ public class Domain {
               + "\"";
       LoggerHelper.getLocal().log(Level.INFO,
           "making sure the domain directory exists by running " + cmd);
-      ExecResult result = TestUtils.exec(cmd, true);
+      // Looking for servers directory as sometimes krun.sh exits with non-zero
+      // even though the domain directory exists
+      ExecResult result = ExecCommand.exec(cmd);
+      if (!result.stdout().contains("servers")) {
+        throw new RuntimeException("Domain directory doesn't exist");
+      }
       LoggerHelper.getLocal().log(Level.INFO, "Run the script to create domain");
     } else {
       String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
