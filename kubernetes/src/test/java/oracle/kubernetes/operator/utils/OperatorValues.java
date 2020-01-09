@@ -97,6 +97,11 @@ public class OperatorValues {
     dedicated = convertNullToEmptyString(val);
   }
 
+  public OperatorValues dedicated(String val) {
+    setDedicated(val);
+    return this;
+  }
+
   public String getServiceAccount() {
     return serviceAccount;
   }
