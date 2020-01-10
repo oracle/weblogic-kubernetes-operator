@@ -222,7 +222,7 @@
         <configuration>
           <mainClass>oracle.kubernetes.operator.helpers.CrdHelper</mainClass>
           <arguments>
-            <argument>${project.basedir}/../kubernetes/charts/domain-crd.yaml</argument>
+            <argument>${project.basedir}/../kubernetes/charts/weblogic-domain/domain-crd.yaml</argument>
           </arguments>
         </configuration>
       </plugin>
