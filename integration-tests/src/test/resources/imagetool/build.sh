@@ -10,9 +10,6 @@ WIT_SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 cd ${WIT_SCRIPT_DIR}
 
 JDK_WLS_INSTALLER_DIR="/scratch/artifacts/imagetool"
-echo @@
-echo "@@ ==== ls  ${JDK_WLS_INSTALLER_DIR}"
-echo @@
 
 ls ${JDK_WLS_INSTALLER_DIR}
 
@@ -35,6 +32,16 @@ ORACLE_SUPPORT_PASSWORD=${ORACLE_SUPPORT_PASSWORD-$USER_PASSWORD}
 # If this is run behind a proxy, then environment variables http_proxy and https_proxy must be set.
 
 sh ${WIT_SCRIPT_DIR}/build_download.sh $@
+
+# In case Weblogic and JDK installers don't exist on Jenkins, use oners in a local box
+
+if [ ! -d ${JDK_WLS_INSTALLER_DIR} ] || [ -d "ls -A ${JDK_WLS_INSTALLER_DIR}" ]; then
+  JDK_WLS_INSTALLER_DIR="/net/slc12enr/scratch/artifacts/imagetool"
+fi
+
+echo @@
+echo "@@ Installers are located at ${JDK_WLS_INSTALLER_DIR}"
+echo @@
 
 # This step builds a docker image (WebLogic Installer with patches) using the WebLogic Image Tool
 
