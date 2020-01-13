@@ -341,10 +341,12 @@ while [ 1 -eq 1 ]; do
     break
   fi
   if [ $((SECONDS - $start_secs)) -ge $max_wait_secs ]; then
+    trace INFO "Trying to put a node manager thread dump in '$nodemgr_out_file'."
+    kill -3 `jps -l | grep weblogic.NodeManager | awk '{ print $1 }'`
     trace INFO "Contents of node manager log '$nodemgr_log_file':"
     cat ${nodemgr_log_file}
     trace INFO "Contents of node manager out '$nodemgr_out_file':"
-    cat ${NODEMGR_OUT_FILE}
+    cat ${nodemgr_out_file}
     trace SEVERE "Node manager failed to start within $max_wait_secs seconds."
     exit 1
   fi
