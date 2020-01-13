@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 logfile="/home/oracle/setup/log/setupDB.log"
-max=20
+max=30
 counter=0
 while [ $counter -le ${max} ]
 do
