@@ -835,12 +835,12 @@ public class ServiceHelper {
 
     @Override
     Map<String, String> getServiceLabels() {
-      return getAdminService().map(AdminService::getLabels).orElse(Collections.emptyMap());
+      return getNullableAdminService().map(AdminService::getLabels).orElse(Collections.emptyMap());
     }
 
     @Override
     Map<String, String> getServiceAnnotations() {
-      return getAdminService().map(AdminService::getAnnotations).orElse(Collections.emptyMap());
+      return getNullableAdminService().map(AdminService::getAnnotations).orElse(Collections.emptyMap());
     }
 
     @Override
@@ -873,10 +873,10 @@ public class ServiceHelper {
     }
 
     private Channel getChannel(String channelName) {
-      return getAdminService().map(a -> a.getChannel(channelName)).orElse(null);
+      return getNullableAdminService().map(a -> a.getChannel(channelName)).orElse(null);
     }
 
-    private Optional<AdminService> getAdminService() {
+    private Optional<AdminService> getNullableAdminService() {
       return Optional.ofNullable(getDomain().getAdminServerSpec())
           .map(AdminServerSpec::getAdminService);
     }

@@ -97,8 +97,12 @@ public class AdminServer extends Server {
         .toHashCode();
   }
 
-  public AdminService getAdminService() {
+  public AdminService createAdminService() {
     if (adminService == null) adminService = new AdminService();
+    return adminService;
+  }
+
+  public AdminService getAdminService() {
     return adminService;
   }
 }
