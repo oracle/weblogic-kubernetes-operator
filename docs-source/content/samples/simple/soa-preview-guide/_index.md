@@ -543,7 +543,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: soadb
-        image: coantiner-registry.oracle.com/database/enterprise:12.2.0.1
+        image: container-registry.oracle.com/database/enterprise:12.2.0.1
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 1521
@@ -596,7 +596,7 @@ uses (which is uid 54321).  You can do this by adding the lines shown below:
       # add the lines before this line
       containers:
       - name: soadb
-        image: coantiner-registry.oracle.com/database/enterprise:12.2.0.1
+        image: container-registry.oracle.com/database/enterprise:12.2.0.1
     ... lines omitted ...
 ```        
 
