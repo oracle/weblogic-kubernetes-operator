@@ -83,8 +83,8 @@ kubectl get po/rcu
 echo "Oradoc_db1" > pwd.txt
 echo "Oradoc_db1" >> pwd.txt
 
-kubectl cp ${scriptDir}/common/createRepository.sh  rcu:/u01/oracle
-kubectl cp pwd.txt rcu:/u01/oracle
+kubectl exec -i rcu -- bash -c 'cat > /u01/oracle/createRepository.sh' < ${scriptDir}/common/createRepository.sh 
+kubectl exec -i rcu -- bash -c 'cat > /u01/oracle/pwd.txt' < pwd.txt 
 rm -rf createRepository.sh pwd.txt
 
 kubectl exec -it rcu /bin/bash /u01/oracle/createRepository.sh ${dburl} ${schemaPrefix} ${rcuType}
