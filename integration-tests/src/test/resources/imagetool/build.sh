@@ -36,7 +36,7 @@ sh ${WIT_SCRIPT_DIR}/build_download.sh $@
 # In case Weblogic and JDK installers don't exist on Jenkins, use oners in a local box
 
 if [ ! -d ${JDK_WLS_INSTALLER_DIR} ] || [ -d "ls -A ${JDK_WLS_INSTALLER_DIR}" ]; then
-  JDK_WLS_INSTALLER_DIR="/net/slc12enr/scratch/artifacts/imagetool"
+  JDK_WLS_INSTALLER_DIR="/net/slc12enr.us.oracle.com/scratch/artifacts/imagetool"
 fi
 
 echo @@
