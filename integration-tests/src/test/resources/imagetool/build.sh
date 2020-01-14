@@ -11,8 +11,6 @@ cd ${WIT_SCRIPT_DIR}
 
 JDK_WLS_INSTALLER_DIR="/scratch/artifacts/imagetool"
 
-ls ${JDK_WLS_INSTALLER_DIR}
-
 # Get user info from a file if it exists. Use this info as default values
 if [ -f ${WIT_SCRIPT_DIR}/user_info.properties ] ; then
   echo @@
@@ -42,6 +40,18 @@ fi
 echo @@
 echo "@@ Installers are located at ${JDK_WLS_INSTALLER_DIR}"
 echo @@
+
+echo @@
+echo "@@ ==== ls  ${JDK_WLS_INSTALLER_DIR}"
+echo @@
+
+ls ${JDK_WLS_INSTALLER_DIR}
+
+echo @@
+echo "@@ ==== hostname is: "
+echo @@
+
+hostname
 
 # This step builds a docker image (WebLogic Installer with patches) using the WebLogic Image Tool
 
