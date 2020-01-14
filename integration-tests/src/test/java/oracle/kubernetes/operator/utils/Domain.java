@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -1160,13 +1160,13 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO,
         "Inside testDomainServerPodRestart domainYamlWithChangedProperty");
 
-    String newDomainYamlFile =
+    final String newDomainYamlFile =
         userProjectsDir + "/weblogic-domains/" + domainUid + "/domain_new.yaml";
-    String domainYamlFile =
+    final String domainYamlFile =
         userProjectsDir + "/weblogic-domains/" + domainUid + "/domain.yaml";
-    String changedDomainYamlFile =
+    final String changedDomainYamlFile =
         userProjectsDir + "/weblogic-domains/" + domainUid + "/domain_change.yaml";
-    String fileWithChangedProperty =
+    final String fileWithChangedProperty =
         BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/"
             + fileNameWithChangedProperty;

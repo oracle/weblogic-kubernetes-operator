@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import oracle.kubernetes.operator.BaseTest;
 
@@ -19,11 +18,11 @@ public class PersistentVolume {
   private String dirPath;
 
   /**
-   * Create PV directory and k8s pv and pvc for the domain
+   * Create PV directory and k8s pv and pvc for the domain.
    *
-   * @param dirPath
-   * @param pvMap
-   * @throws Exception
+   * @param dirPath directory path
+   * @param pvMap PV map
+   * @throws Exception exception
    */
   public PersistentVolume(String dirPath, Map<String, Object> pvMap) throws Exception {
     this.dirPath = dirPath;

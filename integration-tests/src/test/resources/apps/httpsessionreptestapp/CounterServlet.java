@@ -75,7 +75,7 @@ public class CounterServlet extends HttpServlet {
           Integer ival = (Integer)currentSession.getAttribute("simplesession.counter");
           if (ival == null) {
             // Initialize the counter
-            ival = new Integer (1);
+            ival = new Integer(1);
           } else {
             // Increment the counter
             ival = new Integer(ival.intValue() + 1);

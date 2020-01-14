@@ -5,7 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Arrays;
 
-import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import oracle.kubernetes.weblogic.domain.model.BaseConfiguration;
 import org.junit.Test;
 

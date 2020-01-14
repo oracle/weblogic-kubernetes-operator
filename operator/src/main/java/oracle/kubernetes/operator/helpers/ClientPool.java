@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,11 +11,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.squareup.okhttp.Dispatcher;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.Configuration;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.util.ClientBuilder;
+import okhttp3.Dispatcher;
+import okhttp3.OkHttpClient;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -56,6 +57,8 @@ public class ClientPool extends Pool<ApiClient> {
     return getApiClient();
   }
 
+  // RJE: FIXME: With OKHttp3, each client has it's own connection pool
+
   private ApiClient getApiClient() {
     LOGGER.entering();
 
@@ -87,7 +90,8 @@ public class ClientPool extends Pool<ApiClient> {
   @Override
   protected ApiClient onRecycle(ApiClient instance) {
     // Work around async processing creating, but not cleaning-up network interceptors
-    instance.getHttpClient().networkInterceptors().clear();
+    // RJE: FIXME: Not needed
+    // instance.getHttpClient().networkInterceptors().clear();
     return super.onRecycle(instance);
   }
 
@@ -117,7 +121,9 @@ public class ClientPool extends Pool<ApiClient> {
                   super.execute(wrapRunnable(command));
                 }
               };
-          client.getHttpClient().setDispatcher(new Dispatcher(exec));
+          OkHttpClient httpClient =
+              client.getHttpClient().newBuilder().dispatcher(new Dispatcher(exec)).build();
+          client.setHttpClient(httpClient);
         }
 
         return client;
