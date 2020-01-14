@@ -785,6 +785,11 @@ public class BaseTest {
         + domainNS + " mkdir /shared/domains/" + domainUid + "/bin/scripts";
     TestUtils.exec(cmd, true);
 
+    cmd = "kubectl exec " + podName + " -n "
+        + domainNS + " ls -ltr /shared/domains/" + domainUid + " && "
+        + " ls -ltr /shared/domains/" + domainUid + "/bin";
+    TestUtils.exec(cmd, true);
+
     // copy scalingAction.sh to pod
     TestUtils.kubectlcp(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
         "/shared/domains/" + domainUid + "/bin/scripts", podName, domainNS);
