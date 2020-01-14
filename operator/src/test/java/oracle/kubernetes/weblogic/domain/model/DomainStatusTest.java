@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainStatusTest {
@@ -48,6 +49,17 @@ public class DomainStatusTest {
   }
 
   @Test
+  public void whenAddedConditionEqualsPresentCondition_ignoreIt() {
+    DomainCondition originalCondition = new DomainCondition(Failed).withStatus("True");
+    domainStatus.addCondition(originalCondition);
+
+    SystemClockTestSupport.increment();
+    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
+
+    assertThat(domainStatus.getConditions().get(0), sameInstance(originalCondition));
+  }
+
+  @Test
   public void whenAddedConditionIsFailed_replaceOldFailedCondition() {
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("False"));
 
@@ -68,7 +80,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsFailed_removeExistedAvailableCondition() {
+  public void whenAddedConditionIsFailed_removeExistingAvailableCondition() {
     domainStatus.addCondition(new DomainCondition(Available).withStatus("False"));
 
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
