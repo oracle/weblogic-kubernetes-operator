@@ -345,7 +345,7 @@ public class CallBuilder {
               .listNamespacedDomain(
                   requestParams.namespace,
                   pretty,
-                  dryRun,
+                  null,
                   fieldSelector,
                   labelSelector,
                   limit,
