@@ -359,7 +359,7 @@ A JRF domain requires an infrastructure database and also requires initalizing t
        
        ```
 
-   - Use the sample script in <WebLogic Kubernetes Operator Root Directory>/kubernetes/samples/scripts/create-rcu-schema:
+   - Use the sample script in <WebLogic Kubernetes Operator Root Directory>/kubernetes/samples/scripts/create-oracle-db-service:
 
      ```
         start-db-service.sh
@@ -371,7 +371,7 @@ A JRF domain requires an infrastructure database and also requires initalizing t
    > __NOTE__: This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
 
 
-3. Create the rcu schema using the following command. Note that `Oradoc_db1` is the dba password and `Oradoc_db1` is 
+3. Use the sample script in <WebLogic Kubernetes Operator Root Directory>/kubernetes/samples/scripts/create-rcu-schema to create the rcu schema using the following command. Note that `Oradoc_db1` is the dba password and `Oradoc_db1` is 
 the schema password:
 
    ```
