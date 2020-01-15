@@ -792,30 +792,6 @@ public class BaseTest {
         "chmod +x /shared/domains/"
                   + domainUid + "/bin/scripts/scalingAction.sh");
 
-    /*
-    // create scripts dir under domain pv
-    String cmd = "kubectl exec " + podName + " -n "
-        + domainNS + " -- mkdir /shared/domains/" + domainUid + "/bin/scripts";
-    TestUtils.exec(cmd, true);
-
-    cmd = "kubectl exec " + podName + " -n "
-        + domainNS + " -- ls -ltr /shared/domains/" + domainUid
-        + " /shared/domains/" + domainUid + "/bin";
-    TestUtils.exec(cmd, true);
-
-    // copy scalingAction.sh to pod
-
-    cmd = "kubectl exec -i " + podName + " -n "
-        + domainNS + " -- bash -c 'cat > /shared/domains/"
-        + domainUid + "/bin/scripts/scalingAction.sh' < "
-        + getProjectRoot() + "/src/scripts/scaling/scalingAction.sh";
-    TestUtils.exec(cmd, true);
-
-    cmd = "kubectl exec -i " + podName + " -n "
-        + domainNS + " chmod +x /shared/domains/"
-        + domainUid + "/bin/scripts/scalingAction.sh";
-    TestUtils.exec(cmd, true); */
-
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
