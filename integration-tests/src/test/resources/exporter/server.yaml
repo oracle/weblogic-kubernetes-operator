@@ -20,7 +20,7 @@ spec:
     spec:  
       containers:
       - image: webhook-log:1.0
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: webhook
       imagePullSecrets:
         - name: ocirsecret
