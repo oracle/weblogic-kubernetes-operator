@@ -23,7 +23,7 @@ WIT_HOME_DIR="${WIT_INSTALL_DIR}/imagetool"
 ZIP_FILE=imagetool.zip
 
 # vars for creating a WebLogic docker image
-JDK_WLS_INSTALLER_DIR="/scratch/artifacts/imagetool"
+#JDK_WLS_INSTALLER_DIR="/scratch/artifacts/imagetool"
 JDK_INSTALLER_NAME=${JDK_INSTALLER_NAME:-jdk-8u202-linux-x64.tar.gz}
 JDK_INSTALLER_VERSION=${JDK_INSTALLER_VERSION:-8u202}
 WLS_INSTALLER_NAME=${WLS_INSTALLER_NAME:-fmw_12.2.1.3.0_wls_Disk1_1of1.zip}

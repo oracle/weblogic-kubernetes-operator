@@ -149,6 +149,10 @@ source ${WIT_SCRIPT_DIR}/build_image_init.sh
 export WLSIMG_CACHEDIR=${WLSIMG_CACHEDIR}
 export WLSIMG_BLDDIR=${WLSIMG_BLDDIR}
 
+echo @@
+echo "========I nstallers are located at ${JDK_WLS_INSTALLER_DIR}"
+echo @@
+
 checkCondition
 cleanup
 prepare

@@ -37,6 +37,8 @@ if [ ! -d ${JDK_WLS_INSTALLER_DIR} ] || [ -d "ls -A ${JDK_WLS_INSTALLER_DIR}" ];
   JDK_WLS_INSTALLER_DIR="/net/slc12enr.us.oracle.com/scratch/artifacts/imagetool"
 fi
 
+export JDK_WLS_INSTALLER_DIR=${JDK_WLS_INSTALLER_DIR}
+
 echo @@
 echo "@@ Installers are located at ${JDK_WLS_INSTALLER_DIR}"
 echo @@
