@@ -782,7 +782,7 @@ public class BaseTest {
 
     // create scripts dir under domain pv
     String cmd = "kubectl exec " + podName + " -n "
-        + domainNS + " mkdir -p 777 /shared/domains/" + domainUid + "/bin/scripts";
+        + domainNS + " -- mkdir -p 777 /shared/domains/" + domainUid + "/bin/scripts";
     TestUtils.exec(cmd, true);
 
     cmd = "kubectl exec " + podName + " -n "
