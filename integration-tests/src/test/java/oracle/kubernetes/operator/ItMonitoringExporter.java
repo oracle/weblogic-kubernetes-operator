@@ -1023,6 +1023,13 @@ public class ItMonitoringExporter extends BaseTest {
         "30703", String.valueOf(31000 + getNewSuffixCount()));
     replaceStringInFile(resourceExporterDir + "/domain1.yaml",
         "30701", String.valueOf(30800 + getNewSuffixCount()));
+    TestUtils.createDockerRegistrySecret(
+        "ocirsecret",
+        System.getenv("REPO_REGISTRY"),
+        System.getenv("REPO_USERNAME"),
+        System.getenv("REPO_PASSWORD"),
+        System.getenv("REPO_EMAIL"),
+        domainNS2);
     // for remote k8s cluster and domain in image case, push the domain image to OCIR
     if (BaseTest.SHARED_CLUSTER) {
       image = System.getenv("REPO_REGISTRY")
@@ -1033,13 +1040,7 @@ public class ItMonitoringExporter extends BaseTest {
 
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
       // image
-      TestUtils.createDockerRegistrySecret(
-            "ocirsecret",
-            System.getenv("REPO_REGISTRY"),
-            System.getenv("REPO_USERNAME"),
-            System.getenv("REPO_PASSWORD"),
-            System.getenv("REPO_EMAIL"),
-            domainNS2);
+
       TestUtils.loginAndPushImageToOcir(image);
       replaceStringInFile(resourceExporterDir + "/domain1.yaml", oldimage, image);
     }
