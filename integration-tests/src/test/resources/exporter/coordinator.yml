@@ -23,7 +23,7 @@ spec:
       containers:
         - name: coordinator
           image: config_coordinator
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8999
       imagePullSecrets:
