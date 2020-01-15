@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -355,10 +355,10 @@ public class ItOperator extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility");
     Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
               true, testClassName);
-    Operator operatorForRESTCertChain =
+    Operator operatorForRestCertChain =
         TestUtils.createOperator(operatorMap, RestCertType.CHAIN);
-    operatorForRESTCertChain.verifyOperatorExternalRestEndpoint();
-    operatorForRESTCertChain.destroy();
+    operatorForRestCertChain.verifyOperatorExternalRestEndpoint();
+    operatorForRestCertChain.destroy();
     LoggerHelper.getLocal().log(Level.INFO,
         "Operator using legacy REST identity created successfully");
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - testOperatorRestUsingCertificateChain");
