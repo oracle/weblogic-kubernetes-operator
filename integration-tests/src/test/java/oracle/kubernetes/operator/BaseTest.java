@@ -780,6 +780,19 @@ public class BaseTest {
   private void copyScalingScriptToPod(String domainUid, String podName, String domainNS)
       throws Exception {
 
+    TestUtils.kubectlexec(podName, domainNS,
+        "-- mkdir /shared/domains/" + domainUid + "/bin/scripts");
+
+    TestUtils.kubectlexec(podName, domainNS,
+        "-- bash -c 'cat > /shared/domains/"
+            + domainUid + "/bin/scripts/scalingAction.sh' < "
+            + getProjectRoot() + "/src/scripts/scaling/scalingAction.sh");
+
+    TestUtils.kubectlexec(podName, domainNS,
+        "chmod +x /shared/domains/"
+                  + domainUid + "/bin/scripts/scalingAction.sh");
+
+    /*
     // create scripts dir under domain pv
     String cmd = "kubectl exec " + podName + " -n "
         + domainNS + " -- mkdir /shared/domains/" + domainUid + "/bin/scripts";
@@ -791,8 +804,6 @@ public class BaseTest {
     TestUtils.exec(cmd, true);
 
     // copy scalingAction.sh to pod
-    /* TestUtils.kubectlcp(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
-        "/shared/domains/" + domainUid + "/bin/scripts", podName, domainNS); */
 
     cmd = "kubectl exec -i " + podName + " -n "
         + domainNS + " -- bash -c 'cat > /shared/domains/"
@@ -803,7 +814,7 @@ public class BaseTest {
     cmd = "kubectl exec -i " + podName + " -n "
         + domainNS + " chmod +x /shared/domains/"
         + domainUid + "/bin/scripts/scalingAction.sh";
-    TestUtils.exec(cmd, true);
+    TestUtils.exec(cmd, true); */
 
   }
 
