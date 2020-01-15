@@ -10,6 +10,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
@@ -29,6 +30,9 @@ public class ClientPool extends Pool<ApiClient> {
   private static ClientPool SINGLETON = new ClientPool();
   private static ThreadFactory threadFactory;
   private final AtomicBoolean isFirst = new AtomicBoolean(true);
+
+  // With OKHttp3, each client has it's own connection pool, so instance will be shared
+  private final AtomicReference<ApiClient> instance = new AtomicReference<>();
 
   public static void initialize(ThreadFactory threadFactory) {
     ClientPool.threadFactory = threadFactory;
@@ -54,10 +58,11 @@ public class ClientPool extends Pool<ApiClient> {
 
   @Override
   protected ApiClient create() {
-    return getApiClient();
+    // disable pooling and always return the same instance
+    return instance.updateAndGet(prev -> {
+      return prev != null ? prev : getApiClient();
+    });
   }
-
-  // RJE: FIXME: With OKHttp3, each client has it's own connection pool
 
   private ApiClient getApiClient() {
     LOGGER.entering();
@@ -85,14 +90,6 @@ public class ClientPool extends Pool<ApiClient> {
 
     LOGGER.exiting(client);
     return client;
-  }
-
-  @Override
-  protected ApiClient onRecycle(ApiClient instance) {
-    // Work around async processing creating, but not cleaning-up network interceptors
-    // RJE: FIXME: Not needed
-    // instance.getHttpClient().networkInterceptors().clear();
-    return super.onRecycle(instance);
   }
 
   private static class DefaultClientFactory implements ClientFactory {
