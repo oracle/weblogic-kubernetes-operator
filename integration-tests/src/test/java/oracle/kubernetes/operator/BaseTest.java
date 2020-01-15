@@ -791,8 +791,14 @@ public class BaseTest {
     TestUtils.exec(cmd, true);
 
     // copy scalingAction.sh to pod
-    TestUtils.kubectlcp(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
-        "/shared/domains/" + domainUid + "/bin/scripts", podName, domainNS);
+    /* TestUtils.kubectlcp(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
+        "/shared/domains/" + domainUid + "/bin/scripts", podName, domainNS); */
+
+    cmd = "kubectl exec -i " + podName + " -n "
+        + domainNS + " -- bash -c 'cat > /shared/domains/"
+        + domainUid + "/bin/scripts/scalingAction.sh' < "
+        + getProjectRoot() + "/src/scripts/scaling/scalingAction.sh";
+    TestUtils.exec(cmd, true);
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
