@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -38,6 +38,7 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
@@ -172,6 +173,13 @@ public class Main {
     }
   }
 
+  public static boolean isAccessAllowed(AuthorizationProxy.Resource resource, AuthorizationProxy.Operation op) {
+    return (!Main.isDedicated()
+          || HealthCheckHelper.isClusterResourceAccessAllowed(Main.computeOperatorNamespace(),
+          resource, op));
+  }
+
+
   private static void begin() {
     String serviceAccountName =
         Optional.ofNullable(tuningAndConfig.get("serviceaccount")).orElse("default");
@@ -188,11 +196,16 @@ public class Main {
     try {
       version = HealthCheckHelper.performK8sVersionCheck();
 
+      Step stepToStart = new StartNamespacesStep(targetNamespaces);
+      if (isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.list)) {
+        stepToStart = CrdHelper.createDomainCrdStep(version, stepToStart);
+      }
+      if (isAccessAllowed(AuthorizationProxy.Resource.NAMESPACES, AuthorizationProxy.Operation.list)) {
+        stepToStart = Step.chain(stepToStart, readExistingNamespaces());
+      }
+
       runSteps(
-          Step.chain(
-              CrdHelper.createDomainCrdStep(version, 
-                  new StartNamespacesStep(targetNamespaces)),
-              readExistingNamespaces()), 
+          stepToStart, 
           Main::completeBegin);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);

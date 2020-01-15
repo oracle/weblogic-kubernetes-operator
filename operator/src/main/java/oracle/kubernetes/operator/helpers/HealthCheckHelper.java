@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -141,7 +141,7 @@ public final class HealthCheckHelper {
         if (!dedicated) {
           for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
             for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-              check(rules, r, op, ns, !dedicated);
+              check(rules, r, op, null, !dedicated);
             }
           }
         }
@@ -174,7 +174,7 @@ public final class HealthCheckHelper {
   }
 
   /**
-   * Verify View (get, list, and watch) Access.
+   * Verify Access To a Cluster resources.
    *
    * @param ns namespace
    * @param resource Kubernetes resource
@@ -205,7 +205,7 @@ public final class HealthCheckHelper {
         for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
           if (r.equals(resource)) {
             for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-              if (op.equals(operation) && !check(rules, r, op, ns, false)) { 
+              if (op.equals(operation) && !check(rules, r, op, null, false)) { 
                 result = false;
               }
             }
@@ -253,7 +253,10 @@ public final class HealthCheckHelper {
         }
       }
     }
-    if (log) LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
+    if (log) {
+      if (ns != null) LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
+      else LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+    }
     return false;
   }
 

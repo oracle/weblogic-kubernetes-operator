@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -27,6 +27,7 @@ import io.kubernetes.client.models.V1beta1CustomResourceSubresources;
 import io.kubernetes.client.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.models.V1beta1JSONSchemaProps;
 import io.kubernetes.client.util.Yaml;
+
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.Main;
@@ -102,12 +103,6 @@ public class CrdHelper {
     return versions;
   }
 
-  private static boolean crdValidationNotAllowed() {
-    return (Main.isDedicated()
-          && !HealthCheckHelper.isClusterResourceAccessAllowed(Main.computeOperatorNamespace(),
-          AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get));
-  }
-
   interface CrdComparator {
     boolean isOutdatedCrd(
         V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected);
@@ -124,7 +119,7 @@ public class CrdHelper {
     @Override
     public NextAction apply(Packet packet) {
 
-      if (crdValidationNotAllowed()) {
+      if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get)) {
         return doNext(packet);
       }
 
@@ -183,7 +178,7 @@ public class CrdHelper {
     static List<V1beta1CustomResourceDefinitionVersion> getCrdVersions() {
       List<V1beta1CustomResourceDefinitionVersion> versions =
           Arrays.stream(KubernetesConstants.DOMAIN_ALTERNATE_VERSIONS)
-              .map(e -> new V1beta1CustomResourceDefinitionVersion().name(e).served(true))
+              .map(e -> new V1beta1CustomResourceDefinitionVersion().name(e).served(true).storage(false))
               .collect(Collectors.toList());
       versions.add(
           0, // must be first
@@ -322,36 +317,33 @@ public class CrdHelper {
         RuntimeException  exception = null;
         
         if (existingCrd == null) {
-          if (crdValidationNotAllowed()) {
+          if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.create)) {
             exception = new RuntimeException("Failed to find CRD. In the dedicated mode, "
               + "the custom resource definition of domains.weblogic.oracle has to exist");
           } else {
             return doNext(createCrd(getNext()), packet);
           }
         } else if (isOutdatedCrd(existingCrd)) {
-          if (crdValidationNotAllowed()) {
+          if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.update)) {
             exception = new RuntimeException("Found an outdated CRD. In the dedicated mode, "
               + "the expected custom resource definition of domains.weblogic.oracle has to exist");
           } else {
             return doNext(updateCrd(getNext(), existingCrd), packet);
           }
         } else if (!existingCrdContainsVersion(existingCrd)) {
-          if (crdValidationNotAllowed()) {
+          if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.update)) {
             exception = new RuntimeException("Failed to find the right version of the crd. "
               + "In the dedicated mode, the expected version of the custom resource "
               + "definition of domains.weblogic.oracle has to exist");
           } else {
             return doNext(updateExistingCrd(getNext(), existingCrd), packet);
           }
-        } else {
-          return doNext(packet);
         }
-        // we'll be here only if we have an exception
-        // TODO DONGBO
-        // we don't act on the validation result for now
-        // when we do, we need to log too
-        // return super.doTerminate(exception, packet);
-        return doNext(packet);
+
+        if (exception == null) return doNext(packet);
+    
+        //TODO DONGBO we need to log too
+        return super.doTerminate(exception, packet);
       }
     }
 
