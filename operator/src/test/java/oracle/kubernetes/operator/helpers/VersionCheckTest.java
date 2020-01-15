@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.VersionInfo;
+import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;

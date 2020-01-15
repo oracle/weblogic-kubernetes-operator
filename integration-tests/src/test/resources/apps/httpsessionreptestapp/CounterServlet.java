@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package apps.httpsessionreptestapp;
@@ -75,7 +75,7 @@ public class CounterServlet extends HttpServlet {
           Integer ival = (Integer)currentSession.getAttribute("simplesession.counter");
           if (ival == null) {
             // Initialize the counter
-            ival = new Integer (1);
+            ival = new Integer(1);
           } else {
             // Increment the counter
             ival = new Integer(ival.intValue() + 1);

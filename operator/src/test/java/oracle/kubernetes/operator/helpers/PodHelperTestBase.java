@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -15,36 +15,36 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Affinity;
-import io.kubernetes.client.models.V1ConfigMapKeySelector;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1ContainerPort;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1EnvVarSource;
-import io.kubernetes.client.models.V1ExecAction;
-import io.kubernetes.client.models.V1HTTPGetAction;
-import io.kubernetes.client.models.V1Handler;
-import io.kubernetes.client.models.V1LabelSelector;
-import io.kubernetes.client.models.V1LabelSelectorRequirement;
-import io.kubernetes.client.models.V1Lifecycle;
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1ObjectFieldSelector;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodAffinity;
-import io.kubernetes.client.models.V1PodAffinityTerm;
-import io.kubernetes.client.models.V1PodAntiAffinity;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Probe;
-import io.kubernetes.client.models.V1SecretKeySelector;
-import io.kubernetes.client.models.V1SecretReference;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Toleration;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
-import io.kubernetes.client.models.V1WeightedPodAffinityTerm;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVarSource;
+import io.kubernetes.client.openapi.models.V1ExecAction;
+import io.kubernetes.client.openapi.models.V1HTTPGetAction;
+import io.kubernetes.client.openapi.models.V1Handler;
+import io.kubernetes.client.openapi.models.V1LabelSelector;
+import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
+import io.kubernetes.client.openapi.models.V1Lifecycle;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodAffinity;
+import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
+import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1SecretKeySelector;
+import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -87,7 +87,7 @@ import static oracle.kubernetes.operator.helpers.Matchers.ProbeMatcher.hasExpect
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.readOnlyVolumeMount;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.writableVolumeMount;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
-import static oracle.kubernetes.operator.helpers.Matchers.hasPVClaimVolume;
+import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
@@ -1062,13 +1062,13 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalPVClaimVolume_createPodWithIt() {
+  public void whenDomainHasAdditionalPvClaimVolume_createPodWithIt() {
     getConfigurator()
-        .withAdditionalPVClaimVolume("volume1", "myPersistentVolumeClaim");
+        .withAdditionalPvClaimVolume("volume1", "myPersistentVolumeClaim");
 
     assertThat(
         getCreatedPod().getSpec().getVolumes(),
-        allOf(hasPVClaimVolume("volume1", "myPersistentVolumeClaim")));
+        allOf(hasPvClaimVolume("volume1", "myPersistentVolumeClaim")));
   }
 
   @Test
