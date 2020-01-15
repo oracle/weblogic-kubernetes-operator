@@ -58,7 +58,11 @@ public class ClientPool extends Pool<ApiClient> {
 
   @Override
   protected ApiClient create() {
-    // disable pooling and always return the same instance
+    // We no longer need this connection pooling because OkHttp 3 now supports
+    // connection pooling within each instance.  Prior to the Kubernetes Java
+    // client, version 7.0.0, the ApiClient held an instance of the OkHttp 2
+    // HTTP client, which was single threaded.
+    // Disable pooling and always return the same instance
     return instance.updateAndGet(prev -> {
       return prev != null ? prev : getApiClient();
     });

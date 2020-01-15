@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.StringTokenizer;
 
+import com.google.common.base.Strings;
 import oracle.kubernetes.operator.TuningParameters;
 
 /** A class to create DNS-1123 legal names for Kubernetes objects. */
@@ -100,7 +101,7 @@ public class LegalNames {
     }
 
     configuredValue = configuredValue.trim();
-    if (configuredValue == null || configuredValue.isEmpty()) {
+    if (Strings.isNullOrEmpty(configuredValue)) {
       return null;
     }
 
