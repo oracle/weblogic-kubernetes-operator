@@ -786,8 +786,8 @@ public class BaseTest {
     TestUtils.exec(cmd, true);
 
     cmd = "kubectl exec " + podName + " -n "
-        + domainNS + " ls -ltr /shared/domains/" + domainUid + " && "
-        + " ls -ltr /shared/domains/" + domainUid + "/bin";
+        + domainNS + " ls -ltr /shared/domains/" + domainUid
+        + " /shared/domains/" + domainUid + "/bin";
     TestUtils.exec(cmd, true);
 
     // copy scalingAction.sh to pod
