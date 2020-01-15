@@ -782,7 +782,7 @@ public class BaseTest {
 
     // create scripts dir under domain pv
     String cmd = "kubectl exec " + podName + " -n "
-        + domainNS + " -- mkdir -p 777 /shared/domains/" + domainUid + "/bin/scripts";
+        + domainNS + " -- mkdir /shared/domains/" + domainUid + "/bin/scripts";
     TestUtils.exec(cmd, true);
 
     cmd = "kubectl exec " + podName + " -n "
@@ -799,6 +799,12 @@ public class BaseTest {
         + domainUid + "/bin/scripts/scalingAction.sh' < "
         + getProjectRoot() + "/src/scripts/scaling/scalingAction.sh";
     TestUtils.exec(cmd, true);
+
+    cmd = "kubectl exec -i " + podName + " -n "
+        + domainNS + " chmod +x /shared/domains/"
+        + domainUid + "/bin/scripts/scalingAction.sh";
+    TestUtils.exec(cmd, true);
+
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
