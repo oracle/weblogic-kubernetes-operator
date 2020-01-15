@@ -10,7 +10,7 @@
 {{- end }}
 {{- else }}
 {{- $args := include "utils.cloneDictionary" . | fromYaml -}}
-{{- $key := .Release.Namespace | quote -}}
+{{- $key := .Release.Namespace -}}
 {{- $ignore := set $args "domainNamespace" $key -}}
 {{- include "operator.operatorRoleBindingNamespace" $args -}}
 {{- end }}

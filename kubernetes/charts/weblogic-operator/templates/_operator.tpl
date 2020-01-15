@@ -22,7 +22,5 @@
 {{- include "operator.operatorDeployment" . }}
 {{- include "operator.operatorInternalService" . }}
 {{- include "operator.operatorExternalService" . }}
-{{- if not .dedicated }}
 {{- include "operator.domainNamespaces" . }}
-{{- end }}
 {{- end }}
