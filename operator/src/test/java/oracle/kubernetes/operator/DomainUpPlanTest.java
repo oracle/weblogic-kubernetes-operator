@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Optional;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.V1ContainerPort;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
@@ -183,7 +183,7 @@ public class DomainUpPlanTest {
 
   @SuppressWarnings("unused")
   static class ContainerPortMatcher
-      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1Pod> {
+      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Pod> {
     private int expectedPort;
 
     private ContainerPortMatcher(int expectedPort) {

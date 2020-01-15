@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,12 +11,12 @@ import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.V1ResourceAttributes;
-import io.kubernetes.client.models.V1ResourceRule;
-import io.kubernetes.client.models.V1SelfSubjectAccessReview;
-import io.kubernetes.client.models.V1SelfSubjectRulesReview;
-import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
-import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
+import io.kubernetes.client.openapi.models.V1ResourceAttributes;
+import io.kubernetes.client.openapi.models.V1ResourceRule;
+import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
+import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
+import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
+import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;

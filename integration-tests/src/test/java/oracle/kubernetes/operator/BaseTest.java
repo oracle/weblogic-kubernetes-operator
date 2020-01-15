@@ -1,11 +1,10 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -107,9 +106,9 @@ public class BaseTest {
   /**
    * initializes the application properties and creates directories for results.
    *
-   * @param appPropsFile
-   * @param testClassName
-   * @throws Exception
+   * @param appPropsFile application properties file
+   * @param testClassName test class name
+   * @throws Exception exception
    */
   public static void initialize(String appPropsFile, String testClassName)
       throws Exception {
@@ -388,12 +387,12 @@ public class BaseTest {
   }
 
   /**
-   * build web service app inside pod
+   * build web service app inside pod.
    *
-   * @param domain
-   * @param testAppName
-   * @param wsName
-   * @throws Exception
+   * @param domain domain
+   * @param testAppName test application name
+   * @param wsName web service name
+   * @throws Exception exception
    */
   public static void buildDeployWebServiceApp(Domain domain, String testAppName, String wsName)
       throws Exception {
