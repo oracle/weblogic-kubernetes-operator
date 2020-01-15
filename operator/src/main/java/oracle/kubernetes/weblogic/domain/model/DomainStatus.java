@@ -101,6 +101,8 @@ public class DomainStatus {
    * @return this object.
    */
   public DomainStatus addCondition(DomainCondition newCondition) {
+    if (conditions.contains(newCondition)) return this;
+
     conditions = conditions.stream().filter(c -> preserve(c, newCondition.getType())).collect(Collectors.toList());
 
     conditions.add(newCondition);

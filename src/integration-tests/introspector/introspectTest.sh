@@ -326,7 +326,7 @@ function createTestRootPVDir() {
   mkdir -p ${PV_ROOT} || exit 1
   chmod 777 ${PV_ROOT} || exit 1
 
-  trace "Info: Creating k8s cluster physical directory 'PV_ROOT/acceptance_test_pv/domain-${DOMAIN_UID}-storage' via 'kubectl run'."
+  trace "Info: Creating k8s cluster physical directory 'PV_ROOT/introspect/acceptance_test_pv/domain-${DOMAIN_UID}-storage' via 'kubectl run'."
   trace "Info: Test k8s resources use this physical directory via a PV/PVC '/shared' logical directory."
 
   ${SCRIPTPATH}/util_krun.sh -m ${PV_ROOT}:/pv-root \

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -8,13 +8,13 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1HostPathVolumeSource;
-import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.models.V1Probe;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
@@ -45,7 +45,7 @@ public class Matchers {
     return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
   }
 
-  static Matcher<Iterable<? super V1Volume>> hasPVClaimVolume(String name, String claimName) {
+  static Matcher<Iterable<? super V1Volume>> hasPvClaimVolume(String name, String claimName) {
     return hasItem(new V1Volume().name(name).persistentVolumeClaim(
         new V1PersistentVolumeClaimVolumeSource().claimName(claimName)));
   }
@@ -56,7 +56,7 @@ public class Matchers {
 
   @SuppressWarnings("unused")
   public static class VolumeMountMatcher
-      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1VolumeMount> {
+      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1VolumeMount> {
     private String expectedName;
     private String expectedPath;
     private boolean readOnly;
@@ -83,7 +83,7 @@ public class Matchers {
     }
 
     private Boolean isReadOnly(V1VolumeMount item) {
-      return item.isReadOnly() != null && item.isReadOnly();
+      return item.getReadOnly() != null && item.getReadOnly();
     }
 
     @Override
@@ -103,7 +103,7 @@ public class Matchers {
 
   @SuppressWarnings("unused")
   public static class ProbeMatcher
-      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1Probe> {
+      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Probe> {
     private static final Integer EXPECTED_FAILURE_THRESHOLD = 1;
     private Integer expectedInitialDelay;
     private Integer expectedTimeout;

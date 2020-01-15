@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -860,7 +860,12 @@ public class Domain {
               + "\"";
       LoggerHelper.getLocal().log(Level.INFO,
           "making sure the domain directory exists by running " + cmd);
-      ExecResult result = TestUtils.exec(cmd);
+      // Looking for servers directory as sometimes krun.sh exits with non-zero
+      // even though the domain directory exists
+      ExecResult result = ExecCommand.exec(cmd);
+      if (!result.stdout().contains("servers")) {
+        throw new RuntimeException("Domain directory doesn't exist");
+      }
       LoggerHelper.getLocal().log(Level.INFO, "Run the script to create domain");
     } else {
       String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
@@ -1160,13 +1165,13 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO,
         "Inside testDomainServerPodRestart domainYamlWithChangedProperty");
 
-    String newDomainYamlFile =
+    final String newDomainYamlFile =
         userProjectsDir + "/weblogic-domains/" + domainUid + "/domain_new.yaml";
-    String domainYamlFile =
+    final String domainYamlFile =
         userProjectsDir + "/weblogic-domains/" + domainUid + "/domain.yaml";
-    String changedDomainYamlFile =
+    final String changedDomainYamlFile =
         userProjectsDir + "/weblogic-domains/" + domainUid + "/domain_change.yaml";
-    String fileWithChangedProperty =
+    final String fileWithChangedProperty =
         BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/"
             + fileNameWithChangedProperty;
@@ -1541,9 +1546,9 @@ public class Domain {
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
-      ExecResult result = TestUtils.exec(curlCmd, true);
+      ExecResult result = ExecCommand.exec(curlCmd);
       String responseCode = result.stdout().trim();
-      if (!responseCode.equals("200")) {
+      if (result.exitValue() != 0 || !responseCode.equals("200")) {
         LoggerHelper.getLocal().log(Level.INFO,
             "callWebApp did not return 200 status code, got "
                 + responseCode
@@ -1560,7 +1565,7 @@ public class Domain {
         } catch (InterruptedException ignore) {
           // no-op
         }
-      } else {
+      } else if (responseCode.equals("200")) {
         LoggerHelper.getLocal().log(Level.INFO,
             "callWebApp returned 200 response code, iteration " + i);
         break;

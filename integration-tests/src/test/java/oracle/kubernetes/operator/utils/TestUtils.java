@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -29,7 +29,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
@@ -670,7 +670,8 @@ public class TestUtils {
       } catch (Exception ex) {
         LoggerHelper.getLocal().log(Level.INFO, "Got exception, iteration " + i + " " + ex.getMessage());
         i++;
-        if (ex.getMessage().contains("java.net.ConnectException: Connection refused")) {
+        if (ex.getMessage().contains("java.net.ConnectException: Connection refused")
+            || ex.getMessage().contains("java.net.NoRouteToHostException: No route to host")) {
           if (i == (BaseTest.getMaxIterationsPod() - 1)) {
             throw ex;
           }
