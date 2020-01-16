@@ -81,7 +81,7 @@ public class CallBuilder {
   private static AsyncRequestStepFactory STEP_FACTORY = DEFAULT_STEP_FACTORY;
   private final ClientPool helper;
   private Boolean allowWatchBookmarks = false;
-  private String dryRun = "false";
+  private String dryRun = null;
   private String pretty = "false";
   private final CallFactory<Domain> replaceDomain =
       (requestParams, usage, cont, callback) ->
