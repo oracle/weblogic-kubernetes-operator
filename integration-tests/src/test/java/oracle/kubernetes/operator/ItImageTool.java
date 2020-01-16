@@ -74,7 +74,7 @@ public class ItImageTool extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "WebLogic image name is: " + weblogicImageTagWIT);
 
       // Build WebLogic Docker image using imagetool
-      //buildWlsDockerImage();
+      buildWlsDockerImage();
 
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
@@ -113,7 +113,6 @@ public class ItImageTool extends BaseTest {
             createDomainMap(getNewSuffixCount(), testClassNameShort);
         wlstDomainMap.put("namespace", domainNS1);
         wlstDomainMap.put("weblogicImageTagWIT", weblogicImageTagWIT);
-        //wlstDomainMap.put("weblogicImageTagWIT", "imagetool/build/weblogic:12.2.1.3.0");
         domain = TestUtils.createDomain(wlstDomainMap);
         domain.verifyDomainCreated();
       }
