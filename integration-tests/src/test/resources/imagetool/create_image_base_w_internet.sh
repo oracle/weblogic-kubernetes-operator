@@ -62,16 +62,18 @@ checkCondition()
 
 cleanup()
 {
-  echo @@
-  echo "@@ Cleanup WIT cache Entry and old WLS docker image"
-  echo @@
+  if [ -d ${WLSIMG_DIR} ] ; then
+    echo @@
+    echo "@@ Cleanup WIT cache Entry and old WLS docker image"
+    echo @@
 
-  # Clean WIT cache
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key wls_12.2.1.3.0
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key jdk_8u202
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 330386660_12.2.1.3.0
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 28186730_opatch
-  ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 29135930_12.2.1.3.191004
+    # Clean WIT cache
+    ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key wls_12.2.1.3.0
+    ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key jdk_8u202
+    ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 330386660_12.2.1.3.0
+    ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 28186730_opatch
+    ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 29135930_12.2.1.3.191004
+  fi
 
   if [ -d ${WLSIMG_CACHEDIR} ] ; then
     echo @@
