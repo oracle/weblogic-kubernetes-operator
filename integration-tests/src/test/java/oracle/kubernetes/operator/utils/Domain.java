@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -860,7 +860,12 @@ public class Domain {
               + "\"";
       LoggerHelper.getLocal().log(Level.INFO,
           "making sure the domain directory exists by running " + cmd);
-      ExecResult result = TestUtils.exec(cmd);
+      // Looking for servers directory as sometimes krun.sh exits with non-zero
+      // even though the domain directory exists
+      ExecResult result = ExecCommand.exec(cmd);
+      if (!result.stdout().contains("servers")) {
+        throw new RuntimeException("Domain directory doesn't exist");
+      }
       LoggerHelper.getLocal().log(Level.INFO, "Run the script to create domain");
     } else {
       String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
@@ -1147,7 +1152,7 @@ public class Domain {
     }
     LoggerHelper.getLocal().log(Level.INFO, "Done - testDomainServerPodRestart");
   }
-   
+
   /**
    * Verify domain server pods get restarted after the property change by kubectl apply -f new
    * domain yaml file with added/changed property.
@@ -1160,13 +1165,13 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO,
         "Inside testDomainServerPodRestart domainYamlWithChangedProperty");
 
-    String newDomainYamlFile =
+    final String newDomainYamlFile =
         userProjectsDir + "/weblogic-domains/" + domainUid + "/domain_new.yaml";
-    String domainYamlFile =
+    final String domainYamlFile =
         userProjectsDir + "/weblogic-domains/" + domainUid + "/domain.yaml";
-    String changedDomainYamlFile =
+    final String changedDomainYamlFile =
         userProjectsDir + "/weblogic-domains/" + domainUid + "/domain_change.yaml";
-    String fileWithChangedProperty =
+    final String fileWithChangedProperty =
         BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/"
             + fileNameWithChangedProperty;
@@ -1179,7 +1184,7 @@ public class Domain {
         Paths.get(changedDomainYamlFile),
         Files.readAllBytes(Paths.get(fileWithChangedProperty)),
         StandardOpenOption.APPEND);
-    
+
     String oldPvc = "domainpodsrestart-weblogic-sample-pvc";
     String newPvc = domainUid + "-" + pvMap.get("baseName") + "-pvc";
     LoggerHelper.getLocal().log(Level.INFO, "newPvc in verifyDomainServerPodRestart: " + newPvc);
@@ -1200,13 +1205,13 @@ public class Domain {
     LoggerHelper.getLocal().log(
         Level.INFO, "Done - testDomainServerPodRestart with domainYamlWithChangedProperty");
   }
-   
+
   /**
    * Modify the property in the domain yaml file.
    *
    * @param oldString - the old property value
    * @param newString - the new property value
-   * @param oldFileName - the file name that has the oldString 
+   * @param oldFileName - the file name that has the oldString
    * @param newFileName - the file name that has the newString changed from the old one
    * @throws Exception - IOException or errors occurred during the call
    */
@@ -1237,7 +1242,7 @@ public class Domain {
     }
     LoggerHelper.getLocal().log(Level.INFO, "Done - modifyPropertyInYaml");
   }
-  
+
   /**
    * Get runtime server yaml file and verify the changed property is in that file.
    *
@@ -1370,7 +1375,7 @@ public class Domain {
             secret.getSecretName(), domainUid, domainNS);
     TestUtils.exec(labelCmd);
   }
-  
+
   /**
    * Create Docker Registry Secret for the domain namespace.
    *
@@ -1381,7 +1386,7 @@ public class Domain {
     if (secret == null) {
       secret = "docker-store";
     }
-    
+
     String ocrserver = System.getenv("OCR_SERVER");
     if (ocrserver == null) {
       ocrserver = "container-registry.oracle.com";
@@ -1455,7 +1460,7 @@ public class Domain {
     }
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
-  
+
     // for remote k8s cluster and domain in image case, push the domain image to OCIR
     if (domainMap.containsKey("domainHomeImageBase") && BaseTest.SHARED_CLUSTER) {
       String image = (String)domainMap.get("image");
@@ -1463,7 +1468,7 @@ public class Domain {
 
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
       // image
-      
+
       TestUtils.createDockerRegistrySecret(
           "ocir-domain",
           System.getenv("REPO_REGISTRY"),
@@ -1541,9 +1546,9 @@ public class Domain {
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
-      ExecResult result = TestUtils.exec(curlCmd, true);
+      ExecResult result = ExecCommand.exec(curlCmd);
       String responseCode = result.stdout().trim();
-      if (!responseCode.equals("200")) {
+      if (result.exitValue() != 0 || !responseCode.equals("200")) {
         LoggerHelper.getLocal().log(Level.INFO,
             "callWebApp did not return 200 status code, got "
                 + responseCode
@@ -1560,7 +1565,7 @@ public class Domain {
         } catch (InterruptedException ignore) {
           // no-op
         }
-      } else {
+      } else if (responseCode.equals("200")) {
         LoggerHelper.getLocal().log(Level.INFO,
             "callWebApp returned 200 response code, iteration " + i);
         break;
@@ -1712,21 +1717,17 @@ public class Domain {
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
       LoggerHelper.getLocal().log(Level.INFO, "IMAGE_NAME_WEBLOGIC " + imageName);
-    } else if (domainMap.containsKey("weblogicImageNameWIT")) {
-      imageName = (String) domainMap.get("weblogicImageNameWIT");
-      LoggerHelper.getLocal().log(Level.INFO, "IMAGE_NAME_WEBLOGIC " + imageName);
     }
 
     if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
       imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
       LoggerHelper.getLocal().log(Level.INFO, "IMAGE_TAG_WEBLOGIC " + imageTag);
-    } else if (domainMap.containsKey("weblogicImageTagWIT")) {
-      imageTag = (String) domainMap.get("weblogicImageTagWIT");
-      LoggerHelper.getLocal().log(Level.INFO, "IMAGE_TAG_WEBLOGIC " + imageTag);
     }
 
     domainMap.put("logHome", "/shared/logs/" + domainUid);
-    if (!domainMap.containsKey("domainHomeImageBase")) {
+    if (domainMap.containsKey("weblogicImageTagWIT")) {
+      domainMap.put("image", domainMap.get("weblogicImageTagWIT"));
+    } else if (!domainMap.containsKey("domainHomeImageBase")) {
       domainMap.put("domainHome", "/shared/domains/" + domainUid);
       domainMap.put("image", imageName + ":" + imageTag);
       if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
@@ -1765,7 +1766,7 @@ public class Domain {
 
     // create config map and secret for custom sit config
     createConfigMapAndSecretForSitConfig();
-    
+
     if (!domainMap.containsKey("domainHomeImageBase")) {
       createDockerRegistrySecret();
     }
