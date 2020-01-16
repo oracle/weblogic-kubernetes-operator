@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
@@ -6,14 +6,14 @@ package oracle.kubernetes.weblogic.domain;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.models.V1Affinity;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1PodReadinessGate;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
@@ -223,7 +223,7 @@ public abstract class DomainConfigurator {
 
   public abstract DomainConfigurator withAdditionalVolume(String name, String path);
 
-  public abstract DomainConfigurator withAdditionalPVClaimVolume(String name, String claimName);
+  public abstract DomainConfigurator withAdditionalPvClaimVolume(String name, String claimName);
 
   public abstract DomainConfigurator withAdditionalVolumeMount(String name, String path);
 

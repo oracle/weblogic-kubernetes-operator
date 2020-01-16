@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -28,7 +28,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
-import static oracle.kubernetes.operator.helpers.Matchers.hasPVClaimVolume;
+import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
@@ -276,13 +276,13 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalPVClaimVolumesWitVariables_createManagedPodWithThem() {
+  public void whenDomainHasAdditionalPvClaimVolumesWitVariables_createManagedPodWithThem() {
     getConfigurator()
-        .withAdditionalPVClaimVolume(RAW_VALUE_4, RAW_VALUE_3);
+        .withAdditionalPvClaimVolume(RAW_VALUE_4, RAW_VALUE_3);
 
     assertThat(
         getCreatedPod().getSpec().getVolumes(),
-        allOf(hasPVClaimVolume(END_VALUE_4_DNS1123, END_VALUE_3_DNS1123)));
+        allOf(hasPvClaimVolume(END_VALUE_4_DNS1123, END_VALUE_3_DNS1123)));
   }
 
   @Test

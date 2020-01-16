@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -20,10 +20,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.models.V1TokenReviewStatus;
-import io.kubernetes.client.models.V1UserInfo;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
+import io.kubernetes.client.openapi.models.V1UserInfo;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
@@ -143,7 +143,7 @@ public class RestBackendImpl implements RestBackend {
       LOGGER.throwing(e);
       throw e;
     }
-    if (!status.isAuthenticated()) {
+    if (!status.getAuthenticated()) {
       // don't know why the user didn't get authenticated
       WebApplicationException e = createWebApplicationException(Status.UNAUTHORIZED, null);
       LOGGER.throwing(e);

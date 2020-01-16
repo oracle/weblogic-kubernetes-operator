@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -127,7 +127,7 @@ public class ItOperatorTwoDomains extends BaseTest {
       testBasicUseCases(domain1, false);
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
                           true, testClassNameShort);
-      Operator operator2 =
+      final Operator operator2 =
           TestUtils.createOperator(operatorMap, RestCertType.SELF_SIGNED);
       String domainNS2 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       namespaceList.append(" ").append(operatorMap.get("namespace"));
