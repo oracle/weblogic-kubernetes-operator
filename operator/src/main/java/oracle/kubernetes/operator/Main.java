@@ -175,10 +175,8 @@ public class Main {
 
   public static boolean isAccessAllowed(AuthorizationProxy.Resource resource, AuthorizationProxy.Operation op) {
     return (!Main.isDedicated()
-          || HealthCheckHelper.isClusterResourceAccessAllowed(Main.computeOperatorNamespace(),
-          resource, op));
+            || HealthCheckHelper.isClusterResourceAccessAllowed(resource, op));
   }
-
 
   private static void begin() {
     String serviceAccountName =

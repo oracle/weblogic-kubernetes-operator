@@ -120,7 +120,7 @@ public class CrdHelper {
     @Override
     public NextAction apply(Packet packet) {
 
-      if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get)) {
+      if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.list)) {
         return doNext(packet);
       }
 

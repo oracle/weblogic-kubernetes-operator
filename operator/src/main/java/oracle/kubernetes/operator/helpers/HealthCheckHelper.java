@@ -12,6 +12,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
+import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -176,16 +177,15 @@ public final class HealthCheckHelper {
   /**
    * Verify Access To a Cluster resources.
    *
-   * @param ns namespace
    * @param resource Kubernetes resource
    * @param operation Kubernetes operation
    */
-  public static boolean isClusterResourceAccessAllowed(String ns, 
+  public static boolean isClusterResourceAccessAllowed(
       AuthorizationProxy.Resource resource, AuthorizationProxy.Operation operation) {
 
     // Validate RBAC or ABAC policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
-    // TODO DONGBO !!! 
+    // TODO DONGBO log 
     // LOGGER.info(MessageKeys.VERIFY_CLUSTER_VIEW_ACCESS_START, r);
 
     KubernetesVersion version = performK8sVersionCheck();
@@ -194,7 +194,7 @@ public final class HealthCheckHelper {
 
     if (version.isRulesReviewSupported()) {
       boolean rulesReviewSuccessful = true;
-      V1SelfSubjectRulesReview review = ap.review(ns);
+      V1SelfSubjectRulesReview review = ap.review(Main.computeOperatorNamespace());
 
       if (review == null) {
         rulesReviewSuccessful = false;
@@ -202,14 +202,8 @@ public final class HealthCheckHelper {
         V1SubjectRulesReviewStatus status = review.getStatus();
         List<V1ResourceRule> rules = status.getResourceRules();
 
-        for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
-          if (r.equals(resource)) {
-            for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-              if (op.equals(operation) && !check(rules, r, op, null, false)) { 
-                result = false;
-              }
-            }
-          }
+        if (!check(rules, resource, operation, null, false)) { 
+          result = false;
         }
       }
 
@@ -218,15 +212,8 @@ public final class HealthCheckHelper {
       }
     }
 
-    for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
-      if (r.equals(resource)) {
-        for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-          if (op.equals(operation)
-              && !ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
-            result = false;
-          }
-        }
-      }
+    if (!ap.check(operation, resource, null, AuthorizationProxy.Scope.cluster, null)) {
+      result = false;
     }
     return result;
   }
@@ -245,9 +232,9 @@ public final class HealthCheckHelper {
       List<String> ruleApiGroups = rule.getApiGroups();
       if (apiGroupMatch(ruleApiGroups, apiGroup)) {
         List<String> ruleResources = rule.getResources();
-        if (ruleResources != null && ruleResources.contains(resource)) {
+        if (ruleResources != null && (ruleResources.contains("*") || ruleResources.contains(resource))) {
           List<String> ruleVerbs = rule.getVerbs();
-          if (ruleVerbs != null && ruleVerbs.contains(verb)) {
+          if (ruleVerbs != null && (ruleVerbs.contains("*") || ruleVerbs.contains(verb))) {
             return true;
           }
         }
@@ -264,7 +251,7 @@ public final class HealthCheckHelper {
     if (apiGroup == null || apiGroup.isEmpty()) {
       return ruleApiGroups == null || ruleApiGroups.isEmpty() || ruleApiGroups.contains("");
     }
-    return ruleApiGroups != null && ruleApiGroups.contains(apiGroup);
+    return ruleApiGroups != null && (ruleApiGroups.contains("*") || ruleApiGroups.contains(apiGroup));
   }
 
   /**
