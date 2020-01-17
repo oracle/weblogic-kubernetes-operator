@@ -48,6 +48,20 @@ For helm version 2.x, you should have initialized before proceeding.
 $ helm init
 ```
 
+For helm 2
+
+```bash
+$ helm install stable/traefik \
+  --name traefik-operator \
+  --namespace traefik \
+  --values kubernetes/samples/charts/traefik/values.yaml  \
+  --set "kubernetes.namespaces={traefik}" \
+  --wait
+```
+
+
+For helm 3
+
 ```bash
 $ helm install traefik-operator stable/traefik \
     --namespace traefik \
@@ -60,35 +74,50 @@ $ helm install traefik-operator stable/traefik \
 
 1.  Create a namespace for the operator:
 
-    ```bash
-    $ kubectl create namespace sample-weblogic-operator-ns
-    ```
+```bash
+$ kubectl create namespace sample-weblogic-operator-ns
+```
 
-1.	Create a service account for the operator in the operator's namespace:
+2.	Create a service account for the operator in the operator's namespace:
 
-    ```bash
-    $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
-    ```
+```bash
+$ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
+```
 
-1.  Use `helm` to install and start the operator from the directory you just cloned:	 
+3.  Use `helm` to install and start the operator from the directory you just cloned:	 
 
-    ```bash
-    $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
-        --namespace sample-weblogic-operator-ns \
-        --set image=oracle/weblogic-kubernetes-operator:2.4.0 \
-        --set serviceAccount=sample-weblogic-operator-sa \
-        --set "domainNamespaces={}" \
-        --wait
-    ```
+For helm 2.x:
+    
+```bash
+$ helm install kubernetes/charts/weblogic-operator \
+  --name sample-weblogic-operator \
+  --namespace sample-weblogic-operator-ns \
+  --set image=oracle/weblogic-kubernetes-operator:2.4.0 \
+  --set serviceAccount=sample-weblogic-operator-sa \
+  --set "domainNamespaces={}" \
+  --wait
+```
 
-1. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
+For helm 3.x:
+        
+```bash
+$ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
+    --namespace sample-weblogic-operator-ns \
+    --set image=oracle/weblogic-kubernetes-operator:2.4.0 \
+    --set serviceAccount=sample-weblogic-operator-sa \
+    --set "domainNamespaces={}" \
+    --wait
+```
 
-    ```bash
-    $ kubectl get pods -n sample-weblogic-operator-ns
-    ```
+4. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for
+ the operator.
 
-1.  Verify that the operator is up and running by viewing the operator pod's log:
+```bash
+$ kubectl get pods -n sample-weblogic-operator-ns
+```
 
-    ```bash
-    $ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
-    ```
+5.  Verify that the operator is up and running by viewing the operator pod's log:
+
+```bash
+$ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
+```
