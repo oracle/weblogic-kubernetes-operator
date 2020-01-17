@@ -1,0 +1,42 @@
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: apps/v1 
+kind: Deployment 
+metadata:
+  name: webhook 
+  namespace: webhook 
+  labels:
+    app: webhook 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webhook
+  template:
+    metadata:
+      labels:
+        app: webhook
+    spec:  
+      containers:
+      - image: webhook-log:1.0
+        imagePullPolicy: IfNotPresent
+        name: webhook
+      imagePullSecrets:
+        - name: ocirsecret
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook
+  namespace: webhook
+  labels:
+    app: webhook
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+  selector:
+    app: webhook 
