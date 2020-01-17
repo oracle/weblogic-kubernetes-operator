@@ -6,7 +6,7 @@ domainNS=$3
 resourceExporterDir=$2
 monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/end2end
 #delete webhook 
-kubectl delete -f ${monitoringExporterEndToEndDir}/webhook/server.yaml --ignore-not-found
+kubectl delete -f ${resourceExporterDir}/server.yaml --ignore-not-found
 kubectl delete ns webhook
 
 #delete grafana
