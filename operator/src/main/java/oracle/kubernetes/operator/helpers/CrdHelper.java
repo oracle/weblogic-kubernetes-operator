@@ -120,7 +120,8 @@ public class CrdHelper {
     @Override
     public NextAction apply(Packet packet) {
 
-      if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.list)) {
+      if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get)) {
+        LOGGER.warning(MessageKeys.CRD_NO_READ_ACCESS);
         return doNext(packet);
       }
 
@@ -319,23 +320,23 @@ public class CrdHelper {
         
         if (existingCrd == null) {
           if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.create)) {
-            exception = new RuntimeException("Failed to find CRD. In the dedicated mode, "
-              + "the custom resource definition of domains.weblogic.oracle has to exist");
+            exception = new RuntimeException("Failed to find CustomResourceDefination domains.weblogic.oracle.");
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "create the CRD");
           } else {
             return doNext(createCrd(getNext()), packet);
           }
         } else if (isOutdatedCrd(existingCrd)) {
           if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.update)) {
-            exception = new RuntimeException("Found an outdated CRD. In the dedicated mode, "
-              + "the expected custom resource definition of domains.weblogic.oracle has to exist");
+            exception = new RuntimeException("Found an outdated CustomResourceDefination domains.weblogic.oracle.");
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "add a new version to the existing CRD");
           } else {
             return doNext(updateCrd(getNext(), existingCrd), packet);
           }
         } else if (!existingCrdContainsVersion(existingCrd)) {
-          if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.update)) {
-            exception = new RuntimeException("Failed to find the right version of the crd. "
-              + "In the dedicated mode, the expected version of the custom resource "
-              + "definition of domains.weblogic.oracle has to exist");
+          if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.replace)) {
+            exception = new RuntimeException(
+                "Failed to find the expected version of CustomResourceDefination domain.weblogic.oracle. ");
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "replace existing CRD");
           } else {
             return doNext(updateExistingCrd(getNext(), existingCrd), packet);
           }
@@ -343,7 +344,6 @@ public class CrdHelper {
 
         if (exception == null) return doNext(packet);
     
-        //TODO DONGBO we need to log too
         return super.doTerminate(exception, packet);
       }
     }

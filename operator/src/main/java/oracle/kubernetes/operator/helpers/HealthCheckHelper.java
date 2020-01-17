@@ -180,15 +180,12 @@ public final class HealthCheckHelper {
    * @param resource Kubernetes resource
    * @param operation Kubernetes operation
    */
-  public static boolean isClusterResourceAccessAllowed(
+  public static boolean isClusterResourceAccessAllowed(KubernetesVersion version,
       AuthorizationProxy.Resource resource, AuthorizationProxy.Operation operation) {
 
     // Validate RBAC or ABAC policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
-    // TODO DONGBO log 
-    // LOGGER.info(MessageKeys.VERIFY_CLUSTER_VIEW_ACCESS_START, r);
-
-    KubernetesVersion version = performK8sVersionCheck();
+    LOGGER.info(MessageKeys.VERIFY_CLUSTER_VIEW_ACCESS_START, resource, operation);
 
     boolean result = true;
 

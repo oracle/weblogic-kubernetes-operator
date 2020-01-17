@@ -175,7 +175,7 @@ public class Main {
 
   public static boolean isAccessAllowed(AuthorizationProxy.Resource resource, AuthorizationProxy.Operation op) {
     return (!Main.isDedicated()
-            || HealthCheckHelper.isClusterResourceAccessAllowed(resource, op));
+            || HealthCheckHelper.isClusterResourceAccessAllowed(version, resource, op));
   }
 
   private static void begin() {
