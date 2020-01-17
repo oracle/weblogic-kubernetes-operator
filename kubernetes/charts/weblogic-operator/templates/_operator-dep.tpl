@@ -3,7 +3,7 @@
 
 {{- define "operator.operatorDeployment" }}
 ---
-apiVersion: "apps/v1beta1"
+apiVersion: "apps/v1"
 kind: "Deployment"
 metadata:
   name: "weblogic-operator"
@@ -12,6 +12,10 @@ metadata:
     weblogic.resourceVersion: "operator-v2"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 spec:
+  selector:
+    matchLabels:
+      weblogic.resourceVersion: "operator-v2"
+      weblogic.operatorName: {{ .Release.Namespace | quote }}
   replicas: 1
   template:
     metadata:

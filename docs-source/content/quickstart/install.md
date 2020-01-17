@@ -26,15 +26,34 @@ EOF
 
 #### Create a Traefik (Ingress-based) load balancer.
 
-Use `helm` to install the [Traefik](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
+Create a namespace of the load balancer
 
 ```bash
-$ helm install stable/traefik \
-  --name traefik-operator \
-  --namespace traefik \
-  --values kubernetes/samples/charts/traefik/values.yaml  \
-  --set "kubernetes.namespaces={traefik}" \
-  --wait
+$ kubectl create namespace traefik
+
+```
+
+Use `helm` to install the [Traefik](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
+
+The operator requires helm version 2.16 and higher.  For helm version 3.x, you should have add the appropriate 
+repository.
+
+```bash
+$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+```
+
+For helm version 2.x, you should have initialized it first.
+
+```bash
+$ helm init
+```
+
+```bash
+$ helm install traefik-operator stable/traefik \
+    --namespace traefik \
+    --values kubernetes/samples/charts/traefik/values.yaml  \
+    --set "kubernetes.namespaces={traefik}" \
+    --wait
 ```
 
 #### Install the operator.
@@ -54,13 +73,12 @@ $ helm install stable/traefik \
 1.  Use `helm` to install and start the operator from the directory you just cloned:	 
 
     ```bash
-    $ helm install kubernetes/charts/weblogic-operator \
-      --name sample-weblogic-operator \
-      --namespace sample-weblogic-operator-ns \
-      --set image=oracle/weblogic-kubernetes-operator:2.4.0 \
-      --set serviceAccount=sample-weblogic-operator-sa \
-      --set "domainNamespaces={}" \
-      --wait
+    $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
+        --namespace sample-weblogic-operator-ns \
+        --set image=oracle/weblogic-kubernetes-operator:2.4.0 \
+        --set serviceAccount=sample-weblogic-operator-sa \
+        --set "domainNamespaces={}" \
+        --wait
     ```
 
 1. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
