@@ -160,6 +160,7 @@ public class ItImageTool extends BaseTest {
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String podNameSpace = (String) domainMap.get("namespace");
     ExecResult result = null;
+    boolean testCompletedSuccessfully = false;
 
     // Verify that the WebLogic Docker image created by WIT is used
     StringBuffer getImageNameCmd = new StringBuffer();
@@ -173,13 +174,25 @@ public class ItImageTool extends BaseTest {
           .toString();
     LoggerHelper.getLocal().log(Level.INFO, "Command to get pod's image name: " + cmd);
 
-    result = TestUtils.exec(cmd);
+    try {
+      result = TestUtils.exec(cmd);
 
-    Assumptions.assumeTrue((result.stdout()).equals(weblogicImageTagWIT),
-        "Failed to use the image <" + weblogicImageTagWIT + "> built by imagetool");
+      Assumptions.assumeTrue((result.stdout()).equals(weblogicImageTagWIT),
+          "Failed to use the image <" + weblogicImageTagWIT + "> built by imagetool");
 
-    LoggerHelper.getLocal().log(Level.INFO, "WebLogic Docker image used by pod <"
-        + adminServerPodName + "> is <" + result.stdout() + ">");
+      LoggerHelper.getLocal().log(Level.INFO, "WebLogic Docker image used by pod <"
+          + adminServerPodName + "> is <" + result.stdout() + ">");
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && testCompletedSuccessfully) {
+        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain: " + domain.getDomainUid());
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        TestUtils.verifyAfterDeletion(domain);
+      }
+      if (operator != null && testCompletedSuccessfully) {
+        operator.destroy();
+      }
+    }
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
