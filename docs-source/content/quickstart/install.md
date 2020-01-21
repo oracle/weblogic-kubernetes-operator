@@ -38,7 +38,7 @@ Use `helm` to install the [Traefik](http://github.com/oracle/weblogic-kubernetes
 The operator requires helm version 2.14.2 and higher.  
 
 
-For helm version 2.x, you should have initialized if you have not done so.
+For helm version 2.x, you should have initialized if it has not been done already.
 
 ```bash
 $ helm init
@@ -56,7 +56,7 @@ $ helm install stable/traefik \
 ```
 
 
-For helm version 3.x, you should have added the stable repository if you have not done so.
+For helm version 3.x, you should have added the stable repository if it has not been done already.
 
 ```bash
 $ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
