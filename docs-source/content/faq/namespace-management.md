@@ -85,7 +85,7 @@ $ helm ls
 For Helm 3.x:
 
 ```
-$ helm ls --all-namespaces
+$ helm ls
 ```
 
 #### Adding a Kubernetes namespace to an operator
