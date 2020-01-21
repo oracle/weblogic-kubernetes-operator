@@ -25,7 +25,7 @@ $ helm upgrade \
   kubernetes/charts/weblogic-operator
 ```
         
-For helm 3.x:
+For helm 3.x
 
 ```bash
 $ helm upgrade sample-weblogic-operator  kubernetes/charts/weblogic-operator \
@@ -37,7 +37,7 @@ $ helm upgrade sample-weblogic-operator  kubernetes/charts/weblogic-operator \
 
 3.  Configure Traefik to manage Ingresses created in this namespace:
 
-For helm 2.x:
+For helm 2.x
 
 ```bash
 $ helm upgrade \
@@ -49,7 +49,7 @@ $ helm upgrade \
 ```
 
 
-For helm 3.x:
+For helm 3.x
 
 ```bash
 $ helm upgrade traefik-operator stable/traefik \

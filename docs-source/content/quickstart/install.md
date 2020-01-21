@@ -35,20 +35,16 @@ $ kubectl create namespace traefik
 
 Use `helm` to install the [Traefik](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
 
-The operator requires helm version 2.14.2 and higher.  For helm version 3.x, you should have added the 
-stable repository before proceeding.
+The operator requires helm version 2.14.2 and higher.  
 
-```bash
-$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
-```
 
-For helm version 2.x, you should have initialized before proceeding.
+For helm version 2.x, you should have initialized if you have not done so.
 
 ```bash
 $ helm init
 ```
 
-For helm 2
+Install the traefik load balancer
 
 ```bash
 $ helm install stable/traefik \
@@ -60,7 +56,19 @@ $ helm install stable/traefik \
 ```
 
 
-For helm 3
+For helm version 3.x, you should have added the stable repository if you have not done so.
+
+```bash
+$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+```
+
+Create the namespace for traefik
+
+```bash
+$ helm create namesapce traefik
+```
+
+Install the traefik load balancer
 
 ```bash
 $ helm install traefik-operator stable/traefik \
@@ -86,7 +94,7 @@ $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-o
 
 3.  Use `helm` to install and start the operator from the directory you just cloned:	 
 
-For helm 2.x:
+For helm 2.x
     
 ```bash
 $ helm install kubernetes/charts/weblogic-operator \
@@ -98,7 +106,7 @@ $ helm install kubernetes/charts/weblogic-operator \
   --wait
 ```
 
-For helm 3.x:
+For helm 3.x
         
 ```bash
 $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
