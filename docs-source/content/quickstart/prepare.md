@@ -14,7 +14,7 @@ weight: 5
 
 2.	Use `helm` to configure the operator to manage domains in this namespace:
 
-For helm 2.x:
+For helm 2.x
 
 ```bash
 $ helm upgrade \
