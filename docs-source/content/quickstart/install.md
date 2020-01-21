@@ -27,7 +27,7 @@ EOF
 Use `Helm` to install the [Traefik](http://github
 .com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
 
-### Setup helm
+### Setup Helm
 
 For Helm version 2.x:
 
@@ -88,29 +88,29 @@ $ helm install traefik-operator stable/traefik \
 
 3.  Use `Helm` to install and start the operator from the directory you just cloned:	 
 
-  For Helm 2.x:
-    
-  ```bash
-  $ helm install kubernetes/charts/weblogic-operator \
-    --name sample-weblogic-operator \
-    --namespace sample-weblogic-operator-ns \
-    --set image=oracle/weblogic-kubernetes-operator:2.4.0 \
-    --set serviceAccount=sample-weblogic-operator-sa \
-    --set "domainNamespaces={}" \
-    --wait
-  ```
-
-  For Helm 3.x:
-
-  ```bash
-  $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
-    --name sample-weblogic-operator \
-    --namespace sample-weblogic-operator-ns \
-    --set image=oracle/weblogic-kubernetes-operator:2.4.0 \
-    --set serviceAccount=sample-weblogic-operator-sa \
-    --set "domainNamespaces={}" \
-    --wait
-  ```
+    For Helm 2.x:
+      
+    ```bash
+    $ helm install kubernetes/charts/weblogic-operator \
+      --name sample-weblogic-operator \
+      --namespace sample-weblogic-operator-ns \
+      --set image=oracle/weblogic-kubernetes-operator:2.4.0 \
+      --set serviceAccount=sample-weblogic-operator-sa \
+      --set "domainNamespaces={}" \
+      --wait
+    ```
+  
+    For Helm 3.x:
+  
+    ```bash
+    $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
+      --name sample-weblogic-operator \
+      --namespace sample-weblogic-operator-ns \
+      --set image=oracle/weblogic-kubernetes-operator:2.4.0 \
+      --set serviceAccount=sample-weblogic-operator-sa \
+      --set "domainNamespaces={}" \
+      --wait
+    ```
 
 4. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one 
 for the operator.
