@@ -24,6 +24,8 @@ For others, see [Common Mistakes and Solutions]({{<relref "/userguide/managing-o
 You can find the list of the namespaces that an operator manages using the `helm get values` command.
 For example, the following command shows all the values of the operator release `weblogic-operator`; the `domainNamespaces` list contains `default` and `ns1`.
 
+For Helm 2.x:
+
 ```
 $ helm get values weblogic-operator
 domainNamespaces:
@@ -47,7 +49,44 @@ suspendOnDebugStartup: false
 
 ```
 
-If you don't know the release name of the operator, you can use `helm ls` to list all the releases.
+For Helm 3.x:
+
+```
+$ helm -n weblogic-operator-ns get values weblogic-operator
+domainNamespaces:
+- default
+- ns1
+elasticSearchHost: elasticsearch.default.svc.cluster.local
+elasticSearchPort: 9200
+elkIntegrationEnabled: false
+externalDebugHttpPort: 30999
+externalRestEnabled: false
+externalRestHttpsPort: 31001
+image: oracle/weblogic-kubernetes-operator:2.4.0
+imagePullPolicy: IfNotPresent
+internalDebugHttpPort: 30999
+istioEnabled: false
+javaLoggingLevel: INFO
+logStashImage: logstash:6.6.0
+remoteDebugNodePortEnabled: false
+serviceAccount: default
+suspendOnDebugStartup: false
+
+```
+
+If you don't know the release name of the operator, you can use`helm ls` to list all the releases:
+
+For Helm 2.x:
+
+```
+$ helm ls
+```
+
+For Helm 3.x:
+
+```
+$ helm ls --all-namespaces
+```
 
 #### Adding a Kubernetes namespace to an operator
 If you want a WebLogic operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be precreated, for example, using the `kubectl create` command.
@@ -56,6 +95,8 @@ Adding a namespace to the `domainNamespaces` list tells the operator deployment 
 to initialize the necessary Kubernetes resources for the namespace so that the operator is ready to host WebLogic domain resources in that namespace.
 
 When the operator is running and managing the `default` namespace, the following example Helm command adds the namespace `ns1` to the `domainNamespaces` list, where `weblogic-operator` is the release name of the operator, and `kubernetes/charts/weblogic-operator` is the location of the operator's Helm charts.
+
+For Helm 2.x:
 
 ```
 $ helm upgrade \
@@ -67,7 +108,18 @@ $ helm upgrade \
   kubernetes/charts/weblogic-operator
 ```
 
-{{% notice note %}}
+For Helm 3.x:
+
+```
+$ helm upgrade weblogic-operator kubernetes/charts/weblogic-operator \
+  --reuse-values \
+  --set "domainNamespaces={default,ns1}" \
+  --wait \
+  --force 
+  
+```
+
+d{{% notice note %}}
 Changes to the `domainNamespaces` list might not be picked up by the operator right away because the operator
 monitors the changes to the setting periodically. The operator becomes ready to host domain resources in
 a namespace only after the required `configmap` (namely `weblogic-domain-cm`) is initialized in the namespace.
@@ -98,6 +150,8 @@ While the operator is running and managing the `default` and `ns1` namespaces, t
 command removes the namespace `ns1` from the `domainNamespaces` list, where `weblogic-operator` is the release
 name of the operator, and `kubernetes/charts/weblogic-operator` is the location of the operator Helm charts.
 
+For Helm 2.x:
+
 ```
 $ helm upgrade \
   --reuse-values \
@@ -107,6 +161,16 @@ $ helm upgrade \
   weblogic-operator \
   kubernetes/charts/weblogic-operator
 
+```
+
+For Helm 3.x:
+
+```
+$ helm upgrade weblogic-operator kubernetes/charts/weblogic-operator \
+  --reuse-values \
+  --set "domainNamespaces={default}" \
+  --wait \
+  --force 
 ```
 
 #### Recreating a previously deleted Kubernetes namespace
