@@ -90,10 +90,7 @@ kubectl apply -f ${resourceExporterDir}/server.yaml --validate=false
 kubectl get pods -n webhook
 POD_NAME=$(kubectl get pod -l app=webhook -o jsonpath="{.items[0].metadata.name}" -n webhook )
 
-kubectl describe pods ${POD_NAME} -n webhook
-kubectl logs ${POD_NAME} -n webhook
 echo "Getting info about webhook"
-kubectl get pods -n webhook
 
 #create coordinator
 kubectl create secret docker-registry ocirsecret -n ${domainNS} \
@@ -103,10 +100,6 @@ kubectl create secret docker-registry ocirsecret -n ${domainNS} \
                     --docker-email=$REPO_EMAIL  \
                     --dry-run -o yaml | kubectl apply -f -
 
-cat ${resourceExporterDir}/coordinator_${domainNS}.yaml
-kubectl apply -f ${resourceExporterDir}/coordinator_${domainNS}.yaml
-kubectl get pods -n ${domainNS}
-kubectl get pods -n monitoring
-kubectl get pods -n webhook
 
+kubectl apply -f ${resourceExporterDir}/coordinator_${domainNS}.yaml
 echo "Run the script [createPromGrafanaMySqlCoordWebhook.sh] ..."
