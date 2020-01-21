@@ -52,6 +52,15 @@ $ generate-external-rest-identity.sh \
 #
 $ kubectl -n weblogic-operator-ns describe secret weblogic-operator-identity
 #
+# For Helm 2.x:
+#
 $ helm install kubernetes/charts/weblogic-operator --name my_operator \
   --namespace weblogic-operator-ns --values my_values.yaml --wait
+#
+# For Helm 3.x:
+#
+$ helm install my_operator kubernetes/charts/weblogic-operato \
+  --namespace weblogic-operator-ns --values my_values.yaml --wait
+
+
 ```
