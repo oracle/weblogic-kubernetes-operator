@@ -35,9 +35,6 @@ $ kubectl create namespace traefik
 
 Use `helm` to install the [Traefik](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
 
-The operator requires helm version 2.14.2 and higher.  
-
-
 For helm version 2.x, you should have initialized if it has not been done already.
 
 ```bash
