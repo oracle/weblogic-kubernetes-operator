@@ -14,47 +14,46 @@ weight: 5
 
 2.	Use `helm` to configure the operator to manage domains in this namespace:
 
-For helm 2.x
-
-```bash
-$ helm upgrade \
-  --reuse-values \
-  --set "domainNamespaces={sample-domain1-ns}" \
-  --wait \
-  sample-weblogic-operator \
-  kubernetes/charts/weblogic-operator
-```
+    For helm 2.x:
+    
+    ```bash
+    $ helm upgrade \
+      --reuse-values \
+      --set "domainNamespaces={sample-domain1-ns}" \
+      --wait \
+      sample-weblogic-operator \
+      kubernetes/charts/weblogic-operator
+    ```
         
-For helm 3.x
-
-```bash
-$ helm upgrade sample-weblogic-operator  kubernetes/charts/weblogic-operator \
-    --namespace sample-weblogic-operator-ns \
-    --reuse-values \
-    --set "domainNamespaces={sample-domain1-ns}" \
-    --wait
-```
+    For helm 3.x:
+    
+    ```bash
+    $ helm upgrade sample-weblogic-operator  kubernetes/charts/weblogic-operator \
+        --namespace sample-weblogic-operator-ns \
+        --reuse-values \
+        --set "domainNamespaces={sample-domain1-ns}" \
+        --wait
+    ```
 
 3.  Configure Traefik to manage Ingresses created in this namespace:
 
-For helm 2.x
-
-```bash
-$ helm upgrade \
-  --reuse-values \
-  --set "kubernetes.namespaces={traefik,sample-domain1-ns}" \
-  --wait \
-  traefik-operator \
-  stable/traefik
-```
-
-
-For helm 3.x
-
-```bash
-$ helm upgrade traefik-operator stable/traefik \
-    --namespace traefik \
-    --reuse-values \
-    --set "kubernetes.namespaces={traefik,sample-domain1-ns}" \
-    --wait 
-```
+    For helm 2.x:
+    
+    ```bash
+    $ helm upgrade \
+      --reuse-values \
+      --set "kubernetes.namespaces={traefik,sample-domain1-ns}" \
+      --wait \
+      traefik-operator \
+      stable/traefik
+    ```
+        
+    For helm 3.x:
+    
+    ```bash
+    $ helm upgrade traefik-operator stable/traefik \
+        --namespace traefik \
+        --reuse-values \
+        --set "kubernetes.namespaces={traefik,sample-domain1-ns}" \
+        --wait 
+    ```
