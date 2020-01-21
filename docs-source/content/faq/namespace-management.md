@@ -52,7 +52,7 @@ suspendOnDebugStartup: false
 For Helm 3.x:
 
 ```
-$ helm -n weblogic-operator-ns get values weblogic-operator
+$ helm get values weblogic-operator
 domainNamespaces:
 - default
 - ns1
