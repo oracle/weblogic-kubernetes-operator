@@ -24,18 +24,19 @@ subjects:
 EOF
 ```
 
-Use `helm` to install the [Traefik](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
+Use `Helm` to install the [Traefik](http://github
+.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
 
 ### Setup helm
 
-For helm version 2.x:
+For Helm version 2.x:
 
 ```bash
 $ helm init
 
 ```
 
-For helm version 3.x:
+For Helm version 3.x:
 
 ```bash
 $ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
@@ -50,7 +51,7 @@ $ kubectl create namespace traefik
 
 ```
 
-For helm 2.x:
+For Helm 2.x:
 
 ```bash
 $ helm install stable/traefik \
@@ -61,7 +62,7 @@ $ helm install stable/traefik \
   --wait
 ```
 
-For helm 3.x:
+For Helm 3.x:
 
 ```bash
 $ helm install traefik-operator stable/traefik \
@@ -85,12 +86,24 @@ $ helm install traefik-operator stable/traefik \
     $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
     ```
 
-3.  Use `helm` to install and start the operator from the directory you just cloned:	 
+3.  Use `Helm` to install and start the operator from the directory you just cloned:	 
 
-  For helm 2.x:
+  For Helm 2.x:
     
   ```bash
   $ helm install kubernetes/charts/weblogic-operator \
+    --name sample-weblogic-operator \
+    --namespace sample-weblogic-operator-ns \
+    --set image=oracle/weblogic-kubernetes-operator:2.4.0 \
+    --set serviceAccount=sample-weblogic-operator-sa \
+    --set "domainNamespaces={}" \
+    --wait
+  ```
+
+  For Helm 3.x:
+
+  ```bash
+  $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
     --name sample-weblogic-operator \
     --namespace sample-weblogic-operator-ns \
     --set image=oracle/weblogic-kubernetes-operator:2.4.0 \
