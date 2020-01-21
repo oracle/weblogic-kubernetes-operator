@@ -185,7 +185,7 @@ public final class HealthCheckHelper {
 
     // Validate RBAC or ABAC policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
-    LOGGER.info(MessageKeys.VERIFY_CLUSTER_VIEW_ACCESS_START, resource, operation);
+    LOGGER.fine(MessageKeys.VERIFY_CLUSTER_VIEW_ACCESS_START, resource, operation);
 
     boolean result = true;
 

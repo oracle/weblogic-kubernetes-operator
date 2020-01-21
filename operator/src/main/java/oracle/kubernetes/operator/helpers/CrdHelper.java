@@ -320,14 +320,14 @@ public class CrdHelper {
         
         if (existingCrd == null) {
           if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.create)) {
-            exception = new RuntimeException("Failed to find CustomResourceDefination domains.weblogic.oracle.");
+            exception = new RuntimeException("Failed to find CustomResourceDefinition domains.weblogic.oracle.");
             LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "create the CRD");
           } else {
             return doNext(createCrd(getNext()), packet);
           }
         } else if (isOutdatedCrd(existingCrd)) {
           if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.update)) {
-            exception = new RuntimeException("Found an outdated CustomResourceDefination domains.weblogic.oracle.");
+            exception = new RuntimeException("Found an outdated CustomResourceDefinition domains.weblogic.oracle.");
             LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "add a new version to the existing CRD");
           } else {
             return doNext(updateCrd(getNext(), existingCrd), packet);
@@ -335,8 +335,8 @@ public class CrdHelper {
         } else if (!existingCrdContainsVersion(existingCrd)) {
           if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.replace)) {
             exception = new RuntimeException(
-                "Failed to find the expected version of CustomResourceDefination domain.weblogic.oracle. ");
-            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "replace existing CRD");
+                "Failed to find the expected version of CustomResourceDefinition domain.weblogic.oracle. ");
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "replace the existing CRD");
           } else {
             return doNext(updateExistingCrd(getNext(), existingCrd), packet);
           }
