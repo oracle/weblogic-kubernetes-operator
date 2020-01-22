@@ -398,22 +398,8 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("")
-                .resources(singletonList("namespaces"))
+                .resources(asList("namespaces", "persistentvolumes"))
                 .verbs(asList("get", "list", "watch")))
-        .addRulesItem(
-            newPolicyRule()
-                .addApiGroupsItem("")
-                .resources(singletonList("persistentvolumes"))
-                .verbs(
-                    asList(
-                        "get",
-                        "list",
-                        "watch",
-                        "create",
-                        "update",
-                        "patch",
-                        "delete",
-                        "deletecollection")))
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("apiextensions.k8s.io")
@@ -436,32 +422,13 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                 .verbs(asList("get", "list", "watch", "update", "patch")))
         .addRulesItem(
             newPolicyRule()
-                .addApiGroupsItem("extensions")
-                .addResourcesItem("ingresses")
-                .verbs(
-                    asList(
-                        "get",
-                        "list",
-                        "watch",
-                        "create",
-                        "update",
-                        "patch",
-                        "delete",
-                        "deletecollection")))
-        .addRulesItem(
-            newPolicyRule()
                 .addApiGroupsItem("authentication.k8s.io")
                 .addResourcesItem("tokenreviews")
                 .verbs(singletonList("create")))
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("authorization.k8s.io")
-                .resources(
-                    asList(
-                        "selfsubjectaccessreviews",
-                        "localsubjectaccessreviews",
-                        "subjectaccessreviews",
-                        "selfsubjectrulesreviews"))
+                .resources(singletonList("selfsubjectrulesreviews"))
                 .verbs(singletonList("create")));
   }
 
@@ -616,9 +583,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                         "services",
                         "configmaps",
                         "pods",
-                        "podtemplates",
-                        "events",
-                        "persistentvolumeclaims"))
+                        "events"))
                 .verbs(
                     asList(
                         "get",
@@ -632,7 +597,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("")
-                .resources(singletonList("secrets"))
+                .resources(asList("secrets", "persistentvolumeclaims"))
                 .verbs(asList("get", "list", "watch")))
         .addRulesItem(
             newPolicyRule()
@@ -647,7 +612,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("batch")
-                .resources(asList("jobs", "cronjobs"))
+                .resources(singletonList("jobs"))
                 .verbs(
                     asList(
                         "get",
@@ -657,40 +622,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                         "update",
                         "patch",
                         "delete",
-                        "deletecollection")))
-        .addRulesItem(
-            newPolicyRule()
-                .addApiGroupsItem("settings.k8s.io")
-                .addResourcesItem("podpresets")
-                .verbs(
-                    asList(
-                        "get",
-                        "list",
-                        "watch",
-                        "create",
-                        "update",
-                        "patch",
-                        "delete",
-                        "deletecollection")))
-        .addRulesItem(
-            newPolicyRule()
-                .addApiGroupsItem("extensions")
-                .resources(asList("podsecuritypolicies", "networkpolicies"))
-                .verbs(
-                    asList(
-                        "get",
-                        "list",
-                        "watch",
-                        "create",
-                        "update",
-                        "patch",
-                        "delete",
-                        "deletecollection")))
-        .addRulesItem(
-            newPolicyRule()
-                .addApiGroupsItem("storage.k8s.io")
-                .addResourcesItem("storageclasses")
-                .verbs(asList("get", "list", "watch")));
+                        "deletecollection")));
   }
 
   @Test
