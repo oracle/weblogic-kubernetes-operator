@@ -43,7 +43,7 @@ If `weblogic-operator-namespace` exists, then it will be used.  If it does not e
 Using Helm 3.x:
 
 ```
-$ kubectl create namesapce weblogic-operator-namespace
+$ kubectl create namespace weblogic-operator-namespace
 ```
 
 ```
