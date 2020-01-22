@@ -30,7 +30,7 @@ $ helm install kubernetes/charts/weblogic-operator \
   --name weblogic-operator --namespace weblogic-operator-namespace \
   --values custom-values.yaml --wait
 ```
-or:
+Or:
 ```
 $ helm install kubernetes/charts/weblogic-operator \
   --name weblogic-operator --namespace weblogic-operator-namespace \
@@ -51,7 +51,7 @@ $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace weblogic-operator-namespace \
   --values custom-values.yaml --wait
 ```
-or:
+Or:
 ```
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace weblogic-operator-namespace \
