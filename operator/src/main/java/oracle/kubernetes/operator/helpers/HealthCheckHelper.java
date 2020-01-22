@@ -99,8 +99,9 @@ public final class HealthCheckHelper {
    * @param version Kubernetes version
    * @param operatorNamespace operator namespace
    * @param ns target namespace
+   * @return self subject rules review for the target namespace
    */
-  public static void performSecurityChecks(
+  public static V1SubjectRulesReviewStatus performSecurityChecks(
       KubernetesVersion version, String operatorNamespace, String ns) {
 
     // Validate namespace
@@ -127,11 +128,15 @@ public final class HealthCheckHelper {
           check(rules, r, op, ns);
         }
       }
+
+      return status;
     }
+
+    return null;
   }
 
-  private static void check(
-      List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op, String ns) {
+  public static boolean check(
+      List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op) {
     String verb = op.name();
     String apiGroup = r.getApiGroup();
     String resource = r.getResource();
@@ -146,13 +151,20 @@ public final class HealthCheckHelper {
         if (ruleResources != null && ruleResources.contains(resource)) {
           List<String> ruleVerbs = rule.getVerbs();
           if (ruleVerbs != null && ruleVerbs.contains(verb)) {
-            return;
+            return true;
           }
         }
       }
     }
+    return false;
+  }
 
-    LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
+  private static void check(
+      List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op, String ns) {
+
+    if (!check(rules, r, op)) {
+      LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
+    }
   }
 
   private static boolean apiGroupMatch(List<String> ruleApiGroups, String apiGroup) {

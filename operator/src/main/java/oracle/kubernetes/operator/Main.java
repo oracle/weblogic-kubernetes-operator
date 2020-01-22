@@ -36,6 +36,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -83,7 +84,7 @@ public class Main {
       Engine.wrappedExecutorService("operator", container);
   private static final TuningParameters tuningAndConfig;
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
-  private static final Map<String, AtomicBoolean> isNamespaceStarted = new ConcurrentHashMap<>();
+  private static final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
   private static final Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
   private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
   private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
@@ -230,7 +231,7 @@ public class Main {
     if (stopping != null) {
       stopping.set(true);
     }
-    isNamespaceStarted.remove(ns);
+    namespaceStatuses.remove(ns);
     domainWatchers.remove(ns);
     eventWatchers.remove(ns);
     podWatchers.remove(ns);
@@ -286,7 +287,7 @@ public class Main {
       } else {
         // check for namespaces that need to be started
         namespacesToStart = new TreeSet<>(targetNamespaces);
-        namespacesToStart.removeAll(isNamespaceStarted.keySet());
+        namespacesToStart.removeAll(namespaceStatuses.keySet());
         for (String ns : targetNamespaces) {
           if (namespacesToStop.contains(ns)) {
             namespacesToStart.remove(ns);
@@ -564,10 +565,10 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      AtomicBoolean a = isNamespaceStarted.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
-      if (!a.getAndSet(true)) {
+      NamespaceStatus nss = namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
+      if (!nss.isNamespaceStarting().getAndSet(true)) {
         try {
-          HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns);
+          nss.getRulesReviewStatus().set(HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns));
         } catch (Throwable e) {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
         }
@@ -822,6 +823,12 @@ public class Main {
     @Override
     public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
       return podWatchers.get(namespace);
+    }
+
+    @Override
+    public V1SubjectRulesReviewStatus getSubjectRulesReviewStatus(String namespace) {
+      NamespaceStatus namespaceStatus = namespaceStatuses.get(namespace);
+      return namespaceStatus != null ? namespaceStatus.getRulesReviewStatus().get() : null;
     }
 
     @Override

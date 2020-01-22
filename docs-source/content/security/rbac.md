@@ -119,8 +119,8 @@ to a `Role` or `ClusterRole` granting permission to the operator.
 | Role Binding | Mapped to Role | Resource Access | Notes |
 | --- | --- | --- | --- |
 | `weblogic-operator-rolebinding` | `weblogic-operator-role` | **Edit**: secrets, configmaps, events | The role binding is created in the namespace `weblogic-operator-ns` [^1] |
-| `weblogic-operator-rolebinding-namespace` | Operator Cluster Role `namespace` | **Read**: secrets, pod/log, storageclasses | The role binding is created in the namespace `domain1-ns` [^2] |
-| | | **Edit**: configmaps, events, pods, podtemplates, services, persistentvolumeclaims, newtworkpolicies, podsecuritypolicies, podpresets, jobs.batch, cronjobs.batch | |
+| `weblogic-operator-rolebinding-namespace` | Operator Cluster Role `namespace` | **Read**: secrets, persistentvolumeclaims, pods/log | The role binding is created in the namespace `domain1-ns` [^2] |
+| | | **Edit**: configmaps, events, pods, services, jobs.batch | |
 | | | **Create**: pods/exec | |
 
 #### Cluster role bindings
@@ -133,9 +133,10 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
 | Cluster Role Binding | Mapped to Cluster Role | Resource Access | Notes |
 | --- | --- | --- | --- |
 | Operator `general` | Operator `general` | **Read**: namespaces | [^1] |
-| | | **Edit**: customresourcedefinitions, ingresses, persistentvolumes | |
+| | | **Edit**: customresourcedefinitions | |
+| | | **Read**: persistentvolumes | |
 | | | **Update**: domains (weblogic.oracle), domains/status | |
-| | | **Create**: tokenreviews, subjectaccessreviews, localsubjectaccessreviews, selfsubjectaccessreviews, selfsubjectrulesreviews | |
+| | | **Create**: tokenreviews, selfsubjectrulesreviews | |
 | Operator `nonresource` | Operator `nonresource` | **Get**: /version/* | [^1] |
 | Operator `discovery` | Kubernetes `system:discovery` | **See**: [Kubernetes Discovery Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#discovery-roles) | [^1] |
 | Operator `auth-delegator` | Kubernetes `system:auth-delegator` | **See**: [Kubernetes Component Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#other-component-roles) | [^1] |

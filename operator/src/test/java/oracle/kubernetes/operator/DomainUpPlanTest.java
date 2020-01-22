@@ -13,6 +13,7 @@ import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
@@ -271,6 +272,11 @@ public class DomainUpPlanTest {
     @Override
     public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
       return new NullPodWaiter();
+    }
+
+    @Override
+    public V1SubjectRulesReviewStatus getSubjectRulesReviewStatus(String namespace) {
+      return null;
     }
   }
 }
