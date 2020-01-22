@@ -110,10 +110,6 @@ public class KubernetesVersion {
     return this.major > 1 || (this.major == 1 && this.minor >= 8);
   }
 
-  boolean isRulesReviewSupported() {
-    return this.major > 1 || (this.major == 1 && this.minor >= 8);
-  }
-
   boolean isCrdSubresourcesSupported() {
     return this.major > 1 || (this.major == 1 && this.minor >= 10);
   }

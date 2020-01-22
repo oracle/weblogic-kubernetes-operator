@@ -66,35 +66,28 @@ public final class HealthCheckHelper {
   private static final String DEFAULT_NAMESPACE = "default";
 
   static {
-    // CRUD resources
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODPRESETS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODTEMPLATES, crudOperations);
+    clusterAccessChecks.put(AuthorizationProxy.Resource.NAMESPACES, glwOperations);
+    clusterAccessChecks.put(AuthorizationProxy.Resource.PERSISTENTVOLUMES, glwOperations);
+    clusterAccessChecks.put(AuthorizationProxy.Resource.CRDS, crudOperations);
+
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.DOMAINS, glwupOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.DOMAINSTATUSES, glwupOperations);
+
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.TOKENREVIEWS, cOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.SELFSUBJECTRULESREVIEWS, cOperations);
+
     namespaceAccessChecks.put(AuthorizationProxy.Resource.SERVICES, crudOperations);
     namespaceAccessChecks.put(AuthorizationProxy.Resource.CONFIGMAPS, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODS, crudOperations);
     namespaceAccessChecks.put(AuthorizationProxy.Resource.EVENTS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.JOBS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.CRONJOBS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.PERSISTENTVOLUMECLAIMS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.NETWORKPOLICIES, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODSECURITYPOLICIES, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.INGRESSES, crudOperations);
 
-    clusterAccessChecks.put(AuthorizationProxy.Resource.PERSISTENTVOLUMES, crudOperations);
-    clusterAccessChecks.put(AuthorizationProxy.Resource.CRDS, crudOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.SECRETS, glwOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.PERSISTENTVOLUMECLAIMS, glwOperations);
 
     namespaceAccessChecks.put(AuthorizationProxy.Resource.LOGS, glOperations);
     namespaceAccessChecks.put(AuthorizationProxy.Resource.EXEC, cOperations);
 
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.DOMAINS, glwupOperations);
-
-    // Readonly resources
-    clusterAccessChecks.put(AuthorizationProxy.Resource.NAMESPACES, glwOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.SECRETS, glwOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.STORAGECLASSES, glwOperations);
-
-    // tokenreview
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.TOKENREVIEWS, cOperations);
+    namespaceAccessChecks.put(AuthorizationProxy.Resource.JOBS, crudOperations);
   }
 
   private HealthCheckHelper() {
@@ -119,46 +112,19 @@ public final class HealthCheckHelper {
     AuthorizationProxy ap = new AuthorizationProxy();
     LOGGER.info(MessageKeys.VERIFY_ACCESS_START, ns);
 
-    if (version.isRulesReviewSupported()) {
-      boolean rulesReviewSuccessful = true;
-      V1SelfSubjectRulesReview review = ap.review(ns);
-      if (review == null) {
-        rulesReviewSuccessful = false;
-      } else {
-        V1SubjectRulesReviewStatus status = review.getStatus();
-        List<V1ResourceRule> rules = status.getResourceRules();
+    V1SelfSubjectRulesReview review = ap.review(ns);
+    if (review != null) {
+      V1SubjectRulesReviewStatus status = review.getStatus();
+      List<V1ResourceRule> rules = status.getResourceRules();
 
-        for (AuthorizationProxy.Resource r : namespaceAccessChecks.keySet()) {
-          for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
-            check(rules, r, op, ns);
-          }
-        }
-        for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
-          for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-            check(rules, r, op, ns);
-          }
+      for (AuthorizationProxy.Resource r : namespaceAccessChecks.keySet()) {
+        for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
+          check(rules, r, op, ns);
         }
       }
-
-      if (rulesReviewSuccessful) {
-        return;
-      }
-    }
-
-    for (AuthorizationProxy.Resource r : namespaceAccessChecks.keySet()) {
-      for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
-
-        if (!ap.check(op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
-        }
-      }
-    }
-
-    for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
-      for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-
-        if (!ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+      for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
+        for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
+          check(rules, r, op, ns);
         }
       }
     }
