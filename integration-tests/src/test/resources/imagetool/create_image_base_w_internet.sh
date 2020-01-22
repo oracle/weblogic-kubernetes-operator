@@ -37,7 +37,7 @@ userinfo_usage()
 
 checkCondition()
 {
-  if [ ! -f "${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}" ] &&
+  if [ ! -f "${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}" ] ||
      [ ! -f "${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME}" ]; then
     echo @@
     echo "@@ JDK or WLS installer is not installed. Please install tnhem to ${JDK_WLS_INSTALLER_DIR} first! "

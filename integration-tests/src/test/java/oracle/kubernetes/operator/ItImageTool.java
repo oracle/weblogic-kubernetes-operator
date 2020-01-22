@@ -134,6 +134,8 @@ public class ItImageTool extends BaseTest {
         LoggerHelper.getLocal().log(Level.INFO, "namespaceList is null!!");
       }
 
+      deleteWlsDockerImage();
+
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
   }
@@ -234,5 +236,32 @@ public class ItImageTool extends BaseTest {
 
     LoggerHelper.getLocal().log(Level.INFO, "A WebLogic Docker image <"
         + weblogicImageTagWIT + "> is created successfully by imagetool!");
+  }
+
+  private static void deleteWlsDockerImage() throws Exception {
+    //build wls Docker image using imagetool
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Deleting the WebLogic Docker image built by imagetool... ");
+
+    //check the image exists before deleting it
+    StringBuffer buildImage = new StringBuffer();
+    String cmd =
+        buildImage
+        .append("docker image ls | egrep ")
+        .append(weblogicImageNameWIT)
+        .append(".*")
+        .append(weblogicImageVersionWIT)
+        .toString();
+    LoggerHelper.getLocal().log(Level.INFO, "Command to verify that the image exists: " + cmd);
+    ExecResult result = TestUtils.exec(cmd);
+    LoggerHelper.getLocal().log(Level.INFO, "The image to delete: " + result.stdout());
+
+    //delete the image b uilt by imagetool
+    cmd = "docker rmi -f " + weblogicImageTagWIT;
+    LoggerHelper.getLocal().log(Level.INFO, "Command to delete image: " + cmd);
+    TestUtils.exec(cmd);
+
+    LoggerHelper.getLocal().log(Level.INFO, "The WebLogic Docker image <"
+        + weblogicImageTagWIT + "> is deleted successfully!");
   }
 }

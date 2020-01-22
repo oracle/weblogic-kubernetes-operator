@@ -24,10 +24,10 @@ set -e
 
 checkCondition()
 {
-  if [ ! -f "${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}" ] &&
-     [ ! -f "${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME}" ] &&
-     [ ! -f "${JDK_WLS_INSTALLER_DIR}/p30386660_122130_Generic.zip" ] &&
-     [ ! -f "${JDK_WLS_INSTALLER_DIR}/p28186730_139400_Generic.zip" ] &&
+  if [ ! -f "${JDK_WLS_INSTALLER_DIR}/${JDK_INSTALLER_NAME}" ] ||
+     [ ! -f "${JDK_WLS_INSTALLER_DIR}/${WLS_INSTALLER_NAME}" ] ||
+     [ ! -f "${JDK_WLS_INSTALLER_DIR}/p30386660_122130_Generic.zip" ] ||
+     [ ! -f "${JDK_WLS_INSTALLER_DIR}/p28186730_139400_Generic.zip" ] ||
      [ ! -f "${JDK_WLS_INSTALLER_DIR}/p29135930_12213191004_Generic.zip" ]; then
     echo @@
     echo "@@ JDK or WLS installer or requiresd Patches is not installed. Please install them to ${JDK_WLS_INSTALLER_DIR} first! "
