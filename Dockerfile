@@ -26,6 +26,8 @@ COPY operator/target/weblogic-kubernetes-operator-$VERSION.jar /operator/weblogi
 COPY operator/target/lib/*.jar /operator/lib/
 
 # make the operator run with a non-root user id (1000 is the `oracle` user)
+RUN groupadd -g 1000 oracle
+RUN useradd -d /operator -M -s /bin/bash -g 1000 -u 1000 oracle 
 RUN chown -R 1000:1000 /operator
 USER 1000
 
