@@ -64,7 +64,7 @@ using the Oracle Single Sign-On authentication service. If you do not already ha
 Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
 Your acceptance of these terms is stored in a database that links the software images to your Oracle Single Sign-On login credentials.
 
-The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 Docker image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0. image, which does not require any patches.
+The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 Docker image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 image, which does not require any patches.
 
 First, you will need to log in to the Oracle Container Registry:
 
@@ -88,7 +88,7 @@ Oracle Container Registry.
 
 #### Creating a custom image with patches applied
 
-The Oracle WebLogic Server Kubernetes Operator and WebLogic Server 12.2.1.3 image require patch 29135930.
+The Oracle WebLogic Server Kubernetes Operator and WebLogic Server 12.2.1.3.0 image requires patch 29135930.
 This patch has some prerequisite patches that will also need to be applied. To create and customize the WebLogic Server image,
 and apply the required patches, use the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool).
 
@@ -97,15 +97,15 @@ and [Quick Start](https://github.com/oracle/weblogic-image-tool/blob/master/site
 
 To build the WebLogic Server image and apply the patches:
 
-1. Add the Server JRE and the WebLogic Server installer to the [Cache Tool](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
+1. Add the Server JRE and the WebLogic Server installer to the [`cache` command](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
 
     ```
-    $imagetool cache addInstaller \
+    $ imagetool cache addInstaller \
     --type jdk \
     --version 8u241 \
     --path /home/acmeuser/wls-installers/jdk-8u202-linux-x64.tar.gz
 
-    $imagetool cache addInstaller \
+    $ imagetool cache addInstaller \
     --type wls \
     --version 12.2.1.3.0 \
     --path /home/acmeuser/wls-installers/fmw_12.2.1.3.0_wls_Disk1_1of1.zip
@@ -116,13 +116,13 @@ to build the image and apply the patches.
     For the Create Tool to download the patches, you must pass in your My Oracle Support credentials.
     ```
 
-    $imagetool create \
+    $ imagetool create \
     --tag weblogic:12.2.1.3 \
     --type=wls \
-    --version 12.2.1.3.0  \
+    --version 12.2.1.3.0 \
     --jdkVersion=8u241 \
     -–patches=29135930_12.2.1.3.0,27117282_12.2.1.3.0 \
-    --user  username.mycompany.com \
+    --user username.mycompany.com \
     --passwordEnv MYPWD  
     ```
 
@@ -130,7 +130,7 @@ to build the image and apply the patches.
 
     ```
 
-    $docker images
+    $ docker images
     ```
 
 
