@@ -28,7 +28,7 @@ the API version in the data (weblogic.oracle/v2) does not match the expected API
 
 #### Install Helm and Tiller
 
-Helm has two parts: a client (Helm) and a server (Tiller). Tiller runs inside of your Kubernetes cluster, and manages releases (installations) of your charts.  See https://github.com/kubernetes/helm/blob/master/docs/install.md for detailed instructions on installing Helm and Tiller.
+Helm has two parts: a client (Helm) and a server (Tiller). Tiller runs inside of your Kubernetes cluster, and manages releases (installations) of your charts. For detailed instructions on installing Helm and Tiller, see https://github.com/helm/helm.
 
 In order to use Helm to install and manage the operator, you need to ensure that the service account that Tiller uses
 has the `cluster-admin` role.  The default would be `default` in namespace `kube-system`.  You can give that service
