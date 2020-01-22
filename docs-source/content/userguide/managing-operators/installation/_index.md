@@ -118,7 +118,7 @@ $ helm delete --purge weblogic-operator
 For Helm 3.x:
 
 ```
-$ helm delete weblogic-operator
+$ helm uninstall weblogic-operator
 ```
 
 {{% notice note %}}
