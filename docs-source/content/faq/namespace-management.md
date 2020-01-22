@@ -47,7 +47,7 @@ suspendOnDebugStartup: false
 
 ```
 
-If you don't know the release name of the operator, you can use`helm ls` to list all the releases:
+If you don't know the release name of the operator, you can use `helm ls` to list all the releases:
 
 ```
 $ helm ls
