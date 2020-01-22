@@ -25,6 +25,10 @@ COPY src/scripts/* /operator/
 COPY operator/target/weblogic-kubernetes-operator-$VERSION.jar /operator/weblogic-kubernetes-operator.jar
 COPY operator/target/lib/*.jar /operator/lib/
 
+# make the operator run with a non-root user id (1000 is the `oracle` user)
+RUN chown -R 1000:1000 /operator
+USER 1000
+
 HEALTHCHECK --interval=1m --timeout=10s \
   CMD /operator/livenessProbe.sh
 
