@@ -16,8 +16,14 @@ RUN yum -y install openssl && yum clean all
 # ----------
 MAINTAINER Ryan Eberhard <ryan.eberhard@oracle.com>
 
-RUN mkdir /operator
-RUN mkdir /operator/lib
+# make the operator run with a non-root user id (1000 is the `oracle` user)
+RUN groupadd -g 1000 oracle && \
+    useradd -d /operator -M -s /bin/bash -g 1000 -u 1000 oracle && \
+    mkdir /operator && \
+    mkdir /operator/lib && \
+    chown -R 1000:1000 /operator
+USER 1000
+
 ENV PATH=$PATH:/operator
 
 ARG VERSION
