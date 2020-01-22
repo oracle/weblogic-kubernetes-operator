@@ -71,7 +71,7 @@ $ helm upgrade \
   kubernetes/charts/weblogic-operator
 ```
 
-d{{% notice note %}}
+{{% notice note %}}
 Changes to the `domainNamespaces` list might not be picked up by the operator right away because the operator
 monitors the changes to the setting periodically. The operator becomes ready to host domain resources in
 a namespace only after the required `configmap` (namely `weblogic-domain-cm`) is initialized in the namespace.
