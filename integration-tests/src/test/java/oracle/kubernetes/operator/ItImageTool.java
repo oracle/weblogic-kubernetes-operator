@@ -239,7 +239,6 @@ public class ItImageTool extends BaseTest {
   }
 
   private static void deleteWlsDockerImage() throws Exception {
-    //build wls Docker image using imagetool
     LoggerHelper.getLocal().log(Level.INFO,
         "Deleting the WebLogic Docker image built by imagetool... ");
 
@@ -253,15 +252,21 @@ public class ItImageTool extends BaseTest {
         .append(weblogicImageVersionWIT)
         .toString();
     LoggerHelper.getLocal().log(Level.INFO, "Command to verify that the image exists: " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
-    LoggerHelper.getLocal().log(Level.INFO, "The image to delete: " + result.stdout());
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() == 0) {
+      LoggerHelper.getLocal().log(Level.INFO, "The image to delete: " + result.stdout());
 
-    //delete the image b uilt by imagetool
-    cmd = "docker rmi -f " + weblogicImageTagWIT;
-    LoggerHelper.getLocal().log(Level.INFO, "Command to delete image: " + cmd);
-    TestUtils.exec(cmd);
+      //delete the image built by imagetool
+      cmd = "docker rmi -f " + weblogicImageTagWIT;
+      LoggerHelper.getLocal().log(Level.INFO, "Command to delete image: " + cmd);
+      result = ExecCommand.exec(cmd);
 
-    LoggerHelper.getLocal().log(Level.INFO, "The WebLogic Docker image <"
-        + weblogicImageTagWIT + "> is deleted successfully!");
+      if (result.exitValue() == 0) {
+        LoggerHelper.getLocal().log(Level.INFO, "The WebLogic Docker image <"
+            + weblogicImageTagWIT + "> is deleted successfully!");
+      }
+    } else {
+      LoggerHelper.getLocal().log(Level.INFO, "No image to delete!");
+    }
   }
 }
