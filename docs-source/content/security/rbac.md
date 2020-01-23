@@ -132,13 +132,13 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
 
 | Cluster Role Binding | Mapped to Cluster Role | Resource Access | Notes |
 | --- | --- | --- | --- |
-| Operator `general` | Operator `general` | **Read**: namespaces | [^1] |
+| Operator `general` | Operator `general` | **Read**: namespaces | [^3] |
 | | | **Edit**: customresourcedefinitions, ingresses, persistentvolumes | |
 | | | **Update**: domains (weblogic.oracle), domains/status | |
 | | | **Create**: tokenreviews, subjectaccessreviews, localsubjectaccessreviews, selfsubjectaccessreviews, selfsubjectrulesreviews | |
 | Operator `nonresource` | Operator `nonresource` | **Get**: /version/* | [^1] |
-| Operator `discovery` | Kubernetes `system:discovery` | **See**: [Kubernetes Discovery Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#discovery-roles) | [^1] |
-| Operator `auth-delegator` | Kubernetes `system:auth-delegator` | **See**: [Kubernetes Component Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#other-component-roles) | [^1] |
+| Operator `discovery` | Kubernetes `system:discovery` | **See**: [Kubernetes Discovery Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#discovery-roles) | [^3] |
+| Operator `auth-delegator` | Kubernetes `system:auth-delegator` | **See**: [Kubernetes Component Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#other-component-roles) | [^3] |
 
 
 [^1]: The binding is assigned to the operator `ServiceAccount`.
@@ -146,3 +146,4 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
       in each namespace listed with the `domainNamespaces` setting.
       The `domainNamespaces` setting contains the list of namespaces
       that the operator is configured to manage.
+[^3]: The binding is assigned to the operator `ServiceAccount`. In additional, by default (when the `dedicated` value is set to `false`), those are ClusterRole and ClusterRoleBindings. However, if the `dedicated` value is set to `true`,  those will become Roles and RoleBindings in the namespace of the operator.

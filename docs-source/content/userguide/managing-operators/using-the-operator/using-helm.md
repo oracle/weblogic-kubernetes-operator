@@ -94,6 +94,23 @@ Example:
 serviceAccount: "weblogic-operator"
 ```
 
+##### `dedicated`
+
+Specifies if this operator will only manage WebLogic Domains in the same namespace in which the operator itself is deployed.  If set as `true`, then the `domainNamespaces` value below is ignored. 
+
+Defaults to `false`.
+
+Example:
+```
+dedicated: false
+```
+
+In the `dedicated` mode, the operator will most likely not have permissions to access the cluster-scoped Kubernetes resources such as CustomResourceDefinitions, PersistentVolumes, and Namespaces. In those situations, the operator may skip some of its operations, such as verifying the WebLogic Domain CustomResoruceDefinition domains.weblogic.oracle (and creating it when it is absent), watching namespace events, and cleaning up PersistentVolumes as part of deleting a domain. 
+
+{{% notice note %}}
+It is the responsibility of the administrators to make sure that the required CustomResourceDefinition domains.weblogic.oracle is deployed in the Kubernetes cluster before the operator is installed. A YAML file for the CRD (`domain-crd.yaml`) can be found in `kubernetes/crd` directory of the operator project.
+{{% /notice %}}
+
 ##### `javaLoggingLevel`
 
 Specifies the level of Java logging that should be enabled in the operator. Valid values are:  `SEVERE`, `WARNING`, `INFO`, `CONFIG`, `FINE`, `FINER`, and `FINEST`.

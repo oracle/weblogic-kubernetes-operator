@@ -393,9 +393,8 @@ public class Main {
   }
 
   public static boolean isDedicated() {
-    String result = Optional.ofNullable(getHelmVariable.apply("OPERATOR_DEDICATED"))
-            .orElse(tuningAndConfig.get("dedicated"));
-    return result == null ? false : result.equals("") ? false : "true".equals(result);
+    return "true".equalsIgnoreCase(Optional.ofNullable(getHelmVariable.apply("OPERATOR_DEDICATED"))
+            .orElse(tuningAndConfig.get("dedicated")));
   }
 
   private static void startRestServer(String principal, Collection<String> targetNamespaces)
