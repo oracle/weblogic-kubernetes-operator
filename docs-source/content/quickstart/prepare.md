@@ -12,8 +12,8 @@ weight: 5
     $ kubectl create namespace sample-domain1-ns
     ```
 
-2.	Use `helm` to configure the operator to manage domains in this namespace:
-    
+1.	Use `helm` to configure the operator to manage domains in this namespace:
+
     ```bash
     $ helm upgrade sample-weblogic-operator  kubernetes/charts/weblogic-operator \
         --namespace sample-weblogic-operator-ns \
@@ -22,12 +22,12 @@ weight: 5
         --wait
     ```
 
-3.  Configure Traefik to manage Ingresses created in this namespace:
-    
+1.  Configure Traefik to manage Ingresses created in this namespace:
+
     ```bash
     $ helm upgrade traefik-operator stable/traefik \
         --namespace traefik \
         --reuse-values \
         --set "kubernetes.namespaces={traefik,sample-domain1-ns}" \
-        --wait 
+        --wait
     ```

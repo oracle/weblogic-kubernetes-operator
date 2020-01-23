@@ -37,7 +37,7 @@ $ helm install kubernetes/charts/weblogic-operator \
   --set "javaLoggingLevel=FINE" --wait
 ```
 
-If `weblogic-operator-namespace` exists, then it will be used.  If it does not exist, then Helm will create it.
+If `weblogic-operator-namespace` exists, then it will be used.  If it does not exist, then Helm 2.x will create it.
 
 
 Using Helm 3.x:
@@ -59,7 +59,6 @@ $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
 ```
 
 This creates a Helm release, named `weblogic-operator` in the `weblogic-operator-namespace` namespace, and configures a deployment and supporting resources for the operator.
-
 
 You can verify the operator installation by examining the output from the `helm install` command.
 
