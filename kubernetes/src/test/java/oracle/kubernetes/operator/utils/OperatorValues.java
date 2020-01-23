@@ -90,19 +90,6 @@ public class OperatorValues {
     return this;
   }
 
-  public String getDedicated() {
-    return dedicated;
-  }
-
-  public void setDedicated(String val) {
-    dedicated = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues dedicated(String val) {
-    setDedicated(val);
-    return this;
-  }
-
   public String getServiceAccount() {
     return serviceAccount;
   }
@@ -316,6 +303,19 @@ public class OperatorValues {
 
   public OperatorValues elkIntegrationEnabled(String val) {
     setElkIntegrationEnabled(val);
+    return this;
+  }
+
+  public String getDedicated() {
+    return dedicated;
+  }
+
+  public void setDedicated(String val) {
+    dedicated = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues dedicated(String val) {
+    setDedicated(val);
     return this;
   }
 

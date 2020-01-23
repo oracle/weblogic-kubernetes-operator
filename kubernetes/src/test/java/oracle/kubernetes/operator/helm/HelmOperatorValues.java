@@ -24,7 +24,6 @@ class HelmOperatorValues extends OperatorValues {
   }
 
   HelmOperatorValues(Map<String, Object> map) {
-    loadFromMap(map, this::setDedicated, "false");
     loadFromMap(map, this::setServiceAccount, "serviceAccount");
     loadFromMap(map, this::setWeblogicOperatorImage, "image");
     loadFromMap(map, this::setJavaLoggingLevel, "javaLoggingLevel");
@@ -40,6 +39,7 @@ class HelmOperatorValues extends OperatorValues {
     loadBooleanFromMap(map, this::setRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
     loadBooleanFromMap(map, this::setSuspendOnDebugStartup, "suspendOnDebugStartup");
     loadBooleanFromMap(map, this::setElkIntegrationEnabled, "elkIntegrationEnabled");
+    loadBooleanFromMap(map, this::setDedicated, "dedicated");
 
     loadIntegerFromMap(map, this::setExternalRestHttpsPort, "externalRestHttpsPort");
     loadIntegerFromMap(map, this::setExternalDebugHttpPort, "externalDebugHttpPort");
@@ -74,6 +74,12 @@ class HelmOperatorValues extends OperatorValues {
     }
   }
 
+  private void setDedicated(Boolean enabled) {
+    if (enabled != null) {
+      setDedicated(enabled.toString());
+    }
+  }
+
   @SuppressWarnings("unchecked")
   private void loadDomainNamespacesFromMap(Map<String, Object> map) {
     List<String> domainNamespaces = (List<String>) map.get("domainNamespaces");
@@ -100,7 +106,6 @@ class HelmOperatorValues extends OperatorValues {
   Map<String, Object> createMap() {
     HashMap<String, Object> map = new HashMap<>();
 
-    addStringMapEntry(map, this::getDedicated, "false");
     addStringMapEntry(map, this::getServiceAccount, "serviceAccount");
     addStringMapEntry(map, this::getWeblogicOperatorImage, "image");
     addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");
@@ -116,6 +121,7 @@ class HelmOperatorValues extends OperatorValues {
     addMapEntry(map, this::isRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
     addMapEntry(map, this::isSuspendOnDebugStartup, "suspendOnDebugStartup");
     addMapEntry(map, this::isElkIntegrationEnabled, "elkIntegrationEnabled");
+    addMapEntry(map, this::isDedicated, "dedicated");
 
     addMapEntry(map, this::getExternalRestHttpsPortNum, "externalRestHttpsPort");
     addMapEntry(map, this::getExternalDebugHttpPortNum, "externalDebugHttpPort");
@@ -155,6 +161,10 @@ class HelmOperatorValues extends OperatorValues {
 
   private Boolean isElkIntegrationEnabled() {
     return MapUtils.valueOf(getElkIntegrationEnabled());
+  }
+
+  private Boolean isDedicated() {
+    return MapUtils.valueOf(getDedicated());
   }
 
   private Integer getExternalRestHttpsPortNum() {

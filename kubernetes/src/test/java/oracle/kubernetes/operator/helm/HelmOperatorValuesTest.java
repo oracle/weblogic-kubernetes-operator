@@ -487,6 +487,50 @@ public class HelmOperatorValuesTest {
     assertThat(values.getExternalDebugHttpPort(), equalTo(stringValue));
   }
 
+  // --------------- dedicated
+
+  @Test
+  public void whenDedicatedTrue_createdMapContainsValue() {
+    operatorValues.dedicated("true");
+
+    assertThat(operatorValues.createMap(), hasEntry("dedicated", true));
+  }
+
+  @Test
+  public void whenDedicatedFalse_createdMapContainsValue() {
+    operatorValues.dedicated("false");
+
+    assertThat(operatorValues.createMap(), hasEntry("dedicated", false));
+  }
+
+  @Test
+  public void whenDedicatedNotSet_createdMapLacksValue() {
+    assertThat(operatorValues.createMap(), not(hasKey("dedicated")));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithoutDedicated_hasEmptyString() {
+    HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
+
+    assertThat(values.getDedicated(), equalTo(""));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithDedicatedTrue_hasSpecifiedValue() {
+    HelmOperatorValues values =
+        new HelmOperatorValues(ImmutableMap.of("dedicated", true));
+
+    assertThat(values.getDedicated(), equalTo("true"));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithDedicatedFalse_hasSpecifiedValue() {
+    HelmOperatorValues values =
+        new HelmOperatorValues(ImmutableMap.of("dedicated", false));
+
+    assertThat(values.getDedicated(), equalTo("false"));
+  }
+
   @Test
   public void whenCreatedFromMap_hasSpecifiedValues() {
     HelmOperatorValues values =
