@@ -78,28 +78,28 @@ fi
 echo 'docker list images for webhook'
 docker images | grep webhook
 kubectl create ns webhook
-kubectl create secret docker-registry ocirsecret -n webhook \
-                    --docker-server=$REPO_REGISTRY \
-                    --docker-username=$REPO_USERNAME \
-                    --docker-password=$REPO_PASSWORD \
-                    --docker-email=$REPO_EMAIL  \
-                    --dry-run -o yaml | kubectl apply -f -
+if [ ${SHARED_CLUSTER} = "true" ]; then
+    kubectl create secret docker-registry ocirsecret -n webhook \
+                        --docker-server=$REPO_REGISTRY \
+                        --docker-username=$REPO_USERNAME \
+                        --docker-password=$REPO_PASSWORD \
+                        --docker-email=$REPO_EMAIL  \
+                        --dry-run -o yaml | kubectl apply -f -
+fi
 
-cat ${resourceExporterDir}/server.yaml
 kubectl apply -f ${resourceExporterDir}/server.yaml --validate=false
-kubectl get pods -n webhook
-POD_NAME=$(kubectl get pod -l app=webhook -o jsonpath="{.items[0].metadata.name}" -n webhook )
-
 echo "Getting info about webhook"
+kubectl get pods -n webhook
 
 #create coordinator
-kubectl create secret docker-registry ocirsecret -n ${domainNS} \
-                    --docker-server=$REPO_REGISTRY \
-                    --docker-username=$REPO_USERNAME \
-                    --docker-password=$REPO_PASSWORD \
-                    --docker-email=$REPO_EMAIL  \
-                    --dry-run -o yaml | kubectl apply -f -
-
+if [ ${SHARED_CLUSTER} = "true" ]; then
+    kubectl create secret docker-registry ocirsecret -n ${domainNS} \
+                        --docker-server=$REPO_REGISTRY \
+                        --docker-username=$REPO_USERNAME \
+                        --docker-password=$REPO_PASSWORD \
+                        --docker-email=$REPO_EMAIL  \
+                        --dry-run -o yaml | kubectl apply -f -
+fi
 
 kubectl apply -f ${resourceExporterDir}/coordinator_${domainNS}.yaml
 echo "Run the script [createPromGrafanaMySqlCoordWebhook.sh] ..."
