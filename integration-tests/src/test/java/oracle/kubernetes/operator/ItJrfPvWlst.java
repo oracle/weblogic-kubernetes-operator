@@ -70,11 +70,10 @@ public class ItJrfPvWlst extends BaseTest {
           + "/kubernetes/samples/scripts " 
           + getResultDir(),
           true);
-      
-      //To take care of leftover pods caused by test being aborted
+      //delete leftover pods caused by test being aborted
       DbUtils.deleteRcuPod(getResultDir());
       DbUtils.stopOracleDB(getResultDir());
-      
+       
       DbUtils.startOracleDB(getResultDir());
       DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix);
     
