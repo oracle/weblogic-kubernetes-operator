@@ -191,6 +191,7 @@ public class Main {
 
       runSteps(
           Step.chain(
+              new InitializeNamespacesSecurityStep(targetNamespaces),
               CrdHelper.createDomainCrdStep(version, 
                   new StartNamespacesStep(targetNamespaces)),
               readExistingNamespaces()), 
@@ -528,10 +529,10 @@ public class Main {
     }
   }
 
-  private static class StartNamespacesStep extends Step {
+  private abstract static class ForEachNamespaceStep extends Step {
     private final Collection<String> targetNamespaces;
 
-    StartNamespacesStep(Collection<String> targetNamespaces) {
+    ForEachNamespaceStep(Collection<String> targetNamespaces) {
       this.targetNamespaces = targetNamespaces;
     }
 
@@ -539,6 +540,8 @@ public class Main {
     protected String getDetail() {
       return String.join(",", targetNamespaces);
     }
+
+    protected abstract Step action(String ns);
 
     @Override
     public NextAction apply(Packet packet) {
@@ -548,11 +551,24 @@ public class Main {
       for (String ns : targetNamespaces) {
         startDetails.add(
             new StepAndPacket(
-                Step.chain(
-                    new StartNamespaceBeforeStep(ns), readExistingResources(operatorNamespace, ns)),
+                action(ns),
                 packet.clone()));
       }
       return doForkJoin(getNext(), packet, startDetails);
+    }
+  }
+
+  private static class StartNamespacesStep extends ForEachNamespaceStep {
+    StartNamespacesStep(Collection<String> targetNamespaces) {
+      super(targetNamespaces);
+    }
+
+    @Override
+    protected Step action(String ns) {
+      return Step.chain(
+          new NamespaceRulesReviewStep(ns),
+          new StartNamespaceBeforeStep(ns),
+          readExistingResources(operatorNamespace, ns));
     }
   }
 
@@ -567,15 +583,50 @@ public class Main {
     public NextAction apply(Packet packet) {
       NamespaceStatus nss = namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
       if (!nss.isNamespaceStarting().getAndSet(true)) {
-        try {
-          nss.getRulesReviewStatus().set(HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns));
-        } catch (Throwable e) {
-          LOGGER.warning(MessageKeys.EXCEPTION, e);
-        }
-
         return doNext(packet);
       }
       return doEnd(packet);
+    }
+  }
+
+  private static class InitializeNamespacesSecurityStep extends ForEachNamespaceStep {
+    InitializeNamespacesSecurityStep(Collection<String> targetNamespaces) {
+      super(targetNamespaces);
+    }
+
+    @Override
+    protected Step action(String ns) {
+      return new NamespaceRulesReviewStep(ns);
+    }
+  }
+
+  private static class NamespaceRulesReviewStep extends Step {
+    private final String ns;
+
+    NamespaceRulesReviewStep(String ns) {
+      this.ns = ns;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      NamespaceStatus nss = namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
+      V1SubjectRulesReviewStatus srrs = nss.getRulesReviewStatus().updateAndGet(prev -> {
+        if (prev != null) {
+          return prev;
+        }
+
+        try {
+          return HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns);
+        } catch (Throwable e) {
+          LOGGER.warning(MessageKeys.EXCEPTION, e);
+        }
+        return null;
+      });
+
+      packet.getComponents().put(
+          NamespaceRulesReviewStep.class.getName(),
+          Component.createFor(V1SubjectRulesReviewStatus.class, srrs));
+      return doNext(packet);
     }
   }
 
