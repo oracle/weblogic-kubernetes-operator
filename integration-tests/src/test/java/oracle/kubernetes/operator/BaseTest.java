@@ -1,11 +1,10 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -107,9 +106,9 @@ public class BaseTest {
   /**
    * initializes the application properties and creates directories for results.
    *
-   * @param appPropsFile
-   * @param testClassName
-   * @throws Exception
+   * @param appPropsFile application properties file
+   * @param testClassName test class name
+   * @throws Exception exception
    */
   public static void initialize(String appPropsFile, String testClassName)
       throws Exception {
@@ -388,12 +387,12 @@ public class BaseTest {
   }
 
   /**
-   * build web service app inside pod
+   * build web service app inside pod.
    *
-   * @param domain
-   * @param testAppName
-   * @param wsName
-   * @throws Exception
+   * @param domain domain
+   * @param testAppName test application name
+   * @param wsName web service name
+   * @throws Exception exception
    */
   public static void buildDeployWebServiceApp(Domain domain, String testAppName, String wsName)
       throws Exception {
@@ -780,14 +779,18 @@ public class BaseTest {
   private void copyScalingScriptToPod(String domainUid, String podName, String domainNS)
       throws Exception {
 
-    // create scripts dir under domain pv
-    String cmd = "kubectl exec " + podName + " -n "
-        + domainNS + " mkdir /shared/domains/" + domainUid + "/bin/scripts";
-    TestUtils.exec(cmd, true);
+    TestUtils.kubectlexec(podName, domainNS,
+        "-- mkdir /shared/domains/" + domainUid + "/bin/scripts");
 
-    // copy scalingAction.sh to pod
-    TestUtils.kubectlcp(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
-        "/shared/domains/" + domainUid + "/bin/scripts", podName, domainNS);
+    TestUtils.kubectlexec(podName, domainNS,
+        "-- bash -c 'cat > /shared/domains/"
+            + domainUid + "/bin/scripts/scalingAction.sh' < "
+            + getProjectRoot() + "/src/scripts/scaling/scalingAction.sh");
+
+    TestUtils.kubectlexec(podName, domainNS,
+        "chmod +x /shared/domains/"
+                  + domainUid + "/bin/scripts/scalingAction.sh");
+
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,16 +11,16 @@ import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinitionNames;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinitionStatus;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinitionVersion;
-import io.kubernetes.client.models.V1beta1CustomResourceSubresourceScale;
-import io.kubernetes.client.models.V1beta1CustomResourceSubresources;
-import io.kubernetes.client.models.V1beta1CustomResourceValidation;
-import io.kubernetes.client.models.V1beta1JSONSchemaProps;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionNames;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionSpec;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionStatus;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionVersion;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceSubresourceScale;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceSubresources;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceValidation;
+import io.kubernetes.client.openapi.models.V1beta1JSONSchemaProps;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
