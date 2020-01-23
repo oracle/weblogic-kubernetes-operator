@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonException;
 import javax.json.JsonPatch;
 import javax.json.JsonStructure;
 
@@ -77,6 +78,7 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
+import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
@@ -312,11 +314,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     failOnResource(resourceType, name, null, httpStatus);
   }
 
-  @SuppressWarnings({"unchecked", "unused"})
+  @SuppressWarnings("unused")
   private enum Operation {
     create {
       @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
+      <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
         return callContext.createResource(dataRepository);
       }
 
@@ -327,42 +329,42 @@ public class KubernetesTestSupport extends FiberTestSupport {
     },
     delete {
       @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
+      <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
         return callContext.deleteResource(dataRepository);
       }
     },
     read {
       @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
+      <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
         return callContext.readResource(dataRepository);
       }
     },
     replace {
       @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
+      <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
         return callContext.replaceResource(dataRepository);
       }
     },
     list {
       @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
+      <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
         return callContext.listResources(dataRepository);
       }
     },
     patch {
       @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
+      <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
         return callContext.patchResource(dataRepository);
       }
     },
     deleteCollection {
       @Override
-      Object execute(CallContext callContext, DataRepository dataRepository) {
+      <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
         return callContext.deleteCollection(dataRepository);
       }
     };
 
-    abstract Object execute(CallContext callContext, DataRepository dataRepository);
+    abstract <T> Object execute(CallContext callContext, DataRepository<T> dataRepository);
 
     public String getName(RequestParams requestParams) {
       return requestParams.name;
@@ -838,16 +840,16 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return dataRepository.replaceResource(requestParams.name, (T) requestParams.body);
     }
 
-    private Object deleteResource(DataRepository dataRepository) {
+    private <T> V1Status deleteResource(DataRepository<T> dataRepository) {
       return dataRepository.deleteResource(requestParams.name, requestParams.namespace);
     }
 
-    private Object patchResource(DataRepository dataRepository) {
+    private <T> T patchResource(DataRepository<T> dataRepository) {
       return dataRepository.patchResource(
           requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
     }
 
-    private Object listResources(DataRepository dataRepository) {
+    private <T> Object listResources(DataRepository<T> dataRepository) {
       return dataRepository.listResources(requestParams.namespace, fieldSelector, labelSelector);
     }
 
@@ -855,7 +857,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return dataRepository.readResource(requestParams.name, requestParams.namespace);
     }
 
-    public Object deleteCollection(DataRepository dataRepository) {
+    public <T> V1Status deleteCollection(DataRepository<T> dataRepository) {
       return dataRepository.deleteResourceCollection(requestParams.namespace);
     }
   }
@@ -875,11 +877,13 @@ public class KubernetesTestSupport extends FiberTestSupport {
       numCalls++;
       try {
         Object callResult = callContext.execute();
-        CallResponse callResponse = createResponse(callResult);
+        CallResponse<Object> callResponse = createResponse(callResult);
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(callResponse));
       } catch (NotFoundException e) {
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
       } catch (HttpErrorException e) {
+        packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
+      } catch (JsonException e) {
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
       } catch (Exception e) {
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
@@ -888,24 +892,28 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return doNext(packet);
     }
 
-    private CallResponse createResponse(Object callResult) {
+    private <T> CallResponse<T> createResponse(T callResult) {
       return CallResponse.createSuccess(callResult, HTTP_OK);
     }
 
-    private CallResponse createResponse(NotFoundException e) {
+    private CallResponse<?> createResponse(NotFoundException e) {
       return CallResponse.createFailure(new ApiException(e), HTTP_NOT_FOUND);
     }
 
-    private CallResponse createResponse(HttpErrorException e) {
+    private CallResponse<?> createResponse(HttpErrorException e) {
       return CallResponse.createFailure(e.getApiException(), e.getApiException().getCode());
     }
 
-    private CallResponse createResponse(Throwable t) {
+    private CallResponse<?> createResponse(JsonException e) {
+      return CallResponse.createFailure(new ApiException(e), HTTP_INTERNAL_ERROR);
+    }
+
+    private CallResponse<?> createResponse(Throwable t) {
       return CallResponse.createFailure(new ApiException(t), HTTP_UNAVAILABLE);
     }
   }
 
-  class NotFoundException extends RuntimeException {
+  static class NotFoundException extends RuntimeException {
     public NotFoundException(String resourceType, String name, String namespace) {
       super(String.format("No %s named %s found in namespace %s", resourceType, name, namespace));
     }
