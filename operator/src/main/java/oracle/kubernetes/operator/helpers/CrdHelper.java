@@ -121,7 +121,6 @@ public class CrdHelper {
     public NextAction apply(Packet packet) {
 
       if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get)) {
-        LOGGER.warning(MessageKeys.CRD_NO_READ_ACCESS);
         return doNext(packet);
       }
 

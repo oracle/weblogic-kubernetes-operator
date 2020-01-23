@@ -195,10 +195,12 @@ public class Main {
       version = HealthCheckHelper.performK8sVersionCheck();
 
       Step stepToStart = new StartNamespacesStep(targetNamespaces);
-      if (isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.list)) {
+      if (isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get)) {
+        LOGGER.warning(MessageKeys.CRD_NO_READ_ACCESS);
         stepToStart = CrdHelper.createDomainCrdStep(version, stepToStart);
       }
       if (isAccessAllowed(AuthorizationProxy.Resource.NAMESPACES, AuthorizationProxy.Operation.list)) {
+        LOGGER.warning(MessageKeys.NS_NO_READ_ACCESS);
         stepToStart = Step.chain(stepToStart, readExistingNamespaces());
       }
 
