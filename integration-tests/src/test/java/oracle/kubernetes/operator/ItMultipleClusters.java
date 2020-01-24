@@ -251,7 +251,7 @@ public class ItMultipleClusters extends BaseTest {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
-      if (domain !=null) {
+      if (domain != null) {
         domain.deleteImage();
       }
     }
