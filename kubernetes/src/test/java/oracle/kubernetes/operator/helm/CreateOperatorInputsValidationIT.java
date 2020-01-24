@@ -24,7 +24,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   private static final String WRONG_TYPE = "%s must be a %s : %s";
 
   private static final String[] OPERATOR_LEVEL_BOOLEAN_PROPERTIES = {
-    "externalRestEnabled", "remoteDebugNodePortEnabled", "elkIntegrationEnabled", "dedicated"
+    "externalRestEnabled", "remoteDebugNodePortEnabled", "elkIntegrationEnabled"
   };
 
   private static final String[] OPERATOR_LEVEL_STRING_PROPERTIES = {"serviceAccount", "image"};
