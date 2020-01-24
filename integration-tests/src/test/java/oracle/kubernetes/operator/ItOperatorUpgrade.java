@@ -85,6 +85,7 @@ public class ItOperatorUpgrade extends BaseTest {
         //domain.destroy();
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
+        domain.deleteImage();
       }
       if (operator != null) {
         operator.destroy();

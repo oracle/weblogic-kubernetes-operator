@@ -81,6 +81,7 @@ public class SitConfig extends BaseTest {
     if (domain != null) {
       LoggerHelper.getLocal().log(Level.INFO, "Destroying domain...");
       domain.destroy();
+      domain.deleteImage();
     }
   }
 

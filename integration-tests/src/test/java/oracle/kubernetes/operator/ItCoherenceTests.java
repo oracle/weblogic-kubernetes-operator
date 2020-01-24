@@ -215,6 +215,7 @@ public class ItCoherenceTests extends BaseTest {
     if (domain != null) {
       TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       TestUtils.verifyAfterDeletion(domain);
+      domain.deleteImage();
     }
   }
 

@@ -117,6 +117,9 @@ public class ItDomainInImage extends BaseTest {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
+      if (domain != null) {
+        domain.deleteImage();
+      }
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -159,6 +162,9 @@ public class ItDomainInImage extends BaseTest {
       if (domain != null && testCompletedSuccessfully) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
+      }
+      if (domain != null) {
+        domain.deleteImage();
       }
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
