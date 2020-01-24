@@ -3,16 +3,20 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
-import oracle.kubernetes.operator.Main;
+import oracle.kubernetes.operator.StartupControl;
+import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
+import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -22,45 +26,45 @@ public final class HealthCheckHelper {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final Map<AuthorizationProxy.Resource, AuthorizationProxy.Operation[]>
+  private static final Map<Resource, Operation[]>
       namespaceAccessChecks = new HashMap<>();
-  private static final Map<AuthorizationProxy.Resource, AuthorizationProxy.Operation[]>
+  private static final Map<Resource, Operation[]>
       clusterAccessChecks = new HashMap<>();
 
   // Note: this list should match the RBAC or ABAC policies contained in the YAML script
   // generated for use by the Kubernetes administrator
   //
-  private static final AuthorizationProxy.Operation[] crudOperations = {
-    AuthorizationProxy.Operation.get,
-    AuthorizationProxy.Operation.list,
-    AuthorizationProxy.Operation.watch,
-    AuthorizationProxy.Operation.create,
-    AuthorizationProxy.Operation.update,
-    AuthorizationProxy.Operation.patch,
-    AuthorizationProxy.Operation.delete,
-    AuthorizationProxy.Operation.deletecollection
+  private static final Operation[] crudOperations = {
+    Operation.get,
+    Operation.list,
+    Operation.watch,
+    Operation.create,
+    Operation.update,
+    Operation.patch,
+    Operation.delete,
+    Operation.deletecollection
   };
 
-  private static final AuthorizationProxy.Operation[] cOperations = {
-    AuthorizationProxy.Operation.create
+  private static final Operation[] cOperations = {
+    Operation.create
   };
 
-  private static final AuthorizationProxy.Operation[] glOperations = {
-    AuthorizationProxy.Operation.get, AuthorizationProxy.Operation.list
+  private static final Operation[] glOperations = {
+    Operation.get, Operation.list
   };
 
-  private static final AuthorizationProxy.Operation[] glwOperations = {
-    AuthorizationProxy.Operation.get,
-    AuthorizationProxy.Operation.list,
-    AuthorizationProxy.Operation.watch
+  private static final Operation[] glwOperations = {
+    Operation.get,
+    Operation.list,
+    Operation.watch
   };
 
-  private static final AuthorizationProxy.Operation[] glwupOperations = {
-    AuthorizationProxy.Operation.get,
-    AuthorizationProxy.Operation.list,
-    AuthorizationProxy.Operation.watch,
-    AuthorizationProxy.Operation.update,
-    AuthorizationProxy.Operation.patch
+  private static final Operation[] glwupOperations = {
+    Operation.get,
+    Operation.list,
+    Operation.watch,
+    Operation.update,
+    Operation.patch
   };
 
   // default namespace or svc account name
@@ -68,106 +72,94 @@ public final class HealthCheckHelper {
 
   static {
     // CRUD resources
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODPRESETS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODTEMPLATES, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.SERVICES, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.CONFIGMAPS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.EVENTS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.JOBS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.CRONJOBS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.PERSISTENTVOLUMECLAIMS, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.NETWORKPOLICIES, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.PODSECURITYPOLICIES, crudOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.INGRESSES, crudOperations);
+    namespaceAccessChecks.put(Resource.PODS, crudOperations);
+    namespaceAccessChecks.put(Resource.PODPRESETS, crudOperations);
+    namespaceAccessChecks.put(Resource.PODTEMPLATES, crudOperations);
+    namespaceAccessChecks.put(Resource.SERVICES, crudOperations);
+    namespaceAccessChecks.put(Resource.CONFIGMAPS, crudOperations);
+    namespaceAccessChecks.put(Resource.EVENTS, crudOperations);
+    namespaceAccessChecks.put(Resource.JOBS, crudOperations);
+    namespaceAccessChecks.put(Resource.CRONJOBS, crudOperations);
+    namespaceAccessChecks.put(Resource.PERSISTENTVOLUMECLAIMS, crudOperations);
+    namespaceAccessChecks.put(Resource.NETWORKPOLICIES, crudOperations);
+    namespaceAccessChecks.put(Resource.PODSECURITYPOLICIES, crudOperations);
+    namespaceAccessChecks.put(Resource.INGRESSES, crudOperations);
 
-    clusterAccessChecks.put(AuthorizationProxy.Resource.PERSISTENTVOLUMES, crudOperations);
-    clusterAccessChecks.put(AuthorizationProxy.Resource.CRDS, crudOperations);
+    clusterAccessChecks.put(Resource.PERSISTENTVOLUMES, crudOperations);
+    clusterAccessChecks.put(Resource.CRDS, crudOperations);
 
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.LOGS, glOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.EXEC, cOperations);
+    namespaceAccessChecks.put(Resource.LOGS, glOperations);
+    namespaceAccessChecks.put(Resource.EXEC, cOperations);
 
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.DOMAINS, glwupOperations);
+    namespaceAccessChecks.put(Resource.DOMAINS, glwupOperations);
 
     // Readonly resources
-    clusterAccessChecks.put(AuthorizationProxy.Resource.NAMESPACES, glwOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.SECRETS, glwOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.STORAGECLASSES, glwOperations);
+    clusterAccessChecks.put(Resource.NAMESPACES, glwOperations);
+    namespaceAccessChecks.put(Resource.SECRETS, glwOperations);
+    namespaceAccessChecks.put(Resource.STORAGECLASSES, glwOperations);
 
     // tokenreview
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.TOKENREVIEWS, cOperations);
+    namespaceAccessChecks.put(Resource.TOKENREVIEWS, cOperations);
   }
 
   private HealthCheckHelper() {
   }
 
-  public static void performSecurityChecks(
-      KubernetesVersion version, String operatorNamespace, String ns) {
-    performSecurityChecks(version, operatorNamespace, ns, false);
-  }
-
   /**
    * Verify Access.
-   *
-   * @param version Kubernetes version
+   *  @param version Kubernetes version
    * @param operatorNamespace operator namespace
    * @param ns target namespace
    */
   public static void performSecurityChecks(
-      KubernetesVersion version, String operatorNamespace, String ns, boolean dedicated) {
+        KubernetesVersion version, String operatorNamespace, String ns) {
 
     // Validate namespace
     if (DEFAULT_NAMESPACE.equals(operatorNamespace)) {
       LOGGER.info(MessageKeys.NAMESPACE_IS_DEFAULT);
     }
+    boolean dedicated = new StartupControl(version).isDedicated();
 
     // Validate RBAC or ABAC policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
     LOGGER.info(MessageKeys.VERIFY_ACCESS_START, ns);
 
-    if (version.isRulesReviewSupported()) {
-      boolean rulesReviewSuccessful = true;
-      V1SelfSubjectRulesReview review = ap.review(ns);
-      if (review == null) {
-        rulesReviewSuccessful = false;
-      } else {
-        V1SubjectRulesReviewStatus status = review.getStatus();
-        List<V1ResourceRule> rules = status.getResourceRules();
+    V1SelfSubjectRulesReview review = getRulesReview(ap, version);
+    if (review != null) {
+      List<V1ResourceRule> rules = Optional.ofNullable(review.getStatus())
+            .map(V1SubjectRulesReviewStatus::getResourceRules)
+            .orElse(Collections.emptyList());
 
-        for (AuthorizationProxy.Resource r : namespaceAccessChecks.keySet()) {
-          for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
-            check(rules, r, op, ns, !dedicated);
+      for (Resource r : namespaceAccessChecks.keySet()) {
+        for (Operation op : namespaceAccessChecks.get(r)) {
+          check(rules, r, op, ns, !dedicated);
+        }
+      }
+      if (!dedicated) {
+        for (Resource r : clusterAccessChecks.keySet()) {
+          for (Operation op : clusterAccessChecks.get(r)) {
+            check(rules, r, op, null, true);
           }
         }
-        if (!dedicated) {
-          for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
-            for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-              check(rules, r, op, null, !dedicated);
+      }
+    } else {
+
+      for (Resource r : namespaceAccessChecks.keySet()) {
+        for (Operation op : namespaceAccessChecks.get(r)) {
+
+          if (!ap.check(op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
+            LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
+          }
+        }
+      }
+
+      if (!dedicated) {
+        for (Resource r : clusterAccessChecks.keySet()) {
+          for (Operation op : clusterAccessChecks.get(r)) {
+
+            if (!authorizationPermitsClusterAccess(ap, r, op)) {
+              LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
             }
-          }
-        }
-      }
-
-      if (rulesReviewSuccessful) {
-        return;
-      }
-    }
-
-    for (AuthorizationProxy.Resource r : namespaceAccessChecks.keySet()) {
-      for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
-
-        if (!ap.check(op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
-        }
-      }
-    }
-
-    if (!dedicated) {
-      for (AuthorizationProxy.Resource r : clusterAccessChecks.keySet()) {
-        for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
-
-          if (!ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
-            LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
           }
         }
       }
@@ -175,48 +167,48 @@ public final class HealthCheckHelper {
   }
 
   /**
-   * Verify Access To a Cluster resources.
+   * Verify Access To a Cluster resources. Try rule-based control, and fall-back to access-based
+   * control if it fails.
    *
    * @param resource Kubernetes resource
    * @param operation Kubernetes operation
    */
-  public static boolean isClusterResourceAccessAllowed(KubernetesVersion version,
-      AuthorizationProxy.Resource resource, AuthorizationProxy.Operation operation) {
+  public static boolean isClusterResourceAccessAllowed(
+        KubernetesVersion version,
+        Resource resource,
+        Operation operation) {
 
-    // Validate RBAC or ABAC policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
     LOGGER.fine(MessageKeys.VERIFY_CLUSTER_VIEW_ACCESS_START, resource, operation);
 
-    boolean result = true;
-
-    if (version.isRulesReviewSupported()) {
-      boolean rulesReviewSuccessful = true;
-      V1SelfSubjectRulesReview review = ap.review(Main.computeOperatorNamespace());
-
-      if (review == null) {
-        rulesReviewSuccessful = false;
-      } else {
-        V1SubjectRulesReviewStatus status = review.getStatus();
-        List<V1ResourceRule> rules = status.getResourceRules();
-
-        if (!check(rules, resource, operation, null, false)) { 
-          result = false;
-        }
-      }
-
-      if (rulesReviewSuccessful) {
-        return result;
-      }
+    V1SelfSubjectRulesReview review = getRulesReview(ap, version);
+    if (review != null) {
+      return rulesPermitClusterAccess(review, resource, operation);
+    } else {
+      return authorizationPermitsClusterAccess(ap, resource, operation);
     }
+  }
 
-    if (!ap.check(operation, resource, null, AuthorizationProxy.Scope.cluster, null)) {
-      result = false;
-    }
-    return result;
+  private static V1SelfSubjectRulesReview getRulesReview(AuthorizationProxy ap, KubernetesVersion version) {
+    if (!version.isRulesReviewSupported()) return null;
+
+    return ap.review(StartupControl.getOperatorNamespace());
+  }
+
+  static boolean authorizationPermitsClusterAccess(AuthorizationProxy ap, Resource resource, Operation operation) {
+    return ap.check(operation, resource, null, AuthorizationProxy.Scope.cluster, null);
+  }
+
+  static boolean rulesPermitClusterAccess(V1SelfSubjectRulesReview review, Resource resource, Operation operation) {
+    List<V1ResourceRule> rules = Optional.ofNullable(review.getStatus())
+          .map(V1SubjectRulesReviewStatus::getResourceRules)
+          .orElse(Collections.emptyList());
+
+    return check(rules, resource, operation, null, false);
   }
 
   private static boolean check(
-      List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op, 
+      List<V1ResourceRule> rules, Resource r, Operation op,
       String ns, boolean log) {
     String verb = op.name();
     String apiGroup = r.getApiGroup();

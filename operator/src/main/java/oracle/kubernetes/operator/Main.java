@@ -43,7 +43,6 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
-import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
@@ -104,6 +103,7 @@ public class Main {
   private static Engine engine = new Engine(wrappedExecutorService);
   private static String principal;
   private static KubernetesVersion version = null;
+  private static StartupControl startupControl;
 
   static {
     try {
@@ -193,20 +193,11 @@ public class Main {
 
     try {
       version = HealthCheckHelper.performK8sVersionCheck();
-
-      Step stepToStart = new StartNamespacesStep(targetNamespaces);
-      if (isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get)) {
-        LOGGER.warning(MessageKeys.CRD_NO_READ_ACCESS);
-        stepToStart = CrdHelper.createDomainCrdStep(version, stepToStart);
-      }
-      if (isAccessAllowed(AuthorizationProxy.Resource.NAMESPACES, AuthorizationProxy.Operation.list)) {
-        LOGGER.warning(MessageKeys.NS_NO_READ_ACCESS);
-        stepToStart = Step.chain(stepToStart, readExistingNamespaces());
-      }
+      startupControl = new StartupControl(version);
 
       runSteps(
-          stepToStart, 
-          Main::completeBegin);
+            startupControl.getSteps(new StartNamespacesStep(targetNamespaces), readExistingNamespaces()),
+            Main::completeBegin);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
@@ -243,7 +234,7 @@ public class Main {
     if (stopping != null) {
       stopping.set(true);
     }
-    isNamespaceStarted.remove(ns);
+    removeStartedNamespace(ns);
     domainWatchers.remove(ns);
     eventWatchers.remove(ns);
     podWatchers.remove(ns);
@@ -252,7 +243,11 @@ public class Main {
     JobWatcher.removeNamespace(ns);
   }
 
-  private static void stopNamespaces(Collection<String> targetNamespaces, 
+  static void removeStartedNamespace(String ns) {
+    isNamespaceStarted.remove(ns);
+  }
+
+  private static void stopNamespaces(Collection<String> targetNamespaces,
       Collection<String> namespacesToStop) {
     for (String ns : namespacesToStop) {
       stopNamespace(ns, (! targetNamespaces.contains(ns)));
@@ -299,7 +294,7 @@ public class Main {
       } else {
         // check for namespaces that need to be started
         namespacesToStart = new TreeSet<>(targetNamespaces);
-        namespacesToStart.removeAll(isNamespaceStarted.keySet());
+        namespacesToStart.removeAll(getStartedNamespaces());
         for (String ns : targetNamespaces) {
           if (namespacesToStop.contains(ns)) {
             namespacesToStart.remove(ns);
@@ -311,6 +306,11 @@ public class Main {
         runSteps(new StartNamespacesStep(namespacesToStart));
       }
     };
+
+  }
+
+  static Set<String> getStartedNamespaces() {
+    return isNamespaceStarted.keySet();
   }
 
   static Step readExistingResources(String operatorNamespace, String ns) {
@@ -566,7 +566,7 @@ public class Main {
         startDetails.add(
             new StepAndPacket(
                 Step.chain(
-                    new StartNamespaceBeforeStep(ns), readExistingResources(operatorNamespace, ns)),
+                    new StartNamespaceBeforeStep(ns), readExistingResources(StartupControl.getOperatorNamespace(), ns)),
                 packet.clone()));
       }
       return doForkJoin(getNext(), packet, startDetails);
@@ -582,10 +582,9 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      AtomicBoolean a = isNamespaceStarted.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
-      if (!a.getAndSet(true)) {
+      if (addStartedNamespace(ns)) {
         try {
-          HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns, Main.isDedicated());
+          HealthCheckHelper.performSecurityChecks(version, StartupControl.getOperatorNamespace(), ns);
         } catch (Throwable e) {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
         }
@@ -594,6 +593,17 @@ public class Main {
       }
       return doEnd(packet);
     }
+  }
+
+  /**
+   * Adds the specified namespace to the list of started namespaces, returning true if it was not
+   * already present.
+   * @param ns the namespace name
+   * @return false if the namespace had already been started
+   */
+  static boolean addStartedNamespace(String ns) {
+    AtomicBoolean a = isNamespaceStarted.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
+    return !a.getAndSet(true);
   }
 
   private static class ReadExistingResourcesBeforeStep extends Step {

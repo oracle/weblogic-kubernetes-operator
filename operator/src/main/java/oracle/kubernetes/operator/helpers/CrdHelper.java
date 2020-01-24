@@ -109,7 +109,7 @@ public class CrdHelper {
         V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected);
   }
 
-  static class CrdStep extends Step {
+  public static class CrdStep extends Step {
     CrdContext context;
 
     CrdStep(KubernetesVersion version, Step next) {
