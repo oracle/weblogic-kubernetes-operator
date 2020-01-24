@@ -70,7 +70,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static String monitoringExporterScriptDir = "";
   private static String exporterUrl = "";
   private static String configPath = "";
-  private static String prometheusPort = "30000";
+  private static String prometheusPort = "30500";
   private static String wlsUser = "";
   private static String wlsPassword = "";
   // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
@@ -799,7 +799,7 @@ public class ItMonitoringExporter extends BaseTest {
       throw ex;
     } finally {
       String crdCmd =
-          " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
+          " kubectl delete -f " + resourceExporterDir + "/domain1.yaml";
       ExecCommand.exec(crdCmd);
       crdCmd = "kubectl delete secret " + domainNS2 + "-weblogic-credentials";
       ExecCommand.exec(crdCmd);
@@ -812,10 +812,11 @@ public class ItMonitoringExporter extends BaseTest {
   private void fireAlert() throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Fire Alert by changing replca count");
     replaceStringInFile(
-        monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "replicas: 2", "replicas: 1");
+        resourceExporterDir + "/domain1.yaml", "replicas: 2", "replicas: 1");
+
     // apply new domain yaml and verify pod restart
     String crdCmd =
-        " kubectl apply -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
+        " kubectl apply -f " + resourceExporterDir + "/domain1.yaml";
     TestUtils.exec(crdCmd);
 
     TestUtils.checkPodReady(domainNS2 + "-admin-server", domainNS2);
@@ -996,6 +997,8 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static void createWlsImageAndDeploy() throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, " Starting to create WLS Image");
+    String image;
+    String oldimage = domainNS2 + "-image:1.0";
 
     String command =
         "cd "
@@ -1013,7 +1016,35 @@ public class ItMonitoringExporter extends BaseTest {
     assertFalse(
         result.stdout().contains("BUILD FAILURE"), "Shell script failed: " + result.stdout());
     LoggerHelper.getLocal().log(Level.INFO, "Result output from  the command " + crdCmd + " : " + result.stdout());
-    
+    replaceStringInFile(resourceExporterDir + "/domain1.yaml", "v3", "v6");
+    //replaceStringInFile(resourceExporterDir + "/domain1.yaml", "domain1", domainNS2);
+    replaceStringInFile(resourceExporterDir + "/domain1.yaml", "domain1", domainNS2);
+    replaceStringInFile(resourceExporterDir + "/domain1.yaml",
+        "30703", String.valueOf(31000 + getNewSuffixCount()));
+    replaceStringInFile(resourceExporterDir + "/domain1.yaml",
+        "30701", String.valueOf(30800 + getNewSuffixCount()));
+    TestUtils.createDockerRegistrySecret(
+        "ocirsecret",
+        System.getenv("REPO_REGISTRY"),
+        System.getenv("REPO_USERNAME"),
+        System.getenv("REPO_PASSWORD"),
+        System.getenv("REPO_EMAIL"),
+        domainNS2);
+    // for remote k8s cluster and domain in image case, push the domain image to OCIR
+    if (BaseTest.SHARED_CLUSTER) {
+      image = System.getenv("REPO_REGISTRY")
+            + "/weblogick8s/"
+            + domainNS2
+            + "-image:1.0";
+      loginAndTagImage(oldimage, image);
+
+      // create ocir registry secret in the same ns as domain which is used while pulling the domain
+      // image
+
+      TestUtils.loginAndPushImageToOcir(image);
+      replaceStringInFile(resourceExporterDir + "/domain1.yaml", oldimage, image);
+    }
+
     LoggerHelper.getLocal().log(Level.INFO, " Starting to create secret");
     command =
         "kubectl -n " + domainNS2 + " create secret generic " + domainNS2 + "-weblogic-credentials "
@@ -1022,17 +1053,10 @@ public class ItMonitoringExporter extends BaseTest {
             + "  --from-literal=password="
             + wlsPassword;
     TestUtils.exec(command);
-    //update with current WDT version
-    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "v3", "v6");
-    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "domain1", domainNS2);
-    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "default", domainNS2);
-    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml",
-        "30703", String.valueOf(31000 + getNewSuffixCount()));
-    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml",
-        "30701", String.valueOf(30800 + getNewSuffixCount()));
+
     // apply new domain yaml and verify pod restart
     crdCmd =
-        " kubectl apply -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
+        " kubectl apply -f " + resourceExporterDir + "/domain1.yaml";
     TestUtils.exec(crdCmd);
 
     TestUtils.checkPodReady(domainNS2 + "-admin-server", domainNS2);
@@ -1064,13 +1088,36 @@ public class ItMonitoringExporter extends BaseTest {
     assertTrue((result.stdout().contains("wls_servlet_execution_time_average")));
   }
 
+  private static ExecResult loginAndTagImage(String oldImageName, String newImageName) throws Exception {
+    String dockerLoginAndTagCmd =
+        "docker login "
+            + System.getenv("REPO_REGISTRY")
+            + " -u "
+            + System.getenv("REPO_USERNAME")
+            + " -p \""
+            + System.getenv("REPO_PASSWORD")
+            + "\" && docker tag "
+            + oldImageName
+            + " "
+            + newImageName;
+    ExecResult result = TestUtils.exec(dockerLoginAndTagCmd);
+    LoggerHelper.getLocal().log(Level.INFO,
+        "cmd "
+            + dockerLoginAndTagCmd
+            + "\n result "
+            + result.stdout()
+            + "\n err "
+            + result.stderr());
+    return result;
+  }
+
   /**
    * Install Prometheus and Grafana using helm chart, MySql, webhook, coordinator.
    *
    * @throws Exception if could not run the command successfully to install Prometheus and Grafana
    */
   private static void installPrometheusGrafanaWebHookMySqlCoordinator() throws Exception {
-    prometheusPort = "30000";
+    prometheusPort = "30500";
 
     executeShelScript(
         resourceExporterDir,
@@ -1093,7 +1140,6 @@ public class ItMonitoringExporter extends BaseTest {
 
   static void checkPromGrafana(String searchKey, String expectedVal) throws Exception {
     String podName = getPodName("app=prometheus", "monitoring");
-    TestUtils.checkPodReady(podName, "monitoring", "2/2");
 
     String crdCmd = "kubectl -n monitoring get pods -l app=prometheus";
     ExecResult resultStatus = ExecCommand.exec(crdCmd);
@@ -1108,14 +1154,13 @@ public class ItMonitoringExporter extends BaseTest {
     podName = getPodName("app=grafana", "monitoring");
     TestUtils.checkPodReady(podName, "monitoring");
 
-
+    String myhost = domain.getHostNameForCurl();
     LoggerHelper.getLocal().log(Level.INFO, "installing grafana dashboard");
-
     crdCmd =
         " cd "
             + monitoringExporterEndToEndDir
             + " && curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-            + "  -X POST http://admin:12345678@$HOSTNAME:31000/api/datasources/"
+            + "  -X POST http://admin:12345678@" + myhost + ":31000/api/datasources/"
             + "  --data-binary @grafana/datasource.json";
     TestUtils.exec(crdCmd);
 
@@ -1123,14 +1168,14 @@ public class ItMonitoringExporter extends BaseTest {
         " cd "
             + monitoringExporterEndToEndDir
             + " && curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-            + "  -X POST http://admin:12345678@$HOSTNAME:31000/api/dashboards/db/"
+            + "  -X POST http://admin:12345678@" + myhost + ":31000/api/dashboards/db/"
             + "  --data-binary @grafana/dashboard.json";
     TestUtils.exec(crdCmd);
     crdCmd = " cd "
         + monitoringExporterEndToEndDir
         + " && "
         + "curl -v  -H 'Content-Type: application/json' "
-        + " -X GET http://admin:12345678@$HOSTNAME:31000/api/dashboards/db/weblogic-server-dashboard";
+        + " -X GET http://admin:12345678@" + myhost + ":31000/api/dashboards/db/weblogic-server-dashboard";
     ExecResult result = ExecCommand.exec(crdCmd);
     assertTrue(result.stdout().contains("wls_jvm_uptime"));
     assertTrue(
