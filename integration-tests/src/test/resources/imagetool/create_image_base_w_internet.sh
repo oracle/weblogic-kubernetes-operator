@@ -68,11 +68,12 @@ cleanup()
     echo @@
 
     # Clean WIT cache
-    ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key wls_12.2.1.3.0
+    ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key wls_${WLS_IMAGE_VERSION}
     ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key jdk_8u202
-    ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 330386660_12.2.1.3.0
     ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 28186730_opatch
     ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 29135930_12.2.1.3.191004
+    ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 30386660_12.2.1.3.0
+    ${WIT_HOME_DIR}/bin/imagetool cache deleteEntry --key 30689820_12.2.1.4.0
   fi
 
   if [ -d ${WLSIMG_CACHEDIR} ] ; then
@@ -126,11 +127,12 @@ setupCache()
 }
 createImage()
 {
-  create_wls_image="${WIT_HOME_DIR}/bin/imagetool create --tag ${WLS_IMAGE_TAG} --latestPSU --version ${WLS_IMAGE_VERSION} --patches 29135930_12.2.1.3.191004 --httpProxyUrl ${http_proxy} --httpsProxyUrl ${https_proxy} --user ${ORACLE_SUPPORT_USERNAME} --password ${ORACLE_SUPPORT_PASSWORD}"
+  create_wls_image="${WIT_HOME_DIR}/bin/imagetool create --tag ${WLS_IMAGE_TAG} --latestPSU --version ${WLS_IMAGE_VERSION} --patches ${PATCH_LIST} --httpProxyUrl ${http_proxy} --httpsProxyUrl ${https_proxy} --user ${ORACLE_SUPPORT_USERNAME} --password ${ORACLE_SUPPORT_PASSWORD}"
 
   echo @@
   echo "@@ Create WLS Docker image"
   echo "@@ ${create_wls_image}"
+  echo "@@ using ${WLS_INSTALLER_NAME}"
   echo @@
   
   ${create_wls_image}
