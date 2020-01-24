@@ -721,6 +721,7 @@ public class Domain {
   }
 
   public void deleteImage() throws Exception {
+    // delete domain image
     if (domainMap.containsKey("image")) {
       String cmd = "docker rmi -f " + domainMap.get("image");
       TestUtils.exec(cmd, true);
