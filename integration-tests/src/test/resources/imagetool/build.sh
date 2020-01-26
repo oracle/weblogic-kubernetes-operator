@@ -44,7 +44,7 @@ echo "@@ Installers are located at ${JDK_WLS_INSTALLER_DIR}"
 echo @@
 
 echo @@
-echo "@@ ==== ls  ${JDK_WLS_INSTALLER_DIR}"
+echo "@@ ==== ls  -l ${JDK_WLS_INSTALLER_DIR}"
 echo @@
 
 ls ${JDK_WLS_INSTALLER_DIR}
