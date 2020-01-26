@@ -47,7 +47,7 @@ echo @@
 echo "@@ ==== ls  -l ${JDK_WLS_INSTALLER_DIR}"
 echo @@
 
-ls ${JDK_WLS_INSTALLER_DIR}
+ls -l ${JDK_WLS_INSTALLER_DIR}
 
 echo @@
 echo "@@ ==== hostname is: "
