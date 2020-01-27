@@ -113,9 +113,9 @@ server_port                   = int(os.environ.get("MANAGED_SERVER_PORT"))
 domain_path                   = os.environ.get("DOMAIN_HOME")
 cluster_name                  = CLUSTER_NAME
 print('cluster_name             : [%s]' % cluster_name);
-admin_server_name             = ADMIN_NAME
+admin_server_name             = ADMIN_SERVER_NAME
 #admin_server_name_svc        = os.environ.get("ADMIN_SERVER_NAME_SVC")
-admin_port                    = int(os.environ.get("ADMIN_PORT"))
+admin_port                    = int(os.environ.get("ADMIN_SERVER_PORT"))
 domain_name                   = os.environ.get("DOMAIN_NAME")
 t3_channel_port               = int(T3_CHANNEL_PORT)
 t3_public_address             = T3_PUBLIC_ADDRESS
