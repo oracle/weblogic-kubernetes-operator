@@ -47,5 +47,5 @@ see the [OpenShift]({{<relref  "/userguide/introduction/introduction.md#openshif
 
 #### Using a dedicated namespace
 
-When the user that installs an individual instance of the operator does not have the required privileges to create resources at the Kubernetes cluster level, a dedicated namespace can be used for the operator instance and all WebLogic domains that it manages. For more details of the `dedicated` setting, please refer to [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values" >}}).
+When the user that installs an individual instance of the operator does not have the required privileges to create resources at the Kubernetes cluster level, a dedicated namespace can be used for the operator instance and all the WebLogic domains that it manages. For more details about the `dedicated` setting, please refer to [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values" >}}).
 
