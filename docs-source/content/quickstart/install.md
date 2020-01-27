@@ -104,7 +104,6 @@ $ helm install traefik-operator stable/traefik \
 
     ```bash
     $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
-      --name sample-weblogic-operator \
       --namespace sample-weblogic-operator-ns \
       --set image=oracle/weblogic-kubernetes-operator:2.4.0 \
       --set serviceAccount=sample-weblogic-operator-sa \
