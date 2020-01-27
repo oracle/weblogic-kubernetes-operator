@@ -31,7 +31,7 @@ public final class HealthCheckHelper {
   private static final Map<Resource, Operation[]>
       clusterAccessChecks = new HashMap<>();
 
-  // Note: this list should match the RBAC or ABAC policies contained in the YAML script
+  // Note: this list should match the policies contained in the YAML script
   // generated for use by the Kubernetes administrator
   //
   private static final Operation[] crudOperations = {
