@@ -181,6 +181,10 @@ These examples show two valid YAML syntax options for arrays.
 You must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
 {{% /notice %}}
 
+{{% notice note %}}
+This value is ignored if `dedicated` is set to `true`. The operator will then only manage domains in its own namespace.
+{{% /notice %}}
+
 Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about managing `domainNamespaces`.
 
 #### Elastic Stack integration

@@ -107,7 +107,7 @@ public final class HealthCheckHelper {
 
   /**
    * Verify Access.
-   *  @param version Kubernetes version
+   * @param version Kubernetes version
    * @param operatorNamespace operator namespace
    * @param ns target namespace
    */
