@@ -720,6 +720,10 @@ public class Domain {
 
   }
 
+  /**
+   * Delete the domain in image
+   * @throws Exception
+   */
   public void deleteImage() throws Exception {
     // delete domain image
     if (domainMap.containsKey("image")) {
