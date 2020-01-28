@@ -182,7 +182,7 @@ You must include the `default` namespace in the list if you want the operator to
 {{% /notice %}}
 
 {{% notice note %}}
-This value is ignored if `dedicated` is set to `true`. The operator will then only manage domains in its own namespace.
+This value is ignored if `dedicated` is set to `true`. Then, the operator will manage only domains in its own namespace.
 {{% /notice %}}
 
 Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about managing `domainNamespaces`.
