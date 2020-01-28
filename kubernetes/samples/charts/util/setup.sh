@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #  This script is to create or delete Ingress controllers. We support two ingress controllers: traefik and voyager.
@@ -24,7 +24,7 @@ function createVoyager() {
   if [ "$(helm list | grep $VNAME |  wc -l)" = 0 ]; then
     echo "Ihstall voyager operator."
     
-    helm install appscode/voyager --name $VNAME --version 7.4.0 \
+    helm install appscode/voyager --name $VNAME \
       --namespace voyager \
       --set cloudProvider=baremetal \
       --set apiserver.enableValidatingWebhook=false \
