@@ -106,6 +106,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                     .namespace(getInputs().getNamespace())
                     .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V2)
                     .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
+            .putDataItem("dedicated", getInputs().getDedicated())
             .putDataItem("serviceaccount", getInputs().getServiceAccount())
             .putDataItem("targetNamespaces", getInputs().getTargetNamespaces());
     if (expectExternalCredentials()) {
