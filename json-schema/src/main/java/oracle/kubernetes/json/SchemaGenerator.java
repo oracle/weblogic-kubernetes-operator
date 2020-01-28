@@ -48,7 +48,7 @@ public class SchemaGenerator {
   private Map<String, String> schemaUrls = new HashMap<>();
 
   // true if deprecated fields should be included in the schema
-  private boolean includeDeprecated;
+  private boolean includeDeprecated = true;
 
   // if true generate the additionalProperties field for each object. Defaults to true
   private boolean includeAdditionalProperties = true;
@@ -117,17 +117,17 @@ public class SchemaGenerator {
   @SuppressWarnings("unchecked")
   private boolean isDefinitionToUse(Object def) {
     Map<String, Object> definition = (Map<String, Object>) def;
-    return !isDeprecated(definition.get("description"));
+    return !isDescriptionDeprecated(definition.get("description"));
   }
 
-  private boolean isDeprecated(Object description) {
+  private boolean isDescriptionDeprecated(Object description) {
     return description != null && description.toString().contains("Deprecated");
   }
 
   /**
    * Specifies whether deprecated fields should be included in the schema.
    *
-   * @param includeDeprecated true to include deprecated fields. Defaults to false.
+   * @param includeDeprecated true to include deprecated fields. Defaults to true.
    */
   public void setIncludeDeprecated(boolean includeDeprecated) {
     this.includeDeprecated = includeDeprecated;
@@ -205,7 +205,11 @@ public class SchemaGenerator {
   }
 
   private boolean ignoreAsDeprecated(Field field) {
-    return !includeDeprecated && field.getAnnotation(Deprecated.class) != null;
+    return !includeDeprecated && isDeprecated(field);
+  }
+
+  private boolean isDeprecated(Field field) {
+    return field.getAnnotation(Deprecated.class) != null;
   }
 
   private String getPropertyName(Field field) {
@@ -223,6 +227,7 @@ public class SchemaGenerator {
     sub.generateTypeIn(result, field.getType());
     String description = getDescription(field);
     if (description != null) result.put("description", description);
+    if (isDeprecated(field)) result.put("deprecated", "true");
     if (isString(field.getType())) addStringRestrictions(result, field);
     if (isNumeric(field.getType())) addRange(result, field);
 

@@ -18,23 +18,18 @@ DomainSpec is a description of a domain.
 | --- | --- | --- |
 | `adminServer` | [Admin Server](#admin-server) | Configuration for the Administration Server. |
 | `clusters` | array of [Cluster](#cluster) | Configuration for the clusters. |
-| `configOverrides` | string | The name of the config map for optional WebLogic configuration overrides. |
-| `configOverrideSecrets` | array of string | A list of names of the secrets for optional WebLogic configuration overrides. |
+| `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration |
 | `dataHome` | string | An optional, in-pod location for data storage of default and custom file stores. If dataHome is not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage directories are determined from the WebLogic domain home configuration. |
 | `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false. Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true. |
-| `domainHomeInImage` | Boolean | True if this domain's home is defined in the Docker image for the domain. Defaults to true. |
 | `domainUID` | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name. |
 | `experimental` | [Experimental](#experimental) | Experimental feature configurations. |
 | `image` | string | The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3. |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
 | `includeServerOutInPodLog` | Boolean | If true (the default), the server .out file will be included in the pod's stdout. |
-| `keepJRFSchema` | Boolean | Keep JRF schema between lifecycle updates |
 | `logHome` | string | The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files |
 | `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true.  |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
-| `opssKeyWalletConfigMap` | string | The name of the config map to store the opss key wallet file |
-| `opssWalletSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | opss key passphrase. |
 | `replicas` | number | The number of managed servers to run in any cluster that does not specify a replica count. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
 | `rollbackIfRequireStart` | Boolean | Rollback dynamic changes if the updates require restart |
@@ -43,9 +38,6 @@ DomainSpec is a description of a domain.
 | `serverStartPolicy` | string | The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. |
 | `serverStartState` | string | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 | `useOnlineUpdate` | Boolean | Use Online update during lifecycle changes |
-| `wdtConfigMap` | string | The name of the wdt config map used for optional wdt tool. |
-| `wdtDomainType` | string | Model in image - wdt domain type: Legal values: WLS, RestrictedJRF, JRF |
-| `wdtEncryptionPassPhrase` | [Secret Reference](k8s1.13.5.md#secret-reference) | wdt model encryption key passphrase. |
 | `webLogicCredentialsSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | The name of a pre-created Kubernetes secret, in the domain's namespace, that holds the username and password needed to boot WebLogic Server under the 'username' and 'password' fields. |
 
 ### Domain Status
@@ -90,6 +82,13 @@ An element representing a cluster in the domain configuration.
 | `serverService` | [Server Service](#server-service) | Customization affecting ClusterIP Kubernetes services for WebLogic Server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a server. Legal values are NEVER, or IF_NEEDED. |
 | `serverStartState` | string | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
+
+### Configuration
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `model` | [Model](#model) | Model in image model files and properties |
+| `overrides` | [Overrides](#overrides) | Configuration overrides |
 
 ### Experimental
 
@@ -193,6 +192,20 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | `annotations` | Map | The annotations to be attached to generated resources. |
 | `labels` | Map | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
 
+### Model
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `configMapName` | string | WDT config map name |
+| `domainType` | string | WDT domain type: Legal values: WLS, RestrictedJRF, JRF |
+| `encryptionSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | WDT encryption key pass phrase secret. |
+| `opss` | [Opss](#opss) | Configuration for OPSS based security |
+
+### Overrides
+
+| Name | Type | Description |
+| --- | --- | --- |
+
 ### Istio
 
 | Name | Type | Description |
@@ -234,6 +247,13 @@ Describes a single channel used by the Administration Server.
 | --- | --- | --- |
 | `channelName` | string | Name of channel.<br/>'default' refers to the Administration Server's default channel (configured via the ServerMBean's ListenPort) <br/>'default-secure' refers to the Administration Server's default secure channel (configured via the ServerMBean's SSLMBean's ListenPort) <br/>'default-admin' refers to the Administration Server's default administrative channel (configured via the DomainMBean's AdministrationPort) <br/>Otherwise, the name is the name of one of the Administration Server's network access points (configured via the ServerMBean's NetworkAccessMBeans). |
 | `nodePort` | number | Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel. |
+
+### Opss
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `keySecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | OPSS key passphrase. |
+| `walletConfigMap` | string | The name of the config map containing the OPSS key wallet file |
 
 ### Subsystem Health
 

@@ -170,30 +170,6 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Sets the wdt domain type.
-   *
-   * @param wdtDomainType the wdt domain type
-   * @return this object
-   */
-  public DomainConfigurator withWdtDomainType(String wdtDomainType) {
-    getDomainSpec().setWdtDomainType(wdtDomainType);
-    return this;
-  }
-
-  /**
-   * Sets the keep jrf schema.
-   *
-   * @param keepJRFSchema the wdt domain type
-   * @return this object
-   */
-  public DomainConfigurator withWdtDomainType(boolean keepJRFSchema) {
-    getDomainSpec().setKeepJRFSchema(keepJRFSchema);
-    return this;
-  }
-
-
-
-  /**
    * Sets the WebLogic configuration overrides configmap name for the domain.
    *
    * @param configMapName Name of the Kubernetes configmap that contains the config overrides

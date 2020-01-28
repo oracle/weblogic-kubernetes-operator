@@ -350,8 +350,8 @@ public class Domain {
    *
    * @return opss key passphrase
    */
-  public V1SecretReference getOpssWalletSecret() {
-    return spec.getOpssWalletSecret();
+  public V1SecretReference getOpssKeySecret() {
+    return spec.getOpssKeySecret();
   }
 
   /**
@@ -359,8 +359,8 @@ public class Domain {
    *
    * @return wdt encryption passphrase
    */
-  public V1SecretReference getWdtEncryptionPassPhrase() {
-    return spec.getWdtEncryptionPassPhrase();
+  public V1SecretReference getWdtEncryptionSecret() {
+    return spec.getWdtEncryptionSecret();
   }
 
 
@@ -402,10 +402,6 @@ public class Domain {
 
   public boolean isUseOnlineUpdate() {
     return spec.isUseOnlineUpdate();
-  }
-
-  public boolean isKeepJRFSchema() {
-    return spec.isKeepJRFSchema();
   }
 
   public String getWdtDomainType() {
@@ -481,12 +477,12 @@ public class Domain {
   }
 
   /**
-   * Returns the opss key config map.
+   * Returns the opss wallet config map.
    *
-   * @return opss key config map.
+   * @return opss wallet config map.
    */
-  public String getOpssKeyWalletConfigMap() {
-    return spec.getOpssKeyWalletConfigMap();
+  public String getOpssWalletConfigMap() {
+    return spec.getOpssWalletConfigMap();
   }
 
   @Override

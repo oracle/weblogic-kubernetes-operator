@@ -26,9 +26,53 @@ spec:
           type: object
           description: DomainSpec is a description of a domain.
           properties:
-            keepJRFSchema:
-              type: boolean
-              description: Keep JRF schema between lifecycle updates
+            configuration:
+              type: object
+              description: Models and overrides affecting the WebLogic domain configuration
+              properties:
+                model:
+                  type: object
+                  description: Model in image model files and properties
+                  properties:
+                    encryptionSecret:
+                      type: object
+                      description: WDT encryption key pass phrase secret.
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                    domainType:
+                      type: string
+                      description: 'WDT domain type: Legal values: WLS, RestrictedJRF,
+                        JRF'
+                      enum:
+                      - WLS
+                      - RestrictedJRF
+                      - JRF
+                    opss:
+                      type: object
+                      description: Configuration for OPSS based security
+                      properties:
+                        walletConfigMap:
+                          type: string
+                          description: The name of the config map containing the OPSS
+                            key wallet file
+                        keySecret:
+                          type: object
+                          description: OPSS key passphrase.
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                    configMapName:
+                      type: string
+                      description: WDT config map name
+                overrides:
+                  type: object
+                  description: Configuration overrides
+                  properties: {}
             configOverrideSecrets:
               type: array
               description: A list of names of the secrets for optional WebLogic configuration
@@ -65,14 +109,6 @@ spec:
                       description: True, if this domain is deployed under an Istio
                         service mesh. Defaults to true when the 'istio' element is
                         included. Not required.
-            opssWalletSecret:
-              type: object
-              description: opss key passphrase.
-              properties:
-                name:
-                  type: string
-                namespace:
-                  type: string
             serverService:
               type: object
               description: Customization affecting ClusterIP Kubernetes services for
@@ -2141,9 +2177,6 @@ spec:
               type: string
               description: The in-pod name of the directory in which to store the
                 domain, node manager, server logs, and server  *.out files
-            wdtConfigMap:
-              type: string
-              description: The name of the wdt config map used for optional wdt tool.
             includeServerOutInPodLog:
               type: boolean
               description: If true (the default), the server .out file will be included
@@ -4158,14 +4191,6 @@ spec:
                     type: string
                 required:
                 - clusterName
-            wdtDomainType:
-              type: string
-              description: 'Model in image - wdt domain type: Legal values: WLS, RestrictedJRF,
-                JRF'
-              enum:
-              - WLS
-              - RestrictedJRF
-              - JRF
             serverStartState:
               type: string
               description: The state in which the server is to be started. Use ADMIN
@@ -4191,22 +4216,10 @@ spec:
               description: The number of managed servers to run in any cluster that
                 does not specify a replica count.
               minimum: 0.0
-            opssKeyWalletConfigMap:
-              type: string
-              description: The name of the config map to store the opss key wallet
-                file
             domainHomeInImage:
               type: boolean
               description: True if this domain's home is defined in the Docker image
                 for the domain. Defaults to true.
-            wdtEncryptionPassPhrase:
-              type: object
-              description: wdt model encryption key passphrase.
-              properties:
-                name:
-                  type: string
-                namespace:
-                  type: string
             serverStartPolicy:
               type: string
               description: The strategy for deciding whether to start a server. Legal

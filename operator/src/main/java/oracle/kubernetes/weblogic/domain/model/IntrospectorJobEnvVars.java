@@ -28,7 +28,7 @@ public class IntrospectorJobEnvVars {
   /**
    * The credentials used by the introspection job - opss key passphrase.
    */
-  public static final String OPSS_WALLET_SECRET_NAME = "OPSS_WALLET_SECRET_NAME";
+  public static final String OPSS_KEY_SECRET_NAME = "OPSS_KEY_SECRET_NAME";
 
   /**
    * The credentials used by the introspection job - wdt encryption passphrase.
@@ -45,11 +45,6 @@ public class IntrospectorJobEnvVars {
    * The setting of whether to use online update.
    */
   public static final String USE_ONLINE_UPDATE = "USE_ONLINE_UPDATE";
-
-  /**
-   * The setting for keeping the JRF schema between update..
-   */
-  public static final String KEEP_JRF_SCHEMA = "KEEP_JRF_SCHEMA";
 
   /**
    * The wdt domain type.

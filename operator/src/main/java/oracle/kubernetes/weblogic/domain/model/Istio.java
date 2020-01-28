@@ -95,8 +95,7 @@ public class Istio {
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(enabled, rhs.enabled)
-            .append("readinessPort", rhs.readinessPort);
-    ;
+            .append(readinessPort, rhs.readinessPort);
 
     return builder.isEquals();
   }
