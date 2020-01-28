@@ -47,10 +47,14 @@ suspendOnDebugStartup: false
 
 ```
 
-If you don't know the release name of the operator, you can use `helm ls` to list all the releases.
+If you don't know the release name of the operator, you can use `helm ls` to list all the releases:
+
+```
+$ helm ls
+```
 
 #### Adding a Kubernetes namespace to an operator
-If you want a WebLogic operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be precreated, for example, using the `kubectl create` command.
+If you want a WebLogic operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be pre-created, for example, using the `kubectl create` command.
 
 Adding a namespace to the `domainNamespaces` list tells the operator deployment or runtime
 to initialize the necessary Kubernetes resources for the namespace so that the operator is ready to host WebLogic domain resources in that namespace.
