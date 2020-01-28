@@ -7,6 +7,30 @@
 MYDIR="$(dirname "$(readlink -f "$0")")"
 VNAME=voyager-operator  # release name of Voyager
 TNAME=traefik-operator  # release name of Traefik
+VSPACE=voyager # NameSpace for Voyager
+TSPACE=traefik   # NameSpace for Traefik
+
+helm version --short | grep v3
+[[ $? == 0 ]] && HELM_VERSION=V3
+[[ $? == 1 ]] && HELM_VERSION=V2
+
+echo "Detected Helm Version [$HELM_VERSION]"
+
+if [ "$HELM_VERSION" == "V3" ]; then
+   v_list_args="--namespace $VSPACE "
+   t_list_args="--namespace $TSPACE "
+   v_uninstall_args="--namespace $VSPACE "
+   t_uninstall_args="--namespace $TSPACE "
+   v_helm_install="helm install $VNAME appscode/voyager  "
+   t_helm_install="helm install $TNAME stable/traefik "
+else
+   v_list_args=""
+   t_list_args=""
+   v_uninstall_args=""
+   t_uninstall_args=""
+   v_helm_install="helm install appscode/voyager --name $VNAME  "
+   t_helm_install="helm install stable/traefik --name $TNAME "
+fi
 
 function createVoyager() {
   echo "Creating Voyager operator on namespace 'voyager'."
@@ -21,11 +45,11 @@ function createVoyager() {
   fi
   echo
 
-  if [ "$(helm list | grep $VNAME |  wc -l)" = 0 ]; then
-    echo "Ihstall voyager operator."
+  if [ "$(helm list ${v_list_args} | grep $VNAME |  wc -l)" = 0 ]; then
+    echo "Install voyager operator."
     
-    helm install appscode/voyager --name $VNAME --version 7.4.0 \
-      --namespace voyager \
+    ${v_helm_install} --version 7.4.0 \
+      --namespace ${VSPACE} \
       --set cloudProvider=baremetal \
       --set apiserver.enableValidatingWebhook=false \
       --set ingressClass=voyager
@@ -38,7 +62,7 @@ function createVoyager() {
   max=20
   count=0
   while [ $count -lt $max ]; do
-    kubectl -n voyager get pod
+    kubectl -n ${VSPACE} get pod
     if [ "$(kubectl -n voyager get pod | grep voyager | awk '{ print $2 }')" = 1/1 ]; then
       echo "Voyager operator is running now."
       exit 0;
@@ -55,9 +79,9 @@ function createTraefik() {
   echo "Creating Traefik operator on namespace 'traefik'." 
   echo
 
-  if [ "$(helm list | grep $TNAME |  wc -l)" = 0 ]; then
+  if [ "$(helm list ${t_list_args} | grep $TNAME |  wc -l)" = 0 ]; then
     echo "Install Traefik Operator."
-    helm install --name $TNAME --namespace traefik --values ${MYDIR}/../traefik/values.yaml stable/traefik
+    ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml
   else
     echo "Traefik Operator is already installed."
   fi
@@ -68,7 +92,7 @@ function createTraefik() {
   count=0
   while test $count -lt $max; do
     kubectl -n traefik get pod
-    if test "$(kubectl -n traefik get pod | grep traefik | awk '{ print $2 }')" = 1/1; then
+    if test "$(kubectl -n ${TSPACE} get pod | grep traefik | awk '{ print $2 }')" = 1/1; then
       echo "Traefik operator is running now."
       exit 0;
     fi
@@ -111,13 +135,13 @@ function purgeCRDs() {
 }
 
 function deleteVoyager() {
-  if [ "$(helm list | grep $VNAME |  wc -l)" = 1 ]; then
-    echo "Delete Voyager Operator. "
-    helm delete --purge $VNAME 
-    kubectl delete ns voyager
+  if [ "$(helm list ${v_list_args} | grep $VNAME |  wc -l)" = 1 ]; then
+    echo "Uninstall Voyager Operator. "
+    helm uninstall $VNAME ${v_uninstall_args}
+    kubectl delete ns ${VSPACE}
     purgeCRDs
   else
-    echo "Voyager operator has already been deleted." 
+    echo "Voyager operator has already been unistalled" 
   fi
   echo
 
@@ -130,12 +154,12 @@ function deleteVoyager() {
 }
 
 function deleteTraefik() {
-  if [ "$(helm list | grep $TNAME |  wc -l)" = 1 ]; then
-    echo "Delete Traefik operator." 
-    helm delete --purge $TNAME
-    kubectl delete ns traefik
+  if [ "$(helm list ${t_list_args}| grep $TNAME |  wc -l)" = 1 ]; then
+    echo "Uninstall Traefik operator." 
+    helm uninstall $TNAME ${t_uninstall_args}
+    kubectl delete ns ${TSPACE}
   else
-    echo "Traefik operator has already been deleted." 
+    echo "Traefik operator has already been unistalled" 
   fi
 }
 
