@@ -38,11 +38,11 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
-import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
@@ -103,6 +103,7 @@ public class Main {
   private static Engine engine = new Engine(wrappedExecutorService);
   private static String principal;
   private static KubernetesVersion version = null;
+  private static StartupControl startupControl;
 
   static {
     try {
@@ -172,6 +173,11 @@ public class Main {
     }
   }
 
+  public static boolean isAccessAllowed(AuthorizationProxy.Resource resource, AuthorizationProxy.Operation op) {
+    return (!Main.isDedicated()
+            || HealthCheckHelper.isClusterResourceAccessAllowed(version, resource, op));
+  }
+
   private static void begin() {
     String serviceAccountName =
         Optional.ofNullable(tuningAndConfig.get("serviceaccount")).orElse("default");
@@ -187,13 +193,11 @@ public class Main {
 
     try {
       version = HealthCheckHelper.performK8sVersionCheck();
+      startupControl = new StartupControl(version);
 
       runSteps(
-          Step.chain(
-              CrdHelper.createDomainCrdStep(version, 
-                  new StartNamespacesStep(targetNamespaces)),
-              readExistingNamespaces()), 
-          Main::completeBegin);
+            startupControl.getSteps(new StartNamespacesStep(targetNamespaces), readExistingNamespaces()),
+            Main::completeBegin);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
@@ -230,7 +234,7 @@ public class Main {
     if (stopping != null) {
       stopping.set(true);
     }
-    isNamespaceStarted.remove(ns);
+    removeStartedNamespace(ns);
     domainWatchers.remove(ns);
     eventWatchers.remove(ns);
     podWatchers.remove(ns);
@@ -239,7 +243,11 @@ public class Main {
     JobWatcher.removeNamespace(ns);
   }
 
-  private static void stopNamespaces(Collection<String> targetNamespaces, 
+  static void removeStartedNamespace(String ns) {
+    isNamespaceStarted.remove(ns);
+  }
+
+  private static void stopNamespaces(Collection<String> targetNamespaces,
       Collection<String> namespacesToStop) {
     for (String ns : namespacesToStop) {
       stopNamespace(ns, (! targetNamespaces.contains(ns)));
@@ -286,7 +294,7 @@ public class Main {
       } else {
         // check for namespaces that need to be started
         namespacesToStart = new TreeSet<>(targetNamespaces);
-        namespacesToStart.removeAll(isNamespaceStarted.keySet());
+        namespacesToStart.removeAll(getStartedNamespaces());
         for (String ns : targetNamespaces) {
           if (namespacesToStop.contains(ns)) {
             namespacesToStart.remove(ns);
@@ -298,6 +306,11 @@ public class Main {
         runSteps(new StartNamespacesStep(namespacesToStart));
       }
     };
+
+  }
+
+  static Set<String> getStartedNamespaces() {
+    return isNamespaceStarted.keySet();
   }
 
   static Step readExistingResources(String operatorNamespace, String ns) {
@@ -357,7 +370,7 @@ public class Main {
   private static Collection<String> getTargetNamespaces(String tnValue, String namespace) {
     Collection<String> targetNamespaces = new ArrayList<>();
 
-    if (tnValue != null) {
+    if (!isDedicated() && tnValue != null) {
       StringTokenizer st = new StringTokenizer(tnValue, ",");
       while (st.hasMoreTokens()) {
         targetNamespaces.add(st.nextToken().trim());
@@ -377,6 +390,11 @@ public class Main {
         Optional.ofNullable(getHelmVariable.apply("OPERATOR_TARGET_NAMESPACES"))
             .orElse(tuningAndConfig.get("targetNamespaces")),
         operatorNamespace);
+  }
+
+  public static boolean isDedicated() {
+    return "true".equalsIgnoreCase(Optional.ofNullable(getHelmVariable.apply("OPERATOR_DEDICATED"))
+            .orElse(tuningAndConfig.get("dedicated")));
   }
 
   private static void startRestServer(String principal, Collection<String> targetNamespaces)
@@ -471,7 +489,7 @@ public class Main {
         new AtomicBoolean(false));
   }
 
-  private static String computeOperatorNamespace() {
+  public static String computeOperatorNamespace() {
     return Optional.ofNullable(getHelmVariable.apply("OPERATOR_NAMESPACE")).orElse("default");
   }
 
@@ -548,7 +566,7 @@ public class Main {
         startDetails.add(
             new StepAndPacket(
                 Step.chain(
-                    new StartNamespaceBeforeStep(ns), readExistingResources(operatorNamespace, ns)),
+                    new StartNamespaceBeforeStep(ns), readExistingResources(StartupControl.getOperatorNamespace(), ns)),
                 packet.clone()));
       }
       return doForkJoin(getNext(), packet, startDetails);
@@ -564,10 +582,9 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      AtomicBoolean a = isNamespaceStarted.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
-      if (!a.getAndSet(true)) {
+      if (addStartedNamespace(ns)) {
         try {
-          HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns);
+          HealthCheckHelper.performSecurityChecks(version, StartupControl.getOperatorNamespace(), ns);
         } catch (Throwable e) {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
         }
@@ -576,6 +593,17 @@ public class Main {
       }
       return doEnd(packet);
     }
+  }
+
+  /**
+   * Adds the specified namespace to the list of started namespaces, returning true if it was not
+   * already present.
+   * @param ns the namespace name
+   * @return false if the namespace had already been started
+   */
+  static boolean addStartedNamespace(String ns) {
+    AtomicBoolean a = isNamespaceStarted.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
+    return !a.getAndSet(true);
   }
 
   private static class ReadExistingResourcesBeforeStep extends Step {

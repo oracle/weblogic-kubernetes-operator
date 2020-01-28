@@ -3,6 +3,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,6 +16,7 @@ import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionNames;
@@ -21,8 +27,11 @@ import io.kubernetes.client.openapi.models.V1beta1CustomResourceSubresourceScale
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceSubresources;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.openapi.models.V1beta1JSONSchemaProps;
+import io.kubernetes.client.util.Yaml;
+
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -41,6 +50,31 @@ public class CrdHelper {
   private static final CrdComparator COMPARATOR = new CrdComparatorImpl();
 
   private CrdHelper() {
+  }
+
+  /**
+   * Used by build to generate crd-validation.yaml
+   * @param args Arguments that must be one value giving file name to create
+   */
+  public static void main(String[] args) {
+    if (args == null || args.length != 1) {
+      throw new IllegalArgumentException();
+    }
+
+    String outputFileName = args[0];
+
+    Path outputFilePath = Paths.get(outputFileName);
+    CrdContext context = new CrdContext(null, null);
+
+    try (Writer writer = Files.newBufferedWriter(outputFilePath)) {
+      writer.write(
+          "# Copyright (c) 2020, Oracle Corporation and/or its affiliates.  All rights reserved.\n"
+              + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
+      writer.write("\n");
+      Yaml.dump(context.model, writer);
+    } catch (IOException io) {
+      throw new RuntimeException(io);
+    }
   }
 
   /**
@@ -75,7 +109,7 @@ public class CrdHelper {
         V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected);
   }
 
-  static class CrdStep extends Step {
+  public static class CrdStep extends Step {
     CrdContext context;
 
     CrdStep(KubernetesVersion version, Step next) {
@@ -85,6 +119,11 @@ public class CrdHelper {
 
     @Override
     public NextAction apply(Packet packet) {
+
+      if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get)) {
+        return doNext(packet);
+      }
+
       return doNext(context.verifyCrd(getNext()), packet);
     }
   }
@@ -122,7 +161,7 @@ public class CrdHelper {
               .scope("Namespaced")
               .names(getCrdNames())
               .validation(createSchemaValidation());
-      if (version.isCrdSubresourcesSupported()) {
+      if (version == null || version.isCrdSubresourcesSupported()) {
         spec.setSubresources(
             new V1beta1CustomResourceSubresources()
                 .scale(
@@ -140,7 +179,7 @@ public class CrdHelper {
     static List<V1beta1CustomResourceDefinitionVersion> getCrdVersions() {
       List<V1beta1CustomResourceDefinitionVersion> versions =
           Arrays.stream(KubernetesConstants.DOMAIN_ALTERNATE_VERSIONS)
-              .map(e -> new V1beta1CustomResourceDefinitionVersion().name(e).served(true))
+              .map(e -> new V1beta1CustomResourceDefinitionVersion().name(e).served(true).storage(false))
               .collect(Collectors.toList());
       versions.add(
           0, // must be first
@@ -276,15 +315,35 @@ public class CrdHelper {
       public NextAction onSuccess(
           Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
         V1beta1CustomResourceDefinition existingCrd = callResponse.getResult();
+        RuntimeException  exception = null;
+        
         if (existingCrd == null) {
-          return doNext(createCrd(getNext()), packet);
+          if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.create)) {
+            exception = new RuntimeException("Failed to find CustomResourceDefinition domains.weblogic.oracle.");
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "create the CRD");
+          } else {
+            return doNext(createCrd(getNext()), packet);
+          }
         } else if (isOutdatedCrd(existingCrd)) {
-          return doNext(updateCrd(getNext(), existingCrd), packet);
+          if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.update)) {
+            exception = new RuntimeException("Found an outdated CustomResourceDefinition domains.weblogic.oracle.");
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "add a new version to the existing CRD");
+          } else {
+            return doNext(updateCrd(getNext(), existingCrd), packet);
+          }
         } else if (!existingCrdContainsVersion(existingCrd)) {
-          return doNext(updateExistingCrd(getNext(), existingCrd), packet);
-        } else {
-          return doNext(packet);
+          if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.replace)) {
+            exception = new RuntimeException(
+                "Failed to find the expected version of CustomResourceDefinition domain.weblogic.oracle. ");
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "replace the existing CRD");
+          } else {
+            return doNext(updateExistingCrd(getNext(), existingCrd), packet);
+          }
         }
+
+        if (exception == null) return doNext(packet);
+    
+        return super.doTerminate(exception, packet);
       }
     }
 

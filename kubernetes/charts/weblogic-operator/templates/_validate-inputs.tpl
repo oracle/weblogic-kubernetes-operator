@@ -39,6 +39,7 @@
 {{-     $ignore := include "utils.verifyInteger" (list $scope "elasticSearchPort") -}}
 {{-   end -}}
 {{- end -}}
+{{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "dedicated") -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
-{{- $ignore:= include "utils.endValidation" $scope -}}
+{{- $ignore := include "utils.endValidation" $scope -}}
 {{- end -}}
