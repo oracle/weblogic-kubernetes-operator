@@ -96,7 +96,7 @@ public class CrdHelperTest {
   @Test
   public void whenUnableToReadCrd_reportFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    expectReadCrd().failingWithStatus(401);
+    expectReadCrd().failingWithStatus(422);
 
     Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION, null);
     testSupport.runSteps(scriptCrdStep);

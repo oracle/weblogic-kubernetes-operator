@@ -17,13 +17,8 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PersistentVolume;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
-import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -39,21 +34,16 @@ import org.junit.Test;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
 public class CallBuilderTest extends HttpUserAgentTest {
   private static final String NAMESPACE = "testspace";
-  private static final String NAME = "name";
   private static final String UID = "uid";
   private static final String DOMAIN_RESOURCE =
       String.format(
           "/apis/weblogic.oracle/" + KubernetesConstants.DOMAIN_VERSION + "/namespaces/%s/domains",
           NAMESPACE);
-  private static final String PV_RESOURCE = "/api/v1/persistentvolumes";
-  private static final String PVC_RESOURCE =
-      String.format("/api/v1/namespaces/%s/persistentvolumeclaims", NAMESPACE);
 
   private static ApiClient apiClient = new ApiClient();
   private List<Memento> mementos = new ArrayList<>();
@@ -116,70 +106,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_CONFLICT));
 
     callBuilder.replaceDomain(UID, NAMESPACE, domain);
-  }
-
-  @Test
-  public void createPV_returnsVolumeAsJson() throws ApiException {
-    V1PersistentVolume volume = createPersistentVolume();
-    defineHttpPostResponse(PV_RESOURCE, volume);
-
-    assertThat(callBuilder.createPersistentVolume(volume), equalTo(volume));
-  }
-
-  private V1PersistentVolume createPersistentVolume() {
-    return new V1PersistentVolume().metadata(createMetadata()).spec(new V1PersistentVolumeSpec());
-  }
-
-  @Test
-  public void createPV_sendsClaimAsJson() throws ApiException {
-    V1PersistentVolume volume = createPersistentVolume();
-    defineHttpPostResponse(
-        PV_RESOURCE, volume, (json) -> requestBody = fromJson(json, V1PersistentVolume.class));
-
-    callBuilder.createPersistentVolume(volume);
-
-    assertThat(requestBody, equalTo(volume));
-  }
-
-  @Test
-  public void deletePV_returnsStatus() throws ApiException {
-    defineHttpDeleteResponse(PV_RESOURCE, NAME, new V1Status());
-
-    assertThat(
-        callBuilder.deletePersistentVolume(NAME, new V1DeleteOptions()),
-        instanceOf(V1Status.class));
-  }
-
-  @Test
-  public void createPvc_returnsClaimAsJson() throws ApiException {
-    V1PersistentVolumeClaim claim = createPersistentVolumeClaim();
-    defineHttpPostResponse(PVC_RESOURCE, claim);
-
-    assertThat(callBuilder.createPersistentVolumeClaim(claim), equalTo(claim));
-  }
-
-  private V1PersistentVolumeClaim createPersistentVolumeClaim() {
-    return new V1PersistentVolumeClaim().metadata(createMetadata()).spec(createSpec());
-  }
-
-  @Test
-  public void createPvc_sendsClaimAsJson() throws ApiException {
-    V1PersistentVolumeClaim claim = createPersistentVolumeClaim();
-    defineHttpPostResponse(
-        PVC_RESOURCE, claim, (json) -> requestBody = fromJson(json, V1PersistentVolumeClaim.class));
-
-    callBuilder.createPersistentVolumeClaim(claim);
-
-    assertThat(requestBody, equalTo(claim));
-  }
-
-  @Test
-  public void deletePvc_returnsStatus() throws ApiException {
-    defineHttpDeleteResponse(PVC_RESOURCE, NAME, new V1Status());
-
-    assertThat(
-        callBuilder.deletePersistentVolumeClaim(NAME, NAMESPACE, new V1DeleteOptions()),
-        instanceOf(V1Status.class));
   }
 
   private V1PersistentVolumeClaimSpec createSpec() {

@@ -15,6 +15,9 @@ import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
 
 /** A Helper Class for checking the health of the WebLogic Operator. */
 public final class HealthCheckHelper {
@@ -67,7 +70,6 @@ public final class HealthCheckHelper {
 
   static {
     clusterAccessChecks.put(AuthorizationProxy.Resource.NAMESPACES, glwOperations);
-    clusterAccessChecks.put(AuthorizationProxy.Resource.PERSISTENTVOLUMES, glwOperations);
     clusterAccessChecks.put(AuthorizationProxy.Resource.CRDS, crudOperations);
 
     namespaceAccessChecks.put(AuthorizationProxy.Resource.DOMAINS, glwupOperations);
@@ -82,7 +84,6 @@ public final class HealthCheckHelper {
     namespaceAccessChecks.put(AuthorizationProxy.Resource.EVENTS, crudOperations);
 
     namespaceAccessChecks.put(AuthorizationProxy.Resource.SECRETS, glwOperations);
-    namespaceAccessChecks.put(AuthorizationProxy.Resource.PERSISTENTVOLUMECLAIMS, glwOperations);
 
     namespaceAccessChecks.put(AuthorizationProxy.Resource.LOGS, glOperations);
     namespaceAccessChecks.put(AuthorizationProxy.Resource.EXEC, cOperations);
@@ -135,12 +136,40 @@ public final class HealthCheckHelper {
     return null;
   }
 
+  public static Step skipIfNotAuthorized(AuthorizationProxy.Resource res, AuthorizationProxy.Operation op,
+                                         Step authorizedStep, Step notAuthorizedStep) {
+    return new SkipIfNotAuthorizedStep(res, op, authorizedStep, notAuthorizedStep);
+  }
+
+  private static class SkipIfNotAuthorizedStep extends Step {
+    private final AuthorizationProxy.Resource res;
+    private final AuthorizationProxy.Operation op;
+    private final Step notAuthorizedStep;
+
+    SkipIfNotAuthorizedStep(AuthorizationProxy.Resource res, AuthorizationProxy.Operation op,
+                            Step authorizedStep, Step notAuthorizedStep) {
+      super(authorizedStep);
+      this.res = res;
+      this.op = op;
+      this.notAuthorizedStep = notAuthorizedStep;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      V1SubjectRulesReviewStatus srrs = packet.getSpi(V1SubjectRulesReviewStatus.class);
+      if (srrs == null || check(srrs.getResourceRules(), res, op)) {
+        return doNext(packet);
+      }
+      return doNext(notAuthorizedStep, packet);
+    }
+  }
+
   public static boolean check(
-      List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op) {
+      List<V1ResourceRule> rules, AuthorizationProxy.Resource res, AuthorizationProxy.Operation op) {
     String verb = op.name();
-    String apiGroup = r.getApiGroup();
-    String resource = r.getResource();
-    String sub = r.getSubResource();
+    String apiGroup = res.getApiGroup();
+    String resource = res.getResource();
+    String sub = res.getSubResource();
     if (sub != null && !sub.isEmpty()) {
       resource = resource + "/" + sub;
     }

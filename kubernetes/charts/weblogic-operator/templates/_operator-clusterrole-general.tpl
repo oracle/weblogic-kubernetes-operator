@@ -12,7 +12,7 @@ metadata:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
 - apiGroups: [""]
-  resources: ["namespaces", "persistentvolumes"]
+  resources: ["namespaces"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["apiextensions.k8s.io"]
   resources: ["customresourcedefinitions"]

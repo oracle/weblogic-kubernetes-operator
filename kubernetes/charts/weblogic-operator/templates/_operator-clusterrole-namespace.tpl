@@ -15,7 +15,7 @@ rules:
   resources: ["services", "configmaps", "pods", "events"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: [""]
-  resources: ["secrets", "persistentvolumeclaims"]
+  resources: ["secrets"]
   verbs: ["get", "list", "watch"]
 - apiGroups: [""]
   resources: ["pods/log"]

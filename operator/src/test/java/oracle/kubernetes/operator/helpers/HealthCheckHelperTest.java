@@ -69,7 +69,7 @@ public class HealthCheckHelperTest {
       Arrays.asList("customresourcedefinitions//apiextensions.k8s.io");
 
   private static final List<String> CLUSTER_READ_WATCH_RESOURCES =
-      Arrays.asList("namespaces", "persistentvolumes");
+      Arrays.asList("namespaces");
 
   private static final List<String> CLUSTER_READ_UPDATE_RESOURCES =
       Arrays.asList("domains//weblogic.oracle", "domains/status/weblogic.oracle");
@@ -79,7 +79,7 @@ public class HealthCheckHelperTest {
           "selfsubjectrulesreviews//authorization.k8s.io");
 
   private static final List<String> READ_WATCH_RESOURCES =
-      Arrays.asList("secrets", "persistentvolumeclaims");
+      Arrays.asList("secrets");
 
   private static final List<Operation> CRUD_OPERATIONS =
       Arrays.asList(get, list, watch, create, update, patch, delete, deletecollection);

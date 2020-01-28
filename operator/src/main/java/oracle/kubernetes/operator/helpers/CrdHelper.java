@@ -188,9 +188,10 @@ public class CrdHelper {
     }
 
     Step verifyCrd(Step next) {
-      return new CallBuilder()
-          .readCustomResourceDefinitionAsync(
-              model.getMetadata().getName(), createReadResponseStep(next));
+      return HealthCheckHelper.skipIfNotAuthorized(
+          AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get,
+          new CallBuilder().readCustomResourceDefinitionAsync(
+              model.getMetadata().getName(), createReadResponseStep(next)), next);
     }
 
     ResponseStep<V1beta1CustomResourceDefinition> createReadResponseStep(Step next) {
@@ -198,8 +199,10 @@ public class CrdHelper {
     }
 
     Step createCrd(Step next) {
-      return new CallBuilder()
-          .createCustomResourceDefinitionAsync(model, createCreateResponseStep(next));
+      return HealthCheckHelper.skipIfNotAuthorized(
+          AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.create,
+          new CallBuilder().createCustomResourceDefinitionAsync(
+              model, createCreateResponseStep(next)), next);
     }
 
     ResponseStep<V1beta1CustomResourceDefinition> createCreateResponseStep(Step next) {
@@ -233,9 +236,10 @@ public class CrdHelper {
                   .name(KubernetesConstants.DOMAIN_VERSION)
                   .served(true));
 
-      return new CallBuilder()
-          .replaceCustomResourceDefinitionAsync(
-              existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
+      return HealthCheckHelper.skipIfNotAuthorized(
+          AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.replace,
+          new CallBuilder().replaceCustomResourceDefinitionAsync(
+              existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next)), next);
     }
 
     Step updateCrd(Step next, V1beta1CustomResourceDefinition existingCrd) {
@@ -258,9 +262,10 @@ public class CrdHelper {
         }
       }
 
-      return new CallBuilder()
-          .replaceCustomResourceDefinitionAsync(
-              model.getMetadata().getName(), model, createReplaceResponseStep(next));
+      return HealthCheckHelper.skipIfNotAuthorized(
+          AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.replace,
+          new CallBuilder().replaceCustomResourceDefinitionAsync(
+              model.getMetadata().getName(), model, createReplaceResponseStep(next)), next);
     }
 
     ResponseStep<V1beta1CustomResourceDefinition> createReplaceResponseStep(Step next) {
@@ -285,6 +290,12 @@ public class CrdHelper {
         } else {
           return doNext(packet);
         }
+      }
+
+      @Override
+      protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
+        return isNotAuthorizedOrForbidden(callResponse)
+            ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
     }
 

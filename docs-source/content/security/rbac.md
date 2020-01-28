@@ -119,7 +119,7 @@ to a `Role` or `ClusterRole` granting permission to the operator.
 | Role Binding | Mapped to Role | Resource Access | Notes |
 | --- | --- | --- | --- |
 | `weblogic-operator-rolebinding` | `weblogic-operator-role` | **Edit**: secrets, configmaps, events | The role binding is created in the namespace `weblogic-operator-ns` [^1] |
-| `weblogic-operator-rolebinding-namespace` | Operator Cluster Role `namespace` | **Read**: secrets, persistentvolumeclaims, pods/log | The role binding is created in the namespace `domain1-ns` [^2] |
+| `weblogic-operator-rolebinding-namespace` | Operator Cluster Role `namespace` | **Read**: secrets, pods/log | The role binding is created in the namespace `domain1-ns` [^2] |
 | | | **Edit**: configmaps, events, pods, services, jobs.batch | |
 | | | **Create**: pods/exec | |
 
@@ -134,7 +134,6 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
 | --- | --- | --- | --- |
 | Operator `general` | Operator `general` | **Read**: namespaces | [^1] |
 | | | **Edit**: customresourcedefinitions | |
-| | | **Read**: persistentvolumes | |
 | | | **Update**: domains (weblogic.oracle), domains/status | |
 | | | **Create**: tokenreviews, selfsubjectrulesreviews | |
 | Operator `nonresource` | Operator `nonresource` | **Get**: /version/* | [^1] |

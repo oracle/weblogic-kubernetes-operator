@@ -150,7 +150,15 @@ public abstract class ResponseStep<T> extends Step {
    */
   public NextAction onFailure(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
     return Optional.ofNullable(doPotentialRetry(conflictStep, packet, callResponse))
-        .orElse(doTerminate(callResponse.getE(), packet));
+        .orElse(onFailureNoRetry(packet, callResponse));
+  }
+
+  protected NextAction onFailureNoRetry(Packet packet, CallResponse<T> callResponse) {
+    return doTerminate(callResponse.getE(), packet);
+  }
+
+  protected boolean isNotAuthorizedOrForbidden(CallResponse<T> callResponse) {
+    return callResponse.getStatusCode() == 401 || callResponse.getStatusCode() == 403;
   }
 
   /**
