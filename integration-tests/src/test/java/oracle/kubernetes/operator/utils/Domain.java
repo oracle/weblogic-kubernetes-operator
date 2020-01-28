@@ -717,6 +717,19 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO,
         "command to delete domain " + cmd + " \n returned " + output);
     verifyDomainDeleted(replicas);
+
+  }
+
+  /**
+   * Delete the domain in image
+   * @throws Exception
+   */
+  public void deleteImage() throws Exception {
+    // delete domain image
+    if (domainMap.containsKey("image")) {
+      String cmd = "docker rmi -f " + domainMap.get("image");
+      TestUtils.exec(cmd, true);
+    }
   }
 
   /**
