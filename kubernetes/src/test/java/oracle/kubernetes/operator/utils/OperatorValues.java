@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -21,6 +21,7 @@ public class OperatorValues {
   private static final String EXTERNAL_CUSTOM_CERT_PEM = "test-external-custom-certificate-pem";
   private static final String EXTERNAL_CUSTOM_KEY_PEM = "test-external-custom-private-key-pem";
   private String version = "";
+  private String dedicated = "";
   private String serviceAccount = "";
   private String namespace = "";
   private String targetNamespaces = "";
@@ -44,6 +45,7 @@ public class OperatorValues {
 
   public OperatorValues withTestDefaults() {
     return this.namespace("test-operator-namespace")
+        .dedicated("false")
         .serviceAccount("test-operator-service-account")
         .targetNamespaces("test-target-namespace1,test-target-namespace2")
         .weblogicOperatorImage("test-operator-image")
@@ -301,6 +303,19 @@ public class OperatorValues {
 
   public OperatorValues elkIntegrationEnabled(String val) {
     setElkIntegrationEnabled(val);
+    return this;
+  }
+
+  public String getDedicated() {
+    return dedicated;
+  }
+
+  public void setDedicated(String val) {
+    dedicated = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues dedicated(String val) {
+    setDedicated(val);
     return this;
   }
 
