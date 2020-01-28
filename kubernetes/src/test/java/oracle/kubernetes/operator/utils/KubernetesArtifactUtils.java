@@ -82,12 +82,10 @@ public class KubernetesArtifactUtils {
 
   public static final String API_GROUP_RBAC = "rbac.authorization.k8s.io";
 
-  public static final String API_VERSION_APPS_V1BETA1 = "apps/v1beta1";
+  public static final String API_VERSION_APPS_V1 = "apps/v1";
   public static final String API_VERSION_BATCH_V1 = "batch/v1";
-  public static final String API_VERSION_EXTENSIONS_V1BETA1 = "extensions/v1beta1";
   public static final String API_VERSION_REGISTRATION_V1BETA1 = "apiregistration.k8s.io/v1beta1";
   public static final String API_VERSION_RBAC_V1 = API_GROUP_RBAC + "/v1";
-  public static final String API_VERSION_RBAC_V1BETA1 = API_GROUP_RBAC + "/v1beta1";
   public static final String API_VERSION_WEBLOGIC_ORACLE =
       KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION;
   public static final String API_VERSION_V1 = "v1";
@@ -124,7 +122,7 @@ public class KubernetesArtifactUtils {
 
   public static ExtensionsV1beta1Deployment newDeployment() {
     return (new ExtensionsV1beta1Deployment())
-        .apiVersion(API_VERSION_APPS_V1BETA1)
+        .apiVersion(API_VERSION_APPS_V1)
         .kind(KIND_DEPLOYMENT);
   }
 
