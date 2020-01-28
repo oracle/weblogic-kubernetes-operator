@@ -85,7 +85,7 @@ public class KubernetesUtils {
    * @return the name, if found
    */
   static String getResourceName(Object resource) {
-    return getResourceMetadata(resource).getName();
+    return Optional.ofNullable(getResourceMetadata(resource)).map(V1ObjectMeta::getName).orElse(null);
   }
 
   /**

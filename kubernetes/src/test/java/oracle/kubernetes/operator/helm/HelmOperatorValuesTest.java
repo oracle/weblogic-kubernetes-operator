@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
@@ -487,6 +487,50 @@ public class HelmOperatorValuesTest {
     assertThat(values.getExternalDebugHttpPort(), equalTo(stringValue));
   }
 
+  // --------------- dedicated
+
+  @Test
+  public void whenDedicatedTrue_createdMapContainsValue() {
+    operatorValues.dedicated("true");
+
+    assertThat(operatorValues.createMap(), hasEntry("dedicated", true));
+  }
+
+  @Test
+  public void whenDedicatedFalse_createdMapContainsValue() {
+    operatorValues.dedicated("false");
+
+    assertThat(operatorValues.createMap(), hasEntry("dedicated", false));
+  }
+
+  @Test
+  public void whenDedicatedNotSet_createdMapLacksValue() {
+    assertThat(operatorValues.createMap(), not(hasKey("dedicated")));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithoutDedicated_hasEmptyString() {
+    HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
+
+    assertThat(values.getDedicated(), equalTo(""));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithDedicatedTrue_hasSpecifiedValue() {
+    HelmOperatorValues values =
+        new HelmOperatorValues(ImmutableMap.of("dedicated", true));
+
+    assertThat(values.getDedicated(), equalTo("true"));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithDedicatedFalse_hasSpecifiedValue() {
+    HelmOperatorValues values =
+        new HelmOperatorValues(ImmutableMap.of("dedicated", false));
+
+    assertThat(values.getDedicated(), equalTo("false"));
+  }
+
   @Test
   public void whenCreatedFromMap_hasSpecifiedValues() {
     HelmOperatorValues values =
@@ -511,7 +555,8 @@ public class HelmOperatorValuesTest {
 
   private String getExpectedOperatorHelmChartDefaultValues() {
     StringBuilder sb = new StringBuilder();
-    sb.append("domainNamespaces:\n")
+    sb.append("dedicated: false\n")
+        .append("domainNamespaces:\n")
         .append("- default\n")
         .append("elasticSearchHost: elasticsearch.default.svc.cluster.local\n")
         .append("elasticSearchPort: 9200\n")

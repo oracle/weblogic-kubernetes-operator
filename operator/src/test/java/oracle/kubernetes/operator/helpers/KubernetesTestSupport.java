@@ -55,10 +55,12 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
+import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import oracle.kubernetes.operator.calls.CallFactory;
@@ -98,6 +100,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String SECRET = "Secret";
   public static final String SERVICE = "Service";
   public static final String SUBJECT_ACCESS_REVIEW = "SubjectAccessReview";
+  public static final String SELF_SUBJECT_ACCESS_REVIEW = "SelfSubjectAccessReview";
+  public static final String SELF_SUBJECT_RULES_REVIEW = "SelfSubjectRulesReview";
   public static final String TOKEN_REVIEW = "TokenReview";
 
   private Map<String, DataRepository<?>> repositories = new HashMap<>();
@@ -114,6 +118,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
    */
   public Memento install() {
     support(CUSTOM_RESOURCE_DEFINITION, V1beta1CustomResourceDefinition.class);
+    support(SELF_SUBJECT_ACCESS_REVIEW, V1SelfSubjectAccessReview.class);
+    support(SELF_SUBJECT_RULES_REVIEW, V1SubjectRulesReviewStatus.class);
     support(SUBJECT_ACCESS_REVIEW, V1SubjectAccessReview.class);
     support(TOKEN_REVIEW, V1TokenReview.class);
     support(PV, V1PersistentVolume.class, this::createPvList);
