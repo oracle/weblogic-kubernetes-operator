@@ -41,7 +41,6 @@ import static oracle.kubernetes.operator.logging.MessageKeys.PV_ACCESS_MODE_FAIL
 import static oracle.kubernetes.operator.logging.MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID;
 import static oracle.kubernetes.operator.logging.MessageKeys.VERIFY_ACCESS_DENIED;
 import static oracle.kubernetes.operator.logging.MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
@@ -137,58 +136,9 @@ public class HealthCheckHelperTest {
     expectClusterAccessChecks();
   }
 
-  @Test
-  public void whenRulesReviewNotSupportedAndNoNamespaceAccess_logWarning() {
-    expectAccessChecks();
-    accessChecks.setMayAccessNamespace(false);
-    populateSelfSubjectAccessReviewOnCreate();
-
-    for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION, OPERATOR_NAMESPACE, ns);
-    }
-
-    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED));
-    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
-  }
-
   void populateSelfSubjectAccessReviewOnCreate() {
     testSupport.doOnCreate(KubernetesTestSupport.SELF_SUBJECT_ACCESS_REVIEW,
         (V1SelfSubjectAccessReview r) -> accessChecks.populateSubjectAccessReview(r));
-  }
-
-  @Test
-  public void whenRulesReviewNotSupportedAndNoClusterAccess_logWarning() {
-    expectAccessChecks();
-    accessChecks.setMayAccessCluster(false);
-    populateSelfSubjectAccessReviewOnCreate();
-
-    for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION, OPERATOR_NAMESPACE, ns);
-    }
-
-    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED));
-    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
-  }
-
-  @Test
-  public void whenRulesReviewSupported_accessGrantedForEverything() {
-    populateSelfSubjectRulesReviewOnCreate();
-
-    for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.performSecurityChecks(RULES_REVIEW_VERSION, OPERATOR_NAMESPACE, ns);
-    }
-  }
-
-  @Test
-  public void whenRulesReviewSupportedAndNoNamespaceAccess_logWarning() {
-    accessChecks.setMayAccessNamespace(false);
-    populateSelfSubjectRulesReviewOnCreate();
-
-    for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.performSecurityChecks(RULES_REVIEW_VERSION, OPERATOR_NAMESPACE, ns);
-    }
-
-    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
   }
 
   @Test
