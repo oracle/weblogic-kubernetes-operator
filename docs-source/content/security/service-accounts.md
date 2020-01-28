@@ -19,8 +19,11 @@ and the appropriate access controls will be created for this `ServiceAccount` by
 the operator's Helm chart.
 
 {{% notice info %}}
-For more information about access controls, see [RBAC]({{<relref "/security/rbac.md">}}) under **Security**. If the operator's service account cannot have the privileges to access the cluster-level resources, such as `CustomResourceDefinitions`, `Namespaces` and `PersistentVolumes`, consider using a `dedicated` namespace for each operator and the domains that the operator manages, see the `dedicated` setting in [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values" >}}).
+For more information about access controls, see [RBAC]({{<relref "/security/rbac.md">}}) under **Security**.
+{{% /notice %}}
 
+{{% notice note %}}
+If the operator's service account cannot have the privileges to access the cluster-level resources, such as `CustomResourceDefinitions`, `Namespaces` and `PersistentVolumes`, consider using a `dedicated` namespace for each operator and the domains that the operator manages. See the `dedicated` setting in [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values" >}}).
 {{% /notice %}}
 
 In order to display the `ServiceAccount` used by the operator,
