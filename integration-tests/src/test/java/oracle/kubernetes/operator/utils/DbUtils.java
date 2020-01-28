@@ -113,7 +113,7 @@ public class DbUtils {
   public static void deleteRcuPod(String scriptsDir) throws Exception {
     String cmd = "kubectl delete -f " 
         + scriptsDir
-        + "/scripts/create-rcu-schema/common/rcu.yaml";
+        + "/scripts/create-rcu-schema/common/rcu.yaml --ignore-not-found";
     TestUtils.exec(cmd, true);
   }
 

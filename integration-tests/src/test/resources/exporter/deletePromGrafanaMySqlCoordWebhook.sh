@@ -6,7 +6,7 @@ domainNS=$3
 resourceExporterDir=$2
 monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/end2end
 #delete webhook 
-kubectl delete -f ${monitoringExporterEndToEndDir}/webhook/server.yaml --ignore-not-found
+kubectl delete -f ${resourceExporterDir}/server.yaml --ignore-not-found
 kubectl delete ns webhook
 
 #delete grafana
@@ -29,7 +29,7 @@ for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kub
 kubectl delete -f ${resourceExporterDir}/coordinator_${domainNS}.yaml
 
 #delete database
-kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/mysql1.yaml --ignore-not-found
+kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/mysql.yaml --ignore-not-found
 kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/persistence.yaml --ignore-not-found
 #kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/mysql-secret.yaml
 kubectl delete -f ${monitoringExporterEndToEndDir}/util/curl.yaml

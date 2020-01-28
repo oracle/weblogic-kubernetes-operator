@@ -32,6 +32,8 @@
 #   FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR = "true" if WebLogic server should fail to 
 #                       boot if situational configuration related errors are 
 #                       found. Default to "true" if unspecified.
+#   NODEMGR_MEM_ARGS  = JVM mem args for starting the Node Manager instance
+#   NODEMGR_JAVA_OPTIONS  = Java options for starting the Node Manager instance
 #
 # If SERVER_NAME is set, then this NM is for a WL Server and these must also be set:
 # 
@@ -253,7 +255,7 @@ RestartInterval=3600
 NumberOfFilesLimited=true
 FileTimeSpan=24
 NMHostName=${SERVICE_NAME}
-Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap -Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} ${serverOutOption} ${JAVA_OPTIONS}
+Arguments=${USER_MEM_ARGS} -Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} ${serverOutOption} ${JAVA_OPTIONS}
 
 EOF
  
@@ -286,7 +288,31 @@ export VM_TYPE="HotSpot"
 #  Copied from ${DOMAIN_HOME}/bin/startNodeManager.sh 
 export NODEMGR_HOME="${NODEMGR_HOME?}"
 export DOMAIN_HOME="${DOMAIN_HOME?}"
-export JAVA_OPTIONS="${JAVA_OPTIONS} -Dweblogic.RootDirectory=${DOMAIN_HOME}"
+
+# Apply JAVA_OPTIONS to Node Manager if NODEMGR_JAVA_OPTIONS not specified
+if [ -z ${NODEMGR_JAVA_OPTIONS} ]; then
+  NODEMGR_JAVA_OPTIONS="${JAVA_OPTIONS}"
+fi
+
+if [ -z "${NODEMGR_MEM_ARGS}" ]; then
+  # Default JVM memory arguments for Node Manager
+  NODEMGR_MEM_ARGS="-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom "
+fi
+
+# We prevent USER_MEM_ARGS from being applied to the NM here and only pass
+# USER_MEM_ARGS to WL Servers via the WL Server startup properties file above.
+# This is so that WL Servers and NM can have different tuning. Use NODEMGR_MEM_ARGS or
+# NODEMGR_JAVA_OPTIONS to specify JVM memory arguments for NMs.
+# NOTE: Specifying USER_MEM_ARGS with ' ' (space, not empty string)
+# prevents MEM_ARGS from being implicitly set by the WebLogic env
+# scripts in the WebLogic installation and WLS from inserting default
+# values for memory arguments. (See commBaseEnv.sh).
+USER_MEM_ARGS=" "
+export USER_MEM_ARGS
+
+# NODEMGR_MEM_ARGS and NODEMGR_JAVA_OPTIONS are exported to Node Manager as JAVA_OPTIONS
+# environment variable.
+export JAVA_OPTIONS="${NODEMGR_MEM_ARGS} ${NODEMGR_JAVA_OPTIONS} -Dweblogic.RootDirectory=${DOMAIN_HOME}"
 
 ###############################################################################
 #
@@ -315,10 +341,12 @@ while [ 1 -eq 1 ]; do
     break
   fi
   if [ $((SECONDS - $start_secs)) -ge $max_wait_secs ]; then
+    trace INFO "Trying to put a node manager thread dump in '$nodemgr_out_file'."
+    kill -3 `jps -l | grep weblogic.NodeManager | awk '{ print $1 }'`
     trace INFO "Contents of node manager log '$nodemgr_log_file':"
     cat ${nodemgr_log_file}
     trace INFO "Contents of node manager out '$nodemgr_out_file':"
-    cat ${NODEMGR_OUT_FILE}
+    cat ${nodemgr_out_file}
     trace SEVERE "Node manager failed to start within $max_wait_secs seconds."
     exit 1
   fi

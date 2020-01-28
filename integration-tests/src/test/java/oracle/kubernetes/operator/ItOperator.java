@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -44,6 +44,7 @@ public class ItOperator extends BaseTest {
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
+    namespaceList = new StringBuffer();
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
     // initialize test properties and create the directories
@@ -68,7 +69,7 @@ public class ItOperator extends BaseTest {
       operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       Assertions.assertNotNull(operator1);
       domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-      namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+      namespaceList.append((String)operatorMap.get("namespace"));
       namespaceList.append(" ").append(domainNS1);
     }
   }
@@ -354,10 +355,10 @@ public class ItOperator extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Creating operatorForBackwardCompatibility");
     Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
               true, testClassName);
-    Operator operatorForRESTCertChain =
+    Operator operatorForRestCertChain =
         TestUtils.createOperator(operatorMap, RestCertType.CHAIN);
-    operatorForRESTCertChain.verifyOperatorExternalRestEndpoint();
-    operatorForRESTCertChain.destroy();
+    operatorForRestCertChain.verifyOperatorExternalRestEndpoint();
+    operatorForRestCertChain.destroy();
     LoggerHelper.getLocal().log(Level.INFO,
         "Operator using legacy REST identity created successfully");
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - testOperatorRestUsingCertificateChain");

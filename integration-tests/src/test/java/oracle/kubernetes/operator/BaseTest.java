@@ -1,11 +1,10 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -107,9 +106,9 @@ public class BaseTest {
   /**
    * initializes the application properties and creates directories for results.
    *
-   * @param appPropsFile
-   * @param testClassName
-   * @throws Exception
+   * @param appPropsFile application properties file
+   * @param testClassName test class name
+   * @throws Exception exception
    */
   public static void initialize(String appPropsFile, String testClassName)
       throws Exception {
@@ -388,12 +387,12 @@ public class BaseTest {
   }
 
   /**
-   * build web service app inside pod
+   * build web service app inside pod.
    *
-   * @param domain
-   * @param testAppName
-   * @param wsName
-   * @throws Exception
+   * @param domain domain
+   * @param testAppName test application name
+   * @param wsName web service name
+   * @throws Exception exception
    */
   public static void buildDeployWebServiceApp(Domain domain, String testAppName, String wsName)
       throws Exception {
@@ -419,35 +418,39 @@ public class BaseTest {
     LoggerHelper.getLocal().info("BEGIN");
     LoggerHelper.getLocal().info("Run once");
 
-    LoggerHelper.getLocal().log(
-        Level.INFO,
-        "TEARDOWN: Starting Test Run TearDown (state-dump)."
-            + " Note that if the test failed previous to tearDown, "
-            + " the error that caused the test failure may be reported "
-            + "after the tearDown completes. Note that tearDown itself may report errors,"
-            + " but this won't affect the outcome of the test results.");
-    StringBuffer cmd = new StringBuffer("export RESULT_ROOT=");
-    cmd.append(resultRootCommon).append(" && export PV_ROOT=")
-        .append(pvRootCommon).append(" && export IT_CLASS=");
-    cmd.append(itClassName)
-        .append(" && export NAMESPACE_LIST=\"")
-        .append(namespaceList)
-        .append("\" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} && ")
-        .append(getProjectRoot())
-        .append("/integration-tests/src/test/resources/statedump.sh");
-    LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
+    if (!namespaceList.trim().equals("")) {
+      LoggerHelper.getLocal().log(
+          Level.INFO,
+          "TEARDOWN: Starting Test Run TearDown (state-dump)."
+              + " Note that if the test failed previous to tearDown, "
+              + " the error that caused the test failure may be reported "
+              + "after the tearDown completes. Note that tearDown itself may report errors,"
+              + " but this won't affect the outcome of the test results.");
+      StringBuffer cmd = new StringBuffer("export RESULT_ROOT=");
+      cmd.append(resultRootCommon).append(" && export PV_ROOT=")
+          .append(pvRootCommon).append(" && export IT_CLASS=");
+      cmd.append(itClassName)
+          .append(" && export NAMESPACE_LIST=\"")
+          .append(namespaceList)
+          .append("\" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} && ")
+          .append(getProjectRoot())
+          .append("/integration-tests/src/test/resources/statedump.sh");
+      LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
 
-    // renew lease before callin statedump.sh
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+      // renew lease before callin statedump.sh
+      TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() == 0) {
-      LoggerHelper.getLocal().log(Level.INFO, "Executed statedump.sh " + result.stdout());
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() == 0) {
+        LoggerHelper.getLocal().log(Level.INFO, "Executed statedump.sh " + result.stdout());
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO, "Execution of statedump.sh failed, "
+            + result.stderr() + "\n" + result.stdout());
+      }
     } else {
-      LoggerHelper.getLocal().log(Level.INFO, "Execution of statedump.sh failed, "
-          + result.stderr() + "\n" + result.stdout());
+      LoggerHelper.getLocal().log(Level.INFO,
+          "namespaceList is empty, skipping statedump");
     }
-
   }
 
   /**
@@ -776,25 +779,18 @@ public class BaseTest {
   private void copyScalingScriptToPod(String domainUid, String podName, String domainNS)
       throws Exception {
 
-    String pvDir = getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid;
-    String scriptsDir = pvDir + "/domains/" + domainUid + "/bin/scripts";
+    TestUtils.kubectlexec(podName, domainNS,
+        "-- mkdir /shared/domains/" + domainUid + "/bin/scripts");
 
-    // create scripts dir under domain pv
-    TestUtils.createDirUnderDomainPV(scriptsDir, pvRoot);
-    if (OPENSHIFT) {
-      Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
-          Paths.get(scriptsDir + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
-    } else {
-      // workaround for the issue with not allowing .. in the host-path in krun.sh
-      Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
-          Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
-      // copy script to pod
-      String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
-          + getResultDir() + ":/tmpdir -m " + pvDir
-          + ":/pvdir -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/domainonpvwdt/bin/scripts' -n "
-          + domainNS;
-      TestUtils.exec(cpUsingKrunCmd, true);
-    }
+    TestUtils.kubectlexec(podName, domainNS,
+        "-- bash -c 'cat > /shared/domains/"
+            + domainUid + "/bin/scripts/scalingAction.sh' < "
+            + getProjectRoot() + "/src/scripts/scaling/scalingAction.sh");
+
+    TestUtils.kubectlexec(podName, domainNS,
+        "chmod +x /shared/domains/"
+                  + domainUid + "/bin/scripts/scalingAction.sh");
+
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {

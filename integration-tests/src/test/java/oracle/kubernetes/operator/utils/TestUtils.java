@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -29,7 +29,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
@@ -670,7 +670,8 @@ public class TestUtils {
       } catch (Exception ex) {
         LoggerHelper.getLocal().log(Level.INFO, "Got exception, iteration " + i + " " + ex.getMessage());
         i++;
-        if (ex.getMessage().contains("java.net.ConnectException: Connection refused")) {
+        if (ex.getMessage().contains("java.net.ConnectException: Connection refused")
+            || ex.getMessage().contains("java.net.NoRouteToHostException: No route to host")) {
           if (i == (BaseTest.getMaxIterationsPod() - 1)) {
             throw ex;
           }
@@ -1226,24 +1227,6 @@ public class TestUtils {
     }
   }
 
-  public static void createDirUnderDomainPV(String dirPath, String pvRoot) throws Exception {
-    if (BaseTest.OPENSHIFT) {
-      String crdCmd = "mkdir -m 777 -p " + dirPath;
-      ExecResult result = TestUtils.exec(crdCmd, true);
-    } else {
-      dirPath = dirPath.replace(pvRoot, "/sharedparent/");
-      String crdCmd =
-          BaseTest.getProjectRoot()
-              + "/src/integration-tests/bash/krun.sh -t 180 -m "
-              + pvRoot + ":/sharedparent -c 'mkdir -m 777 -p "
-              + dirPath
-              + "'";
-
-      ExecResult result = TestUtils.exec(crdCmd, true);
-    }
-
-  }
-
   public static void createWldfModule(String adminPodName, String domainNS, int t3ChannelPort)
       throws Exception {
 
@@ -1749,10 +1732,16 @@ public class TestUtils {
             + System.getenv("REPO_PASSWORD")
             + "\" && docker push "
             + image;
+    String cmdForDebug =
+        "docker login "
+            + System.getenv("REPO_REGISTRY")
+            + " -u ****** -p ******* "
+            + "\" && docker push "
+            + image;
     ExecResult result = TestUtils.exec(dockerLoginAndPushCmd);
     LoggerHelper.getLocal().log(Level.INFO,
         "cmd "
-            + dockerLoginAndPushCmd
+            + cmdForDebug
             + "\n result "
             + result.stdout()
             + "\n err "

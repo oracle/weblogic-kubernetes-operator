@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -55,6 +55,7 @@ public class ItManagedCoherence extends BaseTest {
   @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
+      namespaceList = new StringBuffer();
       testClassName = new Object() {
       }.getClass().getEnclosingClass().getSimpleName();
       initialize(APP_PROPS_FILE, testClassName);
@@ -93,7 +94,7 @@ public class ItManagedCoherence extends BaseTest {
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
         Assertions.assertNotNull(operator1);
         domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-        namespaceList = new StringBuffer((String)operatorMap.get("namespace"));
+        namespaceList.append((String)operatorMap.get("namespace"));
         namespaceList.append(" ").append(domainNS1);
       }
     }
@@ -220,20 +221,20 @@ public class ItManagedCoherence extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
-  private void createDomainAndDeployApp(Map<String, Object> domainMap, String domainUID) throws Exception {
+  private void createDomainAndDeployApp(Map<String, Object> domainMap, String domainUid) throws Exception {
     domain = null;
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
 
     String[] pods = {
-      domainUID + "-" + domain.getAdminServerName(),
-      domainUID + "-managed-server",
-      domainUID + "-managed-server1",
-      domainUID + "-managed-server2",
-      domainUID + "-new-managed-server1",
-      domainUID + "-new-managed-server2",
+      domainUid + "-" + domain.getAdminServerName(),
+      domainUid + "-managed-server",
+      domainUid + "-managed-server1",
+      domainUid + "-managed-server2",
+      domainUid + "-new-managed-server1",
+      domainUid + "-new-managed-server2",
     };
-    verifyServersStatus(domain, pods, domainUID);
+    verifyServersStatus(domain, pods, domainUid);
     // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
     TestUtils.buildDeployCoherenceAppInPod(
         domain,

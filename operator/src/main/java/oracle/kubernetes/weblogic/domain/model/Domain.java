@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -19,13 +19,15 @@ import javax.validation.Valid;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1SecretReference;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -210,6 +212,10 @@ public class Domain {
     return this;
   }
 
+  public String getNamespace() {
+    return metadata.getNamespace();
+  }
+
   public AdminServerSpec getAdminServerSpec() {
     return getEffectiveConfigurationFactory().getAdminServerSpec();
   }
@@ -331,12 +337,12 @@ public class Domain {
   }
 
   /**
-   * Reference to secret containing WebLogic startup credentials username and password.
+   * Name of the secret containing WebLogic startup credentials username and password.
    *
-   * @return credentials secret
+   * @return the secret name
    */
-  public V1SecretReference getWebLogicCredentialsSecret() {
-    return spec.getWebLogicCredentialsSecret();
+  public String getWebLogicCredentialsSecretName() {
+    return spec.getWebLogicCredentialsSecret().getName();
   }
 
   /**
@@ -474,8 +480,8 @@ public class Domain {
         .isEquals();
   }
 
-  public List<String> getValidationFailures() {
-    return new Validator().getValidationFailures();
+  public List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
+    return new Validator().getValidationFailures(kubernetesResources);
   }
 
   class Validator {
@@ -483,12 +489,14 @@ public class Domain {
     private Set<String> clusterNames = new HashSet<>();
     private Set<String> serverNames = new HashSet<>();
 
-    List<String> getValidationFailures() {
+    List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
       addDuplicateNames();
       addInvalidMountPaths();
       addUnmappedLogHome();
       addReservedEnvironmentVariables();
-
+      addMissingSecrets(kubernetesResources);
+      verifyNoAlternateSecretNamespaceSpecified();
+      
       return failures;
     }
 
@@ -558,7 +566,7 @@ public class Domain {
       checkReservedIntrospectorVariables(spec, "spec");
       Optional.ofNullable(spec.getAdminServer())
           .ifPresent(a -> checkReservedIntrospectorVariables(a, "spec.adminServer"));
-      
+
       spec.getManagedServers()
           .forEach(s -> checkReservedEnvironmentVariables(s, "spec.managedServers[" + s.getServerName() + "]"));
       spec.getClusters()
@@ -593,6 +601,39 @@ public class Domain {
     @SuppressWarnings("SameParameterValue")
     private void checkReservedIntrospectorVariables(BaseConfiguration configuration, String prefix) {
       new EnvironmentVariableCheck(IntrospectorJobEnvVars::isReserved).checkEnvironmentVariables(configuration, prefix);
+    }
+
+    private void addMissingSecrets(KubernetesResourceLookup resourceLookup) {
+      verifySecretExists(resourceLookup, getWebLogicCredentialsSecretName(), SecretType.WebLogicCredentials);
+      for (V1LocalObjectReference reference : getImagePullSecrets())
+        verifySecretExists(resourceLookup, reference.getName(), SecretType.ImagePull);
+      for (String secretName : getConfigOverrideSecrets())
+        verifySecretExists(resourceLookup, secretName, SecretType.ConfigOverride);
+    }
+
+    private List<V1LocalObjectReference> getImagePullSecrets() {
+      return spec.getImagePullSecrets();
+    }
+
+    private List<String> getConfigOverrideSecrets() {
+      return spec.getConfigOverrideSecrets();
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void verifySecretExists(KubernetesResourceLookup resources, String secretName, SecretType type) {
+      if (!resources.isSecretExists(secretName, getNamespace()))
+        failures.add(DomainValidationMessages.noSuchSecret(secretName, getNamespace(), type));
+    }
+
+    private void verifyNoAlternateSecretNamespaceSpecified() {
+      if (!getSpecifiedWebLogicCredentialsNamespace().equals(getNamespace()))
+        failures.add(DomainValidationMessages.illegalSecretNamespace(getSpecifiedWebLogicCredentialsNamespace()));
+    }
+
+    private String getSpecifiedWebLogicCredentialsNamespace() {
+      return Optional.ofNullable(spec.getWebLogicCredentialsSecret())
+            .map(V1SecretReference::getNamespace)
+            .orElse(getNamespace());
     }
 
   }

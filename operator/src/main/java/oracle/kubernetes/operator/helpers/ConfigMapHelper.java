@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -14,9 +14,9 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -256,7 +256,8 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_CREATED, domainNamespace);
+        LOGGER.info(MessageKeys.CM_CREATED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME,
+            domainNamespace);
         packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }
@@ -274,7 +275,8 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_REPLACED, domainNamespace);
+        LOGGER.info(MessageKeys.CM_REPLACED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME,
+            domainNamespace);
         packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }
@@ -322,7 +324,8 @@ public class ConfigMapHelper {
     }
 
     void logConfigMapExists() {
-      LOGGER.fine(MessageKeys.CM_EXISTS, domainNamespace);
+      LOGGER.fine(MessageKeys.CM_EXISTS, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME, 
+          domainNamespace);
     }
   }
 
@@ -490,7 +493,8 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_CREATED, domainNamespace);
+        LOGGER.info(MessageKeys.CM_CREATED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME, 
+            domainNamespace);
         packet.put(ProcessingConstants.SIT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }
@@ -508,7 +512,8 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_REPLACED, domainNamespace);
+        LOGGER.info(MessageKeys.CM_REPLACED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME,
+            domainNamespace);
         packet.put(ProcessingConstants.SIT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }

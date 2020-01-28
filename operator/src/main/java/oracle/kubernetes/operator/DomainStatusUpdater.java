@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -18,7 +18,9 @@ import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSource;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
@@ -45,6 +47,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
+import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -160,15 +163,12 @@ public class DomainStatusUpdater {
       return new DomainStatusUpdaterContext(packet, this);
     }
 
-    void modifyStatus(DomainStatus domainStatus) {
-    }
+    abstract void modifyStatus(DomainStatus domainStatus);
 
     @Override
     public NextAction apply(Packet packet) {
       DomainStatusUpdaterContext context = createContext(packet);
-
       DomainStatus newStatus = context.getNewStatus();
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
 
       return context.isStatusChanged(newStatus)
             ? doNext(packet)
@@ -178,18 +178,56 @@ public class DomainStatusUpdater {
     private Step createDomainStatusPatchStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {
       JsonPatchBuilder builder = Json.createPatchBuilder();
       newStatus.createPatchFrom(builder, context.getStatus());
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
 
       return new CallBuilder().patchDomainAsync(
             context.getDomainName(),
             context.getNamespace(),
             new V1Patch(builder.build().toString()),
-            createResponseStep());
+            createResponseStep(context, getNext()));
     }
 
-    private ResponseStep<Domain> createResponseStep() {
-      return new DefaultResponseStep<>(getNext());
+    private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context, Step next) {
+      return new PatchResponseStep(this, context, next);
+    }
+  }
+
+  static class PatchResponseStep extends DefaultResponseStep<Domain> {
+    private DomainStatusUpdaterStep updaterStep;
+    private final DomainStatusUpdaterContext context;
+
+    public PatchResponseStep(DomainStatusUpdaterStep updaterStep, DomainStatusUpdaterContext context, Step nextStep) {
+      super(nextStep);
+      this.updaterStep = updaterStep;
+      this.context = context;
     }
 
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
+      if (!isPatchFailure(callResponse)) return super.onFailure(packet, callResponse);
+
+      return doNext(createRetry(context, getNext()), packet);
+    }
+
+    public Step createRetry(DomainStatusUpdaterContext context, Step next) {
+      return Step.chain(createDomainRefreshStep(context), updaterStep, next);
+    }
+
+    private boolean isPatchFailure(CallResponse<Domain> callResponse) {
+      return callResponse.getStatusCode() == HTTP_INTERNAL_ERROR;
+    }
+
+    private Step createDomainRefreshStep(DomainStatusUpdaterContext context) {
+      return new CallBuilder().readDomainAsync(context.getDomainName(), context.getNamespace(), new DomainUpdateStep());
+    }
+  }
+
+  static class DomainUpdateStep extends ResponseStep<Domain> {
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+      packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
+      return doNext(packet);
+    }
   }
 
   static class DomainStatusUpdaterContext {
@@ -259,6 +297,10 @@ public class DomainStatusUpdater {
     @Override
     DomainStatusUpdaterContext createContext(Packet packet) {
       return new StatusUpdateContext(packet, this);
+    }
+
+    @Override
+    void modifyStatus(DomainStatus domainStatus) { // no-op; modification happens in the context itself.
     }
 
     static class StatusUpdateContext extends DomainStatusUpdaterContext {
@@ -394,7 +436,8 @@ public class DomainStatusUpdater {
 
       private String getNodeName(String serverName) {
         return Optional.ofNullable(getInfo().getServerPod(serverName))
-            .map(p -> p.getSpec().getNodeName())
+            .map(V1Pod::getSpec)
+            .map(V1PodSpec::getNodeName)
             .orElse(null);
       }
 
@@ -406,20 +449,23 @@ public class DomainStatusUpdater {
 
       private String getClusterNameFromPod(String serverName) {
         return Optional.ofNullable(getInfo().getServerPod(serverName))
-            .map(p -> p.getMetadata().getLabels().get(CLUSTERNAME_LABEL))
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .map(l -> l.get(CLUSTERNAME_LABEL))
             .orElse(null);
       }
 
       private Collection<String> getServerNames() {
         Set<String> result = new HashSet<>();
-        getDomainConfig().ifPresent(config -> {
-          result.addAll(config.getServerConfigs().keySet());
-          for (WlsClusterConfig cluster : config.getConfiguredClusters()) {
-            Optional.ofNullable(cluster.getDynamicServersConfig())
-                .ifPresent(dynamicConfig -> Optional.ofNullable(dynamicConfig.getServerConfigs())
-                    .ifPresent(servers -> servers.forEach(item -> result.add(item.getName()))));
-          }
-        });
+        getDomainConfig()
+              .ifPresent(config -> {
+                result.addAll(config.getServerConfigs().keySet());
+                for (WlsClusterConfig cluster : config.getConfiguredClusters()) {
+                  Optional.ofNullable(cluster.getDynamicServersConfig())
+                        .flatMap(dynamicConfig -> Optional.ofNullable(dynamicConfig.getServerConfigs()))
+                        .ifPresent(servers -> servers.forEach(item -> result.add(item.getName())));
+                }
+              });
         return result;
       }
 

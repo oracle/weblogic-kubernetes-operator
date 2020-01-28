@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -18,9 +18,9 @@ import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServicePort;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServicePort;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -802,7 +802,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
   @SuppressWarnings("unused")
   static class ServiceNameMatcher
-      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1Service> {
+      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Service> {
     private String expectedName;
 
     private ServiceNameMatcher(String expectedName) {
@@ -833,7 +833,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
   @SuppressWarnings("unused")
   static class PortMatcher
-      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1Service> {
+      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Service> {
     private final String expectedName;
     private final Integer expectedValue;
 
@@ -890,7 +890,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
   @SuppressWarnings("unused")
   static class NodePortMatcher
-      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1ServicePort> {
+      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1ServicePort> {
     private String name;
     private int nodePort;
 
@@ -927,7 +927,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
   @SuppressWarnings("unused")
   static class UniquePortsMatcher
-      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1Service> {
+      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Service> {
     static UniquePortsMatcher hasOnlyUniquePortNames() {
       return new UniquePortsMatcher();
     }

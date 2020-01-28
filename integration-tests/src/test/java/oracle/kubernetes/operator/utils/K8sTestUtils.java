@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -6,35 +6,34 @@ package oracle.kubernetes.operator.utils;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.Configuration;
-import io.kubernetes.client.apis.ApiextensionsV1beta1Api;
-import io.kubernetes.client.apis.AppsV1Api;
-import io.kubernetes.client.apis.BatchV1Api;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.apis.CustomObjectsApi;
-import io.kubernetes.client.apis.ExtensionsV1beta1Api;
-import io.kubernetes.client.apis.RbacAuthorizationV1Api;
-import io.kubernetes.client.models.ExtensionsV1beta1IngressList;
-import io.kubernetes.client.models.V1ClusterRoleBindingList;
-import io.kubernetes.client.models.V1ClusterRoleList;
-import io.kubernetes.client.models.V1ConfigMapList;
-import io.kubernetes.client.models.V1DeploymentList;
-import io.kubernetes.client.models.V1JobList;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PersistentVolumeClaimList;
-import io.kubernetes.client.models.V1PersistentVolumeList;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodList;
-import io.kubernetes.client.models.V1ReplicaSetList;
-import io.kubernetes.client.models.V1RoleBindingList;
-import io.kubernetes.client.models.V1RoleList;
-import io.kubernetes.client.models.V1SecretList;
-import io.kubernetes.client.models.V1ServiceAccountList;
-import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.Configuration;
+import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
+import io.kubernetes.client.openapi.apis.BatchV1Api;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.apis.ExtensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
+import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
+import io.kubernetes.client.openapi.models.V1ClusterRoleList;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1DeploymentList;
+import io.kubernetes.client.openapi.models.V1JobList;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1ReplicaSetList;
+import io.kubernetes.client.openapi.models.V1RoleBindingList;
+import io.kubernetes.client.openapi.models.V1RoleList;
+import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.openapi.models.V1ServiceAccountList;
+import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -97,6 +96,7 @@ public class K8sTestUtils {
         coreV1Api.listNamespacedPod(
             namespace,
             Boolean.FALSE.toString(),
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -112,6 +112,7 @@ public class K8sTestUtils {
   public void verifyJobs(String labelSelectors, int expected) throws Exception {
     V1JobList v1JobList =
         batchV1Api.listJobForAllNamespaces(
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -127,6 +128,7 @@ public class K8sTestUtils {
   public void verifyNoDeployments(String labelSelectors) throws Exception {
     V1DeploymentList v1DeploymentList =
         appsV1Api.listDeploymentForAllNamespaces(
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -141,6 +143,7 @@ public class K8sTestUtils {
   public void verifyNoReplicaSets(String labelSelectors) throws Exception {
     V1ReplicaSetList v1ReplicaSetList =
         appsV1Api.listReplicaSetForAllNamespaces(
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -156,6 +159,7 @@ public class K8sTestUtils {
     // Verify services
     V1ServiceList v1ServiceList =
         coreV1Api.listServiceForAllNamespaces(
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -174,6 +178,7 @@ public class K8sTestUtils {
   public void verifyPvcs(String labelSelectors, int expected) throws Exception {
     V1PersistentVolumeClaimList v1PersistentVolumeClaimList =
         coreV1Api.listPersistentVolumeClaimForAllNamespaces(
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -191,6 +196,7 @@ public class K8sTestUtils {
       throws Exception {
     ExtensionsV1beta1IngressList labeledIngressList =
         extensionsV1beta1Api.listIngressForAllNamespaces(
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -206,6 +212,7 @@ public class K8sTestUtils {
         .forEach(li -> li.getMetadata().getNamespace().equals(domainNs));
     ExtensionsV1beta1IngressList traefikIngressList =
         extensionsV1beta1Api.listIngressForAllNamespaces(
+            Boolean.FALSE,
             null,
             String.format("metadata.name=traefik-hostrouting-%s", domainUid),
             null,
@@ -222,6 +229,7 @@ public class K8sTestUtils {
   public void verifyConfigMaps(String labelSelectors, int expected) throws Exception {
     V1ConfigMapList v1ConfigMapList =
         coreV1Api.listConfigMapForAllNamespaces(
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -237,6 +245,7 @@ public class K8sTestUtils {
   public void verifyNoServiceAccounts(String labelSelectors) throws Exception {
     V1ServiceAccountList v1ServiceAccountList =
         coreV1Api.listServiceAccountForAllNamespaces(
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -251,6 +260,7 @@ public class K8sTestUtils {
   public void verifyNoRoles(String labelSelectors) throws Exception {
     V1RoleList v1RoleList =
         rbacAuthorizationV1Api.listRoleForAllNamespaces(
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -265,6 +275,7 @@ public class K8sTestUtils {
   public void verifyNoRoleBindings(String labelSelectors) throws Exception {
     V1RoleBindingList v1RoleBindingList =
         rbacAuthorizationV1Api.listRoleBindingForAllNamespaces(
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -279,6 +290,7 @@ public class K8sTestUtils {
   public void verifySecrets(String secretName, int expected) throws Exception {
     V1SecretList v1SecretList =
         coreV1Api.listSecretForAllNamespaces(
+            Boolean.FALSE,
             null,
             "metadata.name=" + secretName,
             null,
@@ -294,6 +306,7 @@ public class K8sTestUtils {
     V1PersistentVolumeList v1PersistentVolumeList =
         coreV1Api.listPersistentVolume(
             Boolean.FALSE.toString(),
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -308,6 +321,7 @@ public class K8sTestUtils {
     V1ClusterRoleList v1ClusterRoleList =
         rbacAuthorizationV1Api.listClusterRole(
             Boolean.FALSE.toString(),
+            Boolean.FALSE,
             null,
             null,
             domain1Ls,
@@ -322,6 +336,7 @@ public class K8sTestUtils {
     V1ClusterRoleBindingList v1ClusterRoleBindingList =
         rbacAuthorizationV1Api.listClusterRoleBinding(
             Boolean.FALSE.toString(),
+            Boolean.FALSE,
             null,
             null,
             labelSelectors,
@@ -346,6 +361,7 @@ public class K8sTestUtils {
           coreV1Api.listNamespacedPod(
               namespace,
               Boolean.FALSE.toString(),
+              Boolean.FALSE,
               null,
               null,
               labelSelectors,
