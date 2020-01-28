@@ -116,10 +116,10 @@ cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
 
 This will produce an image named `oracle/fmw-infrastructure:12213-update-k8s`.
 
-All samples and instructions reference the pre-built and already patched image, `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3`. When building your own image, you will need to rename `oracle/fmw-infrastructure:12213-update-k8s` to `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3`.
+All samples and instructions reference the pre-built and already patched image, `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3`. When building your own image, you will need to rename `oracle/fmw-infrastructure:12213-update-k8s` to `oracle/fmw-infrastructure:12.2.1.3`.
 
 ```
-$ docker tag oracle/fmw-infrastructure:12213-update-k8s container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3
+$ docker tag oracle/fmw-infrastructure:12213-update-k8s oracle/fmw-infrastructure:12.2.1.3
 ```
 
 After cloning the repository and downloading the installer from Oracle Technology Network
@@ -130,13 +130,13 @@ cd docker-images/OracleSOASuite/dockerfiles
 ./buildDockerImage.sh -v 12.2.1.3 -s
 ```
 
-The image produced will be named `middleware/soasuite/oracle/soasuite:12.2.1.3`.
+The image produced will be named `oracle/soa:12.2.1.3`.
 
 The Oracle SOA Suite image created through the above step needs to be retagged
-from `middleware/soasuite/oracle/soasuite:12.2.1.3` to `container-registry.oracle.com/middleware/soasuite:12.2.1.3` before continuing with the next steps.
+from `oracle/soa:12.2.1.3` to `container-registry.oracle.com/middleware/soasuite:12.2.1.3` before continuing with the next steps.
 
 ```bash
-$ docker tag middleware/soasuite/oracle/soasuite:12.2.1.3 container-registry.oracle.com/middleware/soasuite:12.2.1.3
+$ docker tag oracle/soa:12.2.1.3 container-registry.oracle.com/middleware/soasuite:12.2.1.3
 ```
 
 You can use this image to run the Repository Creation Utility and to run your domain using the “domain on a persistent volume” model.
