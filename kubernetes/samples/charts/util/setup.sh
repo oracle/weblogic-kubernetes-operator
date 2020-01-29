@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018,2019,2020 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018,2020 Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #  This script is to create or delete Ingress controllers. We support two ingress controllers: traefik and voyager.
@@ -10,26 +10,26 @@ TNAME=traefik-operator  # release name of Traefik
 VSPACE=voyager # NameSpace for Voyager
 TSPACE=traefik   # NameSpace for Traefik
 
-helm version --short | grep v3
-[[ $? == 0 ]] && HELM_VERSION=V3
-[[ $? == 1 ]] && HELM_VERSION=V2
+helm version --short | grep v2
+[[ $? == 0 ]] && HELM_VERSION=V2
+[[ $? == 1 ]] && HELM_VERSION=V3
 
 echo "Detected Helm Version [$HELM_VERSION]"
 
-if [ "$HELM_VERSION" == "V3" ]; then
-   v_list_args="--namespace $VSPACE "
-   t_list_args="--namespace $TSPACE "
-   v_uninstall_args="--namespace $VSPACE "
-   t_uninstall_args="--namespace $TSPACE "
-   v_helm_install="helm install $VNAME appscode/voyager  "
-   t_helm_install="helm install $TNAME stable/traefik "
-else
+if [ "$HELM_VERSION" == "V2" ]; then
    v_list_args=""
    t_list_args=""
-   v_uninstall_args=""
-   t_uninstall_args=""
+   v_helm_delete="helm delete --purge"
+   t_helm_delete="helm delete --purge"
    v_helm_install="helm install appscode/voyager --name $VNAME  "
    t_helm_install="helm install stable/traefik --name $TNAME "
+else
+   v_list_args="--namespace $VSPACE "
+   t_list_args="--namespace $TSPACE "
+   v_helm_delete="helm delete --keep-history --namespace $VSPACE "
+   t_helm_delete="helm delete --keep-history --namespace $TSPACE "
+   v_helm_install="helm install $VNAME appscode/voyager  "
+   t_helm_install="helm install $TNAME stable/traefik "
 fi
 
 function createVoyager() {
@@ -136,12 +136,12 @@ function purgeCRDs() {
 
 function deleteVoyager() {
   if [ "$(helm list ${v_list_args} | grep $VNAME |  wc -l)" = 1 ]; then
-    echo "Uninstall Voyager Operator. "
-    helm uninstall $VNAME ${v_uninstall_args}
+    echo "Deleting Voyager Operator. "
+    ${v_helm_delete} $VNAME 
     kubectl delete ns ${VSPACE}
     purgeCRDs
   else
-    echo "Voyager operator has already been unistalled" 
+    echo "Voyager operator has already been deleted" 
   fi
   echo
 
@@ -155,11 +155,11 @@ function deleteVoyager() {
 
 function deleteTraefik() {
   if [ "$(helm list ${t_list_args}| grep $TNAME |  wc -l)" = 1 ]; then
-    echo "Uninstall Traefik operator." 
-    helm uninstall $TNAME ${t_uninstall_args}
+    echo "Deleting Traefik operator." 
+    ${t_helm_delete} $TNAME
     kubectl delete ns ${TSPACE}
   else
-    echo "Traefik operator has already been unistalled" 
+    echo "Traefik operator has already been deleted" 
   fi
 }
 
