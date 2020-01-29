@@ -78,4 +78,6 @@ ${IMGTOOL_BIN} update \
   --wdtVariables models/model1.10.properties \
   --wdtArchive models/archive1.zip \
   --wdtModelOnly \
-  --wdtDomainType ${WDT_DOMAIN_TYPE}
+  --wdtDomainType ${WDT_DOMAIN_TYPE} \
+  --additionalBuildCommands add_os_utils
+
