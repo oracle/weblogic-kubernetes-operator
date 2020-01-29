@@ -101,14 +101,14 @@ To build the WebLogic Server image and apply the patches:
 
     ```
     $ imagetool cache addInstaller \
-    --type jdk \
-    --version 8u241 \
-    --path /home/acmeuser/wls-installers/jdk-8u202-linux-x64.tar.gz
+    --type=jdk \
+    --version=8u241 \
+    --path=/home/acmeuser/wls-installers/jre-8u241-linux-x64.tar.gz
 
     $ imagetool cache addInstaller \
-    --type wls \
-    --version 12.2.1.3.0 \
-    --path /home/acmeuser/wls-installers/fmw_12.2.1.3.0_wls_Disk1_1of1.zip
+    --type=wls \
+    --version=12.2.1.3.0 \
+    --path=/home/acmeuser/wls-installers/fmw_12.2.1.3.0_wls_Disk1_1of1.zip
     ```
 2. Use the [Create Tool](https://github.com/oracle/weblogic-image-tool/blob/master/site/create-image.md)
 to build the image and apply the patches.
@@ -117,13 +117,13 @@ to build the image and apply the patches.
     ```
 
     $ imagetool create \
-    --tag weblogic:12.2.1.3 \
+    --tag=weblogic:12.2.1.3 \
     --type=wls \
-    --version 12.2.1.3.0 \
+    --version=12.2.1.3.0 \
     --jdkVersion=8u241 \
     -–patches=29135930_12.2.1.3.0,27117282_12.2.1.3.0 \
-    --user username.mycompany.com \
-    --passwordEnv MYPWD  
+    --user=username.mycompany.com \
+    --passwordEnv=MYPWD  
     ```
 
 3. After the tool creates the image, verify that the image is in your local repository:
