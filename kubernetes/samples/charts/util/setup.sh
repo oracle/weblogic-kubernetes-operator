@@ -23,6 +23,7 @@ if [ "$HELM_VERSION" == "V2" ]; then
    t_helm_delete="helm delete --purge"
    v_helm_install="helm install appscode/voyager --name $VNAME  "
    t_helm_install="helm install stable/traefik --name $TNAME "
+   helm_search="helm search repo | grep appscode/voyager"
 else
    v_list_args="--namespace $VSPACE "
    t_list_args="--namespace $TSPACE "
@@ -30,13 +31,24 @@ else
    t_helm_delete="helm delete --keep-history --namespace $TSPACE "
    v_helm_install="helm install $VNAME appscode/voyager  "
    t_helm_install="helm install $TNAME stable/traefik "
+   helm_search="helm search appscode/voyager"
 fi
 
+function createNameSpace() {
+ ns=$1
+ namespace=`kubectl get namespace ${ns} | grep ${ns} | awk '{print $1}'`
+ if [ -z ${namespace} ]; then
+   echo "Adding NameSpace[$ns] to Kubernetes Cluster"
+   kubectl create namespace ${ns}
+ fi
+}
+
 function createVoyager() {
+  createNameSpace $VSPACE
   echo "Creating Voyager operator on namespace 'voyager'."
   echo
 
-  if [ "$(helm search appscode/voyager | grep voyager |  wc -l)" = 0 ]; then
+  if [ "$(${helm_search} | grep voyager |  wc -l)" = 0 ]; then
     echo "Add Appscode Chart Repository"
     helm repo add appscode https://charts.appscode.com/stable/
     helm repo update
@@ -76,6 +88,7 @@ function createVoyager() {
 }
 
 function createTraefik() {
+  createNameSpace $TSPACE
   echo "Creating Traefik operator on namespace 'traefik'." 
   echo
 
