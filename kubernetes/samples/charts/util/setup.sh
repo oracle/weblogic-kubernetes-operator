@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018,2020 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #  This script is to create or delete Ingress controllers. We support two ingress controllers: traefik and voyager.
@@ -10,7 +10,7 @@ TNAME=traefik-operator  # release name of Traefik
 VSPACE=voyager # NameSpace for Voyager
 TSPACE=traefik   # NameSpace for Traefik
 
-helm version --short | grep v2
+helm version --short --client | grep v2
 [[ $? == 0 ]] && HELM_VERSION=V2
 [[ $? == 1 ]] && HELM_VERSION=V3
 
@@ -46,7 +46,7 @@ function createVoyager() {
   echo
 
   if [ "$(helm list ${v_list_args} | grep $VNAME |  wc -l)" = 0 ]; then
-    echo "Install voyager operator."
+    echo "Installing Voyager Operator."
     
     ${v_helm_install} --version 7.4.0 \
       --namespace ${VSPACE} \
@@ -80,7 +80,7 @@ function createTraefik() {
   echo
 
   if [ "$(helm list ${t_list_args} | grep $TNAME |  wc -l)" = 0 ]; then
-    echo "Install Traefik Operator."
+    echo "Installing Traefik Operator."
     ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml
   else
     echo "Traefik Operator is already installed."
