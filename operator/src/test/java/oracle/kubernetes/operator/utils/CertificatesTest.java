@@ -15,7 +15,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_CERTIFICATE;
+import static oracle.kubernetes.operator.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
+import static oracle.kubernetes.operator.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -30,7 +31,9 @@ public class CertificatesTest {
 
   @Before
   public void setUp() throws Exception {
-    mementos.add(consoleHandlerMemento.collectLogMessages(logRecords, NO_CERTIFICATE).withLogLevel(Level.INFO));
+    mementos.add(consoleHandlerMemento
+          .collectLogMessages(logRecords, NO_INTERNAL_CERTIFICATE, NO_EXTERNAL_CERTIFICATE)
+          .withLogLevel(Level.INFO));
     mementos.add(InMemoryCertificates.installWithoutData());
   }
 
@@ -67,7 +70,7 @@ public class CertificatesTest {
 
   @Test
   public void whenNoExternalCertificateFile_returnNull() {
-    consoleHandlerMemento.ignoreMessage(NO_CERTIFICATE);
+    consoleHandlerMemento.ignoreMessage(NO_EXTERNAL_CERTIFICATE);
 
     assertThat(Certificates.getOperatorExternalCertificateData(), nullValue());
   }
@@ -76,7 +79,7 @@ public class CertificatesTest {
   public void whenNoExternalCertificateFile_logInfoMessage() {
     assertThat(Certificates.getOperatorExternalCertificateData(), nullValue());
 
-    assertThat(logRecords, containsInfo(NO_CERTIFICATE));
+    assertThat(logRecords, containsInfo(NO_EXTERNAL_CERTIFICATE));
   }
 
   @Test
@@ -88,7 +91,7 @@ public class CertificatesTest {
 
   @Test
   public void whenNoInternalCertificateFile_returnNull() {
-    consoleHandlerMemento.ignoreMessage(NO_CERTIFICATE);
+    consoleHandlerMemento.ignoreMessage(NO_INTERNAL_CERTIFICATE);
 
     assertThat(Certificates.getOperatorInternalCertificateData(), nullValue());
   }
@@ -97,7 +100,7 @@ public class CertificatesTest {
   public void whenNoInternalCertificateFile_logInfoMessage() {
     Certificates.getOperatorInternalCertificateData();
 
-    assertThat(logRecords, containsInfo(NO_CERTIFICATE));
+    assertThat(logRecords, containsInfo(NO_INTERNAL_CERTIFICATE));
   }
 
   @Test

@@ -12,7 +12,8 @@ import java.util.function.Function;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_CERTIFICATE;
+import static oracle.kubernetes.operator.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
+import static oracle.kubernetes.operator.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
 
 public class Certificates {
   private static final String OPERATOR_DIR = "/operator/";
@@ -38,18 +39,18 @@ public class Certificates {
   }
 
   public static String getOperatorExternalCertificateData() {
-    return getCertificate(Certificates.EXTERNAL_CERTIFICATE);
+    return getCertificate(Certificates.EXTERNAL_CERTIFICATE, NO_EXTERNAL_CERTIFICATE);
   }
 
   public static String getOperatorInternalCertificateData() {
-    return getCertificate(Certificates.INTERNAL_CERTIFICATE);
+    return getCertificate(Certificates.INTERNAL_CERTIFICATE, NO_INTERNAL_CERTIFICATE);
   }
 
-  private static String getCertificate(String path) {
+  private static String getCertificate(String path, String failureMessage) {
     try {
       return new String(Files.readAllBytes(GET_PATH.apply(path)));
     } catch (IOException e) {
-      LOGGER.info(NO_CERTIFICATE, path);
+      LOGGER.info(failureMessage, path);
       return null;
     }
   }
