@@ -27,8 +27,8 @@ if [ "$HELM_VERSION" == "V2" ]; then
 else
    v_list_args="--namespace $VSPACE "
    t_list_args="--namespace $TSPACE "
-   v_helm_delete="helm delete --keep-history --namespace $VSPACE "
-   t_helm_delete="helm delete --keep-history --namespace $TSPACE "
+   v_helm_delete="helm uninstall --keep-history --namespace $VSPACE "
+   t_helm_delete="helm uninstall --keep-history --namespace $TSPACE "
    v_helm_install="helm install $VNAME appscode/voyager  "
    t_helm_install="helm install $TNAME stable/traefik "
    helm_search="helm search appscode/voyager"
