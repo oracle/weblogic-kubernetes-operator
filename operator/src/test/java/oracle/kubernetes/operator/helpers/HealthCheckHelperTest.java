@@ -11,6 +11,7 @@ import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ResourceAttributes;
 import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
@@ -18,8 +19,8 @@ import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.ClientFactoryStub;
-import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
+import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -40,9 +41,9 @@ import static oracle.kubernetes.operator.logging.MessageKeys.PV_ACCESS_MODE_FAIL
 import static oracle.kubernetes.operator.logging.MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID;
 import static oracle.kubernetes.operator.logging.MessageKeys.VERIFY_ACCESS_DENIED;
 import static oracle.kubernetes.operator.logging.MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
 
 public class HealthCheckHelperTest {
 
@@ -101,14 +102,16 @@ public class HealthCheckHelperTest {
 
   private List<Memento> mementos = new ArrayList<>();
   private List<LogRecord> logRecords = new ArrayList<>();
-  private CallTestSupport testSupport = new CallTestSupport();
   private AccessChecks accessChecks = new AccessChecks();
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   @Before
   public void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS));
+    mementos.add(TestUtils.silenceOperatorLogger()
+          .ignoringLoggedExceptions(ApiException.class)
+          .collectLogMessages(logRecords, LOG_KEYS));
     mementos.add(ClientFactoryStub.install());
-    mementos.add(testSupport.installSynchronousCallDispatcher());
+    mementos.add(testSupport.install());
   }
 
   @After
@@ -133,64 +136,57 @@ public class HealthCheckHelperTest {
     expectClusterAccessChecks();
   }
 
-  @Test
-  public void whenRulesReviewNotSupportedAndNoNamespaceAccess_logWarning() {
-    expectAccessChecks();
-    accessChecks.setMayAccessNamespace(false);
-    testSupport
-        .createCannedResponse("selfSubjectAccessReview")
-        .computingResult(accessChecks::computeResponse);
-
-    for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION, OPERATOR_NAMESPACE, ns);
-    }
-
-    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED));
-    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
+  void populateSelfSubjectAccessReviewOnCreate() {
+    testSupport.doOnCreate(KubernetesTestSupport.SELF_SUBJECT_ACCESS_REVIEW,
+        (V1SelfSubjectAccessReview r) -> accessChecks.populateSubjectAccessReview(r));
   }
 
   @Test
-  public void whenRulesReviewNotSupportedAndNoClusterAccess_logWarning() {
+  public void whenRulesReviewFailsAndMayNotAccessSpecifiedResource_dontAllowClusterAccess() {
     expectAccessChecks();
     accessChecks.setMayAccessCluster(false);
-    testSupport
-        .createCannedResponse("selfSubjectAccessReview")
-        .computingResult(accessChecks::computeResponse);
+    testSupport.failOnCreate(KubernetesTestSupport.SELF_SUBJECT_RULES_REVIEW, null, null, 500);
+    populateSelfSubjectAccessReviewOnCreate();
 
-    for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.performSecurityChecks(MINIMAL_KUBERNETES_VERSION, OPERATOR_NAMESPACE, ns);
-    }
-
-    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED));
-    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
+    assertThat(
+          HealthCheckHelper.isClusterResourceAccessAllowed(RULES_REVIEW_VERSION, Resource.CRDS, Operation.get),
+          is(false));
   }
 
   @Test
-  public void whenRulesReviewSupported_accessGrantedForEverything() {
-    expectSelfSubjectRulesReview();
+  public void whenRulesReviewFailsAndMayAccessSpecifiedResource_allowClusterAccess() {
+    expectAccessChecks();
+    accessChecks.setMayAccessCluster(true);
+    testSupport.failOnCreate(KubernetesTestSupport.SELF_SUBJECT_RULES_REVIEW, null, null, 500);
+    populateSelfSubjectAccessReviewOnCreate();
 
-    for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.performSecurityChecks(RULES_REVIEW_VERSION, OPERATOR_NAMESPACE, ns);
-    }
+    assertThat(
+          HealthCheckHelper.isClusterResourceAccessAllowed(RULES_REVIEW_VERSION, Resource.CRDS, Operation.get),
+          is(true));
   }
 
   @Test
-  public void whenRulesReviewSupportedAndNoNamespaceAccess_logWarning() {
-    accessChecks.setMayAccessNamespace(false);
-    expectSelfSubjectRulesReview();
+  public void whenRulesReviewPermitsAccess_allowClusterAccess() {
+    populateSelfSubjectRulesReviewOnCreate();
 
-    for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.performSecurityChecks(RULES_REVIEW_VERSION, OPERATOR_NAMESPACE, ns);
-    }
-
-    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
+    assertThat(
+          HealthCheckHelper.isClusterResourceAccessAllowed(RULES_REVIEW_VERSION, Resource.CRDS, Operation.get),
+          is(true));
   }
 
-  private void expectSelfSubjectRulesReview() {
-    testSupport
-        .createCannedResponse("selfSubjectRulesReview")
-        .ignoringBody()
-        .returning(new V1SelfSubjectRulesReview().status(accessChecks.createRulesStatus()));
+  @Test
+  public void whenRulesReviewDoNotAccess_dontAllowClusterAccess() {
+    accessChecks.setMayAccessCluster(false);
+    populateSelfSubjectRulesReviewOnCreate();
+
+    assertThat(
+          HealthCheckHelper.isClusterResourceAccessAllowed(RULES_REVIEW_VERSION, Resource.CRDS, Operation.get),
+          is(false));
+  }
+
+  private void populateSelfSubjectRulesReviewOnCreate() {
+    testSupport.doOnCreate(KubernetesTestSupport.SELF_SUBJECT_RULES_REVIEW,
+        (V1SelfSubjectRulesReview r) -> accessChecks.populateSubjectRulesReview(r));
   }
 
   private void expectAccessReviewsByNamespace(String namespace) {
@@ -278,6 +274,10 @@ public class HealthCheckHelperTest {
       return resourceAttributes.getNamespace() == null ? mayAccessCluster : mayAccessNamespace;
     }
 
+    private void populateSubjectRulesReview(V1SelfSubjectRulesReview review) {
+      review.status(createRulesStatus());
+    }
+
     private V1SubjectRulesReviewStatus createRulesStatus() {
       return new V1SubjectRulesReviewStatus().resourceRules(createRules());
     }
@@ -336,11 +336,7 @@ public class HealthCheckHelperTest {
           && expectedAccessChecks.remove(resourceAttributes);
     }
 
-    private V1SelfSubjectAccessReview computeResponse(RequestParams requestParams) {
-      return computeResponse((V1SelfSubjectAccessReview) requestParams.body);
-    }
-
-    private V1SelfSubjectAccessReview computeResponse(V1SelfSubjectAccessReview body) {
+    private V1SelfSubjectAccessReview populateSubjectAccessReview(V1SelfSubjectAccessReview body) {
       body.setStatus(new V1SubjectAccessReviewStatus().allowed(isResourceCheckAllowed(body)));
       return body;
     }

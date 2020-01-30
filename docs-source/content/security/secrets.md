@@ -88,11 +88,24 @@ The Kubernetes `Secret` of type `docker-registry` should be created in the names
 where the operator is deployed.
 
 Here is an example of using the `helm install` command to set the image name and image pull secret:
+
+For Helm 2.x:
+
 ```bash
 $ helm install kubernetes/charts/weblogic-operator \
   --set "image=my.io/my-operator-image:1.0" \
   --set "imagePullSecrets[0].name=my-operator-image-pull-secret" \
   --name my-weblogic-operator --namespace weblogic-operator-ns \
+  --wait
+```
+
+For Helm 3.x:
+
+```bash
+$ helm install my-weblogic-operator kubernetes/charts/weblogic-operator \
+  --set "image=my.io/my-operator-image:1.0" \
+  --set "imagePullSecrets[0].name=my-operator-image-pull-secret" \
+  --namespace weblogic-operator-ns \
   --wait
 ```
 
