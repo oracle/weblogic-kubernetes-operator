@@ -15,6 +15,12 @@ $ helm repo add appscode https://charts.appscode.com/stable/
 $ helm repo update
 ```
 Verify that the chart repository has been added.
+
+Using Helm 3:
+```
+$ helm search repo appscode/voyager
+```
+Using Helm 2:
 ```
 $ helm search appscode/voyager
 NAME                    CHART VERSION   APP VERSION     DESCRIPTION
@@ -22,8 +28,19 @@ appscode/voyager        v12.0.0-rc.1    v12.0.0-rc.1    Voyager by AppsCode - Se
 ```
 > **NOTE**: After updating the helm repository, the Voyager version listed maybe newer that the one appearing here, please check with the Voyager site for the lastest supported versions.
 
+### 2. Install the Voyager operator
 
-### 2. Install the Voyager operator with Helm 2 support
+> **NOTE**: The Voyager version used for the install should match the version found with `helm search`.
+
+Using Helm 3:
+```
+$ kubectl create ns voyager
+$ helm install voyager-operator appscode/voyager --version v12.0.0-rc.1 \
+  --namespace voyager \
+  --set cloudProvider=baremetal \
+  --set apiserver.enableValidatingWebhook=false
+```
+Using Helm 2:
 ```
 $ kubectl create ns voyager
 $ helm install appscode/voyager --name voyager-operator --version v12.0.0-rc.1 \
@@ -31,7 +48,6 @@ $ helm install appscode/voyager --name voyager-operator --version v12.0.0-rc.1 \
   --set cloudProvider=baremetal \
   --set apiserver.enableValidatingWebhook=false
 ```
-> **NOTE**: The Voyager version used for the install should match the version found with `helm search`.
 
 Wait until the Voyager Operator is running.
 ```
