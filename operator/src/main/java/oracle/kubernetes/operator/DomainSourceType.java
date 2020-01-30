@@ -3,8 +3,8 @@
 
 package oracle.kubernetes.operator;
 
-public enum ModelInImageDomainType {
-  WLS,
-  RestrictedJRF,
-  JRF;
+public enum DomainSourceType {
+  Image,
+  PersistentVolume,
+  FromModel
 }

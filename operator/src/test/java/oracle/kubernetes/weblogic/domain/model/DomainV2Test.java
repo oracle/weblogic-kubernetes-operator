@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Sysctl;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
 import org.hamcrest.Matcher;
@@ -717,14 +718,14 @@ public class DomainV2Test extends DomainTestBase {
   public void whenDomainReadFromYamlWithNoSetting_defaultsToDomainHomeInImage() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
 
-    assertThat(domain.isDomainHomeInImage(), is(true));
+    assertThat(domain.getDomainHomeSourceType(), is(DomainSourceType.Image.toString()));
   }
 
   @Test
   public void whenDomainReadFromYaml_domainHomeInImageIsDisabled() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
-    assertThat(domain.isDomainHomeInImage(), is(false));
+    assertThat(domain.getDomainHomeSourceType(), is(DomainSourceType.PersistentVolume.toString()));
   }
 
   @Test
@@ -1410,13 +1411,6 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDefaultConfiguration_domainHomeInImageIsTrue() {
-    configureDomain(domain);
-
-    assertThat(domain.getSpec().isDomainHomeInImage(), is(true));
-  }
-
-  @Test
   public void whenDomainHomeInImageSpecified_useValue() {
     configureDomain(domain).withDomainHomeInImage(false);
 
@@ -1435,20 +1429,6 @@ public class DomainV2Test extends DomainTestBase {
     configureDomain(domain).withLogHome("/custom/logs/");
 
     assertThat(domain.getLogHome(), equalTo("/custom/logs/"));
-  }
-
-  @Test
-  public void whenDomainHomeInImage_logHomeNotEnabled() {
-    configureDomain(domain).withDomainHomeInImage(true);
-
-    assertThat(domain.getSpec().isLogHomeEnabled(), is(false));
-  }
-
-  @Test
-  public void whenDomainHomeNotInImage_logHomeEnabled() {
-    configureDomain(domain).withDomainHomeInImage(false);
-
-    assertThat(domain.getSpec().isLogHomeEnabled(), is(true));
   }
 
   @Test

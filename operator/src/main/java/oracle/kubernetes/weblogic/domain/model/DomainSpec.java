@@ -19,6 +19,7 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -47,8 +48,8 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The folder for the WebLogic Domain. Not required."
-          + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false."
-          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true.")
+          + " Defaults to /shared/domains/domains/domainUID if domainHomeSourceType is not Image."
+          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image.")
   private String domainHome;
 
   /**
@@ -93,8 +94,8 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "Specified whether the log home folder is enabled. Not required. "
-          + "Defaults to true if domainHomeInImage is false. "
-          + "Defaults to false if domainHomeInImage is true. ")
+          + "Defaults to true if domainHomeSourceType is not Image. "
+          + "Defaults to false if domainHomeSourceType is Image. ")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   /**
@@ -118,7 +119,7 @@ public class DomainSpec extends BaseConfiguration {
    * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3
    */
   @Description(
-      "The WebLogic Docker image; required when domainHomeInImage is true; "
+      "The WebLogic Docker image; required when domainHomeSourceType is Image; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.")
   private String image;
 
@@ -164,8 +165,14 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Deprecated
   @Description(
-      "True if this domain's home is defined in the Docker image for the domain. Defaults to true.")
+      "Deprecated. Use domainHomeSourceType instead. True if this domain's"
+          + " home is defined in the Docker image for the domain. Defaults to true.")
   private Boolean domainHomeInImage;
+
+  @EnumClass(value = DomainSourceType.class)
+  @Description("Domain home source type: Legal values: Image, PersistentVolume, FromModel."
+      + " Defaults to Image unless configuration.model is provided and then defaults to FromModel.")
+  private String domainHomeSourceType;
 
   @Description("Models and overrides affecting the WebLogic domain configuration")
   private Configuration configuration;
@@ -431,8 +438,8 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    * @return log home enabled
    */
-  boolean isLogHomeEnabled() {
-    return Optional.ofNullable(logHomeEnabled).orElse(!isDomainHomeInImage());
+  Boolean isLogHomeEnabled() {
+    return logHomeEnabled;
   }
 
   /**
@@ -441,7 +448,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    * @param logHomeEnabled log home enabled
    */
-  public void setLogHomeEnabled(boolean logHomeEnabled) {
+  public void setLogHomeEnabled(Boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
   }
 
@@ -516,8 +523,8 @@ public class DomainSpec extends BaseConfiguration {
    * @return true or false
    * @since 2.0
    */
-  boolean isDomainHomeInImage() {
-    return Optional.ofNullable(domainHomeInImage).orElse(true);
+  Boolean isDomainHomeInImage() {
+    return domainHomeInImage;
   }
 
   /**
@@ -531,6 +538,19 @@ public class DomainSpec extends BaseConfiguration {
 
   public DomainSpec withDomainHomeInImage(boolean domainHomeInImage) {
     setDomainHomeInImage(domainHomeInImage);
+    return this;
+  }
+
+  public String getDomainHomeSourceType() {
+    return domainHomeSourceType;
+  }
+
+  public void setDomainHomeSourceType(String domainHomeSourceType) {
+    this.domainHomeSourceType = domainHomeSourceType;
+  }
+
+  public DomainSpec withDomainHomeSourceType(String domainHomeSourceType) {
+    this.domainHomeSourceType = domainHomeSourceType;
     return this;
   }
 
@@ -672,6 +692,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("domainUID", domainUid)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
+            .append("domainHomeSourceType", domainHomeSourceType)
             .append("configuration", configuration)
             .append("serverStartPolicy", serverStartPolicy)
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
@@ -702,6 +723,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUid)
             .append(domainHome)
             .append(domainHomeInImage)
+            .append(domainHomeSourceType)
             .append(configuration)
             .append(serverStartPolicy)
             .append(webLogicCredentialsSecret)
@@ -740,6 +762,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUid, rhs.domainUid)
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
+            .append(domainHomeSourceType, rhs.domainHomeSourceType)
             .append(configuration, rhs.configuration)
             .append(serverStartPolicy, rhs.serverStartPolicy)
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)

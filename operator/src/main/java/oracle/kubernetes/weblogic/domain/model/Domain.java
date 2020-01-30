@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.helpers.SecretType;
@@ -389,7 +390,8 @@ public class Domain {
   }
 
   boolean isLogHomeEnabled() {
-    return spec.isLogHomeEnabled();
+    return Optional.ofNullable(spec.isLogHomeEnabled())
+        .orElse(!DomainSourceType.Image.toString().equals(getDomainHomeSourceType()));
   }
 
   public String getDataHome() {
@@ -412,8 +414,19 @@ public class Domain {
     return spec.getIncludeServerOutInPodLog();
   }
 
-  boolean isDomainHomeInImage() {
-    return spec.isDomainHomeInImage();
+  public String getDomainHomeSourceType() {
+    return Optional.ofNullable(spec.getDomainHomeSourceType()).orElseGet(
+        () -> getModel() != null ? DomainSourceType.FromModel.toString()
+            : (Optional.ofNullable(spec.isDomainHomeInImage())
+            .orElse(true) ? DomainSourceType.Image.toString() : DomainSourceType.PersistentVolume.toString()));
+  }
+
+  public Model getModel() {
+    return Optional.ofNullable(spec.getConfiguration()).map(Configuration::getModel).orElse(null);
+  }
+
+  public Overrides getOverrides() {
+    return Optional.ofNullable(spec.getConfiguration()).map(Configuration::getOverrides).orElse(null);
   }
 
   public boolean isIstioEnabled() {
@@ -435,7 +448,7 @@ public class Domain {
     if (spec.getDomainHome() != null) {
       return spec.getDomainHome();
     }
-    if (spec.isDomainHomeInImage()) {
+    if (DomainSourceType.Image.toString().equals(getDomainHomeSourceType())) {
       return "/u01/oracle/user_projects/domains";
     }
     return "/shared/domains/" + getDomainUid();
@@ -460,7 +473,7 @@ public class Domain {
    * @return name of the config map
    */
   public String getConfigOverrides() {
-    return spec.getConfigOverrides();
+    return Optional.ofNullable(getOverrides()).map(Overrides::getConfigMapName).orElse(spec.getConfigOverrides());
   }
 
   public String getWdtConfigMap() {
@@ -473,7 +486,7 @@ public class Domain {
    * @return list of Kubernetes secret names
    */
   public List<String> getConfigOverrideSecrets() {
-    return spec.getConfigOverrideSecrets();
+    return Optional.ofNullable(getOverrides()).map(Overrides::getSecrets).orElse(spec.getConfigOverrideSecrets());
   }
 
   /**
@@ -658,10 +671,6 @@ public class Domain {
 
     private List<V1LocalObjectReference> getImagePullSecrets() {
       return spec.getImagePullSecrets();
-    }
-
-    private List<String> getConfigOverrideSecrets() {
-      return spec.getConfigOverrideSecrets();
     }
 
     @SuppressWarnings("SameParameterValue")

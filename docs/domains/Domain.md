@@ -20,15 +20,16 @@ DomainSpec is a description of a domain.
 | `clusters` | array of [Cluster](#cluster) | Configuration for the clusters. |
 | `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration |
 | `dataHome` | string | An optional, in-pod location for data storage of default and custom file stores. If dataHome is not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage directories are determined from the WebLogic domain home configuration. |
-| `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false. Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true. |
+| `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeSourceType is not Image. Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image. |
+| `domainHomeSourceType` | string | Domain home source type: Legal values: Image, PersistentVolume, FromModel. Defaults to Image unless configuration.model is provided and then defaults to FromModel. |
 | `domainUID` | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name. |
 | `experimental` | [Experimental](#experimental) | Experimental feature configurations. |
-| `image` | string | The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3. |
+| `image` | string | The WebLogic Docker image; required when domainHomeSourceType is Image; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3. |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
 | `includeServerOutInPodLog` | Boolean | If true (the default), the server .out file will be included in the pod's stdout. |
 | `logHome` | string | The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files |
-| `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true.  |
+| `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeSourceType is not Image. Defaults to false if domainHomeSourceType is Image.  |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
 | `replicas` | number | The number of managed servers to run in any cluster that does not specify a replica count. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
@@ -205,6 +206,8 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `configMapName` | string | The name of the config map for WebLogic configuration overrides. |
+| `secrets` | array of string | A list of names of the secrets for WebLogic configuration overrides. |
 
 ### Istio
 
