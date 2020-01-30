@@ -136,12 +136,18 @@ $ curl -k -H 'host: domain2.org' https://${HOSTNAME}:30307/testwebapp/
 
 ## Uninstall the Voyager Operator
 After removing all the Voyager Ingress resources, uninstall the Voyager operator:
+
+Using Helm 3:
+```
+$ helm uninstall voyager-operator --namespace voyager
+```
+Using Helm 2:
 ```
 $ helm delete --purge voyager-operator
 ```
 
 ## Install and uninstall the Voyager operator with setup.sh
-Alternatively, you can run the helper script `setup.sh`, under the `kubernetes/samples/charts/util` folder, to install and uninstall Voyager.
+Alternatively, you can run the helper script `setup.sh` when using Helm 2, under the `kubernetes/samples/charts/util` folder, to install and uninstall Voyager.
 
 To install Voyager:
 ```
