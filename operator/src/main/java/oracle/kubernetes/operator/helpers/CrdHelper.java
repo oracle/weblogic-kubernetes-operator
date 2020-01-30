@@ -221,7 +221,6 @@ public class CrdHelper {
       SchemaGenerator generator = new SchemaGenerator();
       generator.setIncludeAdditionalProperties(false);
       generator.setSupportObjectReferences(false);
-      generator.setIncludeDeprecated(true);
       generator.setIncludeSchemaReference(false);
       return generator;
     }

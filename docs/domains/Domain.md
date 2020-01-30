@@ -18,9 +18,12 @@ DomainSpec is a description of a domain.
 | --- | --- | --- |
 | `adminServer` | [Admin Server](#admin-server) | Configuration for the Administration Server. |
 | `clusters` | array of [Cluster](#cluster) | Configuration for the clusters. |
+| `configOverrides` | string | The name of the config map for optional WebLogic configuration overrides. |
+| `configOverrideSecrets` | array of string | A list of names of the secrets for optional WebLogic configuration overrides. |
 | `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration |
 | `dataHome` | string | An optional, in-pod location for data storage of default and custom file stores. If dataHome is not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage directories are determined from the WebLogic domain home configuration. |
 | `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeSourceType is not Image. Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image. |
+| `domainHomeInImage` | Boolean | Deprecated. Use domainHomeSourceType instead. True if this domain's home is defined in the Docker image for the domain. Defaults to true. |
 | `domainHomeSourceType` | string | Domain home source type: Legal values: Image, PersistentVolume, FromModel. Defaults to Image unless configuration.model is provided and then defaults to FromModel. |
 | `domainUID` | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name. |
 | `experimental` | [Experimental](#experimental) | Experimental feature configurations. |

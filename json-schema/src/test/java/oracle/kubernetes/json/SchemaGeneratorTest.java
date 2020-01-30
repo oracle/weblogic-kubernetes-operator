@@ -311,14 +311,6 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void whenFieldIsDeprecatedButExcludeDeprecatedSpecified_skipIt() {
-    generator.setIncludeDeprecated(false);
-    Object schema = generator.generate(ReferencingObject.class);
-
-    assertThat(schema, hasNoJsonPath("$.properties.deprecatedField"));
-  }
-
-  @Test
   public void whenFieldIsDeprecated_includeIt() {
     Object schema = generator.generate(ReferencingObject.class);
 

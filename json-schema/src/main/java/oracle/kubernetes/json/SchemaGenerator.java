@@ -47,9 +47,6 @@ public class SchemaGenerator {
   // a map of external class names to the external schema that defines them
   private Map<String, String> schemaUrls = new HashMap<>();
 
-  // true if deprecated fields should be included in the schema
-  private boolean includeDeprecated = true;
-
   // if true generate the additionalProperties field for each object. Defaults to true
   private boolean includeAdditionalProperties = true;
 
@@ -110,27 +107,10 @@ public class SchemaGenerator {
     Map<String, Map<String, Object>> objectObjectMap = loadCachedSchema(cacheUrl);
     Map<String, Object> definitions = objectObjectMap.get("definitions");
     for (Map.Entry<String, Object> entry : definitions.entrySet()) {
-      if (isDefinitionToUse(entry.getValue())) schemaUrls.put(entry.getKey(), schemaUrl.toString());
+      if (!entry.getKey().startsWith("io.k8s.kubernetes.pkg.")) {
+        schemaUrls.put(entry.getKey(), schemaUrl.toString());
+      }
     }
-  }
-
-  @SuppressWarnings("unchecked")
-  private boolean isDefinitionToUse(Object def) {
-    Map<String, Object> definition = (Map<String, Object>) def;
-    return !isDescriptionDeprecated(definition.get("description"));
-  }
-
-  private boolean isDescriptionDeprecated(Object description) {
-    return description != null && description.toString().contains("Deprecated");
-  }
-
-  /**
-   * Specifies whether deprecated fields should be included in the schema.
-   *
-   * @param includeDeprecated true to include deprecated fields. Defaults to true.
-   */
-  public void setIncludeDeprecated(boolean includeDeprecated) {
-    this.includeDeprecated = includeDeprecated;
   }
 
   /**
@@ -193,7 +173,7 @@ public class SchemaGenerator {
   }
 
   private boolean includeInSchema(Field field) {
-    return !isStatic(field) && !isVolatile(field) && !ignoreAsDeprecated(field);
+    return !isStatic(field) && !isVolatile(field);
   }
 
   private boolean isStatic(Field field) {
@@ -202,10 +182,6 @@ public class SchemaGenerator {
 
   private boolean isVolatile(Field field) {
     return Modifier.isVolatile(field.getModifiers());
-  }
-
-  private boolean ignoreAsDeprecated(Field field) {
-    return !includeDeprecated && isDeprecated(field);
   }
 
   private boolean isDeprecated(Field field) {
