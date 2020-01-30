@@ -12,6 +12,8 @@ import java.util.function.Function;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
+import static oracle.kubernetes.operator.logging.MessageKeys.NO_CERTIFICATE;
+
 public class Certificates {
   private static final String OPERATOR_DIR = "/operator/";
   private static final String EXTERNAL_ID_DIR = OPERATOR_DIR + "external-identity/";
@@ -47,7 +49,7 @@ public class Certificates {
     try {
       return new String(Files.readAllBytes(GET_PATH.apply(path)));
     } catch (IOException e) {
-      LOGGER.warning("Can't read certificate at " + path, e);
+      LOGGER.info(NO_CERTIFICATE, path);
       return null;
     }
   }
