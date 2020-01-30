@@ -170,12 +170,23 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterAll
+  //@AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       if (domain != null) {
         domain.destroy();
         TestUtils.deleteWeblogicDomainResources(domainNS1);
+        if (BaseTest.SHARED_CLUSTER) {
+
+          String image = System.getenv("REPO_REGISTRY")
+              + "/weblogick8s/"
+              + domainNS2
+              + "-image:1.0";
+          String cmd = "docker rmi -f " + image;
+          TestUtils.exec(cmd, true);
+        }
+        String cmd = "docker rmi -f " + domainNS2 + "-image:1.0";
+        TestUtils.exec(cmd, true);
       }
       if (operator != null) {
         operator.destroy();
@@ -999,7 +1010,6 @@ public class ItMonitoringExporter extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, " Starting to create WLS Image");
     String image;
     String oldimage = domainNS2 + "-image:1.0";
-
     String command =
         "cd "
             + monitoringExporterEndToEndDir
@@ -1023,26 +1033,42 @@ public class ItMonitoringExporter extends BaseTest {
         "30703", String.valueOf(31000 + getNewSuffixCount()));
     replaceStringInFile(resourceExporterDir + "/domain1.yaml",
         "30701", String.valueOf(30800 + getNewSuffixCount()));
-    TestUtils.createDockerRegistrySecret(
-        "ocirsecret",
-        System.getenv("REPO_REGISTRY"),
-        System.getenv("REPO_USERNAME"),
-        System.getenv("REPO_PASSWORD"),
-        System.getenv("REPO_EMAIL"),
-        domainNS2);
+
     // for remote k8s cluster and domain in image case, push the domain image to OCIR
     if (BaseTest.SHARED_CLUSTER) {
+      TestUtils.createDockerRegistrySecret(
+          "ocirsecret",
+          System.getenv("REPO_REGISTRY"),
+          System.getenv("REPO_USERNAME"),
+          System.getenv("REPO_PASSWORD"),
+          System.getenv("REPO_EMAIL"),
+          domainNS2);
+
       image = System.getenv("REPO_REGISTRY")
             + "/weblogick8s/"
             + domainNS2
             + "-image:1.0";
       loginAndTagImage(oldimage, image);
-
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
       // image
 
       TestUtils.loginAndPushImageToOcir(image);
       replaceStringInFile(resourceExporterDir + "/domain1.yaml", oldimage, image);
+    }
+    else {
+      String ocrserver = System.getenv("OCR_SERVER");
+      if (ocrserver == null) {
+        ocrserver = "container-registry.oracle.com";
+      }
+
+      TestUtils.createDockerRegistrySecret(
+          "ocirsecret",
+          ocrserver,
+          System.getenv("OCR_USERNAME"),
+          System.getenv("OCR_PASSWORD"),
+          System.getenv("OCR_USERNAME") + "@oracle.com",
+          domainNS2);
+
     }
 
     LoggerHelper.getLocal().log(Level.INFO, " Starting to create secret");
