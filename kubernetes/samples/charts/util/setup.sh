@@ -6,6 +6,7 @@
 
 MYDIR="$(dirname "$(readlink -f "$0")")"
 VNAME=voyager-operator  # release name of Voyager
+VVERS=v12.0.0-rc.1      # release version of Voyager
 TNAME=traefik-operator  # release name of Traefik
 
 function createVoyager() {
@@ -24,7 +25,7 @@ function createVoyager() {
   if [ "$(helm list | grep $VNAME |  wc -l)" = 0 ]; then
     echo "Ihstall voyager operator."
     
-    helm install appscode/voyager --name $VNAME \
+    helm install appscode/voyager --name $VNAME --version $VVERS \
       --namespace voyager \
       --set cloudProvider=baremetal \
       --set apiserver.enableValidatingWebhook=false \

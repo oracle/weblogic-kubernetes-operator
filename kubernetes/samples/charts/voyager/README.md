@@ -26,11 +26,13 @@ appscode/voyager        v12.0.0-rc.1    v12.0.0-rc.1    Voyager by AppsCode - Se
 ### 2. Install the Voyager operator with Helm 2 support
 ```
 $ kubectl create ns voyager
-$ helm install appscode/voyager --name voyager-operator \
+$ helm install appscode/voyager --name voyager-operator --version v12.0.0-rc.1 \
   --namespace voyager \
   --set cloudProvider=baremetal \
   --set apiserver.enableValidatingWebhook=false
 ```
+> **NOTE**: The Voyager version used for the install should match the version found with `helm search`.
+
 Wait until the Voyager Operator is running.
 ```
 $ kubectl -n voyager get all
