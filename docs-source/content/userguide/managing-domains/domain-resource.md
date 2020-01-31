@@ -61,17 +61,17 @@ The domain resource `spec` section contains elements for configuring the domain 
 Elements related to domain identification, Docker image, and domain home:
 
 * `domainUID`: The domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of `metadata.name`.
-* `image`: The WebLogic Docker image. Required when `domainHomeInImage` is true; otherwise, defaults to `container-registry.oracle.com/middleware/weblogic:12.2.1.3`.
+* `image`: The WebLogic Docker image. Required when `domainHomeSourceType` is `Image`; otherwise, defaults to `container-registry.oracle.com/middleware/weblogic:12.2.1.3`.
 * `imagePullPolicy`: The image pull policy for the WebLogic Docker image. Legal values are `Always`, `Never` and `IfNotPresent`. Defaults to `Always` if image ends in `:latest`; `IfNotPresent` otherwise.
 * `imagePullSecrets`: A list of image pull secrets for the WebLogic Docker image.
 * `domainHome`: The folder for the WebLogic domain. Not required. Defaults to `/shared/domains/domains/domainUID` if `domainHomeInImage` is false. Defaults to `/u01/oracle/user_projects/domains/` if `domainHomeInImage` is true.
-* `domainHomeInImage`: True if this domain's home is defined in the Docker image for the domain. Defaults to true.
+* `domainHomeSourceType`: The source for the domain home. Legal values are `Image`, `PersistentVolume`, and `FromModel`. Defaults to `Image`.
 
 Elements related to logging:
 
 * `includeServerOutInPodLog`: If true (the default), the server `.out` file will be included in the pod's stdout.
 * `logHome`: The in-pod name of the directory in which to store the domain, Node Manager, server logs, and server `.out` files.
-* `logHomeEnabled`: Specifies whether the log home folder is enabled. Not required. Defaults to true if `domainHomeInImage` is false. Defaults to false if `domainHomeInImage` is true.
+* `logHomeEnabled`: Specifies whether the log home folder is enabled. Not required. Defaults to true if `domainHomeSourceType` is not `Image`. Defaults to false if `domainHomeInImage` is true.
 
 Elements related to security:
 
@@ -86,8 +86,9 @@ Elements related to domain [startup and shutdown]({{< relref "/userguide/managin
 
 Elements related to overriding WebLogic domain configuration:
 
-* `configOverrides`: The name of the config map for optional WebLogic configuration overrides.
-* `configOverrideSecrets`: A list of names of the secrets for optional WebLogic configuration overrides.
+These elements are under `configuration.overrides`.
+* `configMapName`: The name of the config map for optional WebLogic configuration overrides.
+* `secrets`: A list of names of the secrets for optional WebLogic configuration overrides.
 
 Elements related to Kubernetes pod and service generation:
 
@@ -176,7 +177,7 @@ metadata:
     weblogic.domainUID: domain1
 spec:
   domainHome: /u01/oracle/user_projects/domains/domain1
-  domainHomeInImage: true
+  domainHomeSourceType: Image
   image: "phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.3"
   imagePullPolicy: "IfNotPresent"
   imagePullSecrets:

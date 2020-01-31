@@ -105,7 +105,7 @@ It is helpful to understand the following high-level flow before running the sam
 
 6. Update the domain resource yaml file 
 
-   - ```domainHomeInImage``` must set to true in the domain resource yaml file
+   - ```domainHomeSourceType``` must set to FromModel in the domain resource yaml file
    
    - ```domainHome``` must be set.  This is the domain home directory to be created, so it must not exist 
    in the image nor in the mount path of any persistent volume. 
@@ -120,7 +120,9 @@ It is helpful to understand the following high-level flow before running the sam
    - If you models reference Kubernetes secrets, then include the following keys to the domain resource yaml file as needed:
    
      ```
-     configOverrideSecrets: [my-secret, my-other-secret]
+     configuration:
+       overrides:
+         secrets: [my-secret, my-other-secret]
      ```
 
    - In addition, specify the domain type in the domain resource yaml attribute. Valid values are `WLS`, `JRF`, and `RestrictedJRF`.

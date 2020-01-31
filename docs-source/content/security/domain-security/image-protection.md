@@ -41,7 +41,7 @@ metadata:
     weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
 spec:
-  domainHomeInImage: true
+  domainHomeSourceType: Image
   image: "my-domain-home-in-image"
   imagePullPolicy: "IfNotPresent"
   imagePullSecrets:

@@ -180,7 +180,7 @@ spec:
   # The WebLogic Domain Home
   domainHome: /shared/domains/fmw-domain
   # If the domain home is in the image
-  domainHomeInImage: false
+  domainHomeSourceType: PersistentVolume
   # The WebLogic Server Docker image that the Operator uses to start the domain
   image: “container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3"
   # imagePullPolicy defaults to "Always" if image version is :latest

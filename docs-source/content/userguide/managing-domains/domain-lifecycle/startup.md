@@ -239,7 +239,7 @@ The operator will restart servers when any of the follow properties on the domai
 
 * `containerSecurityContext`
 * `domainHome`
-* `domainHomeInImage`
+* `domainHomeSourceType`
 * `env`
 * `image`
 * `imagePullPolicy`
