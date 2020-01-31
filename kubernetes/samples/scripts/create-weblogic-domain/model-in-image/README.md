@@ -1,12 +1,12 @@
 # Model in Image Sample
 
-This sample demonstrates the WebLogic Kubernetes Operator "Model in Image" feature. Model in Image allows you to supply a Weblogic Deploy Tool (WDT) model that the operator automatically expands into a full domain home during runtime. This eliminates the need to pre-create a WebLogic domain home prior to deploying your domain resource. 
+This sample demonstrates the WebLogic Kubernetes Operator "Model in Image" feature. Model in Image allows you to supply a Weblogic Deploy Tool (WDT) model that the operator automatically expands into a full domain home during runtime. This eliminates the need to pre-create a WebLogic domain home prior to deploying your domain resource.
 
-WDT models are a convenient and succinct alternative to WebLogic configuration scripts and templates. They compactly define a WebLogic domain via yaml files, plus support for application archives. The WDT model format is described in [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling).
+WDT models are a convenient and succinct alternative to WebLogic configuration scripts and templates. They compactly define a WebLogic domain via yaml files, plus support for application archives. The WDT model format is described in the open source [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
  
-When using `Model In Image`, you can include your WDT models, WDT archives, and the WDT install in your image. In addition, you can also provide additional models and variable files in a `Kubernetes Configuration Map (configmap)`. When you deploy your domain resource, the operator will combine the WDT artifacts and use the `WebLogic Deploy Tool` to generate the domain.  Life cycle updates can be applied to the image or the configmap after initial deployment.
+When using `Model In Image`, you can include your WDT models, WDT archives, and the WDT install in your image. In addition, you can also provide additional models and variable files in a Kubernetes configuration map (configmap). When you deploy your domain resource, the operator will combine the WDT artifacts and then run the WDT tooling to generate the domain. Life cycle updates can be applied to the image or the configmap after initial deployment.
 
-This sample demonstrates deploying a WebLogic servlet application within a basic `WLS` domain, a Oracle Fusion Middleware Infrastructure `JRF` domain, or a `RestrictedJRF` domain. The `JRF` domain path through the sample includes additional steps for deploying a database and initializing the database using the RCU tool. `JRF` domains are used by Oracle products that layer on top of WebLogic Server such as SOA, OSB, and FA. `RestrictedJRF` domains are used by other Oracle layered products such as CGBU.
+This sample demonstrates deploying a WebLogic servlet application within a basic `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, or a `RestrictedJRF` domain. The `JRF` domain path through the sample includes additional steps for deploying an infrastructure database and initializing the database using the Repository Creation Utility (RCU) tool. `JRF` domains are used by Oracle products that layer on top of WebLogic Server such as SOA, OSB, and FA. `RestrictedJRF` domains are used by other Oracle layered products such as CGBU.
 
 # Contents
 
@@ -36,9 +36,7 @@ It is helpful to understand the following high-level flow before running the sam
 3. Create a deployable image with WebLogic Server and WDT installed, plus optionally with your model files.
    - Optionally include all of your WDT model files in the image using the directory structure described below. To control the order which WDT will use to load your model files, see [Model File Naming and Loading Order](#model-file-naming-and-loading-order).
 
-   - You can start with an image from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) and then layer these artifacts into a new image.
-
-   - Or you can also create an image using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). The WebLogic Image Tool has built-in options for embedding WDT model files, WDT binaries, WebLogic binaries install, and WebLogic patches in an image. The sample takes this approach.
+   - You can start with an image from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) and then layer the required WDT artifacts into a new image, or you can create an image using the convenient [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). The WebLogic Image Tool (WIT) has built-in options for embedding WDT model files, WDT binaries, WebLogic binaries install, and WebLogic patches in an image. The sample takes the (WIT) approach.
 
    - `Model in Image` requires the following directory structures in the image for (optional) WDT models artifacts and (required) WDT binaries. If you are not using the WebLogic Image Tool to generate your image, then you must follow the structures listed in the table below:
 
@@ -49,7 +47,7 @@ It is helpful to understand the following high-level flow before running the sam
      | /u01/wdt/models          | optional application archives      | zip         |
      | /u01/wdt/weblogic-deploy | unzipped weblogic deploy install   |             |
 
-     Note that the WebLogic Image Tool mentioned in the previous step can create and populate this directory structure for you.
+     Note that the WebLogic Image Tool mentioned in the previous bullet can create and populate this directory structure for you.
 
 
 4. Create a WDT model config map (optional if the image supplied by step 3 already fully defines your model).
@@ -345,11 +343,11 @@ Furthermore, if you want to have a restarted JRF domain access updates to the in
 
 The following steps demonstrate how to setup an infrastructure database that will work with this sample:
 
-  - Step 1) See [Set up and initialize an RCU database](set-up-and-initialize-an-rcu-database).
-  - Step 2) See [Increase Introspection Job Timeout](increase-introspection-job-timeout).
-  - Step 3) See [Setup RCU model attributes, domain resource attributes, and secrets](setup-rcu-model-attributes,-domain-resource-attributes,-and-secrets).
+  - Step 1) See [Set up and initialize an RCU database](#set-up-and-initialize-an-rcu-database).
+  - Step 2) See [Increase Introspection Job Timeout](#increase-introspection-job-timeout).
+  - Step 3) See [Setup RCU model attributes, domain resource attributes, and secrets](#setup-rcu-model-attributes,-domain-resource-attributes,-and-secrets).
 
-> __Reusing or sharing RCU tables__: When you deploy a JRF domain for the first time, the domain will further update the RCU tables from step 1 and also create a 'wallet' in the domain's local directory that enables access the domain's data in the RCU DB. To recover a domain's RCU tables between domain restarts or to share an RCU schema between different domains, it is necessary to extract this wallet from the original domain and save the OPSS key that was used for the original domain. The key and wallet are needed again when you recreate the domain or share the database with other domains. See [Reusing an RCU Database between Domain Deployments](reusing-an-rcu-database-between-domain-deployments) for instructions.
+> __Reusing or sharing RCU tables__: When you deploy a JRF domain for the first time, the domain will further update the RCU tables from step 1 and also create a 'wallet' in the domain's local directory that enables access the domain's data in the RCU DB. To recover a domain's RCU tables between domain restarts or to share an RCU schema between different domains, it is necessary to extract this wallet from the original domain and save the OPSS key that was used for the original domain. The key and wallet are needed again when you recreate the domain or share the database with other domains. See [Reusing an RCU Database between Domain Deployments](#reusing-an-rcu-database-between-domain-deployments) for instructions.
 
 
 ## Set Up and Initialize an RCU Database
