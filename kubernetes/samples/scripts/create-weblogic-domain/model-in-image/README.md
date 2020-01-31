@@ -345,7 +345,8 @@ The following steps demonstrate how to setup an infrastructure database that wil
 
   - Step 1) See [Set up and initialize an RCU database](#set-up-and-initialize-an-rcu-database).
   - Step 2) See [Increase Introspection Job Timeout](#increase-introspection-job-timeout).
-  - Step 3) See [Setup RCU model attributes, domain resource attributes, and secrets](#setup-rcu-model-attributes,-domain-resource-attributes,-and-secrets).
+  - Step 3) See [Setup RCU model attributes, domain resource attributes, and secrets](#setup-rcu-model-attributes-domain-resource-attributes-and-secrets).
+
 
 > __Reusing or sharing RCU tables__: When you deploy a JRF domain for the first time, the domain will further update the RCU tables from step 1 and also create a 'wallet' in the domain's local directory that enables access the domain's data in the RCU DB. To recover a domain's RCU tables between domain restarts or to share an RCU schema between different domains, it is necessary to extract this wallet from the original domain and save the OPSS key that was used for the original domain. The key and wallet are needed again when you recreate the domain or share the database with other domains. See [Reusing an RCU Database between Domain Deployments](#reusing-an-rcu-database-between-domain-deployments) for instructions.
 
