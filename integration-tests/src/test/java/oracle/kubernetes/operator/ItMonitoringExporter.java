@@ -1055,11 +1055,6 @@ public class ItMonitoringExporter extends BaseTest {
       TestUtils.loginAndPushImageToOcir(image);
       replaceStringInFile(resourceExporterDir + "/domain1.yaml", oldimage, image);
     } else {
-      String ocrserver = System.getenv("OCR_SERVER");
-      if (ocrserver == null) {
-        ocrserver = "container-registry.oracle.com";
-      }
-
       TestUtils.createDockerRegistrySecret(
           "ocirsecret",
           "",
@@ -1067,7 +1062,6 @@ public class ItMonitoringExporter extends BaseTest {
           System.getenv("DOCKER_PASSWORD"),
           System.getenv("DOCKER_EMAIL"),
           domainNS2);
-
     }
 
     LoggerHelper.getLocal().log(Level.INFO, " Starting to create secret");
