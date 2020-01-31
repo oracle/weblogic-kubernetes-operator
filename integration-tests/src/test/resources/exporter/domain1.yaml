@@ -4,23 +4,23 @@
 # This is an sample domain resource which has domainHome in image.
 #
 
-apiVersion: "weblogic.oracle/v6"
+apiVersion: "weblogic.oracle/v3"
 kind: Domain
 metadata:
-  name: monexp-domainns-2
-  namespace: monexp-domainns-2
+  name: domain1
+  namespace: default
   labels:
     weblogic.resourceVersion: domain-v2
-    weblogic.domainUID: monexp-domainns-2
+    weblogic.domainUID: domain1
 spec:
-  domainHome: /u01/oracle/user-projects/domains/monexp-domainns-2
+  domainHome: /u01/oracle/user-projects/domains/domain1
   domainHomeInImage: true
-  image: monexp-domainns-2-image:1.0
+  image: domain1-image:1.0
   imagePullPolicy: "Always"
   imagePullSecrets:
     - name: ocirsecret
   webLogicCredentialsSecret:
-    name: monexp-domainns-2-weblogic-credentials
+    name: domain1-weblogic-credentials
   includeServerOutInPodLog: true
   serverStartPolicy: "IF_NEEDED"
   replicas: 2
@@ -31,6 +31,6 @@ spec:
     adminService:
       channels:
       - channelName: default
-        nodePort: 30805
+        nodePort: 30701
       - channelName: T3Channel
-        nodePort: 31004
+        nodePort: 30703
