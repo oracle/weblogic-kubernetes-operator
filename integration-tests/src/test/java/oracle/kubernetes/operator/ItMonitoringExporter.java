@@ -1028,7 +1028,7 @@ public class ItMonitoringExporter extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Result output from  the command " + crdCmd + " : " + result.stdout());
     // for remote k8s cluster and domain in image case, push the domain image to OCIR
     if (BaseTest.SHARED_CLUSTER) {
-      TestUtils.copyFile(resourceExporterDir + "/domain1.yaml", resourceExporterDir + "/domainInImage.yaml" );
+      TestUtils.copyFile(resourceExporterDir + "/domain1.yaml", resourceExporterDir + "/domainInImage.yaml");
       TestUtils.createDockerRegistrySecret(
           "ocirsecret",
           System.getenv("REPO_REGISTRY"),
@@ -1047,7 +1047,8 @@ public class ItMonitoringExporter extends BaseTest {
 
       TestUtils.loginAndPushImageToOcir(image);
     } else {
-      TestUtils.copyFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", resourceExporterDir + "/domainInImage.yaml" );
+      TestUtils.copyFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml",
+          resourceExporterDir + "/domainInImage.yaml");
     }
     replaceStringInFile(resourceExporterDir + "/domainInImage.yaml", "domain1-image:1.0", image);
     replaceStringInFile(resourceExporterDir + "/domainInImage.yaml", "v3", "v6");
