@@ -66,6 +66,13 @@ spec:
                               type: string
                             namespace:
                               type: string
+                    useOnlineUpdate:
+                      type: boolean
+                      description: Use online update during lifecycle changes
+                    rollbackIfRequireStart:
+                      type: boolean
+                      description: Rollback dynamic changes if the updates requires
+                        restart
                     configMapName:
                       type: string
                       description: WDT config map name
@@ -2186,12 +2193,6 @@ spec:
                   type: string
                   description: If present, every time this value is updated the operator
                     will restart the required servers.
-            useOnlineUpdate:
-              type: boolean
-              description: Use Online update during lifecycle changes
-            rollbackIfRequireStart:
-              type: boolean
-              description: Rollback dynamic changes if the updates require restart
             logHome:
               type: string
               description: The in-pod name of the directory in which to store the

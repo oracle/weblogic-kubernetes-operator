@@ -148,28 +148,6 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Sets the rollback online updates if restart require value.
-   *
-   * @param rollbackIfRequireStart rollback if require (true|false)
-   * @return this object
-   */
-  public DomainConfigurator withRollbackIfRequireStart(boolean rollbackIfRequireStart) {
-    getDomainSpec().setRollbackIfRequireStart(rollbackIfRequireStart);
-    return this;
-  }
-
-  /**
-   * Sets to use online update between lifcycle updates..
-   *
-   * @param useOnlineUpdate true or false
-   * @return this object
-   */
-  public DomainConfigurator withUserOnlineUpdate(boolean useOnlineUpdate) {
-    getDomainSpec().setUseOnlineUpdate(useOnlineUpdate);
-    return this;
-  }
-
-  /**
    * Sets the WebLogic configuration overrides configmap name for the domain.
    *
    * @param configMapName Name of the Kubernetes configmap that contains the config overrides

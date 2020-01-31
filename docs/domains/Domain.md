@@ -36,12 +36,10 @@ DomainSpec is a description of a domain.
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
 | `replicas` | number | The number of managed servers to run in any cluster that does not specify a replica count. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
-| `rollbackIfRequireStart` | Boolean | Rollback dynamic changes if the updates require restart |
 | `serverPod` | [Server Pod](#server-pod) | Configuration affecting server pods. |
 | `serverService` | [Server Service](#server-service) | Customization affecting ClusterIP Kubernetes services for WebLogic Server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. |
 | `serverStartState` | string | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
-| `useOnlineUpdate` | Boolean | Use Online update during lifecycle changes |
 | `webLogicCredentialsSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | The name of a pre-created Kubernetes secret, in the domain's namespace, that holds the username and password needed to boot WebLogic Server under the 'username' and 'password' fields. |
 
 ### Domain Status
@@ -204,6 +202,8 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | `domainType` | string | WDT domain type: Legal values: WLS, RestrictedJRF, JRF |
 | `encryptionSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | WDT encryption key pass phrase secret. |
 | `opss` | [Opss](#opss) | Configuration for OPSS based security |
+| `rollbackIfRequireStart` | Boolean | Rollback dynamic changes if the updates requires restart |
+| `useOnlineUpdate` | Boolean | Use online update during lifecycle changes |
 
 ### Overrides
 

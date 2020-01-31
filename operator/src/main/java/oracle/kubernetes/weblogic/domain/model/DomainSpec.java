@@ -219,22 +219,6 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters.")
   protected List<Cluster> clusters = new ArrayList<>();
 
-  /**
-   * Rollback dynamic changes if the updates require restart.
-   *
-   * @since 2.3.1
-   */
-  @Description("Rollback dynamic changes if the updates require restart")
-  private Boolean rollbackIfRequireStart;
-
-  /**
-   * Use online update.
-   *
-   * @since 2.3.1
-   */
-  @Description("Use Online update during lifecycle changes")
-  private Boolean useOnlineUpdate;
-
   @Description("Experimental feature configurations.")
   private Experimental experimental;
 
@@ -450,37 +434,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   public void setLogHomeEnabled(Boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
-  }
-
-  /**
-   * isRollbackIfRequireStart.
-   *
-   * <p>An optional, For model in image, this attribute determines the lifecycle update behavior
-   *
-   * @return value of the rollback if require restart.
-   */
-  boolean isRollbackIfRequireStart() {
-    return Optional.ofNullable(rollbackIfRequireStart).orElse(false);
-  }
-
-  public void setRollbackIfRequireStart(boolean rollbackIfRequireStart) {
-    this.rollbackIfRequireStart = rollbackIfRequireStart;
-  }
-
-
-  /**
-   * useOnlineUpdate.
-   *
-   * <p>An optional, For model in image, this attribute set to use online updates
-   *
-   * @return whether to use online updates or not.
-   */
-  boolean isUseOnlineUpdate() {
-    return Optional.ofNullable(useOnlineUpdate).orElse(false);
-  }
-
-  public void setUseOnlineUpdate(boolean useOnlineUpdate) {
-    this.useOnlineUpdate = useOnlineUpdate;
   }
 
   /**
@@ -708,9 +661,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets)
-            .append("experimental", experimental)
-            .append("rollbackIfRequireStart", rollbackIfRequireStart)
-            .append("useOnlineUpdate", useOnlineUpdate);
+            .append("experimental", experimental);
 
     return builder.toString();
   }
@@ -739,9 +690,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog)
             .append(configOverrides)
             .append(configOverrideSecrets)
-            .append(experimental)
-            .append(rollbackIfRequireStart)
-            .append(useOnlineUpdate);
+            .append(experimental);
 
     return builder.toHashCode();
   }
@@ -778,9 +727,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
-            .append(experimental, rhs.experimental)
-            .append(useOnlineUpdate, rhs.useOnlineUpdate)
-            .append(rollbackIfRequireStart, rhs.rollbackIfRequireStart);
+            .append(experimental, rhs.experimental);
 
     return builder.isEquals();
   }

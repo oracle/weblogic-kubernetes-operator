@@ -399,11 +399,11 @@ public class Domain {
   }
 
   public boolean isRollbackIfRequireRestart() {
-    return spec.isRollbackIfRequireStart();
+    return Optional.ofNullable(getModel()).map(Model::isRollbackIfRequireStart).orElse(false);
   }
 
   public boolean isUseOnlineUpdate() {
-    return spec.isUseOnlineUpdate();
+    return Optional.ofNullable(getModel()).map(Model::isUseOnlineUpdate).orElse(false);
   }
 
   public String getWdtDomainType() {

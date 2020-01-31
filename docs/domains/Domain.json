@@ -266,14 +266,6 @@
           "description": "Configuration for the Administration Server.",
           "$ref": "#/definitions/AdminServer"
         },
-        "useOnlineUpdate": {
-          "description": "Use Online update during lifecycle changes",
-          "type": "boolean"
-        },
-        "rollbackIfRequireStart": {
-          "description": "Rollback dynamic changes if the updates require restart",
-          "type": "boolean"
-        },
         "logHome": {
           "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files",
           "type": "string"
@@ -503,6 +495,14 @@
         "opss": {
           "description": "Configuration for OPSS based security",
           "$ref": "#/definitions/Opss"
+        },
+        "useOnlineUpdate": {
+          "description": "Use online update during lifecycle changes",
+          "type": "boolean"
+        },
+        "rollbackIfRequireStart": {
+          "description": "Rollback dynamic changes if the updates requires restart",
+          "type": "boolean"
         },
         "configMapName": {
           "description": "WDT config map name",
