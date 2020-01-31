@@ -6,7 +6,7 @@ WDT models are a convenient and succinct alternative to WebLogic configuration s
  
 When using `Model In Image`, you can include your WDT models, WDT archives, and the WDT install in your image. In addition, you can also provide additional models and variable files in a Kubernetes configuration map (configmap). When you deploy your domain resource, the operator will combine the WDT artifacts and then run the WDT tooling to generate the domain. Life cycle updates can be applied to the image or the configmap after initial deployment.
 
-This sample demonstrates deploying a WebLogic servlet application within a basic `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, or a `RestrictedJRF` domain. The `JRF` domain path through the sample includes additional steps for deploying an infrastructure database and initializing the database using the Repository Creation Utility (RCU) tool. `JRF` domains are used by Oracle products that layer on top of WebLogic Server such as SOA, OSB, and FA. `RestrictedJRF` domains are used by other Oracle layered products such as CGBU.
+This sample demonstrates deploying a WebLogic servlet application within a basic `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, or a `RestrictedJRF` domain. The `JRF` domain path through the sample includes additional steps for deploying an infrastructure database and initializing the database using the Repository Creation Utility (RCU) tool. `JRF` domains may be  used by Oracle products that layer on top of WebLogic Server such as SOA, OSB, and FA. Similarly, `RestrictedJRF` domains may be used by Oracle layered products such as Oracle Communications products.
 
 # Contents
 
@@ -417,10 +417,9 @@ A JRF domain requires an infrastructure database and also requires initalizing t
 
 ## Increase Introspection Job Timeout
 
-Since JRF domain home creation takes considerable time, and since model-in-image creates your domain home for you using the introspection job, you should increase the timeout for the introspection job. Use the command `kubectl -n sample-weblogic-operator-ns edit configmap weblogic-operator-cm` to open up an editor for the operator settings, and then use this editor to add parameter `introspectorJobActiveDeadlineSeconds` with a value of at least 300 seconds (default is 120 seconds).  
+Since JRF domain home creation takes considerable time the first time its created, and since model-in-image creates your domain home for you using the introspection job, you should increase the timeout for the introspection job. Use the command `kubectl -n sample-weblogic-operator-ns edit configmap weblogic-operator-cm` to open up an editor for the operator settings, and then use this editor to add parameter `introspectorJobActiveDeadlineSeconds` with a value of at least 300 seconds (default is 120 seconds).  
 
-TBD Is this a one time cost (first time), or does this happen every time a domain is restarted?
-TBD We should do better here.  Should the default timeout be increased?   Should we provide a patch command instead of an editor command?
+TBD These instructions are temporary while we come up with a better way to increase the value.
 
 
 ## Setup RCU model attributes, domain resource attributes, and secrets
