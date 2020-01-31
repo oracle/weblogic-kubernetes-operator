@@ -1057,7 +1057,7 @@ public class ItMonitoringExporter extends BaseTest {
     } else {
       TestUtils.createDockerRegistrySecret(
           "ocirsecret",
-          "",
+          " ",
           System.getenv("DOCKER_USERNAME"),
           System.getenv("DOCKER_PASSWORD"),
           System.getenv("DOCKER_EMAIL"),
