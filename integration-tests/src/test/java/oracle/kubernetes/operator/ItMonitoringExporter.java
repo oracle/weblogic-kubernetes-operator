@@ -170,7 +170,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception exception
    */
-  //@AfterAll
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       if (domain != null) {
@@ -1054,8 +1054,7 @@ public class ItMonitoringExporter extends BaseTest {
 
       TestUtils.loginAndPushImageToOcir(image);
       replaceStringInFile(resourceExporterDir + "/domain1.yaml", oldimage, image);
-    }
-    else {
+    } else {
       String ocrserver = System.getenv("OCR_SERVER");
       if (ocrserver == null) {
         ocrserver = "container-registry.oracle.com";
@@ -1063,10 +1062,10 @@ public class ItMonitoringExporter extends BaseTest {
 
       TestUtils.createDockerRegistrySecret(
           "ocirsecret",
-          ocrserver,
-          System.getenv("OCR_USERNAME"),
-          System.getenv("OCR_PASSWORD"),
-          System.getenv("OCR_USERNAME") + "@oracle.com",
+          "",
+          System.getenv("DOCKER_USERNAME"),
+          System.getenv("DOCKER_PASSWORD"),
+          System.getenv("DOCKER_EMAIL"),
           domainNS2);
 
     }
