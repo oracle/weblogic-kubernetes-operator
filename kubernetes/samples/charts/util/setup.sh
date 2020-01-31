@@ -9,6 +9,7 @@ VNAME=voyager-operator  # release name of Voyager
 TNAME=traefik-operator  # release name of Traefik
 VSPACE=voyager # NameSpace for Voyager
 TSPACE=traefik   # NameSpace for Traefik
+DefaultVoyagerVersion=7.4.0
 
 helm version --short --client | grep v2
 [[ $? == 0 ]] && HELM_VERSION=V2
@@ -60,7 +61,7 @@ function createVoyager() {
   if [ "$(helm list ${v_list_args} | grep $VNAME |  wc -l)" = 0 ]; then
     echo "Installing Voyager Operator."
     
-    ${v_helm_install} --version 7.4.0 \
+    ${v_helm_install} --version ${VoyagerVersion}  \
       --namespace ${VSPACE} \
       --set cloudProvider=baremetal \
       --set apiserver.enableValidatingWebhook=false \
@@ -177,18 +178,22 @@ function deleteTraefik() {
 }
 
 function usage() {
-  echo "usage: $0 create|delete traefik|voyager"
+  echo "usage: $0 create|delete traefik|voyager [voyager version]"
   exit 1
 }
 
 function main() {
-  if [ "$#" != 2 ]; then
+  if [ "$#" -lt 2 ]; then
+    echo "[ERROR] Requires atleast 2 positional parameters"
     usage
   fi
+
   if [ "$1" != create ] && [ "$1" != delete ]; then
+    echo "[ERROR] The first parameter MUST be either create or delete "
     usage
   fi
   if [ "$2" != traefik ] && [ "$2" != voyager ]; then
+    echo "[ERROR] The second  parameter MUST be either traefik  or voyager "
     usage
   fi
 
@@ -196,6 +201,8 @@ function main() {
     if [ "$2" = traefik ]; then
       createTraefik
     else
+      VoyagerVersion="${3:-${DefaultVoyagerVersion}}"
+      echo "Selected Voyager Version [$VoyagerVersion]"
       createVoyager
     fi
   else
