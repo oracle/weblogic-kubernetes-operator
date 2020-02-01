@@ -71,6 +71,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static String exporterUrl = "";
   private static String configPath = "";
   private static String prometheusPort = "30500";
+  private static String grafanaPort;
   private static String wlsUser = "";
   private static String wlsPassword = "";
   // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
@@ -1131,7 +1132,9 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static void installPrometheusGrafanaWebHookMySqlCoordinator() throws Exception {
     prometheusPort = "30500";
-
+    grafanaPort = String.valueOf(31000 + getNewSuffixCount());
+    replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
+        "31000", grafanaPort);
     executeShelScript(
         resourceExporterDir,
         monitoringExporterScriptDir,
@@ -1173,7 +1176,7 @@ public class ItMonitoringExporter extends BaseTest {
         " cd "
             + monitoringExporterEndToEndDir
             + " && curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-            + "  -X POST http://admin:12345678@" + myhost + ":31000/api/datasources/"
+            + "  -X POST http://admin:12345678@" + myhost + ":" + grafanaPort + "/api/datasources/"
             + "  --data-binary @grafana/datasource.json";
     TestUtils.exec(crdCmd);
 
@@ -1181,14 +1184,14 @@ public class ItMonitoringExporter extends BaseTest {
         " cd "
             + monitoringExporterEndToEndDir
             + " && curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-            + "  -X POST http://admin:12345678@" + myhost + ":31000/api/dashboards/db/"
+            + "  -X POST http://admin:12345678@" + myhost + ":" + grafanaPort + "/api/dashboards/db/"
             + "  --data-binary @grafana/dashboard.json";
     TestUtils.exec(crdCmd);
     crdCmd = " cd "
         + monitoringExporterEndToEndDir
         + " && "
         + "curl -v  -H 'Content-Type: application/json' "
-        + " -X GET http://admin:12345678@" + myhost + ":31000/api/dashboards/db/weblogic-server-dashboard";
+        + " -X GET http://admin:12345678@" + myhost + ":" + grafanaPort + "/api/dashboards/db/weblogic-server-dashboard";
     ExecResult result = ExecCommand.exec(crdCmd);
     assertTrue(result.stdout().contains("wls_jvm_uptime"));
     assertTrue(
