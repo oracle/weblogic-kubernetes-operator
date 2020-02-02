@@ -16,6 +16,7 @@ INTROSPECTCM_WLS_VERSION="/weblogic-operator/introspectormd5/wls.version"
 INTROSPECTCM_JDK_PATH="/weblogic-operator/introspectormd5/jdk.path"
 INTROSPECTCM_SECRETS_MD5="/weblogic-operator/introspectormd5/secrets.md5"
 DOMAIN_ZIPPED="/weblogic-operator/introspectormd5/domainzip.secure"
+PRIMORDIAL_DOMAIN_ZIPPED="/weblogic-operator/introspectormd5/primordial_domainzip.secure"
 
 INTROSPECTJOB_IMAGE_MD5="/tmp/inventory_image.md5"
 INTROSPECTJOB_CM_MD5="/tmp/inventory_cm.md5"
@@ -30,8 +31,10 @@ IMG_MODELS_HOME="/u01/wdt/models"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
-WDT_BINDIR="/u01/wdt/weblogic-deploy/bin"
-
+WDT_ROOT="/u01/wdt/weblogic-deploy"
+WDT_BINDIR="${WDT_ROOT}/bin"
+WDT_FILTER_JSON="/weblogic-operator/scripts/model_filters.json"
+WDT_CREATE_FILTER="/weblogic-operator/scripts/wdt_create_filter.py"
 
 ARCHIVE_ZIP_CHANGED=0
 UNSAFE_ONLINE_UPDATE=0
@@ -300,6 +303,16 @@ function createWLDomain() {
 
   trace "Entering createWLDomain"
 
+  # Check if /u01/wdt/models and /u01/wdt/weblogic-deploy exists
+
+  checkDirNotExistsOrEmpty ${IMG_MODELS_HOME}
+  checkDirNotExistsOrEmpty ${WDT_BINDIR}
+
+  # copy the filter related files to the wdt lib
+
+  cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib
+  cp ${WDT_CREATE_FILTER} ${WDT_ROOT}/lib
+
   # check to see if any model including changed (or first model in image deploy)
   # if yes. then run create domain again
 
@@ -428,7 +441,31 @@ function createWLDomain() {
   trap - ERR
 }
 
-# getSecretsMD5
+# checkDirNotExistsOrEmpty
+#  Test directory exists or empty
+
+function checkDirNotExistsOrEmpty() {
+  trap 'error_handler There was an error at dirNotExistsOrEmpty line $LINENO' ERR
+
+  trace "Entering checkDirNotExistsOrEmpty"
+
+  if [ $# -eq 1 ] ; then
+    if [ ! -d $1 ] ; then
+      trace SEVERE "Directory $1 does not exists"
+      exit 1
+    else
+      if [ -z $(ls $1) ] ; then
+        trace SEVERE "Directory $1 is empty"
+        exit 1
+      fi
+    fi
+  fi
+
+  trace "Exiting checkDirNotExistsOrEmpty"
+  trap - ERR
+}
+
+}# getSecretsMD5
 #
 # concatenate all the secrets, calculate the md5 and delete the file.
 # The md5 is used to determine whether the domain needs to be recreated
@@ -465,28 +502,84 @@ function getSecretsMD5() {
 }
 
 #
+# wdtCreatePrimordialDomain call WDT to create the domain
+#
+
+function wdtCreatePrimordialDomain() {
+
+  trace "Entering wdtCreatePrimodialDomain"
+
+  if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
+    # make sure wdt create write out the merged model to a file in the root of the domain
+    export __WLSDEPLOY_STORE_MODEL__=1
+
+    if [ ! -z ${WDT_PASSPHRASE} ]; then
+      yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \
+      ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
+      ${OPSS_FLAGS}
+    else
+      ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
+      ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}
+    fi
+    ret=$?
+    if [ $ret -ne 0 ]; then
+      trace SEVERE "Create Domain Failed "
+      if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
+        cp ${WDT_BINDIR}/../logs/createDomain.log ${LOG_HOME}/introspectJob_createDomain.log
+      else
+        tail -100 ${WDT_BINDIR}/../logs/createDomain.log
+      fi
+      exit 1
+    fi
+
+    # tar up primodial domain with em.ear if it is there.  The zip will be added to the introspect config map by the
+    # introspectDomain.py
+
+    empath=""
+    if [ "${WDT_DOMAIN_TYPE}" != "WLS" ] ; then
+      empath=$(grep "/em.ear" ${DOMAIN_HOME}/config/config.xml | grep -oPm1 "(?<=<source-path>)[^<]+")
+    fi
+
+    tar -pczf /tmp/prim_domain.tar.gz --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/lib  ${empath} \
+    ${DOMAIN_HOME}/*
+  fi
+
+
+  trace "Exiting wdtCreatePrimordialDomain"
+}
+
+#
 # wdtCreateDomain call WDT to create the domain
 #
 
 function wdtCreateDomain() {
 
   trace "Entering wdtCreateDomain"
+
+  wdtCreatePrimordialDomain
+
+  # if the primordial domain already in the configmap, restore it
+
+  if [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
+    cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > /tmp/primordial_tar.gz && tar -xzvf /tmp/primordial_tar.gz
+  fi
+
   # make sure wdt create write out the merged model to a file in the root of the domain
   export __WLSDEPLOY_STORE_MODEL__=1
 
   if [ ! -z ${WDT_PASSPHRASE} ]; then
-    yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \
+    yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home \
     ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
     ${OPSS_FLAGS}
   else
-    ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
+    ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}
   fi
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "Create Domain Failed "
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
-      cp ${WDT_BINDIR}/../logs/createDomain.log ${LOG_HOME}/introspectJob_createDomain.log
+      cp ${WDT_BINDIR}/../logs/updateDomain.log ${LOG_HOME}/introspectJob_updateDomain.log
     else
       tail -100 ${WDT_BINDIR}/../logs/createDomain.log
     fi
@@ -495,6 +588,7 @@ function wdtCreateDomain() {
 
   trace "Exiting wdtCreateDomain"
 }
+
 
 function handleOnlineUpdate() {
 
