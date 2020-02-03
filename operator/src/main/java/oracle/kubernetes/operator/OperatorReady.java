@@ -11,6 +11,10 @@ public class OperatorReady {
 
   private static final File readinessFile = new File("/operator/.ready");
 
+  /**
+   * Create the Operator readiness indicator.
+   * @throws IOException if the readiness file does not exist
+   */
   public static void create() throws IOException {
     if (!readinessFile.exists()) {
       readinessFile.createNewFile();
