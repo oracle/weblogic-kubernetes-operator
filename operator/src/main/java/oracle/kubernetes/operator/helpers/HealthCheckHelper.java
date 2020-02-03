@@ -234,8 +234,7 @@ public final class HealthCheckHelper {
     if (log) {
       if (ns != null) {
         LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
-      }
-      else {
+      } else {
         LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
       }
     }

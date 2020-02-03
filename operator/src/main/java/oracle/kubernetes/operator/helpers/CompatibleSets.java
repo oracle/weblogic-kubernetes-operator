@@ -21,7 +21,9 @@ class CompatibleSets<T> implements CompatibilityCheck {
 
   @Override
   public boolean isCompatible() {
-    if (expected == actual) return true;
+    if (expected == actual) {
+      return true;
+    }
     return asSet(actual).containsAll(asSet(expected));
   }
 

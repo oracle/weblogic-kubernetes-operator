@@ -121,13 +121,17 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static void onEvent(V1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
-    if (ref == null) return;
+    if (ref == null) {
+      return;
+    }
 
     String[] domainAndServer = ref.getName().split("-");
     String domainUid = domainAndServer[0];
     String serverName = domainAndServer[1];
     String status = getReadinessStatus(event);
-    if (status == null) return;
+    if (status == null) {
+      return;
+    }
 
     Optional.ofNullable(DOMAINS.get(event.getMetadata().getNamespace()))
           .map(m -> m.get(domainUid))
@@ -211,18 +215,23 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   public void dispatchPodWatch(Watch.Response<V1Pod> item) {
-    if (getPodLabel(item.object, LabelConstants.DOMAINUID_LABEL) == null) return;
+    if (getPodLabel(item.object, LabelConstants.DOMAINUID_LABEL) == null) {
+      return;
+    }
 
-    if (getPodLabel(item.object, LabelConstants.SERVERNAME_LABEL) != null)
+    if (getPodLabel(item.object, LabelConstants.SERVERNAME_LABEL) != null) {
       processServerPodWatch(item.object, item.type);
-    else if (getPodLabel(item.object, LabelConstants.JOBNAME_LABEL) != null)
+    } else if (getPodLabel(item.object, LabelConstants.JOBNAME_LABEL) != null) {
       processIntrospectorJobPodWatch(item.object, item.type);
+    }
   }
 
   private void processServerPodWatch(V1Pod pod, String watchType) {
     String domainUid = getPodLabel(pod, LabelConstants.DOMAINUID_LABEL);
     DomainPresenceInfo info = getExistingDomainPresenceInfo(getNamespace(pod), domainUid);
-    if (info == null) return;
+    if (info == null) {
+      return;
+    }
 
     String serverName = getPodLabel(pod, LabelConstants.SERVERNAME_LABEL);
     switch (watchType) {
@@ -263,7 +272,9 @@ public class DomainProcessorImpl implements DomainProcessor {
   private void processIntrospectorJobPodWatch(V1Pod pod, String watchType) {
     String domainUid = getPodLabel(pod, LabelConstants.DOMAINUID_LABEL);
     DomainPresenceInfo info = getExistingDomainPresenceInfo(getNamespace(pod), domainUid);
-    if (info == null) return;
+    if (info == null) {
+      return;
+    }
 
     switch (watchType) {
       case "ADDED":
@@ -283,11 +294,15 @@ public class DomainProcessorImpl implements DomainProcessor {
   public void dispatchServiceWatch(Watch.Response<V1Service> item) {
     V1Service service = item.object;
     String domainUid = ServiceHelper.getServiceDomainUid(service);
-    if (domainUid == null) return;
+    if (domainUid == null) {
+      return;
+    }
 
     DomainPresenceInfo info =
         getExistingDomainPresenceInfo(service.getMetadata().getNamespace(), domainUid);
-    if (info == null) return;
+    if (info == null) {
+      return;
+    }
 
     switch (item.type) {
       case "ADDED":
@@ -296,7 +311,9 @@ public class DomainProcessorImpl implements DomainProcessor {
         break;
       case "DELETED":
         boolean removed = ServiceHelper.deleteFromEvent(info, item.object);
-        if (removed && info.isNotDeleting()) makeRightDomainPresence(info, true, false, true);
+        if (removed && info.isNotDeleting()) {
+          makeRightDomainPresence(info, true, false, true);
+        }
         break;
       default:
     }
@@ -462,7 +479,9 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private void internalMakeRightDomainPresence(
       @Nullable DomainPresenceInfo info, boolean isDeleting, boolean isWillInterrupt) {
-    if (info == null) return;
+    if (info == null) {
+      return;
+    }
 
     String ns = info.getNamespace();
     String domainUid = info.getDomainUid();
@@ -472,8 +491,9 @@ public class DomainProcessorImpl implements DomainProcessor {
       Step strategy =
           new StartPlanStep(
               info, isDeleting ? createDomainDownPlan(info) : createDomainUpPlan(info));
-      if (!isDeleting && dom != null)
+      if (!isDeleting && dom != null) {
         strategy = DomainValidationSteps.createDomainValidationSteps(ns, strategy);
+      }
 
       Packet packet = new Packet();
       packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
@@ -796,7 +816,9 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private void updateStatus(String reason, String message) {
-      if (reason == null || message == null) return;
+      if (reason == null || message == null) {
+        return;
+      }
       
       DomainStatusPatch.updateSynchronously(domain, reason, message);
     }

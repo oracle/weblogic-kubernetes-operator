@@ -113,7 +113,9 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   public static boolean isComplete(V1Job job) {
-    if (job == null) return false;
+    if (job == null) {
+      return false;
+    }
 
     V1JobStatus status = job.getStatus();
     LOGGER.fine(
@@ -136,7 +138,9 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   static boolean isFailed(V1Job job) {
-    if (job == null) return false;
+    if (job == null) {
+      return false;
+    }
 
     V1JobStatus status = job.getStatus();
     if (status != null) {
