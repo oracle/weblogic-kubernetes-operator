@@ -628,7 +628,7 @@ public class ServiceHelper {
       public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
         if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
           return updateDomainStatus(packet, callResponse);
-      } else {
+        } else {
           return onFailure(getConflictStep(), packet, callResponse);
         }
       }

@@ -26,7 +26,11 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
 
   @Override
   public boolean isCompatible() {
-    for (K key : expected.keySet()) if (isKeyToCheck(key) && isIncompatible(key)) return false;
+    for (K key : expected.keySet()) {
+      if (isKeyToCheck(key) && isIncompatible(key)) {
+        return false;
+      }
+    }
     return true;
   }
 
@@ -47,15 +51,18 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
     StringBuilder sb = new StringBuilder();
 
     Set<K> missingKeys = getMissingElements(expected.keySet(), actual.keySet());
-    if (!missingKeys.isEmpty())
+    if (!missingKeys.isEmpty()) {
       sb.append(String.format("actual %s has no entry for '%s'%n", description, missingKeys));
+    }
 
-    for (K key : expected.keySet())
-      if (isKeyToCheck(key) && actual.containsKey(key) && valuesDiffer(key))
+    for (K key : expected.keySet()) {
+      if (isKeyToCheck(key) && actual.containsKey(key) && valuesDiffer(key)) {
         sb.append(
             String.format(
                 "actual %s has entry '%s' with value '%s' rather than '%s'%n",
                 description, key, actual.get(key), expected.get(key)));
+      }
+    }
 
     return sb.toString();
   }
