@@ -87,12 +87,19 @@ public enum OperatorServiceType {
   private static final String SERVICE_TYPE = "serviceType";
 
   static OperatorServiceType getType(V1Service service) {
-    if (!KubernetesUtils.isOperatorCreated(service.getMetadata())) return UNKNOWN;
+    if (!KubernetesUtils.isOperatorCreated(service.getMetadata())) {
+      return UNKNOWN;
+    }
     String type = ServiceHelper.getLabelValue(service, SERVICE_TYPE);
-    if (type != null) return OperatorServiceType.valueOf(type);
+    if (type != null) {
+      return OperatorServiceType.valueOf(type);
+    }
 
-    for (OperatorServiceType serviceType : OperatorServiceType.values())
-      if (serviceType.matches(service)) return serviceType;
+    for (OperatorServiceType serviceType : OperatorServiceType.values()) {
+      if (serviceType.matches(service)) {
+        return serviceType;
+      }
+    }
 
     return UNKNOWN;
   }
