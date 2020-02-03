@@ -40,9 +40,14 @@
         <property name="eachLine" value="true"/>
     </module>
 
+    <module name="RegexpHeader">
+        <property name="headerFile" value="build-tools/src/main/resources/weblogic-kubernetes-operator/checkstyle/java.header"/>
+        <property name="fileExtensions" value="java"/>
+    </module>
+
     <module name="LineLength">
         <property name="fileExtensions" value="java"/>
-        <property name="max" value="100"/>
+        <property name="max" value="120"/>
         <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
 
@@ -61,6 +66,7 @@
             <property name="allowNonPrintableEscapes" value="true"/>
         </module>
         <module name="AvoidStarImport"/>
+        <module name="UnusedImports"/>
         <module name="OneTopLevelClass"/>
         <module name="NoLineWrap">
             <property name="tokens" value="PACKAGE_DEF, IMPORT, STATIC_IMPORT"/>
@@ -185,6 +191,7 @@
                      value="Catch parameter name ''{0}'' must match pattern ''{1}''."/>
         </module>
         <module name="LocalVariableName">
+            <property name="tokens" value="VARIABLE_DEF"/>
             <property name="format" value="^[a-z]([a-z0-9][a-zA-Z0-9]*)?$"/>
             <message key="name.invalidPattern"
                      value="Local variable name ''{0}'' must match pattern ''{1}''."/>
@@ -243,6 +250,7 @@
                       value="CTOR_DEF, LITERAL_NEW, METHOD_CALL, METHOD_DEF,
                     SUPER_CTOR_CALL, ENUM_CONSTANT_DEF"/>
         </module>
+        <module name="MethodParamPad"/>
         <module name="NoWhitespaceBefore">
             <property name="tokens"
                       value="COMMA, SEMI, POST_INC, POST_DEC, DOT, ELLIPSIS, METHOD_REF"/>
@@ -287,6 +295,7 @@
         <module name="JavadocMethod">
             <property name="scope" value="public"/>
             <property name="allowMissingParamTags" value="true"/>
+            <property name="allowMissingThrowsTags" value="true"/>
             <property name="allowMissingReturnTag" value="true"/>
             <property name="allowedAnnotations" value="Override, Test"/>
             <property name="tokens" value="METHOD_DEF, CTOR_DEF, ANNOTATION_FIELD_DEF"/>
