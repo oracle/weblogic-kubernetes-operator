@@ -24,7 +24,6 @@ spec:
 
   # The WebLogic Server Docker image that the Operator uses to start the domain
   image: "model-in-image:v1"
-  #image: "model-in-image:12213p2h1" 
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
   # Identify which Secret contains the credentials for pulling an image
