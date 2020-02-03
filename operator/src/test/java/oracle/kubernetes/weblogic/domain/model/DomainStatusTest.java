@@ -40,7 +40,9 @@ public class DomainStatusTest {
 
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
@@ -276,9 +278,15 @@ public class DomainStatusTest {
     @Override
     public void describeTo(Description description) {
       description.appendText("cluster status for ").appendValue(name);
-      if (replicas != null) description.appendText(", with " + replicas + " replicas");
-      if (maximumReplicas != null) description.appendText(", with " + maximumReplicas + " maximum replicas");
-      if (readyReplicas != null) description.appendText(", with " + readyReplicas + " ready replicas");
+      if (replicas != null) {
+        description.appendText(", with " + replicas + " replicas");
+      }
+      if (maximumReplicas != null) {
+        description.appendText(", with " + maximumReplicas + " maximum replicas");
+      }
+      if (readyReplicas != null) {
+        description.appendText(", with " + readyReplicas + " ready replicas");
+      }
     }
   }
 
@@ -291,14 +299,18 @@ public class DomainStatusTest {
     }
 
     void check(String fieldName, String expected, String actual) {
-      if (expected == null || expected.equals(actual)) return;
+      if (expected == null || expected.equals(actual)) {
+        return;
+      }
 
       matches = false;
       description.appendText(fieldName).appendValue(actual);
     }
 
     void check(String fieldName, Number expected, Number actual) {
-      if (expected == null || expected.equals(actual)) return;
+      if (expected == null || expected.equals(actual)) {
+        return;
+      }
 
       matches = false;
       description.appendText(fieldName).appendValue(actual);

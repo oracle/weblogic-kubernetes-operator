@@ -257,8 +257,11 @@ public class DomainValidationTest {
     private List<V1ObjectMeta> definedSecrets = new ArrayList<>();
 
     void undefineSecret(String name, String namespace) {
-      for (Iterator<V1ObjectMeta> each = definedSecrets.iterator(); each.hasNext();)
-        if (hasSpecification(each.next(), name, namespace)) each.remove();
+      for (Iterator<V1ObjectMeta> each = definedSecrets.iterator(); each.hasNext();) {
+        if (hasSpecification(each.next(), name, namespace)) {
+          each.remove();
+        }
+      }
     }
 
     void defineSecret(String name, String namespace) {
