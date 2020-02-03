@@ -132,8 +132,12 @@ public class RestTest extends JerseyTest {
 
   private Invocation.Builder createRequest(String href) {
     Invocation.Builder request = target(href).request();
-    if (authorizationHeader != null) request.header(HttpHeaders.AUTHORIZATION, authorizationHeader);
-    if (includeRequestedByHeader) request.header("X-Requested-By", "TestClient");
+    if (authorizationHeader != null) {
+      request.header(HttpHeaders.AUTHORIZATION, authorizationHeader);
+    }
+    if (includeRequestedByHeader) {
+      request.header("X-Requested-By", "TestClient");
+    }
     return request;
   }
 

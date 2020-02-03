@@ -846,10 +846,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private int indexOfFirstCapital(String callName) {
-      for (int i = 0; i < callName.length(); i++)
+      for (int i = 0; i < callName.length(); i++) {
         if (Character.isUpperCase(callName.charAt(i))) {
           return i;
         }
+      }
 
       throw new RuntimeException(callName + " is not a valid call name");
     }
