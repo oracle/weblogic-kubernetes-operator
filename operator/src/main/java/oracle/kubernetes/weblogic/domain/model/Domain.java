@@ -186,8 +186,7 @@ public class Domain {
    *
    * @return Metadata
    */
-  @Nonnull
-  public V1ObjectMeta getMetadata() {
+  public @Nonnull V1ObjectMeta getMetadata() {
     return metadata;
   }
 
@@ -293,8 +292,7 @@ public class Domain {
    *
    * @return Specification
    */
-  @Nonnull
-  git public DomainSpec getSpec() {
+  public @Nonnull DomainSpec getSpec() {
     return spec;
   }
 
