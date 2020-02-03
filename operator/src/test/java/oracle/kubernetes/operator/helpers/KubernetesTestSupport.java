@@ -236,7 +236,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   @SafeVarargs
   public final <T> void defineResources(T... resources) {
-    for (T resource : resources) getDataRepository(resource).createResourceInNamespace(resource);
+    for (T resource : resources) {
+      getDataRepository(resource).createResourceInNamespace(resource);
+    }
   }
 
   public void definePodLog(String name, String namespace, Object contents) {
@@ -531,15 +533,18 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private T withOptionalCreationTimeStamp(T resource) {
-      if (addCreationTimestamp)
+      if (addCreationTimestamp) {
         getMetadata(resource).setCreationTimestamp(SystemClock.now());
+      }
       return resource;
     }
 
     T createResource(String namespace, T resource) {
       String name = getName(resource);
       if (name != null) {
-        if (hasElementWithName(getName(resource))) throw new RuntimeException("element exists");
+        if (hasElementWithName(getName(resource))) {
+          throw new RuntimeException("element exists");
+        }
         data.put(getName(resource), resource);
       }
 
@@ -548,8 +553,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     Object listResources(String namespace, String fieldSelector, String... labelSelectors) {
-      if (listFactory == null)
+      if (listFactory == null) {
         throw new UnsupportedOperationException("list operation not supported");
+      }
 
       return listFactory.apply(getResources(fieldSelector, labelSelectors));
     }
@@ -579,7 +585,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private boolean includesLabel(Map<String, String> labels, String key, String value) {
-      if (labels == null || !labels.containsKey(key)) return false;
+      if (labels == null || !labels.containsKey(key)) {
+        return false;
+      }
       return value == null || value.equals(labels.get(key));
     }
 
@@ -593,7 +601,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private boolean hasField(Object object, String fieldSpec) {
       Matcher fieldMatcher = fieldPat.matcher(fieldSpec);
-      if (!fieldMatcher.find()) return false;
+      if (!fieldMatcher.find()) {
+        return false;
+      }
 
       return new FieldMatcher(fieldSpec).matches(object);
     }
@@ -607,8 +617,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     V1Status deleteResource(String name, String namespace) {
-      if (!hasElementWithName(name))
+      if (!hasElementWithName(name)) {
         throw new NotFoundException(getResourceName(), name, namespace);
+      }
       data.remove(name);
 
       return new V1Status().code(200);
@@ -624,7 +635,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     public T readResource(String name, String namespace) {
-      if (!data.containsKey(name)) throw new NotFoundException(getResourceName(), name, namespace);
+      if (!data.containsKey(name)) {
+        throw new NotFoundException(getResourceName(), name, namespace);
+      }
       return data.get(name);
     }
 
@@ -633,7 +646,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     public T patchResource(String name, String namespace, V1Patch body) {
-      if (!data.containsKey(name)) throw new NotFoundException(getResourceName(), name, namespace);
+      if (!data.containsKey(name)) {
+        throw new NotFoundException(getResourceName(), name, namespace);
+      }
 
       JsonPatch patch = Json.createPatch(fromV1Patch(body));
       JsonStructure result = patch.apply(toJsonStructure(data.get(name)));
@@ -698,14 +713,19 @@ public class KubernetesTestSupport extends FiberTestSupport {
       boolean matches(Object object) {
         String fieldValue = getFieldValue(object);
         boolean matches = fieldValue.equals(value);
-        if (op.equals("!=")) return !matches;
-        else return matches;
+        if (op.equals("!=")) {
+          return !matches;
+        } else {
+          return matches;
+        }
       }
 
       private String getFieldValue(Object object) {
         String[] split = path.split("\\.");
         Object result = object;
-        for (String link : split) result = result == null ? null : getSubField(result, link);
+        for (String link : split) {
+          result = result == null ? null : getSubField(result, link);
+        }
         return result == null ? "" : result.toString();
       }
 
@@ -780,8 +800,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
     @Override
     List<T> getResources() {
       List<T> result = new ArrayList<>();
-      for (DataRepository<T> repository : repositories.values())
+      for (DataRepository<T> repository : repositories.values()) {
         result.addAll(repository.getResources());
+      }
       return result;
     }
   }
@@ -810,7 +831,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
       resourceType = callName.substring(i);
       operation = Operation.valueOf(callName.substring(0, i));
 
-      if (isDeleteCollection()) selectDeleteCollectionOperation();
+      if (isDeleteCollection()) {
+        selectDeleteCollectionOperation();
+      }
     }
 
     private boolean isDeleteCollection() {
@@ -824,14 +847,17 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private int indexOfFirstCapital(String callName) {
       for (int i = 0; i < callName.length(); i++)
-        if (Character.isUpperCase(callName.charAt(i))) return i;
+        if (Character.isUpperCase(callName.charAt(i))) {
+          return i;
+        }
 
       throw new RuntimeException(callName + " is not a valid call name");
     }
 
     private Object execute() {
-      if (failure != null && failure.matches(resourceType, requestParams, operation))
+      if (failure != null && failure.matches(resourceType, requestParams, operation)) {
         throw failure.getException();
+      }
 
       return operation.execute(this, repositories.get(resourceType));
     }
