@@ -126,7 +126,9 @@ public class JsonSchemaMojoTest {
 
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
@@ -300,8 +302,9 @@ public class JsonSchemaMojoTest {
     String[] classpathElements = new String[] {"a", "b", "c"};
     setMojoParameter("compileClasspathElements", Arrays.asList(classpathElements));
     URL[] classPathUrls = new URL[] {new URL("file:abc"), new URL("file:bcd"), new URL("file:cde")};
-    for (int i = 0; i < classpathElements.length; i++)
+    for (int i = 0; i < classpathElements.length; i++) {
       fileSystem.defineUrl(new File(classpathElements[i]), classPathUrls[i]);
+    }
 
     mojo.execute();
 
@@ -511,7 +514,9 @@ public class JsonSchemaMojoTest {
 
     private Object getEnumConstant(Class<?> enumClass, String value) {
       for (Object constant : enumClass.getEnumConstants()) {
-        if (value.equalsIgnoreCase(constant.toString())) return constant;
+        if (value.equalsIgnoreCase(constant.toString())) {
+          return constant;
+        }
       }
       throw new RuntimeException("No enum constant " + value + " in " + enumClass);
     }

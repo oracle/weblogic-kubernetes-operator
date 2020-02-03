@@ -54,9 +54,13 @@ public class JsonSchemaMojo extends AbstractMojo {
     main.setSupportObjectReferences(supportObjectReferences);
     addExternalSchemas();
 
-    if (rootClass == null) throw new MojoExecutionException("No root class specified");
+    if (rootClass == null) {
+      throw new MojoExecutionException("No root class specified");
+    }
     URL classUrl = main.getResource(toClassFileName(rootClass));
-    if (classUrl == null) throw new MojoExecutionException("Class " + rootClass + " not found");
+    if (classUrl == null) {
+      throw new MojoExecutionException("Class " + rootClass + " not found");
+    }
 
     if (updateNeeded(new File(classUrl.getPath()), getSchemaFile())) {
       getLog().info("Changes detected -- generating schema for " + rootClass + ".");
@@ -76,10 +80,13 @@ public class JsonSchemaMojo extends AbstractMojo {
 
   private void addExternalSchemas() throws MojoExecutionException {
     try {
-      if (kubernetesVersion != null) main.setKubernetesVersion(kubernetesVersion);
-      for (ExternalSchema externalSchema : externalSchemas)
+      if (kubernetesVersion != null) {
+        main.setKubernetesVersion(kubernetesVersion);
+      }
+      for (ExternalSchema externalSchema : externalSchemas) {
         main.defineSchemaUrlAndContents(
             externalSchema.getUrl(), externalSchema.getCacheUrl(baseDir));
+      }
     } catch (IOException e) {
       throw new MojoExecutionException("Unable to define external schema: ", e);
     }

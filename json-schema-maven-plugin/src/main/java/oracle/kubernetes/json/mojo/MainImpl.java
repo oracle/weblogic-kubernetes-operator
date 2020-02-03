@@ -80,14 +80,18 @@ public class MainImpl implements Main {
 
     YamlDocGenerator generator = new YamlDocGenerator(schema);
     try (FileWriter writer = new FileWriter(outputFile)) {
-      if (kubernetesVersion != null) generator.useKubernetesVersion(kubernetesVersion);
+      if (kubernetesVersion != null) {
+        generator.useKubernetesVersion(kubernetesVersion);
+      }
       writer.write(generator.generate(rootName));
     } catch (IOException e) {
       throw new MojoExecutionException("Error generating markdown", e);
     }
 
     String kubernetesSchemaMarkdownFile = generator.getKubernetesSchemaMarkdownFile();
-    if (kubernetesSchemaMarkdownFile == null) return;
+    if (kubernetesSchemaMarkdownFile == null) {
+      return;
+    }
 
     File kubernetesFile = new File(outputFile.getParent(), kubernetesSchemaMarkdownFile);
     try (FileWriter writer = new FileWriter(kubernetesFile)) {

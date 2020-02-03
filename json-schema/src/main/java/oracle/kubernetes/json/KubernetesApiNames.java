@@ -6,10 +6,14 @@ package oracle.kubernetes.json;
 class KubernetesApiNames {
 
   public static boolean matches(String className, Class<?> candidateClass) {
-    if (!candidateClass.getName().startsWith("io.kubernetes.client")) return false;
+    if (!candidateClass.getName().startsWith("io.kubernetes.client")) {
+      return false;
+    }
 
     String[] parts = className.split("\\.");
-    if (parts.length < 2) return false;
+    if (parts.length < 2) {
+      return false;
+    }
     String last = parts[parts.length - 1];
     String nextToLast = parts[parts.length - 2];
 

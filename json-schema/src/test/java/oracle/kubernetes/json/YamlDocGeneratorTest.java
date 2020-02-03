@@ -211,7 +211,9 @@ public class YamlDocGeneratorTest {
 
   private String tableDivider(int numColumns) {
     StringBuilder sb = new StringBuilder("|");
-    for (int i = 0; i < numColumns; i++) sb.append(" --- |");
+    for (int i = 0; i < numColumns; i++) {
+      sb.append(" --- |");
+    }
     return sb.toString();
   }
 

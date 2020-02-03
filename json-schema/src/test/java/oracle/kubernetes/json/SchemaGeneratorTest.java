@@ -243,7 +243,8 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.properties.anInt.description", equalTo("An int\nvalue")));
     assertThat(schema, hasJsonPath("$.properties.depth.type", equalTo("number")));
     assertThat(
-        schema, hasJsonPath("$.required", arrayContainingInAnyOrder("aaBoolean", "anInt", "depth")));
+        schema,
+        hasJsonPath("$.required", arrayContainingInAnyOrder("aaBoolean", "anInt", "depth")));
   }
 
   @Test
