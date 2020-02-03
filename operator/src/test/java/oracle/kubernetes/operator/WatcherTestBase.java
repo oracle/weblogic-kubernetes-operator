@@ -75,7 +75,9 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   @After
   public void tearDown() throws Exception {
     shutDownThreads();
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   void sendInitialRequest(int initialResourceVersion) {

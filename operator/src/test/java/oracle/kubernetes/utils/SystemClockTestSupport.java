@@ -43,9 +43,13 @@ public class SystemClockTestSupport {
 
     @Override
     protected boolean matchesSafely(DateTime item, Description mismatchDescription) {
-      if (item == null) return foundNullTime(mismatchDescription);
+      if (item == null) {
+        return foundNullTime(mismatchDescription);
+      }
       long millis = item.getMillis();
-      if (clock.testStartTime <= millis && millis <= clock.currentTime) return true;
+      if (clock.testStartTime <= millis && millis <= clock.currentTime) {
+        return true;
+      }
 
       mismatchDescription.appendValue(item);
       return false;

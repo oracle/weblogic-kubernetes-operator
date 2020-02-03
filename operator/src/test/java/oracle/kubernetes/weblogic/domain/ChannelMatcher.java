@@ -25,8 +25,9 @@ public class ChannelMatcher extends TypeSafeDiagnosingMatcher<Channel> {
 
   @Override
   protected boolean matchesSafely(Channel item, Description mismatchDescription) {
-    if (item.getChannelName().equals(expectedName) && item.getNodePort().equals(expectedNodePort))
+    if (item.getChannelName().equals(expectedName) && item.getNodePort().equals(expectedNodePort)) {
       return true;
+    }
 
     describe(mismatchDescription, item.getChannelName(), item.getNodePort());
     return false;
