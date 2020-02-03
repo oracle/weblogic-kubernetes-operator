@@ -365,7 +365,9 @@ public class WlsDomainConfigTest {
 
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
@@ -817,7 +819,9 @@ public class WlsDomainConfigTest {
     protected boolean matchesSafely(
         List<Map<String, Object>> configs, Description mismatchDescription) {
       for (Map<String, Object> config : configs) {
-        if (isExpectedConfig(config)) return true;
+        if (isExpectedConfig(config)) {
+          return true;
+        }
       }
 
       mismatchDescription.appendText(configs.toString());
