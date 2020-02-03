@@ -30,7 +30,9 @@ public class LegalNamesTest {
 
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
     LegalNames.dns1123Fields = null;
   }
 

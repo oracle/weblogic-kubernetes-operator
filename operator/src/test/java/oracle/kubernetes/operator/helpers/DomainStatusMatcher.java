@@ -30,7 +30,9 @@ class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
 
   @Override
   protected boolean matchesSafely(Domain item, Description mismatchDescription) {
-    if (hasExpectedReason(item) && hasExpectedMessage(item)) return true;
+    if (hasExpectedReason(item) && hasExpectedMessage(item)) {
+      return true;
+    }
 
     mismatchDescription.appendText("domain status with reason ").appendValue(getStatusReason(item))
                        .appendText(" and message ").appendValue(getStatusMessage(item));

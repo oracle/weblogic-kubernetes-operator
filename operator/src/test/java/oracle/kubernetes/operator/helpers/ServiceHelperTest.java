@@ -854,7 +854,9 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
       V1ServicePort matchingPort = getPortWithName(item);
 
       if (matchingPort == null) {
-        if (expectedValue == null) return true;
+        if (expectedValue == null) {
+          return true;
+        }
         mismatchDescription.appendText("contains no port with name ").appendValue(expectedName);
         return false;
       } else {
