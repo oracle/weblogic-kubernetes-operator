@@ -12,18 +12,18 @@
     <title>Base images :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1580742979" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1580742979" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1580742979" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1580742979" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1580742979" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1580742979" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1580742979" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1580742979" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1580742979" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1580753189" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1580753189" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1580753189" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1580753189" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1580753189" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1580753189" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1580753189" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1580753189" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1580753189" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1580742979"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1580753189"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1580742979"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1580742979"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1580753189"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1580753189"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1580742979"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1580753189"></script>
 
     
   </div>
@@ -2535,7 +2535,7 @@ using the Oracle Single Sign-On authentication service. If you do not already ha
 <p>Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
 Your acceptance of these terms is stored in a database that links the software images to your Oracle Single Sign-On login credentials.</p>
 
-<p>The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 Docker image which already has the necessary patches applied.</p>
+<p>The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 Docker image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 image, which does not require any patches.</p>
 
 <p>First, you will need to log in to the Oracle Container Registry:</p>
 
@@ -2560,35 +2560,51 @@ Oracle Container Registry.</p>
 
 <h4 id="creating-a-custom-image-with-patches-applied">Creating a custom image with patches applied</h4>
 
-<p>The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
-This patch does have some prerequisite patches that will also need to be applied. The standard image <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code> already has all of these patches applied.</p>
+<p>The Oracle WebLogic Server Kubernetes Operator and WebLogic Server 12.2.1.3.0 image requires patch 29135930.
+This patch has some prerequisite patches that will also need to be applied. To create and customize the WebLogic Server image,
+and apply the required patches, use the <a href="https://github.com/oracle/weblogic-image-tool">WebLogic Image Tool</a>.</p>
 
-<p><a href="https://github.com/oracle/docker-images/blob/master/OracleWebLogic/samples/12213-patch-wls-for-k8s/README.md">This sample</a> in
-the Oracle GitHub Docker images repository demonstrates how to create an image with arbitrary patches, starting from an unpatched WebLogic Server 12.2.1.3 image (not the standard <code>container-registry/middleware/weblogic:12.2.1.3</code> pre-patched image).  You can customize that sample to apply a different set of patches, if you require additional patches or PSUs.</p>
+<p>To use the Image Tool, follow the <a href="https://github.com/oracle/weblogic-image-tool/blob/master/README.md#setup">Setup</a> instructions
+and <a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/quickstart.md">Quick Start</a> Guide.</p>
 
-<p>When using that sample, you will need to download the required patch and also
-some prerequisite patches.  To find the correct version of the patch, you should
-use the &ldquo;Product or Family (Advanced)&rdquo; option, then choose &ldquo;Oracle WebLogic Server&rdquo;
-as the product, and set the release to &ldquo;Oracle WebLogic Server 12.2.1.3.181016&rdquo; as
-shown in the image below:</p>
+<p>To build the WebLogic Server image and apply the patches:</p>
 
-<p><img src="/weblogic-kubernetes-operator/images/patch-download.png" alt="patch download page" /></p>
+<ol>
+<li><p>Add the Server JRE and the WebLogic Server installer to the <a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md"><code>cache</code> command</a>.</p>
 
-<p>The <code>Dockerfile</code> in that sample lists the base image as follows:</p>
+<pre><code>$ imagetool cache addInstaller \
+--type=jdk \
+--version=8u241 \
+--path=/home/acmeuser/wls-installers/jre-8u241-linux-x64.tar.gz
 
-<pre><code>FROM oracle/weblogic:12.2.1.3-developer
-</code></pre>
+$ imagetool cache addInstaller \
+--type=wls \
+--version=12.2.1.3.0 \
+--path=/home/acmeuser/wls-installers/fmw_12.2.1.3.0_wls_Disk1_1of1.zip
+</code></pre></li>
 
-<p>You can change this to use the standard WebLogic Server image you
-downloaded from the OCR by updating the <code>FROM</code> statement
-as follows:</p>
+<li><p>Use the <a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/create-image.md">Create Tool</a>
+to build the image and apply the patches.</p>
 
-<pre><code>FROM container-registry.oracle.com/middleware/weblogic:12.2.1.3
-</code></pre>
+<p>For the Create Tool to download the patches, you must pass in your My Oracle Support credentials.</p>
 
-<p>After running <code>docker build</code> as described in the sample, you
-will have created a Docker image with the necessary patches to
-run WebLogic 12.2.1.3 in Kubernetes using the operator.</p>
+<pre><code>
+$ imagetool create \
+--tag=weblogic:12.2.1.3 \
+--type=wls \
+--version=12.2.1.3.0 \
+--jdkVersion=8u241 \
+-–patches=29135930_12.2.1.3.0,27117282_12.2.1.3.0 \
+--user=username.mycompany.com \
+--passwordEnv=MYPWD  
+</code></pre></li>
+
+<li><p>After the tool creates the image, verify that the image is in your local repository:</p>
+
+<pre><code>
+$ docker images
+</code></pre></li>
+</ol>
 
 <h4 id="creating-a-custom-image-with-your-domain-inside-the-image">Creating a custom image with your domain inside the image</h4>
 
@@ -4256,19 +4272,19 @@ be kept in a private repository.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1580742979"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1580742979"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1580742979"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1580742979"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1580742979"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1580742979"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1580753189"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1580753189"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1580753189"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1580753189"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1580753189"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1580753189"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1580742979"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1580742979"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1580742979"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1580753189"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1580753189"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1580753189"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1580742979" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1580742979"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1580753189" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1580753189"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
