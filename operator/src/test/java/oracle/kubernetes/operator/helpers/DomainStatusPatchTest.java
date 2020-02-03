@@ -465,10 +465,11 @@ public class DomainStatusPatchTest {
 
     @Override
     public JsonPatchBuilder add(String s, JsonValue jsonValue) {
-      if (jsonValue == JsonValue.EMPTY_JSON_OBJECT)
+      if (jsonValue == JsonValue.EMPTY_JSON_OBJECT) {
         patches.add("ADD " + s);
-      else
+      } else {
         patches.add("ADD " + s + " " + toPatchString(jsonValue));
+      }
       return this;     
     }
 
@@ -503,20 +504,21 @@ public class DomainStatusPatchTest {
     }
 
     private String toPatchString(JsonValue jsonValue) {
-      if (jsonValue.equals(JsonObject.FALSE))
+      if (jsonValue.equals(JsonObject.FALSE)) {
         return "'false'";
-      else if (jsonValue.equals(JsonValue.TRUE))
+      } else if (jsonValue.equals(JsonValue.TRUE)) {
         return "'true'";
-      else if (jsonValue instanceof JsonString)
+      } else if (jsonValue instanceof JsonString) {
         return "'" + ((JsonString) jsonValue).getString() + "'";
-      else if (jsonValue instanceof JsonNumber)
+      } else if (jsonValue instanceof JsonNumber) {
         return ((JsonNumber) jsonValue).numberValue().toString();
-      else if (jsonValue instanceof JsonObject)
+      } else if (jsonValue instanceof JsonObject) {
         return "{" + toPatchFieldStream(jsonValue.asJsonObject()).collect(Collectors.joining(",")) + "}";
-      else if (jsonValue instanceof JsonArray)
+      } else if (jsonValue instanceof JsonArray) {
         return "[" + toPatchFieldStream(jsonValue.asJsonArray()).collect(Collectors.joining(",")) + "]";
-      else
+      } else {
         return "";
+      }
     }
 
     private Stream<String> toPatchFieldStream(JsonObject jsonObject) {
@@ -552,14 +554,19 @@ public class DomainStatusPatchTest {
       int j = 0;
       for (String expectedItem : expectedItems) {
         j = foundIndex(array, expectedItem, j);
-        if (j++ < 0) return itemNotFound(expectedItem, array, mismatchDescription);
+        if (j++ < 0) {
+          return itemNotFound(expectedItem, array, mismatchDescription);
+        }
       }
       return true;
     }
 
     private int foundIndex(String[] array, String expectedItem, int startIndex) {
-      for (int i = startIndex; i < array.length; i++)
-        if (Objects.equals(expectedItem, array[i])) return i;
+      for (int i = startIndex; i < array.length; i++) {
+        if (Objects.equals(expectedItem, array[i])) {
+          return i;
+        }
+      }
 
       return -1;
     }

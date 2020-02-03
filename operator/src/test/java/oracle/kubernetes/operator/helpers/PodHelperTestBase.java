@@ -199,7 +199,9 @@ public abstract class PodHelperTestBase {
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
-    if (!ADMIN_SERVER.equals(serverName)) configSupport.addWlsServer(serverName, listenPort);
+    if (!ADMIN_SERVER.equals(serverName)) {
+      configSupport.addWlsServer(serverName, listenPort);
+    }
     configSupport.setAdminServerName(ADMIN_SERVER);
 
     testSupport.defineResources(domain);
@@ -224,7 +226,9 @@ public abstract class PodHelperTestBase {
 
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }
