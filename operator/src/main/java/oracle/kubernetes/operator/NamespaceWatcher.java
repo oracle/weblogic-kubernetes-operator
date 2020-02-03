@@ -27,6 +27,15 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
     super(initialResourceVersion, tuning, isStopping, listener);
   }
 
+  /**
+   * Create a namespace watcher.
+   * @param factory the ThreadFactory to run the watcher
+   * @param initialResourceVersion at which to start returning watch events
+   * @param tuning any WatchTuning parameters
+   * @param listener the WatchListener
+   * @param isStopping whether the watcher is stopping
+   * @return the watcher
+   */
   public static NamespaceWatcher create(
       ThreadFactory factory,
       String initialResourceVersion,
