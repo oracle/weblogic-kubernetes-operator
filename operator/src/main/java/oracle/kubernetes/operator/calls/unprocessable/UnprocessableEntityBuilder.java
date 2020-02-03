@@ -13,6 +13,11 @@ public class UnprocessableEntityBuilder implements FailureStatusSource {
   static final int HTTP_UNPROCESSABLE_ENTITY = 422;
   private ErrorBody errorBody;
 
+  /**
+   * Create an UnprocessableEntityBuilder from the provided Exception.
+   * @param exception the exception
+   * @return the UnprocessableEntityBuilder
+   */
   public static UnprocessableEntityBuilder fromException(ApiException exception) {
     if (exception.getCode() != HTTP_UNPROCESSABLE_ENTITY)
       throw new IllegalArgumentException("Is not unprocessable entity exception");

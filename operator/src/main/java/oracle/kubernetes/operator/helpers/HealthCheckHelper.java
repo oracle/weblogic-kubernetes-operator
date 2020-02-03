@@ -190,7 +190,9 @@ public final class HealthCheckHelper {
   }
 
   private static V1SelfSubjectRulesReview getRulesReview(AuthorizationProxy ap, KubernetesVersion version) {
-    if (!version.isRulesReviewSupported()) return null;
+    if (!version.isRulesReviewSupported()) {
+      return null;
+    }
 
     return ap.review(StartupControl.getOperatorNamespace());
   }
@@ -230,8 +232,12 @@ public final class HealthCheckHelper {
       }
     }
     if (log) {
-      if (ns != null) LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
-      else LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+      if (ns != null) {
+        LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
+      }
+      else {
+        LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+      }
     }
     return false;
   }

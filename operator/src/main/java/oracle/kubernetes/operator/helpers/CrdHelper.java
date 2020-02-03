@@ -339,7 +339,9 @@ public class CrdHelper {
           }
         }
 
-        if (exception == null) return doNext(packet);
+        if (exception == null) {
+          return doNext(packet);
+        }
     
         return super.doTerminate(exception, packet);
       }
