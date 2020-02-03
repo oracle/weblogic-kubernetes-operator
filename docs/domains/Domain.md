@@ -202,8 +202,6 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | `domainType` | string | WDT domain type: Legal values: WLS, RestrictedJRF, JRF |
 | `encryptionSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | WDT encryption key pass phrase secret. |
 | `opss` | [Opss](#opss) | Configuration for OPSS based security |
-| `rollbackIfRequireStart` | Boolean | Rollback dynamic changes if the updates requires restart |
-| `useOnlineUpdate` | Boolean | Use online update during lifecycle changes |
 
 ### Overrides
 

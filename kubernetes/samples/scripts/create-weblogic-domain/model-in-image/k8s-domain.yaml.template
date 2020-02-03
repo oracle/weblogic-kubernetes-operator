@@ -89,17 +89,6 @@ spec:
       configMapName: wdt-config-map
 
       #
-      # user online update or not (default is false)
-      #
-      #useOnlineUpdate: "true"
-
-      #
-      # For life cycle online update, if it is set to true it will cancel the update and error out
-      # default is false if not set
-      #
-      #rollbackIfRequireStart: true
-
-      #
       # wdt domain type for model in image case
       # Valid WDT_DOMAIN_TYPE_VALUES are 'WLS', 'JRF', and 'RestrictedJRF'
       #

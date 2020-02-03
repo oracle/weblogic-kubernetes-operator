@@ -398,14 +398,6 @@ public class Domain {
     return spec.getDataHome();
   }
 
-  public boolean isRollbackIfRequireRestart() {
-    return Optional.ofNullable(getModel()).map(Model::isRollbackIfRequireStart).orElse(false);
-  }
-
-  public boolean isUseOnlineUpdate() {
-    return Optional.ofNullable(getModel()).map(Model::isUseOnlineUpdate).orElse(false);
-  }
-
   public String getWdtDomainType() {
     return spec.getWdtDomainType();
   }

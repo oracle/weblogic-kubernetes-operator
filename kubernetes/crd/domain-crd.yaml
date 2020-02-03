@@ -66,13 +66,6 @@ spec:
                               type: string
                             namespace:
                               type: string
-                    useOnlineUpdate:
-                      type: boolean
-                      description: Use online update during lifecycle changes
-                    rollbackIfRequireStart:
-                      type: boolean
-                      description: Rollback dynamic changes if the updates requires
-                        restart
                     configMapName:
                       type: string
                       description: WDT config map name

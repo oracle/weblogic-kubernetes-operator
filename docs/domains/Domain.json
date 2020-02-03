@@ -496,14 +496,6 @@
           "description": "Configuration for OPSS based security",
           "$ref": "#/definitions/Opss"
         },
-        "useOnlineUpdate": {
-          "description": "Use online update during lifecycle changes",
-          "type": "boolean"
-        },
-        "rollbackIfRequireStart": {
-          "description": "Rollback dynamic changes if the updates requires restart",
-          "type": "boolean"
-        },
         "configMapName": {
           "description": "WDT config map name",
           "type": "string"

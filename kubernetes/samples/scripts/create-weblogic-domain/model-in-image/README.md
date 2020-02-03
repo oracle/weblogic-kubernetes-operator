@@ -178,20 +178,6 @@ It is helpful to understand the following high-level flow before running the sam
     --from-file=ewallet.p12
       
     ```
-
-   - (Experimental) During lifecycle updates, specify the behavior of whether to use dynamic update (no rolling of 
-   server). 
-
-
-     | Attribute                | Usage                              |
-     | ------------------------ | ---------------------------------- | 
-     | useOnlineUpdate          | (true or false) Default is false. User WLST online update for changes.      |
-     | rollbackIfRequireStart   | (true or false) Default is true. If successful, there will be no rolling restart,  |                        
-     | | Otherwise, it will cancel the changes and the introspector job will have error.  Note: your changes  |
-     || in the image or configmap will not be rollback |
-
-
-
      
 # Model File Naming and Loading Order
 

@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 
@@ -27,12 +26,6 @@ public class Model {
   @Description("WDT encryption key pass phrase secret.")
   @Valid
   private V1SecretReference encryptionSecret;
-
-  @Description("Rollback dynamic changes if the updates requires restart")
-  private Boolean rollbackIfRequireStart;
-
-  @Description("Use online update during lifecycle changes")
-  private Boolean useOnlineUpdate;
 
   @Description("Configuration for OPSS based security")
   private Opss opss;
@@ -78,32 +71,6 @@ public class Model {
     return this;
   }
 
-  public boolean isRollbackIfRequireStart() {
-    return Optional.ofNullable(rollbackIfRequireStart).orElse(false);
-  }
-
-  public void setRollbackIfRequireStart(boolean rollbackIfRequireStart) {
-    this.rollbackIfRequireStart = rollbackIfRequireStart;
-  }
-
-  public Model withRollbackIfRequireRestart(boolean rollbackIfRequireRestart) {
-    this.rollbackIfRequireStart = rollbackIfRequireRestart;
-    return this;
-  }
-
-  public boolean isUseOnlineUpdate() {
-    return Optional.ofNullable(useOnlineUpdate).orElse(false);
-  }
-
-  public void setUseOnlineUpdate(boolean useOnlineUpdate) {
-    this.useOnlineUpdate = useOnlineUpdate;
-  }
-
-  public Model withUseOnlineUpdate(boolean useOnlineUpdate) {
-    this.useOnlineUpdate = useOnlineUpdate;
-    return this;
-  }
-
   public Opss getOpss() {
     return this.opss;
   }
@@ -124,8 +91,6 @@ public class Model {
             .append("domainType", domainType)
             .append("configMapName", configMapName)
             .append("encryptionSecret", encryptionSecret)
-            .append("rollbackIfRequireStart", rollbackIfRequireStart)
-            .append("useOnlineUpdate", useOnlineUpdate)
             .append("opss", opss);
 
     return builder.toString();
@@ -137,8 +102,6 @@ public class Model {
         .append(domainType)
         .append(configMapName)
         .append(encryptionSecret)
-        .append(rollbackIfRequireStart)
-        .append(useOnlineUpdate)
         .append(opss);
 
     return builder.toHashCode();
@@ -159,8 +122,6 @@ public class Model {
             .append(domainType, rhs.domainType)
             .append(configMapName,rhs.configMapName)
             .append(encryptionSecret, rhs.encryptionSecret)
-            .append(rollbackIfRequireStart, rhs.rollbackIfRequireStart)
-            .append(useOnlineUpdate, rhs.useOnlineUpdate)
             .append(opss, rhs.opss);
 
     return builder.isEquals();

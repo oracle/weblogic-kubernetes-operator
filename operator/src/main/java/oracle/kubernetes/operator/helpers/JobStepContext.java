@@ -155,14 +155,6 @@ public abstract class JobStepContext extends BasePodStepContext {
     return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
   }
 
-  protected boolean isRollBackIfRequireRestart() {
-    return getDomain().isRollbackIfRequireRestart();
-  }
-
-  protected boolean isUseOnlineUpdate() {
-    return getDomain().isUseOnlineUpdate();
-  }
-
   protected String getWdtDomainType() {
     return getDomain().getWdtDomainType();
   }

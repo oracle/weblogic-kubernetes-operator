@@ -35,17 +35,6 @@ public class IntrospectorJobEnvVars {
    */
   public static final String WDT_ENCRYPTION_PASSPHRASE_NAME = "WDT_ENCRYPTION_PASSPHRASE_NAME";
 
-
-  /**
-   * The setting for rollback changes if online update require restart.
-   */
-  public static final String ROLLBACK_IF_REQUIRE_RESTART = "ROLLBACK_IF_REQUIRE_RESTART";
-
-  /**
-   * The setting of whether to use online update.
-   */
-  public static final String USE_ONLINE_UPDATE = "USE_ONLINE_UPDATE";
-
   /**
    * The wdt domain type.
    */
