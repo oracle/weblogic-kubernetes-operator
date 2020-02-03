@@ -73,7 +73,9 @@ public class RestTest extends JerseyTest {
 
   @After
   public void restore() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Override
@@ -339,8 +341,11 @@ public class RestTest extends JerseyTest {
     @Override
     protected boolean matchesSafely(List<Object> item, Description mismatchDescription) {
       Set<Object> actuals = new HashSet<>(item);
-      for (Object o : expectedContents)
-        if (!actuals.remove(o)) return reportMismatch(item, mismatchDescription);
+      for (Object o : expectedContents) {
+        if (!actuals.remove(o)) {
+          return reportMismatch(item, mismatchDescription);
+        }
+      }
       return true;
     }
 

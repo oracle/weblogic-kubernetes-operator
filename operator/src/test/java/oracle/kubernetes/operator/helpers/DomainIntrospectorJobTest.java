@@ -98,7 +98,9 @@ public class DomainIntrospectorJobTest {
 
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   private Domain createDomain() {
