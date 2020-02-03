@@ -116,7 +116,9 @@ public class HealthCheckHelperTest {
 
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
@@ -284,8 +286,12 @@ public class HealthCheckHelperTest {
 
     private List<V1ResourceRule> createRules() {
       List<V1ResourceRule> rules = new ArrayList<>();
-      if (mayAccessNamespace) addNamespaceRules(rules);
-      if (mayAccessCluster) addClusterRules(rules);
+      if (mayAccessNamespace) {
+        addNamespaceRules(rules);
+      }
+      if (mayAccessCluster) {
+        addClusterRules(rules);
+      }
       return rules;
     }
 

@@ -87,7 +87,9 @@ public class CrdHelperTest {
 
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
     testSupport.verifyAllDefinedResponsesInvoked();
@@ -240,18 +242,26 @@ public class CrdHelperTest {
 
     private boolean hasSchemaVerification(V1beta1CustomResourceDefinition actualBody) {
       V1beta1CustomResourceValidation validation = actualBody.getSpec().getValidation();
-      if (validation == null) return expected.getSpec().getValidation() == null;
+      if (validation == null) {
+        return expected.getSpec().getValidation() == null;
+      }
 
       V1beta1JSONSchemaProps openApiV3Schema = validation.getOpenAPIV3Schema();
-      if (openApiV3Schema == null || openApiV3Schema.getProperties().size() != 2) return false;
+      if (openApiV3Schema == null || openApiV3Schema.getProperties().size() != 2) {
+        return false;
+      }
 
       // check for structural schema condition 1 -- top level type value
       // https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/
       //     custom-resource-definitions/#specifying-a-structural-schema
-      if (openApiV3Schema == null || !openApiV3Schema.getType().equals("object")) return false;
+      if (openApiV3Schema == null || !openApiV3Schema.getType().equals("object")) {
+        return false;
+      }
 
       V1beta1JSONSchemaProps spec = openApiV3Schema.getProperties().get("spec");
-      if (spec == null || spec.getProperties().isEmpty()) return false;
+      if (spec == null || spec.getProperties().isEmpty()) {
+        return false;
+      }
 
       return spec.getProperties().containsKey("serverStartState");
     }
