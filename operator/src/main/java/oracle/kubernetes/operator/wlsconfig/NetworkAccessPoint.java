@@ -28,6 +28,13 @@ public class NetworkAccessPoint {
         (Integer) networkAccessPointConfigMap.get("publicPort"));
   }
 
+  /**
+   * Constructor for NetworkAccessPoint (channel).
+   * @param name the name of the network access point
+   * @param protocol the protocol, e.g. T3, HTTP
+   * @param listenPort the listen port (on the container)
+   * @param publicPort the public listen port (i.e. the node port)
+   */
   public NetworkAccessPoint(String name, String protocol, Integer listenPort, Integer publicPort) {
     this.name = name;
     this.protocol = protocol;
