@@ -17,12 +17,12 @@ cd ${WORKDIR}
 
 echo "@@ Info: Deleting weblogic domain 'domain1' if it already exists"
 kubectl -n sample-domain1-ns \
-  delete domain domain --ignore-not-found
+  delete domain domain1 --ignore-not-found
 
 echo "@@ Info: Creating weblogic domain secret"
 ./create_weblogic_domain_secret.sh
 
-echo "@@ Info: Creating rcu access secret (ignored unless domain type is JRF or RestrictedJRF)"
+echo "@@ Info: Creating rcu access secret (ignored unless domain type is JRF)"
 ./create_rcu_access_secret.sh
 
 echo "@@ Info: Creating OPSS passphrase secret (ignored unless domain type is JRF)"
@@ -31,14 +31,14 @@ echo "@@ Info: Creating OPSS passphrase secret (ignored unless domain type is JR
 echo "@@ Info: Creating sample wdt configmap (optional)"
 
 kubectl -n sample-domain1-ns \
-  delete configmap wdt-config-map --ignore-not-found
+  delete configmap domain1-wdt-config-map --ignore-not-found
 
 kubectl -n sample-domain1-ns \
-  create configmap wdt-config-map \
+  create configmap domain1-wdt-config-map \
   --from-file=model1.20.properties
 
 kubectl -n sample-domain1-ns \
-  label  configmap wdt-config-map \
+  label  configmap domain1-wdt-config-map \
   weblogic.domainUID=domain1
 
 echo "@@ Info: Creating 'k8s-domain.yaml' from 'k8s-domain.yaml.template' and setting its Domain Type"
@@ -52,9 +52,10 @@ fi
 cp k8s-domain.yaml.template k8s-domain.yaml
 sed -i s/@@DOMTYPE@@/${WDT_DOMAIN_TYPE}/ k8s-domain.yaml
 
+# TBD Can we just remove the sed and leave this always uncommented in the template? The sample always deploys the secret even for non-JRF domains.  Or even simpler, maintain 3 (nearly identical) templates.  
 if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
   sed -i 's/\#opssWalletSecret:/opssWalletSecret:/' k8s-domain.yaml
-  sed -i 's/\#  name: sample-domain1-opss-secrets/  name: sample-domain1-opss-secrets/' k8s-domain.yaml
+  sed -i 's/\#  name: sample-domain1-opss-key-passphrase-secret/  name: sample-domain1-opss-key-passphrase-secret/' k8s-domain.yaml
 fi
 
 echo "@@ Info: Applying domain resource yaml 'k8s-domain.yaml'"

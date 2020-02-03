@@ -14,9 +14,9 @@
 
 set -eu
 
-kubectl -n sample-domain1-ns delete secret opss-key-passphrase-secret --ignore-not-found
+kubectl -n sample-domain1-ns delete secret sample-domain1-opss-key-passphrase-secret --ignore-not-found
 
-kubectl -n sample-domain1-ns create secret generic opss-key-passphrase-secret \
+kubectl -n sample-domain1-ns create secret generic sample-domain1-opss-key-passphrase-secret \
   --from-literal=passphrase=welcome1
 
 #
@@ -24,7 +24,7 @@ kubectl -n sample-domain1-ns create secret generic opss-key-passphrase-secret \
 # and inventorying of resources specific to a particular domain.
 #
 
-kubectl -n sample-domain1-ns label secret opss-key-passphrase-secret \
+kubectl -n sample-domain1-ns label secret sample-domain1-opss-key-passphrase-secret \
   weblogic.domainUID=domain1
 
 
