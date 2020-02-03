@@ -43,13 +43,17 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<Watch.Response<?>> {
 
   @Override
   protected boolean matchesSafely(Watch.Response<?> item, Description mismatchDescription) {
-    if (isExpectedUpdateResponse(item) || isExpectedErrorResponse(item)) return true;
+    if (isExpectedUpdateResponse(item) || isExpectedErrorResponse(item)) {
+      return true;
+    }
 
-    if (isError(item.type) && item.status != null)
+    if (isError(item.type) && item.status != null) {
       mismatchDescription.appendText("Error with status code ").appendValue(item.status.getCode());
-    else if (isError(item.type)) mismatchDescription.appendValue("Error with no status code");
-    else
+    } else if (isError(item.type)) {
+      mismatchDescription.appendValue("Error with no status code");
+    } else {
       mismatchDescription.appendValue(item.type).appendText(" event for ").appendValue(item.object);
+    }
     return false;
   }
 
@@ -70,12 +74,13 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<Watch.Response<?>> {
   @Override
   public void describeTo(Description description) {
     String expectedType = this.expectedType;
-    if (isError(expectedType))
+    if (isError(expectedType)) {
       description.appendText("error event with code ").appendValue(expectedStatusCode);
-    else
+    } else {
       description
           .appendValue(this.expectedType)
           .appendText(" event for ")
           .appendValue(expectedObject);
+    }
   }
 }

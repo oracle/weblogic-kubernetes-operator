@@ -21,6 +21,10 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class CertificatesTest {
   private List<Memento> mementos = new ArrayList<>();
 
+  /**
+   * Setup test environment.
+   * @throws Exception if test support fails to install.
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(
@@ -28,9 +32,14 @@ public class CertificatesTest {
     mementos.add(InMemoryCertificates.installWithoutData());
   }
 
+  /**
+   * Cleanup test environment.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test

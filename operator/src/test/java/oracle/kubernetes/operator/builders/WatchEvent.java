@@ -71,8 +71,11 @@ public class WatchEvent<T> {
 
   public Watch.Response<T> toWatchResponse() {
     try {
-      if (type.equals("ERROR")) return toErrorWatchResponse();
-      else return toUpdateWatchResponse();
+      if (type.equals("ERROR")) {
+        return toErrorWatchResponse();
+      } else {
+        return toUpdateWatchResponse();
+      }
     } catch (NoSuchMethodException
         | IllegalAccessException
         | InstantiationException
