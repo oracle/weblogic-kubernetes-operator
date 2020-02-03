@@ -49,10 +49,11 @@ public class DomainStatusPatch {
   }
 
   private static void setSubField(JsonPatchBuilder patchBuilder, String path, String oldValue, String newValue) {
-    if (oldValue == null)
+    if (oldValue == null) {
       patchBuilder.add(path, newValue);
-    else
+    } else {
       patchBuilder.replace(path, newValue);
+    }
   }
 
   private void update() {
