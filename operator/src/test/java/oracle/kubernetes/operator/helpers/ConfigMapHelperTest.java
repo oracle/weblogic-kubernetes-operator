@@ -275,7 +275,9 @@ public class ConfigMapHelperTest {
 
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
     testSupport.verifyAllDefinedResponsesInvoked();

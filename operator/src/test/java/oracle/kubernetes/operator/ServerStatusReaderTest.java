@@ -82,7 +82,9 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
 
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }
