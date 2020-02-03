@@ -112,14 +112,17 @@ public class VersionCheckTest {
 
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
   public void test() {
     specifyK8sVersion(majorVersion, minorVersion, revision);
-    for (String ignoredLogMessage : ignoredLogMessages)
+    for (String ignoredLogMessage : ignoredLogMessages) {
       consoleControl.ignoreMessage(ignoredLogMessage);
+    }
 
     testType.runTest(logRecords, matcher);
   }
@@ -166,7 +169,9 @@ public class VersionCheckTest {
 
     @Override
     protected boolean matchesSafely(KubernetesVersion item, Description mismatchDescription) {
-      if (item.getMajor() == expectedMajor && item.getMinor() == expectedMinor) return true;
+      if (item.getMajor() == expectedMajor && item.getMinor() == expectedMinor) {
+        return true;
+      }
 
       describe(mismatchDescription, item.getMajor(), item.getMinor());
       return false;

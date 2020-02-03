@@ -225,8 +225,9 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   public void whenCreated_modelIncludesExpectedNapPorts() {
     V1Service model = testFacade.createServiceModel(testSupport.getPacket());
 
-    for (Map.Entry<String, Integer> entry : testFacade.getExpectedNapPorts().entrySet())
+    for (Map.Entry<String, Integer> entry : testFacade.getExpectedNapPorts().entrySet()) {
       assertThat(model, containsPort(entry.getKey(), entry.getValue()));
+    }
   }
 
   @Test
@@ -815,7 +816,9 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
     @Override
     protected boolean matchesSafely(V1Service item, Description mismatchDescription) {
-      if (expectedName.equals(getName(item))) return true;
+      if (expectedName.equals(getName(item))) {
+        return true;
+      }
 
       mismatchDescription.appendText("service with name ").appendValue(getName(item));
       return false;
@@ -855,7 +858,9 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
         mismatchDescription.appendText("contains no port with name ").appendValue(expectedName);
         return false;
       } else {
-        if (matchSelectedPort(matchingPort)) return true;
+        if (matchSelectedPort(matchingPort)) {
+          return true;
+        }
         mismatchDescription.appendText("contains port ").appendValue(matchingPort);
         return false;
       }
@@ -876,9 +881,9 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
     @Override
     public void describeTo(Description description) {
-      if (expectedValue == null)
+      if (expectedValue == null) {
         description.appendText("service with no port named ").appendValue(expectedName);
-      else {
+      } else {
         description
             .appendText("service with TCP port with name ")
             .appendValue(expectedName)
@@ -913,7 +918,9 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
     @Override
     protected boolean matchesSafely(V1ServicePort item, Description mismatchDescription) {
-      if (name.equals(item.getName()) && nodePort == item.getNodePort()) return true;
+      if (name.equals(item.getName()) && nodePort == item.getNodePort()) {
+        return true;
+      }
 
       describe(mismatchDescription, item.getName(), item.getNodePort());
       return false;
@@ -935,7 +942,9 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     @Override
     protected boolean matchesSafely(V1Service item, Description mismatchDescription) {
       Set<String> duplicates = getDuplicatePortNames(item);
-      if (duplicates.isEmpty()) return true;
+      if (duplicates.isEmpty()) {
+        return true;
+      }
 
       mismatchDescription.appendValueList("found duplicate ports for names: ", ",", "", duplicates);
       return false;
@@ -944,8 +953,11 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     private Set<String> getDuplicatePortNames(V1Service item) {
       Set<String> uniqueNames = new HashSet<>();
       Set<String> duplicates = new HashSet<>();
-      for (V1ServicePort port : item.getSpec().getPorts())
-        if (!uniqueNames.add(port.getName())) duplicates.add(port.getName());
+      for (V1ServicePort port : item.getSpec().getPorts()) {
+        if (!uniqueNames.add(port.getName())) {
+          duplicates.add(port.getName());
+        }
+      }
       return duplicates;
     }
 
