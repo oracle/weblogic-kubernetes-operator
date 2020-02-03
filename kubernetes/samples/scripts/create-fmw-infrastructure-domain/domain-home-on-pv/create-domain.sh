@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -225,7 +225,8 @@ function createDomainHome {
       ERR_COUNT=`echo $JOB_ERRORS | grep "ERROR:" | wc | awk ' {print $1; }'`
       if [ "$ERR_COUNT" != "0" ]; then
         echo "A failure was detected in the log file for job $JOB_NAME."
-        echo "$JOB_ERRORS"
+        # Get the full log of the job before exiting 
+        kubectl logs jobs/$JOB_NAME $CONTAINER_NAME -n ${namespace}
         echo "Check the log output for additional information."
         fail "Exiting due to failure - the job has failed!"
       fi
