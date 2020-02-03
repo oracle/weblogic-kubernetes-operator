@@ -533,7 +533,22 @@ public class WeblogicApi {
     return localVarCall;
   }
 
-  protected Call listNamespacedDomainCall(
+  /**
+   * Generate call to list domains.
+   * @param namespace namespace
+   * @param pretty pretty flag
+   * @param cont continuation
+   * @param fieldSelector field selector
+   * @param labelSelector label selector
+   * @param limit limit
+   * @param resourceVersion resource version
+   * @param timeoutSeconds timeout
+   * @param watch if watch
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
+  public Call listNamespacedDomainCall(
       String namespace,
       String pretty,
       String cont,
@@ -830,7 +845,16 @@ public class WeblogicApi {
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
-  protected Call patchNamespacedDomainAsync(
+  /**
+   * Asynchronously patch domain.
+   * @param name name
+   * @param namespace namespace
+   * @param body patch
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
+  public Call patchNamespacedDomainAsync(
       String name, String namespace, V1Patch body, ApiCallback<Domain> callback)
       throws ApiException {
     Call localVarCall =
