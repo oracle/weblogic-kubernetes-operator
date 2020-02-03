@@ -289,8 +289,14 @@ public class WlsServerConfig {
     return networkAccessPoints;
   }
 
+  /**
+   * Add a network access point (channel).
+   * @param networkAccessPoint the NetworkAccessPoint to add
+   */
   public void addNetworkAccessPoint(NetworkAccessPoint networkAccessPoint) {
-    if (networkAccessPoints == null) networkAccessPoints = new ArrayList<>();
+    if (networkAccessPoints == null) {
+      networkAccessPoints = new ArrayList<>();
+    }
     networkAccessPoints.add(networkAccessPoint);
   }
 
@@ -324,6 +330,10 @@ public class WlsServerConfig {
     return adminPort != null;
   }
 
+  /**
+   * Get the name of the Admin protocol channel as a safe/legal kubernetes service name.
+   * @return the name of the admin channel
+   */
   public String getAdminProtocolChannelName() {
     String adminProtocolChannel = null;
     if (networkAccessPoints != null) {
@@ -347,6 +357,10 @@ public class WlsServerConfig {
     return adminProtocolChannel;
   }
 
+  /**
+   * Get the port number of the local admin protocol channel.
+   * @return the port number
+   */
   public Integer getLocalAdminProtocolChannelPort() {
     Integer adminProtocolPort = null;
     if (networkAccessPoints != null) {
@@ -370,6 +384,10 @@ public class WlsServerConfig {
     return adminProtocolPort;
   }
 
+  /**
+   * Check if the admin protocol channel is using a secure protocol like T3S or HTTPS.
+   * @return true is a secure protocol is being used
+   */
   public boolean isLocalAdminProtocolChannelSecure() {
     boolean adminProtocolPortSecure = false;
     boolean adminProtocolPortFound = false;

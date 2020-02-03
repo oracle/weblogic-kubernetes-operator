@@ -317,6 +317,12 @@ public class WlsDynamicServersConfig {
     this.calculatedListenPorts = calculatedListenPorts;
   }
 
+  /**
+   * Generate the Dynamic Server configurations.
+   * @param serverTemplate name of the dynamic server template
+   * @param clusterName name of the cluster
+   * @param domainName name of the domain
+   */
   public void generateDynamicServerConfigs(
       WlsServerConfig serverTemplate, String clusterName, String domainName) {
     List<String> dynamicServerNames = generateDynamicServerNames();
