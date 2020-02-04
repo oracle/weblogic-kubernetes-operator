@@ -63,6 +63,10 @@ public class KubernetesTestSupportTest {
   List<Memento> mementos = new ArrayList<>();
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -70,6 +74,10 @@ public class KubernetesTestSupportTest {
     mementos.add(SystemClockTestSupport.installClock());
   }
 
+  /**
+   * Tear down test.
+   * @throws Exception on failure
+   */
   @After
   public void tearDown() throws Exception {
     mementos.forEach(Memento::revert);

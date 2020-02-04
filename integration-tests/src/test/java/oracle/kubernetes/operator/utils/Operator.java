@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import oracle.kubernetes.operator.BaseTest;
 
@@ -297,6 +296,10 @@ public class Operator {
     return operatorMap;
   }
 
+  /**
+   * Call Helm install.
+   * @throws Exception on failure
+   */
   public void callHelmInstall() throws Exception {
     String imagePullPolicy =
         System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null
@@ -338,6 +341,11 @@ public class Operator {
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
 
+  /**
+   * Call Helm upgrade.
+   * @param upgradeSet upgrade properties
+   * @throws Exception on failure
+   */
   public void callHelmUpgrade(String upgradeSet) throws Exception {
     StringBuffer cmd = new StringBuffer("cd ");
     cmd.append(BaseTest.getProjectRoot())
@@ -357,6 +365,11 @@ public class Operator {
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
 
+  /**
+   * get Helm values.
+   * @return values
+   * @throws Exception on failure
+   */
   public String getHelmValues() throws Exception {
     StringBuffer cmd = new StringBuffer("cd ");
     cmd.append(BaseTest.getProjectRoot())

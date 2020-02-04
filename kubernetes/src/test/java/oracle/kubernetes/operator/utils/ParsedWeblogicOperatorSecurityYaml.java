@@ -82,6 +82,10 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
     return getRoles().find("weblogic-operator-role");
   }
 
+  /**
+   * Get exected object count.
+   * @return object count
+   */
   public int getExpectedObjectCount() {
     int rtn = 9;
     // add one role binding for each namespace

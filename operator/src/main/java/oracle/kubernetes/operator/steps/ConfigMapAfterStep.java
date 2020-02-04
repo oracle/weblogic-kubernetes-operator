@@ -24,6 +24,14 @@ public class ConfigMapAfterStep extends Step {
   private final AtomicBoolean stopping;
   private final WatchListener<V1ConfigMap> listener;
 
+  /**
+   * Construct config map after step.
+   * @param ns namespace
+   * @param configMapWatchers config map watchers
+   * @param tuning tuning
+   * @param stopping stopping flag
+   * @param listener listener
+   */
   public ConfigMapAfterStep(
       String ns,
       Map<String, ConfigMapWatcher> configMapWatchers,

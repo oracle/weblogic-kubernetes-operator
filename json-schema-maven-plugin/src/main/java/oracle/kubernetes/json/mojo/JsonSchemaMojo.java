@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
@@ -54,9 +54,13 @@ public class JsonSchemaMojo extends AbstractMojo {
     main.setSupportObjectReferences(supportObjectReferences);
     addExternalSchemas();
 
-    if (rootClass == null) throw new MojoExecutionException("No root class specified");
+    if (rootClass == null) {
+      throw new MojoExecutionException("No root class specified");
+    }
     URL classUrl = main.getResource(toClassFileName(rootClass));
-    if (classUrl == null) throw new MojoExecutionException("Class " + rootClass + " not found");
+    if (classUrl == null) {
+      throw new MojoExecutionException("Class " + rootClass + " not found");
+    }
 
     if (updateNeeded(new File(classUrl.getPath()), getSchemaFile())) {
       getLog().info("Changes detected -- generating schema for " + rootClass + ".");
@@ -76,10 +80,13 @@ public class JsonSchemaMojo extends AbstractMojo {
 
   private void addExternalSchemas() throws MojoExecutionException {
     try {
-      if (kubernetesVersion != null) main.setKubernetesVersion(kubernetesVersion);
-      for (ExternalSchema externalSchema : externalSchemas)
+      if (kubernetesVersion != null) {
+        main.setKubernetesVersion(kubernetesVersion);
+      }
+      for (ExternalSchema externalSchema : externalSchemas) {
         main.defineSchemaUrlAndContents(
             externalSchema.getUrl(), externalSchema.getCacheUrl(baseDir));
+      }
     } catch (IOException e) {
       throw new MojoExecutionException("Unable to define external schema: ", e);
     }

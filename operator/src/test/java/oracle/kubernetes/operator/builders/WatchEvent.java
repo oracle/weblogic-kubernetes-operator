@@ -69,10 +69,17 @@ public class WatchEvent<T> {
     return new GsonBuilder().create().toJson(toWatchResponse());
   }
 
+  /**
+   * Convert watch event to response.
+   * @return watch response
+   */
   public Watch.Response<T> toWatchResponse() {
     try {
-      if (type.equals("ERROR")) return toErrorWatchResponse();
-      else return toUpdateWatchResponse();
+      if (type.equals("ERROR")) {
+        return toErrorWatchResponse();
+      } else {
+        return toUpdateWatchResponse();
+      }
     } catch (NoSuchMethodException
         | IllegalAccessException
         | InstantiationException

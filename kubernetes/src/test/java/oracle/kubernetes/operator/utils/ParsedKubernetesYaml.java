@@ -54,6 +54,11 @@ public class ParsedKubernetesYaml {
   private Map<String, TypeHandler<?>> kindToHandler = new HashMap<>();
   private int objectCount = 0;
 
+  /**
+   * Construct parser.
+   * @param factory YAML reader factory
+   * @throws Exception on failure
+   */
   public ParsedKubernetesYaml(YamlReader factory) throws Exception {
     defineHandlers();
 
@@ -210,6 +215,11 @@ public class ParsedKubernetesYaml {
       this.k8sClass = k8sClass;
     }
 
+    /**
+     * fine.
+     * @param name name
+     * @return item
+     */
     public T find(String name) {
       T result = null;
       for (T instance : instances) {
@@ -270,6 +280,10 @@ public class ParsedKubernetesYaml {
       return sb.toString();
     }
 
+    /**
+     * Add objects.
+     * @param objectAsMap objects
+     */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void add(Map objectAsMap) {
       // convert the map to a yaml string then convert the yaml string to the
@@ -310,11 +324,14 @@ public class ParsedKubernetesYaml {
         return;
       }
       Object caBundle = specAsMap.get("caBundle");
-      if (caBundle == null) return;
+      if (caBundle == null) {
+        return;
+      }
 
       byte[] caBundleAsBytes;
-      if (caBundle instanceof byte[]) caBundleAsBytes = (byte[]) caBundle;
-      else {
+      if (caBundle instanceof byte[]) {
+        caBundleAsBytes = (byte[]) caBundle;
+      } else {
         String caBundleValueAsBase64EncodedString = (String) caBundle;
         caBundleAsBytes = Base64.decodeBase64(caBundleValueAsBase64EncodedString);
       }

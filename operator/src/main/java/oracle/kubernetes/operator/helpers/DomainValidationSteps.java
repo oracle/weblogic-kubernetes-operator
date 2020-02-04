@@ -58,7 +58,9 @@ public class DomainValidationSteps {
       Domain domain = info.getDomain();
       List<String> validationFailures = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
 
-      if (validationFailures.isEmpty()) return doNext(packet);
+      if (validationFailures.isEmpty()) {
+        return doNext(packet);
+      }
 
       LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
       Step step = DomainStatusUpdater.createFailedStep(BAD_DOMAIN, perLine(validationFailures), null);
