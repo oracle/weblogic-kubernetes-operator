@@ -19,8 +19,9 @@ public class UnprocessableEntityBuilder implements FailureStatusSource {
    * @return the UnprocessableEntityBuilder
    */
   public static UnprocessableEntityBuilder fromException(ApiException exception) {
-    if (exception.getCode() != HTTP_UNPROCESSABLE_ENTITY)
+    if (exception.getCode() != HTTP_UNPROCESSABLE_ENTITY) {
       throw new IllegalArgumentException("Is not unprocessable entity exception");
+    }
 
     return new UnprocessableEntityBuilder(exception);
   }
@@ -53,7 +54,9 @@ public class UnprocessableEntityBuilder implements FailureStatusSource {
    * @return builder
    */
   public UnprocessableEntityBuilder withReason(String reason) {
-    if (errorBody.getDetails() == null) errorBody.addDetails();
+    if (errorBody.getDetails() == null) {
+      errorBody.addDetails();
+    }
     errorBody.getDetails().addCause(new Cause().withReason(reason));
     return this;
   }
