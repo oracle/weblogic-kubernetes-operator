@@ -241,14 +241,18 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private void patchDomain(Domain domain, String cluster, int replicas) {
-    if (replicas == domain.getReplicaCount(cluster)) return;
+    if (replicas == domain.getReplicaCount(cluster)) {
+      return;
+    }
 
     try {
       JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
       int index = getClusterIndex(domain, cluster);
-      if (index < 0)
+      if (index < 0) {
         patchBuilder.add("/spec/clusters/0", String.format(NEW_CLUSTER, cluster, replicas));
-      else patchBuilder.replace("/spec/clusters/" + index + "/replicas", replicas);
+      } else {
+        patchBuilder.replace("/spec/clusters/" + index + "/replicas", replicas);
+      }
 
       new CallBuilder()
           .patchDomain(
@@ -260,8 +264,11 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private int getClusterIndex(Domain domain, String cluster) {
-    for (int i = 0; i < domain.getSpec().getClusters().size(); i++)
-      if (cluster.equals(domain.getSpec().getClusters().get(i).getClusterName())) return i;
+    for (int i = 0; i < domain.getSpec().getClusters().size(); i++) {
+      if (cluster.equals(domain.getSpec().getClusters().get(i).getClusterName())) {
+        return i;
+      }
+    }
 
     return -1;
   }

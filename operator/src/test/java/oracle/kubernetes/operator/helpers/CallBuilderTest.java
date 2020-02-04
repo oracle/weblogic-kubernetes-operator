@@ -70,9 +70,14 @@ public class CallBuilderTest extends HttpUserAgentTest {
     mementos.add(PseudoServletCallDispatcher.install(getHostPath()));
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
@@ -294,10 +299,14 @@ public class CallBuilderTest extends HttpUserAgentTest {
       List<String> validationErrors = new ArrayList<>();
       for (ParameterExpectation expectation : parameterExpectations) {
         String error = expectation.validate();
-        if (error != null) validationErrors.add(error);
+        if (error != null) {
+          validationErrors.add(error);
+        }
       }
 
-      if (!validationErrors.isEmpty()) throw new IOException(String.join("\n", validationErrors));
+      if (!validationErrors.isEmpty()) {
+        throw new IOException(String.join("\n", validationErrors));
+      }
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -317,7 +326,9 @@ public class CallBuilderTest extends HttpUserAgentTest {
 
       String validate() {
         String value = getParameter(name) == null ? null : String.join(",", getParameter(name));
-        if (expectedValue.equals(value)) return null;
+        if (expectedValue.equals(value)) {
+          return null;
+        }
 
         return String.format("Expected parameter %s = %s but was %s", name, expectedValue, value);
       }
@@ -346,7 +357,9 @@ public class CallBuilderTest extends HttpUserAgentTest {
 
     @Override
     WebResource getResponse() throws IOException {
-      if (bodyValidation != null) bodyValidation.accept(new String(getBody()));
+      if (bodyValidation != null) {
+        bodyValidation.accept(new String(getBody()));
+      }
       return super.getResponse();
     }
   }

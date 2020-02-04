@@ -28,9 +28,14 @@ public class LegalNamesTest {
     mementos.add(TuningParametersStub.install());
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
     LegalNames.dns1123Fields = null;
   }
 

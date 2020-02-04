@@ -88,6 +88,10 @@ public class DomainProcessorTest {
         .withCluster(clusterConfig);
   }
 
+  /**
+   * Setup test environment.
+   * @throws Exception if StaticStubSupport fails to install
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -104,9 +108,14 @@ public class DomainProcessorTest {
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
   }
 
+  /**
+   * Cleanup test environment.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
@@ -117,8 +126,9 @@ public class DomainProcessorTest {
     processor.makeRightDomainPresence(info, true, false, false);
 
     assertServerPodAndServicePresent(info, ADMIN_NAME);
-    for (String serverName : MANAGED_SERVER_NAMES)
+    for (String serverName : MANAGED_SERVER_NAMES) {
       assertServerPodAndServicePresent(info, serverName);
+    }
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
   }
@@ -282,8 +292,9 @@ public class DomainProcessorTest {
     processor.makeRightDomainPresence(info, true, false, false);
 
     assertServerPodAndServiceNotPresent(info, ADMIN_NAME);
-    for (String serverName : MANAGED_SERVER_NAMES)
+    for (String serverName : MANAGED_SERVER_NAMES) {
       assertServerPodAndServiceNotPresent(info, serverName);
+    }
   }
 
   private void assertServerPodAndServiceNotPresent(DomainPresenceInfo info, String serverName) {

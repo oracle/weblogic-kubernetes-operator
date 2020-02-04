@@ -30,6 +30,16 @@ public class DomainWatcher extends Watcher<Domain> {
     this.ns = ns;
   }
 
+  /**
+   * Create domain watcher.
+   * @param factory thread factory
+   * @param ns namespace
+   * @param initialResourceVersion initial resource version
+   * @param tuning tuning parameter
+   * @param listener listener
+   * @param isStopping stopping flag
+   * @return watcher
+   */
   public static DomainWatcher create(
       ThreadFactory factory,
       String ns,
