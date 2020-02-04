@@ -65,6 +65,10 @@ public class ItImageTool extends BaseTest {
         System.getenv("IMAGE_TAG_WEBLOGIC_WIT") != null
           ? System.getenv("IMAGE_TAG_WEBLOGIC_WIT")
           : appProps.getProperty("weblogicImageTagWIT");
+      if (BaseTest.SHARED_CLUSTER) {
+        weblogicImageVersionWIT = System.getenv("REPO_REGISTRY")
+            + "/weblogick8s/" + weblogicImageVersionWIT;
+      }
       weblogicImageNameWIT =
         System.getenv("IMAGE_NAME_WEBLOGIC_WIT") != null
           ? System.getenv("IMAGE_NAME_WEBLOGIC_WIT")
@@ -75,6 +79,10 @@ public class ItImageTool extends BaseTest {
 
       // Build WebLogic Docker image using imagetool
       buildWlsDockerImage();
+      
+      if (BaseTest.SHARED_CLUSTER) {
+        TestUtils.loginAndPushImageToOcir(weblogicImageTagWIT);
+      }
 
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE, testClassName);
