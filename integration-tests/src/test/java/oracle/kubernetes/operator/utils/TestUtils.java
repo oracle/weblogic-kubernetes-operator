@@ -14,12 +14,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -214,6 +212,11 @@ public class TestUtils {
     writer.close();
   }
 
+  /**
+   * read hostname.
+   * @return hostname
+   * @throws Exception on failure
+   */
   public static String getHostName() throws Exception {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");
@@ -224,6 +227,14 @@ public class TestUtils {
     }
   }
 
+  /**
+   * Read cluster replicas.
+   * @param domainUid domain UID
+   * @param clusterName cluster name
+   * @param domainNS namespace
+   * @return cluster replicas
+   * @throws Exception on failure
+   */
   public static int getClusterReplicas(String domainUid, String clusterName, String domainNS)
       throws Exception {
     StringBuffer cmd = new StringBuffer();
@@ -250,6 +261,12 @@ public class TestUtils {
     return replicas;
   }
 
+  /**
+   * Check that pod is deleted.
+   * @param podName pod name
+   * @param domainNS namespace
+   * @throws Exception on failure
+   */
   public static void checkPodDeleted(String podName, String domainNS) throws Exception {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl -n ")
@@ -262,6 +279,12 @@ public class TestUtils {
     checkCmdInLoopForDelete(cmd.toString(), "\"" + podName + "\" not found", podName);
   }
 
+  /**
+   * check domain is deleted.
+   * @param domainUid domain UID
+   * @param domainNS namespace
+   * @throws Exception on failure
+   */
   public static void checkDomainDeleted(String domainUid, String domainNS) throws Exception {
 
     StringBuffer cmd = new StringBuffer();
@@ -276,12 +299,25 @@ public class TestUtils {
     checkCmdInLoopForDelete(cmd.toString(), "\"" + domainUid + "\" not found", domainUid);
   }
 
+  /**
+   * check namespace is deleted.
+   * @param namespace namespace
+   * @throws Exception on failure
+   */
   public static void checkNamespaceDeleted(String namespace) throws Exception {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get ns ").append(namespace);
     checkCmdInLoopForDelete(cmd.toString(), "\"" + namespace + "\" not found", namespace);
   }
 
+  /**
+   * delete PVC.
+   * @param pvcName PVC name
+   * @param namespace namespace
+   * @param domainUid domain UID
+   * @param jobName job name
+   * @throws Exception on failure
+   */
   public static void deletePvc(String pvcName, String namespace, String domainUid, String jobName)
       throws Exception {
     StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
@@ -299,6 +335,13 @@ public class TestUtils {
     return exec(cmd, false);
   }
 
+  /**
+   * exec command.
+   * @param cmd command
+   * @param debug debug flag
+   * @return executor
+   * @throws Exception on failure
+   */
   public static ExecResult exec(String cmd, boolean debug) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0 || debug) {
@@ -325,6 +368,13 @@ public class TestUtils {
     return result;
   }
 
+  /**
+   * Check PV is released.
+   * @param pvBaseName PV base name
+   * @param namespace namespace
+   * @return true, if released
+   * @throws Exception on failure
+   */
   public static boolean checkPvReleased(String pvBaseName, String namespace) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
     cmd.append(pvBaseName).append("-pv -n ").append(namespace);
@@ -519,6 +569,13 @@ public class TestUtils {
     }
   }
 
+  /**
+   * read pod restart count.
+   * @param podName pod name
+   * @param namespace namespace
+   * @return count
+   * @throws Exception on failure
+   */
   public static int getPodRestartCount(String podName, String namespace) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl describe pod ");
     cmd.append(podName)
@@ -534,6 +591,14 @@ public class TestUtils {
     return new Integer(result.stdout().trim()).intValue();
   }
 
+  /**
+   * kubectl cp.
+   * @param srcFileOnHost source
+   * @param destLocationInPod destination
+   * @param podName pod name
+   * @param namespace namespace
+   * @throws Exception on failure
+   */
   public static void kubectlcp(
       String srcFileOnHost, String destLocationInPod, String podName, String namespace)
       throws Exception {
@@ -555,6 +620,14 @@ public class TestUtils {
     }
   }
 
+  /**
+   * copy file via cat.
+   * @param srcFileOnHost source
+   * @param destLocationInPod destination
+   * @param podName pod name
+   * @param namespace namespace
+   * @throws Exception on failure
+   */
   public static void copyFileViaCat(
       String srcFileOnHost, String destLocationInPod, String podName, String namespace)
       throws Exception {
@@ -563,6 +636,14 @@ public class TestUtils {
         podName, namespace, " -- bash -c 'cat > " + destLocationInPod + "' < " + srcFileOnHost);
   }
 
+  /**
+   * kubectl exec with no validation.
+   * @param podName pod name
+   * @param namespace namespace
+   * @param scriptPath script path
+   * @return executor
+   * @throws Exception on failure
+   */
   public static ExecResult kubectlexecNoCheck(String podName, String namespace, String scriptPath)
       throws Exception {
 
@@ -596,7 +677,9 @@ public class TestUtils {
     File appFileRoot = new File(appLocationOnHost);
     File[] appFileList = appFileRoot.listFiles();
 
-    if (appFileList == null) return;
+    if (appFileList == null) {
+      return;
+    }
 
     for (File file : appFileList) {
       if (file.isDirectory()) {
@@ -629,6 +712,13 @@ public class TestUtils {
     }
   }
 
+  /**
+   * kubectl exec.
+   * @param podName pod name
+   * @param namespace namespace
+   * @param scriptPath script path
+   * @throws Exception on failure
+   */
   public static void kubectlexec(String podName, String namespace, String scriptPath)
       throws Exception {
 
@@ -670,7 +760,8 @@ public class TestUtils {
       } catch (Exception ex) {
         LoggerHelper.getLocal().log(Level.INFO, "Got exception, iteration " + i + " " + ex.getMessage());
         i++;
-        if (ex.getMessage().contains("java.net.ConnectException: Connection refused")
+        // change for both java.net.ConnectException: Connection refused and Connection timed out
+        if (ex.getMessage().contains("java.net.ConnectException: ")
             || ex.getMessage().contains("java.net.NoRouteToHostException: No route to host")) {
           if (i == (BaseTest.getMaxIterationsPod() - 1)) {
             throw ex;
@@ -703,6 +794,12 @@ public class TestUtils {
     return null;
   }
 
+  /**
+   * Read access token.
+   * @param operator operator
+   * @return access token
+   * @throws Exception on failure
+   */
   public static String getAccessToken(Operator operator) throws Exception {
     if (BaseTest.OPENSHIFT) {
       StringBuffer tokenCmd = new StringBuffer(
@@ -749,6 +846,12 @@ public class TestUtils {
     }
   }
 
+  /**
+   * Read external operator certificate.
+   * @param operator operator
+   * @return cert value
+   * @throws Exception on failure
+   */
   public static String getExternalOperatorCertificate(Operator operator) throws Exception {
 
     File certFile =
@@ -791,6 +894,12 @@ public class TestUtils {
     return certFile.getAbsolutePath();
   }
 
+  /**
+   * Read external operator key.
+   * @param operator operator
+   * @return key value
+   * @throws Exception on failure
+   */
   public static String getExternalOperatorKey(Operator operator) throws Exception {
     File keyFile =
         new File(
@@ -820,6 +929,11 @@ public class TestUtils {
     return keyFile.getAbsolutePath();
   }
 
+  /**
+   * read GIT branch name.
+   * @return branch name
+   * @throws Exception on failure
+   */
   public static String getGitBranchName() throws Exception {
     String cmd = "git branch | grep \\* | cut -d ' ' -f2-";
     ExecResult result = ExecCommand.exec(cmd);
@@ -829,6 +943,13 @@ public class TestUtils {
     return result.stdout().trim();
   }
 
+  /**
+   * Create operator.
+   * @param opYamlFile YAML file
+   * @param restCertType REST certificate type
+   * @return operator
+   * @throws Exception on failure
+   */
   public static Operator createOperator(String opYamlFile, RestCertType restCertType)
       throws Exception {
     // create op
@@ -842,6 +963,13 @@ public class TestUtils {
     return operator;
   }
 
+  /**
+   * Create operator.
+   * @param inputMap input
+   * @param restCertType REST certificate type
+   * @return operator
+   * @throws Exception on failure
+   */
   public static Operator createOperator(Map<String, Object> inputMap, RestCertType restCertType)
       throws Exception {
     // create op
@@ -900,12 +1028,25 @@ public class TestUtils {
     return operator;
   }
 
+  /**
+   * Create domain.
+   * @param inputYaml input
+   * @return domain
+   * @throws Exception on failure
+   */
   public static Domain createDomain(String inputYaml) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO,
         "Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
   }
 
+  /**
+   * Create domain.
+   * @param inputYaml input
+   * @param createDomainResource create domain resource flag
+   * @return domain
+   * @throws Exception on failure
+   */
   public static Domain createDomain(String inputYaml, boolean createDomainResource)
       throws Exception {
     LoggerHelper.getLocal().log(Level.INFO,
@@ -913,12 +1054,25 @@ public class TestUtils {
     return new Domain(inputYaml, createDomainResource);
   }
 
+  /**
+   * Create domain.
+   * @param inputDomainMap input domain map
+   * @return domain
+   * @throws Exception on failure
+   */
   public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO,
         "Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap);
   }
 
+  /**
+   * Create domain.
+   * @param inputDomainMap input domain map
+   * @param createDomainResource generate domain resource flag
+   * @return domain
+   * @throws Exception on failure
+   */
   public static Domain createDomain(
       Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO,
@@ -926,6 +1080,12 @@ public class TestUtils {
     return new Domain(inputDomainMap, createDomainResource);
   }
 
+  /**
+   * load YAML.
+   * @param yamlFile YAML file
+   * @return Object hierarchy
+   * @throws Exception on failure
+   */
   public static Map<String, Object> loadYaml(String yamlFile) throws Exception {
     // read input domain yaml to test
     Map<String, Object> map = new HashMap<String, Object>();
@@ -936,6 +1096,12 @@ public class TestUtils {
     return map;
   }
 
+  /**
+   * load YAML.
+   * @param yamlString YAML string
+   * @return Object hierarchy
+   * @throws Exception on failure
+   */
   public static Map<String, Object> loadYamlFromString(String yamlString) throws Exception {
     // read input domain yaml to test
     Map<String, Object> map = new HashMap<String, Object>();
@@ -944,6 +1110,12 @@ public class TestUtils {
     return map;
   }
 
+  /**
+   * load properties.
+   * @param propsFile properties file
+   * @return properties
+   * @throws Exception on failure
+   */
   public static Properties loadProps(String propsFile) throws Exception {
     Properties props = new Properties();
     // check file exists
@@ -960,6 +1132,12 @@ public class TestUtils {
     return props;
   }
 
+  /**
+   * renew cluster lease.
+   * @param projectRoot project root
+   * @param leaseId lease ID
+   * @throws Exception on failure
+   */
   public static void renewK8sClusterLease(String projectRoot, String leaseId) throws Exception {
     if (leaseId != "") {
       LoggerHelper.getLocal().log(Level.INFO, "Renewing lease for leaseId " + leaseId);
@@ -992,6 +1170,12 @@ public class TestUtils {
     }
   }
 
+  /**
+   * release lease.
+   * @param projectRoot project root
+   * @param leaseId lease ID
+   * @throws Exception on failure
+   */
   public static void releaseLease(String projectRoot, String leaseId) throws Exception {
     String cmd = projectRoot + "/src/integration-tests/bash/lease.sh -d " + leaseId;
     ExecResult leaseResult = ExecCommand.exec(cmd);
@@ -1030,6 +1214,16 @@ public class TestUtils {
     return request;
   }
 
+  /**
+   * Create registry secret.
+   * @param secretName secret
+   * @param dockerServer docker server
+   * @param dockerUser docker username
+   * @param dockerPassword docker password
+   * @param dockerEmail docker mail
+   * @param namespace namespace
+   * @throws Exception on failure
+   */
   public static void createDockerRegistrySecret(
       String secretName,
       String dockerServer,
@@ -1082,6 +1276,15 @@ public class TestUtils {
     }
   }
 
+  /**
+   * Call shell script in pod.
+   * @param scriptPath script path
+   * @param arguments args
+   * @param podName pod name
+   * @param namespace namespace
+   * @return command
+   * @throws Exception on failure
+   */
   public static String callShellScriptByExecToPod(
       String scriptPath, String arguments, String podName, String namespace) throws Exception {
 
@@ -1227,6 +1430,13 @@ public class TestUtils {
     }
   }
 
+  /**
+   * Create WLDF module.
+   * @param adminPodName admin pod name
+   * @param domainNS namespace
+   * @param t3ChannelPort T3 port
+   * @throws Exception on failure
+   */
   public static void createWldfModule(String adminPodName, String domainNS, int t3ChannelPort)
       throws Exception {
 
@@ -1262,6 +1472,10 @@ public class TestUtils {
         adminPodName, domainNS, BaseTest.getAppLocationInPod(), "callpyscript.sh", args);
   }
 
+  /**
+   * Create RBAC for scaling.
+   * @throws Exception on failure
+   */
   public static void createRbacPoliciesForWldfScaling() throws Exception {
     // create rbac policies
     StringBuffer cmd = new StringBuffer("kubectl apply -f ");
@@ -1283,6 +1497,11 @@ public class TestUtils {
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
 
+  /**
+   * delete domain resources.
+   * @param domainUid domain UID
+   * @throws Exception on failure
+   */
   public static void deleteWeblogicDomainResources(String domainUid) throws Exception {
     StringBuilder cmd =
         new StringBuilder(BaseTest.getProjectRoot())
@@ -1293,6 +1512,11 @@ public class TestUtils {
     TestUtils.exec(cmd.toString(), true);
   }
 
+  /**
+   * verify before deletion.
+   * @param domain domain
+   * @throws Exception on failure
+   */
   public static void verifyBeforeDeletion(Domain domain) throws Exception {
     final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
     final String domainUid = domain.getDomainUid();
@@ -1320,6 +1544,11 @@ public class TestUtils {
     k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
   }
 
+  /**
+   * verify after deletion.
+   * @param domain domain
+   * @throws Exception on failure
+   */
   public static void verifyAfterDeletion(Domain domain) throws Exception {
     final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
     final String domainUid = domain.getDomainUid();
@@ -1401,6 +1630,13 @@ public class TestUtils {
     checkCmdInLoop(cmd, matchStr, "");
   }
 
+  /**
+   * check command in loop.
+   * @param cmd command
+   * @param matchStr matcher
+   * @param k8sObjName object name
+   * @throws Exception on failure
+   */
   public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
       throws Exception {
     int i = 0;
@@ -1722,6 +1958,12 @@ public class TestUtils {
         appName, scriptName, username, password, appToDeploy, deployTargetForGar);
   }
 
+  /**
+   * execute login and push image to OCIR.
+   * @param image image
+   * @return executor
+   * @throws Exception on failure
+   */
   public static ExecResult loginAndPushImageToOcir(String image) throws Exception {
     String dockerLoginAndPushCmd =
         "docker login "
@@ -1749,6 +1991,14 @@ public class TestUtils {
     return result;
   }
 
+  /**
+   * execute kubectl patch.
+   * @param domainUid domain UID
+   * @param domainNS namespace
+   * @param patchStr patch
+   * @return executor
+   * @throws Exception on failure
+   */
   public static ExecResult kubectlpatch(String domainUid, String domainNS, String patchStr)
       throws Exception {
     String cmd =

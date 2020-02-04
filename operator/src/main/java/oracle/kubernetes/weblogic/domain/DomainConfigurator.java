@@ -183,11 +183,11 @@ public abstract class DomainConfigurator {
   /**
    * Sets the keep jrf schema.
    *
-   * @param keepJRFSchema the wdt domain type
+   * @param keepJrfSchema the wdt domain type
    * @return this object
    */
-  public DomainConfigurator withWdtDomainType(boolean keepJRFSchema) {
-    getDomainSpec().setKeepJRFSchema(keepJRFSchema);
+  public DomainConfigurator withWdtDomainType(boolean keepJrfSchema) {
+    getDomainSpec().setKeepJrfSchema(keepJrfSchema);
     return this;
   }
 

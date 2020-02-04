@@ -30,6 +30,16 @@ public class ServiceWatcher extends Watcher<V1Service> {
     this.ns = ns;
   }
 
+  /**
+   * Create service watcher.
+   * @param factory thread factory
+   * @param ns namespace
+   * @param initialResourceVersion initial resource version
+   * @param tuning tuning parameters
+   * @param listener listener
+   * @param isStopping stopping flag
+   * @return watcher
+   */
   public static ServiceWatcher create(
       ThreadFactory factory,
       String ns,

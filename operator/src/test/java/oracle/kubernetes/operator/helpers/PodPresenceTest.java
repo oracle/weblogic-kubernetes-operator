@@ -74,6 +74,10 @@ public class PodPresenceTest {
               KubernetesUtils.withOperatorLabels(
                   "uid", new V1ObjectMeta().name(POD_NAME).namespace(NS)));
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -113,9 +117,14 @@ public class PodPresenceTest {
     info.setDeleting(false);
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test

@@ -272,7 +272,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.3.1
    */
   @Description("Keep JRF schema between lifecycle updates")
-  private Boolean keepJRFSchema;
+  private Boolean keepJrfSchema;
 
   @Description("Experimental feature configurations.")
   private Experimental experimental;
@@ -497,8 +497,12 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private String validatePath(String s) {
-    if (s.isBlank()) return null;
-    if (s.endsWith(File.separator)) return s;
+    if (s.isBlank()) {
+      return null;
+    }
+    if (s.endsWith(File.separator)) {
+      return s;
+    }
     return s + File.separator;
   }
 
@@ -560,14 +564,13 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @return true or false.
    */
-  boolean isKeepJRFSchema() {
-    return Optional.ofNullable(keepJRFSchema).orElse(true);
+  boolean isKeepJrfSchema() {
+    return Optional.ofNullable(keepJrfSchema).orElse(true);
   }
 
-  public void setKeepJRFSchema(boolean keepJRFSchema) {
-    this.keepJRFSchema = keepJRFSchema;
+  public void setKeepJrfSchema(boolean keepJrfSchema) {
+    this.keepJrfSchema = keepJrfSchema;
   }
-
 
   /**
    * wdtDomainType.
@@ -797,7 +800,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("rollbackIfRequireStart", rollbackIfRequireStart)
             .append("useOnlineUpdate", useOnlineUpdate)
             .append("wdtDomainType", wdtDomainType)
-            .append("keepJRFSchema", keepJRFSchema);
+            .append("keepJRFSchema", keepJrfSchema);
 
     return builder.toString();
   }
@@ -829,7 +832,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(experimental)
             .append(rollbackIfRequireStart)
             .append(useOnlineUpdate)
-            .append(keepJRFSchema)
+            .append(keepJrfSchema)
             .append(wdtDomainType);
 
     return builder.toHashCode();
@@ -870,7 +873,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(experimental, rhs.experimental)
             .append(useOnlineUpdate, rhs.useOnlineUpdate)
             .append(wdtDomainType, rhs.wdtDomainType)
-            .append(keepJRFSchema, rhs.keepJRFSchema)
+            .append(keepJrfSchema, rhs.keepJrfSchema)
             .append(rollbackIfRequireStart, rhs.rollbackIfRequireStart);
 
     return builder.isEquals();

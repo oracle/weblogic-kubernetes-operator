@@ -26,9 +26,6 @@ spec:
           type: object
           description: DomainSpec is a description of a domain.
           properties:
-            keepJRFSchema:
-              type: boolean
-              description: Keep JRF schema between lifecycle updates
             configOverrideSecrets:
               type: array
               description: A list of names of the secrets for optional WebLogic configuration
@@ -4166,6 +4163,9 @@ spec:
               - WLS
               - RestrictedJRF
               - JRF
+            keepJrfSchema:
+              type: boolean
+              description: Keep JRF schema between lifecycle updates
             serverStartState:
               type: string
               description: The state in which the server is to be started. Use ADMIN

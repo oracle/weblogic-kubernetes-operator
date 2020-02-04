@@ -47,6 +47,10 @@ public class PodHelperTest {
     return new DomainPresenceInfo(new Domain().withMetadata(new V1ObjectMeta().namespace(NS)));
   }
 
+  /**
+   * Setup test.
+   * @throws NoSuchFieldException on no such field
+   */
   @Before
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -54,9 +58,15 @@ public class PodHelperTest {
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
 
+  /**
+   * Tear down test.
+   * @throws Exception on failure
+   */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }

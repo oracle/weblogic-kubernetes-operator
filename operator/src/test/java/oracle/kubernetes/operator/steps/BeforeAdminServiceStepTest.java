@@ -60,8 +60,11 @@ public class BeforeAdminServiceStepTest {
     return new DomainSpec().withDomainUid(UID).withReplicas(1);
   }
 
+  /**
+   * Setup test environment.
+   */
   @Before
-  public void setUp() throws Exception {
+  public void setUp()  {
     mementos.add(TestUtils.silenceOperatorLogger());
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_NAME, ADMIN_PORT_NUM);
@@ -76,9 +79,15 @@ public class BeforeAdminServiceStepTest {
         .withChannel("default", NODE_PORT_NUM);
   }
 
+  /**
+   * Cleanup test environment.
+   * @throws Exception if test support fails.
+   */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }

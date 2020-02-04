@@ -21,10 +21,16 @@ public class UnrecoverableErrorBuilder {
     return ForbiddenErrorBuilder.isForbiddenOperation(e) || UnprocessableEntityBuilder.isUnprocessableEntity(e);
   }
 
+  /**
+   * Populate FailureStatusSource from an ApiException.
+   * @param apiException the source exception
+   * @return status source object
+   */
   public static FailureStatusSource fromException(ApiException apiException) {
-    if (UnprocessableEntityBuilder.isUnprocessableEntity(apiException))
+    if (UnprocessableEntityBuilder.isUnprocessableEntity(apiException)) {
       return UnprocessableEntityBuilder.fromException(apiException);
-    else
+    } else {
       return ForbiddenErrorBuilder.fromException(apiException);
+    }
   }
 }

@@ -73,8 +73,11 @@ public class DomainPresenceInfo {
       ConcurrentMap<K, V> map, K key, Predicate<? super V> predicateFunction) {
     Objects.requireNonNull(predicateFunction);
     for (V oldValue; (oldValue = map.get(key)) != null; ) {
-      if (!predicateFunction.test(oldValue)) return false;
-      else if (map.remove(key, oldValue)) return true;
+      if (!predicateFunction.test(oldValue)) {
+        return false;
+      } else if (map.remove(key, oldValue)) {
+        return true;
+      }
     }
     return false;
   }
@@ -210,11 +213,14 @@ public class DomainPresenceInfo {
    * @return the new value for the pod.
    */
   public boolean deleteServerPodFromEvent(String serverName, V1Pod event) {
-    if (serverName == null) return false;
+    if (serverName == null) {
+      return false;
+    }
     ServerKubernetesObjects sko = getSko(serverName);
     V1Pod deletedPod = sko.getPod().getAndAccumulate(event, this::getNewerCurrentOrNull);
-    if (deletedPod != null)
+    if (deletedPod != null) {
       sko.getLastKnownStatus().set(new LastKnownStatus(WebLogicConstants.SHUTDOWN_STATE));
+    }
     return deletedPod != null;
   }
 
@@ -296,7 +302,9 @@ public class DomainPresenceInfo {
    * @return true if the service was actually removed
    */
   boolean deleteServerServiceFromEvent(String serverName, V1Service event) {
-    if (serverName == null) return false;
+    if (serverName == null) {
+      return false;
+    }
     V1Service deletedService =
         getSko(serverName).getService().getAndAccumulate(event, this::getNewerCurrentOrNull);
     return deletedService != null;
@@ -315,7 +323,9 @@ public class DomainPresenceInfo {
   }
 
   void setClusterServiceFromEvent(String clusterName, V1Service event) {
-    if (clusterName == null) return;
+    if (clusterName == null) {
+      return;
+    }
 
     clusters.compute(clusterName, (k, s) -> getNewerService(s, event));
   }
@@ -344,7 +354,9 @@ public class DomainPresenceInfo {
   }
 
   boolean deleteExternalServiceFromEvent(String serverName, V1Service event) {
-    if (serverName == null) return false;
+    if (serverName == null) {
+      return false;
+    }
     V1Service deletedService =
         getSko(serverName)
             .getExternalService()

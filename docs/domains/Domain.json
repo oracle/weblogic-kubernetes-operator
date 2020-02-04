@@ -200,10 +200,6 @@
       "description": "DomainSpec is a description of a domain.",
       "type": "object",
       "properties": {
-        "keepJRFSchema": {
-          "description": "Keep JRF schema between lifecycle updates",
-          "type": "boolean"
-        },
         "configOverrideSecrets": {
           "description": "A list of names of the secrets for optional WebLogic configuration overrides.",
           "type": "array",
@@ -282,6 +278,10 @@
             "RestrictedJRF",
             "JRF"
           ]
+        },
+        "keepJrfSchema": {
+          "description": "Keep JRF schema between lifecycle updates",
+          "type": "boolean"
         },
         "serverStartState": {
           "description": "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.",

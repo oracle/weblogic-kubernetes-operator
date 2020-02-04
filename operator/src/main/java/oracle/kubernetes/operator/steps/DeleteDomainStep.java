@@ -27,6 +27,12 @@ public class DeleteDomainStep extends Step {
   private final String namespace;
   private final String domainUid;
 
+  /**
+   * Construct delete domain step.
+   * @param info domain presence
+   * @param namespace namespace
+   * @param domainUid domain UID
+   */
   public DeleteDomainStep(DomainPresenceInfo info, String namespace, String domainUid) {
     super(null);
     this.info = info;
