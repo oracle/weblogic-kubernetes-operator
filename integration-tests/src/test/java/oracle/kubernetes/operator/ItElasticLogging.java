@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -7,7 +7,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
@@ -669,12 +668,12 @@ public class ItElasticLogging extends BaseTest {
     cmdLisDir.setLength(0);
     cmdLisDir = new StringBuffer("kubectl -n ");
     cmdLisDir
-      .append(domainNS)
-      .append(" exec -it ")
-      .append(podName)
-      .append(" -- bash -c 'ls -l /shared/domains/")
-      .append(domainUid)
-      .append("/lib/'");
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(podName)
+        .append(" -- bash -c 'ls -l /shared/domains/")
+        .append(domainUid)
+        .append("/lib/'");
     LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLisDir.toString());
     result = TestUtils.exec(cmdLisDir.toString());
     LoggerHelper.getLocal().log(Level.INFO, "exit code: " + result.exitValue());

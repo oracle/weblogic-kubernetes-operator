@@ -357,11 +357,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   private boolean canUseCurrentPod(V1Pod currentPod) {
     boolean useCurrent =
         AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
-    if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0)
+    if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0) {
       LOGGER.info(
           MessageKeys.POD_DUMP,
           AnnotationHelper.getDebugString(currentPod),
           AnnotationHelper.getDebugString(getPodModel()));
+    }
 
     return useCurrent;
   }
@@ -786,10 +787,11 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse))
+      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
-      else
+      } else {
         return onFailure(getConflictStep(), packet, callResponse);
+      }
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Pod> callResponse) {
