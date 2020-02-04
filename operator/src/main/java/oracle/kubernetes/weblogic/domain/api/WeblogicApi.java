@@ -46,7 +46,7 @@ public class WeblogicApi {
     this.localVarApiClient = apiClient;
   }
 
-  public Call createNamespacedDomainCall(
+  protected Call createNamespacedDomainCall(
       String namespace, Domain body, String pretty, ApiCallback callback) throws ApiException {
     final String localVarPath =
         DOMAIN_PATH.replaceAll("\\{namespace\\}", this.localVarApiClient.escapeString(namespace));
@@ -96,6 +96,14 @@ public class WeblogicApi {
     }
   }
 
+  /**
+   * Create domain.
+   * @param namespace namespace
+   * @param body domain
+   * @param pretty pretty flag
+   * @return domain
+   * @throws ApiException on failure
+   */
   public Domain createNamespacedDomain(String namespace, Domain body, String pretty)
       throws ApiException {
     ApiResponse<Domain> localVarResp =
@@ -103,7 +111,7 @@ public class WeblogicApi {
     return localVarResp.getData();
   }
 
-  public ApiResponse<Domain> createNamespacedDomainWithHttpInfo(
+  protected ApiResponse<Domain> createNamespacedDomainWithHttpInfo(
       String namespace, Domain body, String pretty) throws ApiException {
     Call localVarCall =
         this.createNamespacedDomainValidateBeforeCall(namespace, body, pretty, null);
@@ -111,7 +119,7 @@ public class WeblogicApi {
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
-  public Call createNamespacedDomainAsync(
+  protected Call createNamespacedDomainAsync(
       String namespace, Domain body, String pretty, ApiCallback<Domain> callback)
       throws ApiException {
     Call localVarCall =
@@ -121,7 +129,7 @@ public class WeblogicApi {
     return localVarCall;
   }
 
-  public Call deleteNamespacedDomainCall(
+  protected Call deleteNamespacedDomainCall(
       String name,
       String namespace,
       V1DeleteOptions body,
@@ -210,6 +218,17 @@ public class WeblogicApi {
     }
   }
 
+  /**
+   * Delete domain.
+   * @param name name
+   * @param namespace namespace
+   * @param body domain
+   * @param gracePeriodSeconds grace period
+   * @param orphanDependents if orphan dependents
+   * @param propagationPolicy propagation policy
+   * @return domain
+   * @throws ApiException on failure
+   */
   public Domain deleteNamespacedDomain(
       String name,
       String namespace,
@@ -224,7 +243,7 @@ public class WeblogicApi {
     return localVarResp.getData();
   }
 
-  public ApiResponse<Domain> deleteNamespacedDomainWithHttpInfo(
+  protected ApiResponse<Domain> deleteNamespacedDomainWithHttpInfo(
       String name,
       String namespace,
       V1DeleteOptions body,
@@ -239,6 +258,18 @@ public class WeblogicApi {
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
+  /**
+   * Asynchronously delete domain.
+   * @param name name
+   * @param namespace namespace
+   * @param body deletion options
+   * @param gracePeriodSeconds grace period
+   * @param orphanDependents if orphan dependents
+   * @param propagationPolicy propagation policy
+   * @param callback callback
+   * @return domain
+   * @throws ApiException on failure
+   */
   public Call deleteNamespacedDomainAsync(
       String name,
       String namespace,
@@ -262,7 +293,7 @@ public class WeblogicApi {
     return localVarCall;
   }
 
-  public Call getNamespacedDomainCall(String name, String namespace, ApiCallback callback)
+  protected Call getNamespacedDomainCall(String name, String namespace, ApiCallback callback)
       throws ApiException {
     Object localVarPostBody = null;
     String localVarPath =
@@ -317,13 +348,21 @@ public class WeblogicApi {
     return localVarResp.getData();
   }
 
-  public ApiResponse<Domain> getNamespacedDomainWithHttpInfo(String namespace, String name)
+  protected ApiResponse<Domain> getNamespacedDomainWithHttpInfo(String namespace, String name)
       throws ApiException {
     Call localVarCall = this.getNamespacedDomainValidateBeforeCall(name, namespace, null);
     Type localVarReturnType = (new TypeToken<Domain>() {}).getType();
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
+  /**
+   * Asynchronously read domain.
+   * @param name name
+   * @param namespace namespace
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
   public Call getNamespacedDomainAsync(String name, String namespace, ApiCallback<Domain> callback)
       throws ApiException {
     Call localVarCall = this.getNamespacedDomainValidateBeforeCall(name, namespace, callback);
@@ -332,7 +371,7 @@ public class WeblogicApi {
     return localVarCall;
   }
 
-  public Call getNamespacedDomainScaleCall(String name, String namespace, ApiCallback callback)
+  protected Call getNamespacedDomainScaleCall(String name, String namespace, ApiCallback callback)
       throws ApiException {
     Object localVarPostBody = null;
     String localVarPath =
@@ -390,13 +429,21 @@ public class WeblogicApi {
     return localVarResp.getData();
   }
 
-  public ApiResponse<Domain> getNamespacedDomainScaleWithHttpInfo(String name, String namespace)
+  protected ApiResponse<Domain> getNamespacedDomainScaleWithHttpInfo(String name, String namespace)
       throws ApiException {
     Call localVarCall = this.getNamespacedDomainScaleValidateBeforeCall(name, namespace, null);
     Type localVarReturnType = (new TypeToken<Domain>() {}).getType();
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
+  /**
+   * Asynchronously read domain scale.
+   * @param name name
+   * @param namespace namespace
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
   public Call getNamespacedDomainScaleAsync(
       String name, String namespace, ApiCallback<Domain> callback) throws ApiException {
     Call localVarCall = this.getNamespacedDomainScaleValidateBeforeCall(name, namespace, callback);
@@ -405,7 +452,7 @@ public class WeblogicApi {
     return localVarCall;
   }
 
-  public Call getNamespacedDomainStatusCall(String name, String namespace, ApiCallback callback)
+  protected Call getNamespacedDomainStatusCall(String name, String namespace, ApiCallback callback)
       throws ApiException {
     Object localVarPostBody = null;
     String localVarPath =
@@ -463,13 +510,21 @@ public class WeblogicApi {
     return localVarResp.getData();
   }
 
-  public ApiResponse<Domain> getNamespacedDomainStatusWithHttpInfo(String name, String namespace)
+  protected ApiResponse<Domain> getNamespacedDomainStatusWithHttpInfo(String name, String namespace)
       throws ApiException {
     Call localVarCall = this.getNamespacedDomainStatusValidateBeforeCall(name, namespace, null);
     Type localVarReturnType = (new TypeToken<Domain>() {}).getType();
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
+  /**
+   * Asynchronously read domain status.
+   * @param name name
+   * @param namespace namespace
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
   public Call getNamespacedDomainStatusAsync(
       String name, String namespace, ApiCallback<Domain> callback) throws ApiException {
     Call localVarCall = this.getNamespacedDomainStatusValidateBeforeCall(name, namespace, callback);
@@ -478,6 +533,21 @@ public class WeblogicApi {
     return localVarCall;
   }
 
+  /**
+   * Generate call to list domains.
+   * @param namespace namespace
+   * @param pretty pretty flag
+   * @param cont continuation
+   * @param fieldSelector field selector
+   * @param labelSelector label selector
+   * @param limit limit
+   * @param resourceVersion resource version
+   * @param timeoutSeconds timeout
+   * @param watch if watch
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
   public Call listNamespacedDomainCall(
       String namespace,
       String pretty,
@@ -590,6 +660,20 @@ public class WeblogicApi {
     }
   }
 
+  /**
+   * List domains.
+   * @param namespace namespace
+   * @param pretty pretty flag
+   * @param cont continuation
+   * @param fieldSelector field selector
+   * @param labelSelector label selector
+   * @param limit limit
+   * @param resourceVersion resource version
+   * @param timeoutSeconds timeout
+   * @param watch if watch
+   * @return domain list
+   * @throws ApiException on failure
+   */
   public DomainList listNamespacedDomain(
       String namespace,
       String pretty,
@@ -615,7 +699,7 @@ public class WeblogicApi {
     return localVarResp.getData();
   }
 
-  public ApiResponse<DomainList> listNamespacedDomainWithHttpInfo(
+  protected ApiResponse<DomainList> listNamespacedDomainWithHttpInfo(
       String namespace,
       String pretty,
       String cont,
@@ -642,6 +726,21 @@ public class WeblogicApi {
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
+  /**
+   * Asynchronously list domains.
+   * @param namespace namespace
+   * @param pretty pretty flag
+   * @param cont continuation
+   * @param fieldSelector field selector
+   * @param labelSelector label selector
+   * @param limit limit
+   * @param resourceVersion resource version
+   * @param timeoutSeconds timeout
+   * @param watch watch
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
   public Call listNamespacedDomainAsync(
       String namespace,
       String pretty,
@@ -671,7 +770,7 @@ public class WeblogicApi {
     return localVarCall;
   }
 
-  public Call patchNamespacedDomainCall(
+  protected Call patchNamespacedDomainCall(
       String name, String namespace, V1Patch body, ApiCallback callback) throws ApiException {
     String localVarPath =
         DOMAIN_SPECIFIC_PATH
@@ -724,6 +823,14 @@ public class WeblogicApi {
     }
   }
 
+  /**
+   * Patch domain.
+   * @param name name
+   * @param namespace namespace
+   * @param body patch
+   * @return domain
+   * @throws ApiException on failure
+   */
   public Domain patchNamespacedDomain(String name, String namespace, V1Patch body)
       throws ApiException {
     ApiResponse<Domain> localVarResp =
@@ -731,13 +838,22 @@ public class WeblogicApi {
     return localVarResp.getData();
   }
 
-  public ApiResponse<Domain> patchNamespacedDomainWithHttpInfo(
+  protected ApiResponse<Domain> patchNamespacedDomainWithHttpInfo(
       String name, String namespace, V1Patch body) throws ApiException {
     Call localVarCall = this.patchNamespacedDomainValidateBeforeCall(name, namespace, body, null);
     Type localVarReturnType = (new TypeToken<Domain>() {}).getType();
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
+  /**
+   * Asynchronously patch domain.
+   * @param name name
+   * @param namespace namespace
+   * @param body patch
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
   public Call patchNamespacedDomainAsync(
       String name, String namespace, V1Patch body, ApiCallback<Domain> callback)
       throws ApiException {
@@ -748,7 +864,7 @@ public class WeblogicApi {
     return localVarCall;
   }
 
-  public Call patchNamespacedDomainScaleCall(
+  protected Call patchNamespacedDomainScaleCall(
       String name, String namespace, V1Patch body, ApiCallback callback) throws ApiException {
     String localVarPath =
         DOMAIN_SCALE_PATH
@@ -804,6 +920,14 @@ public class WeblogicApi {
     }
   }
 
+  /**
+   * Patch domain scale.
+   * @param name name
+   * @param namespace namespace
+   * @param body patch
+   * @return domain
+   * @throws ApiException on failure
+   */
   public Domain patchNamespacedDomainScale(String name, String namespace, V1Patch body)
       throws ApiException {
     ApiResponse<Domain> localVarResp =
@@ -811,7 +935,7 @@ public class WeblogicApi {
     return localVarResp.getData();
   }
 
-  public ApiResponse<Domain> patchNamespacedDomainScaleWithHttpInfo(
+  protected ApiResponse<Domain> patchNamespacedDomainScaleWithHttpInfo(
       String name, String namespace, V1Patch body) throws ApiException {
     Call localVarCall =
         this.patchNamespacedDomainScaleValidateBeforeCall(name, namespace, body, null);
@@ -819,6 +943,15 @@ public class WeblogicApi {
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
+  /**
+   * Asynchronously patch domain scale.
+   * @param name name
+   * @param namespace namespace
+   * @param body patch
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
   public Call patchNamespacedDomainScaleAsync(
       String name, String namespace, V1Patch body, ApiCallback<Domain> callback)
       throws ApiException {
@@ -829,7 +962,7 @@ public class WeblogicApi {
     return localVarCall;
   }
 
-  public Call patchNamespacedDomainStatusCall(
+  protected Call patchNamespacedDomainStatusCall(
       String name, String namespace, V1Patch body, ApiCallback callback) throws ApiException {
     String localVarPath =
         DOMAIN_STATUS_PATH
@@ -885,6 +1018,14 @@ public class WeblogicApi {
     }
   }
 
+  /**
+   * Patch domain status.
+   * @param name name
+   * @param namespace namespace
+   * @param body patch
+   * @return domain
+   * @throws ApiException on failure
+   */
   public Domain patchNamespacedDomainStatus(String name, String namespace, V1Patch body)
       throws ApiException {
     ApiResponse<Domain> localVarResp =
@@ -892,7 +1033,7 @@ public class WeblogicApi {
     return localVarResp.getData();
   }
 
-  public ApiResponse<Domain> patchNamespacedDomainStatusWithHttpInfo(
+  protected ApiResponse<Domain> patchNamespacedDomainStatusWithHttpInfo(
       String name, String namespace, V1Patch body) throws ApiException {
     Call localVarCall =
         this.patchNamespacedDomainStatusValidateBeforeCall(name, namespace, body, null);
@@ -900,6 +1041,15 @@ public class WeblogicApi {
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
+  /**
+   * Asynchronously patch domain status.
+   * @param name name
+   * @param namespace namespace
+   * @param body patch
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
   public Call patchNamespacedDomainStatusAsync(
       String name, String namespace, V1Patch body, ApiCallback<Domain> callback)
       throws ApiException {
@@ -910,7 +1060,7 @@ public class WeblogicApi {
     return localVarCall;
   }
 
-  public Call replaceNamespacedDomainCall(
+  protected Call replaceNamespacedDomainCall(
       String name, String namespace, Domain body, ApiCallback callback) throws ApiException {
     String localVarPath =
         DOMAIN_SPECIFIC_PATH
@@ -962,6 +1112,14 @@ public class WeblogicApi {
     }
   }
 
+  /**
+   * Replace domain.
+   * @param name name
+   * @param namespace namespace
+   * @param body domain
+   * @return domain
+   * @throws ApiException on failure
+   */
   public Domain replaceNamespacedDomain(String name, String namespace, Domain body)
       throws ApiException {
     ApiResponse<Domain> localVarResp =
@@ -969,13 +1127,22 @@ public class WeblogicApi {
     return localVarResp.getData();
   }
 
-  public ApiResponse<Domain> replaceNamespacedDomainWithHttpInfo(
+  protected ApiResponse<Domain> replaceNamespacedDomainWithHttpInfo(
       String name, String namespace, Domain body) throws ApiException {
     Call localVarCall = this.replaceNamespacedDomainValidateBeforeCall(name, namespace, body, null);
     Type localVarReturnType = (new TypeToken<Domain>() {}).getType();
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
+  /**
+   * Asynchronously replace domain.
+   * @param name name
+   * @param namespace namespace
+   * @param body domain
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
   public Call replaceNamespacedDomainAsync(
       String name, String namespace, Domain body, ApiCallback<Domain> callback)
       throws ApiException {
@@ -986,7 +1153,7 @@ public class WeblogicApi {
     return localVarCall;
   }
 
-  public Call replaceNamespacedDomainScaleCall(
+  protected Call replaceNamespacedDomainScaleCall(
       String name, String namespace, Domain body, ApiCallback callback) throws ApiException {
     String localVarPath =
         DOMAIN_SCALE_PATH
@@ -1041,6 +1208,14 @@ public class WeblogicApi {
     }
   }
 
+  /**
+   * Replace domain scale.
+   * @param name name
+   * @param namespace namespace
+   * @param body domain
+   * @return domain
+   * @throws ApiException on failure
+   */
   public Domain replaceNamespacedDomainScale(String name, String namespace, Domain body)
       throws ApiException {
     ApiResponse<Domain> localVarResp =
@@ -1048,7 +1223,7 @@ public class WeblogicApi {
     return localVarResp.getData();
   }
 
-  public ApiResponse<Domain> replaceNamespacedDomainScaleWithHttpInfo(
+  protected ApiResponse<Domain> replaceNamespacedDomainScaleWithHttpInfo(
       String name, String namespace, Domain body) throws ApiException {
     Call localVarCall =
         this.replaceNamespacedDomainScaleValidateBeforeCall(name, namespace, body, null);
@@ -1056,6 +1231,15 @@ public class WeblogicApi {
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
+  /**
+   * Asynchronously replace domain status.
+   * @param name name
+   * @param namespace namespace
+   * @param body domain
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
   public Call replaceNamespacedDomainScaleAsync(
       String name, String namespace, Domain body, ApiCallback<Domain> callback)
       throws ApiException {
@@ -1066,7 +1250,7 @@ public class WeblogicApi {
     return localVarCall;
   }
 
-  public Call replaceNamespacedDomainStatusCall(
+  protected Call replaceNamespacedDomainStatusCall(
       String name, String namespace, Domain body, ApiCallback callback) throws ApiException {
     String localVarPath =
         DOMAIN_STATUS_PATH
@@ -1121,6 +1305,14 @@ public class WeblogicApi {
     }
   }
 
+  /**
+   * Replace domain status.
+   * @param name name
+   * @param namespace namespace
+   * @param body domain
+   * @return domain
+   * @throws ApiException on failure
+   */
   public Domain replaceNamespacedDomainStatus(String name, String namespace, Domain body)
       throws ApiException {
     ApiResponse<Domain> localVarResp =
@@ -1128,7 +1320,7 @@ public class WeblogicApi {
     return localVarResp.getData();
   }
 
-  public ApiResponse<Domain> replaceNamespacedDomainStatusWithHttpInfo(
+  protected ApiResponse<Domain> replaceNamespacedDomainStatusWithHttpInfo(
       String name, String namespace, Domain body) throws ApiException {
     Call localVarCall =
         this.replaceNamespacedDomainStatusValidateBeforeCall(name, namespace, body, null);
@@ -1136,6 +1328,15 @@ public class WeblogicApi {
     return this.localVarApiClient.execute(localVarCall, localVarReturnType);
   }
 
+  /**
+   * Asynchronously replace domain status.
+   * @param name name
+   * @param namespace namespace
+   * @param body domain
+   * @param callback callback
+   * @return call
+   * @throws ApiException on failure
+   */
   public Call replaceNamespacedDomainStatusAsync(
       String name, String namespace, Domain body, ApiCallback<Domain> callback)
       throws ApiException {

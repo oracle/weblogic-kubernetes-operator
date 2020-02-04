@@ -496,7 +496,7 @@ public class Domain {
       addReservedEnvironmentVariables();
       addMissingSecrets(kubernetesResources);
       verifyNoAlternateSecretNamespaceSpecified();
-      
+
       return failures;
     }
 
@@ -524,17 +524,19 @@ public class Domain {
     }
 
     private void checkDuplicateServerName(String serverName) {
-      if (serverNames.contains(serverName))
+      if (serverNames.contains(serverName)) {
         failures.add(DomainValidationMessages.duplicateServerName(serverName));
-      else
+      } else {
         serverNames.add(serverName);
+      }
     }
 
     private void checkDuplicateClusterName(String clusterName) {
-      if (clusterNames.contains(clusterName))
+      if (clusterNames.contains(clusterName)) {
         failures.add(DomainValidationMessages.duplicateClusterName(clusterName));
-      else
+      } else {
         clusterNames.add(clusterName);
+      }
     }
 
     private void addInvalidMountPaths() {
@@ -542,15 +544,21 @@ public class Domain {
     }
 
     private void checkValidMountPath(V1VolumeMount mount) {
-      if (!new File(mount.getMountPath()).isAbsolute())
+      if (!new File(mount.getMountPath()).isAbsolute()) {
         failures.add(DomainValidationMessages.badVolumeMountPath(mount));
+      }
     }
 
     private void addUnmappedLogHome() {
-      if (!isLogHomeEnabled()) return;
+      if (!isLogHomeEnabled()) {
+        return;
+      }
 
-      if (getSpec().getAdditionalVolumeMounts().stream().map(V1VolumeMount::getMountPath).noneMatch(this::mapsLogHome))
+      if (getSpec().getAdditionalVolumeMounts().stream()
+          .map(V1VolumeMount::getMountPath)
+          .noneMatch(this::mapsLogHome)) {
         failures.add(DomainValidationMessages.logHomeNotMounted(getLogHome()));
+      }
     }
 
     private boolean mapsLogHome(String mountPath) {
@@ -558,8 +566,11 @@ public class Domain {
     }
 
     private String separatorTerminated(String path) {
-      if (path.endsWith(File.separator)) return path;
-      else return path + File.separator;
+      if (path.endsWith(File.separator)) {
+        return path;
+      } else {
+        return path + File.separator;
+      }
     }
 
     private void addReservedEnvironmentVariables() {
@@ -581,7 +592,9 @@ public class Domain {
       }
 
       void checkEnvironmentVariables(@Nonnull BaseConfiguration configuration, String prefix) {
-        if (configuration.getEnv() == null) return;
+        if (configuration.getEnv() == null) {
+          return;
+        }
 
         List<String> reservedNames = configuration.getEnv()
             .stream()
@@ -589,8 +602,9 @@ public class Domain {
             .filter(isReserved)
             .collect(Collectors.toList());
 
-        if (!reservedNames.isEmpty())
+        if (!reservedNames.isEmpty()) {
           failures.add(DomainValidationMessages.reservedVariableNames(prefix, reservedNames));
+        }
       }
     }
 
@@ -605,10 +619,12 @@ public class Domain {
 
     private void addMissingSecrets(KubernetesResourceLookup resourceLookup) {
       verifySecretExists(resourceLookup, getWebLogicCredentialsSecretName(), SecretType.WebLogicCredentials);
-      for (V1LocalObjectReference reference : getImagePullSecrets())
+      for (V1LocalObjectReference reference : getImagePullSecrets()) {
         verifySecretExists(resourceLookup, reference.getName(), SecretType.ImagePull);
-      for (String secretName : getConfigOverrideSecrets())
+      }
+      for (String secretName : getConfigOverrideSecrets()) {
         verifySecretExists(resourceLookup, secretName, SecretType.ConfigOverride);
+      }
     }
 
     private List<V1LocalObjectReference> getImagePullSecrets() {
@@ -621,19 +637,21 @@ public class Domain {
 
     @SuppressWarnings("SameParameterValue")
     private void verifySecretExists(KubernetesResourceLookup resources, String secretName, SecretType type) {
-      if (!resources.isSecretExists(secretName, getNamespace()))
+      if (!resources.isSecretExists(secretName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchSecret(secretName, getNamespace(), type));
+      }
     }
 
     private void verifyNoAlternateSecretNamespaceSpecified() {
-      if (!getSpecifiedWebLogicCredentialsNamespace().equals(getNamespace()))
+      if (!getSpecifiedWebLogicCredentialsNamespace().equals(getNamespace())) {
         failures.add(DomainValidationMessages.illegalSecretNamespace(getSpecifiedWebLogicCredentialsNamespace()));
+      }
     }
 
     private String getSpecifiedWebLogicCredentialsNamespace() {
       return Optional.ofNullable(spec.getWebLogicCredentialsSecret())
-            .map(V1SecretReference::getNamespace)
-            .orElse(getNamespace());
+          .map(V1SecretReference::getNamespace)
+          .orElse(getNamespace());
     }
 
   }

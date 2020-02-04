@@ -71,10 +71,17 @@ public class WatchBuilderTest extends HttpUserAgentTest {
   private List<Memento> mementos = new ArrayList<>();
 
   private static String getSingleValue(String[] values) {
-    if (values == null || values.length == 0) return null;
-    else return values[0];
+    if (values == null || values.length == 0) {
+      return null;
+    } else {
+      return values[0];
+    }
   }
 
+  /**
+   * Cleanup test environment.
+   * @throws Exception if ClientPoolStub fails to install.
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -82,10 +89,17 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     validationErrors = new ArrayList<>();
   }
 
+  /**
+   * Cleanup test environment.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
-    if (!validationErrors.isEmpty()) throw validationErrors.get(0);
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
+    if (!validationErrors.isEmpty()) {
+      throw validationErrors.get(0);
+    }
   }
 
   @Test
@@ -306,12 +320,14 @@ public class WatchBuilderTest extends HttpUserAgentTest {
 
     @Override
     public WebResource getGetResponse() {
-      if (requestNum >= actions.size())
+      if (requestNum >= actions.size()) {
         return new WebResource("Unexpected Request #" + requestNum, HTTP_UNAVAILABLE);
+      }
 
       JsonServletAction action = actions.get(requestNum++);
-      for (ParameterValidation validation : action.validations)
+      for (ParameterValidation validation : action.validations) {
         validation.verify(getParameter(validation.parameterName));
+      }
 
       return action.webResource;
     }

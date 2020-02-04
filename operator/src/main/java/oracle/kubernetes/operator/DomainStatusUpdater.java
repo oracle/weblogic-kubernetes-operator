@@ -204,7 +204,9 @@ public class DomainStatusUpdater {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
-      if (!isPatchFailure(callResponse)) return super.onFailure(packet, callResponse);
+      if (!isPatchFailure(callResponse)) {
+        return super.onFailure(packet, callResponse);
+      }
 
       return doNext(createRetry(context, getNext()), packet);
     }
@@ -317,7 +319,9 @@ public class DomainStatusUpdater {
 
       @Override
       void modifyStatus(DomainStatus status) {
-        if (getDomain() == null) return;
+        if (getDomain() == null) {
+          return;
+        }
         
         if (getDomainConfig().isPresent()) {
           status.setServers(new ArrayList<>(getServerStatuses().values()));
@@ -495,7 +499,9 @@ public class DomainStatusUpdater {
     @Override
     void modifyStatus(DomainStatus status) {
       status.addCondition(new DomainCondition(Progressing).withStatus(TRUE).withReason(reason));
-      if (!isPreserveAvailable) status.removeConditionIf(c -> c.getType() == Available);
+      if (!isPreserveAvailable) {
+        status.removeConditionIf(c -> c.getType() == Available);
+      }
     }
   }
 

@@ -201,7 +201,7 @@ public class BaseTest {
 
   }
 
-  public void createResultAndPvDirs(String testClassName) throws Exception {
+  protected void createResultAndPvDirs(String testClassName) throws Exception {
 
     resultRoot = resultRootCommon + "/" + testClassName;
     pvRoot = pvRootCommon + "/" + testClassName;
@@ -305,7 +305,7 @@ public class BaseTest {
     return domainApiVersion;
   }
 
-  public ExecResult cleanup() throws Exception {
+  protected ExecResult cleanup() throws Exception {
     String cmd =
         "export RESULT_ROOT="
             + resultRootCommon
@@ -863,7 +863,7 @@ public class BaseTest {
     }
     return operatorMap;
   }
-  
+
   /**
    * Creates a map with commonly used domain input attributes using suffixCount and prefix
    * to make the namespaces and ports unique.
@@ -894,7 +894,7 @@ public class BaseTest {
     return domainMap;
   }
 
-  public Map<String, Object> createDomainMap(int number) {
+  protected Map<String, Object> createDomainMap(int number) {
     Map<String, Object> domainMap = new HashMap<>();
     ArrayList<String> targetDomainsNS = new ArrayList<String>();
     targetDomainsNS.add("test" + number);

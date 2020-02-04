@@ -206,8 +206,9 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
 
     try {
       testSupport.runSteps(watcher.waitForReady(createPod(), terminalStep));
-      for (Function<V1Pod,V1Pod> modifier : modifiers)
+      for (Function<V1Pod,V1Pod> modifier : modifiers) {
         watcher.receivedResponse(new Watch.Response<>("MODIFIED", modifier.apply(createPod())));
+      }
     } finally {
       stopping.set(true);
     }
