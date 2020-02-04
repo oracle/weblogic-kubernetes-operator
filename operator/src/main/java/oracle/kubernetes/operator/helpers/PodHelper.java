@@ -49,6 +49,11 @@ public class PodHelper {
     return new ManagedPodStepContext(null, packet).createPodModel();
   }
 
+  /**
+   * check if pod is ready.
+   * @param pod pod
+   * @return true, if pod is ready
+   */
   public static boolean isReady(V1Pod pod) {
     boolean ready = getReadyStatus(pod);
     if (ready) {
@@ -57,6 +62,11 @@ public class PodHelper {
     return ready;
   }
 
+  /**
+   * get if pod is in ready state.
+   * @param pod pod
+   * @return true, if pod is ready
+   */
   public static boolean getReadyStatus(V1Pod pod) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
@@ -76,6 +86,11 @@ public class PodHelper {
     return false;
   }
 
+  /**
+   * Check if pod is deleting.
+   * @param pod pod
+   * @return true, if pod is deleting
+   */
   public static boolean isDeleting(V1Pod pod) {
     V1ObjectMeta meta = pod.getMetadata();
     if (meta != null) {
@@ -84,6 +99,11 @@ public class PodHelper {
     return false;
   }
 
+  /**
+   * Check if pod is in failed state.
+   * @param pod pod
+   * @return true, if pod is in failed state
+   */
   public static boolean isFailed(V1Pod pod) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
@@ -95,6 +115,11 @@ public class PodHelper {
     return false;
   }
 
+  /**
+   * get pod domain UID.
+   * @param pod pod
+   * @return domain UID
+   */
   public static String getPodDomainUid(V1Pod pod) {
     V1ObjectMeta meta = pod.getMetadata();
     Map<String, String> labels = meta.getLabels();
@@ -104,6 +129,11 @@ public class PodHelper {
     return null;
   }
 
+  /**
+   * get pod's server name.
+   * @param pod pod
+   * @return server name
+   */
   public static String getPodServerName(V1Pod pod) {
     V1ObjectMeta meta = pod.getMetadata();
     Map<String, String> labels = meta.getLabels();

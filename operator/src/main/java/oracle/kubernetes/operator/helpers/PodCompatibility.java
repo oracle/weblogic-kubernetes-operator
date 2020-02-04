@@ -43,7 +43,9 @@ class PodCompatibility extends CollectiveCompatibility {
 
   static <T> Set<T> getMissingElements(Collection<T> expected, Collection<T> actual) {
     Set<T> missing = asSet(expected);
-    if (actual != null) missing.removeAll(actual);
+    if (actual != null) {
+      missing.removeAll(actual);
+    }
     return missing;
   }
 
@@ -73,8 +75,12 @@ class PodCompatibility extends CollectiveCompatibility {
     }
 
     private String getDomainVersion() {
-      if (actual == null) return "unspecified";
-      if (actual.getLabels() == null) return "unspecified";
+      if (actual == null) {
+        return "unspecified";
+      }
+      if (actual.getLabels() == null) {
+        return "unspecified";
+      }
       return Optional.ofNullable(actual.getLabels().get(LabelConstants.RESOURCE_VERSION_LABEL))
           .orElse("unspecified");
     }
@@ -102,9 +108,15 @@ class PodCompatibility extends CollectiveCompatibility {
 
     @Override
     public String getIncompatibility() {
-      if (!isLabelSame(DOMAINRESTARTVERSION_LABEL)) return "domain restart label changed.";
-      if (!isLabelSame(CLUSTERRESTARTVERSION_LABEL)) return "cluster restart label changed.";
-      if (!isLabelSame(SERVERRESTARTVERSION_LABEL)) return "server restart label changed.";
+      if (!isLabelSame(DOMAINRESTARTVERSION_LABEL)) {
+        return "domain restart label changed.";
+      }
+      if (!isLabelSame(CLUSTERRESTARTVERSION_LABEL)) {
+        return "cluster restart label changed.";
+      }
+      if (!isLabelSame(SERVERRESTARTVERSION_LABEL)) {
+        return "server restart label changed.";
+      }
       return null;
     }
   }
@@ -127,16 +139,23 @@ class PodCompatibility extends CollectiveCompatibility {
       Map<String, V1Container> actual = createMap(actualContainers);
 
       List<CompatibilityCheck> containerChecks = new ArrayList<>();
-      for (String name : expected.keySet())
-        if (actual.containsKey(name))
+      for (String name : expected.keySet()) {
+        if (actual.containsKey(name)) {
           containerChecks.add(createCompatibilityCheck(expected.get(name), actual.get(name)));
-        else containerChecks.add(new Mismatch("Expected container '%s' not found", name));
+        } else {
+          containerChecks.add(new Mismatch("Expected container '%s' not found", name));
+        }
+      }
 
-      for (String name : actual.keySet())
-        if (!expected.containsKey(name))
+      for (String name : actual.keySet()) {
+        if (!expected.containsKey(name)) {
           containerChecks.add(new Mismatch("Found unexpected container '%s'", name));
+        }
+      }
 
-      if (containerChecks.isEmpty()) containerChecks.add(new Mismatch("No containers defined"));
+      if (containerChecks.isEmpty()) {
+        containerChecks.add(new Mismatch("No containers defined"));
+      }
 
       addAll(containerChecks);
     }
@@ -147,10 +166,14 @@ class PodCompatibility extends CollectiveCompatibility {
     }
 
     private Map<String, V1Container> createMap(List<V1Container> containers) {
-      if (containers == null) return Collections.emptyMap();
+      if (containers == null) {
+        return Collections.emptyMap();
+      }
 
       Map<String, V1Container> map = new HashMap<>();
-      for (V1Container container : containers) map.put(container.getName(), container);
+      for (V1Container container : containers) {
+        map.put(container.getName(), container);
+      }
       return map;
     }
   }
@@ -262,16 +285,18 @@ class PodCompatibility extends CollectiveCompatibility {
     @Override
     public String getIncompatibility() {
       StringBuilder sb = new StringBuilder();
-      if (!KubernetesUtils.mapEquals(getLimits(expected), getLimits(actual)))
+      if (!KubernetesUtils.mapEquals(getLimits(expected), getLimits(actual))) {
         sb.append(
             String.format(
                 "Expected resource limits: %s but found %s",
                 getLimits(expected), getLimits(actual)));
-      if (!KubernetesUtils.mapEquals(getRequests(expected), getRequests(actual)))
+      }
+      if (!KubernetesUtils.mapEquals(getRequests(expected), getRequests(actual))) {
         sb.append(
             String.format(
                 "Expected resource requests: %s but found %s",
                 getRequests(expected), getRequests(actual)));
+      }
       return sb.toString();
     }
   }

@@ -126,8 +126,9 @@ public class Matchers {
       if (Objects.equals(expectedInitialDelay, item.getInitialDelaySeconds())
           && Objects.equals(expectedTimeout, item.getTimeoutSeconds())
           && Objects.equals(expectedPeriod, item.getPeriodSeconds())
-          && Objects.equals(EXPECTED_FAILURE_THRESHOLD, item.getFailureThreshold())) return true;
-      else {
+          && Objects.equals(EXPECTED_FAILURE_THRESHOLD, item.getFailureThreshold())) {
+        return true;
+      } else {
         mismatchDescription
             .appendText("probe with initial delay ")
             .appendValue(item.getInitialDelaySeconds())

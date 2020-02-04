@@ -51,6 +51,15 @@ public class VersionCheckTest {
   private Matcher<KubernetesVersion> matcher;
   private String[] ignoredLogMessages;
 
+  /**
+   * Version check test constructor.
+   * @param testType test type
+   * @param majorVersion major
+   * @param minorVersion minor
+   * @param revision rev
+   * @param matcher matcher
+   * @param ignoredLogMessages ignored log messages
+   */
   public VersionCheckTest(
       TestType testType,
       String majorVersion,
@@ -66,6 +75,10 @@ public class VersionCheckTest {
     this.ignoredLogMessages = ignoredLogMessages;
   }
 
+  /**
+   * Initialize data.
+   * @return data
+   */
   @Parameters(name = "{0}: {1}.{2}.{3}")
   public static Collection<Object[]> data() {
     return Arrays.asList(
@@ -102,6 +115,10 @@ public class VersionCheckTest {
     return versionInfo;
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS);
@@ -110,16 +127,22 @@ public class VersionCheckTest {
     mementos.add(testSupport.installSynchronousCallDispatcher());
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
   public void test() {
     specifyK8sVersion(majorVersion, minorVersion, revision);
-    for (String ignoredLogMessage : ignoredLogMessages)
+    for (String ignoredLogMessage : ignoredLogMessages) {
       consoleControl.ignoreMessage(ignoredLogMessage);
+    }
 
     testType.runTest(logRecords, matcher);
   }
@@ -166,7 +189,9 @@ public class VersionCheckTest {
 
     @Override
     protected boolean matchesSafely(KubernetesVersion item, Description mismatchDescription) {
-      if (item.getMajor() == expectedMajor && item.getMinor() == expectedMinor) return true;
+      if (item.getMajor() == expectedMajor && item.getMinor() == expectedMinor) {
+        return true;
+      }
 
       describe(mismatchDescription, item.getMajor(), item.getMinor());
       return false;

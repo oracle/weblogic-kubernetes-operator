@@ -67,6 +67,10 @@ public class DomainStatusUpdaterTest {
   private String reason = generator.getUniqueString();
   private RuntimeException failure = new RuntimeException(message);
 
+  /**
+   * Setup test environment.
+   * @throws NoSuchFieldException if test support fails to install.
+   */
   @Before
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -86,9 +90,15 @@ public class DomainStatusUpdaterTest {
     return new V1ObjectMeta().namespace(NS).name(serverName).labels(ImmutableMap.of());
   }
 
+  /**
+   * Cleanup test environment.
+   * @throws Exception if test support fails.
+   */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }
@@ -133,8 +143,11 @@ public class DomainStatusUpdaterTest {
   }
 
   private ServerStatus getServerStatus(Domain domain, String serverName) {
-    for (ServerStatus status : domain.getStatus().getServers())
-      if (status.getServerName().equals(serverName)) return status;
+    for (ServerStatus status : domain.getStatus().getServers()) {
+      if (status.getServerName().equals(serverName)) {
+        return status;
+      }
+    }
 
     return null;
   }
@@ -546,7 +559,9 @@ public class DomainStatusUpdaterTest {
 
   private void generateStartupInfos(String... serverNames) {
     List<DomainPresenceInfo.ServerStartupInfo> startupInfos = new ArrayList<>();
-    for (String serverName : serverNames) configSupport.addWlsServer(serverName);
+    for (String serverName : serverNames) {
+      configSupport.addWlsServer(serverName);
+    }
     WlsDomainConfig domainConfig = configSupport.createDomainConfig();
     for (String serverName : serverNames) {
       String clusterName = getClusterName(serverName);
@@ -567,7 +582,9 @@ public class DomainStatusUpdaterTest {
   }
 
   private void defineCluster(String clusterName, String... serverNames) {
-    for (String serverName : serverNames) definePodWithCluster(serverName, clusterName);
+    for (String serverName : serverNames) {
+      definePodWithCluster(serverName, clusterName);
+    }
   }
 
   private void definePodWithCluster(String serverName, String clusterName) {

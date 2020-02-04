@@ -65,6 +65,10 @@ public class RestBackendImplTest {
         .withSpec(new DomainSpec().withDomainUid(name));
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -90,9 +94,14 @@ public class RestBackendImplTest {
     subjectAccessReview.setStatus(new V1SubjectAccessReviewStatus().allowed(true));
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test(expected = WebApplicationException.class)

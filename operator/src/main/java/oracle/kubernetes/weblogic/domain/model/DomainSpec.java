@@ -386,8 +386,12 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private String validatePath(String s) {
-    if (s.isBlank()) return null;
-    if (s.endsWith(File.separator)) return s;
+    if (s.isBlank()) {
+      return null;
+    }
+    if (s.endsWith(File.separator)) {
+      return s;
+    }
     return s + File.separator;
   }
 

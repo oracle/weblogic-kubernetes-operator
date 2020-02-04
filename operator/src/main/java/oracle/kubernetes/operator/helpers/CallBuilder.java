@@ -1435,6 +1435,13 @@ public class CallBuilder {
 
   /* Subject Access Review */
 
+  /**
+   * Delete persistent volume.
+   * @param name name
+   * @param deleteOptions delete options
+   * @return status
+   * @throws ApiException on failure
+   */
   public V1Status deletePersistentVolume(String name, V1DeleteOptions deleteOptions)
       throws ApiException {
     RequestParams requestParams =
@@ -1506,6 +1513,12 @@ public class CallBuilder {
     return claim.getMetadata().getNamespace();
   }
 
+  /**
+   * Asynchronously create persistent volume claim.
+   * @param claim claim
+   * @param responseStep response step
+   * @return step
+   */
   public Step createPersistentVolumeClaimAsync(
       V1PersistentVolumeClaim claim, ResponseStep<V1PersistentVolumeClaim> responseStep) {
     return createRequestAsync(
@@ -1520,6 +1533,14 @@ public class CallBuilder {
         new RequestParams("deletePVC", namespace, name, deleteOptions), deletePvcCall);
   }
 
+  /**
+   * Asynchronously delete persistent volume claim.
+   * @param name name
+   * @param namespace namespace
+   * @param deleteOptions delete options
+   * @param responseStep response step
+   * @return step
+   */
   public Step deletePersistentVolumeClaimAsync(
       String name,
       String namespace,

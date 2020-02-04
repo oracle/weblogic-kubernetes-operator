@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -29,6 +29,10 @@ public class CertificatesTest {
   private Collection<LogRecord> logRecords = new ArrayList<>();
   private List<Memento> mementos = new ArrayList<>();
 
+  /**
+   * Setup test environment.
+   * @throws Exception if test support fails to install.
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(consoleHandlerMemento
@@ -37,9 +41,14 @@ public class CertificatesTest {
     mementos.add(InMemoryCertificates.installWithoutData());
   }
 
+  /**
+   * Cleanup test environment.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
