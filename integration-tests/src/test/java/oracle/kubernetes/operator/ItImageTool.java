@@ -65,15 +65,14 @@ public class ItImageTool extends BaseTest {
         System.getenv("IMAGE_TAG_WEBLOGIC_WIT") != null
           ? System.getenv("IMAGE_TAG_WEBLOGIC_WIT")
           : appProps.getProperty("weblogicImageTagWIT");
-      if (BaseTest.SHARED_CLUSTER) {
-        weblogicImageVersionWIT = System.getenv("REPO_REGISTRY")
-            + "/weblogick8s/" + weblogicImageVersionWIT;
-      }
       weblogicImageNameWIT =
         System.getenv("IMAGE_NAME_WEBLOGIC_WIT") != null
           ? System.getenv("IMAGE_NAME_WEBLOGIC_WIT")
           : appProps.getProperty("weblogicImageNameWIT");
-
+      if (BaseTest.SHARED_CLUSTER) {
+        weblogicImageNameWIT = System.getenv("REPO_REGISTRY")
+            + "/weblogick8s/" + weblogicImageNameWIT;
+      }
       weblogicImageTagWIT = weblogicImageNameWIT + ":" + weblogicImageVersionWIT;
       LoggerHelper.getLocal().log(Level.INFO, "WebLogic image name is: " + weblogicImageTagWIT);
 
