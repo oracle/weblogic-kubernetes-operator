@@ -20,11 +20,18 @@ public class StepChainTest {
 
   private List<Memento> mementos = new ArrayList<>();
 
+  /**
+   * Setup test.
+   */
   @Before
   public void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger());
   }
 
+  /**
+   * Tear down test.
+   * @throws Exception on failure
+   */
   @After
   public void tearDown() throws Exception {
     for (Memento memento : mementos) {

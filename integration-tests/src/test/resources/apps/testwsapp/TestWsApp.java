@@ -18,7 +18,7 @@ import javax.jws.soap.SOAPBinding;
 public class TestWsApp {
 
   /**
-   * Check addresses and hosts
+   * Check addresses and hosts.
    * @return document content
    */
   @WebMethod

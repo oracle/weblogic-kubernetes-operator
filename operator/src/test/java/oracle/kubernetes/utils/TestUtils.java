@@ -170,6 +170,11 @@ public class TestUtils {
       this.savedHandlers = savedHandlers;
     }
 
+    /**
+     * build with logged exceptions.
+     * @param throwables throwables
+     * @return memento
+     */
     public ConsoleHandlerMemento ignoringLoggedExceptions(Throwable... throwables) {
       for (Throwable throwable : throwables) {
         testHandler.ignoreLoggedException(throwable);
@@ -177,6 +182,11 @@ public class TestUtils {
       return this;
     }
 
+    /**
+     * build with ignoring logged exceptions.
+     * @param classes classes
+     * @return memento
+     */
     @SafeVarargs
     public final ConsoleHandlerMemento ignoringLoggedExceptions(
         Class<? extends Throwable>... classes) {
@@ -197,6 +207,11 @@ public class TestUtils {
       return this;
     }
 
+    /**
+     * build with log level.
+     * @param logLevel log level
+     * @return memento
+     */
     public ConsoleHandlerMemento withLogLevel(Level logLevel) {
       if (!loggerLevelSaved) {
         savedLogLevel = logger.getLevel();

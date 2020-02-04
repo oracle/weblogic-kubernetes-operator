@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.helm;
 import java.util.Map;
 
 @SuppressWarnings("SameParameterValue")
-class OperatorChartITBase extends ChartITBase {
+class OperatorChartItBase extends ChartItBase {
 
   private static final String OPERATOR_CHART = "weblogic-operator";
   private static final String OPERATOR_RELEASE = "weblogic-operator";

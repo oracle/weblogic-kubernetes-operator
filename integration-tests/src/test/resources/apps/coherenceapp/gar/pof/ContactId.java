@@ -60,6 +60,11 @@ public class ContactId implements PortableObject {
     writer.writeString(LASTNAME, msLastName);
   }
 
+  /**
+   * check equality.
+   * @param otherThat other
+   * @return true, if equal
+   */
   public boolean equals(Object otherThat) {
     if (this == otherThat) {
       return true;

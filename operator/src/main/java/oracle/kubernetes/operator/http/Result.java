@@ -12,6 +12,12 @@ public class Result {
   final int status;
   final boolean successful;
 
+  /**
+   * Construct result.
+   * @param response response
+   * @param status status code
+   * @param successful if successful result
+   */
   public Result(String response, int status, boolean successful) {
     this.response = response;
     this.status = status;

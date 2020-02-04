@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.utils;
 
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Secret {
 
@@ -17,6 +16,14 @@ public class Secret {
     secretName = "";
   }
 
+  /**
+   * Construct secret.
+   * @param namespace namespace
+   * @param secretName name
+   * @param username username
+   * @param password password
+   * @throws Exception on failure
+   */
   public Secret(String namespace, String secretName, String username, String password)
       throws Exception {
     this.namespace = namespace;

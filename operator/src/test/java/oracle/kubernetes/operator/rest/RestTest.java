@@ -71,6 +71,9 @@ public class RestTest extends JerseyTest {
     mementos.add(TestUtils.silenceJsonPathLogger());
   }
 
+  /**
+   * restore mementos.
+   */
   @After
   public void restore() {
     for (Memento memento : mementos) {

@@ -273,8 +273,9 @@ public class CacheClient {
 
       // Fill value buff
       StringBuffer valBuf = new StringBuffer(VALUE_SIZE);
-      for (int i = 0; i < VALUE_SIZE; i++)
+      for (int i = 0; i < VALUE_SIZE; i++) {
         valBuf.append('a');
+      }
 
       try {
         System.out.println("Running " + config.operation + " thread " + config.prefix);
@@ -297,7 +298,9 @@ public class CacheClient {
           try {
             //  System.out.println("Key = " + key);
             error = doCacheOperation(cache, map);
-            if (error != null) return;
+            if (error != null) {
+              return;
+            }
             if (delay > 0) {
               Thread.sleep(delay);
             }

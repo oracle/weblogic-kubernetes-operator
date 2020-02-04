@@ -79,6 +79,10 @@ public class DomainIntrospectorJobTest {
     return LegalNames.toJobIntrospectorName(UID);
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(
@@ -96,6 +100,9 @@ public class DomainIntrospectorJobTest {
     return new String[] {getJobCreatedMessageKey(), getJobDeletedMessageKey()};
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
     for (Memento memento : mementos) {

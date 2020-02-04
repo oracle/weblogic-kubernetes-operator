@@ -27,6 +27,9 @@ public class DomainConditionTest {
     mementos.add(SystemClockTestSupport.installClock());
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
     for (Memento memento : mementos) {

@@ -11,6 +11,10 @@ public class ResourceVersion implements Comparable<ResourceVersion> {
   private final String prerelease;
   private final Integer prereleaseVersion;
 
+  /**
+   * Construct resource version.
+   * @param value version
+   */
   public ResourceVersion(String value) {
     this.value = value;
 
@@ -159,6 +163,11 @@ public class ResourceVersion implements Comparable<ResourceVersion> {
     return value;
   }
 
+  /**
+   * Check equality.
+   * @param o other
+   * @return true, if equal
+   */
   public boolean equals(Object o) {
     if (!(o instanceof ResourceVersion)) {
       return false;

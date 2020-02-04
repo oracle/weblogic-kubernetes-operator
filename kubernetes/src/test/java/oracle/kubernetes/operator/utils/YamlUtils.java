@@ -121,15 +121,19 @@ public class YamlUtils {
     @Override
     protected boolean matchesSafely(Object returnedObject, Description description) {
       String returnedString = objectToYaml(returnedObject);
-      if (Objects.equals(expectedString, returnedString)) return true;
+      if (Objects.equals(expectedString, returnedString)) {
+        return true;
+      }
 
       int index = StringUtils.indexOfDifference(expectedString, returnedString);
-      if (index < 10) description.appendText("\nwas\n").appendText(returnedString);
-      else
+      if (index < 10) {
+        description.appendText("\nwas\n").appendText(returnedString);
+      } else {
         description
             .appendText("\ndiffers at position ")
             .appendValue(index)
             .appendText(toDifference(index, returnedString));
+      }
       return false;
     }
 
@@ -140,7 +144,9 @@ public class YamlUtils {
       int lastMatchLineIndex =
           Math.max(0, returnedString.substring(0, firstDiffLineIndex).lastIndexOf('\n'));
       sb.append(returnedString, lastMatchLineIndex, firstDiffLineIndex);
-      if (sb.length() > 0) sb.append("\n-----\n");
+      if (sb.length() > 0) {
+        sb.append("\n-----\n");
+      }
       sb.append(returnedString, firstDiffLineIndex, firstDiffLineIndex + 100);
       return sb.toString();
     }

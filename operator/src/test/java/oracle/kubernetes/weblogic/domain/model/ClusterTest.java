@@ -13,6 +13,9 @@ public class ClusterTest extends BaseConfigurationTestBase {
   private final Cluster cluster1;
   private final Cluster cluster2;
 
+  /**
+   * Construct cluster test.
+   */
   public ClusterTest() {
     super(new Cluster(), new Cluster());
     cluster1 = getInstance1();

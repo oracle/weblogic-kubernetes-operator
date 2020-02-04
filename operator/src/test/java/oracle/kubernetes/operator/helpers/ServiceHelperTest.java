@@ -127,6 +127,10 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   private WlsServerConfig serverConfig;
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
+  /**
+   * Generate data.
+   * @return data
+   */
   @Parameters(name = "{index} : {0} service test")
   public static Collection<Object[]> data() {
     return Arrays.asList(
@@ -138,6 +142,10 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
         });
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     configureAdminServer()

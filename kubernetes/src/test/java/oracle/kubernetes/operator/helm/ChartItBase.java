@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @SuppressWarnings("SameParameterValue")
-class ChartITBase {
+class ChartItBase {
   private static List<ProcessedChart> charts = new ArrayList<>();
 
   ProcessedChart getChart(InstallArgs installArgs) {

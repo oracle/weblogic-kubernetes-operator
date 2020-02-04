@@ -15,7 +15,7 @@ import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyString;
 
-public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
+public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
 
   private static final String MUTEX = "%s can not be present when %s is defined";
 

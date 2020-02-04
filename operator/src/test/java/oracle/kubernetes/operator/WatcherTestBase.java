@@ -63,7 +63,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
 
   /**
    * Setup test.
-   * @throws Exception
+   * @throws Exception on failure
    */
   @Before
   public void setUp() throws Exception {
@@ -78,7 +78,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
 
   /**
    * Tear down test.
-   * @throws Exception
+   * @throws Exception on failure
    */
   @After
   public void tearDown() throws Exception {
