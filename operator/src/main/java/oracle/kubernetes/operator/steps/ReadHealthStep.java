@@ -196,7 +196,9 @@ public class ReadHealthStep extends Step {
     }
 
     private Pair<String, ServerHealth> parseServerHealthJson(String jsonResult) throws IOException {
-      if (jsonResult == null) return null;
+      if (jsonResult == null) {
+        return null;
+      }
 
       ObjectMapper mapper = new ObjectMapper();
       JsonNode root = mapper.readTree(jsonResult);

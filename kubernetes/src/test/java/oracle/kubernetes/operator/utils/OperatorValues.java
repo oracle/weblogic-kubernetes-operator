@@ -43,6 +43,10 @@ public class OperatorValues {
   private String elasticSearchHost = "";
   private String elasticSearchPort = "";
 
+  /**
+   * build with test defaults.
+   * @return values
+   */
   public OperatorValues withTestDefaults() {
     return this.namespace("test-operator-namespace")
         .dedicated("false")
@@ -56,12 +60,20 @@ public class OperatorValues {
         .elasticSearchPort("9200");
   }
 
+  /**
+   * enable debugging.
+   * @return values
+   */
   public OperatorValues enableDebugging() {
     return this.remoteDebugNodePortEnabled("true")
         .internalDebugHttpPort("9090")
         .externalDebugHttpPort("30090");
   }
 
+  /**
+   * setup external REST.
+   * @return values
+   */
   public OperatorValues setupExternalRestEnabled() {
     return this.externalRestHttpsPort("30070")
         .externalRestEnabled("true")

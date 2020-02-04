@@ -411,8 +411,12 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private String validatePath(String s) {
-    if (s.isBlank()) return null;
-    if (s.endsWith(File.separator)) return s;
+    if (s.isBlank()) {
+      return null;
+    }
+    if (s.endsWith(File.separator)) {
+      return s;
+    }
     return s + File.separator;
   }
 
@@ -614,6 +618,10 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
+  /**
+   * Get OPSS wallet config map name.
+   * @return config map name
+   */
   public String getOpssWalletConfigMap() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel)
@@ -630,6 +638,10 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
+  /**
+   * Get WDT config map.
+   * @return config map name
+   */
   public String getWdtConfigMap() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel)
@@ -728,7 +740,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(experimental, rhs.experimental);
-
     return builder.isEquals();
   }
 

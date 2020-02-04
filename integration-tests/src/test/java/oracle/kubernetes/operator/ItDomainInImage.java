@@ -1,10 +1,9 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -117,6 +116,9 @@ public class ItDomainInImage extends BaseTest {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
+      if (domain != null) {
+        domain.deleteImage();
+      }
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -159,6 +161,9 @@ public class ItDomainInImage extends BaseTest {
       if (domain != null && testCompletedSuccessfully) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
+      }
+      if (domain != null) {
+        domain.deleteImage();
       }
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);

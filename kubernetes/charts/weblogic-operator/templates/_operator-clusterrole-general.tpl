@@ -20,6 +20,7 @@ metadata:
     weblogic.resourceVersion: "operator-v2"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
+{{- if not .dedicated }}
 - apiGroups: [""]
   resources: ["namespaces"]
   verbs: ["get", "list", "watch"]
@@ -29,6 +30,7 @@ rules:
 - apiGroups: ["apiextensions.k8s.io"]
   resources: ["customresourcedefinitions"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+{{- end }}
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains", "domains/status"]
   verbs: ["get", "list", "watch", "update", "patch"]

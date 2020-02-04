@@ -7,7 +7,13 @@
 #
 #
 
-# TBD - refactor - make this 'save only' and move wallet to a dedicated secret
+# TBD 
+#   - refactor - and move wallet to a dedicated secret
+#   - advance script to have both save and restore options (allow specifying both)
+#   - for save option, since the secret already exists we can extract the passphrase from the secret instead of needing to pass it in
+#   - for save option, can deduce the secret and namespace from the domain resource - no need to pass them in
+
+set -eu
 
 if [ "$#" -ne 4 ]; then
     echo "Usage: save_ewallet.sh <domain uid> <namespace> <secret name> <opss paasphase>"

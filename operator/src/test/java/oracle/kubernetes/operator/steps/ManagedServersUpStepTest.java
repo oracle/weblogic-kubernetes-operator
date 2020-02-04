@@ -114,6 +114,10 @@ public class ManagedServersUpStepTest {
     return new DomainSpec().withDomainUid(UID).withReplicas(1);
   }
 
+  /**
+   * Setup env for tests.
+   * @throws NoSuchFieldException if TestStepFactory fails to install
+   */
   @Before
   public void setUp() throws NoSuchFieldException {
     mementos.add(consoleHandlerMemento = TestUtils.silenceOperatorLogger());
@@ -121,9 +125,15 @@ public class ManagedServersUpStepTest {
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
 
+  /**
+   * Cleanup env after tests.
+   * @throws Exception if test support failed
+   */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }
@@ -645,7 +655,9 @@ public class ManagedServersUpStepTest {
 
     static ServerStartupInfo getServerStartupInfo(String serverName) {
       for (ServerStartupInfo startupInfo : info.getServerStartupInfo()) {
-        if (startupInfo.serverConfig.getName().equals(serverName)) return startupInfo;
+        if (startupInfo.serverConfig.getName().equals(serverName)) {
+          return startupInfo;
+        }
       }
 
       return null;

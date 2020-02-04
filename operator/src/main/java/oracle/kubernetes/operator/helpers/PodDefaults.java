@@ -62,12 +62,12 @@ class PodDefaults {
     return domainUid + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
   }
 
-  private static V1Volume createWdtConfigMapVolume(String domainUID) {
-    return createVolume(getWdtConfigMapVolumeName(domainUID), getConfigMapName(domainUID));
+  private static V1Volume createWdtConfigMapVolume(String domainUid) {
+    return createVolume(getWdtConfigMapVolumeName(domainUid), getConfigMapName(domainUid));
   }
 
-  private static String getWdtConfigMapVolumeName(String domainUID) {
-    return domainUID + WDT_CONFIG_MAP_VOLUME_SUFFIX;
+  private static String getWdtConfigMapVolumeName(String domainUid) {
+    return domainUid + WDT_CONFIG_MAP_VOLUME_SUFFIX;
   }
 
   static List<V1VolumeMount> getStandardVolumeMounts(String domainUid) {
@@ -90,8 +90,8 @@ class PodDefaults {
     return volumeMount(getSitConfigMapVolumeName(domainUid), "/weblogic-operator/introspector");
   }
 
-  private static V1VolumeMount createWdtConfigVolumeMount(String domainUID) {
-    return volumeMount(getWdtConfigMapVolumeName(domainUID), "/weblogic-operator/introspector");
+  private static V1VolumeMount createWdtConfigVolumeMount(String domainUid) {
+    return volumeMount(getWdtConfigMapVolumeName(domainUid), "/weblogic-operator/introspector");
   }
 
   private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {

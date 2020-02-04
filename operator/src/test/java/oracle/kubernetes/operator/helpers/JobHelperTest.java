@@ -25,7 +25,6 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.LabelConstants;
@@ -85,14 +84,23 @@ public class JobHelperTest {
   private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
   protected List<Memento> mementos = new ArrayList<>();
 
+  /**
+   * Setup test environment.
+   * @throws Exception if TuningParameterStub fails to install
+   */
   @Before
   public void setup() throws Exception {
     mementos.add(TuningParametersStub.install());
   }
 
+  /**
+   * Cleanup test environment.
+   */
   @After
-  public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+  public void tearDown() {
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test

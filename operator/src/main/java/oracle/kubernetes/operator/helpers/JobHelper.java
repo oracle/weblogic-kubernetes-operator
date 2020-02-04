@@ -381,13 +381,17 @@ public class JobHelper {
 
       if (result != null) {
         convertJobLogsToOperatorLogs(result);
-        if (!severeStatuses.isEmpty()) updateStatus(packet.getSpi(DomainPresenceInfo.class));
+        if (!severeStatuses.isEmpty()) {
+          updateStatus(packet.getSpi(DomainPresenceInfo.class));
+        }
         packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
       }
 
       V1Job domainIntrospectorJob =
             (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
-      if (isNotComplete(domainIntrospectorJob)) return onFailure(packet, callResponse);
+      if (isNotComplete(domainIntrospectorJob)) {
+        return onFailure(packet, callResponse);
+      }
 
       return doNext(packet);
     }
@@ -414,7 +418,9 @@ public class JobHelper {
     }
 
     private void logToOperator() {
-      if (logMessage.length() == 0) return;
+      if (logMessage.length() == 0) {
+        return;
+      }
 
       String logMsg = logMessage.toString();
       switch (getLogLevel(logMsg)) {

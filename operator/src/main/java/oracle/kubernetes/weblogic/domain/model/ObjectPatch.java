@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -85,13 +85,19 @@ class ObjectPatch<T> {
   void createPatch(JsonPatchBuilder builder, String parentPath, @Nullable T oldValue, T newValue) {
     T startValue = getStartValue(builder, parentPath, oldValue);
 
-    for (FieldPatch<T> field : fields) field.patchField(builder, parentPath, startValue, newValue);
+    for (FieldPatch<T> field : fields) {
+      field.patchField(builder, parentPath, startValue, newValue);
+    }
   }
 
   private T getStartValue(JsonPatchBuilder builder, String parentPath, @Nullable T oldValue) {
-    if (oldValue != null) return oldValue;
+    if (oldValue != null) {
+      return oldValue;
+    }
 
-    if (constructor == null) throw new RuntimeException("No constructor supplied for null object");
+    if (constructor == null) {
+      throw new RuntimeException("No constructor supplied for null object");
+    }
     builder.add(parentPath, JsonValue.EMPTY_JSON_OBJECT);
     return constructor.get();
   }
@@ -154,14 +160,17 @@ class ObjectPatch<T> {
     }
 
     private void patchFieldValue(JsonPatchBuilder builder, String path, S oldValue, S newValue) {
-      if (Objects.equals(oldValue, newValue)) return;
+      if (Objects.equals(oldValue, newValue)) {
+        return;
+      }
 
-      if (oldValue == null)
+      if (oldValue == null) {
         addField(builder, path, newValue);
-      else if (newValue == null)
+      } else if (newValue == null) {
         builder.remove(path);
-      else
+      } else {
         replaceField(builder, path, oldValue, newValue);
+      }
     }
 
     abstract void replaceField(JsonPatchBuilder builder, String path, S oldValue, S newValue);
@@ -273,7 +282,9 @@ class ObjectPatch<T> {
     @Override
     public void addToObject(JsonObjectBuilder builder, T newItem) {
       List<P> contents = getter.apply(newItem);
-      if (contents.isEmpty()) return;
+      if (contents.isEmpty()) {
+        return;
+      }
       
       JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
       contents.stream().map(objectPatch::createObjectBuilder).forEach(arrayBuilder::add);
@@ -287,20 +298,28 @@ class ObjectPatch<T> {
       List<Disposition> disposition
             = Arrays.stream(oldItems).map(c -> getDisposition(c, newItems)).collect(Collectors.toList());
 
-      for (int i = 0; i < oldItems.length; i++)
-        if (disposition.get(i).type == DispositionType.UPDATE)
+      for (int i = 0; i < oldItems.length; i++) {
+        if (disposition.get(i).type == DispositionType.UPDATE) {
           objectPatch.replaceItem(
-                builder, getPath(parent) + "/" + i, oldItems[i], newItems[disposition.get(i).newIndex]);
+              builder, getPath(parent) + "/" + i, oldItems[i], newItems[disposition.get(i).newIndex]);
+        }
+      }
 
-      for (int i = disposition.size() - 1; i >= 0; i--)
-        if (disposition.get(i).type == DispositionType.REMOVE)
+      for (int i = disposition.size() - 1; i >= 0; i--) {
+        if (disposition.get(i).type == DispositionType.REMOVE) {
           removePatch(builder, getPath(parent), i);
+        }
+      }
 
-      if (oldItems.length == 0 && newItems.length != 0)
+      if (oldItems.length == 0 && newItems.length != 0) {
         builder.add(getPath(parent), JsonValue.EMPTY_JSON_ARRAY);
+      }
       
-      for (int j = 0; j < newItems.length; j++)
-        if (Disposition.shouldAdd(disposition, j)) objectPatch.addItem(builder, getPath(parent), newItems[j]);
+      for (int j = 0; j < newItems.length; j++) {
+        if (Disposition.shouldAdd(disposition, j)) {
+          objectPatch.addItem(builder, getPath(parent), newItems[j]);
+        }
+      }
     }
 
     @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
@@ -309,11 +328,13 @@ class ObjectPatch<T> {
     }
 
     Disposition getDisposition(P oldItem, P[] newItems) {
-      for (int i = 0; i < newItems.length; i++)
-        if (oldItem.equals(newItems[i]))
+      for (int i = 0; i < newItems.length; i++) {
+        if (oldItem.equals(newItems[i])) {
           return Disposition.retain(i);
-        else if (newItems[i].isPatchableFrom(oldItem))
+        } else if (newItems[i].isPatchableFrom(oldItem)) {
           return Disposition.update(i);
+        }
+      }
 
       return Disposition.remove();
     }
@@ -324,7 +345,9 @@ class ObjectPatch<T> {
 
   }
 
-  enum DispositionType { REMOVE, UPDATE, EXISTS }
+  enum DispositionType {
+    REMOVE, UPDATE, EXISTS
+  }
 
   static class Disposition {
     private DispositionType type;
@@ -366,7 +389,9 @@ class ObjectPatch<T> {
     @Override
     public void addToObject(JsonObjectBuilder builder, T newItem) {
       List<String> contents = getter.apply(newItem);
-      if (contents.isEmpty()) return;
+      if (contents.isEmpty()) {
+        return;
+      }
 
       JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
       contents.forEach(arrayBuilder::add);

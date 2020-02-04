@@ -123,6 +123,7 @@ class OfflineWlstEnv(object):
     self.USERCONFIG_FILE    = self.INTROSPECT_HOME + '/userConfigNodeManager.secure'
     self.USERKEY_FILE       = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
     self.DOMAIN_ZIP         = self.INTROSPECT_HOME + '/domainzip.secure'
+    self.PRIMORDIAL_DOMAIN_ZIP         = self.INTROSPECT_HOME + '/primordial_domainzip.secure'
 
     self.INVENTORY_IMAGE_MD5 = self.INTROSPECT_HOME + '/inventory_image.md5'
     self.INVENTORY_CM_MD5 = self.INTROSPECT_HOME + '/inventory_cm.md5'
@@ -848,7 +849,12 @@ class DomainSeedGenerator(Generator):
     empath = ''
     if em_ear_path is not None and os.path.exists(em_ear_path):
       empath = em_ear_path
-    packcmd = "tar -pczf /tmp/domain.tar.gz --exclude %s/wlsdeploy --exclude %s/lib %s %s/*" % (self.domain_home, self.domain_home, empath, self.domain_home)
+    #packcmd = "tar -pczf /tmp/domain.tar.gz --exclude %s/wlsdeploy --exclude %s/lib %s %s/*" % (self.domain_home,
+    # self.domain_home, empath, self.domain_home)
+    packcmd = "tar -pczf /tmp/domain.tar.gz %s/config/config.xml %s/config/jdbc/ %s/config/jms %s/config/coherence " \
+              "%s/config/diagnostics %s/config/startup %s/config/configCache %s/config/nodemanager" % (
+              self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home,
+              self.domain_home, self.domain_home, self.domain_home)
     trace(packcmd)
     rc = os.system(packcmd)
     trace("targz " + str(rc))
@@ -882,6 +888,30 @@ class OpssKeyGenerator(Generator):
       b64 = b64 + s
     self.writeln(b64)
     trace("done writing opss key")
+
+
+class PrimordialDomainGenerator(Generator):
+
+  def __init__(self, env):
+    Generator.__init__(self, env, env.PRIMORDIAL_DOMAIN_ZIP)
+    self.env = env
+    self.domain_home = self.env.getDomainHome()
+  def generate(self):
+    self.open()
+    try:
+      self.addPrimordialDomain()
+      self.close()
+      self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addPrimordialDomain(self):
+    primordial_domain_data = self.env.readBinaryFile("/tmp/prim_domain.tar.gz")
+    b64 = ""
+    for s in base64.encodestring(primordial_domain_data).splitlines():
+      b64 = b64 + s
+    self.writeln(b64)
+    trace("done writing primordial domain")
 
 
 class InventoryMD5Generator(Generator):
@@ -1392,18 +1422,20 @@ class DomainIntrospector(SecretManager):
         InventoryMD5Generator(self.env, self.env.MERGED_MODEL_FILE,
                               self.env.DOMAIN_HOME+"/wlsdeploy/domain_model.json").generate()
         DomainSeedGenerator(self.env).generate()
-        trace("md5 image")
+        trace("cfgmap write md5 image")
         InventoryMD5Generator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
-        trace("md5 cm")
+        trace("cfgmap write md5 cm")
         InventoryMD5Generator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
-        trace("md5 passphrase")
+        trace("cfgmap write md5 passphrase")
         InventoryMD5Generator(self.env, self.env.INVENTORY_PASSPHRASE_MD5, '/tmp/inventory_passphrase.md5').generate()
-        trace("wls version")
+        trace("cfgmap write wls version")
         InventoryMD5Generator(self.env, self.env.WLS_VERSION, '/tmp/wls_version').generate()
-        trace("jdk_path")
+        trace("cfgmap write jdk_path")
         InventoryMD5Generator(self.env, self.env.JDK_PATH, '/tmp/jdk_path').generate()
-        trace("jdk_path")
+        trace("cfgmap write jdk_path")
         InventoryMD5Generator(self.env, self.env.SECRETS_MD5, '/tmp/secrets.md5').generate()
+        trace("cfgmap write primordial_domain")
+        PrimordialDomainGenerator(self.env).generate()
 
         if self.env.WDT_DOMAIN_TYPE == 'JRF':
           OpssKeyGenerator(self.env).generate()

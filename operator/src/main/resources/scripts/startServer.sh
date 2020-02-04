@@ -131,6 +131,10 @@ traceEnv before
 traceDirs before
 
 if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
+  # primordial domain contain the basic structures, security and other fmwconfig templated info
+  # domainzip only contains the domain configuration (config.xml jdbc/ jms/)
+  # Both are needed for the complete domain reconstruction
+  cd / && base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
   cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
   chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
 
