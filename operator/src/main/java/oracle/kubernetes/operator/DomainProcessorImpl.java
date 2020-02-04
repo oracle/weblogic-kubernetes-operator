@@ -198,6 +198,10 @@ public class DomainProcessorImpl implements DomainProcessor {
     return statusFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
   }
 
+  /**
+   * Stop namespace.
+   * @param ns namespace
+   */
   public void stopNamespace(String ns) {
     Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
     if (map != null) {
@@ -214,6 +218,10 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
+  /**
+   * Dispatch pod watch event.
+   * @param item watch event
+   */
   public void dispatchPodWatch(Watch.Response<V1Pod> item) {
     if (getPodLabel(item.object, LabelConstants.DOMAINUID_LABEL) == null) {
       return;
@@ -291,6 +299,10 @@ public class DomainProcessorImpl implements DomainProcessor {
    * a MODIFIED event for an object that has already had subsequent modifications.
    */
 
+  /**
+   * Dispatch service watch event.
+   * @param item watch event
+   */
   public void dispatchServiceWatch(Watch.Response<V1Service> item) {
     V1Service service = item.object;
     String domainUid = ServiceHelper.getServiceDomainUid(service);
@@ -319,6 +331,10 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
+  /**
+   * Dispatch config map watch event.
+   * @param item watch event
+   */
   public void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item) {
     V1ConfigMap c = item.object;
     if (c != null) {
@@ -336,6 +352,10 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
+  /**
+   * Dispatch event watch event.
+   * @param item watch event
+   */
   public void dispatchEventWatch(Watch.Response<V1Event> item) {
     V1Event e = item.object;
     if (e != null) {
@@ -438,6 +458,13 @@ public class DomainProcessorImpl implements DomainProcessor {
             TimeUnit.SECONDS));
   }
 
+  /**
+   * Begin activity to align domain status with domain resource.
+   * @param info domain presence info
+   * @param explicitRecheck if explicit recheck
+   * @param isDeleting if is deleting domain
+   * @param isWillInterrupt if will interrupt already running activities
+   */
   public void makeRightDomainPresence(
       DomainPresenceInfo info,
       boolean explicitRecheck,

@@ -11,6 +11,13 @@ public class ExecResult {
   private String stdout;
   private String stderr;
 
+  /**
+   * Construct exec result.
+   * @param exitValue exit value
+   * @param stdout standard out
+   * @param stderr standard err
+   * @throws Exception on failure
+   */
   public ExecResult(int exitValue, String stdout, String stderr) throws Exception {
     this.exitValue = exitValue;
     this.stdout = stdout;

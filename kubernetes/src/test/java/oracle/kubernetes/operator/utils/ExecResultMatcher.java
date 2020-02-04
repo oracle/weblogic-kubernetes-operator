@@ -44,6 +44,12 @@ public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
     return ".*" + regexp + ".*";
   }
 
+  /**
+   * match all items.
+   * @param list list
+   * @param more more
+   * @return set of combined
+   */
   public static String[] allOf(String[] list, String... more) {
     String[] combined = new String[list.length + more.length];
     System.arraycopy(list, 0, combined, 0, list.length);

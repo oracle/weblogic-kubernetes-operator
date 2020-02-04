@@ -27,6 +27,14 @@ public class ExecCommand {
     return exec(command, isRedirectToOut, null);
   }
 
+  /**
+   * execute command.
+   * @param command command
+   * @param isRedirectToOut redirect to out flag
+   * @param additionalEnvMap additional environment map
+   * @return result
+   * @throws Exception on failure
+   */
   public static ExecResult exec(
       String command, boolean isRedirectToOut, Map<String, String> additionalEnvMap)
       throws Exception {

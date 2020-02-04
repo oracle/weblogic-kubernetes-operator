@@ -31,6 +31,10 @@ public class DomainStatusTest {
   private DomainStatus domainStatus;
   private List<Memento> mementos = new ArrayList<>();
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(SystemClockTestSupport.installClock());
@@ -38,6 +42,9 @@ public class DomainStatusTest {
     domainStatus = new DomainStatus();
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
     for (Memento memento : mementos) {

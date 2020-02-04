@@ -10,6 +10,11 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class GenerateSchema {
 
+  /**
+   * generate schema.
+   * @param args args
+   * @throws Exception on failure
+   */
   public static void main(String... args) throws Exception {
     ObjectMapper objectMapper = new ObjectMapper();
     JsonSchemaGenerator jsonSchemaGenerator = new JsonSchemaGenerator(objectMapper);

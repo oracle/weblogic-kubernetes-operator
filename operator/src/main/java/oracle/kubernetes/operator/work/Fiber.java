@@ -304,6 +304,11 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return status.get() == DONE;
   }
 
+  /**
+   * Wait for Fiber to complete.
+   * @return none
+   * @throws InterruptedException on interruption
+   */
   public Void get() throws InterruptedException {
     int s = status.get();
     if (s == CANCELLED) {
@@ -338,6 +343,14 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return null;
   }
 
+  /**
+   * Wait for Fiber to terminate up to timeout.
+   * @param timeout timeout
+   * @param unit time unit
+   * @return none
+   * @throws InterruptedException on interruption
+   * @throws TimeoutException on timeout
+   */
   public Void get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
     int s = status.get();
     if (s == CANCELLED) {

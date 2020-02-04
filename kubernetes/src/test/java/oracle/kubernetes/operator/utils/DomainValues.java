@@ -83,6 +83,10 @@ public abstract class DomainValues {
     return Objects.toString(val, "");
   }
 
+  /**
+   * build with defaults.
+   * @return domain values
+   */
   public DomainValues withTestDefaults() {
     return this.adminNodePort("30702")
         .adminPort("7002")

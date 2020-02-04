@@ -13,6 +13,12 @@ import java.util.stream.Collectors;
  */
 public class ExecCommand {
 
+  /**
+   * execute command.
+   * @param command command
+   * @return executor
+   * @throws Exception on failure
+   */
   public static ExecResult exec(String command) throws Exception {
     Process p = Runtime.getRuntime().exec(command);
     try {

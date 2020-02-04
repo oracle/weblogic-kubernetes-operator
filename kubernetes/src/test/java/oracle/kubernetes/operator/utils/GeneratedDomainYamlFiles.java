@@ -23,6 +23,12 @@ public class GeneratedDomainYamlFiles {
   private ParsedWeblogicDomainPersistentVolumeYaml weblogicDomainPersistentVolumeYaml;
   private ParsedWeblogicDomainPersistentVolumeClaimYaml weblogicDomainPersistentVolumeClaimYaml;
 
+  /**
+   * Construct generate domain YAML files.
+   * @param createDomainJobYaml create domain job YAML
+   * @param deleteDomainJobYaml delete domain job YAML
+   * @param domainYaml domain YAML
+   */
   public GeneratedDomainYamlFiles(
       ParsedCreateWeblogicDomainJobYaml createDomainJobYaml,
       ParsedDeleteWeblogicDomainJobYaml deleteDomainJobYaml,
@@ -39,6 +45,12 @@ public class GeneratedDomainYamlFiles {
     this.weblogicDomainPersistentVolumeClaimYaml = persistentVolumeClaimYaml;
   }
 
+  /**
+   * define Voyager YAML.
+   * @param voyagerOperatorYaml operator yaml
+   * @param voyagerOperatorSecurityYaml operator security yaml
+   * @param voyagerIngressYaml ingress yaml
+   */
   public void defineYoyagerYaml(
       ParsedVoyagerOperatorYaml voyagerOperatorYaml,
       ParsedVoyagerOperatorSecurityYaml voyagerOperatorSecurityYaml,

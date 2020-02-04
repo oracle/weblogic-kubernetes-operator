@@ -11,6 +11,7 @@ import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ResourceAttributes;
 import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;

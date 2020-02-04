@@ -28,6 +28,10 @@ public class DomainValidationTest {
   private Domain domain = createTestDomain();
   private KubernetesResourceLookupStub resourceLookup = new KubernetesResourceLookupStub();
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     resourceLookup.defineSecret(SECRET_NAME, NS);
