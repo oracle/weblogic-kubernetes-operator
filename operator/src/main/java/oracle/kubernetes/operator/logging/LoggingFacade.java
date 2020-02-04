@@ -17,6 +17,10 @@ public class LoggingFacade {
   protected static final String CLASS = LoggingFacade.class.getName();
   private final Logger logger;
 
+  /**
+   * Construct logging facade.
+   * @param logger logger
+   */
   public LoggingFacade(Logger logger) {
     this.logger = logger;
 

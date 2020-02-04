@@ -225,6 +225,13 @@ public class KubernetesTestSupport extends FiberTestSupport {
     return ((DataRepository<T>) repositories.get(resourceType)).getResources();
   }
 
+  /**
+   * get resource with name.
+   * @param resourceType resource type
+   * @param name name
+   * @param <T> type
+   * @return resource
+   */
   @SuppressWarnings("unchecked")
   public <T> T getResourceWithName(String resourceType, String name) {
     return (T)
@@ -234,6 +241,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
             .orElse(null);
   }
 
+  /**
+   * define resources.
+   * @param resources resources.
+   * @param <T> type
+   */
   @SafeVarargs
   public final <T> void defineResources(T... resources) {
     for (T resource : resources) {

@@ -168,7 +168,7 @@ public class K8sTestUtils {
             null,
             null,
             Boolean.FALSE);
-    /**
+    /*
      * TODO verify name pattern {domainUID}-admin-server {domainUID}-admin-server-external
      * {domainUID}-cluster-cluster-1 {domainUID}-managed-server1 {domainUID}-managed-server2
      */
@@ -242,6 +242,11 @@ public class K8sTestUtils {
     assertEquals(v1ConfigMapList.getItems().size(), expected, "Number of config maps");
   }
 
+  /**
+   * verify no service accounts.
+   * @param labelSelectors label selectors
+   * @throws Exception on failure
+   */
   public void verifyNoServiceAccounts(String labelSelectors) throws Exception {
     V1ServiceAccountList v1ServiceAccountList =
         coreV1Api.listServiceAccountForAllNamespaces(
@@ -257,6 +262,11 @@ public class K8sTestUtils {
     assertEquals(v1ServiceAccountList.getItems().size(), 0, "Number of service accounts");
   }
 
+  /**
+   * verify no roles.
+   * @param labelSelectors label selectors.
+   * @throws Exception on failure
+   */
   public void verifyNoRoles(String labelSelectors) throws Exception {
     V1RoleList v1RoleList =
         rbacAuthorizationV1Api.listRoleForAllNamespaces(
@@ -272,6 +282,11 @@ public class K8sTestUtils {
     assertEquals(v1RoleList.getItems().size(), 0, "Number of roles");
   }
 
+  /**
+   * verify no role bindings.
+   * @param labelSelectors label selctors
+   * @throws Exception on failure
+   */
   public void verifyNoRoleBindings(String labelSelectors) throws Exception {
     V1RoleBindingList v1RoleBindingList =
         rbacAuthorizationV1Api.listRoleBindingForAllNamespaces(
@@ -287,6 +302,12 @@ public class K8sTestUtils {
     assertEquals(v1RoleBindingList.getItems().size(), 0, "Number of role bindings");
   }
 
+  /**
+   * verify secrets.
+   * @param secretName secret name
+   * @param expected expected count
+   * @throws Exception on failure
+   */
   public void verifySecrets(String secretName, int expected) throws Exception {
     V1SecretList v1SecretList =
         coreV1Api.listSecretForAllNamespaces(
@@ -302,6 +323,12 @@ public class K8sTestUtils {
     assertEquals(v1SecretList.getItems().size(), expected, "Number of secrets");
   }
 
+  /**
+   * verify PV's.
+   * @param labelSelectors label selectors
+   * @param expected number expected
+   * @throws Exception on failure
+   */
   public void verifyPvs(String labelSelectors, int expected) throws Exception {
     V1PersistentVolumeList v1PersistentVolumeList =
         coreV1Api.listPersistentVolume(
@@ -317,6 +344,11 @@ public class K8sTestUtils {
     assertEquals(v1PersistentVolumeList.getItems().size(), expected, "Number of PVs");
   }
 
+  /**
+   * verify no cluster roles.
+   * @param domain1Ls domains
+   * @throws Exception on failure
+   */
   public void verifyNoClusterRoles(String domain1Ls) throws Exception {
     V1ClusterRoleList v1ClusterRoleList =
         rbacAuthorizationV1Api.listClusterRole(
@@ -332,6 +364,11 @@ public class K8sTestUtils {
     assertEquals(v1ClusterRoleList.getItems().size(), 0, "Number of cluster roles");
   }
 
+  /**
+   * verify no cluster role bindings.
+   * @param labelSelectors label selectors
+   * @throws Exception on failure
+   */
   public void verifyNoClusterRoleBindings(String labelSelectors) throws Exception {
     V1ClusterRoleBindingList v1ClusterRoleBindingList =
         rbacAuthorizationV1Api.listClusterRoleBinding(

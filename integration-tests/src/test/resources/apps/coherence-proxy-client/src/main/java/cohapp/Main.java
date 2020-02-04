@@ -7,6 +7,10 @@ import static java.lang.System.exit;
 
 public class Main {
 
+  /**
+   * main.
+   * @param args arguments
+   */
   public static void main(String[] args) {
 
     try {

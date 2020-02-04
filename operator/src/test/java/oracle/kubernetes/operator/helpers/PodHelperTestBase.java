@@ -186,6 +186,10 @@ public abstract class PodHelperTestBase {
     return (DomainSpec) getDomainSpec.invoke(configurator);
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(
@@ -224,6 +228,10 @@ public abstract class PodHelperTestBase {
     };
   }
 
+  /**
+   * Tear down test.
+   * @throws Exception on failure
+   */
   @After
   public void tearDown() throws Exception {
     for (Memento memento : mementos) {

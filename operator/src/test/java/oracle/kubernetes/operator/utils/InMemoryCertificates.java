@@ -16,6 +16,11 @@ public class InMemoryCertificates {
   private static InMemoryFileSystem fileSystem;
   private static Function<String, Path> getInMemoryPath = p -> fileSystem.getPath(p);
 
+  /**
+   * install memento.
+   * @return memento
+   * @throws NoSuchFieldException on no such field
+   */
   public static Memento install() throws NoSuchFieldException {
     fileSystem = InMemoryFileSystem.createInstance();
     defineOperatorInternalCertificateFile(INTERNAL_CERT_DATA);

@@ -12,6 +12,13 @@ public final class RequestParams {
   public final Object body;
   private CallParams callParams;
 
+  /**
+   * Construct request params.
+   * @param call call
+   * @param namespace namespace
+   * @param name name
+   * @param body body
+   */
   public RequestParams(String call, String namespace, String name, Object body) {
     this.call = call;
     this.namespace = namespace;
@@ -19,6 +26,14 @@ public final class RequestParams {
     this.body = body;
   }
 
+  /**
+   * Construct request params.
+   * @param call call
+   * @param namespace namespace
+   * @param name name
+   * @param body body
+   * @param callParams call params
+   */
   public RequestParams(
       String call, String namespace, String name, Object body, CallParams callParams) {
     this.call = call;

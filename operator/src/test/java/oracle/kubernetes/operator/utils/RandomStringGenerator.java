@@ -10,6 +10,10 @@ import java.util.List;
 public class RandomStringGenerator {
   private List<String> previousStrings = new ArrayList<>();
 
+  /**
+   * generated unique string.
+   * @return unique string
+   */
   public String getUniqueString() {
     String result;
 

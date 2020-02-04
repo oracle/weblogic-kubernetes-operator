@@ -18,6 +18,11 @@ public abstract class InMemoryDatabase<T, L> {
 
   private Map<DatabaseKey, T> contents = new HashMap<>();
 
+  /**
+   * Create DB.
+   * @param item item
+   * @param keys keys
+   */
   public void create(T item, Map<String, String> keys) {
     T t = contents.get(new DatabaseKey(keys, item));
     if (t != null) {

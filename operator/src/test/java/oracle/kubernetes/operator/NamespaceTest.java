@@ -38,6 +38,10 @@ public class NamespaceTest {
   private Map<String,String> helmValues = new HashMap<>();
   private Function<String,String> getTestHelmValue = helmValues::get;
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());

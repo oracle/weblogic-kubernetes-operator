@@ -10,6 +10,16 @@ public class RcuSecret extends Secret {
   private String sysUsername;
   private String sysPassword;
 
+  /**
+   * Construct RCU secret.
+   * @param namespace namespace
+   * @param secretName secret name
+   * @param username username
+   * @param password password
+   * @param sysUsername sys username
+   * @param sysPassword sys password
+   * @throws Exception on failure
+   */
   public RcuSecret(
       String namespace,
       String secretName,

@@ -91,6 +91,10 @@ public class JsonSchemaMojoTest {
     return Paths.get(url.toURI()).toFile().getParentFile();
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     ClassReader classReader = new ClassReader(JsonSchemaMojo.class.getName());
@@ -124,6 +128,9 @@ public class JsonSchemaMojoTest {
     return field.get(mojo);
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
     for (Memento memento : mementos) {

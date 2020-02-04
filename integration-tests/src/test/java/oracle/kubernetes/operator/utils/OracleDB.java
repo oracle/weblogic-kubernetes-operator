@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.utils;
 
 import java.util.Properties;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class OracleDB {
 
@@ -30,6 +29,11 @@ public class OracleDB {
   private String dbdomain;
   private String dbbundle;
 
+  /**
+   * Construct Oracle DB.
+   * @param dbPropFile DB properties file
+   * @throws Exception on failure
+   */
   public OracleDB(String dbPropFile) throws Exception {
     Properties dbprops = TestUtils.loadProps(dbPropFile);
     name = dbprops.getProperty("name", DEFAULT_DB_NAME);

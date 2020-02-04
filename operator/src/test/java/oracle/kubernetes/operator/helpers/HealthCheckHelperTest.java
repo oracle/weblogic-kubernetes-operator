@@ -11,7 +11,6 @@ import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ResourceAttributes;
 import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
@@ -105,6 +104,10 @@ public class HealthCheckHelperTest {
   private AccessChecks accessChecks = new AccessChecks();
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger()
@@ -114,6 +117,9 @@ public class HealthCheckHelperTest {
     mementos.add(testSupport.install());
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
     for (Memento memento : mementos) {

@@ -22,7 +22,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 import javax.xml.bind.DatatypeConverter;
 
 public class PemImporter {

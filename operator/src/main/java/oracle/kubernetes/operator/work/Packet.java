@@ -33,6 +33,12 @@ public class Packet extends AbstractMap<String, Object> implements ComponentRegi
     return new Packet(this);
   }
 
+  /**
+   * Get SPI by class.
+   * @param spiType SPI class
+   * @param <S> SPI class
+   * @return implementation object
+   */
   public <S> S getSpi(Class<S> spiType) {
     for (Component c : components.values()) {
       S s = c.getSpi(spiType);

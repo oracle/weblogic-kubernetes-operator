@@ -35,6 +35,10 @@ public class IntrospectionLoggingTest {
   private String jobPodName = LegalNames.toJobIntrospectorName(UID);
   private TerminalStep terminalStep = new TerminalStep();
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().collectAllLogMessages(logRecords));

@@ -40,8 +40,11 @@ class MapUtils {
   }
 
   static Integer integerValue(String integerString) {
-    if (integerString.length() == 0) return null;
-    else return Integer.parseInt(integerString);
+    if (integerString.length() == 0) {
+      return null;
+    } else {
+      return Integer.parseInt(integerString);
+    }
   }
 
   static void addStringMapEntry(HashMap<String, Object> map, Supplier<String> getter, String key) {

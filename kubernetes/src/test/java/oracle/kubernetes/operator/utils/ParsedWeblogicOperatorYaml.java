@@ -47,6 +47,10 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
     return getServices().find("internal-weblogic-operator-svc");
   }
 
+  /**
+   * get expected object count.
+   * @return object count
+   */
   public int getExpectedObjectCount() {
     int rtn = 6;
     if (inputs.getRemoteDebugNodePortEnabled().equals("true")

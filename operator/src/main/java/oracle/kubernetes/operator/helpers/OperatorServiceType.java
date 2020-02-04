@@ -114,6 +114,11 @@ public enum OperatorServiceType {
   void updateFromEvent(DomainPresenceInfo presenceInfo, V1Service service) {
   }
 
+  /**
+   * build with type label.
+   * @param service service
+   * @return service
+   */
   public V1Service withTypeLabel(V1Service service) {
     Optional.ofNullable(service)
         .map(V1Service::getMetadata)

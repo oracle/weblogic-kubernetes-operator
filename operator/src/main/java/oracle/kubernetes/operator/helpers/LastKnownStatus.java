@@ -17,6 +17,11 @@ public class LastKnownStatus {
     this(status, 0);
   }
 
+  /**
+   * Construct last known status.
+   * @param status status
+   * @param unchangedCount unchanged count
+   */
   public LastKnownStatus(String status, int unchangedCount) {
     this.status = status;
     this.unchangedCount = unchangedCount;

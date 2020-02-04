@@ -28,6 +28,9 @@ public class LegalNamesTest {
     mementos.add(TuningParametersStub.install());
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
     for (Memento memento : mementos) {

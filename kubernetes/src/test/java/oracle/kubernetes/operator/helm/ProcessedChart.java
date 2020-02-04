@@ -61,7 +61,9 @@ public class ProcessedChart implements YamlReader {
     String line;
     BufferedReader br = new BufferedReader(new InputStreamReader(in));
 
-    while (((line = br.readLine()) != null)) sb.append(line).append(System.lineSeparator());
+    while (((line = br.readLine()) != null)) {
+      sb.append(line).append(System.lineSeparator());
+    }
 
     return sb.toString();
   }
@@ -99,7 +101,9 @@ public class ProcessedChart implements YamlReader {
           .loadAll(getProcess().getInputStream())
           .forEach(
               (document) -> {
-                if (document != null) documents.add(document);
+                if (document != null) {
+                  documents.add(document);
+                }
               });
 
       this.documents = documents;

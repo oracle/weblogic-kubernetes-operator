@@ -112,6 +112,11 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     factory = new JobWatcherFactory(threadFactory, tuning, isNamespaceStopping);
   }
 
+  /**
+   * Test if job is complete.
+   * @param job job
+   * @return true, if complete
+   */
   public static boolean isComplete(V1Job job) {
     if (job == null) {
       return false;
@@ -171,6 +176,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
         .createJobWatch(namespace);
   }
 
+  /**
+   * receive response.
+   * @param item item
+   */
   public void receivedResponse(Watch.Response<V1Job> item) {
     LOGGER.entering();
 

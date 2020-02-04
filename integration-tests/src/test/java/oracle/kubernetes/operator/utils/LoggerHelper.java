@@ -20,6 +20,10 @@ public class LoggerHelper {
     initLocal(null);
   }
 
+  /**
+   * initialize local logger.
+   * @param cl logger
+   */
   public static void initLocal(Logger cl) {
     //cl.setUseParentHandlers(false);
     //cl.addHandler(new ConsoleHandler());
@@ -27,9 +31,15 @@ public class LoggerHelper {
 
   }
 
+  /**
+   * get local.
+   * @return logger
+   */
   public static Logger getLocal() {
     Logger cl = localLogger.get();
-    if (cl == null) return globalLogger;
+    if (cl == null) {
+      return globalLogger;
+    }
     return cl;
   }
 
