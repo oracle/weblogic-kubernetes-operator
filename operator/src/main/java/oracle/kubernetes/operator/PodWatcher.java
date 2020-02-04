@@ -122,6 +122,10 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
         .createPodWatch(namespace);
   }
 
+  /**
+   * Receive response.
+   * @param item item
+   */
   public void receivedResponse(Watch.Response<V1Pod> item) {
     LOGGER.entering();
 

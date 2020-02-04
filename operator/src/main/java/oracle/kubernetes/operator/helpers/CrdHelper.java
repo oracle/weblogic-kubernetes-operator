@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionNames;
@@ -28,7 +27,6 @@ import io.kubernetes.client.openapi.models.V1beta1CustomResourceSubresources;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.openapi.models.V1beta1JSONSchemaProps;
 import io.kubernetes.client.util.Yaml;
-
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.Main;
@@ -341,7 +339,9 @@ public class CrdHelper {
           }
         }
 
-        if (exception == null) return doNext(packet);
+        if (exception == null) {
+          return doNext(packet);
+        }
     
         return super.doTerminate(exception, packet);
       }

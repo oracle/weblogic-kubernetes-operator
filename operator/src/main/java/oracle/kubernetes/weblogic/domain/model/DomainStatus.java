@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -101,7 +101,9 @@ public class DomainStatus {
    * @return this object.
    */
   public DomainStatus addCondition(DomainCondition newCondition) {
-    if (conditions.contains(newCondition)) return this;
+    if (conditions.contains(newCondition)) {
+      return this;
+    }
 
     conditions = conditions.stream().filter(c -> preserve(c, newCondition.getType())).collect(Collectors.toList());
 
@@ -112,8 +114,11 @@ public class DomainStatus {
   }
 
   private boolean preserve(DomainCondition condition, DomainConditionType newType) {
-    for (DomainConditionType type : newType.typesToRemove())
-      if (condition.getType() == type) return false;
+    for (DomainConditionType type : newType.typesToRemove()) {
+      if (condition.getType() == type) {
+        return false;
+      }
+    }
 
     return true;
   }
@@ -309,8 +314,11 @@ public class DomainStatus {
    * @return this object
    */
   public DomainStatus addServer(ServerStatus server) {
-    for (ListIterator<ServerStatus> it = servers.listIterator(); it.hasNext(); )
-      if (Objects.equals(it.next().getServerName(), server.getServerName())) it.remove();
+    for (ListIterator<ServerStatus> it = servers.listIterator(); it.hasNext(); ) {
+      if (Objects.equals(it.next().getServerName(), server.getServerName())) {
+        it.remove();
+      }
+    }
 
     servers.add(server);
     return this;
@@ -320,6 +328,10 @@ public class DomainStatus {
     return clusters;
   }
 
+  /**
+   * Set the clusters list.
+   * @param clusters the list of clusters to use
+   */
   public void setClusters(List<ClusterStatus> clusters) {
     if (isClustersEqualIgnoringOrder(clusters, this.clusters)) {
       return;
@@ -338,8 +350,11 @@ public class DomainStatus {
    * @return this object
    */
   public DomainStatus addCluster(ClusterStatus cluster) {
-    for (ListIterator<ClusterStatus> it = clusters.listIterator(); it.hasNext(); )
-      if (Objects.equals(it.next().getClusterName(), cluster.getClusterName())) it.remove();
+    for (ListIterator<ClusterStatus> it = clusters.listIterator(); it.hasNext(); ) {
+      if (Objects.equals(it.next().getClusterName(), cluster.getClusterName())) {
+        it.remove();
+      }
+    }
 
     clusters.add(cluster);
     return this;

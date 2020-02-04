@@ -17,6 +17,11 @@ public class KubernetesVersion {
   private final int revision;
   private final String version;
 
+  /**
+   * Construct Kubernetes version.
+   * @param major major
+   * @param minor minor
+   */
   public KubernetesVersion(int major, int minor) {
     this.major = major;
     this.minor = minor;

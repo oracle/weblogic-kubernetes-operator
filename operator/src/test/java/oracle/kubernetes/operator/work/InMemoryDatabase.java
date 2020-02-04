@@ -18,33 +18,44 @@ public abstract class InMemoryDatabase<T, L> {
 
   private Map<DatabaseKey, T> contents = new HashMap<>();
 
+  /**
+   * Create DB.
+   * @param item item
+   * @param keys keys
+   */
   public void create(T item, Map<String, String> keys) {
     T t = contents.get(new DatabaseKey(keys, item));
-    if (t != null)
+    if (t != null) {
       throw new InMemoryDatabaseException(HttpURLConnection.HTTP_CONFLICT, "Item already exists");
+    }
 
     contents.put(new DatabaseKey(keys, item), item);
   }
 
   void delete(Map<String, String> keys) {
     T removed = contents.remove(new DatabaseKey(keys));
-    if (removed == null)
+    if (removed == null) {
       throw new InMemoryDatabaseException(HttpURLConnection.HTTP_NOT_FOUND, "No such item");
+    }
   }
 
   @SuppressWarnings("unchecked")
   L list(Map<String, String> searchKeys) {
     List<T> foundItems = new ArrayList<>();
-    for (DatabaseKey key : contents.keySet())
-      if (key.matches(searchKeys)) foundItems.add(contents.get(key));
+    for (DatabaseKey key : contents.keySet()) {
+      if (key.matches(searchKeys)) {
+        foundItems.add(contents.get(key));
+      }
+    }
 
     return createList(foundItems);
   }
 
   T read(Map<String, String> keys) {
     T t = contents.get(new DatabaseKey(keys));
-    if (t == null)
+    if (t == null) {
       throw new InMemoryDatabaseException(HttpURLConnection.HTTP_NOT_FOUND, "No such item");
+    }
     return t;
   }
 
@@ -54,8 +65,9 @@ public abstract class InMemoryDatabase<T, L> {
   void replace(T item, Map<String, String> keys) {
     DatabaseKey databaseKey = new DatabaseKey(keys, item);
     T t = contents.get(databaseKey);
-    if (t == null)
+    if (t == null) {
       throw new InMemoryDatabaseException(HttpURLConnection.HTTP_NOT_FOUND, "No such item");
+    }
 
     contents.put(databaseKey, item);
   }
@@ -70,7 +82,9 @@ public abstract class InMemoryDatabase<T, L> {
     DatabaseKey(@Nonnull Map<String, String> keys, Object o) {
       this(keys);
       String name = getName(o);
-      if (name != null) this.keys.put("name", name);
+      if (name != null) {
+        this.keys.put("name", name);
+      }
     }
 
     private String getName(Object o) {
@@ -83,8 +97,11 @@ public abstract class InMemoryDatabase<T, L> {
     }
 
     boolean matches(Map<String, String> searchKeys) {
-      for (String key : searchKeys.keySet())
-        if (!Objects.equals(searchKeys.get(key), keys.get(key))) return false;
+      for (String key : searchKeys.keySet()) {
+        if (!Objects.equals(searchKeys.get(key), keys.get(key))) {
+          return false;
+        }
+      }
       return true;
     }
 

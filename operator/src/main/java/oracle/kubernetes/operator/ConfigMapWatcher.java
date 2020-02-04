@@ -30,6 +30,16 @@ public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
     this.ns = ns;
   }
 
+  /**
+   * Create watcher.
+   * @param factory thread factory
+   * @param ns namespace
+   * @param initialResourceVersion initial resource version
+   * @param tuning tuning parameters
+   * @param listener listener
+   * @param isStopping stopping flag
+   * @return watcher
+   */
   public static ConfigMapWatcher create(
       ThreadFactory factory,
       String ns,

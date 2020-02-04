@@ -23,9 +23,15 @@ public class ForbiddenErrorBuilder implements FailureStatusSource {
     return e.getCode() == HttpURLConnection.HTTP_FORBIDDEN;
   }
 
+  /**
+   * Create a ForbiddenErrorBuilder from the provided Exception.
+   * @param exception the exception
+   * @return the ForbiddenErrorBuilder
+   */
   public static ForbiddenErrorBuilder fromException(ApiException exception) {
-    if (!isForbiddenOperation(exception))
+    if (!isForbiddenOperation(exception)) {
       throw new IllegalArgumentException("Is not forbidden exception");
+    }
 
     return new ForbiddenErrorBuilder(exception);
   }

@@ -30,6 +30,10 @@ public class Helpers {
   private final ApiClient apiClient;
   private final CoreV1Api coreApi;
 
+  /**
+   * Construct helpers.
+   * @param authenticator authenticator
+   */
   public Helpers(Authenticator authenticator) {
     this.authenticator = authenticator;
     apiClient = authenticator.getApiClient();

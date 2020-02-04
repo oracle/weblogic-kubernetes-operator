@@ -112,7 +112,9 @@ public class ServiceHelper {
   }
 
   static String getLabelValue(V1Service service, String labelName) {
-    if (service == null) return null;
+    if (service == null) {
+      return null;
+    }
 
     V1ObjectMeta meta = service.getMetadata();
     Map<String, String> labels = meta.getLabels();
@@ -235,8 +237,9 @@ public class ServiceHelper {
               .clusterIP(isPreserveServices ? null : "None")
               .ports(createServicePorts())
               .putSelectorItem(LabelConstants.SERVERNAME_LABEL, getServerName());
-      if (isPublishNotReadyAddressesSupported())
+      if (isPublishNotReadyAddressesSupported()) {
         serviceSpec.setPublishNotReadyAddresses(Boolean.TRUE);
+      }
       return serviceSpec;
     }
 
@@ -251,8 +254,9 @@ public class ServiceHelper {
               .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
               .putAnnotationsItem("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
 
-      if (getClusterName() != null)
+      if (getClusterName() != null) {
         metadata.putLabelsItem(LabelConstants.CLUSTERNAME_LABEL, getClusterName());
+      }
 
       return metadata;
     }
@@ -308,7 +312,9 @@ public class ServiceHelper {
     }
 
     protected List<V1ServicePort> createServicePorts() {
-      if (scan == null) return null;
+      if (scan == null) {
+        return null;
+      }
 
       ports = null;
       addServicePorts(scan);
@@ -317,7 +323,9 @@ public class ServiceHelper {
 
     @Override
     void addServicePortIfNeeded(String portName, Integer port) {
-      if (port == null) return;
+      if (port == null) {
+        return;
+      }
 
       addPort(createServicePort(portName, port));
     }
@@ -349,7 +357,9 @@ public class ServiceHelper {
   }
 
   private static boolean testNodePort(List<V1ServicePort> ports, Integer port) {
-    if (ports == null) return true;
+    if (ports == null) {
+      return true;
+    }
     for (V1ServicePort servicePort : ports) {
       if (port.equals(servicePort.getPort())) {
         return false;
@@ -359,7 +369,9 @@ public class ServiceHelper {
   }
 
   private static boolean testNodePort(Map<String, V1ServicePort> ports, Integer port) {
-    if (ports == null) return true;
+    if (ports == null) {
+      return true;
+    }
     for (V1ServicePort servicePort : ports.values()) {
       if (port.equals(servicePort.getPort())) {
         return false;
@@ -415,7 +427,9 @@ public class ServiceHelper {
     }
 
     void addPort(V1ServicePort port) {
-      if (ports == null) ports = new ArrayList<>();
+      if (ports == null) {
+        ports = new ArrayList<>();
+      }
 
       if (testNodePort(ports, port.getPort())) {
         ports.add(port);
@@ -612,10 +626,11 @@ public class ServiceHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
-        if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse))
+        if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
           return updateDomainStatus(packet, callResponse);
-        else
+        } else {
           return onFailure(getConflictStep(), packet, callResponse);
+        }
       }
 
       private NextAction updateDomainStatus(Packet packet, CallResponse<V1Service> callResponse) {
@@ -686,8 +701,9 @@ public class ServiceHelper {
     }
 
     protected List<V1ServicePort> createServicePorts() {
-      for (WlsServerConfig server : getServerConfigs(config.getClusterConfig(clusterName)))
+      for (WlsServerConfig server : getServerConfigs(config.getClusterConfig(clusterName))) {
         addServicePorts(server);
+      }
 
       return ports.isEmpty() ? null : new ArrayList<>(ports.values());
     }
@@ -855,7 +871,9 @@ public class ServiceHelper {
 
     protected List<V1ServicePort> createServicePorts() {
       WlsServerConfig scan = domainTopology.getServerConfig(domainTopology.getAdminServerName());
-      if (scan == null) return null;
+      if (scan == null) {
+        return null;
+      }
 
       addServicePorts(scan);
       return ports;
@@ -863,7 +881,9 @@ public class ServiceHelper {
 
     void addServicePortIfNeeded(String channelName, Integer internalPort) {
       Channel channel = getChannel(channelName);
-      if (channel == null || internalPort == null) return;
+      if (channel == null || internalPort == null) {
+        return;
+      }
 
       if (testNodePort(ports, internalPort)) {
         addPort(

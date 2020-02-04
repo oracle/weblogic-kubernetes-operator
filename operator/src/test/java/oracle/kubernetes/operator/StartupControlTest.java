@@ -57,6 +57,10 @@ public class StartupControlTest {
   private Collection<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento loggerMemento;
 
+  /**
+   * Setup test environment.
+   * @throws Exception if TuningParametersStub install fails.
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(StaticStubSupport.install(StartupControl.class, "getHelmVariable", getEnv));
@@ -239,9 +243,13 @@ public class StartupControlTest {
 
     @Override
     protected boolean matchesSafely(Step step, Description description) {
-      while (step != null && step != expectedStep) step = step.getNext();
+      while (step != null && step != expectedStep) {
+        step = step.getNext();
+      }
 
-      if (step != null) return true;
+      if (step != null) {
+        return true;
+      }
 
       description.appendText("Chain does not include ").appendValue(expectedStep);
       return false;

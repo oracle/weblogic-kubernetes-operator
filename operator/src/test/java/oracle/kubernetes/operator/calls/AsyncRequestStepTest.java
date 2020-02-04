@@ -53,6 +53,9 @@ public class AsyncRequestStepTest {
           null);
   private List<Memento> mementos = new ArrayList<>();
 
+  /**
+   * Setup test.
+   */
   @Before
   public void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -60,9 +63,14 @@ public class AsyncRequestStepTest {
     testSupport.runSteps(asyncRequestStep);
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test

@@ -76,6 +76,9 @@ public class ReadHealthStepTest {
   private List<LogRecord> logRecords = new ArrayList<>();
   private Memento consoleControl;
 
+  /**
+   * Setup test.
+   */
   @Before
   public void setup() {
     consoleControl =
