@@ -62,6 +62,9 @@ public class WlsClusterConfigTest {
         clusterSize, maxClusterSize, serverNamePrefix, false, null, serverTemplate, serverConfigs);
   }
 
+  /**
+   * Setup test.
+   */
   @Before
   public void setup() {
     consoleControl =
@@ -70,6 +73,9 @@ public class WlsClusterConfigTest {
             .withLogLevel(Level.WARNING);
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
     consoleControl.revert();

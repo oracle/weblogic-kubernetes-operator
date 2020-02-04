@@ -61,6 +61,10 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     callBacks.add(response);
   }
 
+  /**
+   * Setup test.
+   * @throws Exception
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(hasNextException));
@@ -72,6 +76,10 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     mementos.add(memento);
   }
 
+  /**
+   * Tear down test.
+   * @throws Exception
+   */
   @After
   public void tearDown() throws Exception {
     shutDownThreads();

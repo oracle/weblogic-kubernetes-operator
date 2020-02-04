@@ -23,6 +23,11 @@ public abstract class TuningParametersStub implements TuningParameters {
   static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 180L;
   static Map<String, String> namedParameters;
 
+  /**
+   * Install memento.
+   * @return memento
+   * @throws NoSuchFieldException on failure
+   */
   public static Memento install() throws NoSuchFieldException {
     namedParameters = new HashMap<>();
     return StaticStubSupport.install(

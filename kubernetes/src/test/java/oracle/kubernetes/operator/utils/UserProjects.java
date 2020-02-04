@@ -29,7 +29,7 @@ public class UserProjects {
     return this.path;
   }
 
-  public void remove() throws Exception {
+  protected void remove() throws Exception {
     final List<Path> pathsToDelete = getContents(path);
     for (Path p : pathsToDelete) {
       Files.deleteIfExists(p);

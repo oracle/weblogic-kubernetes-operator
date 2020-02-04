@@ -16,6 +16,11 @@ import javax.jws.soap.SOAPBinding;
     use = SOAPBinding.Use.LITERAL,
     parameterStyle = SOAPBinding.ParameterStyle.WRAPPED)
 public class TestWsApp {
+
+  /**
+   * Check addresses and hosts
+   * @return document content
+   */
   @WebMethod
   public String checkInetAddressAndHost() {
 

@@ -28,6 +28,9 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   private AdminServer server2;
   private Domain domain = new Domain();
 
+  /**
+   * Administration server tests.
+   */
   public AdminServerTest() {
     super(new AdminServer(), new AdminServer());
     server1 = getInstance1();

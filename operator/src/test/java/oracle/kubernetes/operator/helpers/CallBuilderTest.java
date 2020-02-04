@@ -70,6 +70,9 @@ public class CallBuilderTest extends HttpUserAgentTest {
     mementos.add(PseudoServletCallDispatcher.install(getHostPath()));
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
     for (Memento memento : mementos) {

@@ -47,6 +47,11 @@ public class UnprocessableEntityBuilder implements FailureStatusSource {
     return errorBody.getDetails().getCauses()[0].getReason();
   }
 
+  /**
+   * Build with reason.
+   * @param reason reason
+   * @return builder
+   */
   public UnprocessableEntityBuilder withReason(String reason) {
     if (errorBody.getDetails() == null) errorBody.addDetails();
     errorBody.getDetails().addCause(new Cause().withReason(reason));

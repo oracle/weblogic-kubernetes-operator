@@ -25,6 +25,10 @@ import org.yaml.snakeyaml.representer.Representer;
 /** Yaml utilities for the create script tests. */
 public class YamlUtils {
 
+  /**
+   * Create Yaml instance.
+   * @return Yaml instance
+   */
   public static Yaml newYaml() {
     // always make a new yaml object since it appears to be stateful
     // so there are problems if you try to use the same one to

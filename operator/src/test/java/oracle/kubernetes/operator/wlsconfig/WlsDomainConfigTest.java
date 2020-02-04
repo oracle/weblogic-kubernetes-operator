@@ -354,6 +354,9 @@ public class WlsDomainConfigTest {
   private List<LogRecord> logRecords = new ArrayList<>();
   private List<Memento> mementos = new ArrayList<>();
 
+  /**
+   * Setup test.
+   */
   @Before
   public void setup() {
     mementos.add(
@@ -363,6 +366,9 @@ public class WlsDomainConfigTest {
     mementos.add(TestUtils.silenceJsonPathLogger());
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
     for (Memento memento : mementos) {

@@ -24,7 +24,13 @@ public class TestWsAppServlet extends HttpServlet {
   @WebServiceRef(name = "ref1", wsdlLocation = "TestWsApp.wsdl")
   Service service;
 
-  // Handles the HTTP GET request
+  /**
+   * Handles the HTTP GET request.
+   * @param request request
+   * @param response response
+   * @throws ServletException servlet exception
+   * @throws IOException io exception
+   */
   public void doGet(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
     String result = "";

@@ -22,7 +22,7 @@ public class UnrecoverableErrorBuilder {
   }
 
   /**
-   * Populate FailureStatusSource from an ApiException
+   * Populate FailureStatusSource from an ApiException.
    * @param apiException the source exception
    * @return status source object
    */

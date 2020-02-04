@@ -40,6 +40,17 @@ public interface TuningParameters extends Map<String, String> {
     public final long initialShortDelay;
     public final long eventualLongDelay;
 
+    /**
+     * create main tuning.
+     * @param domainPresenceFailureRetrySeconds domain presence failure retry
+     * @param domainPresenceFailureRetryMaxCount domain presence failure retry max count
+     * @param domainPresenceRecheckIntervalSeconds domain presence recheck interval
+     * @param targetNamespaceRecheckIntervalSeconds target namespace recheck interval
+     * @param statusUpdateTimeoutSeconds status update timeout
+     * @param unchangedCountToDelayStatusRecheck unchanged count to delay status recheck
+     * @param initialShortDelay initial short delay
+     * @param eventualLongDelay eventual long delay
+     */
     public MainTuning(
         int domainPresenceFailureRetrySeconds,
         int domainPresenceFailureRetryMaxCount,
@@ -114,6 +125,12 @@ public interface TuningParameters extends Map<String, String> {
     public final int callMaxRetryCount;
     public final int callTimeoutSeconds;
 
+    /**
+     * Create call builder tuning.
+     * @param callRequestLimit call request limit
+     * @param callMaxRetryCount call max retry count
+     * @param callTimeoutSeconds call timeout
+     */
     public CallBuilderTuning(int callRequestLimit, int callMaxRetryCount, int callTimeoutSeconds) {
       this.callRequestLimit = callRequestLimit;
       this.callMaxRetryCount = callMaxRetryCount;
@@ -202,6 +219,16 @@ public interface TuningParameters extends Map<String, String> {
     public final int livenessProbePeriodSeconds;
     public final long introspectorJobActiveDeadlineSeconds;
 
+    /**
+     * create pod tuning.
+     * @param readinessProbeInitialDelaySeconds readiness probe initial delay
+     * @param readinessProbeTimeoutSeconds readiness probe timeout
+     * @param readinessProbePeriodSeconds rediness probe period
+     * @param livenessProbeInitialDelaySeconds liveness probe initial delay
+     * @param livenessProbeTimeoutSeconds liveness probe timeout
+     * @param livenessProbePeriodSeconds liveness probe period
+     * @param introspectorJobActiveDeadlineSeconds introspector job active deadline
+     */
     public PodTuning(
         int readinessProbeInitialDelaySeconds,
         int readinessProbeTimeoutSeconds,

@@ -55,6 +55,9 @@ public class CacheClient {
   private static final String SUCCESS = "Success";
   private static final String FAILURE = "Failure";
 
+  /**
+   * Load cache.
+   */
   public void loadCache() {
     try {
       init();
@@ -64,6 +67,9 @@ public class CacheClient {
     }
   }
 
+  /**
+   * Validate cache.
+   */
   public void validateCache() {
     try {
       init();
