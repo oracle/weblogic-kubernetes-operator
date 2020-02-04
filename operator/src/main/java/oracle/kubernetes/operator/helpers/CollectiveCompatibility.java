@@ -24,7 +24,11 @@ abstract class CollectiveCompatibility implements CompatibilityCheck {
 
   @Override
   public boolean isCompatible() {
-    for (CompatibilityCheck check : checks) if (!check.isCompatible()) return false;
+    for (CompatibilityCheck check : checks) {
+      if (!check.isCompatible()) {
+        return false;
+      }
+    }
 
     return true;
   }
@@ -32,8 +36,11 @@ abstract class CollectiveCompatibility implements CompatibilityCheck {
   @Override
   public String getIncompatibility() {
     final List<String> reasons = new ArrayList<>();
-    for (CompatibilityCheck check : checks)
-      if (!check.isCompatible()) reasons.add(getIndent() + check.getIncompatibility());
+    for (CompatibilityCheck check : checks) {
+      if (!check.isCompatible()) {
+        reasons.add(getIndent() + check.getIncompatibility());
+      }
+    }
     return reasons.isEmpty() ? null : getHeader() + String.join("\n", reasons);
   }
 

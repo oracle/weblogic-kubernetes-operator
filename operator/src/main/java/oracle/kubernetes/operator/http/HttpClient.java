@@ -62,7 +62,9 @@ public class HttpClient {
    * find it.
    */
   private static void clearCredential(byte[] credential) {
-    if (credential != null) Arrays.fill(credential, (byte) 0);
+    if (credential != null) {
+      Arrays.fill(credential, (byte) 0);
+    }
   }
 
   /**
