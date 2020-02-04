@@ -858,7 +858,7 @@ public class BaseTest {
     operatorMap.put("resultDir", resultDir);
     operatorMap.put("userProjectsDir", resultDir + "/user-projects");
     if (restEnabled) {
-      operatorMap.put("externalRestHttpsPort", 32300 + suffixCount);
+      operatorMap.put("externalRestHttpsPort", 32000 + suffixCount);
       operatorMap.put("externalRestEnabled", restEnabled);
     }
     return operatorMap;
