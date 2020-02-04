@@ -864,23 +864,6 @@ public class BaseTest {
     return operatorMap;
   }
 
-  protected Map<String, Object> createOperatorMap(int number, boolean restEnabled) {
-    Map<String, Object> operatorMap = new HashMap<>();
-    ArrayList<String> targetDomainsNS = new ArrayList<String>();
-    targetDomainsNS.add("test" + number);
-    operatorMap.put("releaseName", "op" + number);
-    operatorMap.put("domainNamespaces", targetDomainsNS);
-    operatorMap.put("serviceAccount", "weblogic-operator" + number);
-    operatorMap.put("namespace", "weblogic-operator" + number);
-    operatorMap.put("resultDir", resultDir);
-    operatorMap.put("userProjectsDir", resultDir + "/user-projects");
-    if (restEnabled) {
-      operatorMap.put("externalRestHttpsPort", 31000 + number);
-      operatorMap.put("externalRestEnabled", restEnabled);
-    }
-    return operatorMap;
-  }
-
   /**
    * Creates a map with commonly used domain input attributes using suffixCount and prefix
    * to make the namespaces and ports unique.
