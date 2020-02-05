@@ -76,6 +76,8 @@ public class ItImageTool extends BaseTest {
       weblogicImageTagWIT = weblogicImageNameWIT + ":" + weblogicImageVersionWIT;
       LoggerHelper.getLocal().log(Level.INFO, "WebLogic image name is: " + weblogicImageTagWIT);
 
+      // Delete existing image
+      deleteWlsDockerImage();
       // Build WebLogic Docker image using imagetool
       buildWlsDockerImage();
       
@@ -99,6 +101,7 @@ public class ItImageTool extends BaseTest {
     if (FULLTEST) {
       createResultAndPvDirs(testClassName);
       String testClassNameShort = "itimage";
+      String imagePullSecretName = "ocir-domain";
       // create operator1
       if (operator == null) {
         Map<String, Object> operatorMap =
@@ -122,6 +125,17 @@ public class ItImageTool extends BaseTest {
         wlstDomainMap.put("weblogicImageTagWIT", weblogicImageTagWIT);
         domain = TestUtils.createDomain(wlstDomainMap);
         domain.verifyDomainCreated();
+      }
+
+      if (BaseTest.SHARED_CLUSTER) {
+        TestUtils.loginAndPushImageToOcir(weblogicImageTagWIT);
+        TestUtils.createDockerRegistrySecret(
+            imagePullSecretName,
+            System.getenv("REPO_REGISTRY"),
+            System.getenv("REPO_USERNAME"),
+            System.getenv("REPO_PASSWORD"),
+            System.getenv("REPO_EMAIL"),
+            domainNS1);
       }
     }
   }
