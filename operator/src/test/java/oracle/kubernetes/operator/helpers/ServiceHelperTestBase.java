@@ -19,9 +19,14 @@ public class ServiceHelperTestBase {
   List<Memento> mementos = new ArrayList<>();
   DomainPresenceInfo domainPresenceInfo = createPresenceInfo();
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   private DomainPresenceInfo createPresenceInfo() {

@@ -21,14 +21,22 @@ public class ClientPoolTest {
 
   private List<Memento> mementos = new ArrayList<>();
 
+  /**
+   * Setup test.
+   */
   @Before
   public void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger());
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test

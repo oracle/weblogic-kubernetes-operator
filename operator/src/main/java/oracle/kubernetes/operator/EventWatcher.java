@@ -33,6 +33,17 @@ public class EventWatcher extends Watcher<V1Event> {
     this.fieldSelector = fieldSelector;
   }
 
+  /**
+   * Create and start a new EventWatcher.
+   * @param factory thread factory to use for this watcher's threads
+   * @param ns namespace
+   * @param fieldSelector value for the fieldSelector parameter
+   * @param initialResourceVersion the oldest version to return for this watch
+   * @param tuning Watch tuning parameters
+   * @param listener a listener to which to dispatch watch events
+   * @param isStopping an atomic boolean to watch to determine when to stop the watcher
+   * @return the domain watcher
+   */
   public static EventWatcher create(
       ThreadFactory factory,
       String ns,

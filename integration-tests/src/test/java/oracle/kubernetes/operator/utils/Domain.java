@@ -99,6 +99,13 @@ public class Domain {
     this(inputDomainMap, true, createLoadBalancer);
   }
 
+  /**
+   * Construct domain.
+   * @param inputDomainMap input domain map
+   * @param createDomainResource create domain resource flag
+   * @param createLoadBalancer create load balancer flag
+   * @throws Exception on failure
+   */
   public Domain(Map<String, Object> inputDomainMap,
                 boolean createDomainResource, boolean createLoadBalancer)
       throws Exception {
@@ -721,8 +728,8 @@ public class Domain {
   }
 
   /**
-   * Delete the domain in image
-   * @throws Exception
+   * Delete the domain in image.
+   * @throws Exception on failure
    */
   public void deleteImage() throws Exception {
     // delete domain image
@@ -827,6 +834,11 @@ public class Domain {
     deletePvcAndCheckPvReleased("create-weblogic-sample-domain-job");
   }
 
+  /**
+   * delete PVC and check PV status.
+   * @param jobName job name
+   * @throws Exception on failure
+   */
   public void deletePvcAndCheckPvReleased(String jobName) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
     String pvBaseName = (String) pvMap.get("baseName");
@@ -1917,6 +1929,11 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + result.stdout().trim());
   }
 
+  /**
+   * hostname for curl.
+   * @return hostname
+   * @throws Exception on failure
+   */
   public String getHostNameForCurl() throws Exception {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");

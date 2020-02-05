@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -95,8 +94,9 @@ public class SitConfig extends BaseTest {
 
   protected Domain prepareDomainAndDB(boolean domainInImage,String domainNS, String mysqldbport) throws Exception {
     String testprefix = "sitconfigdomaininpv";
-    if (domainInImage)
+    if (domainInImage) {
       testprefix = "sitconfigdomaininimage";
+    }
     String sitconfigTmpDir = getResultDir() + "/sitconfigtemp" + testprefix;
     String mysqltmpDir = sitconfigTmpDir + "/mysql";
     String configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
@@ -127,9 +127,11 @@ public class SitConfig extends BaseTest {
     // create weblogic domain with configOverrides
     String domainScript = "integration-tests/src/test/resources/sitconfig/"
         + "scripts/create-domain-auto-custom-sit-config20.py";
-    if (domainInImage)
-      domainScript = "integration-tests/src/test/resources/sitconfig/scripts/"
-          + "create-domain-auto-custom-sit-config-inimage.py";
+    if (domainInImage) {
+      domainScript =
+          "integration-tests/src/test/resources/sitconfig/scripts/"
+              + "create-domain-auto-custom-sit-config-inimage.py";
+    }
     Domain domain = createSitConfigDomain(domainInImage, domainScript, domainNS);
     Assertions.assertNotNull(domain);
     // copy the jmx test client file the administratioin server weblogic server pod

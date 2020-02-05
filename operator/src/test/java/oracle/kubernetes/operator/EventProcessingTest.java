@@ -48,6 +48,10 @@ public class EventProcessingTest {
   private DomainProcessorImpl processor =
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -56,9 +60,14 @@ public class EventProcessingTest {
     presenceInfoMap.put(NS, ImmutableMap.of(UID, info));
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test

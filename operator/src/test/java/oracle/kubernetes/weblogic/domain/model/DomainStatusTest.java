@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -31,6 +31,10 @@ public class DomainStatusTest {
   private DomainStatus domainStatus;
   private List<Memento> mementos = new ArrayList<>();
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(SystemClockTestSupport.installClock());
@@ -38,9 +42,14 @@ public class DomainStatusTest {
     domainStatus = new DomainStatus();
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
@@ -276,9 +285,15 @@ public class DomainStatusTest {
     @Override
     public void describeTo(Description description) {
       description.appendText("cluster status for ").appendValue(name);
-      if (replicas != null) description.appendText(", with " + replicas + " replicas");
-      if (maximumReplicas != null) description.appendText(", with " + maximumReplicas + " maximum replicas");
-      if (readyReplicas != null) description.appendText(", with " + readyReplicas + " ready replicas");
+      if (replicas != null) {
+        description.appendText(", with " + replicas + " replicas");
+      }
+      if (maximumReplicas != null) {
+        description.appendText(", with " + maximumReplicas + " maximum replicas");
+      }
+      if (readyReplicas != null) {
+        description.appendText(", with " + readyReplicas + " ready replicas");
+      }
     }
   }
 
@@ -291,14 +306,18 @@ public class DomainStatusTest {
     }
 
     void check(String fieldName, String expected, String actual) {
-      if (expected == null || expected.equals(actual)) return;
+      if (expected == null || expected.equals(actual)) {
+        return;
+      }
 
       matches = false;
       description.appendText(fieldName).appendValue(actual);
     }
 
     void check(String fieldName, Number expected, Number actual) {
-      if (expected == null || expected.equals(actual)) return;
+      if (expected == null || expected.equals(actual)) {
+        return;
+      }
 
       matches = false;
       description.appendText(fieldName).appendValue(actual);

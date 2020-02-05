@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -28,6 +28,9 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   private AdminServer server2;
   private Domain domain = new Domain();
 
+  /**
+   * Administration server tests.
+   */
   public AdminServerTest() {
     super(new AdminServer(), new AdminServer());
     server1 = getInstance1();

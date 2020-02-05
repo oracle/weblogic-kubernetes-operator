@@ -30,6 +30,10 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
     return new V1Service().metadata(new V1ObjectMeta().name(SERVICE_NAME).namespace(NS));
   }
 
+  /**
+   * Setup deletion test.
+   * @throws NoSuchFieldException if no such field
+   */
   @Before
   public void setUpDeletionTest() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());

@@ -38,6 +38,9 @@ public class HttpClientTest {
   private List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
 
+  /**
+   * Setup test.
+   */
   @Before
   public void setup() {
     consoleControl =
