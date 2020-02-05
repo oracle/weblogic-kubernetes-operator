@@ -1069,22 +1069,33 @@ public class Domain {
       pvMap.put("weblogicDomainStorageSize", domainMap.get("weblogicDomainStorageSize"));
     }
     pvMap.put("namespace", domainNS);
-    pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
+    if(BaseTest.OKE_CLUSTER) {
+      pvMap.put("weblogicDomainStorageNFSServer", "10.0.10.6");
+      // set pv path
+      domainMap.put(
+          "weblogicDomainStoragePath",
+          "/ci-oke-2/acceptance_test_pv/persistentVolume-" + domainUid);
+
+      pvMap.put(
+          "weblogicDomainStoragePath",
+          "/ci-oke-2/acceptance_test_pv/persistentVolume-" + domainUid);
+    } else {
+      pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
+      // set pv path
+      domainMap.put(
+          "weblogicDomainStoragePath",
+          pvRoot + "/acceptance_test_pv/persistentVolume-" + domainUid);
+
+      pvMap.put(
+          "weblogicDomainStoragePath",
+          pvRoot + "/acceptance_test_pv/persistentVolume-" + domainUid);
+    }
     pvMap.put("userProjectsDir", userProjectsDir);
     pvMap.put("pvRoot", pvRoot);
 
-    if (BaseTest.OPENSHIFT) {
+    if (BaseTest.OPENSHIFT || BaseTest.OKE_CLUSTER) {
       pvMap.put("weblogicDomainStorageType", "NFS");
     }
-
-    // set pv path
-    domainMap.put(
-        "weblogicDomainStoragePath",
-        pvRoot + "/acceptance_test_pv/persistentVolume-" + domainUid);
-
-    pvMap.put(
-        "weblogicDomainStoragePath",
-        pvRoot + "/acceptance_test_pv/persistentVolume-" + domainUid);
 
     pvMap.values().removeIf(Objects::isNull);
 
