@@ -72,10 +72,10 @@ is dynamic and does not require a restart.
 
 Any change to domain configuration overrides requires a full domain restart.  This includes:
 
-  * Changing the domain resource's `configuration.overrides.configMapName` to point to a different configuration map
-  * Changing the domain resource's `configuration.overrides.secrets` to point to a different list of secrets
-  * Changing the contents of the configuration map referenced by `configuration.overrides.configMapName`
-  * Changing the contents to any of the secrets referenced by `configuration.overrides.secrets`
+  * Changing the domain resource's `configuration.overridesConfigMap` to point to a different configuration map
+  * Changing the domain resource's `configuration.secrets` to point to a different list of secrets
+  * Changing the contents of the configuration map referenced by `configuration.overridesConfigMap`
+  * Changing the contents to any of the secrets referenced by `configuration.secrets`
 
 #### Changing the WebLogic Server credentials
 

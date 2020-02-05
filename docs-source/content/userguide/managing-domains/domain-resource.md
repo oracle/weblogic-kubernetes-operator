@@ -86,9 +86,9 @@ Elements related to domain [startup and shutdown]({{< relref "/userguide/managin
 
 Elements related to overriding WebLogic domain configuration:
 
-These elements are under `configuration.overrides`.
-* `configMapName`: The name of the config map for optional WebLogic configuration overrides.
-* `secrets`: A list of names of the secrets for optional WebLogic configuration overrides.
+These elements are under `configuration`.
+* `overridesConfigMap`: The name of the config map for optional WebLogic configuration overrides.
+* `secrets`: A list of names of the secrets for optional WebLogic configuration overrides or model.
 
 Elements related to Kubernetes pod and service generation:
 
