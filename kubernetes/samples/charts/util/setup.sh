@@ -13,7 +13,8 @@ DefaultVoyagerVersion=7.4.0
 
 helm version --short --client | grep v2
 [[ $? == 0 ]] && HELM_VERSION=V2
-[[ $? == 1 ]] && HELM_VERSION=V3
+helm version --short --client | grep v3
+[[ $? == 0 ]] && HELM_VERSION=V3
 
 echo "Detected Helm Version [$HELM_VERSION]"
 
