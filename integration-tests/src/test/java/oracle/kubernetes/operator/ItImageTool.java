@@ -123,6 +123,10 @@ public class ItImageTool extends BaseTest {
             createDomainMap(getNewSuffixCount(), testClassNameShort);
         wlstDomainMap.put("namespace", domainNS1);
         wlstDomainMap.put("weblogicImageTagWIT", weblogicImageTagWIT);
+        if (BaseTest.SHARED_CLUSTER) {
+          wlstDomainMap.put("imagePullSecretName", "ocir-domain");
+          wlstDomainMap.put("imagePullPolicy", "Always");
+        }
         domain = TestUtils.createDomain(wlstDomainMap);
         domain.verifyDomainCreated();
       }
