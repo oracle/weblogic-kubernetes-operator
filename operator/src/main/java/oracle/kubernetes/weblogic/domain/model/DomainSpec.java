@@ -119,7 +119,7 @@ public class DomainSpec extends BaseConfiguration {
    * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3
    */
   @Description(
-      "The WebLogic Docker image; required when domainHomeSourceType is Image; "
+      "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.")
   private String image;
 
@@ -183,7 +183,8 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Deprecated
-  @Description("The name of the config map for optional WebLogic configuration overrides.")
+  @Description("Deprecated: Use configuration.overridesConfigMap instead."
+      + " The name of the config map for optional WebLogic configuration overrides.")
   private String configOverrides;
 
   /**
@@ -192,7 +193,8 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Deprecated
-  @Description("A list of names of the secrets for optional WebLogic configuration overrides.")
+  @Description("Deprecated: Use configuration.secrets instead. "
+      + " A list of names of the secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets;
 
   /**

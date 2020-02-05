@@ -18,8 +18,8 @@ DomainSpec is a description of a domain.
 | --- | --- | --- |
 | `adminServer` | [Admin Server](#admin-server) | Configuration for the Administration Server. |
 | `clusters` | array of [Cluster](#cluster) | Configuration for the clusters. |
-| `configOverrides` | string | The name of the config map for optional WebLogic configuration overrides. |
-| `configOverrideSecrets` | array of string | A list of names of the secrets for optional WebLogic configuration overrides. |
+| `configOverrides` | string | Deprecated: Use configuration.overridesConfigMap instead. The name of the config map for optional WebLogic configuration overrides. |
+| `configOverrideSecrets` | array of string | Deprecated: Use configuration.secrets instead.  A list of names of the secrets for optional WebLogic configuration overrides. |
 | `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration |
 | `dataHome` | string | An optional, in-pod location for data storage of default and custom file stores. If dataHome is not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage directories are determined from the WebLogic domain home configuration. |
 | `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeSourceType is not Image. Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image. |
@@ -27,7 +27,7 @@ DomainSpec is a description of a domain.
 | `domainHomeSourceType` | string | Domain home source type: Legal values: Image, PersistentVolume, FromModel. Defaults to Image unless configuration.model is provided and then defaults to FromModel. |
 | `domainUID` | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name. |
 | `experimental` | [Experimental](#experimental) | Experimental feature configurations. |
-| `image` | string | The WebLogic Docker image; required when domainHomeSourceType is Image; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3. |
+| `image` | string | The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3. |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
 | `includeServerOutInPodLog` | Boolean | If true (the default), the server .out file will be included in the pod's stdout. |
