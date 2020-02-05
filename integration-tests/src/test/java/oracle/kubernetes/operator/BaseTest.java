@@ -44,6 +44,7 @@ public class BaseTest {
   public static boolean JENKINS;
   public static boolean SHARED_CLUSTER;
   public static boolean OKE_CLUSTER = true;
+
   public static boolean OPENSHIFT;
   public static String WDT_VERSION;
   //currently certified chart versions of Prometheus and Grafana
