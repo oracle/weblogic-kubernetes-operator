@@ -57,8 +57,6 @@ function create_image_pull_secret_wl {
 	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}
 	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
 	  
-	  # pull fmw infra images
-          docker pull $IMAGE_NAME_FMWINFRA:$IMAGE_TAG_FMWINFRA
   fi
   set -x
 }
@@ -136,6 +134,12 @@ export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "
 echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPERATOR JAR_VERSION $JAR_VERSION
 
 #docker_login
+
+if [ "$JRF_ENABLED" = true ] ; then
+  pull_tag_images_jrf	
+else
+  create_image_pull_secret_wl
+fi
   
 if [ "$SHARED_CLUSTER" = "true" ]; then
   
@@ -173,8 +177,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	  	echo "When running in shared cluster option, provide DNS name or IP of a Kubernetes worker node using K8S_NODEPORT_HOST env variable"
 	  	exit 1
 	fi
-    create_image_pull_secret_wl
-	
+    	
   #fi
   setup_shared_cluster
   docker images
@@ -184,11 +187,6 @@ elif [ "$JENKINS" = "true" ]; then
   echo "Test Suite is running on Jenkins and k8s is running locally on the same node."
   docker images
 
-  if [ "$JRF_ENABLED" = true ] ; then
-	pull_tag_images_jrf	
-  else
-  	create_image_pull_secret_wl
-  fi
   if [ "$SKIP_BUILD_OPERATOR" = false ] ; then
     export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
     # create a docker image for the operator code being tested
@@ -200,12 +198,7 @@ elif [ "$JENKINS" = "true" ]; then
 
 else
   cleanup
-  if [ "$JRF_ENABLED" = true ] ; then
-	pull_tag_images_jrf	
-  else
-  	create_image_pull_secret_wl
-  fi
-    
+  
   #docker rmi -f $(docker images -q -f dangling=true)
   docker images --quiet --filter=dangling=true | xargs --no-run-if-empty docker rmi  -f
   
