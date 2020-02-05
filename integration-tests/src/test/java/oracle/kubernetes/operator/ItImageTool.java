@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -116,7 +116,6 @@ public class ItImageTool extends BaseTest {
       }
 
       if (BaseTest.SHARED_CLUSTER) {
-        LoggerHelper.getLocal().log(Level.INFO, "===== Creting the secret: " + imagePullSecretName);
         TestUtils.createDockerRegistrySecret(
             imagePullSecretName,
             System.getenv("REPO_REGISTRY"),
@@ -136,7 +135,7 @@ public class ItImageTool extends BaseTest {
         wlstDomainMap.put("weblogicImageTagWIT", weblogicImageTagWIT);
         wlstDomainMap.put("image", weblogicImageTagWIT);
         if (BaseTest.SHARED_CLUSTER) {
-          wlstDomainMap.put("imagePullSecretName", "ocir-domain");
+          wlstDomainMap.put("imagePullSecretName", imagePullSecretName);
           wlstDomainMap.put("imagePullPolicy", "Always");
         }
         domain = TestUtils.createDomain(wlstDomainMap);

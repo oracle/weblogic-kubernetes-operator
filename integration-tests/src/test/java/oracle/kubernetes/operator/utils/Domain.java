@@ -1474,16 +1474,6 @@ public class Domain {
 
     LoggerHelper.getLocal().log(Level.INFO, "Running " + createDomainScriptCmd);
     ExecResult result = ExecCommand.exec(createDomainScriptCmd, true, additionalEnvMap);
-    //Huizhao
-    String cmd = "kubectl get pods -o=name --all-namespaces | grep create-weblogic-sample-domain-job";
-    LoggerHelper.getLocal().log(Level.INFO, "===== 1. Command to list pod: " + cmd);
-    ExecResult result1 = ExecCommand.exec(cmd);
-    LoggerHelper.getLocal().log(Level.INFO, "==== 1. Command returned " + result1.stdout());
-    cmd = "kubectl describe " + result1.stdout().trim() + " -n " + domainNS;
-    LoggerHelper.getLocal().log(Level.INFO, "===== 2. Command to list pods: " + cmd);
-    result1 = ExecCommand.exec(cmd);
-    LoggerHelper.getLocal().log(Level.INFO, "====2. Command returned " + result1.stdout());
-    
     if (result.exitValue() != 0) {
       throw new RuntimeException(
           "FAILURE: command "

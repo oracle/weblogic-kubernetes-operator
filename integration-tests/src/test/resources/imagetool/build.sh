@@ -44,16 +44,10 @@ echo "@@ Installers are located at ${JDK_WLS_INSTALLER_DIR}"
 echo @@
 
 echo @@
-echo "@@ ==== ls  -l ${JDK_WLS_INSTALLER_DIR}"
+echo "@@ ls  -l ${JDK_WLS_INSTALLER_DIR}"
 echo @@
 
 ls -l ${JDK_WLS_INSTALLER_DIR}
-
-echo @@
-echo "@@ ==== hostname is: "
-echo @@
-
-hostname
 
 # This step builds a docker image (WebLogic Installer with patches) using the WebLogic Image Tool
 
