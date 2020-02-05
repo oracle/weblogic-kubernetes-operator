@@ -56,6 +56,9 @@ function create_image_pull_secret_wl {
 	  # below docker pull is needed to for domain home in image tests the base image should be in local repo
 	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}
 	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
+	  
+	  # pull fmw infra images
+          docker pull $IMAGE_NAME_FMWINFRA:$IMAGE_TAG_FMWINFRA
   fi
   set -x
 }
