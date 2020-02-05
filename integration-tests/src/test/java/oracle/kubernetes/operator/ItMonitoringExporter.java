@@ -147,7 +147,9 @@ public class ItMonitoringExporter extends BaseTest {
 
         myhost = domain.getHostNameForCurl();
         exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
-        upgradeTraefikHostName();
+        if(domain.getDomainMap().get("loadBalancer").equals("TRAEFIK")) {
+          upgradeTraefikHostName();
+        }
         deployRunMonitoringExporter(domain, operator);
 
         String testAppName = "httpsessionreptestapp";
