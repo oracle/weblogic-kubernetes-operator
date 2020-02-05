@@ -105,9 +105,9 @@ spec:
       # opss wallet and optional key ewallet.p12 containing the base64 encoded opss wallet
       #
       #
-      #walletConfigMap: sample-domain1-opss-secrets
+      #keyWalletConfigMap: sample-domain1-opss-secrets
       #
       # Use this if the wdt model is encrypted
       #
-      #keySecret: wdt-encrypt-passphrase-secret
+      #walletSecret: wdt-encrypt-passphrase-secret
 

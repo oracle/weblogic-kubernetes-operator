@@ -90,10 +90,12 @@ It is helpful to understand the following high-level flow before running the sam
    
    - Set `domainHome` to the domain home directory that will be created within the image at runtime. It must not already exist in the image. It must not include the mount path of any persistent volume. 
    
-   - Set `wdtConfigMap` if you have additional models stored in a config map. For example, assuming the config map is named `domain1-wdt-config-map` as per step 4 above:
+   - Set `configuration.model.configMapName` if you have additional models stored in a config map. For example, assuming the config map is named `domain1-wdt-config-map` as per step 4 above:
    
      ```
-     wdtConfigMap : domain1-wdt-config-map
+     configuration:
+       model:
+         configMapName : domain1-wdt-config-map
      ```
 
    - If your models reference Kubernetes secrets, then include them as in the following domain resource attribute as needed:
@@ -103,16 +105,20 @@ It is helpful to understand the following high-level flow before running the sam
        secrets: [my-secret, my-other-secret]
      ```
 
-   - Set `wdtDomainType`. Valid values are `WLS`, `JRF`, and `RestrictedJRF` where `WLS` is the default.
+   - Set `configuration.model.domainType`. Valid values are `WLS`, `JRF`, and `RestrictedJRF` where `WLS` is the default.
 
      ```
-     wdtDomainType: "WLS"
+     configuration:
+       model:
+         domainType: "WLS"
      ```
 
-   - Finally, if the WDT model is encrypted, then create a Kubernetes secret for its `passphrase` as described in step 5 above, and specify the secret name in your domain resource using the `wdtEncryptionPassPhrase` attribute.  For example:
+   - Finally, if the WDT model is encrypted, then create a Kubernetes secret for its `passphrase` as described in step 5 above, and specify the secret name in your domain resource using the `configuration.model.encryptionSecret` attribute.  For example:
      ```
-     wdtEncryptionPassPhrase: 
-       name: sample-domain1-wdt-encrypt-secret
+     configuration:
+       model:
+         encryptionSecret: 
+           name: sample-domain1-wdt-encrypt-secret
      ```
 
 7. If you are using a `JRF` domain type, see [Setup Prerequisites for JRF Domains](#setup-prerequisites-for-jrf-domains).
@@ -321,12 +327,12 @@ Property files (ending in `.properties`) use the same sorting algorithm, but the
 
 You can use wdt model `@@FILE` macros to reference the WebLogic administrator username and password that is stored in a Kubernetes secret and to optionally reference additional secrets. 
 
-Secret names are specified in your domain resource using the `weblogicCredentialsSecret` and `configOverridesSecrets` fields, and secret mounts are at the following locations:
+Secret names are specified in your domain resource using the `weblogicCredentialsSecret` and `configuration.secrets` fields, and secret mounts are at the following locations:
 
   |domain resource field|directory location|
   |---------------------|-------------|
   |webLogicCredentialsSecret|/weblogic-operator/secrets|
-  |configOverridesSecrets|/weblogic-operator/config-overrides-secrets/SECRET_NAME|
+  |configuration.secrets|/weblogic-operator/config-overrides-secrets/SECRET_NAME|
 
 For example:
   
@@ -431,7 +437,7 @@ To allow model-in-image to access the RCU database and OPSS wallet, it's necessa
 | `create_opss_key_secret.sh` | Defines secret `sample-domain1-opss-key-passphrase-secret` with `passphrase=welcome1` |
 | `create_rcu_access_secret.sh` | Defines secret `sample-domain1-rcu-access` with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` |
 | `model1.yaml.jrf` | Populates the `domainInfo -> RCUDbInfo` stanza `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` attributes by referencing their locations in the `sample-domain1-rcu-access` secret. |
-| `k8s-domain.yaml.template` | Ensures the domain mounts the OPSS key secret by setting the domain resource `opssWalletSecret` attribute to `sample-domain1-rcu-access`, and ensures the domain mounts the RCU access secret `sample-domain1-rcu-access` for reference by WDT model macros by setting the domain resource `configOverridesSecrets` attribute. |
+| `k8s-domain.yaml.template` | Ensures the domain mounts the OPSS key secret by setting the domain resource `configuration.opss.walletSecret` attribute to `sample-domain1-rcu-access`, and ensures the domain mounts the RCU access secret `sample-domain1-rcu-access` for reference by WDT model macros by setting the domain resource `configuration.secrets` attribute. |
 
 > __NOTE__: This step is for information purposes only. Do not run the above sample files directly. The sample's main build and run scripts will run them for you.
 
@@ -450,7 +456,7 @@ When a domain is first deployed, the WebLogic Kubernetes Operator will copy its 
       > ewallet.p12
     ```
 
-To reuse the wallet, create a secret that contains the OPSS key you specified in the original domain and make sure that your domain resource `opssWalletSecret` attribute names this secret. Here's sample code for deploying the secret that assumes the wallet is in local file 'ewallet.p12' and that the secret passphrase is `welcome1`:
+To reuse the wallet, create a secret that contains the OPSS key you specified in the original domain and make sure that your domain resource `configuration.opss.walletSecret` attribute names this secret. Here's sample code for deploying the secret that assumes the wallet is in local file 'ewallet.p12' and that the secret passphrase is `welcome1`:
 
     ```
     kubectl -n sample-domain1-ns \

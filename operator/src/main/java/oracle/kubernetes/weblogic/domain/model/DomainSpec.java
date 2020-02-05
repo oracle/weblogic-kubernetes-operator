@@ -610,10 +610,10 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(ModelInImageDomainType.WLS.toString());
   }
 
-  V1SecretReference getOpssKeySecret() {
+  V1SecretReference getOpssWalletSecret() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getOpss)
-        .map(Opss::getKeySecret)
+        .map(Opss::getWalletSecret)
         .orElse(null);
   }
 
@@ -621,10 +621,10 @@ public class DomainSpec extends BaseConfiguration {
    * Get OPSS wallet config map name.
    * @return config map name
    */
-  public String getOpssWalletConfigMap() {
+  public String getOpssKeyWalletConfigMap() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getOpss)
-        .map(Opss::getWalletConfigMap)
+        .map(Opss::getKeyWalletConfigMap)
         .orElse(null);
   }
 

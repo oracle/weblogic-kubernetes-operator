@@ -34,13 +34,13 @@ spec:
                   type: object
                   description: Configuration for OPSS based security
                   properties:
-                    walletConfigMap:
+                    keyWalletConfigMap:
                       type: string
                       description: The name of the config map containing the OPSS
                         key wallet file
-                    keySecret:
+                    walletSecret:
                       type: object
-                      description: OPSS key passphrase.
+                      description: Secret containing OPSS key passphrase.
                       properties:
                         name:
                           type: string

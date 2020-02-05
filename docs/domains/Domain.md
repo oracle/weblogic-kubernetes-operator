@@ -208,8 +208,8 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `keySecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | OPSS key passphrase. |
-| `walletConfigMap` | string | The name of the config map containing the OPSS key wallet file |
+| `keyWalletConfigMap` | string | The name of the config map containing the OPSS key wallet file |
+| `walletSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | Secret containing OPSS key passphrase. |
 
 ### Istio
 
