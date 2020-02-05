@@ -80,7 +80,7 @@ public class ItImageTool extends BaseTest {
       deleteWlsDockerImage();
       // Build WebLogic Docker image using imagetool
       buildWlsDockerImage();
-      
+
       if (BaseTest.SHARED_CLUSTER) {
         TestUtils.loginAndPushImageToOcir(weblogicImageTagWIT);
       }
@@ -115,6 +115,17 @@ public class ItImageTool extends BaseTest {
         namespaceList.append(" ").append(domainNS1);
       }
 
+      if (BaseTest.SHARED_CLUSTER) {
+        LoggerHelper.getLocal().log(Level.INFO, "===== Creting the secret: " + imagePullSecretName);
+        TestUtils.createDockerRegistrySecret(
+            imagePullSecretName,
+            System.getenv("REPO_REGISTRY"),
+            System.getenv("REPO_USERNAME"),
+            System.getenv("REPO_PASSWORD"),
+            System.getenv("REPO_EMAIL"),
+            domainNS1);
+      }
+
       // create domain
       if (domain == null) {
         LoggerHelper.getLocal().log(Level.INFO,
@@ -123,23 +134,13 @@ public class ItImageTool extends BaseTest {
             createDomainMap(getNewSuffixCount(), testClassNameShort);
         wlstDomainMap.put("namespace", domainNS1);
         wlstDomainMap.put("weblogicImageTagWIT", weblogicImageTagWIT);
+        wlstDomainMap.put("image", weblogicImageTagWIT);
         if (BaseTest.SHARED_CLUSTER) {
           wlstDomainMap.put("imagePullSecretName", "ocir-domain");
           wlstDomainMap.put("imagePullPolicy", "Always");
         }
         domain = TestUtils.createDomain(wlstDomainMap);
         domain.verifyDomainCreated();
-      }
-
-      if (BaseTest.SHARED_CLUSTER) {
-        TestUtils.loginAndPushImageToOcir(weblogicImageTagWIT);
-        TestUtils.createDockerRegistrySecret(
-            imagePullSecretName,
-            System.getenv("REPO_REGISTRY"),
-            System.getenv("REPO_USERNAME"),
-            System.getenv("REPO_PASSWORD"),
-            System.getenv("REPO_EMAIL"),
-            domainNS1);
       }
     }
   }

@@ -1503,7 +1503,7 @@ public class Domain {
 
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
       // image
-      
+
       TestUtils.createDockerRegistrySecret(
           "ocir-domain",
           System.getenv("REPO_REGISTRY"),
