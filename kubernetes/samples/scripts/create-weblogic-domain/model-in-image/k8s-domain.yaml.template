@@ -85,9 +85,8 @@ spec:
   # replicas: 1
 
   configuration:
-    overrides:
-      # Secrets used by configuration overrides and/or WDT model yaml files
-      configOverrideSecrets: [ sample-domain1-rcu-access ]
+    secrets: [ sample-domain1-rcu-access ]
+
     model:
       #
       # Optional configmap for additional models and variable files
@@ -100,15 +99,15 @@ spec:
       #
       domainType: "@@DOMTYPE@@"
 
-      #opss:
-        #
-        # k8 secret name for the opss extract wallet.  It contains the key passphrase used to extract the
-        # opss wallet and optional key ewallet.p12 containing the base64 encoded opss wallet
-        #
-        #
-        #walletConfigMap: sample-domain1-opss-secrets
-        #
-        # Use this if the wdt model is encrypted
-        #
-        #keySecret: wdt-encrypt-passphrase-secret
+    #opss:
+      #
+      # k8 secret name for the opss extract wallet.  It contains the key passphrase used to extract the
+      # opss wallet and optional key ewallet.p12 containing the base64 encoded opss wallet
+      #
+      #
+      #walletConfigMap: sample-domain1-opss-secrets
+      #
+      # Use this if the wdt model is encrypted
+      #
+      #keySecret: wdt-encrypt-passphrase-secret
 

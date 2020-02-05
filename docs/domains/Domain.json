@@ -161,13 +161,24 @@
     "Configuration": {
       "type": "object",
       "properties": {
+        "opss": {
+          "description": "Configuration for OPSS based security",
+          "$ref": "#/definitions/Opss"
+        },
         "model": {
           "description": "Model in image model files and properties",
           "$ref": "#/definitions/Model"
         },
-        "overrides": {
-          "description": "Configuration overrides",
-          "$ref": "#/definitions/Overrides"
+        "secrets": {
+          "description": "A list of names of the secrets for WebLogic configuration overrides or model.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overridesConfigMap": {
+          "description": "The name of the config map for WebLogic configuration overrides.",
+          "type": "string"
         }
       }
     },
@@ -480,7 +491,7 @@
       "type": "object",
       "properties": {
         "encryptionSecret": {
-          "description": "WDT encryption key pass phrase secret.",
+          "description": "WDT encryption key passphrase secret.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
         },
         "domainType": {
@@ -491,10 +502,6 @@
             "RestrictedJRF",
             "JRF"
           ]
-        },
-        "opss": {
-          "description": "Configuration for OPSS based security",
-          "$ref": "#/definitions/Opss"
         },
         "configMapName": {
           "description": "WDT config map name",
@@ -512,22 +519,6 @@
         "keySecret": {
           "description": "OPSS key passphrase.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
-        }
-      }
-    },
-    "Overrides": {
-      "type": "object",
-      "properties": {
-        "configMapName": {
-          "description": "The name of the config map for WebLogic configuration overrides.",
-          "type": "string"
-        },
-        "secrets": {
-          "description": "A list of names of the secrets for WebLogic configuration overrides.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },

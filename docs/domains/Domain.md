@@ -90,7 +90,9 @@ An element representing a cluster in the domain configuration.
 | Name | Type | Description |
 | --- | --- | --- |
 | `model` | [Model](#model) | Model in image model files and properties |
-| `overrides` | [Overrides](#overrides) | Configuration overrides |
+| `opss` | [Opss](#opss) | Configuration for OPSS based security |
+| `overridesConfigMap` | string | The name of the config map for WebLogic configuration overrides. |
+| `secrets` | array of string | A list of names of the secrets for WebLogic configuration overrides or model. |
 
 ### Experimental
 
@@ -200,15 +202,14 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | --- | --- | --- |
 | `configMapName` | string | WDT config map name |
 | `domainType` | string | WDT domain type: Legal values: WLS, RestrictedJRF, JRF |
-| `encryptionSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | WDT encryption key pass phrase secret. |
-| `opss` | [Opss](#opss) | Configuration for OPSS based security |
+| `encryptionSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | WDT encryption key passphrase secret. |
 
-### Overrides
+### Opss
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `configMapName` | string | The name of the config map for WebLogic configuration overrides. |
-| `secrets` | array of string | A list of names of the secrets for WebLogic configuration overrides. |
+| `keySecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | OPSS key passphrase. |
+| `walletConfigMap` | string | The name of the config map containing the OPSS key wallet file |
 
 ### Istio
 
@@ -251,13 +252,6 @@ Describes a single channel used by the Administration Server.
 | --- | --- | --- |
 | `channelName` | string | Name of channel.<br/>'default' refers to the Administration Server's default channel (configured via the ServerMBean's ListenPort) <br/>'default-secure' refers to the Administration Server's default secure channel (configured via the ServerMBean's SSLMBean's ListenPort) <br/>'default-admin' refers to the Administration Server's default administrative channel (configured via the DomainMBean's AdministrationPort) <br/>Otherwise, the name is the name of one of the Administration Server's network access points (configured via the ServerMBean's NetworkAccessMBeans). |
 | `nodePort` | number | Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel. |
-
-### Opss
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `keySecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | OPSS key passphrase. |
-| `walletConfigMap` | string | The name of the config map containing the OPSS key wallet file |
 
 ### Subsystem Health
 

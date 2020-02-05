@@ -612,8 +612,7 @@ public class DomainSpec extends BaseConfiguration {
 
   V1SecretReference getOpssKeySecret() {
     return Optional.ofNullable(configuration)
-        .map(Configuration::getModel)
-        .map(Model::getOpss)
+        .map(Configuration::getOpss)
         .map(Opss::getKeySecret)
         .orElse(null);
   }
@@ -624,8 +623,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   public String getOpssWalletConfigMap() {
     return Optional.ofNullable(configuration)
-        .map(Configuration::getModel)
-        .map(Model::getOpss)
+        .map(Configuration::getOpss)
         .map(Opss::getWalletConfigMap)
         .orElse(null);
   }

@@ -421,10 +421,6 @@ public class Domain {
     return Optional.ofNullable(spec.getConfiguration()).map(Configuration::getModel).orElse(null);
   }
 
-  public Overrides getOverrides() {
-    return Optional.ofNullable(spec.getConfiguration()).map(Configuration::getOverrides).orElse(null);
-  }
-
   public boolean isIstioEnabled() {
     return spec.isIstioEnabled();
   }
@@ -469,7 +465,8 @@ public class Domain {
    * @return name of the config map
    */
   public String getConfigOverrides() {
-    return Optional.ofNullable(getOverrides()).map(Overrides::getConfigMapName).orElse(spec.getConfigOverrides());
+    return Optional.ofNullable(spec.getConfiguration())
+        .map(Configuration::getOverridesConfigMap).orElse(spec.getConfigOverrides());
   }
 
   public String getWdtConfigMap() {
@@ -482,7 +479,8 @@ public class Domain {
    * @return list of Kubernetes secret names
    */
   public List<String> getConfigOverrideSecrets() {
-    return Optional.ofNullable(getOverrides()).map(Overrides::getSecrets).orElse(spec.getConfigOverrideSecrets());
+    return Optional.ofNullable(spec.getConfiguration())
+        .map(Configuration::getSecrets).orElse(spec.getConfigOverrideSecrets());
   }
 
   /**

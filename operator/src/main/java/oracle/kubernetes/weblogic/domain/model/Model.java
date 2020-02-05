@@ -23,12 +23,9 @@ public class Model {
   @Description("WDT config map name")
   private String configMapName;
 
-  @Description("WDT encryption key pass phrase secret.")
+  @Description("WDT encryption key passphrase secret.")
   @Valid
   private V1SecretReference encryptionSecret;
-
-  @Description("Configuration for OPSS based security")
-  private Opss opss;
 
   @Nullable
   public String getDomainType() {
@@ -71,27 +68,13 @@ public class Model {
     return this;
   }
 
-  public Opss getOpss() {
-    return this.opss;
-  }
-
-  public void setOpss(Opss opss) {
-    this.opss = opss;
-  }
-
-  public Model withOpss(Opss opss) {
-    this.opss = opss;
-    return this;
-  }
-
   @Override
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .append("domainType", domainType)
             .append("configMapName", configMapName)
-            .append("encryptionSecret", encryptionSecret)
-            .append("opss", opss);
+            .append("encryptionSecret", encryptionSecret);
 
     return builder.toString();
   }
@@ -101,8 +84,7 @@ public class Model {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(domainType)
         .append(configMapName)
-        .append(encryptionSecret)
-        .append(opss);
+        .append(encryptionSecret);
 
     return builder.toHashCode();
   }
@@ -121,8 +103,7 @@ public class Model {
         new EqualsBuilder()
             .append(domainType, rhs.domainType)
             .append(configMapName,rhs.configMapName)
-            .append(encryptionSecret, rhs.encryptionSecret)
-            .append(opss, rhs.opss);
+            .append(encryptionSecret, rhs.encryptionSecret);
 
     return builder.isEquals();
   }

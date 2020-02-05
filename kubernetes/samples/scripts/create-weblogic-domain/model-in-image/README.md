@@ -100,8 +100,7 @@ It is helpful to understand the following high-level flow before running the sam
    
      ```
      configuration:
-       overrides:
-         secrets: [my-secret, my-other-secret]
+       secrets: [my-secret, my-other-secret]
      ```
 
    - Set `wdtDomainType`. Valid values are `WLS`, `JRF`, and `RestrictedJRF` where `WLS` is the default.

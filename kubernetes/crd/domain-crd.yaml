@@ -30,13 +30,29 @@ spec:
               type: object
               description: Models and overrides affecting the WebLogic domain configuration
               properties:
+                opss:
+                  type: object
+                  description: Configuration for OPSS based security
+                  properties:
+                    walletConfigMap:
+                      type: string
+                      description: The name of the config map containing the OPSS
+                        key wallet file
+                    keySecret:
+                      type: object
+                      description: OPSS key passphrase.
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
                 model:
                   type: object
                   description: Model in image model files and properties
                   properties:
                     encryptionSecret:
                       type: object
-                      description: WDT encryption key pass phrase secret.
+                      description: WDT encryption key passphrase secret.
                       properties:
                         name:
                           type: string
@@ -50,39 +66,19 @@ spec:
                       - WLS
                       - RestrictedJRF
                       - JRF
-                    opss:
-                      type: object
-                      description: Configuration for OPSS based security
-                      properties:
-                        walletConfigMap:
-                          type: string
-                          description: The name of the config map containing the OPSS
-                            key wallet file
-                        keySecret:
-                          type: object
-                          description: OPSS key passphrase.
-                          properties:
-                            name:
-                              type: string
-                            namespace:
-                              type: string
                     configMapName:
                       type: string
                       description: WDT config map name
-                overrides:
-                  type: object
-                  description: Configuration overrides
-                  properties:
-                    configMapName:
-                      type: string
-                      description: The name of the config map for WebLogic configuration
-                        overrides.
-                    secrets:
-                      type: array
-                      description: A list of names of the secrets for WebLogic configuration
-                        overrides.
-                      items:
-                        type: string
+                secrets:
+                  type: array
+                  description: A list of names of the secrets for WebLogic configuration
+                    overrides or model.
+                  items:
+                    type: string
+                overridesConfigMap:
+                  type: string
+                  description: The name of the config map for WebLogic configuration
+                    overrides.
             configOverrideSecrets:
               type: array
               description: A list of names of the secrets for optional WebLogic configuration

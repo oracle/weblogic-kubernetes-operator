@@ -331,9 +331,8 @@ spec:
   webLogicCredentialsSecret:
     name: domain1-wl-credentials-secret
   configuration:
-    overrides:
-      configMapName: domain1-overrides-config-map
-      secrets: [my-secret, my-other-secret]
+    overridesConfigMap: domain1-overrides-config-map
+    secrets: [my-secret, my-other-secret]
   [ ... ]
 ```
 
