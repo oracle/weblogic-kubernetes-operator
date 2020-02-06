@@ -147,9 +147,13 @@ public class ItMonitoringExporter extends BaseTest {
 
         myhost = domain.getHostNameForCurl();
         exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
+        LoggerHelper.getLocal().log(Level.INFO, "LB_TYPE is set to: " + System.getenv("LB_TYPE"));
+        if (domain.getDomainMap().containsKey("loadBalancer")) {
+          LoggerHelper.getLocal().log(Level.INFO, " loadBalancer from domainMap "  + (String) domain.getDomainMap().get("loadBalancer"));
+        }
         boolean isTraefik = ((System.getenv("LB_TYPE") != null
             && System.getenv("LB_TYPE").equalsIgnoreCase("TRAEFIK"))
-            || (!domain.getDomainMap().containsKey("loadBalancer"))
+            || (!domain.getDomainMap().containsKey("loadBalancer") && System.getenv("LB_TYPE") == null)
             || (domain.getDomainMap().containsKey("loadBalancer")
             && ((String) domain.getDomainMap().get("loadBalancer")).equalsIgnoreCase("TRAEFIK")));
         if (isTraefik) {
