@@ -9,16 +9,12 @@ VNAME=voyager-operator  # release name of Voyager
 TNAME=traefik-operator  # release name of Traefik
 VSPACE=voyager # NameSpace for Voyager
 TSPACE=traefik   # NameSpace for Traefik
-DefaultVoyagerVersion=7.4.0
+DefaultVoyagerVersion=10.0.0
 
-helm version --short --client | grep v2
-[[ $? == 0 ]] && HELM_VERSION=V2
-helm version --short --client | grep v3
-[[ $? == 0 ]] && HELM_VERSION=V3
+HELM_VERSION=$(helm version --short --client)
 
-echo "Detected Helm Version [$HELM_VERSION]"
-
-if [ "$HELM_VERSION" == "V2" ]; then
+if [[ "$HELM_VERSION" =~ "v2" ]]; then
+   echo "Detected Helm Version [${HELM_VERSION}]"
    v_list_args=""
    t_list_args=""
    v_helm_delete="helm delete --purge"
@@ -26,7 +22,8 @@ if [ "$HELM_VERSION" == "V2" ]; then
    v_helm_install="helm install appscode/voyager --name $VNAME  "
    t_helm_install="helm install stable/traefik --name $TNAME "
    helm_search="helm search repo | grep appscode/voyager"
-else
+elif [[ "$HELM_VERSION" =~ "v3" ]]; then
+   echo "Detected Helm Version [${HELM_VERSION}]"
    v_list_args="--namespace $VSPACE "
    t_list_args="--namespace $TSPACE "
    v_helm_delete="helm uninstall --keep-history --namespace $VSPACE "
@@ -34,6 +31,9 @@ else
    v_helm_install="helm install $VNAME appscode/voyager  "
    t_helm_install="helm install $TNAME stable/traefik "
    helm_search="helm search appscode/voyager"
+else
+    echo "Detected Unsuppoted Helm Version [${HELM_VERSION}]"
+    exit 1
 fi
 
 function createNameSpace() {
