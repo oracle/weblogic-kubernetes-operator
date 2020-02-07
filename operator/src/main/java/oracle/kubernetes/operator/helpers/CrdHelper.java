@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -66,7 +66,7 @@ public class CrdHelper {
 
     try (Writer writer = Files.newBufferedWriter(outputFilePath)) {
       writer.write(
-          "# Copyright (c) 2020, Oracle Corporation and/or its affiliates.  All rights reserved.\n"
+          "# Copyright (c) 2020, 2020, Oracle Corporation and/or its affiliates.\n"
               + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
       writer.write("\n");
       Yaml.dump(context.model, writer);
