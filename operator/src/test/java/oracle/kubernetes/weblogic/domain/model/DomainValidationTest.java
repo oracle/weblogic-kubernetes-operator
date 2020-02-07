@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -28,6 +28,10 @@ public class DomainValidationTest {
   private Domain domain = createTestDomain();
   private KubernetesResourceLookupStub resourceLookup = new KubernetesResourceLookupStub();
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     resourceLookup.defineSecret(SECRET_NAME, NS);
@@ -257,8 +261,11 @@ public class DomainValidationTest {
     private List<V1ObjectMeta> definedSecrets = new ArrayList<>();
 
     void undefineSecret(String name, String namespace) {
-      for (Iterator<V1ObjectMeta> each = definedSecrets.iterator(); each.hasNext();)
-        if (hasSpecification(each.next(), name, namespace)) each.remove();
+      for (Iterator<V1ObjectMeta> each = definedSecrets.iterator(); each.hasNext();) {
+        if (hasSpecification(each.next(), name, namespace)) {
+          each.remove();
+        }
+      }
     }
 
     void defineSecret(String name, String namespace) {

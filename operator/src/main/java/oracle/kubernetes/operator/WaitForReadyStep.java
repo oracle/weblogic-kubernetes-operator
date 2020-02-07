@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -121,9 +121,9 @@ abstract class WaitForReadyStep<T> extends Step {
 
   @Override
   public final NextAction apply(Packet packet) {
-    if (shouldTerminateFiber(initialResource))
+    if (shouldTerminateFiber(initialResource)) {
       return doTerminate(createTerminationException(initialResource), packet);
-    else if (isReady(initialResource)) {
+    } else if (isReady(initialResource)) {
       return doNext(packet);
     }
 
@@ -163,8 +163,9 @@ abstract class WaitForReadyStep<T> extends Step {
     return new DefaultResponseStep<>(null) {
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
-        if (isReady(callResponse.getResult()))
+        if (isReady(callResponse.getResult())) {
           callback.proceedFromWait(callResponse.getResult());
+        }
         return doNext(packet);
       }
     };

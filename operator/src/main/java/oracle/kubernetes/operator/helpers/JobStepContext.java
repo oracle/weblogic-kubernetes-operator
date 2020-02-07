@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -219,7 +219,9 @@ public abstract class JobStepContext extends BasePodStepContext {
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(
                 LabelConstants.JOBNAME_LABEL, LegalNames.toJobIntrospectorName(getDomainUid()));
-    if (isIstioEnabled()) metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
+    if (isIstioEnabled()) {
+      metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
+    }
     return metadata;
   }
 
@@ -321,10 +323,11 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Job> callResponse) {
-      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse))
+      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
-      else
+      } else {
         return super.onFailure(packet, callResponse);
+      }
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {

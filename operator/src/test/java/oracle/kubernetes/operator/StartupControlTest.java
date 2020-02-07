@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2020, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -57,6 +57,10 @@ public class StartupControlTest {
   private Collection<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento loggerMemento;
 
+  /**
+   * Setup test environment.
+   * @throws Exception if TuningParametersStub install fails.
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(StaticStubSupport.install(StartupControl.class, "getHelmVariable", getEnv));
@@ -239,9 +243,13 @@ public class StartupControlTest {
 
     @Override
     protected boolean matchesSafely(Step step, Description description) {
-      while (step != null && step != expectedStep) step = step.getNext();
+      while (step != null && step != expectedStep) {
+        step = step.getNext();
+      }
 
-      if (step != null) return true;
+      if (step != null) {
+        return true;
+      }
 
       description.appendText("Chain does not include ").appendValue(expectedStep);
       return false;

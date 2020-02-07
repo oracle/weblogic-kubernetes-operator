@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -59,6 +59,10 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return StaticStubSupport.install(containingClass, fieldName, newValue);
   }
 
+  /**
+   * Setup test environment.
+   * @throws Exception if StaticStubSupport fails to install
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().withLogLevel(Level.OFF));
@@ -78,12 +82,18 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return stoppingMemento.getOriginalValue();
   }
 
+  /**
+   * Cleanup test environment.
+   * @throws Exception if test support fails.
+   */
   @After
   public void tearDown() throws Exception {
     isNamespaceStopping.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
     shutDownThreads();
 
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }

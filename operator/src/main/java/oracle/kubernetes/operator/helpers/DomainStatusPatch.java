@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -49,10 +49,11 @@ public class DomainStatusPatch {
   }
 
   private static void setSubField(JsonPatchBuilder patchBuilder, String path, String oldValue, String newValue) {
-    if (oldValue == null)
+    if (oldValue == null) {
       patchBuilder.add(path, newValue);
-    else
+    } else {
       patchBuilder.replace(path, newValue);
+    }
   }
 
   private void update() {

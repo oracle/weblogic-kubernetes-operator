@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -190,7 +190,9 @@ public final class HealthCheckHelper {
   }
 
   private static V1SelfSubjectRulesReview getRulesReview(AuthorizationProxy ap, KubernetesVersion version) {
-    if (!version.isRulesReviewSupported()) return null;
+    if (!version.isRulesReviewSupported()) {
+      return null;
+    }
 
     return ap.review(StartupControl.getOperatorNamespace());
   }
@@ -230,8 +232,11 @@ public final class HealthCheckHelper {
       }
     }
     if (log) {
-      if (ns != null) LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
-      else LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+      if (ns != null) {
+        LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
+      } else {
+        LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+      }
     }
     return false;
   }

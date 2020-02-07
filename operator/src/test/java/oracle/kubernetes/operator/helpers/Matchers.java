@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -126,8 +126,9 @@ public class Matchers {
       if (Objects.equals(expectedInitialDelay, item.getInitialDelaySeconds())
           && Objects.equals(expectedTimeout, item.getTimeoutSeconds())
           && Objects.equals(expectedPeriod, item.getPeriodSeconds())
-          && Objects.equals(EXPECTED_FAILURE_THRESHOLD, item.getFailureThreshold())) return true;
-      else {
+          && Objects.equals(EXPECTED_FAILURE_THRESHOLD, item.getFailureThreshold())) {
+        return true;
+      } else {
         mismatchDescription
             .appendText("probe with initial delay ")
             .appendValue(item.getInitialDelaySeconds())

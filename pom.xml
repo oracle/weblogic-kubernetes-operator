@@ -1,6 +1,5 @@
-<!-- Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
-     Licensed under the Universal Permissive License v 1.0 as shown at
-     https://oss.oracle.com/licenses/upl. -->
+<!-- Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+     Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -8,7 +7,7 @@
 
   <groupId>oracle.kubernetes</groupId>
   <artifactId>operator-parent</artifactId>
-  <version>2.4.0</version>
+  <version>2.5.0</version>
 
   <modules>
     <module>build-tools</module>
@@ -99,7 +98,7 @@
             <dependency>
               <groupId>com.puppycrawl.tools</groupId>
               <artifactId>checkstyle</artifactId>
-              <version>8.23</version>
+              <version>8.29</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -133,7 +132,7 @@
             <dependency>
               <groupId>net.sourceforge.pmd</groupId>
               <artifactId>pmd-java</artifactId>
-              <version>6.17.0</version>
+              <version>6.21.0</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -265,7 +264,7 @@
               <author>false</author>
               <notimestamp>true</notimestamp>
               <bottom>
-                <![CDATA[<p>Copyright (c) 2018, {currentYear}, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="https://oss.oracle.com/licenses/upl">https://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
+                <![CDATA[<p>Copyright (c) 2018, {currentYear}, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="https://oss.oracle.com/licenses/upl">https://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
               <doctitle>Oracle WebLogic Server Kubernetes Operator API</doctitle>
             </configuration>
           </execution>
@@ -303,7 +302,7 @@
           <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs</artifactId>
-            <version>${spotbugs-maven-plugin-version}</version>
+            <version>${spotbugs-version}</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -535,7 +534,7 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.26</version>
+        <version>1.7.30</version>
       </dependency>
       <dependency>
         <groupId>org.hamcrest</groupId>
@@ -581,7 +580,7 @@
       <dependency>
         <groupId>com.meterware.simplestub</groupId>
         <artifactId>simplestub</artifactId>
-        <version>1.2.12</version>
+        <version>1.3.0</version>
       </dependency>
       <dependency>
         <groupId>org.glassfish</groupId>
@@ -677,7 +676,7 @@
       <dependency>
         <groupId>net.sourceforge.htmlunit</groupId>
         <artifactId>htmlunit</artifactId>
-        <version>2.35.0</version>
+        <version>2.37.0</version>
       </dependency>
       <dependency>
         <groupId>javax.xml.bind</groupId>
@@ -693,7 +692,7 @@
       <dependency>
         <groupId>com.kjetland</groupId>
         <artifactId>mbknor-jackson-jsonschema_2.12</artifactId>
-        <version>1.0.34</version>
+        <version>1.0.36</version>
       </dependency>
       <dependency>
         <groupId>joda-time</groupId>
@@ -713,7 +712,7 @@
       <dependency>
         <groupId>commons-codec</groupId>
         <artifactId>commons-codec</artifactId>
-        <version>1.13</version>
+        <version>1.14</version>
       </dependency>
       <dependency>
         <groupId>org.httpunit</groupId>
@@ -740,38 +739,39 @@
   <properties>
     <java.version.range>11</java.version.range>
     <maven.version.range>[3.5.2,)</maven.version.range>
-    <maven-enforcer-plugin-version>3.0.0-M1</maven-enforcer-plugin-version>
+    <maven-enforcer-plugin-version>3.0.0-M3</maven-enforcer-plugin-version>
     <maven-clean-plugin-version>3.1.0</maven-clean-plugin-version>
     <maven-compiler-plugin-version>3.8.1</maven-compiler-plugin-version>
     <maven-deploy-plugin-version>3.0.0-M1</maven-deploy-plugin-version>
     <maven-install-plugin-version>3.0.0-M1</maven-install-plugin-version>
-    <maven-jar-plugin-version>3.1.2</maven-jar-plugin-version>
+    <maven-jar-plugin-version>3.2.0</maven-jar-plugin-version>
     <maven-resources-plugin-version>3.1.0</maven-resources-plugin-version>
-    <maven-site-plugin-version>3.7.1</maven-site-plugin-version>
-    <maven-surefire-plugin-version>3.0.0-M3</maven-surefire-plugin-version>
+    <maven-site-plugin-version>3.8.2</maven-site-plugin-version>
+    <maven-surefire-plugin-version>3.0.0-M4</maven-surefire-plugin-version>
     <surefire-logger-api-version>3.0.0-M3</surefire-logger-api-version>
     <maven-checkstyle-plugin-version>3.1.0</maven-checkstyle-plugin-version>
-    <maven-pmd-plugin-version>3.12.0</maven-pmd-plugin-version>
-    <maven-release-plugin-version>2.5.3</maven-release-plugin-version>
-    <maven-javadoc-plugin-version>3.1.0</maven-javadoc-plugin-version>
-    <maven-failsafe-plugin-version>3.0.0-M3</maven-failsafe-plugin-version>
+    <maven-pmd-plugin-version>3.13.0</maven-pmd-plugin-version>
+    <maven-release-plugin-version>3.0.0-M1</maven-release-plugin-version>
+    <maven-javadoc-plugin-version>3.1.1</maven-javadoc-plugin-version>
+    <maven-failsafe-plugin-version>3.0.0-M4</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.1.1</maven-dependency-plugin-version>
     <exec-maven-plugin-version>1.6.0</exec-maven-plugin-version>
-    <spotbugs-maven-plugin-version>3.1.11</spotbugs-maven-plugin-version>
+    <spotbugs-maven-plugin-version>3.1.12.2</spotbugs-maven-plugin-version>
+    <spotbugs-version>3.1.12</spotbugs-version>
     <swagger-core-version>1.5.22</swagger-core-version>
-    <jodatime-version>2.10.3</jodatime-version>
+    <jodatime-version>2.10.5</jodatime-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
-    <junit-version>4.12</junit-version>
-    <junit.jupiter.version>5.5.2</junit.jupiter.version>
-    <junit.vintage.version>5.5.2</junit.vintage.version>
-    <junit.platform.version>1.5.0</junit.platform.version>
+    <junit-version>4.13</junit-version>
+    <junit.jupiter.version>5.6.0</junit.jupiter.version>
+    <junit.vintage.version>5.6.0</junit.vintage.version>
+    <junit.platform.version>1.6.0</junit.platform.version>
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jersey-version>2.29</jersey-version> <!-- switched from 2.23 to 2.26 to get the RestServer to work -->
-    <jackson-version>2.9.9</jackson-version>
-    <jackson-databind-version>2.9.9.2</jackson-databind-version>
-    <snakeyaml-version>1.24</snakeyaml-version>
-    <guava-version>28.0-jre</guava-version>
+    <jersey-version>2.30</jersey-version>
+    <jackson-version>2.10.2</jackson-version>
+    <jackson-databind-version>2.10.2</jackson-databind-version>
+    <snakeyaml-version>1.25</snakeyaml-version>
+    <guava-version>28.2-jre</guava-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
@@ -781,7 +781,7 @@
     <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
     <sonar.jacoco.itReportPath>${project.basedir}/../target/jacoco-it.exec</sonar.jacoco.itReportPath>
     <sonar.language>java</sonar.language>
-    <jacoco.version>0.8.3</jacoco.version>
+    <jacoco.version>0.8.5</jacoco.version>
     <jacoco.outputDir>${project.basedir}/../target/jacoco</jacoco.outputDir>
     <jacoco.itOutputDir>${project.basedir}/../target/jacoco-it</jacoco.itOutputDir>
     <jacoco.destFile>${project.basedir}/../target/jacoco.exec</jacoco.destFile>

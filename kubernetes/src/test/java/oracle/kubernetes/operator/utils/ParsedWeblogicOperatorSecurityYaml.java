@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -82,6 +82,10 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
     return getRoles().find("weblogic-operator-role");
   }
 
+  /**
+   * Get exected object count.
+   * @return object count
+   */
   public int getExpectedObjectCount() {
     int rtn = 9;
     // add one role binding for each namespace

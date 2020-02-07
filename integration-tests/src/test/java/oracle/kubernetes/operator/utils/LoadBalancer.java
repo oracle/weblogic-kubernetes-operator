@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -24,6 +24,11 @@ public class LoadBalancer {
   private static int maxIterationsPod = 60;
   private static int waitTimePod = 5;
 
+  /**
+   * Construct load balancer.
+   * @param lbMap load balancer map
+   * @throws Exception on failure
+   */
   public LoadBalancer(Map lbMap) throws Exception {
     this.lbMap = lbMap;
     userProjectsDir = (String) lbMap.get("userProjectsDir");
@@ -65,6 +70,10 @@ public class LoadBalancer {
     }
   }
 
+  /**
+   * Create Traefik load balancer.
+   * @throws Exception on failure
+   */
   public void createTraefikLoadBalancer() throws Exception {
     String cmdLb =
         "helm install --name traefik-operator --namespace traefik --values "
@@ -85,6 +94,10 @@ public class LoadBalancer {
     }
   }
 
+  /**
+   * Create Traefik host routing.
+   * @throws Exception on failure
+   */
   public void createTraefikHostRouting() throws Exception {
 
     createInputFile(
@@ -204,6 +217,10 @@ public class LoadBalancer {
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
 
+  /**
+   * Create Voyager load balancer.
+   * @throws Exception on failure
+   */
   public void createVoyagerLoadBalancer() throws Exception {
 
     String cmd1 = "helm repo add appscode https://charts.appscode.com/stable/";
