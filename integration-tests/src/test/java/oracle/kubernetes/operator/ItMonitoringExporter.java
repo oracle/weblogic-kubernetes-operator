@@ -154,7 +154,7 @@ public class ItMonitoringExporter extends BaseTest {
         }
         boolean isTraefik = ((System.getenv("LB_TYPE") != null
             && System.getenv("LB_TYPE").equalsIgnoreCase("TRAEFIK"))
-            || (!domain.getDomainMap().containsKey("loadBalancer") && System.getenv("LB_TYPE") == null)
+            || (!domain.getDomainMap().containsKey("loadBalancer"))
             || (domain.getDomainMap().containsKey("loadBalancer")
             && ((String) domain.getDomainMap().get("loadBalancer")).equalsIgnoreCase("TRAEFIK")));
         if (isTraefik) {
