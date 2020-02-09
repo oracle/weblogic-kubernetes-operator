@@ -148,18 +148,7 @@ public class ItMonitoringExporter extends BaseTest {
         myhost = domain.getHostNameForCurl();
         exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
         LoggerHelper.getLocal().log(Level.INFO, "LB_TYPE is set to: " + System.getenv("LB_TYPE"));
-        boolean isTraefik = false;
-        if (System.getenv("LB_TYPE") != null) {
-          if (System.getenv("LB_TYPE").equalsIgnoreCase("TRAEFIK")) {
-            isTraefik = true;
-          }
-        } else if (domain.getDomainMap().containsKey("loadBalancer")) {
-          if (((String) domain.getDomainMap().get("loadBalancer")).equalsIgnoreCase("TRAEFIK")) {
-            isTraefik = true;
-          }
-        } else if (!domain.getDomainMap().containsKey("loadBalancer")) {
-          isTraefik = true;
-        }
+        boolean isTraefik = (domain.getLoadBalancerName().equalsIgnoreCase("TRAEFIK"));
         if (isTraefik) {
           LoggerHelper.getLocal().log(Level.INFO, "Upgrading Traefik");
           upgradeTraefikHostName();
