@@ -18,7 +18,8 @@ variables:
   SHARED_CLUSTER: "true"
   PV_ROOT: "/scratch/k8s_gitlab_pvroot"
   RESULT_ROOT: "/scratch/RESULT_ROOT"
-  IMAGE_TAG_OPERATOR: "${BRANCH//[+\/]/-}"
+  #IMAGE_TAG_OPERATOR: "${BRANCH//[+\/]/-}"
+  IMAGE_TAG_OPERATOR: "$CI_COMMIT_BRANCH"
   IMAGE_NAME_OPERATOR: "phx.ocir.io/weblogick8s/weblogic-kubernetes-operator"
   IMAGE_PULL_POLICY_OPERATOR: "Always"
   IMAGE_PULL_SECRET_WEBLOGIC: "docker-store"
@@ -35,8 +36,10 @@ cache:
 install: &install
   stage: test
   script:
-    - 'uname -a'
-    - 'id'
+    - './integration-tests/src/test/resources/build_push_operator_image.sh'
     - 'mvn $MAVEN_CLI_OPTS clean install'
+    - 'echo "Running all the IT Classes ...."'
+    - 'echo "mvn clean verify -P java-integration-tests"'
+    - 'mvn -DJENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} -DPARALLEL=${PARALLEL_RUN} clean verify -P ${PROFILE_NAME}'
   except:
     - master
