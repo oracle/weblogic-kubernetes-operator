@@ -1144,6 +1144,9 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static void installPrometheusGrafanaWebHookMySqlCoordinator() throws Exception {
     prometheusPort = "30500";
+    String promalertmanagerPort = String.valueOf(32500 + getNewSuffixCount());
+    replaceStringInFile(
+        resourceExporterDir + "/promvalues.yaml", "32500", promalertmanagerPort);
     grafanaPort = String.valueOf(31000 + getNewSuffixCount());
     replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
         "31000", grafanaPort);
