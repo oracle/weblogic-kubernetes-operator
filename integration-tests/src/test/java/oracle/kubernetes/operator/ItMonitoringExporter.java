@@ -1170,8 +1170,12 @@ public class ItMonitoringExporter extends BaseTest {
         resultStatus.stdout().contains("CrashLoopBackOff")
             || resultStatus.stdout().contains("Error"),
         "Can't create prometheus pods");
+    crdCmd = "kubectl -n monitoring get pods -l app=grafana";
+    resultStatus = ExecCommand.exec(crdCmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Status of the pods " + resultStatus.stdout());
 
     podName = getPodName("app=grafana", "monitoring");
+    assertNotNull("Grafana pod was not created", podName);
     TestUtils.checkPodReady(podName, "monitoring");
 
     String myhost = domain.getHostNameForCurl();
