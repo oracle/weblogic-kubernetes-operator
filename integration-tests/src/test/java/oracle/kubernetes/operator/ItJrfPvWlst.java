@@ -71,7 +71,8 @@ public class ItJrfPvWlst extends BaseTest {
        
       DbUtils.startOracleDB(getResultDir());
       DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix);
-    
+      
+      setMaxIterationsPod(150);
       // create operator1
       if (operator1 == null) {
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
