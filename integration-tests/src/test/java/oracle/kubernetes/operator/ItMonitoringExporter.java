@@ -1159,12 +1159,10 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   static void checkPromGrafana(String searchKey, String expectedVal) throws Exception {
-    String podName = getPodName("app=prometheus", "monitoring");
 
     String crdCmd = "kubectl -n monitoring get pods -l app=prometheus";
     ExecResult resultStatus = ExecCommand.exec(crdCmd);
     LoggerHelper.getLocal().log(Level.INFO, "Status of the pods " + resultStatus.stdout());
-
 
     assertFalse(
         resultStatus.stdout().contains("CrashLoopBackOff")
@@ -1174,7 +1172,7 @@ public class ItMonitoringExporter extends BaseTest {
     resultStatus = ExecCommand.exec(crdCmd);
     LoggerHelper.getLocal().log(Level.INFO, "Status of the pods " + resultStatus.stdout());
 
-    podName = getPodName("app=grafana", "monitoring");
+    String podName = getPodName("app=grafana", "monitoring");
     assertNotNull("Grafana pod was not created", podName);
     TestUtils.checkPodReady(podName, "monitoring");
 
