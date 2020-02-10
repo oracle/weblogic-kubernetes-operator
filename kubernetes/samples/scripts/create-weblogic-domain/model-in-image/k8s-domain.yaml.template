@@ -6,7 +6,7 @@
 # TBD review this file line by line with Johnny and Tom.
 # 
 #
-apiVersion: "weblogic.oracle/v4"
+apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
   name: domain1
