@@ -165,16 +165,24 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Deprecated
   @Description(
-      "Deprecated. Use domainHomeSourceType instead. True if this domain's"
-          + " home is defined in the Docker image for the domain. Defaults to true.")
+      "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
+          + " True indicates that the domain home file system is contained in the Docker image"
+          + " specified by the image field. False indicates that the domain home file system is located"
+          + " on a persistent volume.")
   private Boolean domainHomeInImage;
 
   @EnumClass(value = DomainSourceType.class)
-  @Description("Domain home source type: Legal values: Image, PersistentVolume, FromModel."
-      + " Defaults to Image unless configuration.model is provided and then defaults to FromModel.")
+  @Description(
+      "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
+          + " Image indicates that the domain home file system is contained in the Docker image"
+          + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
+          + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
+          + " and managed by the operator based on a WDT domain model."
+          + " If this field is specified it overrides the value of domainHomeInImage. If both fields are"
+          + " unspecified then domainHomeSourceType defaults to Image.")
   private String domainHomeSourceType;
 
-  @Description("Models and overrides affecting the WebLogic domain configuration")
+  @Description("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
 
   /**
@@ -183,7 +191,8 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Deprecated
-  @Description("Deprecated: Use configuration.overridesConfigMap instead."
+  @Description("Deprecated. Use configuration.overridesConfigMap instead."
+      + " Ignored if configuration.overridesConfigMap is specified."
       + " The name of the config map for optional WebLogic configuration overrides.")
   private String configOverrides;
 
@@ -193,7 +202,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Deprecated
-  @Description("Deprecated: Use configuration.secrets instead. "
+  @Description("Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
       + " A list of names of the secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets;
 
@@ -612,21 +621,21 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(ModelInImageDomainType.WLS.toString());
   }
 
-  V1SecretReference getOpssWalletSecret() {
+  V1SecretReference getOpssWalletPasswordSecret() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getOpss)
-        .map(Opss::getWalletSecret)
+        .map(Opss::getWalletPasswordSecret)
         .orElse(null);
   }
 
   /**
-   * Get OPSS wallet config map name.
-   * @return config map name
+   * Get OPSS wallet file secret.
+   * @return wallet file secret
    */
-  public String getOpssKeyWalletConfigMap() {
+  public V1SecretReference getOpssWalletFileSecret() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getOpss)
-        .map(Opss::getKeyWalletConfigMap)
+        .map(Opss::getWalletFileSecret)
         .orElse(null);
   }
 
@@ -645,7 +654,7 @@ public class DomainSpec extends BaseConfiguration {
   public String getWdtConfigMap() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel)
-        .map(Model::getConfigMapName)
+        .map(Model::getConfigMap)
         .orElse(null);
   }
 

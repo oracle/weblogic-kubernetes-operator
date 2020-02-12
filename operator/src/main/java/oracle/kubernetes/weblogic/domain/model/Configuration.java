@@ -12,16 +12,19 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Configuration {
 
-  @Description("Model in image model files and properties")
+  @Description("Model in image model files and properties.")
   private Model model;
 
-  @Description("Configuration for OPSS based security")
+  @Description("Configuration for OPSS security.")
   private Opss opss;
 
-  @Description("A list of names of the secrets for WebLogic configuration overrides or model.")
+  @Description(
+      "A list of names of the secrets for WebLogic configuration overrides or model. If this field is specified"
+          + " it overrides the value of spec.configOverrideSecrets.")
   private List<String> secrets;
 
-  @Description("The name of the config map for WebLogic configuration overrides.")
+  @Description("The name of the config map for WebLogic configuration overrides. If this field is specified"
+          + " it overrides the value of spec.configOverrides.")
   private String overridesConfigMap;
 
   public Model getModel() {

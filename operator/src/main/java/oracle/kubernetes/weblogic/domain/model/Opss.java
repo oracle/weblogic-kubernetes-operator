@@ -13,37 +13,37 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Opss {
 
-  @Description("The name of the config map containing the OPSS key wallet file")
-  private String keyWalletConfigMap;
+  @Description("Secret containing the OPSS key wallet file.")
+  private V1SecretReference walletFileSecret;
 
   @Description(
       "Secret containing OPSS key passphrase.")
   @Valid
-  private V1SecretReference walletSecret;
+  private V1SecretReference walletPasswordSecret;
 
-  public String getKeyWalletConfigMap() {
-    return this.keyWalletConfigMap;
+  public V1SecretReference getWalletFileSecret() {
+    return this.walletFileSecret;
   }
 
-  public void setKeyWalletConfigMap(String keyWalletConfigMap) {
-    this.keyWalletConfigMap = keyWalletConfigMap;
+  public void setWalletFileSecret(V1SecretReference walletFileSecret) {
+    this.walletFileSecret = walletFileSecret;
   }
 
-  public Opss withKeyWalletConfigMap(String keyWalletConfigMap) {
-    this.keyWalletConfigMap = keyWalletConfigMap;
+  public Opss withWalletFileSecret(V1SecretReference walletFileSecret) {
+    this.walletFileSecret = walletFileSecret;
     return this;
   }
 
-  public V1SecretReference getWalletSecret() {
-    return this.walletSecret;
+  public V1SecretReference getWalletPasswordSecret() {
+    return this.walletPasswordSecret;
   }
 
-  public void setWalletSecret(V1SecretReference walletSecret) {
-    this.walletSecret = walletSecret;
+  public void setWalletPasswordSecret(V1SecretReference walletPasswordSecret) {
+    this.walletPasswordSecret = walletPasswordSecret;
   }
 
-  public Opss withWalletSecret(V1SecretReference walletSecret) {
-    this.walletSecret = walletSecret;
+  public Opss withWalletPasswordSecret(V1SecretReference walletPasswordSecret) {
+    this.walletPasswordSecret = walletPasswordSecret;
     return this;
   }
 
@@ -51,8 +51,8 @@ public class Opss {
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
-            .append("keyWalletConfigMap", keyWalletConfigMap)
-            .append("walletSecret", walletSecret);
+            .append("walletFileSecret", walletFileSecret)
+            .append("walletPasswordSecret", walletPasswordSecret);
 
     return builder.toString();
   }
@@ -60,8 +60,8 @@ public class Opss {
   @Override
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder()
-        .append(keyWalletConfigMap)
-        .append(walletSecret);
+        .append(walletFileSecret)
+        .append(walletPasswordSecret);
 
     return builder.toHashCode();
   }
@@ -78,8 +78,8 @@ public class Opss {
     Opss rhs = ((Opss) other);
     EqualsBuilder builder =
         new EqualsBuilder()
-            .append(keyWalletConfigMap, rhs.keyWalletConfigMap)
-            .append(walletSecret, rhs.walletSecret);
+            .append(walletFileSecret, rhs.walletFileSecret)
+            .append(walletPasswordSecret, rhs.walletPasswordSecret);
 
     return builder.isEquals();
   }

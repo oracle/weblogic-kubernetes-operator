@@ -90,12 +90,12 @@ It is helpful to understand the following high-level flow before running the sam
    
    - Set `domainHome` to the domain home directory that will be created within the image at runtime. It must not already exist in the image. It must not include the mount path of any persistent volume. 
    
-   - Set `configuration.model.configMapName` if you have additional models stored in a config map. For example, assuming the config map is named `domain1-wdt-config-map` as per step 4 above:
+   - Set `configuration.model.configMap` if you have additional models stored in a config map. For example, assuming the config map is named `domain1-wdt-config-map` as per step 4 above:
    
      ```
      configuration:
        model:
-         configMapName : domain1-wdt-config-map
+         configMap : domain1-wdt-config-map
      ```
 
    - If your models reference Kubernetes secrets, then include them as in the following domain resource attribute as needed:

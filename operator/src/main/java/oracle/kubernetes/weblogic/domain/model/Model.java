@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.json.Description;
@@ -17,13 +18,14 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Model {
 
   @EnumClass(value = ModelInImageDomainType.class)
-  @Description("WDT domain type: Legal values: WLS, RestrictedJRF, JRF")
+  @Description("WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
   private String domainType;
 
-  @Description("WDT config map name")
-  private String configMapName;
+  @Description("WDT config map name. Required.")
+  @NotNull
+  private String configMap;
 
-  @Description("WDT encryption key passphrase secret.")
+  @Description("WDT encryption key passphrase secret. Required when WDT model files are encrypted.")
   @Valid
   private V1SecretReference encryptionSecret;
 
@@ -42,16 +44,16 @@ public class Model {
   }
 
   @Nullable
-  String getConfigMapName() {
-    return configMapName;
+  String getConfigMap() {
+    return configMap;
   }
 
-  void setConfigMapName(@Nullable String configMapName) {
-    this.configMapName = configMapName;
+  void setConfigMap(@Nullable String configMap) {
+    this.configMap = configMap;
   }
 
-  public Model withConfigMapName(@Nullable String configMapName) {
-    this.configMapName = configMapName;
+  public Model withConfigMap(@Nullable String configMap) {
+    this.configMap = configMap;
     return this;
   }
 
@@ -73,7 +75,7 @@ public class Model {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .append("domainType", domainType)
-            .append("configMapName", configMapName)
+            .append("configMap", configMap)
             .append("encryptionSecret", encryptionSecret);
 
     return builder.toString();
@@ -83,7 +85,7 @@ public class Model {
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(domainType)
-        .append(configMapName)
+        .append(configMap)
         .append(encryptionSecret);
 
     return builder.toHashCode();
@@ -102,7 +104,7 @@ public class Model {
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(domainType, rhs.domainType)
-            .append(configMapName,rhs.configMapName)
+            .append(configMap,rhs.configMap)
             .append(encryptionSecret, rhs.encryptionSecret);
 
     return builder.isEquals();

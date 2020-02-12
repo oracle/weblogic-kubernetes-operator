@@ -91,7 +91,7 @@ spec:
       #
       # Optional configmap for additional models and variable files
       #
-      configMapName: wdt-config-map
+      configMap: wdt-config-map
 
       #
       # wdt domain type for model in image case

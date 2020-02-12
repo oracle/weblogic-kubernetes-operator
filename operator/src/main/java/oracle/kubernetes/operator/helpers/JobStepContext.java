@@ -101,9 +101,9 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWebLogicCredentialsSecretName();
   }
 
-  String getOpssWalletSecretName() {
-    if (getDomain().getOpssWalletSecret() != null) {
-      return getDomain().getOpssWalletSecret().getName();
+  String getOpssWalletPasswordSecretName() {
+    if (getDomain().getOpssWalletPasswordSecret() != null) {
+      return getDomain().getOpssWalletPasswordSecret().getName();
     } else {
       return null;
     }
@@ -190,9 +190,14 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtConfigMap();
   }
 
-  String getOpssKeyWalletConfigMap() {
-    return getDomain().getOpssKeyWalletConfigMap();
+  String getOpssWalletFileSecretName() {
+    if (getDomain().getOpssWalletFileSecret() != null) {
+      return getDomain().getOpssWalletFileSecret().getName();
+    } else {
+      return null;
+    }
   }
+
 
   private ResponseStep<V1Job> createResponse(Step next) {
     return new CreateResponseStep(next);
@@ -264,9 +269,9 @@ public abstract class JobStepContext extends BasePodStepContext {
                 new V1Volume()
                     .name(getDomainUid() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
                     .configMap(getIntrospectMD5VolumeSource()));
-    if (getOpssWalletSecretVolume() != null) {
+    if (getOpssWalletPasswordSecretVolume() != null) {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
-          getOpssWalletSecretVolume()));
+          getOpssWalletPasswordSecretVolume()));
     }
     if (getWdtEncryptPassPhraseVolume() != null) {
       podSpec.addVolumesItem(new V1Volume().name(WDT_ENCRYPT_PASSPHRASE_VOLUME)
@@ -300,7 +305,7 @@ public abstract class JobStepContext extends BasePodStepContext {
               .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
     }
 
-    String opssKeyWalletConfigMap = getOpssKeyWalletConfigMap();
+    String opssKeyWalletConfigMap = getOpssWalletFileSecretName();
     if (opssKeyWalletConfigMap != null) {
       podSpec.addVolumesItem(
           new V1Volume()
@@ -321,7 +326,7 @@ public abstract class JobStepContext extends BasePodStepContext {
               "/weblogic-operator/introspectormd5")
               .readOnly(false));
 
-    if (getOpssWalletSecretVolume() != null) {
+    if (getOpssWalletPasswordSecretVolume() != null) {
       container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_KEYPASSPHRASE_VOLUME, OPSS_KEY_MOUNT_PATH));
     }
     if (getWdtEncryptPassPhraseVolume() != null) {
@@ -350,7 +355,7 @@ public abstract class JobStepContext extends BasePodStepContext {
           readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
     }
 
-    String opssKeyWalletConfigMap = getOpssKeyWalletConfigMap();
+    String opssKeyWalletConfigMap = getOpssWalletFileSecretName();
     if (opssKeyWalletConfigMap != null) {
       container.addVolumeMountsItem(
           readOnlyVolumeMount(
@@ -385,10 +390,10 @@ public abstract class JobStepContext extends BasePodStepContext {
           .defaultMode(420);
   }
 
-  private V1SecretVolumeSource getOpssWalletSecretVolume() {
-    if (getOpssWalletSecretName() != null) {
+  private V1SecretVolumeSource getOpssWalletPasswordSecretVolume() {
+    if (getOpssWalletPasswordSecretName() != null) {
       V1SecretVolumeSource result =  new V1SecretVolumeSource()
-          .secretName(getOpssWalletSecretName())
+          .secretName(getOpssWalletPasswordSecretName())
           .defaultMode(420);
       result.setOptional(true);
       return result;

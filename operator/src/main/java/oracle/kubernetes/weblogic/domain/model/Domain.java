@@ -351,8 +351,8 @@ public class Domain {
    *
    * @return opss key passphrase
    */
-  public V1SecretReference getOpssWalletSecret() {
-    return spec.getOpssWalletSecret();
+  public V1SecretReference getOpssWalletPasswordSecret() {
+    return spec.getOpssWalletPasswordSecret();
   }
 
   /**
@@ -488,8 +488,8 @@ public class Domain {
    *
    * @return opss wallet config map.
    */
-  public String getOpssKeyWalletConfigMap() {
-    return spec.getOpssKeyWalletConfigMap();
+  public V1SecretReference getOpssWalletFileSecret() {
+    return spec.getOpssWalletFileSecret();
   }
 
   @Override
