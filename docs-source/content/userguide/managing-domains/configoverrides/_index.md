@@ -411,7 +411,7 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
 
 * When a domain is first deployed, or is restarted, the operator runtime creates an introspector Kubernetes job named `DOMAIN_UID-introspect-domain-job`.
 * The introspector job's pod:
-  * Mounts the Kubernetes configuration map and secrets specified by using the operator domain resource `configuration.overridesConfigMap`, `webLogicCredentialsSecret`, and `configuration.overrides.secrets` fields.
+  * Mounts the Kubernetes configuration map and secrets specified by using the operator domain resource `configuration.overridesConfigMap`, `webLogicCredentialsSecret`, and `configuration.secrets` fields.
   * Reads the mounted situational configuration templates from the configuration map and expands them to create the actual situational configuration files for the domain:
       * It expands some fixed replaceable values (for example, `${env:DOMAIN_UID}`).
       * It expands referenced secrets by reading the value from the corresponding mounted secret file (for example, `${secret:mysecret.mykey}`).

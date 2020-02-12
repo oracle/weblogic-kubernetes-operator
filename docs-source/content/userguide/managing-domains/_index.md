@@ -18,10 +18,10 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 
 Please be aware of the following important considerations for WebLogic domains running in Kubernetes:
 
-* _Domain Home Location:_ The WebLogic domain home location is determined by the domain resource `domainHome` if set; otherwise, a default location is determined by the `domainHomeSourceType` setting. If a domain resource `domainHome` field is not set
+* _Domain Home Location:_ The WebLogic domain home location is determined by the domain resource `domainHome`, if specified; otherwise, a default location is determined by the `domainHomeSourceType` setting. If the domain resource `domainHome` field is not specified
   and `domainHomeSourceType` is `Image` (the default), then the operator will
   assume that the domain home is a directory under `/u01/oracle/user_projects/domains/` and report an error if no domain is found
-  or more than one domain is found.  If a domain resource `domainHome` field is not set and `domainHomeSourceType` is not `Image`, then the operator will
+  or more than one domain is found.  If the domain resource `domainHome` field is not specified and `domainHomeSourceType` is `PersistentVolume` or `FromModel`, then the operator will
   assume that the domain home is `/shared/domains/DOMAIN_UID`.
   {{% notice warning %}}
   Oracle strongly recommends storing an image containing a WebLogic domain home
@@ -33,9 +33,9 @@ Please be aware of the following important considerations for WebLogic domains r
   in the ***Security*** section.
   {{% /notice %}}
 
-* _Log File Locations:_ The operator can automatically override WebLogic domain and server log locations using situational
+* _Log File Locations:_ The operator can automatically override WebLogic domain and server log locations using
   configuration overrides.  This occurs if the domain resource `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
-  and `domainHomeSourceType` is not set to `Image`.   When overriding, the log location will be the location specified by the `logHome` setting.
+  and `domainHomeSourceType` is set to `PersistentVolume` or `FromModel`.   When overriding, the log location will be the location specified by the `logHome` setting.
 
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
   SSL, admin, or custom channel listen addresses (using situational configuration overrides).  These will become `domainUID` followed by a
