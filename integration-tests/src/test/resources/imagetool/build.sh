@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 # Exit immediately if a command exits with a non-zero status.
