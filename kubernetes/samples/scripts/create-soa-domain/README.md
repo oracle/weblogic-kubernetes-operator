@@ -2,14 +2,12 @@
 
 The WebLogic Kubernetes operator supports deployment of SOA Suite components such as Oracle Service-Oriented Architecture (SOA), Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS). 
 
-{{% notice warning %}}
 Oracle SOA Suite is currently only supported for non-production use in Docker and Kubernetes.  The information provided
 in this document is a *preview* for early adopters who wish to experiment with Oracle SOA Suite in Kubernetes before
 it is supported for production use.
-{{% /notice %}}
 
 In this release, SOA Suite domains are supported using the “domain on a persistent volume”
-[model](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/) only, where the domain home is located in a persistent volume (PV).
+[model]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) only, where the domain home is located in a persistent volume (PV).
 
 The operator has several key features to assist you with deploying and managing SOA domains in a Kubernetes
 environment. You can:
@@ -30,9 +28,9 @@ following limitations currently exist for SOA Suite domains:
 * JMS Migration is not supported.
 * ATP Database is not supported.
 
-Refer to the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/) for more limitations for this release.
+Refer to the [User guide]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md" >}}) for more limitations for this release.
 
-The fastest way to experience the operator is to follow the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/), or you can read our [blogs](link-to-be-added), or try out the [samples](https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/soa-domain/).
+The fastest way to experience the operator is to follow the [User guide]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md" >}}), or try out the deployment [scripts]({{< relref "/samples/simple/domains/soa-domain/_index.md" >}}).
 
 ***
 The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.4.0.
