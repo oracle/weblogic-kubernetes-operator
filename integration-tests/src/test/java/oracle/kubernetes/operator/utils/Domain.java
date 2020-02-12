@@ -2072,6 +2072,10 @@ public class Domain {
     return loadBalancerWebPort;
   }
 
+  public String getLoadBalancerName() {
+    return loadBalancer;
+  }
+
   /**
    * Shut down a ms by setting serverStartPolicy to NEVER.
    *
