@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.54.0" />
-    <meta name="description" content="Sample for generating a self-signed certificate and private key that can be used for the operator&#39;s external REST API.">
+    <meta name="description" content="">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>REST APIs :: WebLogic Kubernetes Operator</title>
+    <title>Using OCI File Storage (FSS) for Persistent Volumes :: WebLogic Kubernetes Operator</title>
 
     
     <link href="/weblogic-kubernetes-operator/css/nucleus.css?1581633081" rel="stylesheet">
@@ -33,7 +33,7 @@
     </style>
     
   </head>
-  <body class="" data-url="/weblogic-kubernetes-operator/samples/simple/rest/">
+  <body class="" data-url="/weblogic-kubernetes-operator/faq/oci-fss-pv/">
     <nav id="sidebar" class="">
 
 
@@ -1268,7 +1268,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/" title="Samples" class="dd-item 
-        parent
+        
         
         
         ">
@@ -1295,7 +1295,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/" title="Simple samples" class="dd-item 
-        parent
+        
         
         
         ">
@@ -1550,8 +1550,8 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/rest/" title="REST APIs" class="dd-item 
-        parent
-        active
+        
+        
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/rest/">
@@ -2229,7 +2229,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/faq/" title="Frequently asked questions" class="dd-item 
-        
+        parent
         
         
         ">
@@ -2253,7 +2253,7 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/oci-fss-pv/" title="Using OCI File Storage (FSS) for Persistent Volumes" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/oci-fss-pv/" title="Using OCI File Storage (FSS) for Persistent Volumes" class="dd-item active">
         <a href="/weblogic-kubernetes-operator/faq/oci-fss-pv/">
         Using OCI File Storage (FSS) for Persistent Volumes
         
@@ -2421,13 +2421,7 @@
             
           
           
-            
-            
-          
-          
-            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/samples/'>Samples</a> > <a href='/weblogic-kubernetes-operator/samples/simple/'>Simple samples</a> > REST APIs
-          
-         
+            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/faq/'>Frequently asked questions</a> > Using OCI File Storage (FSS) for Persistent Volumes
           
          
           
@@ -2446,7 +2440,8 @@
 <ul>
 <li>
 <ul>
-<li><a href="#sample-to-create-certificate-and-key">Sample to create certificate and key</a></li>
+<li><a href="#failure-during-domain-creation-with-persistent-volume-sample">Failure during domain creation with persistent volume sample</a></li>
+<li><a href="#updating-the-domain-on-persistent-volume-sample">Updating the domain on persistent volume sample</a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -2466,7 +2461,7 @@
           
             <h1>
               
-              REST APIs
+              Using OCI File Storage (FSS) for Persistent Volumes
             </h1>
           
 
@@ -2475,67 +2470,105 @@
 
 
 
-	
 
-<h3 id="sample-to-create-certificate-and-key">Sample to create certificate and key</h3>
-
-<p>When a user enables the operator&rsquo;s external REST API (by setting
-<code>externalRestEnabled</code> to <code>true</code> when installing or upgrading the operator Helm chart), the user also needs
-to provide the certificate(s) and private key used for the SSL/TLS identity on the external REST API endpoint by creating a
-kubernetes <code>tls secret</code> and using that secret&rsquo;s name with the operator Helm chart values.</p>
-
-<p>This sample script generates a self-signed certificate and private key that can be used
-for the operator&rsquo;s external REST API when experimenting with the operator.</p>
+<p>If you are running your Kubernetes cluster on Oracle Container Engine
+for Kubernetes (commonly known as OKE), and you use OCI File Storage (FSS)
+for persistent volumes to store the WebLogic domain home, then the file system
+handling demonstrated in the operator persistent volume sample will require
+an update to properly initialize the file ownership on the persistent volume
+when the domain is initially created.</p>
 
 
-<div class="notices warning" ><p>The certificate and key generated with this script should <strong><em>not</em></strong> be used in a production environment.</p>
+<div class="notices note" ><p>File permission handling on persistent volumes can differ between
+cloud providers and even with the underlying storage handling on
+Linux based systems. These instructions provide one option to
+update file ownership used by the standard Oracle images where
+UID <code>1000</code> and GID <code>1000</code> typically represent the <code>oracle</code> or <code>opc</code> user.
+For more information on persistent volume handling,
+see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/persistent-storage/">Persistent storage</a>.</p>
 </div>
 
 
-<p>The syntax of the script is:</p>
+<h3 id="failure-during-domain-creation-with-persistent-volume-sample">Failure during domain creation with persistent volume sample</h3>
 
-<pre><code>$ kubernetes/samples/scripts/rest/generate-external-rest-identity.sh \
-  -a &lt;SANs&gt; -n &lt;operator-namespace&gt; [-s &lt;secret-name&gt;]
+<p>The existing sample for <a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv">creation of a domain home on persistent volume</a>
+uses a Kubernetes job to create the domain. The sample uses an
+<code>initContainers</code> section to change the file ownership which will
+fail for OCI FSS created volumes used with an OKE cluster.</p>
+
+<p>The OCI FSS volume contains some files that are not modifiable thus
+causing the Kubernetes job to fail. The failure is seen in the
+description of the Kubernetes job pod:</p>
+
+<pre><code class="language-bash">$ kubectl describe -n domain1-ns pod domain1-create-weblogic-sample-domain-job-wdkvs
+   :
+   :
+Init Containers:
+  fix-pvc-owner:
+    Container ID:  docker://7051b6abdc296c76e937246df03d157926f2f7477e63b6af3bf65f6ae1ceddee
+    Image:         container-registry.oracle.com/middleware/weblogic:12.2.1.3
+    Image ID:      docker-pullable://container-registry.oracle.com/middleware/weblogic@sha256:47dfd4fdf6b56210a6c49021b57dc2a6f2b0d3b3cfcd253af7a75ff6e7421498
+    Port:          &lt;none&gt;
+    Host Port:     &lt;none&gt;
+    Command:
+      sh
+      -c
+      chown -R 1000:1000 /shared
+    State:          Terminated
+      Reason:       Error
+      Exit Code:    1
+      Started:      Wed, 12 Feb 2020 18:28:53 +0000
+      Finished:     Wed, 12 Feb 2020 18:28:53 +0000
+    Ready:          False
+    Restart Count:  0
+    Environment:    &lt;none&gt;
+
+   :
 </code></pre>
 
-<p>Where <code>&lt;SANs&gt;</code> lists the subject alternative names to put into the generated self-signed
-certificate for the external WebLogic Kubernetes Operator REST HTTPS interface, <code>&lt;operator-namespace&gt;</code> should match
-the namespace where the operator will be installed, and optionally the secret name, which defaults
-to <code>weblogic-operator-external-rest-identity</code>.</p>
+<h3 id="updating-the-domain-on-persistent-volume-sample">Updating the domain on persistent volume sample</h3>
 
-<p>You should include the addresses of all masters and load balancers
-(i.e. what a client specifies to access the external REST endpoint)
-in the subject alternative name list. In addition, each name must be prefaced
-by <code>DNS:</code> for a host name, or <code>IP:</code> for an address, as with this example:</p>
+<p>In the following snippet of the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml">create-domain-job-template.yaml</a>,
+you can see the updated <code>command</code> for the init container:</p>
 
-<pre><code>-a &quot;DNS:myhost,DNS:localhost,IP:127.0.0.1&quot;
+<pre><code>apiVersion: batch/v1
+kind: Job
+metadata:
+  name: %DOMAIN_UID%-create-weblogic-sample-domain-job
+  namespace: %NAMESPACE%
+spec:
+  template:
+    metadata:
+  :
+  :
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: fix-pvc-owner
+          image: %WEBLOGIC_IMAGE%
+          command: [&quot;sh&quot;, &quot;-c&quot;, &quot;chown 1000:1000 %DOMAIN_ROOT_DIR%/. &amp;&amp; find %DOMAIN_ROOT_DIR%/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:1000&quot;]
+          volumeMounts:
+          - name: weblogic-sample-domain-storage-volume
+            mountPath: %DOMAIN_ROOT_DIR%
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+      containers:
+        - name: create-weblogic-sample-domain-job
+          image: %WEBLOGIC_IMAGE%
+
+  :
 </code></pre>
 
-<p>The external certificate and key can be changed after installation of the operator. For
-more information, see <a href="/weblogic-kubernetes-operator/security/certificates/#updating-operator-external-certificate">updating operator external certificate</a>
-in the <strong><em>Security</em></strong> section.</p>
-
-<p>The script as used below will create the <code>tls secret</code> named <code>weblogic-operator-identity</code> in the namespace <code>weblogic-operator-ns</code> using a self-signed
-certificate and private key:</p>
-
-<pre><code>$ echo &quot;externalRestEnabled: true&quot; &gt; my_values.yaml
-$ generate-external-rest-identity.sh \
-  -a &quot;DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1&quot; \
-  -n weblogic-operator-ns -s weblogic-operator-identity &gt;&gt; my_values.yaml
-#
-$ kubectl -n weblogic-operator-ns describe secret weblogic-operator-identity
-#
-$ helm install kubernetes/charts/weblogic-operator --name my_operator \
-  --namespace weblogic-operator-ns --values my_values.yaml --wait
-</code></pre>
-
-
-
+<p>Use this new <code>command</code> in your copy of this template file. This will result in
+the ownership being updated for the expected files only, before the WebLogic
+domain is created on the persistent volume.</p>
 
 
 <footer class=" footline" >
 	
 </footer>
+
 
         
         </div> 
@@ -3381,7 +3414,6 @@ $ helm install kubernetes/charts/weblogic-operator --name my_operator \
             
                 
                     
-                    
                 
                 
 
@@ -3391,57 +3423,6 @@ $ helm install kubernetes/charts/weblogic-operator --name my_operator \
                     
                     
 
-                    
-                        
-            
-            
-                
-                    
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                        
-                        
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
                     
                         
             
@@ -3473,6 +3454,37 @@ $ helm install kubernetes/charts/weblogic-operator --name my_operator \
                     
             
         
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
                     
                         
             
@@ -3554,6 +3566,22 @@ $ helm install kubernetes/charts/weblogic-operator --name my_operator \
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -3561,7 +3589,6 @@ $ helm install kubernetes/charts/weblogic-operator --name my_operator \
             
             
                 
-                    
                     
                 
                 
@@ -3578,9 +3605,6 @@ $ helm install kubernetes/charts/weblogic-operator --name my_operator \
             
             
                 
-                    
-                        
-                        
                     
                 
                 
@@ -4056,6 +4080,7 @@ $ helm install kubernetes/charts/weblogic-operator --name my_operator \
             
                 
                     
+                    
                 
                 
 
@@ -4068,6 +4093,7 @@ $ helm install kubernetes/charts/weblogic-operator --name my_operator \
             
             
                 
+                    
                     
                 
                 
@@ -4084,6 +4110,9 @@ $ helm install kubernetes/charts/weblogic-operator --name my_operator \
             
             
                 
+                    
+                        
+                        
                     
                 
                 
@@ -4172,10 +4201,10 @@ $ helm install kubernetes/charts/weblogic-operator --name my_operator \
 	 
 	 
 		
-			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/" title="Delete domain resources"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/faq/" title="Frequently asked questions"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/weblogic-kubernetes-operator/samples/simple/ingress/" title="Ingress" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/faq/fan/" title="Disabling Fast Application Notifications" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
@@ -4205,3 +4234,4 @@ $ helm install kubernetes/charts/weblogic-operator --name my_operator \
 
   </body>
 </html>
+

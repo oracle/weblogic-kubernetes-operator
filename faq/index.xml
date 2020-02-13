@@ -12,6 +12,16 @@
     
     
     <item>
+      <title>Using OCI File Storage (FSS) for Persistent Volumes</title>
+      <link>/weblogic-kubernetes-operator/faq/oci-fss-pv/</link>
+      <pubDate>Wed, 12 Feb 2020 12:12:12 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/oci-fss-pv/</guid>
+      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), and you use OCI File Storage (FSS) for persistent volumes to store the WebLogic domain home, then the file system handling demonstrated in the operator persistent volume sample will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.
+File permission handling on persistent volumes can differ between cloud providers and even with the underlying storage handling on Linux based systems.</description>
+    </item>
+    
+    <item>
       <title>Disabling Fast Application Notifications</title>
       <link>/weblogic-kubernetes-operator/faq/fan/</link>
       <pubDate>Fri, 11 Oct 2019 17:20:00 -0500</pubDate>

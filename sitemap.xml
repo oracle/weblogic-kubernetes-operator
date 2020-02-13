@@ -373,6 +373,11 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/faq/oci-fss-pv/</loc>
+    <lastmod>2020-02-12T12:12:12-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/userguide/experimental/</loc>
     <lastmod>2019-08-15T13:29:04-04:00</lastmod>
   </url>
