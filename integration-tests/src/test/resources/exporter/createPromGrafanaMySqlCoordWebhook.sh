@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 # Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upload
 monitoringExporterDir=$1
@@ -74,6 +74,8 @@ if [ ${SHARED_CLUSTER} = "true" ]; then
     fi
     sed -i "s/webhook-log:1.0/$REPO_REGISTRY\/weblogick8s\/webhook-log:1.0/g"  ${resourceExporterDir}/server.yaml
     sed -i "s/config_coordinator/$REPO_REGISTRY\/weblogick8s\/config_coordinator/g"  ${resourceExporterDir}/coordinator_${domainNS}.yaml
+    sed -i "s/IfNotPresent/Always/g"  ${resourceExporterDir}/server.yaml
+    sed -i "s/IfNotPresent/Always/g"  ${resourceExporterDir}/coordinator_${domainNS}.yaml
 fi
 echo 'docker list images for webhook'
 docker images | grep webhook
