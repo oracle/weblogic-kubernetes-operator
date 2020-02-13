@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # serviceAccount specifies the name of the service account in the operator's namespace that the
@@ -25,7 +25,7 @@ domainNamespaces:
   - "default"
 
 # image specifies the docker image containing the operator code.
-image: "oracle/weblogic-kubernetes-operator:2.4.0"
+image: "oracle/weblogic-kubernetes-operator:2.5.0"
 
 # imagePullPolicy specifies the image pull policy for the operator docker image.
 imagePullPolicy: "IfNotPresent"

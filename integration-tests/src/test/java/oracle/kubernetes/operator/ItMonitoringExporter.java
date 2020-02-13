@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -147,7 +147,12 @@ public class ItMonitoringExporter extends BaseTest {
 
         myhost = domain.getHostNameForCurl();
         exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
-        upgradeTraefikHostName();
+        LoggerHelper.getLocal().log(Level.INFO, "LB_TYPE is set to: " + System.getenv("LB_TYPE"));
+        boolean isTraefik = (domain.getLoadBalancerName().equalsIgnoreCase("TRAEFIK"));
+        if (isTraefik) {
+          LoggerHelper.getLocal().log(Level.INFO, "Upgrading Traefik");
+          upgradeTraefikHostName();
+        }
         deployRunMonitoringExporter(domain, operator);
 
         String testAppName = "httpsessionreptestapp";
@@ -1128,6 +1133,9 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static void installPrometheusGrafanaWebHookMySqlCoordinator() throws Exception {
     prometheusPort = "30500";
+    String promalertmanagerPort = String.valueOf(32500 + getNewSuffixCount());
+    replaceStringInFile(
+        resourceExporterDir + "/promvalues.yaml", "32500", promalertmanagerPort);
     grafanaPort = String.valueOf(31000 + getNewSuffixCount());
     replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
         "31000", grafanaPort);
@@ -1151,19 +1159,21 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   static void checkPromGrafana(String searchKey, String expectedVal) throws Exception {
-    String podName = getPodName("app=prometheus", "monitoring");
 
     String crdCmd = "kubectl -n monitoring get pods -l app=prometheus";
     ExecResult resultStatus = ExecCommand.exec(crdCmd);
     LoggerHelper.getLocal().log(Level.INFO, "Status of the pods " + resultStatus.stdout());
 
-
     assertFalse(
         resultStatus.stdout().contains("CrashLoopBackOff")
             || resultStatus.stdout().contains("Error"),
         "Can't create prometheus pods");
+    crdCmd = "kubectl -n monitoring get pods -l app=grafana";
+    resultStatus = ExecCommand.exec(crdCmd);
+    LoggerHelper.getLocal().log(Level.INFO, "Status of the pods " + resultStatus.stdout());
 
-    podName = getPodName("app=grafana", "monitoring");
+    String podName = getPodName("app=grafana", "monitoring");
+    assertNotNull("Grafana pod was not created", podName);
     TestUtils.checkPodReady(podName, "monitoring");
 
     String myhost = domain.getHostNameForCurl();

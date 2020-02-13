@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -1749,7 +1749,9 @@ public class Domain {
       LoggerHelper.getLocal().log(Level.INFO, "IMAGE_TAG_WEBLOGIC " + imageTag);
     }
     domainMap.put("logHome", "/shared/logs/" + domainUid);
-    if (!domainMap.containsKey("domainHomeImageBase")) {
+    if (domainMap.containsKey("weblogicImageTagWIT")) {
+      domainMap.put("image", domainMap.get("weblogicImageTagWIT"));
+    } else if (!domainMap.containsKey("domainHomeImageBase")) {
       domainMap.put("domainHome", "/shared/domains/" + domainUid);
       domainMap.put("image", imageName + ":" + imageTag);
       if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
@@ -2068,6 +2070,10 @@ public class Domain {
 
   public int getLoadBalancerWebPort() {
     return loadBalancerWebPort;
+  }
+
+  public String getLoadBalancerName() {
+    return loadBalancer;
   }
 
   /**
