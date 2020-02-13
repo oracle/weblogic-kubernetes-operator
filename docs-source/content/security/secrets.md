@@ -120,7 +120,7 @@ under **User Guide**.
 The operator supports embedding macros within configuration override templates
 that reference Kubernetes secrets. These Kubernetes secrets can be created with any name in the
 namespace where the `Domain` will be running. The Kubernetes secret names are
-specified using `configOverrideSecrets` in the WebLogic `Domain` resource.
+specified using `configuration.secrets` in the WebLogic `Domain` resource.
 
 {{% notice info %}}
 For more information, see

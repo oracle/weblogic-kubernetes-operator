@@ -163,7 +163,7 @@ spec:
   # The WebLogic Domain Home
   domainHome: /shared/domains/domain1
   # If the domain home is in the image
-  domainHomeInImage: false
+  domainHomeSourceType: PersistentVolume
   # The WebLogic Server Docker image that the operator uses to start the domain
   image: "container-registry.oracle.com/middleware/weblogic:12.2.1.3"
   # imagePullPolicy defaults to "Always" if image version is :latest

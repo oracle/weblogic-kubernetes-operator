@@ -63,26 +63,6 @@ public abstract class ServerSpecBase implements ServerSpec {
   }
 
   @Override
-  public String getConfigOverrides() {
-    return domainSpec.getConfigOverrides();
-  }
-
-  @Override
-  public List<String> getConfigOverrideSecrets() {
-    return domainSpec.getConfigOverrideSecrets();
-  }
-
-  @Override
-  public String getWdtConfigMap() {
-    return domainSpec.getWdtConfigMap();
-  }
-
-  @Override
-  public String getWdtConfigMapSecrets() {
-    return domainSpec.getOpssKeyWalletConfigMap();
-  }
-
-  @Override
   @Nonnull
   public ProbeTuning getLivenessProbe() {
     return new ProbeTuning();

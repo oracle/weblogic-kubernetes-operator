@@ -194,7 +194,7 @@ spec:
   # The WebLogic Domain Home
   domainHome: /u01/oracle/user_projects/domains/domain1
   # If the domain home is in the image
-  domainHomeInImage: true
+  domainHomeSourceType: Image
   # The WebLogic Server Docker image that the operator uses to start the domain
   image: "domain-home-in-image:12.2.1.3"
   # imagePullPolicy defaults to "Always" if image version is :latest

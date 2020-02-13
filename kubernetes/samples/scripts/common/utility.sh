@@ -440,12 +440,14 @@ function createFiles {
   fi
 
   if [ "${domainHomeInImage}" == "true" ]; then
+    domainHomeSourceType="Image"
     if [ "${logHomeOnPV}" == "true" ]; then
       logHomeOnPVPrefix="${enabledPrefix}"
     else
       logHomeOnPVPrefix="${disabledPrefix}"
     fi
   else
+    domainHomeSourceType="PersistentVolume"
     logHomeOnPVPrefix="${enabledPrefix}"
     logHomeOnPV=true
   fi
@@ -457,7 +459,7 @@ function createFiles {
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_HOME_IN_IMAGE%:${domainHomeInImage}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_HOME_SOURCE_TYPE%:${domainHomeSourceType}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}

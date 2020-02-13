@@ -39,37 +39,6 @@ public interface ServerSpec {
   List<V1EnvVar> getEnvironmentVariables();
 
   /**
-   * The Kubernetes config map name used in WebLogic configuration overrides.
-   *
-   * @return configMapName. May be empty.
-   */
-  String getConfigOverrides();
-
-  /**
-   * The secret names used in WebLogic configuration overrides.
-   *
-   * @return a list of secret names. May be empty.
-   */
-  List<String> getConfigOverrideSecrets();
-
-  ////
-  /**
-   * The Kubernetes config map name for wdt model.
-   *
-   * @return configMapName. May be empty.
-   */
-  String getWdtConfigMap();
-
-  /**
-   * The secret name for wdt model encryption passphrase.
-   *
-   * @return name of the secret. May be empty.
-   */
-  String getWdtConfigMapSecrets();
-
-  ////
-
-  /**
    * Desired startup state. Legal values are RUNNING or ADMIN.
    *
    * @return desired state
