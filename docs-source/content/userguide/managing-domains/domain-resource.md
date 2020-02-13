@@ -64,13 +64,13 @@ Elements related to domain identification, Docker image, and domain home:
 * `image`: The WebLogic Docker image. Required when `domainHomeSourceType` is `Image`; otherwise, defaults to `container-registry.oracle.com/middleware/weblogic:12.2.1.3`.
 * `imagePullPolicy`: The image pull policy for the WebLogic Docker image. Legal values are `Always`, `Never` and `IfNotPresent`. Defaults to `Always` if image ends in `:latest`; `IfNotPresent` otherwise.
 * `imagePullSecrets`: A list of image pull secrets for the WebLogic Docker image.
-* `domainHome`: The folder for the WebLogic domain. Not required. Defaults to `/shared/domains/domains/domainUID` if `domainHomeInImage` is false. Defaults to `/u01/oracle/user_projects/domains/` if `domainHomeInImage` is true.
+* `domainHome`: The folder for the WebLogic domain. Not required. Defaults to `/shared/domains/domains/domainUID` if `domainHomeSourceType` is `PersistentVolume`. Defaults to `/u01/oracle/user_projects/domains/` if `domainHomeSourceType` is `Image`. Defaults to `/u01/domains/domainUID` if `domainHomeSourceType` is `FromModel`.
 * `domainHomeSourceType`: The source for the domain home. Legal values are `Image`, `PersistentVolume`, and `FromModel`. Defaults to `Image`.
 
 Elements related to logging:
 
 * `includeServerOutInPodLog`: If true (the default), the server `.out` file will be included in the pod's stdout.
-* `logHome`: The in-pod name of the directory in which to store the domain, Node Manager, server logs, and server `.out` files.
+* `logHome`: The in-pod name of the directory in which to store the domain, Node Manager, server logs, and server `.out` files. Defaults to `/shared/logs/<domainUID>`. Ignored if `logHomeEnabled` is `false`.
 * `logHomeEnabled`: Specifies whether the log home folder is enabled. Not required. Defaults to true if `domainHomeSourceType` is `PersistentVolume`.
 
 Elements related to security:

@@ -31,8 +31,8 @@ DomainSpec is a description of a domain.
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
 | `includeServerOutInPodLog` | Boolean | If true (the default), the server .out file will be included in the pod's stdout. |
-| `logHome` | string | The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files |
-| `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeSourceType is not Image. Defaults to false if domainHomeSourceType is Image.  |
+| `logHome` | string | The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files. Defaults to /shared/logs/<domainUID>. Ignored if logHomeEnabled is false. |
+| `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise. |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
 | `replicas` | number | The number of managed servers to run in any cluster that does not specify a replica count. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |

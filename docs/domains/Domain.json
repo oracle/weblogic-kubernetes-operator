@@ -278,7 +278,7 @@
           "$ref": "#/definitions/AdminServer"
         },
         "logHome": {
-          "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files",
+          "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files. Defaults to /shared/logs/\u003cdomainUID\u003e. Ignored if logHomeEnabled is false.",
           "type": "string"
         },
         "includeServerOutInPodLog": {
@@ -346,7 +346,7 @@
           "type": "string"
         },
         "logHomeEnabled": {
-          "description": "Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeSourceType is not Image. Defaults to false if domainHomeSourceType is Image. ",
+          "description": "Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.",
           "type": "boolean"
         },
         "serverPod": {

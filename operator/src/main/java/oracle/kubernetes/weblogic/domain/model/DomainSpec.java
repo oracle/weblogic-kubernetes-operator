@@ -85,7 +85,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The in-pod name of the directory in which to store the domain, node manager, server logs, "
-          + "and server  *.out files")
+          + "and server  *.out files. Defaults to /shared/logs/<domainUID>. Ignored if logHomeEnabled is false.")
   private String logHome;
 
   /**
@@ -95,8 +95,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "Specified whether the log home folder is enabled. Not required. "
-          + "Defaults to true if domainHomeSourceType is not Image. "
-          + "Defaults to false if domainHomeSourceType is Image. ")
+          + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   /**

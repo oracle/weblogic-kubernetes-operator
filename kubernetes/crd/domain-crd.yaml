@@ -2185,7 +2185,8 @@ spec:
             logHome:
               type: string
               description: The in-pod name of the directory in which to store the
-                domain, node manager, server logs, and server  *.out files
+                domain, node manager, server logs, and server  *.out files. Defaults
+                to /shared/logs/<domainUID>. Ignored if logHomeEnabled is false.
             includeServerOutInPodLog:
               type: boolean
               description: If true (the default), the server .out file will be included
@@ -4257,9 +4258,9 @@ spec:
                 of the config map for optional WebLogic configuration overrides.
             logHomeEnabled:
               type: boolean
-              description: 'Specified whether the log home folder is enabled. Not
-                required. Defaults to true if domainHomeSourceType is not Image. Defaults
-                to false if domainHomeSourceType is Image. '
+              description: Specified whether the log home folder is enabled. Not required.
+                Defaults to true if domainHomeSourceType is PersistentVolume; false,
+                otherwise.
             serverPod:
               type: object
               description: Configuration affecting server pods.
