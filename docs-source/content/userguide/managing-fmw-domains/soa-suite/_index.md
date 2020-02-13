@@ -116,10 +116,10 @@ cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
 
 This will produce an image named `oracle/fmw-infrastructure:12213-update-k8s`.
 
-All samples and instructions reference the pre-built and already patched image, `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3`. When building your own image, you will need to rename `oracle/fmw-infrastructure:12213-update-k8s` to `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3`.
+All samples and instructions reference the pre-built and already patched image, `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3`. When building your own image, you will need to rename `oracle/fmw-infrastructure:12213-update-k8s` to `oracle/fmw-infrastructure:12.2.1.3`.
 
 ```
-$ docker tag oracle/fmw-infrastructure:12213-update-k8s container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3
+$ docker tag oracle/fmw-infrastructure:12213-update-k8s oracle/fmw-infrastructure:12.2.1.3
 ```
 
 After cloning the repository and downloading the installer from Oracle Technology Network
@@ -130,13 +130,13 @@ cd docker-images/OracleSOASuite/dockerfiles
 ./buildDockerImage.sh -v 12.2.1.3 -s
 ```
 
-The image produced will be named `middleware/soasuite/oracle/soasuite:12.2.1.3`.
+The image produced will be named `oracle/soa:12.2.1.3`.
 
 The Oracle SOA Suite image created through the above step needs to be retagged
-from `middleware/soasuite/oracle/soasuite:12.2.1.3` to `container-registry.oracle.com/middleware/soasuite:12.2.1.3` before continuing with the next steps.
+from `oracle/soa:12.2.1.3` to `container-registry.oracle.com/middleware/soasuite:12.2.1.3` before continuing with the next steps.
 
 ```bash
-$ docker tag middleware/soasuite/oracle/soasuite:12.2.1.3 container-registry.oracle.com/middleware/soasuite:12.2.1.3
+$ docker tag oracle/soa:12.2.1.3 container-registry.oracle.com/middleware/soasuite:12.2.1.3
 ```
 
 You can use this image to run the Repository Creation Utility and to run your domain using the “domain on a persistent volume” model.
@@ -159,30 +159,31 @@ For more details, see My Oracle Support note:
 Oracle Support for Database Running on Docker (Doc ID 2216342.1)
 {{% /notice %}}
 
-The following documentation and samples are for creating a container-based database on a persistent volume.
-
 ##### Running the database inside Kubernetes
 
-Follow these instructions for a basic database setup inside Kubernetes that uses PV (persistent volume) and PVC (persistent volume claim) to persist the data. For more details about database setup and configuration, refer to this [page]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#running-the-database-inside-kubernetes" >}}).
+Follow these instructions for a basic database set up inside Kubernetes. For more details about database set up and configuration, refer to this [page]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#running-the-database-inside-kubernetes" >}}).
 
-Pull the database image:
+The database inside Kubernetes can also be launched by attaching persistent volumes (PV) for persisting the storage for the database.
 
-```bash
-$ docker pull container-registry.oracle.com/database/enterprise:12.2.0.1
-$ docker tag  container-registry.oracle.com/database/enterprise:12.2.0.1  oracle/database:12.2.0.1
-```
+Follow the instructions in this [section](https://github.com/sbattagi/weblogic-kubernetes-operator/tree/soa-2.4.0-develop/kubernetes/samples/scripts/create-rcu-schema#create-the-rcu-schema-in-the-oracle-database), to set up a database in a container with out persistent volume (PV) attached.
+
+>NOTE: `start-db-service.sh` by default creates the database in the `default` namespace. If you are creating the database in a different namespace, you need to manually update the value for all the occurances of namespace field in "create-rcu-schema/common/oracle.db.yaml" file.
+
+Follow the below instructions, **only** when you set up the database in a container with persistent volume (PV) attached. Otherwise skip to [RCU creation step](#running-the-repository-creation-utility-to-set-up-your-database-schema).
+
 Create the PV and PVC for the database
 by running the [create-pv-pvc.sh]({{< relref "/samples/simple/storage/_index.md" >}}) script.
-Follow the instructions for using the scripts to create a PV and PVC.  
+Follow the instructions for using the scripts to create a PV and PVC.
 
 {{% notice note %}}
 When creating the PV and PVC for the database, make sure that you use a different name
 and storage class to the PV and PVC you create for the domain to use.
+For this you need to update the value of "baseName" field in create-pv-pvc-inputs.yaml to a different name than the one used for domain PV.
 {{% /notice %}}
 
 Bring up the database and database service using the following commands:
 
-**NOTE**: Make sure you update `db-with-pv.yaml` with the name of the PVC you created in the previous step.
+>NOTE: Make sure you update `kubernetes/samples/scripts/create-soa-domain/domain-home-on-pv/create-database/db-with-pv.yaml` file with the name of the PVC  created in the previous step. Also update the value for all the occurances of namespace field to the namespace where the database PV is created in above step.
 
 ```bash
 $ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-soa-domain/domain-home-on-pv/create-database
@@ -194,120 +195,51 @@ complete the setup operations.  You can watch the log to see its progress using
 this command:
 
 ```bash
-$ kubectl logs -f soadb-0 -n soans
+$ kubectl logs -f oracle-db -n soans
 ```
 
 Verify that the database service status is Ready.
 
 ```bash
-$ kubectl get pods,svc -n soans |grep soadb
-po/soadb-0   1/1       Running   0          6m
+$ kubectl get pods,svc -n soans |grep oracle-db
+po/oracle-db   1/1       Running   0          6m
 
-svc/soadb   ClusterIP   None         <none>        1521/TCP,5500/TCP   7m
+svc/oracle-db   ClusterIP   None         <none>        1521/TCP,5500/TCP   7m
 $
 ```
+>NOTE: You need to update the namespace in above commands if the database is running in a different namespace.
 
 #### Running the Repository Creation Utility to set up your database schema
 
-If you want to run RCU from a pod inside the Kubernetes cluster, you can use the Docker
-image that you built earlier as a "service" pod to run RCU.  To do this, start up a
-pod using that image as follows:
-
-```bash
-kubectl run rcu --generator=run-pod/v1 --image container-registry.oracle.com/middleware/soasuite:12.2.1.3 -n soans  -- sleep infinity
-```
-
-This will create a Kubernetes deployment called `rcu` containing a pod running a container
-created from the `oracle/soa:12.2.1.3` image which will just run
-`sleep infinity`, which essentially creates a pod that we can "exec" into and use to run whatever
-commands we need to run.
-
-To get inside this container and run commands, use this command:
-
-```bash
-kubectl exec -n soans -ti rcu /bin/bash
-```
-
-When you are finished with this pod, you can remove it with this command:
-
-```bash
-kubectl delete pod rcu
-```
-
-{{% notice note %}}
-You can use the same approach to get a temporary pod to run other utilities
-like WLST.
-{{% /notice %}}
-
 ##### Creating schemas
 
-Inside this pod, you can use the following command to run RCU in command-line (no GUI) mode
-to create your schemas required for SOA domains.  You will need to provide the right prefix and connect string.
-You will be prompted to enter the password for the `sys` user, and then the password to use
-for the regular schema users.
+To create the database schema for Oracle SOA, run the "create-rcu-schema.sh" script as described [here](https://github.com/sbattagi/weblogic-kubernetes-operator/tree/soa-2.4.0-develop/kubernetes/samples/scripts/create-rcu-schema#create-the-rcu-schema-in-the-oracle-database):
 
-{{% notice note %}}If an ESS application is being deployed to the SOA domain cluster
-(for example, for domain types, `soaess` and `soaessosb`), you must append the components
-list with `-component ESS` for the `createRepository` and `dropRepository` RCU commands.
-{{% /notice %}}
+Below is the sample command to execute `create-rcu-schema.sh` for SOA domain:
 
 ```bash
-$ export CONNECTION_STRING=soadb:1521/soapdb.my.domain.com
-$ export RCUPREFIX=SOA1
-
-$ echo -e Oradoc_db1"\n"Welcome1 > /tmp/pwd.txt
-
-$ /u01/oracle/oracle_common/bin/rcu \
--silent \
--createRepository \
--databaseType ORACLE \
--connectString $CONNECTION_STRING \
--dbUser sys \
--dbRole sysdba   \
--useSamePasswordForAllSchemaUsers true \
--selectDependentsForComponents true \
--variables SOA_PROFILE_TYPE=SMALL,HEALTHCARE_INTEGRATION=NO \
--schemaPrefix $RCUPREFIX  \
--component MDS \
--component IAU \
--component IAU_APPEND \
--component IAU_VIEWER \
--component OPSS \
--component WLS \
--component STB \
--component SOAINFRA < /tmp/pwd.txt
+$ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
+$ ./create-rcu-schema.sh -s SOA1 -t soaessosb -d oracle-db.soans.svc.cluster.local:1521/devpdb.k8s -i container-registry.oracle.com/middleware/soasuite:12.2.1.3
 ```
+
+>NOTE: For SOA domains `create-rcu-schema.sh` script supports the domain types `soa,osb,soaosb,soaess,soaessosb` (for -t flag) . You must pass one of these values for -t flag.
 
 You need to make sure that you maintain the association between the database schemas and the
 matching domain just like you did in a non-Kubernetes environment.  There is no specific
-functionality provided to help with this.  
+functionality provided to help with this.
 
 ##### Dropping schemas
 
-If you want to drop the schema, you can use a command like this:
+If you want to drop the schema, you can use the `drop-rcu-schema.sh` script as described [here](https://github.com/sbattagi/weblogic-kubernetes-operator/tree/soa-2.4.0-develop/kubernetes/samples/scripts/create-rcu-schema#drop-the-rcu-schema-from-the-oracle-database).
+
+Below is the sample command to execute `drop-rcu-schema.sh` for SOA domain:
 
 ```bash
-$ /u01/oracle/oracle_common/bin/rcu \
--silent \
--dropRepository \
--databaseType ORACLE \
--connectString $CONNECTION_STRING \
--dbUser sys \
--dbRole sysdba  \
--selectDependentsForComponents true \
--schemaPrefix $RCUPREFIX \
--component MDS \
--component IAU \
--component IAU_APPEND \
--component IAU_VIEWER \
--component OPSS \
--component WLS \
--component STB \
--component SOAINFRA < /tmp/pwd.txt
+$ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
+$ ./drop-rcu-schema.sh -s SOA1 -t soaessosb -d oracle-db.soans.svc.cluster.local:1521/devpdb.k8s
 ```
 
-Again, you will need to set the right prefix and connection string, and you will be prompted
-to enter the `sys` user password.
+>NOTE: For SOA domains `drop-rcu-schema.sh` script supports the domain types `soa,osb,soaosb,soaess,soaessosb` (for -t flag) . You must pass one of these values for -t flag.
 
 #### Create a Kubernetes secret with the RCU credentials
 
@@ -359,3 +291,4 @@ After the SOA domain is set up, you can:
 * Monitor the SOA instance using Prometheus and Grafana. See [Monitor a SOA domain]({{< relref "/samples/simple/elastic-stack/soa-domain/weblogic-monitoring-exporter-setup.md" >}}).
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 See [Publish logs to Elasticsearch]({{< relref "/samples/simple/elastic-stack/soa-domain/weblogic-logging-exporter-setup.md" >}}).
+
