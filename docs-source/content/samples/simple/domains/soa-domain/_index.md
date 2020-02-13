@@ -19,111 +19,21 @@ artifacts of the corresponding domain.
 
 #### Prerequisites
 
-Before you begin, read this document, [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
+Before you begin, we recommend the following:
 
-Also see [operator-prerequisites](https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/#operator-prerequisites) section for the supported versions of Kubernetes and Helm.
+* Review the [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}) documentation.
+* Review the [operator-prerequisites](https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/#operator-prerequisites) 
+section for the supported versions of Kubernetes and Helm.
+* Complete the preliminary required steps documented [here]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md" >}}).
 
-The following prerequisites must be handled prior to running the create domain script:
 
-* Make sure that Kubernetes is set up in the environment. For details, see the [Kubernetes setup guide]({{< relref "/userguide/overview/k8s-setup.md" >}}).
-* Make sure that the WebLogic operator is running. See [Manage operators]({{< relref "/userguide/managing-operators/_index.md" >}}) for operator infrastructure setup and [Install the operator]({{< relref "/userguide/managing-operators/installation/_index.md" >}}) for operator installation.
-* The operator requires SOA Suite 12.2.1.3.0 with patch 29135930 applied. For details on how to obtain or create the image, see [SOA domains]({{< relref "/userguide/managing-domains/soa-suite/_index.md#obtaining-the-soa-suite-docker-image" >}}).
-* Create a Kubernetes namespace (for example, `soans`) for the domain unless you intend to use the default namespace. Use the newly created namespace in all the other steps.
-For details, see [Prepare to run a domain]({{< relref "/userguide/managing-domains/prepare.md" >}}).
+#### Prepare to use the create domain script
 
-  ```
-   $ kubectl create namespace soans
-  ```
-
-* In the Kubernetes namespace created above, create the PV and PVC for the database
-by running the [create-pv-pvc.sh]({{< relref "/samples/simple/storage/_index.md" >}}) script.
-Follow the instructions for using the scripts to create a PV and PVC.
-
-    * Change the values in the [create-pv-pvc-inputs.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml) file based on your requirements.
-
-    * Ensure that the path for the `weblogicDomainStoragePath` property exists (if not, you need to create it),
-    has full access permissions, and that the folder is empty.
-
-* Create the Kubernetes secrets `username` and `password` of the administrative account in the same Kubernetes
-  namespace as the domain. For details, see this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/README.md).
-
-    ```bash
-    $ cd kubernetes/samples/scripts/create-weblogic-domain-credentials
-    $ ./create-weblogic-credentials.sh -u weblogic -p Welcome1 -n soans -d soainfra -s soainfra-domain-credentials
-    ```
-
-    You can check the secret with the `kubectl get secret` command. See the following example, including the output:
-
-    ```bash
-    $ kubectl get secret soainfra-domain-credentials -o yaml -n soans
-    apiVersion: v1
-    data:
-      password: V2VsY29tZTE=
-      username: d2VibG9naWM=
-    kind: Secret
-    metadata:
-      creationTimestamp: 2019-06-02T07:05:25Z
-      labels:
-        weblogic.domainName: soainfra
-        weblogic.domainUID: soainfra
-      name: soainfra-domain-credentials
-      namespace: soans
-      resourceVersion: "11561988"
-      selfLink: /api/v1/namespaces/soans/secrets/soainfra-domain-credentials
-      uid: a91ef4e1-6ca8-11e9-8143-fa163efa261a
-    type: Opaque
-    ```
-
-* Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md#configuring-access-to-your-database" >}}).  
-* Create a Kubernetes secret with the RCU credentials. For details, refer to this [document]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md#running-the-repository-creation-utility-to-set-up-your-database-schema" >}}).
-
-#### Use the script to create a domain
-
-Please note that the sample scripts for SOASuite domain deployment are available at  `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts/create-soa-domain`.
+The sample scripts for Oracle SOA Suite domain deployment are available at `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts/create-soa-domain`.
   
-Make a copy of the `create-domain-inputs.yaml` file, and run the create script, pointing it at
-your inputs file and an output directory:
-
-```
-$ ./create-domain.sh \
-  -i create-domain-inputs.yaml \
-  -o /<path to output-directory>
-```
-
-The script will perform the following steps:
-
-* Create a directory for the generated Kubernetes YAML files for this domain if it does not
-  already exist.  The path name is `/<path to output-directory>/weblogic-domains/<domainUID>`.
-  If the directory already exists, its contents must be removed before using this script.
-* Create a Kubernetes job that will start up a utility SOA Suite container and run
-  offline WLST scripts to create the domain on the shared storage.
-* Run and wait for the job to finish.
-* Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above.
-  This YAML file can be used to create the Kubernetes resource using the `kubectl create -f`
-  or `kubectl apply -f` command:
-
-    ```
-    $ kubectl apply -f /<path to output-directory>/weblogic-domains/<domainUID>/domain.yaml
-    ```
-
-* Create a convenient utility script, `delete-domain-job.yaml`, to clean up the domain home
-  created by the create script.
-
-If you copy the sample scripts to a different location, make sure that you copy everything in
-the `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts` directory together
-into the target directory, maintaining the original directory hierarchy.
-
-The default domain created by the script has the following characteristics:
-
-* An Administration Server named `AdminServer` listening on port `7001`.
-* A configured cluster named `soa_cluster-1` of size 5.
-* Two Managed Servers, named `soa_server1` and `soa_server2`, listening on port `8001`.
-* Log files that are located in `/shared/logs/<domainUID>`.
-* SOA Infra, SOA composer and WorklistApp applications deployed.
-* No data sources or JMS resources.
-* A T3 channel.
-
-The domain creation inputs can be customized by editing `create-domain-inputs.yaml`.
+You must edit `create-domain-inputs.yaml` (or a copy of it) to provide the details for your domain.
+Please refer to the configuration parameters below to understand what information you must
+provide in this file.
 
 #### Configuration parameters
 The following parameters can be provided in the inputs file.
@@ -166,7 +76,6 @@ The following parameters can be provided in the inputs file.
 | `rcuDatabaseURL` | The database URL. | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
 | `rcuCredentialsSecret` | The Kubernetes secret containing the database credentials. | `soainfra-rcu-credentials` |
 
-
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the
 value of some of the properties specified in the `create-inputs.yaml` file. Those properties include
 the `adminServerName`, `clusterName` and `managedServerNameBase`. If those values contain any
@@ -178,49 +87,51 @@ The sample demonstrates how to create a SOA Suite domain home and associated Kub
 that has one cluster only. In addition, the sample provides the capability for users to supply their own scripts
 to create the domain home for other use cases. The generated domain YAML file could also be modified to cover more use cases.
 
-In addition, you should update the generated `domain.yaml` file by performing the following steps.
+#### Run the create domain script
 
-##### Mandatory Configurations
+Run the create domain script, specifying your inputs file and an output directory to store the
+generated artifacts:
 
-None.
-
-##### Optional Configurations
-
-You can assign pods to a given node. For more information, see [Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/).
-
-Before using the `nodeSelector` option, make sure that the nodes are already labelled; then use those labels in the `nodeSelector` definition.
-
-Command:  
 ```
-kubectl label node <node-name>  <label-with-value>
+$ ./create-domain.sh \
+  -i create-domain-inputs.yaml \
+  -o /<path to output-directory>
 ```
 
-Example:
-```
-kubectl label node TestNode name=Test-Node
-```
+The script will perform the following steps:
 
-Then you can edit the `domain.yaml`  file to add the `nodeSelector` to the `serverPod` definition, as shown below.
+* Create a directory for the generated Kubernetes YAML files for this domain if it does not
+  already exist.  The path name is `/<path to output-directory>/weblogic-domains/<domainUID>`.
+  If the directory already exists, its contents must be removed before using this script.
+* Create a Kubernetes job that will start up a utility SOA Suite container and run
+  offline WLST scripts to create the domain on the shared storage.
+* Run and wait for the job to finish.
+* Create a Kubernetes domain YAML file, `domain.yaml`, in the "output" directory that was created above.
+  This YAML file can be used to create the Kubernetes resource using the `kubectl create -f`
+  or `kubectl apply -f` command:
 
-##### nodeSelector for assigning pods:
+    ```
+    $ kubectl apply -f /<path to output-directory>/weblogic-domains/<domainUID>/domain.yaml
+    ```
 
-```bash
-managedServers:
- - serverName: soa_server1
-   serverPod:
-     nodeSelector:
-       name: Test-Node
- - serverName: soa_server2
-   serverPod:
-     nodeSelector:
-       name: Test-Node
-```
+* Create a convenient utility script, `delete-domain-job.yaml`, to clean up the domain home
+  created by the create script.
 
 
+
+The default domain created by the script has the following characteristics:
+
+* An Administration Server named `AdminServer` listening on port `7001`.
+* A configured cluster named `soa_cluster-1` of size 5.
+* Two Managed Servers, named `soa_server1` and `soa_server2`, listening on port `8001`.
+* Log files that are located in `/shared/logs/<domainUID>`.
+* SOA Infra, SOA composer and WorklistApp applications deployed.
+* No data sources or JMS resources.
+* A T3 channel.
 
 #### Verify the results
 
-The create script will verify that the domain was created, and will report failure if there was any error.
+The create domain script will verify that the domain was created, and will report failure if there was any error.
 However, it may be desirable to manually verify the domain, even if just to gain familiarity with the
 various Kubernetes objects that were created by the script.
 
