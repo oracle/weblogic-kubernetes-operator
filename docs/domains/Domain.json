@@ -257,7 +257,7 @@
           "$ref": "#/definitions/ServerService"
         },
         "domainHome": {
-          "description": "The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeSourceType is not Image. Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image.",
+          "description": "The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/\u003cdomainUID\u003e if domainHomeSourceType is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image. Defaults to /u01/domains/\u003cdomainUID\u003e if domainHomeSourceType is FromModel.",
           "type": "string"
         },
         "domainHomeSourceType": {
@@ -492,7 +492,7 @@
       "properties": {
         "encryptionSecret": {
           "description": "WDT encryption key passphrase secret. Required when WDT model files are encrypted.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
+          "type": "string"
         },
         "domainType": {
           "description": "WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.",
@@ -504,7 +504,7 @@
           ]
         },
         "configMap": {
-          "description": "WDT config map name. Required.",
+          "description": "WDT config map name.",
           "type": "string"
         }
       }
@@ -514,11 +514,11 @@
       "properties": {
         "walletFileSecret": {
           "description": "Secret containing the OPSS key wallet file.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
+          "type": "string"
         },
         "walletPasswordSecret": {
           "description": "Secret containing OPSS key passphrase.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
+          "type": "string"
         }
       }
     },

@@ -351,7 +351,7 @@ public class Domain {
    *
    * @return opss key passphrase
    */
-  public V1SecretReference getOpssWalletPasswordSecret() {
+  public String getOpssWalletPasswordSecret() {
     return spec.getOpssWalletPasswordSecret();
   }
 
@@ -360,7 +360,7 @@ public class Domain {
    *
    * @return wdt encryption passphrase
    */
-  public V1SecretReference getWdtEncryptionSecret() {
+  public String getWdtEncryptionSecret() {
     return spec.getWdtEncryptionSecret();
   }
 
@@ -391,7 +391,7 @@ public class Domain {
 
   boolean isLogHomeEnabled() {
     return Optional.ofNullable(spec.isLogHomeEnabled())
-        .orElse(!DomainSourceType.Image.toString().equals(getDomainHomeSourceType()));
+        .orElse(DomainSourceType.PersistentVolume.toString().equals(getDomainHomeSourceType()));
   }
 
   public String getDataHome() {
@@ -442,8 +442,11 @@ public class Domain {
     }
     if (DomainSourceType.Image.toString().equals(getDomainHomeSourceType())) {
       return "/u01/oracle/user_projects/domains";
+    } else if (DomainSourceType.PersistentVolume.toString().equals(getDomainHomeSourceType())) {
+      return "/shared/domains/" + getDomainUid();
+    } else { // FromModel
+      return "/u01/domains/" + getDomainUid();
     }
-    return "/shared/domains/" + getDomainUid();
   }
 
   public boolean isShuttingDown() {
@@ -488,7 +491,7 @@ public class Domain {
    *
    * @return opss wallet config map.
    */
-  public V1SecretReference getOpssWalletFileSecret() {
+  public String getOpssWalletFileSecret() {
     return spec.getOpssWalletFileSecret();
   }
 

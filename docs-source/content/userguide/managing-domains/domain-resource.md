@@ -71,7 +71,7 @@ Elements related to logging:
 
 * `includeServerOutInPodLog`: If true (the default), the server `.out` file will be included in the pod's stdout.
 * `logHome`: The in-pod name of the directory in which to store the domain, Node Manager, server logs, and server `.out` files.
-* `logHomeEnabled`: Specifies whether the log home folder is enabled. Not required. Defaults to true if `domainHomeSourceType` is `PersistentVolume` or `FromModel`.
+* `logHomeEnabled`: Specifies whether the log home folder is enabled. Not required. Defaults to true if `domainHomeSourceType` is `PersistentVolume`.
 
 Elements related to security:
 

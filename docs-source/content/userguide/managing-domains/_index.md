@@ -35,7 +35,7 @@ Please be aware of the following important considerations for WebLogic domains r
 
 * _Log File Locations:_ The operator can automatically override WebLogic domain and server log locations using
   configuration overrides.  This occurs if the domain resource `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
-  and `domainHomeSourceType` is set to `PersistentVolume` or `FromModel`.   When overriding, the log location will be the location specified by the `logHome` setting.
+  and `domainHomeSourceType` is set to `PersistentVolume`.   When overriding, the log location will be the location specified by the `logHome` setting.
 
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
   SSL, admin, or custom channel listen addresses (using situational configuration overrides).  These will become `domainUID` followed by a

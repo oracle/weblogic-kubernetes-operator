@@ -102,19 +102,11 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   String getOpssWalletPasswordSecretName() {
-    if (getDomain().getOpssWalletPasswordSecret() != null) {
-      return getDomain().getOpssWalletPasswordSecret().getName();
-    } else {
-      return null;
-    }
+    return getDomain().getOpssWalletPasswordSecret();
   }
 
   String getWdtEncryptSecretName() {
-    if (getDomain().getWdtEncryptionSecret() != null) {
-      return getDomain().getWdtEncryptionSecret().getName();
-    } else {
-      return null;
-    }
+    return getDomain().getWdtEncryptionSecret();
   }
 
   // ----------------------- step methods ------------------------------
@@ -191,11 +183,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   String getOpssWalletFileSecretName() {
-    if (getDomain().getOpssWalletFileSecret() != null) {
-      return getDomain().getOpssWalletFileSecret().getName();
-    } else {
-      return null;
-    }
+    return getDomain().getOpssWalletFileSecret();
   }
 
 

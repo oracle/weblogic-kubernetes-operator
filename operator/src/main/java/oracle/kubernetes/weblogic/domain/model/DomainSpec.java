@@ -48,8 +48,9 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The folder for the WebLogic Domain. Not required."
-          + " Defaults to /shared/domains/domains/domainUID if domainHomeSourceType is not Image."
-          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image.")
+          + " Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume."
+          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image."
+          + " Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel.")
   private String domainHome;
 
   /**
@@ -621,7 +622,7 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(ModelInImageDomainType.WLS.toString());
   }
 
-  V1SecretReference getOpssWalletPasswordSecret() {
+  String getOpssWalletPasswordSecret() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getOpss)
         .map(Opss::getWalletPasswordSecret)
@@ -632,7 +633,7 @@ public class DomainSpec extends BaseConfiguration {
    * Get OPSS wallet file secret.
    * @return wallet file secret
    */
-  public V1SecretReference getOpssWalletFileSecret() {
+  public String getOpssWalletFileSecret() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getOpss)
         .map(Opss::getWalletFileSecret)
@@ -640,7 +641,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
 
-  V1SecretReference getWdtEncryptionSecret() {
+  String getWdtEncryptionSecret() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel)
         .map(Model::getEncryptionSecret)

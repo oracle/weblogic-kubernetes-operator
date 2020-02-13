@@ -5,9 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -21,13 +19,12 @@ public class Model {
   @Description("WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
   private String domainType;
 
-  @Description("WDT config map name. Required.")
-  @NotNull
+  @Description("WDT config map name.")
   private String configMap;
 
   @Description("WDT encryption key passphrase secret. Required when WDT model files are encrypted.")
   @Valid
-  private V1SecretReference encryptionSecret;
+  private String encryptionSecret;
 
   @Nullable
   public String getDomainType() {
@@ -57,15 +54,15 @@ public class Model {
     return this;
   }
 
-  public V1SecretReference getEncryptionSecret() {
+  public String getEncryptionSecret() {
     return encryptionSecret;
   }
 
-  public void setEncryptionSecret(V1SecretReference encryptionSecret) {
+  public void setEncryptionSecret(String encryptionSecret) {
     this.encryptionSecret = encryptionSecret;
   }
 
-  public Model withEncryptionSecret(V1SecretReference encryptionSecret) {
+  public Model withEncryptionSecret(String encryptionSecret) {
     this.encryptionSecret = encryptionSecret;
     return this;
   }

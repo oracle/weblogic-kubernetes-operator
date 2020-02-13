@@ -91,7 +91,7 @@ spec:
       #
       # Optional configmap for additional models and variable files
       #
-      configMap: wdt-config-map
+      configMap: domain1-wdt-config-map
 
       #
       # wdt domain type for model in image case
@@ -105,11 +105,9 @@ spec:
       # opss wallet and optional key ewallet.p12 containing the base64 encoded opss wallet
       #
       #
-      #walletFileSecret:
-      #  name: sample-domain1-opss-secret
+      #walletFileSecret: sample-domain1-opss-secret
       #
       # Use this if the wdt model is encrypted
       #
-      #walletPasswordSecret:
-      #  name: wdt-encrypt-passphrase-secret
+      #walletPasswordSecret: wdt-encrypt-passphrase-secret
 

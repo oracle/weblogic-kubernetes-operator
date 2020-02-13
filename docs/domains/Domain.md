@@ -22,7 +22,7 @@ DomainSpec is a description of a domain.
 | `configOverrideSecrets` | array of string | Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified. A list of names of the secrets for optional WebLogic configuration overrides. |
 | `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration. |
 | `dataHome` | string | An optional, in-pod location for data storage of default and custom file stores. If dataHome is not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage directories are determined from the WebLogic domain home configuration. |
-| `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeSourceType is not Image. Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image. |
+| `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image. Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel. |
 | `domainHomeInImage` | Boolean | Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified. True indicates that the domain home file system is contained in the Docker image specified by the image field. False indicates that the domain home file system is located on a persistent volume. |
 | `domainHomeSourceType` | string | Domain home file system source type: Legal values: Image, PersistentVolume, FromModel. Image indicates that the domain home file system is contained in the Docker image specified by the image field. PersistentVolume indicates that the domain home file system is located on a persistent volume.  FromModel indicates that the domain home file system will be created and managed by the operator based on a WDT domain model. If this field is specified it overrides the value of domainHomeInImage. If both fields are unspecified then domainHomeSourceType defaults to Image. |
 | `domainUID` | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name. |
@@ -200,16 +200,16 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `configMap` | string | WDT config map name. Required. |
+| `configMap` | string | WDT config map name. |
 | `domainType` | string | WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS. |
-| `encryptionSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | WDT encryption key passphrase secret. Required when WDT model files are encrypted. |
+| `encryptionSecret` | string | WDT encryption key passphrase secret. Required when WDT model files are encrypted. |
 
 ### Opss
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `walletFileSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | Secret containing the OPSS key wallet file. |
-| `walletPasswordSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | Secret containing OPSS key passphrase. |
+| `walletFileSecret` | string | Secret containing the OPSS key wallet file. |
+| `walletPasswordSecret` | string | Secret containing OPSS key passphrase. |
 
 ### Istio
 

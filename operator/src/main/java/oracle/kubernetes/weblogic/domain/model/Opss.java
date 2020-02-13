@@ -5,7 +5,6 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import javax.validation.Valid;
 
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -14,35 +13,35 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Opss {
 
   @Description("Secret containing the OPSS key wallet file.")
-  private V1SecretReference walletFileSecret;
+  private String walletFileSecret;
 
   @Description(
       "Secret containing OPSS key passphrase.")
   @Valid
-  private V1SecretReference walletPasswordSecret;
+  private String walletPasswordSecret;
 
-  public V1SecretReference getWalletFileSecret() {
+  public String getWalletFileSecret() {
     return this.walletFileSecret;
   }
 
-  public void setWalletFileSecret(V1SecretReference walletFileSecret) {
+  public void setWalletFileSecret(String walletFileSecret) {
     this.walletFileSecret = walletFileSecret;
   }
 
-  public Opss withWalletFileSecret(V1SecretReference walletFileSecret) {
+  public Opss withWalletFileSecret(String walletFileSecret) {
     this.walletFileSecret = walletFileSecret;
     return this;
   }
 
-  public V1SecretReference getWalletPasswordSecret() {
+  public String getWalletPasswordSecret() {
     return this.walletPasswordSecret;
   }
 
-  public void setWalletPasswordSecret(V1SecretReference walletPasswordSecret) {
+  public void setWalletPasswordSecret(String walletPasswordSecret) {
     this.walletPasswordSecret = walletPasswordSecret;
   }
 
-  public Opss withWalletPasswordSecret(V1SecretReference walletPasswordSecret) {
+  public Opss withWalletPasswordSecret(String walletPasswordSecret) {
     this.walletPasswordSecret = walletPasswordSecret;
     return this;
   }
