@@ -1,8 +1,8 @@
 # Oracle SOA on Kubernetes
 
-The WebLogic Kubernetes operator supports deployment of SOA Suite components such as Oracle Service-Oriented Architecture (SOA), Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS). 
+The WebLogic Kubernetes operator supports deployment of SOA Suite components such as Oracle Service-Oriented Architecture (SOA), Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS).
 
-Oracle SOA Suite is currently only supported for non-production use in Docker and Kubernetes.  The information provided
+Oracle SOA Suite is currently supported for non-production use only in Docker and Kubernetes.  The information provided
 in this document is a *preview* for early adopters who wish to experiment with Oracle SOA Suite in Kubernetes before
 it is supported for production use.
 
@@ -17,13 +17,13 @@ environment. You can:
 * Expose the SOA Services and Composites for external access.
 * Scale SOA domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
-* Monitor the SOA instance using Prometheus and Grafana
+* Monitor the SOA instance using Prometheus and Grafana.
 
-#### Limitations
+### Limitations
 
-Refer to the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/) for more limitations for this release.
+Refer to the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/) for limitations in this release.
 
-#### Getting started
+### Getting started
 
-The fastest way to experience the operator is to follow the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/),
+The fastest way to experience the operator is to follow the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/)
 or try out the deployment [scripts](https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/soa-domain/).
