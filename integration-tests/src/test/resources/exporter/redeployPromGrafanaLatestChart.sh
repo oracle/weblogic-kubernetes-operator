@@ -21,4 +21,5 @@ helm install --wait --name prometheus --namespace monitoring --values  ${monitor
 
 #remove version after https://github.com/helm/charts/issues/18215 will be fixed
 helm install --wait --name grafana --namespace monitoring --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version=3.12.0
+
 echo "Run the script [redeployPromGrafanaLatestChart.sh] ..."
