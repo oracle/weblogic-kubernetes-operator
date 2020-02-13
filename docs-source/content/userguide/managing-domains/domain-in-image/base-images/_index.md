@@ -64,7 +64,7 @@ using the Oracle Single Sign-On authentication service. If you do not already ha
 Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
 Your acceptance of these terms is stored in a database that links the software images to your Oracle Single Sign-On login credentials.
 
-The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 Docker image which already has the necessary patches applied.
+The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 Docker image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 image, which does not require any patches.
 
 First, you will need to log in to the Oracle Container Registry:
 
@@ -88,38 +88,51 @@ Oracle Container Registry.
 
 #### Creating a custom image with patches applied
 
-The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
-This patch does have some prerequisite patches that will also need to be applied. The standard image `container-registry.oracle.com/middleware/weblogic:12.2.1.3` already has all of these patches applied.
+The Oracle WebLogic Server Kubernetes Operator and WebLogic Server 12.2.1.3.0 image requires patch 29135930.
+This patch has some prerequisite patches that will also need to be applied. To create and customize the WebLogic Server image,
+and apply the required patches, use the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool).
 
-[This sample](https://github.com/oracle/docker-images/blob/master/OracleWebLogic/samples/12213-patch-wls-for-k8s/README.md) in
-the Oracle GitHub Docker images repository demonstrates how to create an image with arbitrary patches, starting from an unpatched WebLogic Server 12.2.1.3 image (not the standard `container-registry/middleware/weblogic:12.2.1.3` pre-patched image).  You can customize that sample to apply a different set of patches, if you require additional patches or PSUs.
+To use the Image Tool, follow the [Setup](https://github.com/oracle/weblogic-image-tool/blob/master/README.md#setup) instructions
+and [Quick Start](https://github.com/oracle/weblogic-image-tool/blob/master/site/quickstart.md) Guide.
 
-When using that sample, you will need to download the required patch and also
-some prerequisite patches.  To find the correct version of the patch, you should
-use the "Product or Family (Advanced)" option, then choose "Oracle WebLogic Server"
-as the product, and set the release to "Oracle WebLogic Server 12.2.1.3.181016" as
-shown in the image below:
+To build the WebLogic Server image and apply the patches:
 
-![patch download page](/weblogic-kubernetes-operator/images/patch-download.png)
+1. Add the Server JRE and the WebLogic Server installer to the [`cache` command](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
 
+    ```
+    $ imagetool cache addInstaller \
+    --type=jdk \
+    --version=8u241 \
+    --path=/home/acmeuser/wls-installers/jre-8u241-linux-x64.tar.gz
 
-The `Dockerfile` in that sample lists the base image as follows:
+    $ imagetool cache addInstaller \
+    --type=wls \
+    --version=12.2.1.3.0 \
+    --path=/home/acmeuser/wls-installers/fmw_12.2.1.3.0_wls_Disk1_1of1.zip
+    ```
+2. Use the [Create Tool](https://github.com/oracle/weblogic-image-tool/blob/master/site/create-image.md)
+to build the image and apply the patches.
 
-```
-FROM oracle/weblogic:12.2.1.3-developer
-```
+    For the Create Tool to download the patches, you must pass in your My Oracle Support credentials.
+    ```
 
-You can change this to use the standard WebLogic Server image you
-downloaded from the OCR by updating the `FROM` statement
-as follows:
+    $ imagetool create \
+    --tag=weblogic:12.2.1.3 \
+    --type=wls \
+    --version=12.2.1.3.0 \
+    --jdkVersion=8u241 \
+    -–patches=29135930_12.2.1.3.0,27117282_12.2.1.3.0 \
+    --user=username.mycompany.com \
+    --passwordEnv=MYPWD  
+    ```
 
-```
-FROM container-registry.oracle.com/middleware/weblogic:12.2.1.3
-```
+3. After the tool creates the image, verify that the image is in your local repository:
 
-After running `docker build` as described in the sample, you
-will have created a Docker image with the necessary patches to
-run WebLogic 12.2.1.3 in Kubernetes using the operator.
+    ```
+
+    $ docker images
+    ```
+
 
 #### Creating a custom image with your domain inside the image
 
