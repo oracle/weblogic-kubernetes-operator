@@ -6,7 +6,7 @@ draft: false
 
 If you are running your Kubernetes cluster on Oracle Container Engine 
 for Kubernetes (commonly known as OKE), and you use OCI File Storage (FSS)
-for persistent volumes to store the WebLogic domain home then the file system
+for persistent volumes to store the WebLogic domain home, then the file system
 handling demonstrated in the operator persistent volume sample will require
 an update to properly initialize the file ownership on the persistent volume
 when the domain is initially created.
@@ -16,7 +16,7 @@ File permission handling on persistent volumes can differ between
 cloud providers and even with the underlying storage handling on
 Linux based systems. These instructions provide one option to
 update file ownership used by the standard Oracle images where
-UID `1000` and GID `1000` normally represent the `oracle` or `opc` user.
+UID `1000` and GID `1000` typically represent the `oracle` or `opc` user.
 For more information on persistent volume handling,
 see [Persistent storage]({{< relref "/userguide/managing-domains/persistent-storage/_index.md" >}}).
 {{% /notice %}}
@@ -30,7 +30,7 @@ uses a Kubernetes job to create the domain. The sample uses an
 fail for OCI FSS created volumes used with an OKE cluster.
 
 The OCI FSS volume contains some files that are not modifiable thus
-causing the Kubernetes job to fail. The failure is see from the
+causing the Kubernetes job to fail. The failure is seen in the
 description of the Kubernetes job pod:
 ```bash
 $ kubectl describe -n domain1-ns pod domain1-create-weblogic-sample-domain-job-wdkvs
@@ -60,8 +60,8 @@ Init Containers:
 ```
 
 ### Updating the domain on persistent volume sample
-In the snippet of the [create-domain-job-template.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml)
-below, you will see the updated `command` for the init container:
+In the following snippet of the [create-domain-job-template.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml),
+you can see the updated `command` for the init container:
 ```
 apiVersion: batch/v1
 kind: Job
@@ -78,7 +78,7 @@ spec:
       initContainers:
         - name: fix-pvc-owner
           image: %WEBLOGIC_IMAGE%
-          command: ["sh", "-c", "chown -R 1000:1000 $(ls -a %DOMAIN_ROOT_DIR% | grep -v '^\\.')"]
+          command: ["sh", "-c", "find %DOMAIN_ROOT_DIR% ! -name '.snapshot' | xargs chown 1000:1000"]
           volumeMounts:
           - name: weblogic-sample-domain-storage-volume
             mountPath: %DOMAIN_ROOT_DIR%
@@ -91,6 +91,6 @@ spec:
 
   :
 ```
-The new `command` shown above should be made to your copy of this template file
-and will result in the ownership updated only for the expected files before
-the WebLogic domain is created on the persistent volume.
+Use this new `command` in your copy of this template file. This will result in
+the ownership being updated for the expected files only, before the WebLogic
+domain is created on the persistent volume.
