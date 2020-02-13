@@ -79,7 +79,7 @@ spec:
       initContainers:
         - name: fix-pvc-owner
           image: %WEBLOGIC_IMAGE%
-          command: ["sh", "-c", "find %DOMAIN_ROOT_DIR%/. -maxdepth ! -name '.snapshot' ! -name '.' -print0 | xargs -0 chown 1000:1000"]
+          command: ["sh", "-c", "find %DOMAIN_ROOT_DIR%/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown 1000:1000"]
           volumeMounts:
           - name: weblogic-sample-domain-storage-volume
             mountPath: %DOMAIN_ROOT_DIR%
