@@ -192,12 +192,6 @@ spec:
   # data storage directories are determined from the WebLogic domain home configuration.
   dataHome: ""
  
-  # Istio service mesh support is experimental.
-  # experimental:
-  #   istio:
-  #     enabled:
-  #     readinessPort:
- 
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "NEVER" will not start any server in the domain
@@ -205,9 +199,10 @@ spec:
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "IF_NEEDED"
  
-  serverPod:
-    serverService:
-      precreateService: true
+  serverService:
+    precreateService: true
+
+  serverPod:  
     # an (optional) list of environment variable to be set on the servers
     env:
     - name: JAVA_OPTIONS
