@@ -62,7 +62,7 @@ function traceDirs() {
   done
 }
 
-function prepareDomainHomeDir { 
+function prepareDomainHomeDir {
   traceDirs before
 
   # Do not proceed if the domain already exists
