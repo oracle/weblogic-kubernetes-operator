@@ -5,10 +5,13 @@
 export DOMAIN_HOME=${DOMAIN_HOME_DIR}
 
 # Create the domain
+if [ -z "${JAVA_HOME}" ]; then
+  JAVA_HOME=/usr/java/latest
+fi
 wlst.sh -skipWLSModuleScanning \
         ${CREATE_DOMAIN_SCRIPT_DIR}/createFMWDomain.py \
         -oh /u01/oracle \
-        -jh /usr/java/latest \
+        -jh ${JAVA_HOME} \
         -parent ${DOMAIN_HOME}/.. \
         -name ${CUSTOM_DOMAIN_NAME} \
         -user `cat /weblogic-operator/secrets/username` \
