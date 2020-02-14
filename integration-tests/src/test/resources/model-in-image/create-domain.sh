@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -21,8 +21,8 @@
 # Initialize
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/../../common/utility.sh
-source ${scriptDir}/../../common/validate.sh
+source ${scriptDir}/../../../../../kubernetes/samples/scripts/common/utility.sh
+source ${scriptDir}/../../../../../kubernetes/samples/scripts/common/validate.sh
 
 function usage {
   echo usage: ${script} -o dir -i file -u username -p password [-k] [-e] [-v] [-h]
@@ -43,7 +43,8 @@ function usage {
 #
 doValidation=false
 executeIt=false
-cloneIt=true
+#downloadTools=true
+downloadTools=false
 while getopts "evhki:o:u:p:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
@@ -58,7 +59,7 @@ while getopts "evhki:o:u:p:" opt; do
     ;;
     p) password="${OPTARG}"
     ;;
-    k) cloneIt=false;
+    k) downloadTools=false;
     ;;
     h) usage 0
     ;;
@@ -97,8 +98,10 @@ fi
 #
 function initOutputDir {
   domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
-  # Create a directory for this domain's output files
-  mkdir -p ${domainOutputDir}
+  miiWorkDir="${domainOutputDir}/miiWorkDir"
+  modelDir="${miiWorkDir}/models"
+  # Create a directory for this domain's output files and model files
+  mkdir -p ${modelDir}
 
   removeFileIfExists ${domainOutputDir}/${valuesInputFile}
   removeFileIfExists ${domainOutputDir}/create-domain-inputs.yaml
@@ -141,7 +144,7 @@ function initialize {
     validationError "The template file ${domainPropertiesInput} for creating a WebLogic domain was not found"
   fi
 
-  dcrInput="${scriptDir}/../../common/domain-template.yaml"
+  dcrInput="${scriptDir}/../../../../../kubernetes/samples/scripts/common/domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain resource was not found"
   fi
@@ -155,49 +158,84 @@ function initialize {
 
   initOutputDir
 
-  if [ "${cloneIt}" = true ] || [ ! -d ${domainHomeImageBuildPath} ]; then
-    getDockerSample
+  if [ "${downloadTools}" = true ] ; then
+    downloadTool oracle/weblogic-deploy-tooling $miiWorkDir/weblogic-deploy-tooling.zip
+    downloadTool oracle/weblogic-image-tool $miiWorkDir/weblogic-image-tool.zip
   fi
 }
 
 #
-# Function to get the dependency docker sample
+# Function to get the dependency tools
 #
-function getDockerSample {
-  dockerImagesDir=${domainHomeImageBuildPath%/OracleWebLogic*}
-  rm -rf ${dockerImagesDir}
-  git clone https://github.com/oracle/docker-images.git ${dockerImagesDir}
+function downloadTool {
+  toolLocation=$1
+  downloadTo=$2
+  downloadlink=$(curl -sL https://github.com/$1/releases/latest |
+    grep "/$1/releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
+  echo "@@ Downloading latest '$toolLocation' to '$downloadTo' from 'https://github.com$downloadlink'."
+  curl -L  https://github.com$downloadlink -o $downloadTo
 }
 
+
 #
-# Function to build docker image and create WebLogic domain home
+# Function to build model in image
 #
 function createDomainHome {
-  dockerDir=${domainHomeImageBuildPath}
-  dockerPropsDir=${dockerDir}/properties
-  cp ${domainPropertiesOutput} ${dockerPropsDir}/docker-build
 
-  # 12213-domain-home-in-image use one properties file for the credentials 
-  usernameFile="${dockerPropsDir}/docker-build/domain_security.properties"
-  passwordFile="${dockerPropsDir}/docker-build/domain_security.properties"
- 
-  # 12213-domain-home-in-image-wdt uses two properties files for the credentials 
-  if [ ! -f $usernameFile ]; then
-    usernameFile="${dockerPropsDir}/docker-build/adminuser.properties"
-    passwordFile="${dockerPropsDir}/docker-build/adminpass.properties"
-  fi
-  
-  sed -i -e "s|myuser|${username}|g" $usernameFile
-  sed -i -e "s|mypassword1|${password}|g" $passwordFile
-    
-  if [ ! -z $domainHomeImageBase ]; then
-    sed -i -e "s|\(FROM \).*|\1 ${domainHomeImageBase}|g" ${dockerDir}/Dockerfile
+  buildApp
+  cd ${scriptDir}
+  cp add_os_utils ${miiWorkDir}
+  cp ${wdtModelFile} ${modelDir}/model.yaml
+  #if [ "$?" != "0" ]; then
+   # fail "Copy of model file ${wdtModelFile} failed."
+  #fi
+  cp ${wdtModelPropertiesFile} ${modelDir}/model.properties
+  #if [ "$?" != "0" ]; then
+  #  fail "Copy of model properties file ${wdtModelPropertiesFile} failed."
+  #fi
+  # base image should have been pulled already
+  if [ ! "`docker images ${domainHomeImageBase} | awk '{ print $1 ":" $2 }' | grep -c ${domainHomeImageBase}`" = "1" ]; then
+    fail "Base image ${domainHomeImageBase} doesn't exist"
   fi
 
-  bash ${dockerDir}/build.sh
+  cd ${miiWorkDir}
+  echo @@ Info: Setting up imagetool and populating its caches
+
+  mkdir -p cache
+  unzip -o weblogic-image-tool.zip
+
+  IMGTOOL_BIN=${miiWorkDir}/imagetool/bin/imagetool.sh
+
+  # The image tool uses the WLSIMG_CACHEDIR and WLSIMG_BLDIR env vars:
+  WLSIMG_CACHEDIR=${WORKDIR}/cache
+  WLSIMG_BLDDIR=${WORKDIR}
+
+  imagetool/bin/imagetool.sh cache deleteEntry --key wdt_latest
+  imagetool/bin/imagetool.sh cache addInstaller \
+    --type wdt --version latest --path weblogic-deploy-tooling.zip
+
+  echo "Info: Starting model image build for '${image}'"
+
+
+  #
+  # Run the image tool to create the image. It will implicitly use the latest WDT binaries
+  # in the local image tool cache marked with key 'wdt_latest' (see 'cache' commands above). To
+  # use a different version of WDT, specify '--wdtVersion'.
+  #
+
+  set -x
+  imagetool/bin/imagetool.sh update \
+    --tag ${image} \
+    --fromImage ${domainHomeImageBase} \
+    --wdtModel models/model.yaml \
+    --wdtVariables models/model.properties \
+    --wdtArchive models/archive.zip \
+    --wdtModelOnly \
+    --wdtDomainType ${wdtDomainType} \
+    --additionalBuildCommands add_os_utils
 
   if [ "$?" != "0" ]; then
-    fail "Create domain ${domainName} failed."
+    fail "Create model in image failed."
   fi
 
   # clean up the generated domain.properties file
@@ -205,6 +243,23 @@ function createDomainHome {
 
   echo ""
   echo "Create domain ${domainName} successfully."
+}
+
+#
+# Creating model archive
+#
+
+function buildApp {
+    cp -r sample_app ${miiWorkDir}
+    cd ${miiWorkDir}/sample_app/wlsdeploy/applications
+    rm -f sample_app.ear
+    jar cvfM sample_app.ear *
+
+    cd ../..
+    rm -f ${modelDir}/archive.zip
+    pwd
+    zip ../models/archive.zip wlsdeploy/applications/sample_app.ear wlsdeploy/config/amimemappings.properties
+
 }
 
 #
