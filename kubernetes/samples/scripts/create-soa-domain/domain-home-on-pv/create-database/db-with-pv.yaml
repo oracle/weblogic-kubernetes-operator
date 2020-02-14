@@ -1,63 +1,80 @@
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 apiVersion: v1
 kind: Service
 metadata:
-  name: soadb
-  labels:
-    app: soadb
-  namespace: soans
+  name: oracle-db
+  namespace: default
 spec:
   ports:
-  - port: 1521
-    name: server-port
-  - port: 5500
-    name: em-port
-  clusterIP: None
+  - name: tns
+    port: 1521
+    protocol: TCP
+    targetPort: 1521
+    nodePort: 30022
   selector:
-    app: soadb
+    app.kubernetes.io/instance: dev
+    app.kubernetes.io/name: oracle-db
+  sessionAffinity: None
+  type: LoadBalancer
 ---
-apiVersion: apps/v1beta1
-kind: StatefulSet
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
-  name: soadb
-  namespace: soans
+  name: oracle-db
+  namespace: default
 spec:
-  serviceName: "soadb"
   replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: dev
+      app.kubernetes.io/name: oracle-db
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
   template:
     metadata:
       labels:
-        app: soadb
+        app.kubernetes.io/instance: dev
+        app.kubernetes.io/name: oracle-db
     spec:
-      terminationGracePeriodSeconds: 30
       containers:
-      - name: soadb
-        image: oracle/database:12.2.0.1
+      - env:
+        - name: DB_SID
+          value: devcdb
+        - name: DB_PDB
+          value: devpdb
+        - name: DB_DOMAIN
+          value: k8s
+        - name: DB_BUNDLE
+          value: basic  
+        image: container-registry.oracle.com/database/enterprise:12.2.0.1-slim
         imagePullPolicy: IfNotPresent
+        name: oracle-db
         ports:
         - containerPort: 1521
-          name: server-port
-        - containerPort: 5500
-          name: em-port
-        env:
-        - name: DB_SID
-          value: soadb
-        - name: DB_PDB
-          value: soapdb
-        - name: DB_DOMAIN
-          value: my.domain.com
-        - name: DB_BUNDLE
-          value: basic
-        readinessProbe:
-          exec:
-            command:
-            - grep
-            - "Done ! The database is ready for use ."
-            - "/home/oracle/setup/log/setupDB.log"
-          initialDelaySeconds: 300
-          periodSeconds: 5
+          name: tns
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "2"
+            memory: "6Gi"
+          requests:
+            cpu: 500m
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /ORCL
           name: soadb-storage
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+           - name: docker-store
       volumes:
       - name: soadb-storage
         persistentVolumeClaim:
