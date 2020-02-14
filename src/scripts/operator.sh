@@ -1,6 +1,6 @@
 #!/bin/bash
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 export PATH=$PATH:/operator
 
@@ -20,7 +20,7 @@ trap relay_SIGTERM SIGTERM
 /operator/initialize-external-operator-identity.sh
 
 if [[ ! -z "$REMOTE_DEBUG_PORT" ]]; then
-  DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:$REMOTE_DEBUG_PORT"
+  DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=$DEBUG_SUSPEND,address=*:$REMOTE_DEBUG_PORT"
   echo "DEBUG=$DEBUG"
 else
   DEBUG=""

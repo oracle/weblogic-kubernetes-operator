@@ -1,25 +1,8 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
-import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.meterware.pseudoserver.HttpUserAgentTest;
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodCondition;
-import io.kubernetes.client.models.V1PodStatus;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -30,7 +13,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import oracle.kubernetes.TestUtils;
+
+import com.meterware.pseudoserver.HttpUserAgentTest;
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodCondition;
+import io.kubernetes.client.models.V1PodStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
@@ -41,6 +32,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Matchers;
@@ -48,15 +40,22 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
+
 public class ServerStatusReaderTest extends HttpUserAgentTest {
   private static final String NS = "namespace";
   private static final String UID = "uid";
-  private FiberTestSupport testSupport = new FiberTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
   private final TerminalStep endStep = new TerminalStep();
   private final KubernetesExecFactoryFake execFactory = new KubernetesExecFactoryFake();
   private final ReadServerHealthStepFactoryFake stepFactory = new ReadServerHealthStepFactoryFake();
-
+  private FiberTestSupport testSupport = new FiberTestSupport();
+  private List<Memento> mementos = new ArrayList<>();
   private Domain domain =
       new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(new DomainSpec());
   private DomainPresenceInfo info = new DomainPresenceInfo(domain);
@@ -227,6 +226,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
     }
 
     @Override
-    public void destroy() {}
+    public void destroy() {
+    }
   }
 }

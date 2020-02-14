@@ -1,6 +1,6 @@
 # Oracle WebLogic Server Kubernetes Operator documentation
 
-Documentation for the current version of the operator, version 2.0.1, is
+Documentation for the current version of the operator is
 available [here](https://oracle.github.io/weblogic-kubernetes-operator).
 
 If you wish to view documentation for an older version, please see:
@@ -14,5 +14,8 @@ If you wish to view documentation for an older version, please see:
     * [Old Version 2.0.1](v2.0.1)
     * [New Version 2.0.1](https://oracle.github.io/weblogic-kubernetes-operator/2.0.1)
 * [Version 2.1](https://oracle.github.io/weblogic-kubernetes-operator/2.1)
+* [Version 2.2.0](https://oracle.github.io/weblogic-kubernetes-operator/2.2.0)
+* [Version 2.2.1](https://oracle.github.io/weblogic-kubernetes-operator/2.2.1)
+* [Version 2.3.0](https://oracle.github.io/weblogic-kubernetes-operator/2.3.0)
 
 For a guide to the operator project, refer to this [README](../README.md).

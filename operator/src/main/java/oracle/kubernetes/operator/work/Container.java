@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
 
@@ -10,20 +9,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Root of the SPI implemented by the container. */
 public class Container implements ComponentRegistry, ComponentEx {
-  private final Map<String, Component> components = new ConcurrentHashMap<String, Component>();
-
   /**
    * Constant that represents a "no {@link Container}", which always returns null from {@link
-   * #getSPI(Class)}.
+   * #getSpi(Class)}.
    */
   public static final Container NONE = new NoneContainer();
-
-  private static final class NoneContainer extends Container {}
+  private final Map<String, Component> components = new ConcurrentHashMap<String, Component>();
 
   @Override
-  public <S> S getSPI(Class<S> spiType) {
+  public <S> S getSpi(Class<S> spiType) {
     for (Component c : components.values()) {
-      S s = c.getSPI(spiType);
+      S s = c.getSpi(spiType);
       if (s != null) {
         return s;
       }
@@ -37,11 +33,14 @@ public class Container implements ComponentRegistry, ComponentEx {
   }
 
   @Override
-  public <E> Iterable<E> getIterableSPI(Class<E> spiType) {
-    E item = getSPI(spiType);
+  public <E> Iterable<E> getIterableSpi(Class<E> spiType) {
+    E item = getSpi(spiType);
     if (item != null) {
       return Collections.singletonList(item);
     }
     return Collections.emptySet();
+  }
+
+  private static final class NoneContainer extends Container {
   }
 }

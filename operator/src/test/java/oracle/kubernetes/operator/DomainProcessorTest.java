@@ -1,20 +1,16 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -24,14 +20,6 @@ import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -44,12 +32,31 @@ import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.stringContainsInOrder;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainProcessorTest {
   private static final String ADMIN_NAME = "admin";
@@ -90,6 +97,7 @@ public class DomainProcessorTest {
     mementos.add(UnitTestHash.install());
 
     domainConfigurator = DomainConfiguratorFactory.forDomain(domain);
+    testSupport.defineResources(domain);
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig());
   }
 
@@ -122,6 +130,20 @@ public class DomainProcessorTest {
     processor.makeRightDomainPresence(info, true, false, false);
 
     assertThat((int) getServerServices().count(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS));
+    assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
+  }
+
+  @Test
+  public void whenDomainScaledDown_withPreCreateServerService_doesNotRemoveServices() {
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(true);
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.makeRightDomainPresence(info, true, false, false);
+
+    assertThat((int) getServerServices().count(), equalTo(MAX_SERVERS + NUM_ADMIN_SERVERS));
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
   }
 
@@ -247,5 +269,47 @@ public class DomainProcessorTest {
   private void assertServerPodAndServicePresent(DomainPresenceInfo info, String serverName) {
     assertThat(serverName + " server service", info.getServerService(serverName), notNullValue());
     assertThat(serverName + " pod", info.getServerPod(serverName), notNullValue());
+  }
+
+  @Test
+  public void whenDomainIsNotValid_dontBringUpServers() {
+    defineDuplicateServerNames();
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.makeRightDomainPresence(info, true, false, false);
+
+    assertServerPodAndServiceNotPresent(info, ADMIN_NAME);
+    for (String serverName : MANAGED_SERVER_NAMES)
+      assertServerPodAndServiceNotPresent(info, serverName);
+  }
+
+  private void assertServerPodAndServiceNotPresent(DomainPresenceInfo info, String serverName) {
+    assertThat(serverName + " server service", info.getServerService(serverName), nullValue());
+    assertThat(serverName + " pod", info.getServerPod(serverName), nullValue());
+  }
+
+  @Test
+  public void whenDomainIsNotValid_updateStatus() {
+    defineDuplicateServerNames();
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.makeRightDomainPresence(info, true, false, false);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
+    assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("managedServers", "ms1"));
+  }
+
+  private String getStatusReason(Domain updatedDomain) {
+    return Optional.ofNullable(updatedDomain).map(Domain::getStatus).map(DomainStatus::getReason).orElse(null);
+  }
+
+  private String getStatusMessage(Domain updatedDomain) {
+    return Optional.ofNullable(updatedDomain).map(Domain::getStatus).map(DomainStatus::getMessage).orElse(null);
+  }
+
+  private void defineDuplicateServerNames() {
+    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
+    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
   }
 }

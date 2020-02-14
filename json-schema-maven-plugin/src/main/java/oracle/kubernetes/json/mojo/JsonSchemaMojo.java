@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
 
@@ -12,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -26,37 +26,25 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 public class JsonSchemaMojo extends AbstractMojo {
 
   private static final String DOT = "\\.";
-
+  private static Main main = new MainImpl();
+  private static FileSystem fileSystem = FileSystem.LIVE_FILE_SYSTEM;
   @Parameter(defaultValue = "${project.compileClasspathElements}", readonly = true, required = true)
   private List<String> compileClasspathElements;
-
   @Parameter(defaultValue = "${project.build.outputDirectory}/schema")
   private String targetDir;
-
   @Parameter private String kubernetesVersion;
-
   @Parameter private List<ExternalSchema> externalSchemas = Collections.emptyList();
-
   @Parameter(required = true)
   private String rootClass;
-
   @Parameter private boolean includeDeprecated;
-
   @Parameter private boolean generateMarkdown;
-
   @Parameter private boolean includeAdditionalProperties;
-
   @SuppressWarnings("FieldCanBeLocal")
   @Parameter
   private boolean supportObjectReferences = true;
-
   @Parameter(defaultValue = "${basedir}")
   private String baseDir;
-
   @Parameter private String outputFile;
-
-  private static Main main = new MainImpl();
-  private static FileSystem fileSystem = FileSystem.LIVE_FILE_SYSTEM;
 
   @Override
   public void execute() throws MojoExecutionException {
@@ -91,7 +79,7 @@ public class JsonSchemaMojo extends AbstractMojo {
       if (kubernetesVersion != null) main.setKubernetesVersion(kubernetesVersion);
       for (ExternalSchema externalSchema : externalSchemas)
         main.defineSchemaUrlAndContents(
-            externalSchema.getUrl(), externalSchema.getCacheURL(baseDir));
+            externalSchema.getUrl(), externalSchema.getCacheUrl(baseDir));
     } catch (IOException e) {
       throw new MojoExecutionException("Unable to define external schema: ", e);
     }
@@ -117,12 +105,12 @@ public class JsonSchemaMojo extends AbstractMojo {
   }
 
   private URL[] toUrls(List<String> paths) {
-    return paths.stream().map(this::toURL).toArray(URL[]::new);
+    return paths.stream().map(this::toUrl).toArray(URL[]::new);
   }
 
-  private URL toURL(String classpathElement) {
+  private URL toUrl(String classpathElement) {
     try {
-      return fileSystem.toURL(new File(classpathElement));
+      return fileSystem.toUrl(new File(classpathElement));
     } catch (MalformedURLException e) {
       throw new UncheckedMalformedUrlException(e);
     }

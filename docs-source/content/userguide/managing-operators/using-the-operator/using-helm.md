@@ -67,6 +67,16 @@ $ helm upgrade \
   kubernetes/charts/weblogic-operator
 ```
 
+Enable operator debugging on port 30999. Again, we use `--reuse-values` to change one value without affecting the others:
+```
+$ helm upgrade \
+  --reuse-values \
+  --set "remoteDebugNodePortEnabled=true" \
+  --wait \
+  weblogic-operator \
+  kubernetes/charts/weblogic-operator
+```
+
 ### Operator Helm configuration values
 
 This section describes the details of the operator Helm chart's available configuration values.
@@ -101,7 +111,7 @@ javaLoggingLevel:  "FINE"
 
 Specifies the Docker image containing the operator code.
 
-Defaults to `weblogic-kubernetes-operator:2.2.1`.
+Defaults to `weblogic-kubernetes-operator:2.4.0`.
 
 Example:
 ```
@@ -153,6 +163,8 @@ These examples show two valid YAML syntax options for arrays.
 {{% notice note %}}
 You must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
 {{% /notice %}}
+
+Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about managing `domainNamespaces`.
 
 #### Elastic Stack integration
 
@@ -227,7 +239,7 @@ externalRestHttpsPort: 32009
 
 ##### `externalRestIdentitySecret`
 
-Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes tls secret previously created in the namespace where the WebLogic operator is deployed. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored. In order to create the Kubernetes tls secret you can use the following command:
+Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes `tls` secret previously created in the namespace where the operator is deployed. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored. In order to create the Kubernetes `tls` secret you can use the following command:
 
 ```
 $ kubectl create secret tls <secret-name> \
@@ -470,3 +482,9 @@ To recover:
 - `helm rollback`
 - Create the domain namespace.
 - `helm upgrade` again.
+
+#### Deleting and recreating a namespace that an operator manages without informing the operator
+
+If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
+
+Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about the problem and solutions.

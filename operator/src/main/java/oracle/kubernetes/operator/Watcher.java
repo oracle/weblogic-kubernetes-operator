@@ -1,18 +1,16 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
-import static java.net.HttpURLConnection.HTTP_GONE;
+import java.lang.reflect.Method;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.util.Watch;
-import java.lang.reflect.Method;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -20,6 +18,9 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
+
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.net.HttpURLConnection.HTTP_GONE;
 
 /**
  * This class handles the Watching interface and drives the watch support for a specific type of
@@ -50,7 +51,7 @@ abstract class Watcher<T> {
    */
   Watcher(String resourceVersion, WatchTuning tuning, AtomicBoolean stopping) {
     this.resourceVersion =
-        !isNullOrEmptyString(resourceVersion) ? Long.parseLong(resourceVersion) : 0;
+        !isNullOrEmpty(resourceVersion) ? Long.parseLong(resourceVersion) : 0;
     this.tuning = tuning;
     this.stopping = stopping;
   }
@@ -200,7 +201,7 @@ abstract class Watcher<T> {
       // The kubernetes client parsing logic can mistakenly parse a status as a type
       // with similar fields, such as V1ConfigMap. In this case, the actual status is
       // not available to our layer, so respond defensively by resetting resource version.
-      resourceVersion = 0l;
+      resourceVersion = 0L;
     } else if (status.getCode() == HTTP_GONE) {
       resourceVersion = computeNextResourceVersionFromMessage(status);
     }
@@ -214,13 +215,13 @@ abstract class Watcher<T> {
         int index2 = message.indexOf(')', index1 + 1);
         if (index2 > 0) {
           String val = message.substring(index1 + 1, index2);
-          if (!isNullOrEmptyString(val)) {
+          if (!isNullOrEmpty(val)) {
             return Long.parseLong(val);
           }
         }
       }
     }
-    return 0l;
+    return 0L;
   }
 
   /**
@@ -249,7 +250,7 @@ abstract class Watcher<T> {
       Method getMetadata = object.getClass().getDeclaredMethod("getMetadata");
       V1ObjectMeta metadata = (V1ObjectMeta) getMetadata.invoke(object);
       String val = metadata.getResourceVersion();
-      return !isNullOrEmptyString(val) ? Long.parseLong(val) : 0;
+      return !isNullOrEmpty(val) ? Long.parseLong(val) : 0;
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       return IGNORED_RESOURCE_VERSION;
@@ -262,9 +263,5 @@ abstract class Watcher<T> {
     } else if (newResourceVersion > resourceVersion) {
       resourceVersion = newResourceVersion;
     }
-  }
-
-  private static boolean isNullOrEmptyString(String s) {
-    return s == null || s.equals("");
   }
 }

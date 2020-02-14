@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
 
@@ -11,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -19,10 +17,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction.Kind;
+
+import static oracle.kubernetes.operator.logging.MessageKeys.CURRENT_STEPS;
 
 /**
  * User-level thread&#x2E; Represents the execution of one processing flow. The {@link Engine} is
@@ -52,72 +53,33 @@ import oracle.kubernetes.operator.work.NextAction.Kind;
  */
 public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
-  /** The next action for this Fiber. */
-  private NextAction na;
-
+  private static final int NOT_COMPLETE = 0;
+  private static final int DONE = 1;
+  private static final int CANCELLED = 2;
+  private static final ThreadLocal<Fiber> CURRENT_FIBER = new ThreadLocal<>();
+  /** Used to allocate unique number for each fiber. */
+  private static final AtomicInteger iotaGen = new AtomicInteger();
   public final Engine owner;
   private final Fiber parent;
-
   private final int id;
-  private ClassLoader contextClassLoader;
-  private CompletionCallback completionCallback;
-
-  /** The thread on which this Fiber is currently executing, if applicable. */
-  private volatile Thread currentThread;
-
-  private ExitCallback exitCallback;
-
-  private Collection<Fiber> children = null;
-
-  // Will only be populated if log level is at least FINE
-  private List<BreadCrumb> breadCrumbs = null;
-
   /**
    * Replace uses of synchronized(this) with this lock so that we can control unlocking for resume
    * use cases.
    */
   private final ReentrantLock lock = new ReentrantLock();
-
   private final Condition condition = lock.newCondition();
-
-  private static final int NOT_COMPLETE = 0;
-  private static final int DONE = 1;
-  private static final int CANCELLED = 2;
   private final AtomicInteger status = new AtomicInteger(NOT_COMPLETE);
-
-  /** Callback to be invoked when a {@link Fiber} finishes execution. */
-  public interface CompletionCallback {
-    /**
-     * Indicates that the fiber has finished its execution. Since the processing flow runs
-     * asynchronously, this method maybe invoked by a different thread than any of the threads that
-     * started it or run a part of stepline.
-     *
-     * @param packet The packet
-     */
-    void onCompletion(Packet packet);
-
-    /**
-     * Indicates that the fiber has finished its execution with a throwable. Since the processing
-     * flow runs asynchronously, this method maybe invoked by a different thread than any of the
-     * threads that started it or run a part of stepline.
-     *
-     * @param packet The packet
-     * @param throwable The throwable
-     */
-    void onThrowable(Packet packet, Throwable throwable);
-  }
-
-  /** Callback invoked when a Thread exits processing this fiber */
-  public interface ExitCallback {
-    /**
-     * Indicates that a thread has finished processing the fiber, for now. If the fiber is done or
-     * cancelled then no thread will enter the fiber again.
-     */
-    void onExit();
-  }
-
-  private static final ExitCallback PLACEHOLDER = () -> {};
+  private final Map<String, Component> components = new ConcurrentHashMap<>();
+  /** The next action for this Fiber. */
+  private NextAction na;
+  private ClassLoader contextClassLoader;
+  private CompletionCallback completionCallback;
+  /** The thread on which this Fiber is currently executing, if applicable. */
+  private volatile Thread currentThread;
+  private ExitCallback exitCallback;
+  private Collection<Fiber> children = null;
+  // Will only be populated if log level is at least FINE
+  private List<BreadCrumb> breadCrumbs = null;
 
   Fiber(Engine engine) {
     this(engine, null);
@@ -132,6 +94,29 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     // classloader,
     // so this code works for fiber->fiber inheritance just fine.
     contextClassLoader = Thread.currentThread().getContextClassLoader();
+  }
+
+  /**
+   * Gets the current fiber that's running. This works like {@link Thread#currentThread()}. This
+   * method only works when invoked from {@link Step}.
+   *
+   * @return Current fiber
+   */
+  public static Fiber current() {
+    Fiber fiber = CURRENT_FIBER.get();
+    if (fiber == null) {
+      throw new IllegalStateException("Can be only used from fibers");
+    }
+    return fiber;
+  }
+
+  /**
+   * Gets the current fiber that's running, if set.
+   *
+   * @return Current fiber
+   */
+  public static Fiber getCurrentIfSet() {
+    return CURRENT_FIBER.get();
   }
 
   /**
@@ -151,7 +136,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     if (status.get() == NOT_COMPLETE) {
       if (LOGGER.isFineEnabled()) {
         breadCrumbs = new ArrayList<>();
-        LOGGER.fine("{0} started", new Object[] {getName()});
+        LOGGER.fine("{0} started", getName());
       }
 
       owner.addRunnable(this);
@@ -182,11 +167,11 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    * @param resumePacket packet used in the resumed processing
    * @param callback Replacement completion callback
    */
-  public void resume(Packet resumePacket, CompletionCallback callback) {
+  private void resume(Packet resumePacket, CompletionCallback callback) {
     if (status.get() == NOT_COMPLETE) {
 
       if (LOGGER.isFinerEnabled()) {
-        LOGGER.finer("{0} resumed", new Object[] {getName()});
+        LOGGER.finer("{0} resumed", getName());
       }
 
       boolean doAddRunnable = false;
@@ -196,7 +181,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
           setCompletionCallback(callback);
         }
         if (LOGGER.isFinerEnabled()) {
-          LOGGER.finer("{0} resuming.", new Object[] {getName()});
+          LOGGER.finer("{0} resuming.", getName());
         }
         na.packet = resumePacket;
         if (na.kind == Kind.SUSPEND) {
@@ -207,7 +192,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         } else {
           if (LOGGER.isFinerEnabled()) {
             LOGGER.finer(
-                "{0} taking no action on resume because not suspended", new Object[] {getName()});
+                "{0} taking no action on resume because not suspended", getName());
           }
         }
       } finally {
@@ -232,7 +217,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     }
 
     if (LOGGER.isFineEnabled()) {
-      LOGGER.fine("{0} terminated", new Object[] {getName()});
+      LOGGER.fine("{0} terminated", getName());
     }
 
     lock.lock();
@@ -286,7 +271,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     }
 
     if (LOGGER.isFineEnabled()) {
-      LOGGER.fine("{0} cancelled", new Object[] {getName()});
+      LOGGER.fine("{0} cancelled", getName());
     }
 
     // synchronized(this) is used as Thread running Fiber will be holding lock
@@ -319,7 +304,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return status.get() == DONE;
   }
 
-  public Void get() throws InterruptedException, ExecutionException {
+  public Void get() throws InterruptedException {
     int s = status.get();
     if (s == CANCELLED) {
       throw new CancellationException();
@@ -353,8 +338,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return null;
   }
 
-  public Void get(long timeout, TimeUnit unit)
-      throws InterruptedException, ExecutionException, TimeoutException {
+  public Void get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
     int s = status.get();
     if (s == CANCELLED) {
       throw new CancellationException();
@@ -394,7 +378,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
   private boolean suspend(Holder<Boolean> isRequireUnlock, Consumer<Fiber> onExit) {
     if (LOGGER.isFinerEnabled()) {
-      LOGGER.finer("{0} suspending", new Object[] {getName()});
+      LOGGER.finer("{0} suspending", getName());
     }
 
     if (onExit != null) {
@@ -426,17 +410,6 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return false;
   }
 
-  private static final class OnExitRunnableException extends RuntimeException {
-    private static final long serialVersionUID = 1L;
-
-    Throwable target;
-
-    public OnExitRunnableException(Throwable target) {
-      super((Throwable) null); // see pattern for InvocationTargetException
-      this.target = target;
-    }
-  }
-
   /**
    * Gets the context {@link ClassLoader} of this fiber.
    *
@@ -458,7 +431,9 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return r;
   }
 
-  /** DO NOT CALL THIS METHOD. This is an implementation detail of {@link Fiber}. */
+  /**
+   * DO NOT CALL THIS METHOD. This is an implementation detail of {@link Fiber}.
+   */
   @Override
   public void run() {
     if (status.get() == NOT_COMPLETE) {
@@ -516,7 +491,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private boolean doRun() {
     // isRequireUnlock will contain Boolean.FALSE when lock has already been
     // released in suspend
-    Holder<Boolean> isRequireUnlock = new Holder<Boolean>(Boolean.TRUE);
+    Holder<Boolean> isRequireUnlock = new Holder<>(Boolean.TRUE);
     lock.lock();
     try {
       ClassLoader old;
@@ -525,7 +500,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         // that it is accessible to cancel() even when the lock is held
         currentThread = Thread.currentThread();
         if (LOGGER.isFinerEnabled()) {
-          LOGGER.finer("Thread entering _doRun(): {0}", currentThread);
+          LOGGER.finer("Thread entering doRunInternal(): {0}", currentThread);
         }
 
         old = currentThread.getContextClassLoader();
@@ -533,7 +508,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       }
 
       try {
-        return _doRun(isRequireUnlock);
+        return doRunInternal(isRequireUnlock);
       } catch (OnExitRunnableException o) {
         // catching this exception indicates onExitRunnable in suspend() threw.
         // we must still avoid double unlock
@@ -552,7 +527,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         Thread thread = Thread.currentThread();
         thread.setContextClassLoader(old);
         if (LOGGER.isFinerEnabled()) {
-          LOGGER.finer("Thread leaving _doRun(): {0}", thread);
+          LOGGER.finer("Thread leaving doRunInternal(): {0}", thread);
         }
       }
     } finally {
@@ -568,19 +543,19 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
   private void triggerExitCallback() {
     synchronized (this) {
-      if (exitCallback != null && exitCallback != PLACEHOLDER) {
+      if (exitCallback != null) {
 
         if (LOGGER.isFinerEnabled()) {
-          LOGGER.finer("{0} triggering exit callback", new Object[] {getName()});
+          LOGGER.finer("{0} triggering exit callback", getName());
         }
 
         exitCallback.onExit();
       }
-      exitCallback = PLACEHOLDER;
+      exitCallback = null;
     }
   }
 
-  private boolean _doRun(Holder<Boolean> isRequireUnlock) {
+  private boolean doRunInternal(Holder<Boolean> isRequireUnlock) {
     assert (lock.isHeldByCurrentThread());
 
     while (isReady()) {
@@ -595,14 +570,14 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         return false;
       }
 
+      LOGGER.fine(CURRENT_STEPS, na.next);
+
       if (LOGGER.isFinerEnabled()) {
         LOGGER.finer(
             "{0} {1}.apply({2})",
-            new Object[] {
-              getName(),
-              na.next,
-              na.packet != null ? "Packet@" + Integer.toHexString(na.packet.hashCode()) : "null"
-            });
+            getName(),
+            na.next,
+            na.packet != null ? "Packet@" + Integer.toHexString(na.packet.hashCode()) : "null");
       }
 
       addBreadCrumb(na);
@@ -620,7 +595,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       }
 
       if (LOGGER.isFinerEnabled()) {
-        LOGGER.finer("{0} {1} returned with {2}", new Object[] {getName(), na.next, result});
+        LOGGER.finer("{0} {1} returned with {2}", getName(), na.next, result);
       }
 
       // If resume is called before suspend, then make sure
@@ -703,12 +678,12 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    *
    * @param completionCallback Completion callback
    */
-  public void setCompletionCallback(CompletionCallback completionCallback) {
+  private void setCompletionCallback(CompletionCallback completionCallback) {
     this.completionCallback = completionCallback;
   }
 
   /**
-   * Cancels the current thread and accepts a callback for when the current thread, if any, exits
+   * Cancels this fiber and accepts a callback for when the current thread, if any, exits
    * processing this fiber. Since the fiber will now be cancelled or done, no thread will re-enter
    * this fiber. If the return value is true, then there is a current thread processing in this
    * fiber and the caller can expect a callback; however, if the return value is false, then there
@@ -719,12 +694,12 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    * @return true, if there is a current thread executing in the fiber and that callback will
    *     eventually occur
    */
-  public boolean cancelAndExitCallback(boolean mayInterrupt, ExitCallback exitCallback) {
+  boolean cancelAndExitCallback(boolean mayInterrupt, ExitCallback exitCallback) {
     // Mark fiber as cancelled, if not already done
     status.compareAndSet(NOT_COMPLETE, CANCELLED);
 
     if (LOGGER.isFineEnabled()) {
-      LOGGER.fine("{0} cancelled", new Object[] {getName()});
+      LOGGER.fine("{0} cancelled", getName());
     }
 
     AtomicInteger count = new AtomicInteger(1); // ensure we don't hit zero before iterating
@@ -737,9 +712,13 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         count.incrementAndGet();
       }
 
+      ExitCallback preexistingExitCallback = this.exitCallback;
       ExitCallback myCallback =
           () -> {
             if (count.decrementAndGet() == 0) {
+              if (preexistingExitCallback != null) {
+                preexistingExitCallback.onExit();
+              }
               exitCallback.onExit();
             }
           };
@@ -754,9 +733,6 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
       boolean isWillCall = count.get() > 1; // more calls outstanding then our initial buffer count
       if (isWillCall) {
-        if (this.exitCallback != null || this.exitCallback == PLACEHOLDER) {
-          throw new IllegalStateException();
-        }
         this.exitCallback = myCallback;
         myCallback.onExit(); // remove the buffer count
       }
@@ -764,34 +740,6 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       return isWillCall;
     }
   }
-
-  /**
-   * Gets the current fiber that's running. This works like {@link Thread#currentThread()}. This
-   * method only works when invoked from {@link Step}.
-   *
-   * @return Current fiber
-   */
-  public static Fiber current() {
-    Fiber fiber = CURRENT_FIBER.get();
-    if (fiber == null) {
-      throw new IllegalStateException("Can be only used from fibers");
-    }
-    return fiber;
-  }
-
-  /**
-   * Gets the current fiber that's running, if set.
-   *
-   * @return Current fiber
-   */
-  public static Fiber getCurrentIfSet() {
-    return CURRENT_FIBER.get();
-  }
-
-  private static final ThreadLocal<Fiber> CURRENT_FIBER = new ThreadLocal<Fiber>();
-
-  /** Used to allocate unique number for each fiber. */
-  private static final AtomicInteger iotaGen = new AtomicInteger();
 
   private synchronized void addBreadCrumb(NextAction na) {
     if (breadCrumbs != null) {
@@ -817,8 +765,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         StringBuilder sb = new StringBuilder();
         writeBreadCrumb(sb);
 
-        if (sb != null && LOGGER.isFineEnabled()) {
-          LOGGER.fine("{0} bread crumb: {1}", new Object[] {getName(), sb.toString()});
+        if (LOGGER.isFineEnabled()) {
+          LOGGER.fine("{0} bread crumb: {1}", getName(), sb.toString());
         }
         breadCrumbs = null;
       }
@@ -844,6 +792,55 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     }
   }
 
+  @Override
+  public <S> S getSpi(Class<S> spiType) {
+    for (Component c : components.values()) {
+      S spi = c.getSpi(spiType);
+      if (spi != null) {
+        return spi;
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public Map<String, Component> getComponents() {
+    return components;
+  }
+
+  /**
+   * Callback to be invoked when a {@link Fiber} finishes execution.
+   */
+  public interface CompletionCallback {
+    /**
+     * Indicates that the fiber has finished its execution. Since the processing flow runs
+     * asynchronously, this method maybe invoked by a different thread than any of the threads that
+     * started it or run a part of stepline.
+     *
+     * @param packet The packet
+     */
+    void onCompletion(Packet packet);
+
+    /**
+     * Indicates that the fiber has finished its execution with a throwable. Since the processing
+     * flow runs asynchronously, this method maybe invoked by a different thread than any of the
+     * threads that started it or run a part of stepline.
+     *
+     * @param packet The packet
+     * @param throwable The throwable
+     */
+    void onThrowable(Packet packet, Throwable throwable);
+  }
+
+  /** Callback invoked when a Thread exits processing this fiber. */
+  public interface ExitCallback {
+    /**
+     * Indicates that a thread has finished processing the fiber, for now. If the fiber is done or
+     * cancelled then no thread will enter the fiber again.
+     */
+    void onExit();
+  }
+
   private interface BreadCrumb {
     void writeTo(StringBuilder sb);
 
@@ -852,10 +849,21 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     }
   }
 
+  private static final class OnExitRunnableException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
+
+    Throwable target;
+
+    OnExitRunnableException(Throwable target) {
+      super((Throwable) null); // see pattern for InvocationTargetException
+      this.target = target;
+    }
+  }
+
   private static class NextActionBreadCrumb implements BreadCrumb {
     private final NextAction na;
 
-    public NextActionBreadCrumb(NextAction na) {
+    NextActionBreadCrumb(NextAction na) {
       this.na = na;
     }
 
@@ -884,7 +892,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private static class ChildFiberBreadCrumb implements BreadCrumb {
     private final Fiber child;
 
-    public ChildFiberBreadCrumb(Fiber child) {
+    ChildFiberBreadCrumb(Fiber child) {
       this.child = child;
     }
 
@@ -915,28 +923,10 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     }
   }
 
-  private final Map<String, Component> components = new ConcurrentHashMap<String, Component>();
-
-  @Override
-  public <S> S getSPI(Class<S> spiType) {
-    for (Component c : components.values()) {
-      S spi = c.getSPI(spiType);
-      if (spi != null) {
-        return spi;
-      }
-    }
-    return null;
-  }
-
-  @Override
-  public Map<String, Component> getComponents() {
-    return components;
-  }
-
   private static final class Holder<T> {
     T value;
 
-    public Holder(T value) {
+    Holder(T value) {
       this.value = value;
     }
   }

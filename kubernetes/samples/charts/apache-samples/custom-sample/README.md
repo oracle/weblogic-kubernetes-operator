@@ -41,7 +41,7 @@ In this sample, we will provide a custom Apache plugin configuration to fine tun
 ```
 # Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
 #
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
 <IfModule mod_weblogic.c>
@@ -106,7 +106,7 @@ Edit the input parameters file, `input.yaml`. The file content is similar to bel
 ```
 # Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
 #
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Use this to provide your own Apache webtier configuration as needed; simply define this
 # path and put your own custom_mod_wl_apache.conf file under this path.

@@ -1,22 +1,22 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Yaml;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
 import org.apache.commons.codec.digest.DigestUtils;
 
 /** Annotates pods, services with details about the Domain instance and checks these annotations. */
 public class AnnotationHelper {
-  private static final boolean DEBUG = false;
   static final String SHA256_ANNOTATION = "weblogic.sha256";
+  private static final boolean DEBUG = false;
   private static final String HASHED_STRING = "hashedString";
   private static Function<Object, String> HASH_FUNCTION = o -> DigestUtils.sha256Hex(Yaml.dump(o));
 

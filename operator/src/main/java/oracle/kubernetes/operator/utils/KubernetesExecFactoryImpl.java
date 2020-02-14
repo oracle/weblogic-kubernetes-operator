@@ -1,14 +1,14 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
+
+import java.io.IOException;
 
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Exec;
 import io.kubernetes.client.models.V1Pod;
-import java.io.IOException;
 
 /** The live implementation of this factory, which uses the 'kubectl exec' command. */
 public class KubernetesExecFactoryImpl implements KubernetesExecFactory {

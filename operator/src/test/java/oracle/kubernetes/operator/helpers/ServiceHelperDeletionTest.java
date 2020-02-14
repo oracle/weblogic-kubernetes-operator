@@ -1,8 +1,15 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
+
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Service;
+import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.TestUtils;
+import org.junit.Before;
+import org.junit.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
@@ -10,14 +17,6 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Service;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.work.TerminalStep;
-import org.junit.Before;
-import org.junit.Test;
 
 public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
   private static final String UID = "uid1";

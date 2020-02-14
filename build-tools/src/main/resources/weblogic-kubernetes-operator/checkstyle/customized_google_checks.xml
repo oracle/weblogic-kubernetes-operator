@@ -27,6 +27,11 @@
         <property name="eachLine" value="true"/>
     </module>
 
+    <module name="RegexpHeader">
+        <property name="headerFile" value="build-tools/src/main/resources/weblogic-kubernetes-operator/checkstyle/java.header"/>
+        <property name="fileExtensions" value="java"/>
+    </module>
+
     <module name="TreeWalker">
         <module name="OuterTypeFilename"/>
         <module name="IllegalTokenText">
@@ -42,7 +47,7 @@
             <property name="allowNonPrintableEscapes" value="true"/>
         </module>
         <module name="LineLength">
-            <property name="max" value="100"/>
+            <property name="max" value="120"/>
             <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
         </module>
         <module name="AvoidStarImport"/>
@@ -193,7 +198,7 @@
         <module name="CustomImportOrder">
             <property name="sortImportsInGroupAlphabetically" value="true"/>
             <property name="separateLineBetweenGroups" value="true"/>
-            <property name="customImportOrderRules" value="STATIC###THIRD_PARTY_PACKAGE"/>
+            <property name="customImportOrderRules" value="STANDARD_JAVA_PACKAGE###THIRD_PARTY_PACKAGE###STATIC"/>
         </module>
         <module name="MethodParamPad"/>
         <module name="NoWhitespaceBefore">

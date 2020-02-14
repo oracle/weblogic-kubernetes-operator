@@ -1,13 +1,12 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
 
 import java.util.HashSet;
 import java.util.Set;
 
-/** A LoggingFilter that logs each log message, which are typically message keys, at most once */
+/** A LoggingFilter that logs each log message, which are typically message keys, at most once. */
 public class OncePerMessageLoggingFilter implements LoggingFilter {
 
   // allow all messages to be logged when filtering is off
@@ -17,7 +16,7 @@ public class OncePerMessageLoggingFilter implements LoggingFilter {
 
   /**
    * Turn on or off the filtering of log messages and skip logging of messages that have already
-   * been logged
+   * been logged.
    *
    * @param value true if filtering should be on, false if filtering should be off
    * @return logging filter
@@ -28,7 +27,7 @@ public class OncePerMessageLoggingFilter implements LoggingFilter {
   }
 
   /**
-   * Clears the list of history of messages logged and turn off filtering
+   * Clears the list of history of messages logged and turn off filtering.
    *
    * @return logging filter
    */

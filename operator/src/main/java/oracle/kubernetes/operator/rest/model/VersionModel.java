@@ -1,14 +1,18 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.model;
 
 /** VersionModel describes a version of the WebLogic operator REST api. */
 public class VersionModel extends ItemModel {
 
+  private String version;
+  private boolean latest;
+  private String lifecycle;
+
   /** Construct an empty VersionModel. */
-  public VersionModel() {}
+  public VersionModel() {
+  }
 
   /**
    * Construct a populated VersionModel.
@@ -23,8 +27,6 @@ public class VersionModel extends ItemModel {
     setLatest(latest);
     setLifecycle(lifecycle);
   }
-
-  private String version;
 
   /**
    * Get the name of this version of the WebLogic operator REST api.
@@ -44,8 +46,6 @@ public class VersionModel extends ItemModel {
     this.version = version;
   }
 
-  private boolean latest;
-
   /**
    * Get whether or not this is the latest version of the WebLogic operator REST api.
    *
@@ -63,8 +63,6 @@ public class VersionModel extends ItemModel {
   public void setLatest(boolean latest) {
     this.latest = latest;
   }
-
-  private String lifecycle;
 
   /**
    * Get the lifecycle of this version of the WebLogic operator REST api.

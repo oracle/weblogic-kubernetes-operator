@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
@@ -9,35 +8,44 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Logger;
+
 import oracle.kubernetes.operator.BaseTest;
 
 public class PersistentVolume {
 
+  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   private Map<String, Object> pvMap;
   private String dirPath;
-
-  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   public PersistentVolume(String dirPath, Map pvMap) throws Exception {
     this.dirPath = dirPath;
     this.pvMap = pvMap;
-
-    String cmd =
-        BaseTest.getProjectRoot()
-            + "/src/integration-tests/bash/job.sh \"mkdir -m 777 -p "
-            + dirPath
-            + "\"";
-
-    ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to create domain PV directory "
-              + cmd
-              + " failed, returned "
-              + result.stdout()
-              + result.stderr());
+    String cmd;
+    
+    if (BaseTest.OPENSHIFT) {
+      cmd = "mkdir -m 777 -p " +  dirPath;
+    } else {
+      cmd =
+            BaseTest.getProjectRoot()
+        + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot()
+        + ":/sharedparent -t 120 -c 'mkdir -m 777 -p "
+        + dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/")
+        + "'"; 
     }
-    logger.info("command result " + result.stdout().trim());
+    
+    // retry logic for PV dir creation as sometimes krun.sh fails
+    int cnt = 0;
+    int maxCnt = 10;
+    while (cnt < maxCnt) {
+      logger.info("Executing command " + cmd);
+      if (ExecCommand.exec(cmd).exitValue() == 0) {
+        break;
+      } else {
+        logger.info("PV dir creation command failed");
+        Thread.sleep(BaseTest.getWaitTimePod());
+        cnt = cnt + 1;
+      }
+    }
 
     Path parentDir =
         pvMap.get("domainUID") != null
@@ -60,16 +68,7 @@ public class PersistentVolume {
             + BaseTest.getUserProjectsDir();
     logger.info("Executing cmd " + cmdPvPvc);
 
-    result = ExecCommand.exec(cmdPvPvc);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to create PV/PVC "
-              + cmdPvPvc
-              + " failed, returned "
-              + result.stdout()
-              + result.stderr());
-    }
-    logger.info("command result " + result.stdout().trim());
+    TestUtils.exec(cmdPvPvc, true);
   }
 
   public String getDirPath() {

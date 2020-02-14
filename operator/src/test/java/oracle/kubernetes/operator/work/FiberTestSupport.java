@@ -1,12 +1,7 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
-
-import static com.meterware.simplestub.Stub.createStrictStub;
-import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -18,14 +13,18 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+
+import static com.meterware.simplestub.Stub.createStrictStub;
+import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 
 /**
  * Support for writing unit tests that use a fiber to run steps. Such tests can call #runStep to
@@ -39,10 +38,9 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
  */
 @SuppressWarnings("UnusedReturnValue")
 public class FiberTestSupport {
+  private static Container container = new Container();
   private CompletionCallbackStub completionCallback = new CompletionCallbackStub();
   private ScheduledExecutorStub schedule = ScheduledExecutorStub.create();
-
-  private static Container container = new Container();
   private Engine engine = new Engine(schedule);
   private Fiber fiber = engine.createFiber();
   private Packet packet = new Packet();
@@ -130,18 +128,18 @@ public class FiberTestSupport {
     return this;
   }
 
-  public <T> FiberTestSupport addComponent(String key, Class<T> aClass, T component) {
-    packet.getComponents().put(key, Component.createFor(aClass, component));
+  public <T> FiberTestSupport addComponent(String key, Class<T> aaClass, T component) {
+    packet.getComponents().put(key, Component.createFor(aaClass, component));
     return this;
   }
 
-  public <T> FiberTestSupport addContainerComponent(String key, Class<T> aClass, T component) {
-    container.getComponents().put(key, Component.createFor(aClass, component));
+  public <T> FiberTestSupport addContainerComponent(String key, Class<T> aaClass, T component) {
+    container.getComponents().put(key, Component.createFor(aaClass, component));
     return this;
   }
 
   /**
-   * Starts a unit-test fiber with the specified step
+   * Starts a unit-test fiber with the specified step.
    *
    * @param step the first step to run
    */
@@ -153,7 +151,18 @@ public class FiberTestSupport {
   }
 
   /**
-   * Starts a unit-test fiber with the specified step and runs until the fiber is done
+   * Starts a unit-test fiber with the specified step.
+   *
+   * @param nextStep the first step to run
+   */
+  public Packet runSteps(StepFactory factory, Step nextStep) {
+    fiber = engine.createFiber();
+    fiber.start(factory.createStepList(nextStep), packet, completionCallback);
+    return packet;
+  }
+
+  /**
+   * Starts a unit-test fiber with the specified step and runs until the fiber is done.
    *
    * @param step the first step to run
    */
@@ -164,26 +173,10 @@ public class FiberTestSupport {
     // Wait for fiber to finish
     try {
       fiber.get();
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
     return packet;
-  }
-
-  /**
-   * Starts a unit-test fiber with the specified step
-   *
-   * @param nextStep the first step to run
-   */
-  public Packet runSteps(StepFactory factory, Step nextStep) {
-    fiber = engine.createFiber();
-    fiber.start(factory.createStepList(nextStep), packet, completionCallback);
-    return packet;
-  }
-
-  @FunctionalInterface
-  public interface StepFactory {
-    Step createStepList(Step next);
   }
 
   /**
@@ -208,8 +201,13 @@ public class FiberTestSupport {
     completionCallback.throwOnFailure();
   }
 
+  @FunctionalInterface
+  public interface StepFactory {
+    Step createStepList(Step next);
+  }
+
   abstract static class ScheduledExecutorStub implements ScheduledExecutorService {
-    /** current time in milliseconds. */
+    /* current time in milliseconds. */
     private long currentTime = 0;
 
     private SortedSet<ScheduledItem> scheduledItems = new TreeSet<>();
@@ -336,7 +334,8 @@ public class FiberTestSupport {
     private Throwable throwable;
 
     @Override
-    public void onCompletion(Packet packet) {}
+    public void onCompletion(Packet packet) {
+    }
 
     @Override
     public void onThrowable(Packet packet, Throwable throwable) {

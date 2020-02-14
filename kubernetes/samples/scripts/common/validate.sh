@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
 #  Common validation functions shared by all other scripts that process inputs properties.
@@ -172,6 +172,27 @@ function validateWeblogicImagePullPolicy {
   else
     # Set the default
     imagePullPolicy="IfNotPresent"
+  fi
+  failIfValidationErrors
+}
+
+#
+# Function to validate the fmwDomainType
+#
+function validateFmwDomainType {
+  if [ ! -z ${fmwDomainType} ]; then
+    case ${fmwDomainType} in
+      "JRF")
+      ;;
+      "RestrictedJRF")
+      ;;
+      *)
+        validationError "Invalid value for fmwDomainType: ${fmwDomainType}. Valid values are JRF or restrictedJRF."
+      ;;
+    esac
+  else
+    # Set the default
+    fmwDomainType="JRF"
   fi
   failIfValidationErrors
 }
@@ -371,6 +392,7 @@ function validateCommonInputs {
   validateServerStartPolicy
   validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
+  validateFmwDomainType
 
   failIfValidationErrors
 }

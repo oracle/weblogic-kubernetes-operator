@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
 
@@ -10,6 +9,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Map;
+
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.json.YamlDocGenerator;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -51,8 +51,8 @@ public class MainImpl implements Main {
   }
 
   @Override
-  public void defineSchemaUrlAndContents(URL schemaURL, URL cacheUrl) throws IOException {
-    generator.addExternalSchema(schemaURL, cacheUrl);
+  public void defineSchemaUrlAndContents(URL schemaUrl, URL cacheUrl) throws IOException {
+    generator.addExternalSchema(schemaUrl, cacheUrl);
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")

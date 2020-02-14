@@ -1,32 +1,8 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
-import static oracle.kubernetes.LogMatcher.containsFine;
-import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
-import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
-import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,7 +10,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import oracle.kubernetes.TestUtils;
+
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -46,6 +27,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -56,6 +39,25 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
+import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
+import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
+import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
+import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /**
  * Tests the code to bring up managed servers. "Wls Servers" and "WLS Clusters" are those defined in
@@ -82,6 +84,20 @@ public class ManagedServersUpStepTest {
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private Memento factoryMemento;
 
+  private static void addServer(DomainPresenceInfo domainPresenceInfo, String serverName) {
+    domainPresenceInfo.setServerPod(serverName, createPod(serverName));
+  }
+
+  private static V1Pod createPod(String serverName) {
+    return new V1Pod().metadata(withNames(new V1ObjectMeta().namespace(NS), serverName));
+  }
+
+  private static V1ObjectMeta withNames(V1ObjectMeta objectMeta, String serverName) {
+    return objectMeta
+        .name(LegalNames.toPodName(UID, serverName))
+        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, serverName);
+  }
+
   private DomainPresenceInfo createDomainPresenceInfo() {
     return new DomainPresenceInfo(domain);
   }
@@ -95,7 +111,7 @@ public class ManagedServersUpStepTest {
   }
 
   private DomainSpec createDomainSpec() {
-    return new DomainSpec().withDomainUID(UID).withReplicas(1);
+    return new DomainSpec().withDomainUid(UID).withReplicas(1);
   }
 
   @Before
@@ -316,6 +332,16 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
+  public void whenClusterStartupDefinedWithZeroReplicas_addNothingToServers() {
+    configureCluster("cluster1").withReplicas(0);
+    addWlsCluster("cluster1", "ms1", "ms2");
+
+    invokeStep();
+
+    assertThat(getServers(), empty());
+  }
+
+  @Test
   public void whenServerStartupNotDefined_useEnvForCluster() {
     configureCluster("cluster1").withEnvironmentVariable("item1", "value1");
     addWlsCluster("cluster1", "ms1");
@@ -434,20 +460,6 @@ public class ManagedServersUpStepTest {
     assertThat(createNextStep(), instanceOf(ClusterServicesStep.class));
   }
 
-  private static void addServer(DomainPresenceInfo domainPresenceInfo, String serverName) {
-    domainPresenceInfo.setServerPod(serverName, createPod(serverName));
-  }
-
-  private static V1Pod createPod(String serverName) {
-    return new V1Pod().metadata(withNames(new V1ObjectMeta().namespace(NS), serverName));
-  }
-
-  private static V1ObjectMeta withNames(V1ObjectMeta objectMeta, String serverName) {
-    return objectMeta
-        .name(LegalNames.toPodName(UID, serverName))
-        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, serverName);
-  }
-
   @Test
   public void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
     addServer(domainPresenceInfo, "server1");
@@ -477,16 +489,58 @@ public class ManagedServersUpStepTest {
     assertStoppingServers(createNextStepWithout("server2"), "server1", "server3", ADMIN);
   }
 
+  @Test
+  public void whenClusterStartupDefinedWithPreCreateServerService_addAllToServers() {
+    configureCluster("cluster1").withPrecreateServerService(true);
+    addWlsCluster("cluster1", "ms1", "ms2");
+
+    invokeStep();
+
+    assertThat(getServers(), allOf(hasItem("ms1"), hasItem("ms2")));
+  }
+
+  @Test
+  public void whenClusterStartupDefinedWithPreCreateServerService_adminServerDown_addAllToServers() {
+    configureCluster("cluster1").withPrecreateServerService(true);
+    addWlsCluster("cluster1", "ms1", "ms2");
+    configureAdminServer().withServerStartPolicy(START_NEVER);
+
+    invokeStep();
+
+    assertThat(getServers(), allOf(hasItem("ms1"), hasItem("ms2")));
+  }
+
+  @Test
+  public void whenClusterStartupDefinedWithPreCreateServerService_managedServerDown_addAllToServers() {
+    configureCluster("cluster1").withPrecreateServerService(true).withServerStartPolicy(START_NEVER);
+    addWlsCluster("cluster1", "ms1", "ms2");
+
+    invokeStep();
+
+    assertThat(getServers(), allOf(hasItem("ms1"), hasItem("ms2")));
+  }
+
+  @Test
+  public void whenClusterStartupDefinedWithPreCreateServerService_allServersDown_addNothingToServers() {
+    configureCluster("cluster1").withPrecreateServerService(true).withServerStartPolicy(START_NEVER);
+    addWlsCluster("cluster1", "ms1", "ms2");
+    configureAdminServer().withServerStartPolicy(START_NEVER);
+
+    invokeStep();
+
+    assertThat(getServers(), empty());
+  }
+
   private void assertStoppingServers(Step step, String... servers) {
     assertThat(((ServerDownIteratorStep) step).getServersToStop(), containsInAnyOrder(servers));
   }
 
-  private Step createNextStep() {
-    return createNextStep(Collections.emptyList());
-  }
-
   private Step createNextStepWithout(String... serverNames) {
     return createNextStep(Arrays.asList(serverNames));
+  }
+
+  private Step createNextStep() {
+    return createNextStep(Collections.emptyList());
   }
 
   private Step createNextStep(List<String> servers) {
@@ -534,6 +588,10 @@ public class ManagedServersUpStepTest {
 
   private void configureServer(String serverName) {
     configurator.configureServer(serverName);
+  }
+
+  private AdminServerConfigurator configureAdminServer() {
+    return configurator.configureAdminServer();
   }
 
   private ServerConfigurator configureServerToStart(String serverName) {

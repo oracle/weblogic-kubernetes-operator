@@ -1,12 +1,12 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.function.Function;
+
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import java.util.function.Function;
 
 public class UnitTestHash implements Function<Object, String> {
   public static Memento install() throws NoSuchFieldException {

@@ -68,7 +68,7 @@ The PV and PVC creation inputs can be customized by editing the `create-pv-pvc-i
 
 #### Shared versus dedicated PVC
 
-By default, the `domainUID` is left empty in the inputs file, which means the generated PV and PVC will not be associated with a particular domain, but can be shared by multiple domain resources in the same Kubernetes namespaces as the PV and PVC.
+By default, the `domainUID` is left empty in the inputs file, which means the generated PV and PVC will not be associated with a particular domain, but can be shared by multiple domain resources in the same Kubernetes namespaces as the PV and PVC. If the PV/PVC is being shared across domains, then, as a best practice, you should specify a unique `baseName`.
 
 For the use cases where dedicated PV and PVC are desired for a particular domain, the `domainUID` needs to be set in the `create-pv-pvc-inputs.yaml` file. The presence of a non-empty `domainUID` in the inputs file will cause the generated PV and PVC to be associated with the specified `domainUID`. The association includes that the names of the generated YAML files and the Kubernetes PV and PVC objects are decorated with the `domainUID`, and the PV and PVC objects are also labeled with the `domainUID`.
 

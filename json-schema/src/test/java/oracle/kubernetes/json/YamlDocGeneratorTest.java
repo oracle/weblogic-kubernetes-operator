@@ -1,8 +1,17 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
+import org.joda.time.DateTime;
+import org.junit.Test;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static org.hamcrest.Matchers.containsString;
@@ -10,18 +19,24 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-import com.google.common.collect.ImmutableMap;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.joda.time.DateTime;
-import org.junit.Test;
-
 public class YamlDocGeneratorTest {
   private static final String K8S_VERSION = "1.9.0";
   private SchemaGenerator schemaGenerator = new SchemaGenerator();
+  @SuppressWarnings("unused")
+  @Description("An annotated field")
+  private Double annotatedDouble;
+  @SuppressWarnings("unused")
+  private DateTime dateTime;
+  @SuppressWarnings("unused")
+  private Map<String, String> notes;
+  @SuppressWarnings("unused")
+  private List<String> myList;
+  @SuppressWarnings("unused")
+  @Description("An example")
+  private SimpleObject simpleUsage;
+  @SuppressWarnings("unused")
+  @Description("An array")
+  private SimpleObject[] simpleArray;
 
   @Test
   public void generateMarkdownForProperty() throws NoSuchFieldException {
@@ -46,10 +61,6 @@ public class YamlDocGeneratorTest {
     return result;
   }
 
-  @SuppressWarnings("unused")
-  @Description("An annotated field")
-  private Double annotatedDouble;
-
   @Test
   public void whenSchemaHasUknownTypeAndNoReference_useAsSpecified() throws NoSuchFieldException {
     Map<String, Object> schema = ImmutableMap.of("anInt", of("type", "integer"));
@@ -65,26 +76,17 @@ public class YamlDocGeneratorTest {
     assertThat(markdown, containsString(tableEntry("`dateTime`", "DateTime", "")));
   }
 
-  @SuppressWarnings("unused")
-  private DateTime dateTime;
-
   @Test
   public void whenPropertyTypeIsMap_doNotGenerateReference() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("notes"));
     assertThat(markdown, containsString(tableEntry("`notes`", "Map", "")));
   }
 
-  @SuppressWarnings("unused")
-  private Map<String, String> notes;
-
   @Test
   public void whenPropertyTypeIsArrayOfStrings_generateType() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("myList"));
     assertThat(markdown, containsString(tableEntry("`myList`", "array of string", "")));
   }
-
-  @SuppressWarnings("unused")
-  private List<String> myList;
 
   @Test
   public void whenPropertyTypeIsReferenceWithDescription_includeBoth() throws NoSuchFieldException {
@@ -99,10 +101,6 @@ public class YamlDocGeneratorTest {
     return "[" + section + "](" + anchor + ")";
   }
 
-  @SuppressWarnings("unused")
-  @Description("An example")
-  private SimpleObject simpleUsage;
-
   @Test
   public void whenPropertyTypeIsReferenceArrayWithDescription_includeBoth()
       throws NoSuchFieldException {
@@ -116,10 +114,6 @@ public class YamlDocGeneratorTest {
                 "An array")));
   }
 
-  @SuppressWarnings("unused")
-  @Description("An array")
-  private SimpleObject[] simpleArray;
-
   @Test
   public void generateMarkdownForSimpleObject() {
     YamlDocGenerator generator = new YamlDocGenerator(new HashMap<>());
@@ -130,13 +124,13 @@ public class YamlDocGeneratorTest {
             String.join(
                 "\n",
                 tableHeader(),
-                tableEntry("`aBoolean`", "Boolean", "A flag"),
-                tableEntry("`aString`", "string", "A string"),
+                tableEntry("`aaBoolean`", "Boolean", "A flag"),
+                tableEntry("`aaString`", "string", "A string"),
                 tableEntry("`depth`", "number", ""))));
   }
 
-  private Map<String, Object> generateSchema(Class<?> aClass) {
-    return schemaGenerator.generate(aClass);
+  private Map<String, Object> generateSchema(Class<?> aaClass) {
+    return schemaGenerator.generate(aaClass);
   }
 
   @Test
@@ -152,8 +146,8 @@ public class YamlDocGeneratorTest {
                 "### Simple Object",
                 "",
                 tableHeader(),
-                tableEntry("`aBoolean`", "Boolean", "A flag"),
-                tableEntry("`aString`", "string", "A string"),
+                tableEntry("`aaBoolean`", "Boolean", "A flag"),
+                tableEntry("`aaString`", "string", "A string"),
                 tableEntry("`depth`", "number", ""))));
   }
 
@@ -203,8 +197,8 @@ public class YamlDocGeneratorTest {
                 "A simple object used for testing",
                 "",
                 tableHeader(),
-                tableEntry("`aBoolean`", "Boolean", "A flag"),
-                tableEntry("`anInt`", "number", "An int<br/>value"))));
+                tableEntry("`aaBoolean`", "Boolean", "A flag"),
+                tableEntry("`aaString`", "string", "A string"))));
   }
 
   private String tableHeader() {

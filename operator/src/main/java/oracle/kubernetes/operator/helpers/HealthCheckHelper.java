@@ -1,17 +1,17 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ResourceRule;
 import io.kubernetes.client.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.models.VersionInfo;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -97,7 +97,8 @@ public final class HealthCheckHelper {
     namespaceAccessChecks.put(AuthorizationProxy.Resource.TOKENREVIEWS, cOperations);
   }
 
-  private HealthCheckHelper() {}
+  private HealthCheckHelper() {
+  }
 
   /**
    * Verify Access.
@@ -116,7 +117,7 @@ public final class HealthCheckHelper {
 
     // Validate RBAC or ABAC policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
-    LOGGER.info(MessageKeys.VERIFY_ACCESS_START);
+    LOGGER.info(MessageKeys.VERIFY_ACCESS_START, ns);
 
     if (version.isRulesReviewSupported()) {
       boolean rulesReviewSuccessful = true;
@@ -148,7 +149,7 @@ public final class HealthCheckHelper {
       for (AuthorizationProxy.Operation op : namespaceAccessChecks.get(r)) {
 
         if (!ap.check(op, r, null, AuthorizationProxy.Scope.namespace, ns)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource(), ns);
         }
       }
     }
@@ -157,7 +158,7 @@ public final class HealthCheckHelper {
       for (AuthorizationProxy.Operation op : clusterAccessChecks.get(r)) {
 
         if (!ap.check(op, r, null, AuthorizationProxy.Scope.cluster, null)) {
-          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource());
+          LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED, op, r.getResource(), ns);
         }
       }
     }
@@ -166,7 +167,7 @@ public final class HealthCheckHelper {
   private static void check(
       List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op) {
     String verb = op.name();
-    String apiGroup = r.getAPIGroup();
+    String apiGroup = r.getApiGroup();
     String resource = r.getResource();
     String sub = r.getSubResource();
     if (sub != null && !sub.isEmpty()) {

@@ -1,6 +1,6 @@
 # !/bin/sh
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #############################################################################
 #
@@ -34,7 +34,7 @@
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SOURCEPATH="`echo $SCRIPTPATH | sed 's/weblogic-kubernetes-operator.*/weblogic-kubernetes-operator/'`"
-traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils.sh
+traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/utils.sh
 source ${traceFile}
 source ${SCRIPTPATH}/util_dots.sh
 [ $? -ne 0 ] && echo "Error: missing file ${traceFile}" && exit 1
@@ -94,6 +94,10 @@ export T3CHANNEL2_PORT=${T3CHANNEL2_PORT:-30013}
 export T3CHANNEL3_PORT=${T3CHANNEL3_PORT:-30014}
 export T3_PUBLIC_ADDRESS=${T3_PUBLIC_ADDRESS:-}
 export PRODUCTION_MODE_ENABLED=${PRODUCTION_MODE_ENABLED:-true}
+export ALLOW_DYNAMIC_CLUSTER_IN_FMW=${ALLOW_DYNAMIC_CLUSTER_IN_FMW:-false}
+
+# whether this test run is expecting a domain validation error
+export EXPECT_INVALID_DOMAIN=${EXPECT_INVALID_DOMAIN:-false}
 
 #############################################################################
 #
@@ -256,10 +260,12 @@ function deployTestScriptConfigMap() {
 
   mkdir -p ${test_home}/test-scripts
 
-  cp ${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils* ${test_home}/test-scripts || exit 1
+  cp ${SOURCEPATH}/operator/src/main/resources/scripts/utils* ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/wl-create-domain-pod.sh ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/createTestRoot.sh ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/wl-introspect-pod.sh ${test_home}/test-scripts || exit 1
+
+  export DATA_HOME=${DATA_HOME:-/shared/data}
 
   rm -f ${test_home}/test-scripts/wl-create-domain-pod.py
   ${SCRIPTPATH}/util_subst.sh -g wl-create-domain-pod.pyt ${test_home}/test-scripts/wl-create-domain-pod.py || exit 1
@@ -417,6 +423,7 @@ function deployIntrospectJobPod() {
   (
     export JOB_NAME=${DOMAIN_UID}--introspect-domain-pod
     export JOB_SCRIPT=/test-scripts/wl-introspect-pod.sh
+    export DATA_HOME=${DATA_HOME:-/shared/data}
     ${SCRIPTPATH}/util_subst.sh -g wl-introspect-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
 
@@ -438,6 +445,25 @@ function deployIntrospectJobPod() {
   # put the outputfile in a cm
 
   createConfigMapFromDir $introspect_output_cm_name ${test_home}/jobfiles
+
+
+  # check domainValid value from domain introspector job output
+  domainValid=`cat ${test_home}/jobfiles/topology.yaml | awk '/domainValid:/{sub(/.*domainValid: /, ""); print}'`
+
+  if [ "$domainValid" = "false" ]; then
+    if [ "$EXPECT_INVALID_DOMAIN" = "true" ]; then
+      trace "Info: Success! domainValid is false as expected"
+    else
+      trace "Error: Exiting test due to domainValid from introspecting domain is false!"
+    fi
+    exit 1
+  fi
+
+  if [ "$EXPECT_INVALID_DOMAIN" = "true" ]; then
+    trace "Exiting test due to domainValid from introspecting domain not returning false for an invalid domain"
+    exit 1
+  fi
+
 }
 
 #############################################################################
@@ -491,10 +517,15 @@ function deployPod() {
     export SERVER_NAME=${server_name}
     export SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
     export AS_SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${ADMIN_NAME}`
+    export DATA_HOME=${DATA_HOME:-/shared/data}
     if [ "${SERVER_NAME}" = "${ADMIN_NAME}" ]; then
       export LOCAL_SERVER_DEFAULT_PORT=$ADMIN_PORT
+      export KEEP_DEFAULT_DATA_HOME="true"
+      export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR=""
     else
       export LOCAL_SERVER_DEFAULT_PORT=$MANAGED_SERVER_PORT
+      export KEEP_DEFAULT_DATA_HOME=""
+      export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR="true"
     fi
     ${SCRIPTPATH}/util_subst.sh -g wl-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
@@ -580,7 +611,7 @@ function checkOverrides() {
   tracen "Info: Waiting for WLST checkBeans.py to complete."
   printdots_start
   # TBD weblogic/welcome1 should be deduced via a base64 of the admin secret
-  kubectl exec -it ${DOMAIN_UID}-${ADMIN_NAME} \
+  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} \
     wlst.sh /shared/checkBeans.py \
       weblogic welcome1 t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT} \
       /shared/checkBeans.input \
@@ -589,6 +620,54 @@ function checkOverrides() {
   printdots_end
   if [ $status -ne 0 ]; then
     trace "Error: The checkBeans verification failed, see '$test_home/checkBeans.out'."
+  fi
+
+  if [ $status -ne 0 ] || [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+}
+
+#############################################################################
+#
+# Check if wl version checks are working on the admin pod
+#
+
+function checkWLVersionChecks() {
+
+  trace "Info: Checking pod log for 'error' strings."
+
+  # Check for exactly 0 occurances of 'Error:' lines.
+  #   a version issue is reported as an 'error:' to the log
+  #   the awk expression below gets the tail of the log, everything after the last occurance of 'Starting WebLogic...'
+
+  linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'error:'`"
+  logstatus=0
+
+  if [ ! "$linecount" == "0" ]; then
+    trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' contains lines with the keyword 'error'."
+    logstatus=1
+  fi
+
+  # Copy version test file up to admin server and run it
+
+  local testscript="util_testwlversion.sh"
+  local outfile="$test_home/${testscript}.out"
+
+  trace "Info: Running version checks on admin-server, output file '$outfile'."
+
+  kubectl -n ${NAMESPACE} \
+    cp ${SCRIPTPATH}/${testscript} \
+       ${DOMAIN_UID}-${ADMIN_NAME}:/shared/${testscript} \
+    || exit 1
+
+  rm -f ${outfile}
+  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} \
+      /shared/${testscript} \
+      > ${outfile} 2>&1
+  status=$?
+
+  if [ $status -ne 0 ]; then
+    trace "Error: The version checks failed, see '${outfile}'."
   fi
 
   if [ $status -ne 0 ] || [ $logstatus -ne 0 ]; then
@@ -618,11 +697,47 @@ function checkDataSource() {
 
   tracen "Info: Waiting for script to complete"
   printdots_start
-  kubectl exec -it ${pod_name} ${script_cmd} > ${out_file} 2>&1
+  kubectl exec -it -n ${NAMESPACE} ${pod_name} ${script_cmd} > ${out_file} 2>&1
   status=$?
   printdots_end
   if [ $status -ne 0 ]; then
     trace "Error: The '$script_cmd' failed, see '$out_file'."
+    exit 1
+  fi
+}
+
+#############################################################################
+#
+# Check .DAT default and custom filestores created when overridden with
+# a location specified by DATA_HOME environment variable
+#
+
+function checkFileStores() {
+
+  # Copy file store test file up to admin server and run it
+
+  local testscript=${1?}
+  local server_name=${2?}
+  local outfile="$test_home/${testscript}.out"
+
+  trace "Info: Verifying .DAT file store checks for ${server_name}, output file '$outfile'."
+
+  kubectl -n ${NAMESPACE} \
+    cp ${SCRIPTPATH}/${testscript} \
+       ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1:/shared/${testscript} \
+    || exit 1
+
+  rm -f ${outfile}
+  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+      /shared/${testscript} \
+      > ${outfile} 2>&1
+  status=$?
+
+  if [ $status -ne 0 ]; then
+    trace "Error: The version checks failed, see '${outfile}'."
+  fi
+
+  if [ $status -ne 0 ] || [ $logstatus -ne 0 ]; then
     exit 1
   fi
 }
@@ -675,6 +790,11 @@ deployPod ${MANAGED_SERVER_NAME_BASE?}1
 deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801
 waitForPod ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1
 
+# Check admin-server pod log for wl version errors and run some
+# tests on the life-cycle WL version checking code.
+
+checkWLVersionChecks
+
 # Check admin-server pod log and also call on-line WLST to check if
 # automatic and custom overrides are taking effect in the bean tree:
 
@@ -684,5 +804,11 @@ checkOverrides
 # overrides actually took effect:
 
 checkDataSource ${DOMAIN_UID}-${ADMIN_NAME?} t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT} ${ADMIN_NAME?} mysqlDS
+
+# Verify default and custom file stores were created for admin-server
+checkFileStores util_test_adminfilestores.sh ${ADMIN_NAME}
+
+# Verify default file store was created for managed-server1
+checkFileStores util_test_ms1filestores.sh ${MANAGED_SERVER_NAME_BASE?}1
 
 trace "Info: Success!"

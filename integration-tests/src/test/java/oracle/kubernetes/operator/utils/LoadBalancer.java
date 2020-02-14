@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
@@ -13,13 +12,13 @@ import java.nio.file.StandardCopyOption;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
+
 import oracle.kubernetes.operator.BaseTest;
 
 public class LoadBalancer {
 
-  private Map<String, Object> lbMap;
-
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+  private Map<String, Object> lbMap;
 
   public LoadBalancer(Map lbMap) throws Exception {
     this.lbMap = lbMap;
@@ -261,7 +260,7 @@ public class LoadBalancer {
         + result.stderr();
   }
 
-  public Map<String, Object> getLBMap() {
+  public Map<String, Object> getLbMap() {
     return lbMap;
   }
 

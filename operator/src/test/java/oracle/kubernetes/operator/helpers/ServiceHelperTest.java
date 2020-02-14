@@ -1,16 +1,57 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.ServiceConfigurator;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.LogMatcher.containsFine;
-import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
+import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.NodePortMatcher.nodePort;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.PortMatcher.containsPort;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.ServiceNameMatcher.serviceWithName;
@@ -27,51 +68,14 @@ import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SE
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServicePort;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.operator.work.TerminalStep;
-import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
-import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.ServiceConfigurator;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
 public class ServiceHelperTest extends ServiceHelperTestBase {
@@ -82,7 +86,6 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   private static final int NAP1_NODE_PORT = 30012;
   private static final int TEST_PORT = 7000;
   private static final int ADMIN_PORT = 8000;
-  private static final String DOMAIN_NAME = "domain1";
   private static final String TEST_SERVER = "server1";
   private static final String ADMIN_SERVER = "ADMIN_SERVER";
   private static final String[] MESSAGE_KEYS = {
@@ -114,13 +117,26 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   private static final int NAP_PORT_1 = 7100;
   private static final int NAP_PORT_2 = 37100;
   private static final int NAP_PORT_3 = 37200;
-
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
+  @Parameter public String testType;
+  @Parameter(1)
+  public TestFacade testFacade;
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private List<LogRecord> logRecords = new ArrayList<>();
   private WlsServerConfig serverConfig;
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
+
+  @Parameters(name = "{index} : {0} service test")
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+          {"cluster", CLUSTER_SERVICE_TEST_FACADE},
+          {"managed server", MANAGED_SERVER_TEST_FACADE},
+          {"admin server", ADMIN_SERVER_TEST_FACADE},
+          {"external", EXTERNAL_SERVICE_TEST_FACADE}
+        });
+  }
 
   @Before
   public void setUp() throws Exception {
@@ -174,22 +190,6 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   private DomainConfigurator configureDomain() {
     return DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain());
   }
-
-  @Parameters(name = "{index} : {0} service test")
-  public static Collection<Object[]> data() {
-    return Arrays.asList(
-        new Object[][] {
-          {"cluster", CLUSTER_SERVICE_TEST_FACADE},
-          {"managed server", MANAGED_SERVER_TEST_FACADE},
-          {"admin server", ADMIN_SERVER_TEST_FACADE},
-          {"external", EXTERNAL_SERVICE_TEST_FACADE}
-        });
-  }
-
-  @Parameter public String testType;
-
-  @Parameter(1)
-  public TestFacade testFacade;
 
   @Test
   public void whenCreated_modelHasServiceType() {
@@ -292,11 +292,41 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   @Test
   public void onFailedRun_reportFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnResource(null, NS, 401);
+    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, 401);
 
     runServiceHelper();
 
     testSupport.verifyCompletionThrowable(ApiException.class);
+  }
+
+  @Test
+  public void whenServiceCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
+    testSupport.defineResources(domainPresenceInfo.getDomain());
+    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnprocessableEntityBuilder()
+        .withReason("FieldValueNotFound")
+        .withMessage("Test this failure")
+        .build());
+
+    runServiceHelper();
+
+    assertThat(getDomain(), hasStatus("FieldValueNotFound", "Test this failure"));
+  }
+
+  @Test
+  public void whenServiceCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
+    testSupport.defineResources(domainPresenceInfo.getDomain());
+    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnprocessableEntityBuilder()
+        .withReason("FieldValueNotFound")
+        .withMessage("Test this failure")
+        .build());
+
+    runServiceHelper();
+
+    assertThat(terminalStep.wasRun(), is(false));
+  }
+
+  private Domain getDomain() {
+    return (Domain) testSupport.getResources(KubernetesTestSupport.DOMAIN).get(0);
   }
 
   @Test
@@ -446,7 +476,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   private List<V1Service> getCreatedServices() {
-    return testSupport.getResources(KubernetesTestSupport.SERVICE);
+    return testSupport.getResources(SERVICE);
   }
 
   enum ServiceType {
@@ -511,7 +541,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
   static class ClusterServiceTestFacade extends TestFacade {
     ClusterServiceTestFacade() {
-      getExpectedNapPorts().put(LegalNames.toDNS1123LegalName(NAP_3), NAP_PORT_3);
+      getExpectedNapPorts().put(LegalNames.toDns1123LegalName(NAP_3), NAP_PORT_3);
     }
 
     @Override
@@ -695,8 +725,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   static class ExternalServiceTestFacade extends TestFacade {
     ExternalServiceTestFacade() {
       getExpectedNodePorts().put("default", TEST_NODE_PORT);
-      getExpectedNodePorts().put(LegalNames.toDNS1123LegalName(NAP_1), NAP1_NODE_PORT);
-      getExpectedNodePorts().put(LegalNames.toDNS1123LegalName(NAP_2), NAP_PORT_2);
+      getExpectedNodePorts().put(LegalNames.toDns1123LegalName(NAP_1), NAP1_NODE_PORT);
+      getExpectedNodePorts().put(LegalNames.toDns1123LegalName(NAP_2), NAP_PORT_2);
     }
 
     @Override
@@ -873,20 +903,20 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
       return new NodePortMatcher(name, nodePort);
     }
 
-    @Override
-    protected boolean matchesSafely(V1ServicePort item, Description mismatchDescription) {
-      if (name.equals(item.getName()) && nodePort == item.getNodePort()) return true;
-
-      describe(mismatchDescription, item.getName(), item.getNodePort());
-      return false;
-    }
-
     private static void describe(Description description, String name, Integer nodePort) {
       description
           .appendText("service port with name ")
           .appendValue(name)
           .appendText(" and node port ")
           .appendValue(nodePort);
+    }
+
+    @Override
+    protected boolean matchesSafely(V1ServicePort item, Description mismatchDescription) {
+      if (name.equals(item.getName()) && nodePort == item.getNodePort()) return true;
+
+      describe(mismatchDescription, item.getName(), item.getNodePort());
+      return false;
     }
 
     @Override

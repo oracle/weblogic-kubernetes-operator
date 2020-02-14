@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
 #  This sample script creates a WebLogic domain home in docker image, and generates the domain resource
@@ -194,7 +194,7 @@ function createDomainHome {
     sed -i -e "s|\(FROM \).*|\1 ${domainHomeImageBase}|g" ${dockerDir}/Dockerfile
   fi
 
-  sh ${dockerDir}/build.sh
+  bash ${dockerDir}/build.sh
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."

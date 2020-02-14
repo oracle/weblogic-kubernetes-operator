@@ -1,0 +1,172 @@
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+# The version of this inputs file.  Do not modify.
+version: create-weblogic-sample-domain-inputs-v1
+
+# Port number for admin server
+adminPort: 7001
+
+# Name of the Admin Server
+adminServerName: AdminServer
+
+# Unique ID identifying a domain.
+# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
+domainUID: soainfra
+
+# Domain Type. Mandatory input for SOASuite domains. User must provide one of the supported values given below.
+# Domain Type must be carefully chosen and specified depending on the usecase. It can't be changed once you proceed.
+# In case of SOASuite domains, the supported Domain types are soa,osb,soaess,soaosb,soaessosb.
+# soa       : Deploys a SOA Domain
+# osb       : Deploys an OSB Domain (Oracle Service Bus)
+# soaess    : Deploys a SOA Domain with Enterprise Scheduler (ESS)
+# soaosb    : Deploys a Domain with SOA and OSB
+# soaessosb : Deploys a Domain with SOA, OSB and Enterprise Scheduler (ESS)
+domainType: soa
+
+# Home of the WebLogic domain
+# If not specified, the value is derived from the domainUID as /shared/domains/<domainUID>
+domainHome: /u01/oracle/user_projects/domains/soainfra
+
+# Determines which WebLogic Servers the operator will start up
+# Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
+serverStartPolicy: IF_NEEDED
+
+# Cluster name
+clusterName: soa_cluster
+
+# Number of managed servers to generate for the domain
+configuredManagedServerCount: 5
+
+# Number of managed servers to initially start for the domain
+initialManagedServerReplicas: 2
+
+# Base string used to generate managed server names
+managedServerNameBase: soa_server
+
+# Port number for each managed server
+managedServerPort: 8001
+
+# SOA Suite Docker image.
+# The operator requires SOA Suite 12.2.1.3.0 with patch 29135930 applied.
+# The existing SOA Suite Docker image, `container-registry.oracle.com/middleware/soasuite:12.2.1.3`
+# has all the necessary patches applied; a `docker pull` is required if you already have this image.
+# Refer to https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/soa-domain/
+# for details on how to obtain or create the image.
+image: container-registry.oracle.com/middleware/soasuite:12.2.1.3
+
+# Image pull policy
+# Legal values are "IfNotPresent", "Always", or "Never"
+imagePullPolicy: IfNotPresent
+
+# Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
+# The presence of the secret will be validated when this parameter is enabled.
+#imagePullSecretName:
+
+# Boolean indicating if production mode is enabled for the domain
+productionModeEnabled: true
+
+# Name of the Kubernetes secret for the Admin Server's username and password
+# The name must be lowercase.
+# If not specified, the value is derived from the domainUID as <domainUID>-weblogic-credentials
+weblogicCredentialsSecretName: soainfra-domain-credentials
+
+# Whether to include server .out to the pod's stdout.
+# The default is true.
+includeServerOutInPodLog: true
+
+# The in-pod location for domain log, server logs, server out, and node manager log files
+# If not specified, the value is derived from the domainUID as /shared/logs/<domainUID>
+logHome: /u01/oracle/user_projects/domains/logs/soainfra
+
+# Port for the T3Channel of the NetworkAccessPoint
+t3ChannelPort: 30012
+
+# Public address for T3Channel of the NetworkAccessPoint.  This value should be set to the
+# kubernetes server address, which you can get by running "kubectl cluster-info".  If this
+# value is not set to that address, WLST will not be able to connect from outside the
+# kubernetes cluster.
+#t3PublicAddress:
+
+# Boolean to indicate if the channel should be exposed as a service
+exposeAdminT3Channel: false
+
+# NodePort to expose for the admin server
+adminNodePort: 30701
+
+# Boolean to indicate if the adminNodePort will be exposed
+exposeAdminNodePort: false
+
+# Name of the domain namespace
+namespace: soans
+
+#Java Option for WebLogic Server
+javaOptions: -Dweblogic.StdoutDebugEnabled=false
+
+# Name of the persistent volume claim
+# If not specified, the value is derived from the domainUID as <domainUID>-weblogic-sample-pvc
+persistentVolumeClaimName: soainfra-domain-pvc
+
+# Mount path of the domain persistent volume.
+domainPVMountPath: /u01/oracle/user_projects
+
+# Mount path where the create domain scripts are located inside a pod
+#
+# The `create-domain.sh` script creates a Kubernetes job to run the script (specified in the
+# `createDomainScriptName` property) in a Kubernetes pod to create a WebLogic home. Files
+# in the `createDomainFilesDir` directory are mounted to this location in the pod, so that
+# a Kubernetes pod can use the scripts and supporting files to create a domain home.
+createDomainScriptsMountPath: /u01/weblogic
+
+# Script that the create domain script uses to create a WebLogic domain
+#
+# The `create-domain.sh` script creates a Kubernetes job to run this script to create a
+# domain home. The script is located in the in-pod directory that is specified in the
+# `createDomainScriptsMountPath` property.
+#
+# If you need to provide your own scripts to create the domain home, instead of using the
+# built-it scripts, you must use this property to set the name of the script that you want
+# the create domain job to run.
+createDomainScriptName: create-domain-job.sh
+
+# Directory on the host machine to locate all the files to create a WebLogic domain
+# It contains the script that is specified in the `createDomainScriptName` property.
+#
+# By default, this directory is set to the relative path `wlst`, and the create script will
+# use the built-in WLST offline scripts in the `wlst` directory to create the WebLogic domain.
+# It can also be set to the relative path `wdt`, and then the built-in WDT scripts will be
+# used instead.
+#
+# An absolute path is also supported to point to an arbitrary directory in the file system.
+#
+# The built-in scripts can be replaced by the user-provided scripts or model files as long
+# as those files are in the specified directory. Files in this directory are put into a
+# Kubernetes config map, which in turn is mounted to the `createDomainScriptsMountPath`,
+# so that the Kubernetes pod can use the scripts and supporting files to create a domain home.
+createDomainFilesDir: wlst
+
+# Uncomment and edit value(s) below to specify the maximum amount of
+# compute resources allowed, and minimum amount of compute resources
+# required for each server pod.
+# These are optional.
+# Please refer to the kubernetes documentation on Managing Compute
+# Resources for Containers for details.
+#
+#serverPodMemoryRequest: "4Gi"
+#serverPodCpuRequest: "1000m"
+#serverPodMemoryLimit: "4Gi"
+#serverPodCpuLimit: "1000m"
+
+#
+# RCU configuration details
+#
+
+# The schema prefix to use in the database, for example `SOA1`.  You may wish to make this
+# the same as the domainUID in order to simplify matching domains to their RCU schemas.
+rcuSchemaPrefix: SOA1
+
+# The database URL
+rcuDatabaseURL: oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+
+# The kubernetes secret containing the database credentials
+rcuCredentialsSecret: soainfra-rcu-credentials

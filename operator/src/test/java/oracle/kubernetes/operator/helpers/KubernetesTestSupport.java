@@ -1,42 +1,11 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static java.net.HttpURLConnection.HTTP_OK;
-import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
-import static java.util.Collections.emptyMap;
-import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.meterware.simplestub.Memento;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1ConfigMapList;
-import io.kubernetes.client.models.V1Event;
-import io.kubernetes.client.models.V1EventList;
-import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1JobList;
-import io.kubernetes.client.models.V1ListMeta;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.models.V1PersistentVolumeClaimList;
-import io.kubernetes.client.models.V1PersistentVolumeList;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodList;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.models.V1SubjectAccessReview;
-import io.kubernetes.client.models.V1TokenReview;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import java.io.StringReader;
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -57,6 +26,41 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonPatch;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1ConfigMapList;
+import io.kubernetes.client.models.V1Event;
+import io.kubernetes.client.models.V1EventList;
+import io.kubernetes.client.models.V1Job;
+import io.kubernetes.client.models.V1JobList;
+import io.kubernetes.client.models.V1ListMeta;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PersistentVolume;
+import io.kubernetes.client.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.models.V1PersistentVolumeClaimList;
+import io.kubernetes.client.models.V1PersistentVolumeList;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceList;
+import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.models.V1SubjectAccessReview;
+import io.kubernetes.client.models.V1TokenReview;
+import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -69,14 +73,17 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 
 @SuppressWarnings("WeakerAccess")
 public class KubernetesTestSupport extends FiberTestSupport {
-  private Map<String, DataRepository<?>> repositories = new HashMap<>();
-  private Map<Class<?>, String> dataTypes = new HashMap<>();
-  private Failure failure;
-  private long resourceVersion;
-
   public static final String CONFIG_MAP = "ConfigMap";
   public static final String CUSTOM_RESOURCE_DEFINITION = "CRD";
   public static final String DOMAIN = "Domain";
@@ -89,17 +96,21 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String SERVICE = "Service";
   public static final String SUBJECT_ACCESS_REVIEW = "SubjectAccessReview";
   public static final String TOKEN_REVIEW = "TokenReview";
+  private Map<String, DataRepository<?>> repositories = new HashMap<>();
+  private Map<Class<?>, String> dataTypes = new HashMap<>();
+  private Failure failure;
+  private long resourceVersion;
 
   /**
    * Installs a factory into CallBuilder to use canned responses.
    *
    * @return a memento which can be used to restore the production factory
    */
-  public Memento install() throws NoSuchFieldException {
+  public Memento install() {
     support(CUSTOM_RESOURCE_DEFINITION, V1beta1CustomResourceDefinition.class);
     support(SUBJECT_ACCESS_REVIEW, V1SubjectAccessReview.class);
     support(TOKEN_REVIEW, V1TokenReview.class);
-    support(PV, V1PersistentVolume.class, this::createPVList);
+    support(PV, V1PersistentVolume.class, this::createPvList);
 
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
     supportNamespaced(DOMAIN, Domain.class, this::createDomainList);
@@ -107,7 +118,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     supportNamespaced(JOB, V1Job.class, this::createJobList);
     supportNamespaced(POD, V1Pod.class, this::createPodList);
     supportNamespaced(PODLOG, String.class);
-    supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPVCList);
+    supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPvcList);
     supportNamespaced(SERVICE, V1Service.class, this::createServiceList);
 
     return new KubernetesTestSupportMemento();
@@ -125,11 +136,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     return new V1EventList().metadata(createListMeta()).items(items);
   }
 
-  private V1PersistentVolumeList createPVList(List<V1PersistentVolume> items) {
+  private V1PersistentVolumeList createPvList(List<V1PersistentVolume> items) {
     return new V1PersistentVolumeList().metadata(createListMeta()).items(items);
   }
 
-  private V1PersistentVolumeClaimList createPVCList(List<V1PersistentVolumeClaim> items) {
+  private V1PersistentVolumeClaimList createPvcList(List<V1PersistentVolumeClaim> items) {
     return new V1PersistentVolumeClaimList().metadata(createListMeta()).items(items);
   }
 
@@ -161,6 +172,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     repositories.put(resourceName, new DataRepository<>(resourceClass, toList));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private <T> void supportNamespaced(String resourceName, Class<T> resourceClass) {
     dataTypes.put(resourceClass, resourceName);
     repositories.put(resourceName, new NamespacedDataRepository<>(resourceClass, null));
@@ -209,6 +221,32 @@ public class KubernetesTestSupport extends FiberTestSupport {
   }
 
   /**
+   * Specifies that a create operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnCreate(String resourceType, String name, String namespace, int httpStatus) {
+    failure = new Failure(Operation.create, resourceType, name, namespace, httpStatus);
+  }
+
+  /**
+   * Specifies that a delete operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnDelete(String resourceType, String name, String namespace, int httpStatus) {
+    failure = new Failure(Operation.delete, resourceType, name, namespace, httpStatus);
+  }
+
+  /**
    * Specifies that any operation should fail if it matches the specified conditions. Applies to
    * namespaced resources.
    *
@@ -223,356 +261,27 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   /**
    * Specifies that any operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param apiException the kubernetes failure to associate with the failure
+   */
+  public void failOnResource(@Nonnull String resourceType, String name, String namespace, ApiException apiException) {
+    failure = new Failure(resourceType, name, namespace, apiException);
+  }
+
+  /**
+   * Specifies that any operation should fail if it matches the specified conditions. Applies to
    * non-namespaced resources.
    *
    * @param resourceType the type of resource
    * @param name the name of the resource
    * @param httpStatus the status to associate with the failure
    */
-  public void failOnResource(String resourceType, String name, int httpStatus) {
+  public void failOnResource(@Nonnull String resourceType, String name, int httpStatus) {
     failOnResource(resourceType, name, null, httpStatus);
-  }
-  /*
-
-    public void runOnOperation(String resourceType, String name, String namespace, Consumer<?> consumer) {
-      this.consumers.add(consumer)
-    }
-  */
-
-  private class KubernetesTestSupportMemento implements Memento {
-
-    public KubernetesTestSupportMemento() throws NoSuchFieldException {
-      CallBuilder.setStepFactory(new AsyncRequestStepFactoryImpl());
-      CallBuilder.setCallDispatcher(new CallDispatcherImpl());
-    }
-
-    @Override
-    public void revert() {
-      CallBuilder.resetStepFactory();
-      CallBuilder.resetCallDispatcher();
-    }
-
-    @Override
-    public <T> T getOriginalValue() {
-      throw new UnsupportedOperationException();
-    }
-  }
-
-  private class AsyncRequestStepFactoryImpl implements AsyncRequestStepFactory {
-
-    @Override
-    public <T> Step createRequestAsync(
-        ResponseStep<T> next,
-        RequestParams requestParams,
-        CallFactory<T> factory,
-        ClientPool helper,
-        int timeoutSeconds,
-        int maxRetryCount,
-        String fieldSelector,
-        String labelSelector,
-        String resourceVersion) {
-      return new KubernetesTestSupport.SimulatedResponseStep(
-          next, requestParams, fieldSelector, labelSelector);
-    }
-  }
-
-  private class CallDispatcherImpl implements SynchronousCallDispatcher {
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T execute(
-        SynchronousCallFactory<T> factory, RequestParams requestParams, Pool<ApiClient> helper)
-        throws ApiException {
-      try {
-        return (T) new CallContext(requestParams).execute();
-      } catch (HttpErrorException e) {
-        throw new ApiException(e.status, "failure reported in test");
-      }
-    }
-  }
-
-  private class DataRepository<T> {
-    private Map<String, T> data = new HashMap<>();
-    private Class<?> resourceType;
-    private Function<List<T>, Object> listFactory;
-    private List<Consumer<T>> onCreateActions = new ArrayList<>();
-    private List<Consumer<T>> onUpdateActions = new ArrayList<>();
-
-    public DataRepository(Class<?> resourceType) {
-      this.resourceType = resourceType;
-    }
-
-    public DataRepository(Class<?> resourceType, Function<List<T>, Object> listFactory) {
-      this.resourceType = resourceType;
-      this.listFactory = listFactory;
-    }
-
-    public DataRepository(Class<?> resourceType, NamespacedDataRepository<T> parent) {
-      this.resourceType = resourceType;
-      onCreateActions = ((DataRepository<T>) parent).onCreateActions;
-      onUpdateActions = ((DataRepository<T>) parent).onUpdateActions;
-    }
-
-    void createResourceInNamespace(T resource) {
-      createResource(getMetadata(resource).getNamespace(), resource);
-    }
-
-    @SuppressWarnings("unchecked")
-    void createResourceInNamespace(String name, String namespace, Object resource) {
-      data.put(name, (T) resource);
-    }
-
-    T createResource(String namespace, T resource) {
-      String name = getName(resource);
-      if (name != null) {
-        if (hasElementWithName(getName(resource))) throw new RuntimeException("element exists");
-        data.put(getName(resource), resource);
-      }
-
-      onCreateActions.forEach(a -> a.accept(resource));
-      return resource;
-    }
-
-    Object listResources(String namespace, String fieldSelector, String... labelSelectors) {
-      if (listFactory == null)
-        throw new UnsupportedOperationException("list operation not supported");
-
-      return listFactory.apply(getResources(fieldSelector, labelSelectors));
-    }
-
-    List<T> getResources(String fieldSelector, String... labelSelectors) {
-      return data.values().stream()
-          .filter(withFields(fieldSelector))
-          .filter(withLabels(labelSelectors))
-          .collect(Collectors.toList());
-    }
-
-    private Predicate<Object> withLabels(String[] labelSelectors) {
-      return o -> labelSelectors == null || hasLabels(getMetadata(o), labelSelectors);
-    }
-
-    private boolean hasLabels(V1ObjectMeta metadata, String[] selectors) {
-      return Arrays.stream(selectors).allMatch(s -> hasLabel(metadata, s));
-    }
-
-    private boolean hasLabel(V1ObjectMeta metadata, String selector) {
-      String[] split = selector.split("=");
-      return includesLabel(metadata.getLabels(), split[0], split.length == 1 ? null : split[1]);
-    }
-
-    private boolean includesLabel(Map<String, String> labels, String key, String value) {
-      if (labels == null || !labels.containsKey(key)) return false;
-      return value == null || value.equals(labels.get(key));
-    }
-
-    private Predicate<Object> withFields(String fieldSelector) {
-      return o -> (fieldSelector == null) || allSelectorsMatch(o, fieldSelector);
-    }
-
-    private boolean allSelectorsMatch(Object o, String fieldSelector) {
-      return Arrays.stream(fieldSelector.split(",")).allMatch(f -> hasField(o, f));
-    }
-
-    private final String path = "\\w+(?:.\\w+)*";
-    private final String op = "=|==|!=";
-    private final String value = ".*";
-    private final Pattern fieldPat = Pattern.compile("(" + path + ")(" + op + ")(" + value + ")");
-
-    private boolean hasField(Object object, String fieldSpec) {
-      Matcher fieldMatcher = fieldPat.matcher(fieldSpec);
-      if (!fieldMatcher.find()) return false;
-
-      return new FieldMatcher(fieldSpec).matches(object);
-    }
-
-    class FieldMatcher {
-      private String path;
-      private String op;
-      private String value;
-
-      FieldMatcher(String fieldSpec) {
-        Matcher fieldMatcher = fieldPat.matcher(fieldSpec);
-        if (fieldMatcher.find()) {
-          path = fieldMatcher.group(1);
-          op = fieldMatcher.group(2);
-          value = fieldMatcher.group(3);
-        }
-      }
-
-      boolean matches(Object object) {
-        String fieldValue = getFieldValue(object);
-        boolean matches = fieldValue.equals(value);
-        if (op.equals("!=")) return !matches;
-        else return matches;
-      }
-
-      private String getFieldValue(Object object) {
-        String[] split = path.split("\\.");
-        Object result = object;
-        for (String link : split) result = result == null ? null : getSubField(result, link);
-        return result == null ? "" : result.toString();
-      }
-
-      private Object getSubField(Object object, String fieldName) {
-        try {
-          Class<?> aClass = object.getClass();
-          Field field = aClass.getDeclaredField(fieldName);
-          field.setAccessible(true);
-          return field.get(object);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-          return "";
-        }
-      }
-    }
-
-    T replaceResource(String name, T resource) {
-      setName(resource, name);
-
-      data.put(name, resource);
-      onUpdateActions.forEach(a -> a.accept(resource));
-      return resource;
-    }
-
-    V1Status deleteResource(String name, String namespace) {
-      if (!hasElementWithName(name))
-        throw new NotFoundException(getResourceName(), name, namespace);
-      data.remove(name);
-
-      return new V1Status().code(200);
-    }
-
-    private String getResourceName() {
-      return dataTypes.get(resourceType);
-    }
-
-    public V1Status deleteResourceCollection(String namespace) {
-      data.clear();
-      return new V1Status().code(200);
-    }
-
-    public T readResource(String name, String namespace) {
-      if (!data.containsKey(name)) throw new NotFoundException(getResourceName(), name, namespace);
-      return data.get(name);
-    }
-
-    public T patchResource(String name, String namespace, List<JsonObject> body) {
-      if (!data.containsKey(name)) throw new NotFoundException(getResourceName(), name, namespace);
-
-      JsonPatch patch = Json.createPatch(toJsonArray(body));
-      JsonStructure result = patch.apply(toJsonStructure(data.get(name)));
-      T resource = fromJsonStructure(result);
-      data.put(name, resource);
-      onUpdateActions.forEach(a -> a.accept(resource));
-      return resource;
-    }
-
-    @SuppressWarnings("unchecked")
-    T fromJsonStructure(JsonStructure jsonStructure) {
-      return (T) new Gson().fromJson(jsonStructure.toString(), resourceType);
-    }
-
-    JsonStructure toJsonStructure(T src) {
-      String json = new Gson().toJson(src);
-      return Json.createReader(new StringReader(json)).read();
-    }
-
-    JsonArray toJsonArray(List<JsonObject> patch) {
-      JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
-      for (JsonObject jsonObject : patch) arrayBuilder.add(toJsonValue(jsonObject));
-      return arrayBuilder.build();
-    }
-
-    private JsonValue toJsonValue(JsonObject jsonObject) {
-      return Json.createReader(new StringReader(jsonObject.toString())).readValue();
-    }
-
-    boolean hasElementWithName(String name) {
-      return data.containsKey(name);
-    }
-
-    private String getName(@Nonnull Object resource) {
-      return Optional.ofNullable(getMetadata(resource)).map(V1ObjectMeta::getName).orElse(null);
-    }
-
-    private V1ObjectMeta getMetadata(@Nonnull Object resource) {
-      return KubernetesUtils.getResourceMetadata(resource);
-    }
-
-    private void setName(@Nonnull Object resource, String name) {
-      getMetadata(resource).setName(name);
-    }
-
-    List<T> getResources() {
-      return new ArrayList<>(data.values());
-    }
-
-    @SuppressWarnings("unchecked")
-    public void addCreateAction(Consumer<?> consumer) {
-      onCreateActions.add((Consumer<T>) consumer);
-    }
-
-    @SuppressWarnings("unchecked")
-    public void addUpdateAction(Consumer<?> consumer) {
-      onUpdateActions.add((Consumer<T>) consumer);
-    }
-  }
-
-  private class NamespacedDataRepository<T> extends DataRepository<T> {
-    private Map<String, DataRepository<T>> repositories = new HashMap<>();
-    private Class<?> resourceType;
-    private Function<List<T>, Object> listFactory;
-
-    NamespacedDataRepository(Class<?> resourceType, Function<List<T>, Object> listFactory) {
-      super(resourceType);
-      this.resourceType = resourceType;
-      this.listFactory = listFactory;
-    }
-
-    @Override
-    void createResourceInNamespace(String name, String namespace, Object resource) {
-      inNamespace(namespace).createResourceInNamespace(name, namespace, resource);
-    }
-
-    @Override
-    T createResource(String namespace, T resource) {
-      return inNamespace(namespace).createResource(namespace, resource);
-    }
-
-    private DataRepository<T> inNamespace(String namespace) {
-      return repositories.computeIfAbsent(namespace, n -> new DataRepository<>(resourceType, this));
-    }
-
-    @Override
-    V1Status deleteResource(String name, String namespace) {
-      return inNamespace(namespace).deleteResource(name, namespace);
-    }
-
-    @Override
-    public V1Status deleteResourceCollection(String namespace) {
-      return inNamespace(namespace).deleteResourceCollection(namespace);
-    }
-
-    @Override
-    public T readResource(String name, String namespace) {
-      return inNamespace(namespace).readResource(name, namespace);
-    }
-
-    @Override
-    public T patchResource(String name, String namespace, List<JsonObject> body) {
-      return inNamespace(namespace).patchResource(name, namespace, body);
-    }
-
-    @Override
-    Object listResources(String namespace, String fieldSelector, String... labelSelectors) {
-      return listFactory.apply(inNamespace(namespace).getResources(fieldSelector, labelSelectors));
-    }
-
-    @Override
-    List<T> getResources() {
-      List<T> result = new ArrayList<>();
-      for (DataRepository<T> repository : repositories.values())
-        result.addAll(repository.getResources());
-      return result;
-    }
   }
 
   @SuppressWarnings({"unchecked", "unused"})
@@ -632,12 +341,418 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
   }
 
+  static class Failure {
+    private String resourceType;
+    private String name;
+    private String namespace;
+    private ApiException apiException;
+    private Operation operation;
+
+    public Failure(String resourceType, String name, String namespace, int httpStatus) {
+      this(resourceType, name, namespace, new ApiException(httpStatus, "failure reported in test"));
+    }
+
+    Failure(@Nonnull String resourceType, String name, String namespace, ApiException apiException) {
+      this.resourceType = resourceType;
+      this.name = name;
+      this.namespace = namespace;
+      this.apiException = apiException;
+    }
+
+    Failure(Operation operation, String resourceType, String name, String namespace, int httpStatus) {
+      this(resourceType, name, namespace, httpStatus);
+      this.operation = operation;
+    }
+
+    boolean matches(String resourceType, RequestParams requestParams, Operation operation) {
+      return this.resourceType.equals(resourceType)
+          && (this.operation == null || this.operation == operation)
+          && Objects.equals(name, operation.getName(requestParams))
+          && Objects.equals(namespace, requestParams.namespace);
+    }
+
+    HttpErrorException getException() {
+      return new HttpErrorException(apiException);
+    }
+  }
+
+  static class HttpErrorException extends RuntimeException {
+    private ApiException apiException;
+
+    HttpErrorException(ApiException apiException) {
+      this.apiException = apiException;
+    }
+
+    ApiException getApiException() {
+      return apiException;
+    }
+  }
+
+  private class KubernetesTestSupportMemento implements Memento {
+
+    public KubernetesTestSupportMemento() {
+      CallBuilder.setStepFactory(new AsyncRequestStepFactoryImpl());
+      CallBuilder.setCallDispatcher(new CallDispatcherImpl());
+    }
+
+    @Override
+    public void revert() {
+      CallBuilder.resetStepFactory();
+      CallBuilder.resetCallDispatcher();
+    }
+
+    @Override
+    public <T> T getOriginalValue() {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  private class AsyncRequestStepFactoryImpl implements AsyncRequestStepFactory {
+
+    @Override
+    public <T> Step createRequestAsync(
+        ResponseStep<T> next,
+        RequestParams requestParams,
+        CallFactory<T> factory,
+        ClientPool helper,
+        int timeoutSeconds,
+        int maxRetryCount,
+        String fieldSelector,
+        String labelSelector,
+        String resourceVersion) {
+      return new KubernetesTestSupport.SimulatedResponseStep(
+          next, requestParams, fieldSelector, labelSelector);
+    }
+  }
+
+  private class CallDispatcherImpl implements SynchronousCallDispatcher {
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T execute(
+        SynchronousCallFactory<T> factory, RequestParams requestParams, Pool<ApiClient> helper)
+        throws ApiException {
+      try {
+        return (T) new CallContext(requestParams).execute();
+      } catch (HttpErrorException e) {
+        throw e.getApiException();
+      }
+    }
+  }
+
+  static class DateTimeSerializer implements JsonDeserializer<DateTime>, JsonSerializer<DateTime> {
+    private static final DateTimeFormatter DATE_FORMAT = ISODateTimeFormat.dateTime();
+
+    @Override
+    public DateTime deserialize(
+        final JsonElement je, final Type type, final JsonDeserializationContext jdc)
+        throws JsonParseException {
+      return new DateTime(Long.parseLong(je.getAsJsonObject().get("iMillis").getAsString()));
+    }
+
+    @Override
+    public JsonElement serialize(
+        final DateTime src, final Type typeOfSrc, final JsonSerializationContext context) {
+      String retVal = src == null ? "" : DATE_FORMAT.print(src);
+      return new JsonPrimitive(retVal);
+    }
+  }
+
+  private class DataRepository<T> {
+    private final String path = "\\w+(?:.\\w+)*";
+    private final String op = "=|==|!=";
+    private final String value = ".*";
+    private final Pattern fieldPat = Pattern.compile("(" + path + ")(" + op + ")(" + value + ")");
+    private Map<String, T> data = new HashMap<>();
+    private Class<?> resourceType;
+    private Function<List<T>, Object> listFactory;
+    private List<Consumer<T>> onCreateActions = new ArrayList<>();
+    private List<Consumer<T>> onUpdateActions = new ArrayList<>();
+
+    public DataRepository(Class<?> resourceType) {
+      this.resourceType = resourceType;
+    }
+
+    public DataRepository(Class<?> resourceType, Function<List<T>, Object> listFactory) {
+      this.resourceType = resourceType;
+      this.listFactory = listFactory;
+    }
+
+    public DataRepository(Class<?> resourceType, NamespacedDataRepository<T> parent) {
+      this.resourceType = resourceType;
+      onCreateActions = ((DataRepository<T>) parent).onCreateActions;
+      onUpdateActions = ((DataRepository<T>) parent).onUpdateActions;
+    }
+
+    void createResourceInNamespace(T resource) {
+      createResource(getMetadata(resource).getNamespace(), resource);
+    }
+
+    @SuppressWarnings("unchecked")
+    void createResourceInNamespace(String name, String namespace, Object resource) {
+      data.put(name, (T) resource);
+    }
+
+    T createResource(String namespace, T resource) {
+      String name = getName(resource);
+      if (name != null) {
+        if (hasElementWithName(getName(resource))) throw new RuntimeException("element exists");
+        data.put(getName(resource), resource);
+      }
+
+      onCreateActions.forEach(a -> a.accept(resource));
+      return resource;
+    }
+
+    Object listResources(String namespace, String fieldSelector, String... labelSelectors) {
+      if (listFactory == null)
+        throw new UnsupportedOperationException("list operation not supported");
+
+      return listFactory.apply(getResources(fieldSelector, labelSelectors));
+    }
+
+    List<T> getResources(String fieldSelector, String... labelSelectors) {
+      return data.values().stream()
+          .filter(withFields(fieldSelector))
+          .filter(withLabels(labelSelectors))
+          .collect(Collectors.toList());
+    }
+
+    List<T> getResources() {
+      return new ArrayList<>(data.values());
+    }
+
+    private Predicate<Object> withLabels(String[] labelSelectors) {
+      return o -> labelSelectors == null || hasLabels(getMetadata(o), labelSelectors);
+    }
+
+    private boolean hasLabels(V1ObjectMeta metadata, String[] selectors) {
+      return Arrays.stream(selectors).allMatch(s -> hasLabel(metadata, s));
+    }
+
+    private boolean hasLabel(V1ObjectMeta metadata, String selector) {
+      String[] split = selector.split("=");
+      return includesLabel(metadata.getLabels(), split[0], split.length == 1 ? null : split[1]);
+    }
+
+    private boolean includesLabel(Map<String, String> labels, String key, String value) {
+      if (labels == null || !labels.containsKey(key)) return false;
+      return value == null || value.equals(labels.get(key));
+    }
+
+    private Predicate<Object> withFields(String fieldSelector) {
+      return o -> (fieldSelector == null) || allSelectorsMatch(o, fieldSelector);
+    }
+
+    private boolean allSelectorsMatch(Object o, String fieldSelector) {
+      return Arrays.stream(fieldSelector.split(",")).allMatch(f -> hasField(o, f));
+    }
+
+    private boolean hasField(Object object, String fieldSpec) {
+      Matcher fieldMatcher = fieldPat.matcher(fieldSpec);
+      if (!fieldMatcher.find()) return false;
+
+      return new FieldMatcher(fieldSpec).matches(object);
+    }
+
+    T replaceResource(String name, T resource) {
+      setName(resource, name);
+
+      data.put(name, resource);
+      onUpdateActions.forEach(a -> a.accept(resource));
+      return resource;
+    }
+
+    V1Status deleteResource(String name, String namespace) {
+      if (!hasElementWithName(name))
+        throw new NotFoundException(getResourceName(), name, namespace);
+      data.remove(name);
+
+      return new V1Status().code(200);
+    }
+
+    private String getResourceName() {
+      return dataTypes.get(resourceType);
+    }
+
+    public V1Status deleteResourceCollection(String namespace) {
+      data.clear();
+      return new V1Status().code(200);
+    }
+
+    public T readResource(String name, String namespace) {
+      if (!data.containsKey(name)) throw new NotFoundException(getResourceName(), name, namespace);
+      return data.get(name);
+    }
+
+    private JsonArray fromV1Patch(V1Patch patch) {
+      return Json.createReader(new StringReader(patch.getValue())).readArray();
+    }
+
+    public T patchResource(String name, String namespace, V1Patch body) {
+      if (!data.containsKey(name)) throw new NotFoundException(getResourceName(), name, namespace);
+
+      JsonPatch patch = Json.createPatch(fromV1Patch(body));
+      JsonStructure result = patch.apply(toJsonStructure(data.get(name)));
+      T resource = fromJsonStructure(result);
+      data.put(name, resource);
+      onUpdateActions.forEach(a -> a.accept(resource));
+      return resource;
+    }
+
+    @SuppressWarnings("unchecked")
+    T fromJsonStructure(JsonStructure jsonStructure) {
+      final GsonBuilder builder =
+          new GsonBuilder().registerTypeAdapter(DateTime.class, new DateTimeSerializer());
+      return (T) builder.create().fromJson(jsonStructure.toString(), resourceType);
+    }
+
+    JsonStructure toJsonStructure(T src) {
+      String json = new Gson().toJson(src);
+      return Json.createReader(new StringReader(json)).read();
+    }
+
+    JsonArray toJsonArray(List<JsonObject> patch) {
+      JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+      for (JsonObject jsonObject : patch) arrayBuilder.add(toJsonValue(jsonObject));
+      return arrayBuilder.build();
+    }
+
+    private JsonValue toJsonValue(JsonObject jsonObject) {
+      return Json.createReader(new StringReader(jsonObject.toString())).readValue();
+    }
+
+    boolean hasElementWithName(String name) {
+      return data.containsKey(name);
+    }
+
+    private String getName(@Nonnull Object resource) {
+      return Optional.ofNullable(getMetadata(resource)).map(V1ObjectMeta::getName).orElse(null);
+    }
+
+    private V1ObjectMeta getMetadata(@Nonnull Object resource) {
+      return KubernetesUtils.getResourceMetadata(resource);
+    }
+
+    private void setName(@Nonnull Object resource, String name) {
+      getMetadata(resource).setName(name);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void addCreateAction(Consumer<?> consumer) {
+      onCreateActions.add((Consumer<T>) consumer);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void addUpdateAction(Consumer<?> consumer) {
+      onUpdateActions.add((Consumer<T>) consumer);
+    }
+
+    class FieldMatcher {
+      private String path;
+      private String op;
+      private String value;
+
+      FieldMatcher(String fieldSpec) {
+        Matcher fieldMatcher = fieldPat.matcher(fieldSpec);
+        if (fieldMatcher.find()) {
+          path = fieldMatcher.group(1);
+          op = fieldMatcher.group(2);
+          value = fieldMatcher.group(3);
+        }
+      }
+
+      boolean matches(Object object) {
+        String fieldValue = getFieldValue(object);
+        boolean matches = fieldValue.equals(value);
+        if (op.equals("!=")) return !matches;
+        else return matches;
+      }
+
+      private String getFieldValue(Object object) {
+        String[] split = path.split("\\.");
+        Object result = object;
+        for (String link : split) result = result == null ? null : getSubField(result, link);
+        return result == null ? "" : result.toString();
+      }
+
+      private Object getSubField(Object object, String fieldName) {
+        try {
+          Class<?> aaClass = object.getClass();
+          Field field = aaClass.getDeclaredField(fieldName);
+          field.setAccessible(true);
+          return field.get(object);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+          return "";
+        }
+      }
+    }
+  }
+
+  private class NamespacedDataRepository<T> extends DataRepository<T> {
+    private Map<String, DataRepository<T>> repositories = new HashMap<>();
+    private Class<?> resourceType;
+    private Function<List<T>, Object> listFactory;
+
+    NamespacedDataRepository(Class<?> resourceType, Function<List<T>, Object> listFactory) {
+      super(resourceType);
+      this.resourceType = resourceType;
+      this.listFactory = listFactory;
+    }
+
+    @Override
+    void createResourceInNamespace(String name, String namespace, Object resource) {
+      inNamespace(namespace).createResourceInNamespace(name, namespace, resource);
+    }
+
+    @Override
+    T createResource(String namespace, T resource) {
+      return inNamespace(namespace).createResource(namespace, resource);
+    }
+
+    private DataRepository<T> inNamespace(String namespace) {
+      return repositories.computeIfAbsent(namespace, n -> new DataRepository<>(resourceType, this));
+    }
+
+    @Override
+    V1Status deleteResource(String name, String namespace) {
+      return inNamespace(namespace).deleteResource(name, namespace);
+    }
+
+    @Override
+    public V1Status deleteResourceCollection(String namespace) {
+      return inNamespace(namespace).deleteResourceCollection(namespace);
+    }
+
+    @Override
+    public T readResource(String name, String namespace) {
+      return inNamespace(namespace).readResource(name, namespace);
+    }
+
+    @Override
+    public T patchResource(String name, String namespace, V1Patch body) {
+      return inNamespace(namespace).patchResource(name, namespace, body);
+    }
+
+    @Override
+    Object listResources(String namespace, String fieldSelector, String... labelSelectors) {
+      return listFactory.apply(inNamespace(namespace).getResources(fieldSelector, labelSelectors));
+    }
+
+    @Override
+    List<T> getResources() {
+      List<T> result = new ArrayList<>();
+      for (DataRepository<T> repository : repositories.values())
+        result.addAll(repository.getResources());
+      return result;
+    }
+  }
+
   private class CallContext {
     private final RequestParams requestParams;
-    private String resourceType;
-    private Operation operation;
     private final String fieldSelector;
     private final String[] labelSelector;
+    private String resourceType;
+    private Operation operation;
 
     CallContext(RequestParams requestParams) {
       this(requestParams, null, null);
@@ -703,7 +818,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private Object patchResource(DataRepository dataRepository) {
       return dataRepository.patchResource(
-          requestParams.name, requestParams.namespace, asJsonObject(requestParams.body));
+          requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
     }
 
     private Object listResources(DataRepository dataRepository) {
@@ -747,57 +862,25 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private CallResponse createResponse(Object callResult) {
-      return new CallResponse<>(callResult, null, HTTP_OK, emptyMap());
+      return CallResponse.createSuccess(callResult, HTTP_OK);
     }
 
     private CallResponse createResponse(NotFoundException e) {
-      return new CallResponse<>(null, new ApiException(e), HTTP_NOT_FOUND, emptyMap());
+      return CallResponse.createFailure(new ApiException(e), HTTP_NOT_FOUND);
     }
 
     private CallResponse createResponse(HttpErrorException e) {
-      return new CallResponse<>(null, new ApiException(e), e.status, emptyMap());
+      return CallResponse.createFailure(e.getApiException(), e.getApiException().getCode());
     }
 
     private CallResponse createResponse(Throwable t) {
-      return new CallResponse<>(null, new ApiException(t), HTTP_UNAVAILABLE, emptyMap());
-    }
-  }
-
-  static class Failure {
-    private String resourceType;
-    private String name;
-    private String namespace;
-    private int httpStatus;
-
-    public Failure(String resourceType, String name, String namespace, int httpStatus) {
-      this.resourceType = resourceType;
-      this.name = name;
-      this.namespace = namespace;
-      this.httpStatus = httpStatus;
-    }
-
-    public boolean matches(String resourceType, RequestParams requestParams, Operation operation) {
-      return this.resourceType.equals(resourceType)
-          && Objects.equals(name, operation.getName(requestParams))
-          && Objects.equals(namespace, requestParams.namespace);
-    }
-
-    public HttpErrorException getException() {
-      return new HttpErrorException(httpStatus);
+      return CallResponse.createFailure(new ApiException(t), HTTP_UNAVAILABLE);
     }
   }
 
   class NotFoundException extends RuntimeException {
     public NotFoundException(String resourceType, String name, String namespace) {
       super(String.format("No %s named %s found in namespace %s", resourceType, name, namespace));
-    }
-  }
-
-  static class HttpErrorException extends RuntimeException {
-    private int status;
-
-    public HttpErrorException(int status) {
-      this.status = status;
     }
   }
 }

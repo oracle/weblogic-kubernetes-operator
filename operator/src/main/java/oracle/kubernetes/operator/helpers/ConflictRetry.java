@@ -1,6 +1,5 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -15,8 +14,11 @@ package oracle.kubernetes.operator.helpers;
 public interface ConflictRetry<T> {
 
   /**
+   * The latest version of the kubernetes object for passing to the kubernetes API, or null if the
+   * API should not be retried.
+   *
    * @return The latest version of the kubernetes object for passing to the kubernetes API, or null
-   *     if the API should not be retried
+   *     if the API should not be retried.
    */
   T getUpdatedObject();
 }

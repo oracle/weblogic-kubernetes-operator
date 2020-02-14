@@ -15,7 +15,7 @@ for more information about Ingresses.
 In an Ingress object, a list of backends are provided for each target that will be load balanced.  Each backend is typically
 [a Kubernetes service](https://kubernetes.io/docs/concepts/services-networking/service/), more specifically, a combination of a `serviceName` and a `servicePort`.
 
-When the WebLogic operator creates a WebLogic domain, it also creates a service for each WebLogic cluster in the domain.
+When the operator creates a WebLogic domain, it also creates a service for each WebLogic cluster in the domain.
 The operator defines the service such that its selector will match all WebLogic server pods within the WebLogic cluster
 which are in the "ready" state.
 
@@ -69,6 +69,10 @@ Information about how to install and configure these to load balance WebLogic cl
 
  - [Traefik guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md)
  - [Voyager guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/voyager/README.md)
+
+ {{% notice note %}}
+ Traefik is recommended for development and test environments only.  For production environments, we recommend Apache or Voyager Ingress controllers, or the load balancer provided by your cloud provider.
+ {{% /notice %}}
 
 Samples are also provided for these two Ingress controllers, showing how to manage multiple WebLogic clusters as the backends, using different routing rules, host-routing and path-routing; and TLS termination:
 

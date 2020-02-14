@@ -1,8 +1,34 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceSpec;
+import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.DomainProcessorDelegate;
+import oracle.kubernetes.operator.DomainProcessorImpl;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.builders.WatchEvent;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import org.joda.time.DateTime;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -17,32 +43,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.google.common.collect.ImmutableMap;
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceSpec;
-import io.kubernetes.client.util.Watch;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.DomainProcessorDelegate;
-import oracle.kubernetes.operator.DomainProcessorImpl;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.builders.WatchEvent;
-import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.work.Component;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 @SuppressWarnings("SameParameterValue")
 public class ServicePresenceTest {
@@ -97,7 +97,7 @@ public class ServicePresenceTest {
   public void whenServiceHasNoDomainUid_returnNull() {
     V1Service service = new V1Service().metadata(new V1ObjectMeta());
 
-    assertThat(ServiceHelper.getServiceDomainUID(service), nullValue());
+    assertThat(ServiceHelper.getServiceDomainUid(service), nullValue());
   }
 
   @Test
@@ -106,7 +106,7 @@ public class ServicePresenceTest {
         new V1Service()
             .metadata(new V1ObjectMeta().labels(ImmutableMap.of(DOMAINUID_LABEL, "domain1")));
 
-    assertThat(ServiceHelper.getServiceDomainUID(service), equalTo("domain1"));
+    assertThat(ServiceHelper.getServiceDomainUid(service), equalTo("domain1"));
   }
 
   @Test

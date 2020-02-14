@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
 
@@ -14,6 +13,36 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
   static final int DEFAULT_LISTEN_PORT_RANGE_BASE = 7100;
   static final int DEFAULT_SSL_LISTEN_PORT_RANGE_BASE = 8100;
   static final int DEFAULT_NAP_LISTEN_PORT_RANGE_BASE = 9100;
+
+  /**
+   * private constructor. Use {@link #create(String, int, String, String, boolean, WlsServerConfig)}
+   * for creating an instance of WlsDynamicServerConfig instead.
+   *
+   * @param name Name of the dynamic server
+   * @param listenPort list port of the dynamic server
+   * @param listenAddress listen address of the dynamic server
+   * @param sslListenPort SSL listen port of the dynamic server
+   * @param machineName machine name of the dynamic server
+   * @param adminPort administration port if administration port is enabled
+   * @param networkAccessPoints network access points or channels configured for this dynamic server
+   */
+  private WlsDynamicServerConfig(
+      String name,
+      Integer listenPort,
+      String listenAddress,
+      Integer sslListenPort,
+      String machineName,
+      Integer adminPort,
+      List<NetworkAccessPoint> networkAccessPoints) {
+    super(
+        name,
+        listenAddress,
+        machineName,
+        listenPort,
+        sslListenPort,
+        adminPort,
+        networkAccessPoints);
+  }
 
   /**
    * Create a dynamic server config using server template and index number of this server.
@@ -73,36 +102,6 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
         sslListenPort,
         macroSubstitutor.substituteMacro(serverTemplate.getMachineName()),
         serverTemplate.getAdminPort(),
-        networkAccessPoints);
-  }
-
-  /**
-   * private constructor. Use {@link #create(String, int, String, String, boolean, WlsServerConfig)}
-   * for creating an instance of WlsDynamicServerConfig instead.
-   *
-   * @param name Name of the dynamic server
-   * @param listenPort list port of the dynamic server
-   * @param listenAddress listen address of the dynamic server
-   * @param sslListenPort SSL listen port of the dynamic server
-   * @param machineName machine name of the dynamic server
-   * @param adminPort administration port if administration port is enabled
-   * @param networkAccessPoints network access points or channels configured for this dynamic server
-   */
-  private WlsDynamicServerConfig(
-      String name,
-      Integer listenPort,
-      String listenAddress,
-      Integer sslListenPort,
-      String machineName,
-      Integer adminPort,
-      List<NetworkAccessPoint> networkAccessPoints) {
-    super(
-        name,
-        listenAddress,
-        machineName,
-        listenPort,
-        sslListenPort,
-        adminPort,
         networkAccessPoints);
   }
 

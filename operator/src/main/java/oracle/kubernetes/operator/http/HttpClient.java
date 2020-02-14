@@ -1,13 +1,8 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http;
 
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServicePort;
-import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.Arrays;
 import java.util.Map;
 import javax.ws.rs.client.Client;
@@ -16,6 +11,11 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
+
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
+import io.kubernetes.client.models.V1ServiceSpec;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -29,117 +29,16 @@ public class HttpClient {
   public static final String KEY = "httpClient";
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
-  private Client httpClient;
-  private String encodedCredentials;
-
   private static final String HTTP_PROTOCOL = "http://";
   private static final String HTTPS_PROTOCOL = "https://";
+  private Client httpClient;
+  private String encodedCredentials;
 
   // Please use one of the factory methods to get an instance of HttpClient.
   // Constructor is package access for unit testing
   HttpClient(Client httpClient, String encodedCredentials) {
     this.httpClient = httpClient;
     this.encodedCredentials = encodedCredentials;
-  }
-
-  /**
-   * Constructs a URL using the provided service URL and request URL, and use the resulting URL to
-   * issue a HTTP GET request.
-   *
-   * @param requestUrl The request URL containing the request of the REST call
-   * @param serviceURL The service URL containing the host and port of the server where the HTTP
-   *     request is to be sent to
-   * @return A Result object containing the respond from the REST call
-   */
-  public Result executeGetOnServiceClusterIP(String requestUrl, String serviceURL) {
-    String url = serviceURL + requestUrl;
-    WebTarget target = httpClient.target(url);
-    Invocation.Builder invocationBuilder =
-        target
-            .request()
-            .accept("application/json")
-            .header("Authorization", "Basic " + encodedCredentials);
-    Response response = invocationBuilder.get();
-    String responseString = null;
-    int status = response.getStatus();
-    boolean successful = false;
-    if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-      successful = true;
-      if (response.hasEntity()) {
-        responseString = String.valueOf(response.readEntity(String.class));
-      }
-    } else {
-      LOGGER.warning(MessageKeys.HTTP_METHOD_FAILED, "GET", url, response.getStatus());
-    }
-    return new Result(responseString, status, successful);
-  }
-
-  /**
-   * Constructs a URL using the provided service URL and request URL, and use the resulting URL and
-   * the payload provided to issue a HTTP POST request. This method does not throw HTTPException if
-   * the HTTP request returns failure status code
-   *
-   * @param requestUrl The request URL containing the request of the REST call
-   * @param serviceURL The service URL containing the host and port of the server where the HTTP
-   *     request is to be sent to
-   * @param payload The payload to be used in the HTTP POST request
-   * @return A Result object containing the respond from the REST call
-   */
-  public Result executePostUrlOnServiceClusterIP(
-      String requestUrl, String serviceURL, String payload) {
-    Result result = null;
-    try {
-      result = executePostUrlOnServiceClusterIP(requestUrl, serviceURL, payload, false);
-    } catch (HTTPException httpException) {
-      // ignore as executePostUrlOnServiceClusterIP only throw HTTPException if throwOnFailure is
-      // true
-    }
-    return result;
-  }
-
-  /**
-   * Constructs a URL using the provided service URL and request URL, and use the resulting URL and
-   * the payload provided to issue a HTTP POST request.
-   *
-   * @param requestUrl The request URL containing the request of the REST call
-   * @param serviceURL The service URL containing the host and port of the server where the HTTP
-   *     request is to be sent to
-   * @param payload The payload to be used in the HTTP POST request
-   * @param throwOnFailure Throws HTTPException if the status code in the HTTP response indicates
-   *     any error
-   * @return A Result object containing the respond from the REST call
-   * @throws HTTPException if throwOnFailure is true and the status of the HTTP response indicates
-   *     the request was not successful
-   */
-  public Result executePostUrlOnServiceClusterIP(
-      String requestUrl, String serviceURL, String payload, boolean throwOnFailure)
-      throws HTTPException {
-    String url = serviceURL + requestUrl;
-    WebTarget target = httpClient.target(url);
-    Invocation.Builder invocationBuilder =
-        target
-            .request()
-            .accept("application/json")
-            .header("Authorization", "Basic " + encodedCredentials)
-            .header("X-Requested-By", "Weblogic Operator");
-    Response response = invocationBuilder.post(Entity.json(payload));
-    LOGGER.finer("Response is  " + response.getStatusInfo());
-    String responseString = null;
-    int status = response.getStatus();
-    boolean successful = false;
-    if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-      successful = true;
-      if (response.hasEntity()) {
-        responseString = String.valueOf(response.readEntity(String.class));
-      }
-    } else {
-      LOGGER.fine(MessageKeys.HTTP_METHOD_FAILED, "POST", url, response.getStatus());
-      if (throwOnFailure) {
-        throw new HTTPException(status);
-      }
-    }
-    return new Result(responseString, status, successful);
   }
 
   /**
@@ -157,50 +56,6 @@ public class HttpClient {
         namespace, adminSecretName, new WithSecretDataStep(next));
   }
 
-  private static class AuthenticatedClientForServerStep extends Step {
-    private final String namespace;
-    private final String adminSecretName;
-
-    public AuthenticatedClientForServerStep(String namespace, String adminSecretName, Step next) {
-      super(next);
-      this.namespace = namespace;
-      this.adminSecretName = adminSecretName;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      Step readSecret =
-          SecretHelper.getSecretData(
-              SecretHelper.SecretType.AdminCredentials, adminSecretName, namespace, getNext());
-      return doNext(readSecret, packet);
-    }
-  }
-
-  private static class WithSecretDataStep extends Step {
-
-    public WithSecretDataStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      @SuppressWarnings("unchecked")
-      Map<String, byte[]> secretData =
-          (Map<String, byte[]>) packet.get(SecretHelper.SECRET_DATA_KEY);
-      byte[] username = null;
-      byte[] password = null;
-      if (secretData != null) {
-        username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
-        password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
-        packet.put(KEY, createAuthenticatedClient(username, password));
-
-        clearCredential(username);
-        clearCredential(password);
-      }
-      return doNext(packet);
-    }
-  }
-
   /**
    * Erase authentication credential so that it is not sitting in memory where a rogue program can
    * find it.
@@ -210,35 +65,14 @@ public class HttpClient {
   }
 
   /**
-   * Create authenticated client specifically targeted at an admin server.
-   *
-   * @param namespace Namespace
-   * @param adminSecretName Admin secret name
-   * @return authenticated client
-   */
-  public static HttpClient createAuthenticatedClientForServer(
-      String namespace, String adminSecretName) {
-    SecretHelper secretHelper = new SecretHelper(namespace);
-    Map<String, byte[]> secretData =
-        secretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, adminSecretName);
-
-    byte[] username = null;
-    byte[] password = null;
-    if (secretData != null) {
-      username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
-      password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
-    }
-    return createAuthenticatedClient(username, password);
-  }
-
-  /**
    * Create authenticated HTTP client.
    *
    * @param username Username
    * @param password Password
    * @return authenticated client
    */
-  public static HttpClient createAuthenticatedClient(final byte[] username, final byte[] password) {
+  private static HttpClient createAuthenticatedClient(
+      final byte[] username, final byte[] password) {
     // build client with authentication information.
     Client client = ClientBuilder.newClient();
     String encodedCredentials = null;
@@ -262,7 +96,7 @@ public class HttpClient {
    * @param defaultPort default port, if enabled. Other ports will use SSL.
    * @return The URL of the Service or null if the URL cannot be found.
    */
-  public static String getServiceURL(
+  public static String getServiceUrl(
       V1Service service, V1Pod pod, String adminChannel, Integer defaultPort) {
     if (service != null) {
       V1ServiceSpec spec = service.getSpec();
@@ -294,11 +128,120 @@ public class HttpClient {
           port = spec.getPorts().iterator().next().getPort();
         }
         portalIP += ":" + port;
-        String serviceURL = (port.equals(defaultPort) ? HTTP_PROTOCOL : HTTPS_PROTOCOL) + portalIP;
-        LOGGER.fine(MessageKeys.SERVICE_URL, serviceURL);
-        return serviceURL;
+        String serviceUrl = (port.equals(defaultPort) ? HTTP_PROTOCOL : HTTPS_PROTOCOL) + portalIP;
+        LOGGER.fine(MessageKeys.SERVICE_URL, serviceUrl);
+        return serviceUrl;
       }
     }
     return null;
+  }
+
+  /**
+   * Constructs a URL using the provided service URL and request URL, and use the resulting URL and
+   * the payload provided to issue a HTTP POST request. This method does not throw HttpException if
+   * the HTTP request returns failure status code
+   *
+   * @param requestUrl The request URL containing the request of the REST call
+   * @param serviceUrl The service URL containing the host and port of the server where the HTTP
+   *     request is to be sent to
+   * @param payload The payload to be used in the HTTP POST request
+   * @return A Result object containing the respond from the REST call
+   */
+  public Result executePostUrlOnServiceClusterIP(
+      String requestUrl, String serviceUrl, String payload) {
+    Result result = null;
+    try {
+      result = executePostUrlOnServiceClusterIP(requestUrl, serviceUrl, payload, false);
+    } catch (HttpException httpException) {
+      // ignore as executePostUrlOnServiceClusterIP only throw HttpException if throwOnFailure is
+      // true
+    }
+    return result;
+  }
+
+  /**
+   * Constructs a URL using the provided service URL and request URL, and use the resulting URL and
+   * the payload provided to issue a HTTP POST request.
+   *
+   * @param requestUrl The request URL containing the request of the REST call
+   * @param serviceUrl The service URL containing the host and port of the server where the HTTP
+   *     request is to be sent to
+   * @param payload The payload to be used in the HTTP POST request
+   * @param throwOnFailure Throws HttpException if the status code in the HTTP response indicates
+   *     any error
+   * @return A Result object containing the respond from the REST call
+   * @throws HttpException if throwOnFailure is true and the status of the HTTP response indicates
+   *     the request was not successful
+   */
+  public Result executePostUrlOnServiceClusterIP(
+      String requestUrl, String serviceUrl, String payload, boolean throwOnFailure)
+      throws HttpException {
+    String url = serviceUrl + requestUrl;
+    WebTarget target = httpClient.target(url);
+    Invocation.Builder invocationBuilder =
+        target
+            .request()
+            .accept("application/json")
+            .header("Authorization", "Basic " + encodedCredentials)
+            .header("X-Requested-By", "Weblogic Operator");
+    Response response = invocationBuilder.post(Entity.json(payload));
+    LOGGER.finer("Response is  " + response.getStatusInfo());
+    String responseString = null;
+    int status = response.getStatus();
+    boolean successful = false;
+    if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+      successful = true;
+      if (response.hasEntity()) {
+        responseString = String.valueOf(response.readEntity(String.class));
+      }
+    } else {
+      LOGGER.fine(MessageKeys.HTTP_METHOD_FAILED, "POST", url, response.getStatus());
+      if (throwOnFailure) {
+        throw new HttpException(status);
+      }
+    }
+    return new Result(responseString, status, successful);
+  }
+
+  private static class AuthenticatedClientForServerStep extends Step {
+    private final String namespace;
+    private final String adminSecretName;
+
+    AuthenticatedClientForServerStep(String namespace, String adminSecretName, Step next) {
+      super(next);
+      this.namespace = namespace;
+      this.adminSecretName = adminSecretName;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      Step readSecret =
+          SecretHelper.getSecretData(
+              SecretHelper.SecretType.AdminCredentials, adminSecretName, namespace, getNext());
+      return doNext(readSecret, packet);
+    }
+  }
+
+  private static class WithSecretDataStep extends Step {
+
+    WithSecretDataStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      @SuppressWarnings("unchecked")
+      Map<String, byte[]> secretData =
+          (Map<String, byte[]>) packet.get(SecretHelper.SECRET_DATA_KEY);
+      if (secretData != null) {
+        byte[] username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
+        byte[] password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
+        packet.put(KEY, createAuthenticatedClient(username, password));
+
+        clearCredential(username);
+        clearCredential(password);
+      }
+      return doNext(packet);
+    }
   }
 }

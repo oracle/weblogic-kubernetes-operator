@@ -1,6 +1,5 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
@@ -20,7 +19,7 @@ public class WatchDomainIntrospectorJobReadyStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
 
     V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
 

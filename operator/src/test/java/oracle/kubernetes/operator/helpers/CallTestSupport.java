@@ -1,21 +1,20 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import com.meterware.simplestub.Memento;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.ApiException;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
@@ -41,9 +40,19 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
  *
  * <p>will return the specified custom resource definition.
  */
-public class CallTestSupport {
+class CallTestSupport {
 
   private Map<CallTestSupport.CannedResponse, Boolean> cannedResponses = new HashMap<>();
+
+  private static String toString(RequestParams requestParams, AdditionalParams additionalParams) {
+    return new ErrorFormatter(requestParams.call)
+        .addDescriptor("namespace", requestParams.namespace)
+        .addDescriptor("name", requestParams.name)
+        .addDescriptor("fieldSelector", additionalParams.getFieldSelector())
+        .addDescriptor("labelSelector", additionalParams.getLabelSelector())
+        .addDescriptor("body", requestParams.body)
+        .toString();
+  }
 
   Memento installSynchronousCallDispatcher() {
     return new Memento() {
@@ -75,7 +84,7 @@ public class CallTestSupport {
    * @return a canned response which may be qualified by parameters and defines how CallBuilder
    *     should react.
    */
-  public CannedResponse createCannedResponse(String forMethod) {
+  CannedResponse createCannedResponse(String forMethod) {
     CannedResponse cannedResponse = new CannedResponse(forMethod);
     this.cannedResponses.put(cannedResponse, false);
     return cannedResponse;
@@ -88,14 +97,14 @@ public class CallTestSupport {
    * @return a canned response which may be qualified by parameters and defines how CallBuilder
    *     should react.
    */
-  public CannedResponse createOptionalCannedResponse(String forMethod) {
+  CannedResponse createOptionalCannedResponse(String forMethod) {
     CannedResponse cannedResponse = new CannedResponse(forMethod).optional();
     this.cannedResponses.put(cannedResponse, false);
     return cannedResponse;
   }
 
   /** Throws an exception if any of the canned responses were not used. */
-  public void verifyAllDefinedResponsesInvoked() {
+  void verifyAllDefinedResponsesInvoked() {
     List<CannedResponse> unusedResponses = new ArrayList<>();
     for (CannedResponse cannedResponse : this.cannedResponses.keySet())
       if (isUnused(cannedResponse)) unusedResponses.add(cannedResponse);
@@ -164,9 +173,9 @@ public class CallTestSupport {
 
     CallResponse getCallResponse() {
       if (result == null)
-        return new CallResponse<>(null, new ApiException(), status, Collections.emptyMap());
+        return CallResponse.createFailure(new ApiException(), status);
       else
-        return new CallResponse<>(result, null, HttpURLConnection.HTTP_OK, Collections.emptyMap());
+        return CallResponse.createSuccess(result, HttpURLConnection.HTTP_OK);
     }
 
     boolean matches(@Nonnull RequestParams requestParams, AdditionalParams params) {
@@ -180,19 +189,19 @@ public class CallTestSupport {
           && matchesBody(requestParams.body, requestParamExpectations.get(BODY));
     }
 
+    private boolean matches(AdditionalParams params) {
+      return Objects.equals(params.fieldSelector, requestParamExpectations.get(FIELD_SELECTOR))
+          && Objects.equals(params.labelSelector, requestParamExpectations.get(LABEL_SELECTOR));
+    }
+
     private boolean matchesBody(Object actualBody, Object expectedBody) {
       return expectedBody instanceof BodyMatcher && ((BodyMatcher) expectedBody).matches(actualBody)
           || Objects.equals(actualBody, expectedBody)
           || function != null;
     }
 
-    private boolean matches(AdditionalParams params) {
-      return Objects.equals(params.fieldSelector, requestParamExpectations.get(FIELD_SELECTOR))
-          && Objects.equals(params.labelSelector, requestParamExpectations.get(LABEL_SELECTOR));
-    }
-
     /**
-     * Qualifies the canned response to be used only if the namespace matches the value specified
+     * Qualifies the canned response to be used only if the namespace matches the value specified.
      *
      * @param namespace the expected namespace
      * @return the updated response
@@ -203,7 +212,7 @@ public class CallTestSupport {
     }
 
     /**
-     * Qualifies the canned response to be used only if the name matches the value specified
+     * Qualifies the canned response to be used only if the name matches the value specified.
      *
      * @param name the expected name
      * @return the updated response
@@ -213,50 +222,29 @@ public class CallTestSupport {
       return this;
     }
 
-    /**
-     * Qualifies the canned response to be used only if the UID matches the value specified
-     *
-     * @param uid the expected domain uid
-     * @return the updated response
-     */
-    public CannedResponse withUid(String uid) {
-      requestParamExpectations.put(NAME, uid);
-      return this;
-    }
-
     private CannedResponse optional() {
       optional = true;
       return this;
     }
 
     /**
-     * Qualifies the canned response to be used for any body value
+     * Qualifies the canned response to be used for any body value.
      *
      * @return the updated response
      */
-    public CannedResponse ignoringBody() {
+    CannedResponse ignoringBody() {
       requestParamExpectations.put(BODY, WILD_CARD);
       return this;
     }
 
     /**
-     * Qualifies the canned response to be used only if the body matches the value specified
+     * Qualifies the canned response to be used only if the body matches the value specified.
      *
      * @param body the expected body
      * @return the updated response
      */
     public CannedResponse withBody(Object body) {
       requestParamExpectations.put(BODY, body);
-      return this;
-    }
-
-    public CannedResponse withLabelSelectors(String... selectors) {
-      requestParamExpectations.put(LABEL_SELECTOR, String.join(",", selectors));
-      return this;
-    }
-
-    public CannedResponse withFieldSelector(String fieldSelector) {
-      requestParamExpectations.put(FIELD_SELECTOR, fieldSelector);
       return this;
     }
 
@@ -283,7 +271,7 @@ public class CallTestSupport {
      *
      * @param status the failure status
      */
-    public void failingWithStatus(int status) {
+    void failingWithStatus(int status) {
       this.status = status;
     }
 
@@ -301,34 +289,6 @@ public class CallTestSupport {
         throw new IllegalStateException(String.format(MISFORMED_RESPONSE, this));
       }
     }
-  }
-
-  private class AdditionalParams {
-    private String fieldSelector;
-    private String labelSelector;
-
-    AdditionalParams(String fieldSelector, String labelSelector) {
-      this.fieldSelector = fieldSelector;
-      this.labelSelector = labelSelector;
-    }
-
-    String getFieldSelector() {
-      return fieldSelector;
-    }
-
-    String getLabelSelector() {
-      return labelSelector;
-    }
-  }
-
-  private static String toString(RequestParams requestParams, AdditionalParams additionalParams) {
-    return new ErrorFormatter(requestParams.call)
-        .addDescriptor("namespace", requestParams.namespace)
-        .addDescriptor("name", requestParams.name)
-        .addDescriptor("fieldSelector", additionalParams.getFieldSelector())
-        .addDescriptor("labelSelector", additionalParams.getLabelSelector())
-        .addDescriptor("body", requestParams.body)
-        .toString();
   }
 
   private static class ErrorFormatter {
@@ -365,6 +325,24 @@ public class CallTestSupport {
           sb.append(" and ").append(descriptors.get(descriptors.size() - 1));
       }
       return sb.toString();
+    }
+  }
+
+  private class AdditionalParams {
+    private String fieldSelector;
+    private String labelSelector;
+
+    AdditionalParams(String fieldSelector, String labelSelector) {
+      this.fieldSelector = fieldSelector;
+      this.labelSelector = labelSelector;
+    }
+
+    String getFieldSelector() {
+      return fieldSelector;
+    }
+
+    String getLabelSelector() {
+      return labelSelector;
     }
   }
 

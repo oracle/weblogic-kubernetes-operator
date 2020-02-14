@@ -1,5 +1,5 @@
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # The version of this inputs file.  Do not modify.
 version: create-weblogic-sample-domain-inputs-v1
@@ -85,6 +85,11 @@ logHomeOnPV: false
 # Otherwise, it is ignored.
 logHome: /shared/logs/domain1
 
+# An (optional) in-pod location for data storage of default and custom file stores.
+# If not specified or the value is either not set or empty (e.g. dataHome: "") then the
+# data storage directories are determined from the WebLogic domain home configuration.
+#dataHome:
+
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012
 
@@ -134,3 +139,16 @@ domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.3
 # Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt",
 # which uses WDT, instead of WLST, to generate the domain configuration.
 domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image
+
+# Uncomment and edit value(s) below to specify the maximum amount of 
+# compute resources allowed, and minimum amount of compute resources 
+# required for each server pod.
+# These are optional.                
+# Please refer to the kubernetes documentation on Managing Compute
+# Resources for Containers for details.
+#
+# serverPodMemoryRequest: "64Mi"
+# serverPodCpuRequest: "250m"
+# serverPodMemoryLimit: "1Gi"
+# serverPodCpuLimit: "1000m"
+

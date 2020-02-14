@@ -1,13 +1,13 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Service;
 
 /** Kubernetes pods and services associated with a single WebLogic server. */
 class ServerKubernetesObjects {
@@ -17,7 +17,8 @@ class ServerKubernetesObjects {
   private final AtomicReference<V1Service> service = new AtomicReference<>(null);
   private final AtomicReference<V1Service> externalService = new AtomicReference<>();
 
-  ServerKubernetesObjects() {}
+  ServerKubernetesObjects() {
+  }
 
   /**
    * The Pod.

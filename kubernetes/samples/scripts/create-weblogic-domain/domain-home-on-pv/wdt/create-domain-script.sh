@@ -1,6 +1,6 @@
 #!/bin/bash
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description:
 #
@@ -45,7 +45,7 @@
 #                  default:  weblogic-deploy.zip
 #
 #   WDT_INSTALL_ZIP_URL   URL for downloading WDT install zip
-#                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.24/$WDT_INSTALL_ZIP_FILE
+#                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.6.0/$WDT_INSTALL_ZIP_FILE
 #
 #   https_proxy    Proxy for downloading WDT_INSTALL_ZIP_URL.
 #                  default: "http://www-proxy-hqdc.us.oracle.com:80"
@@ -59,6 +59,8 @@
 #                  $WDT_MODEL_FILE and $WDT_MODEL_VARS. Also the location
 #                  of WDT log files.
 #                  default:  /shared/wdt
+#   WDT_VERSION    WDT version to download.
+#                  default:  1.6.0
 #
 #   DOMAIN_HOME_DIR  Target location for generated domain. 
 #
@@ -72,9 +74,10 @@ WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
 WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
+WDT_VERSION=${WDT_VERSION:-1.6.0}
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
-WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.24/$WDT_INSTALL_ZIP_FILE"}
+WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
 
 # using "-" instead of ":-" in case proxy vars are explicitly set to "".
 https_proxy=${https_proxy-""}
@@ -96,14 +99,19 @@ function install_wdt {
   cd $WDT_DIR || return 1
 
   local curl_res=1
-  for proxy in "${https_proxy}" "${https_proxy2}"; do
-    echo @@ "Info:  Downloading $WDT_INSTALL_ZIP_URL with https_proxy=\"$proxy\""
-    https_proxy="${proxy}" \
-      curl --silent --show-error --connect-timeout 10 -O -L $WDT_INSTALL_ZIP_URL 
-    curl_res=$?
-    [ $curl_res -eq 0 ] && break
+  max=20
+  count=0
+  while [ $curl_res -ne 0 -a $count -lt $max ] ; do
+    sleep 10
+    count=`expr $count + 1`
+    for proxy in "${https_proxy}" "${https_proxy2}"; do
+	  echo @@ "Info:  Downloading $WDT_INSTALL_ZIP_URL with https_proxy=\"$proxy\""
+	  https_proxy="${proxy}" \
+	    curl --silent --show-error --connect-timeout 10 -O -L $WDT_INSTALL_ZIP_URL 
+	  curl_res=$?
+	  [ $curl_res -eq 0 ] && break
+	done
   done
-
   if [ $curl_res -ne 0 ] || [ ! -f $WDT_INSTALL_ZIP_FILE ]; then
     cd $save_dir
     echo @@ "Error: Download failed or $WDT_INSTALL_ZIP_FILE not found."
@@ -158,6 +166,7 @@ function run_wdt {
   fi 
 
   echo domain_home_dir = $domain_home_dir
+  mkdir -p $domain_home_dir
 
   # Output files and directories.
 

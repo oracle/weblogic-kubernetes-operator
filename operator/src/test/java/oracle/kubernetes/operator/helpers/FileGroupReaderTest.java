@@ -1,24 +1,24 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Map;
+
+import oracle.kubernetes.operator.utils.InMemoryFileSystem;
+import org.junit.Test;
 
 import static oracle.kubernetes.operator.helpers.ConfigMapHelperTest.SCRIPT_NAMES;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Map;
-import oracle.kubernetes.operator.utils.InMemoryFileSystem;
-import org.junit.Test;
-
 public class FileGroupReaderTest {
 
-  private final FileGroupReader scriptReader = ConfigMapHelper.getScriptReader();
   private static InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
+  private final FileGroupReader scriptReader = ConfigMapHelper.getScriptReader();
 
   @Test
   public void afterLoadScriptsFromClasspath_haveScriptNamesAsKeys() {

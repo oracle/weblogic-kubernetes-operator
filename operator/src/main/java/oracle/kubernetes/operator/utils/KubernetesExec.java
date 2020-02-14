@@ -1,31 +1,31 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
-import io.kubernetes.client.ApiException;
 import java.io.IOException;
+
+import io.kubernetes.client.ApiException;
 
 /** A base class for an object which can execute a command in an Kubertenes containers. */
 public abstract class KubernetesExec {
   private boolean stdin = true;
   private boolean tty = true;
 
-  public void setStdin(boolean stdin) {
-    this.stdin = stdin;
-  }
-
-  public void setTty(boolean tty) {
-    this.tty = tty;
-  }
-
   boolean isStdin() {
     return stdin;
   }
 
+  public void setStdin(boolean stdin) {
+    this.stdin = stdin;
+  }
+
   boolean isTty() {
     return tty;
+  }
+
+  public void setTty(boolean tty) {
+    this.tty = tty;
   }
 
   /**

@@ -1,5 +1,5 @@
-# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 def getEnvVar(var):
     val = os.environ.get(var)
@@ -83,7 +83,7 @@ def createDataSource(dsName, dsJNDI, dsUrl, dsUser, dsPassword, dsTarget):
     cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
     create('testDriverParams', 'JDBCDriverParams')
     cd('JDBCDriverParams/NO_NAME_0')
-    set('DriverName', 'com.mysql.jdbc.jdbc2.optional.MysqlXADataSource')
+    set('DriverName', 'com.mysql.cj.jdbc.Driver')
     set('URL', dsUrl)
     set('PasswordEncrypted', dsPassword)
 
@@ -176,7 +176,7 @@ cmo.setPassword(admin_password)
 # ==============================================
 setOption('OverwriteDomain', 'true')
 
-# Create a cluster
+# Create a cluster/
 # ======================
 cd('/')
 cl = create(cluster_name, 'Cluster')
@@ -237,10 +237,7 @@ print 'Domain Created'
 # Update Domain
 readDomain(domain_path)
 cd('/')
-if production_mode_enabled == "true":
-    cmo.setProductionModeEnabled(true)
-else: 
-    cmo.setProductionModeEnabled(false)
+cmo.setProductionModeEnabled(false)
 updateDomain()
 closeDomain()
 print 'Domain Updated'

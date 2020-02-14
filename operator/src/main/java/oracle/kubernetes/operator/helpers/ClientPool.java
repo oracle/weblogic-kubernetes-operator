@@ -1,13 +1,8 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import com.squareup.okhttp.Dispatcher;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.Configuration;
-import io.kubernetes.client.util.Config;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
@@ -15,6 +10,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.squareup.okhttp.Dispatcher;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.Configuration;
+import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.util.ClientBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -23,10 +24,10 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 
 public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final ClientFactory FACTORY = new DefaultClientFactory();
   private static ClientPool SINGLETON = new ClientPool();
   private static ThreadFactory threadFactory;
-
-  private static final ClientFactory FACTORY = new DefaultClientFactory();
+  private final AtomicBoolean isFirst = new AtomicBoolean(true);
 
   public static void initialize(ThreadFactory threadFactory) {
     ClientPool.threadFactory = threadFactory;
@@ -50,8 +51,6 @@ public class ClientPool extends Pool<ApiClient> {
     return SINGLETON;
   }
 
-  private final AtomicBoolean isFirst = new AtomicBoolean(true);
-
   @Override
   protected ApiClient create() {
     return getApiClient();
@@ -66,7 +65,7 @@ public class ClientPool extends Pool<ApiClient> {
       ClientFactory factory = null;
       Container c = ContainerResolver.getInstance().getContainer();
       if (c != null) {
-        factory = c.getSPI(ClientFactory.class);
+        factory = c.getSpi(ClientFactory.class);
       }
       if (factory == null) {
         factory = FACTORY;
@@ -99,7 +98,7 @@ public class ClientPool extends Pool<ApiClient> {
     public ApiClient get() {
       ApiClient client;
       try {
-        client = Config.defaultClient();
+        client = ClientBuilder.standard().setOverridePatchFormat(V1Patch.PATCH_FORMAT_JSON_PATCH).build();
         if (first.getAndSet(false)) {
           Configuration.setDefaultApiClient(client);
         }

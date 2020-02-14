@@ -1,53 +1,56 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
+import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.builders.WatchEvent;
+import oracle.kubernetes.utils.TestUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import static java.net.HttpURLConnection.HTTP_GONE;
 import static oracle.kubernetes.operator.builders.EventMatcher.addEvent;
 import static oracle.kubernetes.operator.builders.EventMatcher.modifyEvent;
+import static oracle.kubernetes.operator.builders.StubWatchFactory.AllWatchesClosedListener;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 
-import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.util.Watch;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
-import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.builders.WatchEvent;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 /** Tests behavior of the Watcher class. */
 @SuppressWarnings("SameParameterValue")
-public abstract class WatcherTestBase extends ThreadFactoryTestBase
-    implements StubWatchFactory.AllWatchesClosedListener {
+public abstract class WatcherTestBase extends ThreadFactoryTestBase implements AllWatchesClosedListener {
   private static final int NEXT_RESOURCE_VERSION = 123456;
   private static final int INITIAL_RESOURCE_VERSION = 123;
   private static final String NAMESPACE = "testspace";
-  private final RuntimeException hasNextException =
-      new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE);
-
+  private final RuntimeException hasNextException = new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE);
+  final WatchTuning tuning = new WatchTuning(30, 0);
   private List<Memento> mementos = new ArrayList<>();
   private List<Watch.Response<?>> callBacks = new ArrayList<>();
-
   private int resourceVersion = INITIAL_RESOURCE_VERSION;
-
-  protected WatchTuning tuning = new WatchTuning(30, 0);
+  private AtomicBoolean stopping = new AtomicBoolean(false);
 
   private V1ObjectMeta createMetaData() {
     return createMetaData("test", NAMESPACE);
   }
 
-  private AtomicBoolean stopping = new AtomicBoolean(false);
+  @SuppressWarnings("SameParameterValue")
+  private V1ObjectMeta createMetaData(String name, String namespace) {
+    return new V1ObjectMeta()
+        .name(name)
+        .namespace(namespace)
+        .resourceVersion(getNextResourceVersion());
+  }
 
   @Override
   public void allWatchesClosed() {
@@ -65,13 +68,16 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
     StubWatchFactory.setListener(this);
   }
 
+  final void addMemento(Memento memento) {
+    mementos.add(memento);
+  }
+
   @After
-  public void tearDown() {
+  public void tearDown() throws Exception {
     shutDownThreads();
     for (Memento memento : mementos) memento.revert();
   }
 
-  @SuppressWarnings("unchecked")
   void sendInitialRequest(int initialResourceVersion) {
     scheduleAddResponse(createObjectWithMetaData());
 
@@ -115,7 +121,6 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
     return WatchEvent.createErrorEventWithoutStatus().toWatchResponse();
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void receivedEvents_areSentToListeners() {
     Object object1 = createObjectWithMetaData();
@@ -143,7 +148,6 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
         hasEntry("resourceVersion", String.valueOf(resourceVersion - 2)));
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void afterHttpGoneError_nextRequestSendsIncludedResourceVersion() {
     StubWatchFactory.addCallResponses(createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
@@ -156,7 +160,6 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
         hasEntry("resourceVersion", Integer.toString(NEXT_RESOURCE_VERSION)));
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void afterHttpGoneErrorWithoutResourceVersion_nextRequestSendsResourceVersionZero() {
     StubWatchFactory.addCallResponses(createHttpGoneErrorWithoutResourceVersionResponse());
@@ -167,7 +170,6 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
     assertThat(StubWatchFactory.getRequestParameters().get(1), hasEntry("resourceVersion", "0"));
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void afterErrorWithoutStatus_nextRequestSendsResourceVersionZero() {
     StubWatchFactory.addCallResponses(createErrorWithoutStatusResponse());
@@ -178,7 +180,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
     assertThat(StubWatchFactory.getRequestParameters().get(1), hasEntry("resourceVersion", "0"));
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   @Test
   public void afterDelete_nextRequestSendsIncrementedResourceVersion() {
     scheduleDeleteResponse(createObjectWithMetaData());
@@ -191,7 +193,6 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
         hasEntry("resourceVersion", Integer.toString(INITIAL_RESOURCE_VERSION + 1)));
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void afterExceptionDuringNext_closeWatchAndTryAgain() {
     StubWatchFactory.throwExceptionOnNext(hasNextException);
@@ -202,24 +203,12 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
     assertThat(StubWatchFactory.getNumCloseCalls(), equalTo(2));
   }
 
-  protected void scheduleAddResponse(Object object) {
+  void scheduleAddResponse(Object object) {
     StubWatchFactory.addCallResponses(createAddResponse(object));
   }
 
-  protected void scheduleModifyResponse(Object object) {
-    StubWatchFactory.addCallResponses(createModifyResponse(object));
-  }
-
-  protected void scheduleDeleteResponse(Object object) {
+  private void scheduleDeleteResponse(Object object) {
     StubWatchFactory.addCallResponses(createDeleteResponse(object));
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private V1ObjectMeta createMetaData(String name, String namespace) {
-    return new V1ObjectMeta()
-        .name(name)
-        .namespace(namespace)
-        .resourceVersion(getNextResourceVersion());
   }
 
   private String getNextResourceVersion() {

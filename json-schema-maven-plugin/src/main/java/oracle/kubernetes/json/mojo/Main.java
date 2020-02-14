@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
 
@@ -8,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
+
 import org.apache.maven.plugin.MojoExecutionException;
 
 public interface Main {
@@ -23,11 +23,11 @@ public interface Main {
   /**
    * Defines an external schema URL to be used for object definitions.
    *
-   * @param schemaURL the schema URL
+   * @param schemaUrl the schema URL
    * @param cacheUrl a file url specifying a local cache of the schema
    * @throws IOException if there is a problem using the URLs
    */
-  void defineSchemaUrlAndContents(URL schemaURL, URL cacheUrl) throws IOException;
+  void defineSchemaUrlAndContents(URL schemaUrl, URL cacheUrl) throws IOException;
 
   /**
    * Specifies that deprecated fields should be included when generating a schema. If false, they

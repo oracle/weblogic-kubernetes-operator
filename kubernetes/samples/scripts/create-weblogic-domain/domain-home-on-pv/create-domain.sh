@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
 #  This sample script creates a WebLogic domain home on an existing PV/PVC, and generates the domain resource
@@ -26,7 +26,7 @@ source ${scriptDir}/../../common/validate.sh
 function usage {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
   echo "  -i Parameter inputs file, must be specified."
-  echo "  -o Ouput directory for the generated yaml files, must be specified."
+  echo "  -o Output directory for the generated yaml files, must be specified."
   echo "  -e Also create the resources in the generated yaml files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -h Help"
@@ -153,7 +153,7 @@ function createDomainConfigmap {
   echo domainName: $domainName >> ${externalFilesTmpDir}/create-domain-inputs.yaml
 
   if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
-   sh ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir}
+   bash ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir}
   fi
  
   # create the configmap and label it properly

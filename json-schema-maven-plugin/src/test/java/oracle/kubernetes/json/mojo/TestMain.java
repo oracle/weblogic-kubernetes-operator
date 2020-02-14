@@ -1,6 +1,5 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
 
@@ -31,6 +30,11 @@ public class TestMain implements Main {
 
   boolean isIncludeDeprecated() {
     return includeDeprecated;
+  }
+
+  @Override
+  public void setIncludeDeprecated(boolean includeDeprecated) {
+    this.includeDeprecated = includeDeprecated;
   }
 
   URL[] getClasspath() {
@@ -73,8 +77,18 @@ public class TestMain implements Main {
     return kubernetesVersion;
   }
 
+  @Override
+  public void setKubernetesVersion(String kubernetesVersion) {
+    this.kubernetesVersion = kubernetesVersion;
+  }
+
   boolean isIncludeAdditionalProperties() {
     return includeAdditionalProperties;
+  }
+
+  @Override
+  public void setIncludeAdditionalProperties(boolean includeAdditionalProperties) {
+    this.includeAdditionalProperties = includeAdditionalProperties;
   }
 
   boolean isSupportObjectReferences() {
@@ -87,23 +101,8 @@ public class TestMain implements Main {
   }
 
   @Override
-  public void setKubernetesVersion(String kubernetesVersion) {
-    this.kubernetesVersion = kubernetesVersion;
-  }
-
-  @Override
-  public void defineSchemaUrlAndContents(URL schemaURL, URL cacheUrl) {
-    schemas.put(schemaURL, cacheUrl);
-  }
-
-  @Override
-  public void setIncludeDeprecated(boolean includeDeprecated) {
-    this.includeDeprecated = includeDeprecated;
-  }
-
-  @Override
-  public void setIncludeAdditionalProperties(boolean includeAdditionalProperties) {
-    this.includeAdditionalProperties = includeAdditionalProperties;
+  public void defineSchemaUrlAndContents(URL schemaUrl, URL cacheUrl) {
+    schemas.put(schemaUrl, cacheUrl);
   }
 
   @Override

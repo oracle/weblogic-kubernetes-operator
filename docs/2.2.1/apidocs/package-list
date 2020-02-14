@@ -1,0 +1,16 @@
+oracle.kubernetes.operator
+oracle.kubernetes.operator.authentication
+oracle.kubernetes.operator.builders
+oracle.kubernetes.operator.calls
+oracle.kubernetes.operator.helpers
+oracle.kubernetes.operator.http
+oracle.kubernetes.operator.logging
+oracle.kubernetes.operator.rest
+oracle.kubernetes.operator.rest.backend
+oracle.kubernetes.operator.rest.model
+oracle.kubernetes.operator.rest.resource
+oracle.kubernetes.operator.steps
+oracle.kubernetes.operator.utils
+oracle.kubernetes.operator.watcher
+oracle.kubernetes.operator.wlsconfig
+oracle.kubernetes.operator.work

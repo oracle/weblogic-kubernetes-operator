@@ -1,21 +1,24 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
-
-import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
-import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.junit.Before;
 import org.junit.Test;
+
+import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
+import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
+import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
 
 public class SchemaGeneratorTest {
 
@@ -26,6 +29,43 @@ public class SchemaGeneratorTest {
 
   private URL schemaUrl;
   private URL cacheUrl;
+  @SuppressWarnings("unused")
+  private boolean unAnnotatedBoolean;
+  @SuppressWarnings("unused")
+  private int unAnnotatedInteger;
+  @SuppressWarnings("unused")
+  private long unAnnotatedLong;
+  @SuppressWarnings("unused")
+  private String unAnnotatedString;
+  @SuppressWarnings("unused")
+  private int[] intArray;
+  @SuppressWarnings("unused")
+  private volatile boolean ignoreMe;
+  @SuppressWarnings("unused")
+  private TrafficLightColors colors;
+  @SuppressWarnings("unused")
+  @EnumClass(TrafficLightColors.class)
+  private String colorString;
+  @SuppressWarnings("unused")
+  @EnumClass(value = TrafficLightColors.class, qualifier = "forSmallLight")
+  private String twoColorString;
+  @SuppressWarnings("unused")
+  @Range(minimum = 7)
+  private int valueWithMinimum;
+  @SuppressWarnings("unused")
+  @Range(maximum = 43)
+  private int valueWithMaximum;
+  @SuppressWarnings("unused")
+  @Range(minimum = 12, maximum = 85)
+  private int valueWithRange;
+  @SuppressWarnings("unused")
+  @Pattern("[A-Z][a-zA-Z_]*")
+  private String codeName;
+  @SuppressWarnings("unused")
+  @Description("An annotated field")
+  private Double annotatedDouble;
+  @SuppressWarnings("unused")
+  private SimpleObject simpleObject;
 
   @Before
   public void setUp() throws Exception {
@@ -46,18 +86,12 @@ public class SchemaGeneratorTest {
     return result;
   }
 
-  @SuppressWarnings("unused")
-  private boolean unAnnotatedBoolean;
-
   @Test
   public void generateSchemaForInteger() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("unAnnotatedInteger"));
 
     assertThat(schema, hasJsonPath("$.unAnnotatedInteger.type", equalTo("number")));
   }
-
-  @SuppressWarnings("unused")
-  private int unAnnotatedInteger;
 
   @Test
   public void generateSchemaForLong() throws NoSuchFieldException {
@@ -66,18 +100,12 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.unAnnotatedLong.type", equalTo("number")));
   }
 
-  @SuppressWarnings("unused")
-  private long unAnnotatedLong;
-
   @Test
   public void generateSchemaForString() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("unAnnotatedString"));
 
     assertThat(schema, hasJsonPath("$.unAnnotatedString.type", equalTo("string")));
   }
-
-  @SuppressWarnings("unused")
-  private String unAnnotatedString;
 
   @Test
   public void generateSchemaForIntArray() throws NoSuchFieldException {
@@ -87,18 +115,12 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.intArray.items.type", equalTo("number")));
   }
 
-  @SuppressWarnings("unused")
-  private int[] intArray;
-
   @Test
   public void doNotGenerateSchemaForVolatileFields() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("ignoreMe"));
 
     assertThat(schema, hasNoJsonPath("$.ignoreMe"));
   }
-
-  @SuppressWarnings("unused")
-  private volatile boolean ignoreMe;
 
   @Test
   public void generateSchemaForEnum() throws NoSuchFieldException {
@@ -108,25 +130,6 @@ public class SchemaGeneratorTest {
     assertThat(
         schema, hasJsonPath("$.colors.enum", arrayContainingInAnyOrder("RED", "YELLOW", "GREEN")));
   }
-
-  @SuppressWarnings("unused")
-  private enum TrafficLightColors {
-    RED,
-    YELLOW {
-      @Override
-      boolean forSmallLight() {
-        return false;
-      }
-    },
-    GREEN;
-
-    boolean forSmallLight() {
-      return true;
-    }
-  }
-
-  @SuppressWarnings("unused")
-  private TrafficLightColors colors;
 
   @Test
   public void generateSchemaForEnumAnnotatedString() throws NoSuchFieldException {
@@ -138,10 +141,6 @@ public class SchemaGeneratorTest {
         hasJsonPath("$.colorString.enum", arrayContainingInAnyOrder("RED", "YELLOW", "GREEN")));
   }
 
-  @SuppressWarnings("unused")
-  @EnumClass(TrafficLightColors.class)
-  private String colorString;
-
   @Test
   public void generateSchemaForEnumAnnotatedStringWithQualifier() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("twoColorString"));
@@ -151,10 +150,6 @@ public class SchemaGeneratorTest {
         schema, hasJsonPath("$.twoColorString.enum", arrayContainingInAnyOrder("RED", "GREEN")));
   }
 
-  @SuppressWarnings("unused")
-  @EnumClass(value = TrafficLightColors.class, qualifier = "forSmallLight")
-  private String twoColorString;
-
   @Test
   public void whenIntegerAnnotatedWithMinimumOnly_addToSchema() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("valueWithMinimum"));
@@ -162,10 +157,6 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.valueWithMinimum.minimum", equalTo(7)));
     assertThat(schema, hasNoJsonPath("$.valueWithMinimum.maximum"));
   }
-
-  @SuppressWarnings("unused")
-  @Range(minimum = 7)
-  private int valueWithMinimum;
 
   @Test
   public void whenIntegerAnnotatedWithMaximumOnly_addToSchema() throws NoSuchFieldException {
@@ -175,10 +166,6 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.valueWithMaximum.maximum", equalTo(43)));
   }
 
-  @SuppressWarnings("unused")
-  @Range(maximum = 43)
-  private int valueWithMaximum;
-
   @Test
   public void whenIntegerAnnotatedWithRange_addToSchema() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("valueWithRange"));
@@ -187,20 +174,12 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.valueWithRange.maximum", equalTo(85)));
   }
 
-  @SuppressWarnings("unused")
-  @Range(minimum = 12, maximum = 85)
-  private int valueWithRange;
-
   @Test
   public void whenStringAnnotatedWithPatterne_addToSchema() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("codeName"));
 
     assertThat(schema, hasJsonPath("$.codeName.pattern", equalTo("[A-Z][a-zA-Z_]*")));
   }
-
-  @SuppressWarnings("unused")
-  @Pattern("[A-Z][a-zA-Z_]*")
-  private String codeName;
 
   @Test
   public void generateSchemaForAnnotatedDouble() throws NoSuchFieldException {
@@ -209,10 +188,6 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.annotatedDouble.type", equalTo("number")));
     assertThat(schema, hasJsonPath("$.annotatedDouble.description", equalTo("An annotated field")));
   }
-
-  @SuppressWarnings("unused")
-  @Description("An annotated field")
-  private Double annotatedDouble;
 
   @Test
   public void doNotGenerateSchemaForStatics() {
@@ -231,10 +206,10 @@ public class SchemaGeneratorTest {
         schema, hasJsonPath("$.$schema", equalTo("http://json-schema.org/draft-04/schema#")));
     assertThat(schema, hasJsonPath("$.type", equalTo("object")));
     assertThat(schema, hasJsonPath("$.additionalProperties", equalTo("false")));
-    assertThat(schema, hasJsonPath("$.properties.aBoolean.type", equalTo("boolean")));
-    assertThat(schema, hasJsonPath("$.properties.aString.type", equalTo("string")));
-    assertThat(schema, hasJsonPath("$.properties.aBoolean.description", equalTo("A flag")));
-    assertThat(schema, hasJsonPath("$.properties.aString.description", equalTo("A string")));
+    assertThat(schema, hasJsonPath("$.properties.aaBoolean.type", equalTo("boolean")));
+    assertThat(schema, hasJsonPath("$.properties.aaString.type", equalTo("string")));
+    assertThat(schema, hasJsonPath("$.properties.aaBoolean.description", equalTo("A flag")));
+    assertThat(schema, hasJsonPath("$.properties.aaString.description", equalTo("A string")));
   }
 
   @Test
@@ -253,9 +228,6 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasNoJsonPath("$.additionalProperties"));
   }
 
-  @SuppressWarnings("unused")
-  private SimpleObject simpleObject;
-
   @Test
   public void generateSchemaForDerivedObject() {
     Object schema = generator.generate(DerivedObject.class);
@@ -263,15 +235,15 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.description", equalTo("A simple object used for testing")));
     assertThat(schema, hasJsonPath("$.type", equalTo("object")));
     assertThat(schema, hasJsonPath("$.additionalProperties", equalTo("false")));
-    assertThat(schema, hasJsonPath("$.properties.aBoolean.type", equalTo("boolean")));
-    assertThat(schema, hasJsonPath("$.properties.aString.type", equalTo("string")));
+    assertThat(schema, hasJsonPath("$.properties.aaBoolean.type", equalTo("boolean")));
+    assertThat(schema, hasJsonPath("$.properties.aaString.type", equalTo("string")));
     assertThat(schema, hasJsonPath("$.properties.anInt.type", equalTo("number")));
-    assertThat(schema, hasJsonPath("$.properties.aBoolean.description", equalTo("A flag")));
-    assertThat(schema, hasJsonPath("$.properties.aString.description", equalTo("A string")));
+    assertThat(schema, hasJsonPath("$.properties.aaBoolean.description", equalTo("A flag")));
+    assertThat(schema, hasJsonPath("$.properties.aaString.description", equalTo("A string")));
     assertThat(schema, hasJsonPath("$.properties.anInt.description", equalTo("An int\nvalue")));
     assertThat(schema, hasJsonPath("$.properties.depth.type", equalTo("number")));
     assertThat(
-        schema, hasJsonPath("$.required", arrayContainingInAnyOrder("aBoolean", "anInt", "depth")));
+        schema, hasJsonPath("$.required", arrayContainingInAnyOrder("aaBoolean", "anInt", "depth")));
   }
 
   @Test
@@ -284,13 +256,13 @@ public class SchemaGeneratorTest {
         schema, hasJsonPath("$.properties.derived.$ref", equalTo("#/definitions/DerivedObject")));
     assertThat(
         schema,
-        hasJsonPath("$.definitions.SimpleObject.properties.aBoolean.type", equalTo("boolean")));
+        hasJsonPath("$.definitions.SimpleObject.properties.aaBoolean.type", equalTo("boolean")));
     assertThat(
         schema,
-        hasJsonPath("$.definitions.SimpleObject.properties.aString.type", equalTo("string")));
+        hasJsonPath("$.definitions.SimpleObject.properties.aaString.type", equalTo("string")));
     assertThat(
         schema,
-        hasJsonPath("$.definitions.DerivedObject.properties.aString.type", equalTo("string")));
+        hasJsonPath("$.definitions.DerivedObject.properties.aaString.type", equalTo("string")));
     assertThat(
         schema,
         hasJsonPath("$.definitions.DerivedObject.properties.anInt.type", equalTo("number")));
@@ -303,12 +275,12 @@ public class SchemaGeneratorTest {
 
     assertThat(schema, hasJsonPath("$.properties.simple.type", equalTo("object")));
     assertThat(
-        schema, hasJsonPath("$.properties.simple.properties.aBoolean.type", equalTo("boolean")));
+        schema, hasJsonPath("$.properties.simple.properties.aaBoolean.type", equalTo("boolean")));
     assertThat(
-        schema, hasJsonPath("$.properties.simple.properties.aString.type", equalTo("string")));
+        schema, hasJsonPath("$.properties.simple.properties.aaString.type", equalTo("string")));
     assertThat(schema, hasJsonPath("$.properties.derived.type", equalTo("object")));
     assertThat(
-        schema, hasJsonPath("$.properties.derived.properties.aString.type", equalTo("string")));
+        schema, hasJsonPath("$.properties.derived.properties.aaString.type", equalTo("string")));
     assertThat(
         schema, hasJsonPath("$.properties.derived.properties.anInt.type", equalTo("number")));
   }
@@ -319,7 +291,7 @@ public class SchemaGeneratorTest {
 
     assertThat(
         schema,
-        hasJsonPath("$.definitions.SimpleObject.properties.aBoolean.type", equalTo("boolean")));
+        hasJsonPath("$.definitions.SimpleObject.properties.aaBoolean.type", equalTo("boolean")));
     assertThat(
         schema,
         hasJsonPath(
@@ -407,6 +379,22 @@ public class SchemaGeneratorTest {
   @Test(expected = IOException.class)
   public void whenNonCachedK8sVersionSpecified_throwException() throws IOException {
     generator.useKubernetesVersion("1.12.0");
+  }
+
+  @SuppressWarnings("unused")
+  private enum TrafficLightColors {
+    RED,
+    YELLOW {
+      @Override
+      boolean forSmallLight() {
+        return false;
+      }
+    },
+    GREEN;
+
+    boolean forSmallLight() {
+      return true;
+    }
   }
 
   // todo (future, maybe): generate $id nodes where they can simplify $ref urls

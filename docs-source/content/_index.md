@@ -1,6 +1,6 @@
 ### Oracle WebLogic Server Kubernetes Operator
 
-Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. In addition, we've provided an open-source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:
+Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. In addition, we've provided an open source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:
 
 * Create WebLogic domains in a Kubernetes persistent volume. This persistent volume can reside in an NFS file system or other Kubernetes volume types.
 * Create a WebLogic domain in a Docker image.
@@ -14,12 +14,16 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 * Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 
-The fastest way to experience the operator is to follow the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}), or you can peruse our [documentation]({{< relref "/userguide/_index.md" >}}), read our [blogs](https://blogs.oracle.com/weblogicserver/updated-weblogic-kubernetes-support-with-operator-20), or try out the [samples]({{< relref "/samples/_index.md" >}}).
+The fastest way to experience the operator is to follow the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}), or you can peruse our [documentation]({{< relref "/userguide/_index.md" >}}), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples]({{< relref "/samples/_index.md" >}}).
 
 ***
-The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.2.1.
-This release was published on June 20, 2019.
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.4.0.
+This release was published on November 15th, 2019.
 ***
+
+{{% notice note %}}
+Please review the prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction" >}}).
+{{% /notice %}}
 
 #### Operator earlier versions
 

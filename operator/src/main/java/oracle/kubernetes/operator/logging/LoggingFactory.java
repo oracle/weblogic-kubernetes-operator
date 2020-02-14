@@ -1,13 +1,13 @@
-// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
 
-import io.kubernetes.client.JSON;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import io.kubernetes.client.JSON;
 
 /** A factory to create Loggers. */
 public class LoggingFactory {
@@ -17,16 +17,16 @@ public class LoggingFactory {
 
   private static JSON json = new JSON();
 
-  public static void setJSON(JSON json) {
-    LoggingFactory.json = json;
+  private LoggingFactory() {
+    // hide implicit public constructor
   }
 
-  static JSON getJSON() {
+  static JSON getJson() {
     return json;
   }
 
-  private LoggingFactory() {
-    // hide implicit public constructor
+  public static void setJson(JSON json) {
+    LoggingFactory.json = json;
   }
 
   /**

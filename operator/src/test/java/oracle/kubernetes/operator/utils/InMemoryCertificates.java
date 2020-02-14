@@ -1,13 +1,13 @@
-// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
 import java.nio.file.Path;
 import java.util.function.Function;
+
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 
 @SuppressWarnings("SameParameterValue")
 public class InMemoryCertificates {
