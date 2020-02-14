@@ -47,9 +47,6 @@ public class SchemaGenerator {
   // a map of external class names to the external schema that defines them
   private Map<String, String> schemaUrls = new HashMap<>();
 
-  // true if deprecated fields should be included in the schema
-  private boolean includeDeprecated;
-
   // if true generate the additionalProperties field for each object. Defaults to true
   private boolean includeAdditionalProperties = true;
 
@@ -114,29 +111,10 @@ public class SchemaGenerator {
     Map<String, Map<String, Object>> objectObjectMap = loadCachedSchema(cacheUrl);
     Map<String, Object> definitions = objectObjectMap.get("definitions");
     for (Map.Entry<String, Object> entry : definitions.entrySet()) {
-      if (isDefinitionToUse(entry.getValue())) {
+      if (!entry.getKey().startsWith("io.k8s.kubernetes.pkg.")) {
         schemaUrls.put(entry.getKey(), schemaUrl.toString());
       }
     }
-  }
-
-  @SuppressWarnings("unchecked")
-  private boolean isDefinitionToUse(Object def) {
-    Map<String, Object> definition = (Map<String, Object>) def;
-    return !isDeprecated(definition.get("description"));
-  }
-
-  private boolean isDeprecated(Object description) {
-    return description != null && description.toString().contains("Deprecated");
-  }
-
-  /**
-   * Specifies whether deprecated fields should be included in the schema.
-   *
-   * @param includeDeprecated true to include deprecated fields. Defaults to false.
-   */
-  public void setIncludeDeprecated(boolean includeDeprecated) {
-    this.includeDeprecated = includeDeprecated;
   }
 
   /**
@@ -201,7 +179,7 @@ public class SchemaGenerator {
   }
 
   private boolean includeInSchema(Field field) {
-    return !isStatic(field) && !isVolatile(field) && !ignoreAsDeprecated(field);
+    return !isStatic(field) && !isVolatile(field);
   }
 
   private boolean isStatic(Field field) {
@@ -212,8 +190,8 @@ public class SchemaGenerator {
     return Modifier.isVolatile(field.getModifiers());
   }
 
-  private boolean ignoreAsDeprecated(Field field) {
-    return !includeDeprecated && field.getAnnotation(Deprecated.class) != null;
+  private boolean isDeprecated(Field field) {
+    return field.getAnnotation(Deprecated.class) != null;
   }
 
   private String getPropertyName(Field field) {
@@ -234,6 +212,9 @@ public class SchemaGenerator {
     String description = getDescription(field);
     if (description != null) {
       result.put("description", description);
+    }
+    if (isDeprecated(field)) {
+      result.put("deprecated", "true");
     }
     if (isString(field.getType())) {
       addStringRestrictions(result, field);

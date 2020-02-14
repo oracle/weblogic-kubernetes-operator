@@ -19,6 +19,7 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -47,8 +48,9 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The folder for the WebLogic Domain. Not required."
-          + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false."
-          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true.")
+          + " Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume."
+          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image."
+          + " Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel.")
   private String domainHome;
 
   /**
@@ -78,29 +80,12 @@ public class DomainSpec extends BaseConfiguration {
   private V1SecretReference webLogicCredentialsSecret;
 
   /**
-   * Reference to secret opss key passphrase.
-   */
-  @Description(
-      "opss key passphrase.")
-  @Valid
-  private V1SecretReference opssWalletSecret;
-
-  /**
-   * Reference to wdt model encryption pass phrase.
-   */
-  @Description(
-      "wdt model encryption key passphrase.")
-  @Valid
-  private V1SecretReference wdtEncryptionPassPhrase;
-
-
-  /**
    * The in-pod name of the directory to store the domain, node manager, server logs, and server
    * .out files in.
    */
   @Description(
       "The in-pod name of the directory in which to store the domain, node manager, server logs, "
-          + "and server  *.out files")
+          + "and server  *.out files. Defaults to /shared/logs/<domainUID>. Ignored if logHomeEnabled is false.")
   private String logHome;
 
   /**
@@ -110,8 +95,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "Specified whether the log home folder is enabled. Not required. "
-          + "Defaults to true if domainHomeInImage is false. "
-          + "Defaults to false if domainHomeInImage is true. ")
+          + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   /**
@@ -135,7 +119,7 @@ public class DomainSpec extends BaseConfiguration {
    * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3
    */
   @Description(
-      "The WebLogic Docker image; required when domainHomeInImage is true; "
+      "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.")
   private String image;
 
@@ -179,16 +163,37 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
+  @Deprecated
   @Description(
-      "True if this domain's home is defined in the Docker image for the domain. Defaults to true.")
+      "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
+          + " True indicates that the domain home file system is contained in the Docker image"
+          + " specified by the image field. False indicates that the domain home file system is located"
+          + " on a persistent volume.")
   private Boolean domainHomeInImage;
+
+  @EnumClass(value = DomainSourceType.class)
+  @Description(
+      "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
+          + " Image indicates that the domain home file system is contained in the Docker image"
+          + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
+          + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
+          + " and managed by the operator based on a WDT domain model."
+          + " If this field is specified it overrides the value of domainHomeInImage. If both fields are"
+          + " unspecified then domainHomeSourceType defaults to Image.")
+  private String domainHomeSourceType;
+
+  @Description("Models and overrides affecting the WebLogic domain configuration.")
+  private Configuration configuration;
 
   /**
    * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
    *
    * @since 2.0
    */
-  @Description("The name of the config map for optional WebLogic configuration overrides.")
+  @Deprecated
+  @Description("Deprecated. Use configuration.overridesConfigMap instead."
+      + " Ignored if configuration.overridesConfigMap is specified."
+      + " The name of the config map for optional WebLogic configuration overrides.")
   private String configOverrides;
 
   /**
@@ -196,7 +201,9 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("A list of names of the secrets for optional WebLogic configuration overrides.")
+  @Deprecated
+  @Description("Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
+      + " A list of names of the secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets;
 
   /**
@@ -222,57 +229,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description("Configuration for the clusters.")
   protected List<Cluster> clusters = new ArrayList<>();
-
-  /**
-   * The name of the wdt config map used for optional wdt tool.
-   *
-   * @since 2.3.1
-   */
-
-  @Description("The name of the wdt config map used for optional wdt tool.")
-  private String wdtConfigMap;
-
-  /**
-   * The name of the config map to store the opss key wallet file.
-   *
-   * @since 2.3.1
-   */
-  @Description("The name of the config map to store the opss key wallet file")
-  private String opssKeyWalletConfigMap;
-
-  /**
-   * Rollback dynamic changes if the updates require restart.
-   *
-   * @since 2.3.1
-   */
-  @Description("Rollback dynamic changes if the updates require restart")
-  private Boolean rollbackIfRequireStart;
-
-  /**
-   * Use online update.
-   *
-   * @since 2.3.1
-   */
-  @Description("Use Online update during lifecycle changes")
-  private Boolean useOnlineUpdate;
-
-  /**
-   * wdt domain type.
-   *
-   * @since 2.3.1
-   */
-  @EnumClass(value = ModelInImageDomainType.class)
-  @Description("Model in image - wdt domain type: Legal values: WLS, RestrictedJRF, JRF")
-  private String wdtDomainType;
-
-
-  /**
-   * keep jrf schema.
-   *
-   * @since 2.3.1
-   */
-  @Description("Keep JRF schema between lifecycle updates")
-  private Boolean keepJrfSchema;
 
   @Description("Experimental feature configurations.")
   private Experimental experimental;
@@ -403,16 +359,6 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-
-  public V1SecretReference getOpssWalletSecret() {
-    return opssWalletSecret;
-  }
-
-  @SuppressWarnings("unused")
-  public void setOpssWalletSecret(V1SecretReference opssWalletSecret) {
-    this.opssWalletSecret = opssWalletSecret;
-  }
-
   /**
    * Reference to secret containing WebLogic startup credentials username and password. Secret must
    * contain keys names 'username' and 'password'. Required.
@@ -422,27 +368,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   public DomainSpec withOpssKeyPassPhrase(V1SecretReference opssKeyPassPhrase) {
     this.webLogicCredentialsSecret = opssKeyPassPhrase;
-    return this;
-  }
-
-
-  public V1SecretReference getWdtEncryptionPassPhrase() {
-    return wdtEncryptionPassPhrase;
-  }
-
-  @SuppressWarnings("unused")
-  public void setWdtEncryptionPassPhrase(V1SecretReference wdtEncryptionPassPhrase) {
-    this.wdtEncryptionPassPhrase = wdtEncryptionPassPhrase;
-  }
-
-  /**
-   * Reference to secret wdt model encryption pass phrase.
-   *
-   * @param wdtEncryptionPassPhrase WebLogic startup credentials secret
-   * @return this
-   */
-  public DomainSpec withWdtEncryptionPassPhrase(V1SecretReference wdtEncryptionPassPhrase) {
-    this.wdtEncryptionPassPhrase = wdtEncryptionPassPhrase;
     return this;
   }
 
@@ -512,8 +437,8 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    * @return log home enabled
    */
-  boolean isLogHomeEnabled() {
-    return Optional.ofNullable(logHomeEnabled).orElse(!isDomainHomeInImage());
+  Boolean isLogHomeEnabled() {
+    return logHomeEnabled;
   }
 
   /**
@@ -522,71 +447,9 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    * @param logHomeEnabled log home enabled
    */
-  public void setLogHomeEnabled(boolean logHomeEnabled) {
+  public void setLogHomeEnabled(Boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
   }
-
-  /**
-   * isRollbackIfRequireStart.
-   *
-   * <p>An optional, For model in image, this attribute determines the lifecycle update behavior
-   *
-   * @return value of the rollback if require restart.
-   */
-  boolean isRollbackIfRequireStart() {
-    return Optional.ofNullable(rollbackIfRequireStart).orElse(false);
-  }
-
-  public void setRollbackIfRequireStart(boolean rollbackIfRequireStart) {
-    this.rollbackIfRequireStart = rollbackIfRequireStart;
-  }
-
-
-  /**
-   * useOnlineUpdate.
-   *
-   * <p>An optional, For model in image, this attribute set to use online updates
-   *
-   * @return whether to use online updates or not.
-   */
-  boolean isUseOnlineUpdate() {
-    return Optional.ofNullable(useOnlineUpdate).orElse(false);
-  }
-
-  public void setUseOnlineUpdate(boolean useOnlineUpdate) {
-    this.useOnlineUpdate = useOnlineUpdate;
-  }
-
-  /**
-   * keepJRFSchema
-   *
-   * <p>An optional, For model in image, this attribute determines keeping the jrf schema between updates.
-   *
-   * @return true or false.
-   */
-  boolean isKeepJrfSchema() {
-    return Optional.ofNullable(keepJrfSchema).orElse(true);
-  }
-
-  public void setKeepJrfSchema(boolean keepJrfSchema) {
-    this.keepJrfSchema = keepJrfSchema;
-  }
-
-  /**
-   * wdtDomainType.
-   *
-   * <p>An optional, For model in image, this attribute set the domain type
-   * @return domain type (WLS|JRF|RestrictedJRF)
-   */
-  @Nullable
-  public String getWdtDomainType() {
-    return Optional.ofNullable(wdtDomainType).orElse("WLS");
-  }
-
-  public void setWdtDomainType(@Nullable String wdtDomainType) {
-    this.wdtDomainType = wdtDomainType;
-  }
-
 
   /**
    * Data Home.
@@ -628,8 +491,8 @@ public class DomainSpec extends BaseConfiguration {
    * @return true or false
    * @since 2.0
    */
-  boolean isDomainHomeInImage() {
-    return Optional.ofNullable(domainHomeInImage).orElse(true);
+  Boolean isDomainHomeInImage() {
+    return domainHomeInImage;
   }
 
   /**
@@ -643,6 +506,32 @@ public class DomainSpec extends BaseConfiguration {
 
   public DomainSpec withDomainHomeInImage(boolean domainHomeInImage) {
     setDomainHomeInImage(domainHomeInImage);
+    return this;
+  }
+
+  public String getDomainHomeSourceType() {
+    return domainHomeSourceType;
+  }
+
+  public void setDomainHomeSourceType(String domainHomeSourceType) {
+    this.domainHomeSourceType = domainHomeSourceType;
+  }
+
+  public DomainSpec withDomainHomeSourceType(String domainHomeSourceType) {
+    this.domainHomeSourceType = domainHomeSourceType;
+    return this;
+  }
+
+  public Configuration getConfiguration() {
+    return configuration;
+  }
+
+  public void setConfiguration(Configuration configuration) {
+    this.configuration = configuration;
+  }
+
+  public DomainSpec withConfiguration(Configuration configuration) {
+    this.configuration = configuration;
     return this;
   }
 
@@ -676,53 +565,6 @@ public class DomainSpec extends BaseConfiguration {
   public DomainSpec withReplicas(Integer replicas) {
     this.replicas = replicas;
     return this;
-  }
-
-  /**
-   * Get wdt config map.
-   *
-   * @return wdt config map
-   */
-  @Nullable
-  String getWdtConfigMap() {
-    return wdtConfigMap;
-  }
-
-  /**
-   * Set wdt config map.
-   *
-   * @param wdtConfigMap wdt configmap name
-   */
-  void settWdtConfigMap(@Nullable String wdtConfigMap) {
-    this.wdtConfigMap = wdtConfigMap;
-  }
-
-  public DomainSpec withWdtConfigMap(@Nullable String wdtConfigMap) {
-    this.wdtConfigMap = wdtConfigMap;
-    return this;
-  }
-
-  /**
-   * Get wdt model encryption passphrase secret name.
-   *
-   * @return wdt model encryption passphrase secret name
-   */
-  @Nullable
-  String getOpssKeyWalletConfigMap() {
-    return opssKeyWalletConfigMap;
-  }
-
-  /**
-   * Set wdt model encryption passphrase secret name.
-   *
-   * @param opssKeyWalletConfigMap wdt model encryption passphrase secret name
-   */
-  void setOpssKeyWalletConfigMap(@Nullable String opssKeyWalletConfigMap) {
-    this.opssKeyWalletConfigMap = opssKeyWalletConfigMap;
-  }
-
-  private boolean hasWdtConfigMapSecret() {
-    return opssKeyWalletConfigMap != null;
   }
 
   @Nullable
@@ -772,6 +614,50 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(8888);
   }
 
+  String getWdtDomainType() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getModel)
+        .map(Model::getDomainType)
+        .orElse(ModelInImageDomainType.WLS.toString());
+  }
+
+  String getOpssWalletPasswordSecret() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getOpss)
+        .map(Opss::getWalletPasswordSecret)
+        .orElse(null);
+  }
+
+  /**
+   * Get OPSS wallet file secret.
+   * @return wallet file secret
+   */
+  public String getOpssWalletFileSecret() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getOpss)
+        .map(Opss::getWalletFileSecret)
+        .orElse(null);
+  }
+
+
+  String getWdtEncryptionSecret() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getModel)
+        .map(Model::getEncryptionSecret)
+        .orElse(null);
+  }
+
+  /**
+   * Get WDT config map.
+   * @return config map name
+   */
+  public String getWdtConfigMap() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getModel)
+        .map(Model::getConfigMap)
+        .orElse(null);
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -780,6 +666,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("domainUID", domainUid)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
+            .append("domainHomeSourceType", domainHomeSourceType)
+            .append("configuration", configuration)
             .append("serverStartPolicy", serverStartPolicy)
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("image", image)
@@ -794,13 +682,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets)
-            .append("experimental", experimental)
-            .append("opssKeyWalletConfigMap", opssKeyWalletConfigMap)
-            .append("wdtConfigMap", wdtConfigMap)
-            .append("rollbackIfRequireStart", rollbackIfRequireStart)
-            .append("useOnlineUpdate", useOnlineUpdate)
-            .append("wdtDomainType", wdtDomainType)
-            .append("keepJRFSchema", keepJrfSchema);
+            .append("experimental", experimental);
 
     return builder.toString();
   }
@@ -813,6 +695,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUid)
             .append(domainHome)
             .append(domainHomeInImage)
+            .append(domainHomeSourceType)
+            .append(configuration)
             .append(serverStartPolicy)
             .append(webLogicCredentialsSecret)
             .append(image)
@@ -827,13 +711,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog)
             .append(configOverrides)
             .append(configOverrideSecrets)
-            .append(opssKeyWalletConfigMap)
-            .append(wdtConfigMap)
-            .append(experimental)
-            .append(rollbackIfRequireStart)
-            .append(useOnlineUpdate)
-            .append(keepJrfSchema)
-            .append(wdtDomainType);
+            .append(experimental);
 
     return builder.toHashCode();
   }
@@ -854,6 +732,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUid, rhs.domainUid)
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
+            .append(domainHomeSourceType, rhs.domainHomeSourceType)
+            .append(configuration, rhs.configuration)
             .append(serverStartPolicy, rhs.serverStartPolicy)
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
             .append(image, rhs.image)
@@ -868,14 +748,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
-            .append(opssKeyWalletConfigMap, rhs.opssKeyWalletConfigMap)
-            .append(wdtConfigMap, rhs.wdtConfigMap)
-            .append(experimental, rhs.experimental)
-            .append(useOnlineUpdate, rhs.useOnlineUpdate)
-            .append(wdtDomainType, rhs.wdtDomainType)
-            .append(keepJrfSchema, rhs.keepJrfSchema)
-            .append(rollbackIfRequireStart, rhs.rollbackIfRequireStart);
-
+            .append(experimental, rhs.experimental);
     return builder.isEquals();
   }
 

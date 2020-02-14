@@ -15,8 +15,8 @@ spec:
   # The WebLogic Domain Home
   domainHome: %DOMAIN_HOME%
 
-  # If the domain home is in the image
-  domainHomeInImage: %DOMAIN_HOME_IN_IMAGE%
+  # The domain home source type
+  domainHomeSourceType: %DOMAIN_HOME_SOURCE_TYPE%
 
   # The WebLogic Server Docker image that the Operator uses to start the domain
   image: "%WEBLOGIC_IMAGE%"

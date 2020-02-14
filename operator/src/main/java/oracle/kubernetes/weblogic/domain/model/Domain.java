@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.helpers.SecretType;
@@ -350,8 +351,8 @@ public class Domain {
    *
    * @return opss key passphrase
    */
-  public V1SecretReference getOpssWalletSecret() {
-    return spec.getOpssWalletSecret();
+  public String getOpssWalletPasswordSecret() {
+    return spec.getOpssWalletPasswordSecret();
   }
 
   /**
@@ -359,8 +360,8 @@ public class Domain {
    *
    * @return wdt encryption passphrase
    */
-  public V1SecretReference getWdtEncryptionPassPhrase() {
-    return spec.getWdtEncryptionPassPhrase();
+  public String getWdtEncryptionSecret() {
+    return spec.getWdtEncryptionSecret();
   }
 
 
@@ -389,23 +390,12 @@ public class Domain {
   }
 
   boolean isLogHomeEnabled() {
-    return spec.isLogHomeEnabled();
+    return Optional.ofNullable(spec.isLogHomeEnabled())
+        .orElse(DomainSourceType.PersistentVolume.toString().equals(getDomainHomeSourceType()));
   }
 
   public String getDataHome() {
     return spec.getDataHome();
-  }
-
-  public boolean isRollbackIfRequireRestart() {
-    return spec.isRollbackIfRequireStart();
-  }
-
-  public boolean isUseOnlineUpdate() {
-    return spec.isUseOnlineUpdate();
-  }
-
-  public boolean isKeepJrfSchema() {
-    return spec.isKeepJrfSchema();
   }
 
   public String getWdtDomainType() {
@@ -416,8 +406,19 @@ public class Domain {
     return spec.getIncludeServerOutInPodLog();
   }
 
-  boolean isDomainHomeInImage() {
-    return spec.isDomainHomeInImage();
+  /**
+   * Get domain home source type.
+   * @return source type
+   */
+  public String getDomainHomeSourceType() {
+    return Optional.ofNullable(spec.getDomainHomeSourceType()).orElseGet(
+        () -> getModel() != null ? DomainSourceType.FromModel.toString()
+            : (Optional.ofNullable(spec.isDomainHomeInImage())
+            .orElse(true) ? DomainSourceType.Image.toString() : DomainSourceType.PersistentVolume.toString()));
+  }
+
+  public Model getModel() {
+    return Optional.ofNullable(spec.getConfiguration()).map(Configuration::getModel).orElse(null);
   }
 
   public boolean isIstioEnabled() {
@@ -439,10 +440,13 @@ public class Domain {
     if (spec.getDomainHome() != null) {
       return spec.getDomainHome();
     }
-    if (spec.isDomainHomeInImage()) {
+    if (DomainSourceType.Image.toString().equals(getDomainHomeSourceType())) {
       return "/u01/oracle/user_projects/domains";
+    } else if (DomainSourceType.PersistentVolume.toString().equals(getDomainHomeSourceType())) {
+      return "/shared/domains/" + getDomainUid();
+    } else { // FromModel
+      return "/u01/domains/" + getDomainUid();
     }
-    return "/shared/domains/" + getDomainUid();
   }
 
   public boolean isShuttingDown() {
@@ -464,7 +468,8 @@ public class Domain {
    * @return name of the config map
    */
   public String getConfigOverrides() {
-    return spec.getConfigOverrides();
+    return Optional.ofNullable(spec.getConfiguration())
+        .map(Configuration::getOverridesConfigMap).orElse(spec.getConfigOverrides());
   }
 
   public String getWdtConfigMap() {
@@ -477,16 +482,17 @@ public class Domain {
    * @return list of Kubernetes secret names
    */
   public List<String> getConfigOverrideSecrets() {
-    return spec.getConfigOverrideSecrets();
+    return Optional.ofNullable(spec.getConfiguration())
+        .map(Configuration::getSecrets).orElse(spec.getConfigOverrideSecrets());
   }
 
   /**
-   * Returns the opss key config map.
+   * Returns the opss wallet config map.
    *
-   * @return opss key config map.
+   * @return opss wallet config map.
    */
-  public String getOpssKeyWalletConfigMap() {
-    return spec.getOpssKeyWalletConfigMap();
+  public String getOpssWalletFileSecret() {
+    return spec.getOpssWalletFileSecret();
   }
 
   @Override
@@ -678,10 +684,6 @@ public class Domain {
 
     private List<V1LocalObjectReference> getImagePullSecrets() {
       return spec.getImagePullSecrets();
-    }
-
-    private List<String> getConfigOverrideSecrets() {
-      return spec.getConfigOverrideSecrets();
     }
 
     @SuppressWarnings("SameParameterValue")

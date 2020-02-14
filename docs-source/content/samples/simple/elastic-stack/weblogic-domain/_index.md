@@ -266,7 +266,7 @@ spec:
   - clusterName: cluster-1
     serverPod:
   domainHome: /u01/oracle/user_projects/domains/bobs-bookstore
-  domainHomeInImage: true
+  domainHomeSourceType: Image
   domainUID: bobs-bookstore
   experimental:
     istio:

@@ -21,8 +21,8 @@ spec:
   # Note that this might be in the image itself or in a mounted volume or network storage.
   domainHome: /u01/oracle/user_projects/domains/domain1
 
-  # If the domain home is inside the Docker image, set this to `true`, otherwise set `false`:
-  domainHomeInImage: true
+  # Domain home source type.  Legal values are Image, PersistentVolume, or FromModel
+  domainHomeSourceType: Image
 
   # Update this with the name of the Docker image that will be used to run your domain:
   image: "my-domain1-image:1.0"
