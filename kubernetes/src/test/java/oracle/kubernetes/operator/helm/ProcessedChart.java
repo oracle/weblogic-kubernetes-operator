@@ -134,15 +134,15 @@ public class ProcessedChart implements YamlReader {
   private Process processChart() throws Exception {
     // determine Helm version
     Process vp = new ProcessBuilder(new String[] {
-        "helm", "version", "--template='{{.Version}}'"
+        "helm", "version", "--client", "--short"
     }).start();
     vp.waitFor();
     String version = CharStreams.toString(new InputStreamReader(vp.getInputStream()));
 
     boolean isHelm3;
-    if (version.startsWith("'v3.")) {
+    if (version.startsWith("v3.")) {
       isHelm3 = true;
-    } else if (version.startsWith("'v2.")) {
+    } else if (version.startsWith("Client: v2.") || version.startsWith("v2.")) {
       isHelm3 = false;
     } else {
       throw new IllegalArgumentException("Helm version unrecognized: " + version);
