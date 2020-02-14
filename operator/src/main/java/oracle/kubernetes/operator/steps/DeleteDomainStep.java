@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -6,7 +6,9 @@ package oracle.kubernetes.operator.steps;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -23,6 +25,12 @@ public class DeleteDomainStep extends Step {
   private final String namespace;
   private final String domainUid;
 
+  /**
+   * Construct delete domain step.
+   * @param info domain presence
+   * @param namespace namespace
+   * @param domainUid domain UID
+   */
   public DeleteDomainStep(DomainPresenceInfo info, String namespace, String domainUid) {
     super(null);
     this.info = info;

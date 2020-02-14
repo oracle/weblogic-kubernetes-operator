@@ -3,6 +3,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1beta1CustomResourceSubresourceScale
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceSubresources;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.openapi.models.V1beta1JSONSchemaProps;
+import io.kubernetes.client.util.Yaml;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -41,6 +47,31 @@ public class CrdHelper {
   private static final CrdComparator COMPARATOR = new CrdComparatorImpl();
 
   private CrdHelper() {
+  }
+
+  /**
+   * Used by build to generate crd-validation.yaml
+   * @param args Arguments that must be one value giving file name to create
+   */
+  public static void main(String[] args) {
+    if (args == null || args.length != 1) {
+      throw new IllegalArgumentException();
+    }
+
+    String outputFileName = args[0];
+
+    Path outputFilePath = Paths.get(outputFileName);
+    CrdContext context = new CrdContext(null, null);
+
+    try (Writer writer = Files.newBufferedWriter(outputFilePath)) {
+      writer.write(
+          "# Copyright (c) 2020, Oracle Corporation and/or its affiliates.  All rights reserved.\n"
+              + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
+      writer.write("\n");
+      Yaml.dump(context.model, writer);
+    } catch (IOException io) {
+      throw new RuntimeException(io);
+    }
   }
 
   /**
@@ -122,7 +153,7 @@ public class CrdHelper {
               .scope("Namespaced")
               .names(getCrdNames())
               .validation(createSchemaValidation());
-      if (version.isCrdSubresourcesSupported()) {
+      if (version == null || version.isCrdSubresourcesSupported()) {
         spec.setSubresources(
             new V1beta1CustomResourceSubresources()
                 .scale(
@@ -140,7 +171,7 @@ public class CrdHelper {
     static List<V1beta1CustomResourceDefinitionVersion> getCrdVersions() {
       List<V1beta1CustomResourceDefinitionVersion> versions =
           Arrays.stream(KubernetesConstants.DOMAIN_ALTERNATE_VERSIONS)
-              .map(e -> new V1beta1CustomResourceDefinitionVersion().name(e).served(true))
+              .map(e -> new V1beta1CustomResourceDefinitionVersion().name(e).served(true).storage(false))
               .collect(Collectors.toList());
       versions.add(
           0, // must be first

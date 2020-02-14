@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -65,6 +65,10 @@ public class DomainUpPlanTest {
     return DomainPresenceStep.createDomainPresenceStep(domain, adminStep, managedServersStep);
   }
 
+  /**
+   * Setup test environment.
+   * @throws NoSuchFieldException if test support fails to install.
+   */
   @Before
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -74,9 +78,15 @@ public class DomainUpPlanTest {
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
 
+  /**
+   * Cleanup test environment.
+   * @throws Exception if test support fails.
+   */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }
@@ -197,8 +207,9 @@ public class DomainUpPlanTest {
 
     @Override
     protected boolean matchesSafely(V1Pod item, Description mismatchDescription) {
-      if (getContainerPorts(item).stream().anyMatch(p -> p.getContainerPort() == expectedPort))
+      if (getContainerPorts(item).stream().anyMatch(p -> p.getContainerPort() == expectedPort)) {
         return true;
+      }
 
       mismatchDescription.appendText("No matching port found in pod ").appendText(item.toString());
       return false;
@@ -260,11 +271,12 @@ public class DomainUpPlanTest {
 
     @Override
     public void describeTo(Description description) {
-      if (expectedSteps.length == 1)
+      if (expectedSteps.length == 1) {
         description.appendText("expected step ").appendValue(expectedSteps[0]);
-      else
+      } else {
         description.appendValueList(
             "expected steps in order to include: ", ",", ".", expectedSteps);
+      }
     }
   }
 

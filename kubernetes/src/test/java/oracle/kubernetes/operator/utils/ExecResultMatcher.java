@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -44,6 +44,12 @@ public class ExecResultMatcher extends TypeSafeDiagnosingMatcher<ExecResult> {
     return ".*" + regexp + ".*";
   }
 
+  /**
+   * match all items.
+   * @param list list
+   * @param more more
+   * @return set of combined
+   */
   public static String[] allOf(String[] list, String... more) {
     String[] combined = new String[list.length + more.length];
     System.arraycopy(list, 0, combined, 0, list.length);

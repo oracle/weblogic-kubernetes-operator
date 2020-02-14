@@ -29,40 +29,40 @@ public final class HealthCheckHelper {
   private static final Map<AuthorizationProxy.Resource, AuthorizationProxy.Operation[]>
       clusterAccessChecks = new HashMap<>();
 
-  // Note: this list should match the RBAC or ABAC policies contained in the YAML script
+  // Note: this list should match the policies contained in the YAML script
   // generated for use by the Kubernetes administrator
   //
   private static final AuthorizationProxy.Operation[] crudOperations = {
-    AuthorizationProxy.Operation.get,
-    AuthorizationProxy.Operation.list,
-    AuthorizationProxy.Operation.watch,
-    AuthorizationProxy.Operation.create,
-    AuthorizationProxy.Operation.update,
-    AuthorizationProxy.Operation.patch,
-    AuthorizationProxy.Operation.delete,
-    AuthorizationProxy.Operation.deletecollection
+      AuthorizationProxy.Operation.get,
+      AuthorizationProxy.Operation.list,
+      AuthorizationProxy.Operation.watch,
+      AuthorizationProxy.Operation.create,
+      AuthorizationProxy.Operation.update,
+      AuthorizationProxy.Operation.patch,
+      AuthorizationProxy.Operation.delete,
+      AuthorizationProxy.Operation.deletecollection
   };
 
   private static final AuthorizationProxy.Operation[] cOperations = {
-    AuthorizationProxy.Operation.create
+      AuthorizationProxy.Operation.create
   };
 
   private static final AuthorizationProxy.Operation[] glOperations = {
-    AuthorizationProxy.Operation.get, AuthorizationProxy.Operation.list
+      AuthorizationProxy.Operation.get, AuthorizationProxy.Operation.list
   };
 
   private static final AuthorizationProxy.Operation[] glwOperations = {
-    AuthorizationProxy.Operation.get,
-    AuthorizationProxy.Operation.list,
-    AuthorizationProxy.Operation.watch
+      AuthorizationProxy.Operation.get,
+      AuthorizationProxy.Operation.list,
+      AuthorizationProxy.Operation.watch
   };
 
   private static final AuthorizationProxy.Operation[] glwupOperations = {
-    AuthorizationProxy.Operation.get,
-    AuthorizationProxy.Operation.list,
-    AuthorizationProxy.Operation.watch,
-    AuthorizationProxy.Operation.update,
-    AuthorizationProxy.Operation.patch
+      AuthorizationProxy.Operation.get,
+      AuthorizationProxy.Operation.list,
+      AuthorizationProxy.Operation.watch,
+      AuthorizationProxy.Operation.update,
+      AuthorizationProxy.Operation.patch
   };
 
   // default namespace or svc account name
@@ -110,7 +110,7 @@ public final class HealthCheckHelper {
       LOGGER.info(MessageKeys.NAMESPACE_IS_DEFAULT);
     }
 
-    // Validate RBAC or ABAC policies allow service account to perform required operations
+    // Validate policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
     LOGGER.info(MessageKeys.VERIFY_ACCESS_START, ns);
 
@@ -200,7 +200,7 @@ public final class HealthCheckHelper {
     if (apiGroup == null || apiGroup.isEmpty()) {
       return ruleApiGroups == null || ruleApiGroups.isEmpty() || ruleApiGroups.contains("");
     }
-    return ruleApiGroups != null && ruleApiGroups.contains(apiGroup);
+    return ruleApiGroups != null && (ruleApiGroups.contains("*") || ruleApiGroups.contains(apiGroup));
   }
 
   /**

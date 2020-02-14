@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -179,11 +179,6 @@ public class CallBuilder {
           wrap(
               createSubjectAccessReviewAsync(
                   usage, (V1SubjectAccessReview) requestParams.body, callback));
-  private final CallFactory<V1SelfSubjectAccessReview> createSelfsubjectaccessreview =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createSelfSubjectAccessReviewAsync(
-                  usage, (V1SelfSubjectAccessReview) requestParams.body, callback));
   private final CallFactory<V1SelfSubjectRulesReview> createSelfsubjectrulesreview =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -1380,10 +1375,6 @@ public class CallBuilder {
         responseStep, new RequestParams("listNamespace", null, null, null), listNamespace);
   }
 
-  protected String getNamespace(V1PersistentVolumeClaim claim) {
-    return claim.getMetadata().getNamespace();
-  }
-
   /**
    * Read secret.
    *
@@ -1546,32 +1537,8 @@ public class CallBuilder {
    */
   public V1SelfSubjectAccessReview createSelfSubjectAccessReview(V1SelfSubjectAccessReview body)
       throws ApiException {
-    RequestParams requestParams = new RequestParams("selfSubjectAccessReview", null, null, body);
+    RequestParams requestParams = new RequestParams("createSelfSubjectAccessReview", null, null, body);
     return executeSynchronousCall(requestParams, createSelfsubjectacessreviewCall);
-  }
-
-  private Call createSelfSubjectAccessReviewAsync(
-      ApiClient client,
-      V1SelfSubjectAccessReview body,
-      ApiCallback<V1SelfSubjectAccessReview> callback)
-      throws ApiException {
-    return new AuthorizationV1Api(client)
-        .createSelfSubjectAccessReviewAsync(body, null, null, pretty, callback);
-  }
-
-  /**
-   * Asynchronous step for creating self subject access review.
-   *
-   * @param body Body
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step createSelfSubjectAccessReviewAsync(
-      V1SelfSubjectAccessReview body, ResponseStep<V1SelfSubjectAccessReview> responseStep) {
-    return createRequestAsync(
-        responseStep,
-        new RequestParams("createSelfSubjectAccessReview", null, null, body),
-        createSelfsubjectaccessreview);
   }
 
   /**
@@ -1583,7 +1550,7 @@ public class CallBuilder {
    */
   public V1SelfSubjectRulesReview createSelfSubjectRulesReview(V1SelfSubjectRulesReview body)
       throws ApiException {
-    RequestParams params = new RequestParams("selfSubjectRulesReview", null, null, body);
+    RequestParams params = new RequestParams("createSelfSubjectRulesReview", null, null, body);
     return executeSynchronousCall(params, createSelfsubjectrulesreviewCall);
   }
 

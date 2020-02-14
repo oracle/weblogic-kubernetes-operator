@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package cohapp;
@@ -7,6 +7,10 @@ import static java.lang.System.exit;
 
 public class Main {
 
+  /**
+   * main.
+   * @param args arguments
+   */
   public static void main(String[] args) {
 
     try {

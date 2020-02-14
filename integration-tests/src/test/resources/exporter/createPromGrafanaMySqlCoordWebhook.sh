@@ -1,5 +1,5 @@
-#!/bin/bash -x
-# Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+#!/bin/bash
+# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upload
 monitoringExporterDir=$1
 domainNS=$5
@@ -74,32 +74,34 @@ if [ ${SHARED_CLUSTER} = "true" ]; then
     fi
     sed -i "s/webhook-log:1.0/$REPO_REGISTRY\/weblogick8s\/webhook-log:1.0/g"  ${resourceExporterDir}/server.yaml
     sed -i "s/config_coordinator/$REPO_REGISTRY\/weblogick8s\/config_coordinator/g"  ${resourceExporterDir}/coordinator_${domainNS}.yaml
+    sed -i "s/IfNotPresent/Always/g"  ${resourceExporterDir}/server.yaml
+    sed -i "s/IfNotPresent/Always/g"  ${resourceExporterDir}/coordinator_${domainNS}.yaml
 fi
 echo 'docker list images for webhook'
 docker images | grep webhook
 kubectl create ns webhook
-kubectl create secret docker-registry ocirsecret -n webhook \
-                    --docker-server=$REPO_REGISTRY \
-                    --docker-username=$REPO_USERNAME \
-                    --docker-password=$REPO_PASSWORD \
-                    --docker-email=$REPO_EMAIL  \
-                    --dry-run -o yaml | kubectl apply -f -
+if [ ${SHARED_CLUSTER} = "true" ]; then
+    kubectl create secret docker-registry ocirsecret -n webhook \
+                        --docker-server=$REPO_REGISTRY \
+                        --docker-username=$REPO_USERNAME \
+                        --docker-password=$REPO_PASSWORD \
+                        --docker-email=$REPO_EMAIL  \
+                        --dry-run -o yaml | kubectl apply -f -
+fi
 
-cat ${resourceExporterDir}/server.yaml
 kubectl apply -f ${resourceExporterDir}/server.yaml --validate=false
-kubectl get pods -n webhook
-POD_NAME=$(kubectl get pod -l app=webhook -o jsonpath="{.items[0].metadata.name}" -n webhook )
-
 echo "Getting info about webhook"
+kubectl get pods -n webhook
 
 #create coordinator
-kubectl create secret docker-registry ocirsecret -n ${domainNS} \
-                    --docker-server=$REPO_REGISTRY \
-                    --docker-username=$REPO_USERNAME \
-                    --docker-password=$REPO_PASSWORD \
-                    --docker-email=$REPO_EMAIL  \
-                    --dry-run -o yaml | kubectl apply -f -
-
+if [ ${SHARED_CLUSTER} = "true" ]; then
+    kubectl create secret docker-registry ocirsecret -n ${domainNS} \
+                        --docker-server=$REPO_REGISTRY \
+                        --docker-username=$REPO_USERNAME \
+                        --docker-password=$REPO_PASSWORD \
+                        --docker-email=$REPO_EMAIL  \
+                        --dry-run -o yaml | kubectl apply -f -
+fi
 
 kubectl apply -f ${resourceExporterDir}/coordinator_${domainNS}.yaml
 echo "Run the script [createPromGrafanaMySqlCoordWebhook.sh] ..."

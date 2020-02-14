@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -82,12 +82,10 @@ public class KubernetesArtifactUtils {
 
   public static final String API_GROUP_RBAC = "rbac.authorization.k8s.io";
 
-  public static final String API_VERSION_APPS_V1BETA1 = "apps/v1beta1";
+  public static final String API_VERSION_APPS_V1 = "apps/v1";
   public static final String API_VERSION_BATCH_V1 = "batch/v1";
-  public static final String API_VERSION_EXTENSIONS_V1BETA1 = "extensions/v1beta1";
   public static final String API_VERSION_REGISTRATION_V1BETA1 = "apiregistration.k8s.io/v1beta1";
   public static final String API_VERSION_RBAC_V1 = API_GROUP_RBAC + "/v1";
-  public static final String API_VERSION_RBAC_V1BETA1 = API_GROUP_RBAC + "/v1beta1";
   public static final String API_VERSION_WEBLOGIC_ORACLE =
       KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION;
   public static final String API_VERSION_V1 = "v1";
@@ -122,9 +120,13 @@ public class KubernetesArtifactUtils {
     return (new Domain()).withApiVersion(API_VERSION_WEBLOGIC_ORACLE).withKind(KIND_DOMAIN);
   }
 
+  /**
+   * Create deployment.
+   * @return deployment
+   */
   public static ExtensionsV1beta1Deployment newDeployment() {
     return (new ExtensionsV1beta1Deployment())
-        .apiVersion(API_VERSION_APPS_V1BETA1)
+        .apiVersion(API_VERSION_APPS_V1)
         .kind(KIND_DEPLOYMENT);
   }
 
@@ -140,6 +142,10 @@ public class KubernetesArtifactUtils {
     return (new V1PersistentVolume()).apiVersion(API_VERSION_V1).kind(KIND_PERSISTENT_VOLUME);
   }
 
+  /**
+   * Create persistent volume claim.
+   * @return persistent volume claim
+   */
   public static V1PersistentVolumeClaim newPersistentVolumeClaim() {
     return (new V1PersistentVolumeClaim())
         .apiVersion(API_VERSION_V1)
@@ -162,6 +168,10 @@ public class KubernetesArtifactUtils {
     return (new V1Secret()).apiVersion(API_VERSION_V1).kind(KIND_SECRET);
   }
 
+  /**
+   * Create API service.
+   * @return API service
+   */
   public static V1beta1APIService newApiService() {
     return (new V1beta1APIService())
         .apiVersion(API_VERSION_REGISTRATION_V1BETA1)
@@ -208,6 +218,10 @@ public class KubernetesArtifactUtils {
     return (new V1ClusterRole()).apiVersion(API_VERSION_RBAC_V1).kind(KIND_CLUSTER_ROLE);
   }
 
+  /**
+   * Create cluster role binding.
+   * @return cluster role binding
+   */
   public static V1ClusterRoleBinding newClusterRoleBinding() {
     return (new V1ClusterRoleBinding())
         .apiVersion(API_VERSION_RBAC_V1)
@@ -398,20 +412,22 @@ public class KubernetesArtifactUtils {
     return new FluentArrayList<E>();
   }
 
-  // Some of the k8s artifacts, especially config maps, contain scripts and
-  // configuration files whose values we don't want to hard code into the tests.
-  // However, some parts of these values can be expansions of text from the
-  // inputs files.
-  // For these cases, the general testing pattern is to:
-  // 1) extract the values from the actual k8s artifacts
-  // 2) empty the values in the actual k8s artifacts
-  // 3) create a desired k8s artifact, with empty values
-  // 4) use yamlEqualTo to compare the desired k8s artifact with the actual k8s
-  //    artifact whose values have been extracted and emptied
-  //    (i.e. make sure the rest of the fields of the actual k8s artifact are as expected
-  // 5) if (4) passes, THEN make sure that the extracted value contains the
-  //    expected expanded text (i.e. just test part of the text, not all of it)
-  // This method helps with (1) & (2)
+  /**
+   * Some of the k8s artifacts, especially config maps, contain scripts and // configuration
+   * files whose values we don't want to hard code into the tests. // However, some parts of these
+   * values can be expansions of text from the // inputs files. // For these cases, the general
+   * testing pattern is to: // 1) extract the values from the actual k8s artifacts // 2) empty the
+   * values in the actual k8s artifacts // 3) create a desired k8s artifact, with empty values // 4)
+   * use yamlEqualTo to compare the desired k8s artifact with the actual k8s // artifact whose
+   * values have been extracted and emptied // (i.e. make sure the rest of the fields of the actual
+   * k8s artifact are as expected // 5) if (4) passes, THEN make sure that the extracted value
+   * contains the // expected expanded text (i.e. just test part of the text, not all of it) // This
+   * method helps with (1) & (2).
+   *
+   * @param configMap config map
+   * @param key key
+   * @return data
+   */
   public static String getThenEmptyConfigMapDataValue(V1ConfigMap configMap, String key) {
     if (configMap != null) {
       Map<String, String> data = configMap.getData();

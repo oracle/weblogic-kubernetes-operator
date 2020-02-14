@@ -192,9 +192,9 @@ public class Main {
       runSteps(
           Step.chain(
               new InitializeNamespacesSecurityStep(targetNamespaces),
-              CrdHelper.createDomainCrdStep(version, 
+              CrdHelper.createDomainCrdStep(version,
                   new StartNamespacesStep(targetNamespaces)),
-              readExistingNamespaces()), 
+              readExistingNamespaces()),
           Main::completeBegin);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -226,7 +226,7 @@ public class Main {
 
   private static void stopNamespace(String ns, boolean remove) {
     processor.stopNamespace(ns);
-    AtomicBoolean stopping = 
+    AtomicBoolean stopping =
         remove ? isNamespaceStopping.remove(ns) : isNamespaceStopping.get(ns);
 
     if (stopping != null) {
@@ -241,8 +241,8 @@ public class Main {
     JobWatcher.removeNamespace(ns);
   }
 
-  private static void stopNamespaces(Collection<String> targetNamespaces, 
-      Collection<String> namespacesToStop) {
+  private static void stopNamespaces(Collection<String> targetNamespaces,
+                                     Collection<String> namespacesToStop) {
     for (String ns : namespacesToStop) {
       stopNamespace(ns, (! targetNamespaces.contains(ns)));
     }
@@ -270,7 +270,7 @@ public class Main {
       Collection<String> targetNamespaces = getTargetNamespaces();
 
       // Check for namespaces that are removed from the operator's
-      // targetNamespaces list, or that are deleted from the Kubernetes cluster. 
+      // targetNamespaces list, or that are deleted from the Kubernetes cluster.
       Set<String> namespacesToStop = new TreeSet<>(isNamespaceStopping.keySet());
       for (String ns : targetNamespaces) {
         // the active namespaces are the ones that will not be stopped
@@ -485,7 +485,7 @@ public class Main {
 
       // We only care about namespaces that are in our targetNamespaces
       if (!targetNamespaces.contains(ns)) return;
-      
+
       switch (item.type) {
         case "ADDED":
           // We only create the domain config map when a namespace is added.
@@ -501,12 +501,12 @@ public class Main {
           break;
 
         case "DELETED":
-          // Mark the namespace as isStopping, which will cause the namespace be stopped 
+          // Mark the namespace as isStopping, which will cause the namespace be stopped
           // the next time when recheckDomains is triggered
           if (delegate.isNamespaceRunning(ns)) {
             isNamespaceStopping.put(ns, new AtomicBoolean(true));
           }
-     
+
           break;
 
         case "MODIFIED":

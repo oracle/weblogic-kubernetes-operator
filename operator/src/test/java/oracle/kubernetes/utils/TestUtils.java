@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.utils;
@@ -36,7 +36,9 @@ public class TestUtils {
       }
     }
 
-    for (Handler handler : savedHandlers) logger.removeHandler(handler);
+    for (Handler handler : savedHandlers) {
+      logger.removeHandler(handler);
+    }
 
     TestLogHandler testHandler = createStub(TestLogHandler.class);
     logger.addHandler(testHandler);
@@ -57,7 +59,9 @@ public class TestUtils {
         savedHandlers.add(handler);
       }
     }
-    for (Handler handler : savedHandlers) logger.removeHandler(handler);
+    for (Handler handler : savedHandlers) {
+      logger.removeHandler(handler);
+    }
     return savedHandlers;
   }
 
@@ -87,9 +91,12 @@ public class TestUtils {
 
     @Override
     public void publish(LogRecord record) {
-      if (record.getThrown() != null && !shouldIgnore(record.getThrown()))
+      if (record.getThrown() != null && !shouldIgnore(record.getThrown())) {
         throwable = record.getThrown();
-      if (shouldTrack(record)) logRecords.add(record);
+      }
+      if (shouldTrack(record)) {
+        logRecords.add(record);
+      }
     }
 
     private boolean shouldTrack(LogRecord record) {
@@ -101,11 +108,17 @@ public class TestUtils {
     }
 
     void throwLoggedThrowable() {
-      if (throwable == null) return;
+      if (throwable == null) {
+        return;
+      }
 
       throwable.printStackTrace();
-      if (throwable instanceof Error) throw (Error) throwable;
-      if (throwable instanceof RuntimeException) throw (RuntimeException) throwable;
+      if (throwable instanceof Error) {
+        throw (Error) throwable;
+      }
+      if (throwable instanceof RuntimeException) {
+        throw (RuntimeException) throwable;
+      }
       throw new RuntimeException(throwable);
     }
 
@@ -129,11 +142,15 @@ public class TestUtils {
     }
 
     void throwUncheckedLogMessages() {
-      if (logRecords.isEmpty()) return;
+      if (logRecords.isEmpty()) {
+        return;
+      }
 
       SimpleFormatter formatter = new SimpleFormatter();
       List<String> messageKeys = new ArrayList<>();
-      for (LogRecord record : logRecords) messageKeys.add(formatter.format(record));
+      for (LogRecord record : logRecords) {
+        messageKeys.add(formatter.format(record));
+      }
 
       throw new AssertionError("Unexpected log messages " + messageKeys);
     }
@@ -153,15 +170,29 @@ public class TestUtils {
       this.savedHandlers = savedHandlers;
     }
 
+    /**
+     * build with logged exceptions.
+     * @param throwables throwables
+     * @return memento
+     */
     public ConsoleHandlerMemento ignoringLoggedExceptions(Throwable... throwables) {
-      for (Throwable throwable : throwables) testHandler.ignoreLoggedException(throwable);
+      for (Throwable throwable : throwables) {
+        testHandler.ignoreLoggedException(throwable);
+      }
       return this;
     }
 
+    /**
+     * build with ignoring logged exceptions.
+     * @param classes classes
+     * @return memento
+     */
     @SafeVarargs
     public final ConsoleHandlerMemento ignoringLoggedExceptions(
         Class<? extends Throwable>... classes) {
-      for (Class<? extends Throwable> klass : classes) testHandler.ignoreLoggedException(klass);
+      for (Class<? extends Throwable> klass : classes) {
+        testHandler.ignoreLoggedException(klass);
+      }
       return this;
     }
 
@@ -176,6 +207,11 @@ public class TestUtils {
       return this;
     }
 
+    /**
+     * build with log level.
+     * @param logLevel log level
+     * @return memento
+     */
     public ConsoleHandlerMemento withLogLevel(Level logLevel) {
       if (!loggerLevelSaved) {
         savedLogLevel = logger.getLevel();

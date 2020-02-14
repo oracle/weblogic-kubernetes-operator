@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -186,6 +186,10 @@ public abstract class PodHelperTestBase {
     return (DomainSpec) getDomainSpec.invoke(configurator);
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(
@@ -199,7 +203,9 @@ public abstract class PodHelperTestBase {
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
-    if (!ADMIN_SERVER.equals(serverName)) configSupport.addWlsServer(serverName, listenPort);
+    if (!ADMIN_SERVER.equals(serverName)) {
+      configSupport.addWlsServer(serverName, listenPort);
+    }
     configSupport.setAdminServerName(ADMIN_SERVER);
 
     testSupport.defineResources(domain);
@@ -222,9 +228,15 @@ public abstract class PodHelperTestBase {
     };
   }
 
+  /**
+   * Tear down test.
+   * @throws Exception on failure
+   */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }

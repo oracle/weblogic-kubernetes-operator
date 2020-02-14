@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -196,7 +196,9 @@ public class ReadHealthStep extends Step {
     }
 
     private Pair<String, ServerHealth> parseServerHealthJson(String jsonResult) throws IOException {
-      if (jsonResult == null) return null;
+      if (jsonResult == null) {
+        return null;
+      }
 
       ObjectMapper mapper = new ObjectMapper();
       JsonNode root = mapper.readTree(jsonResult);

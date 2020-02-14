@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
@@ -9,6 +9,7 @@ import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -106,6 +107,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                     .namespace(getInputs().getNamespace())
                     .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V2)
                     .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
+            .putDataItem("dedicated", getInputs().getDedicated())
             .putDataItem("serviceaccount", getInputs().getServiceAccount())
             .putDataItem("targetNamespaces", getInputs().getTargetNamespaces());
     if (expectExternalCredentials()) {
@@ -176,6 +178,9 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .spec(
             newDeploymentSpec()
+                .selector(new V1LabelSelector()
+                    .putMatchLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V2)
+                    .putMatchLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
                 .replicas(1)
                 .template(
                     newPodTemplateSpec()

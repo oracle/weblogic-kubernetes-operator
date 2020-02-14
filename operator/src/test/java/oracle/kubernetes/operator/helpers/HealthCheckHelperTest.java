@@ -46,11 +46,11 @@ public class HealthCheckHelperTest {
 
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
-    DOMAIN_UID_UNIQUENESS_FAILED,
-    PV_ACCESS_MODE_FAILED,
-    PV_NOT_FOUND_FOR_DOMAIN_UID,
-    VERIFY_ACCESS_DENIED,
-    VERIFY_ACCESS_DENIED_WITH_NS
+      DOMAIN_UID_UNIQUENESS_FAILED,
+      PV_ACCESS_MODE_FAILED,
+      PV_NOT_FOUND_FOR_DOMAIN_UID,
+      VERIFY_ACCESS_DENIED,
+      VERIFY_ACCESS_DENIED_WITH_NS
   };
 
   private static final String OPERATOR_NAMESPACE = "operator";

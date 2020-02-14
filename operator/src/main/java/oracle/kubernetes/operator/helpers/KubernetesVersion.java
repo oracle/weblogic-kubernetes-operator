@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -17,7 +17,12 @@ public class KubernetesVersion {
   private final int revision;
   private final String version;
 
-  KubernetesVersion(int major, int minor) {
+  /**
+   * Construct Kubernetes version.
+   * @param major major
+   * @param minor minor
+   */
+  public KubernetesVersion(int major, int minor) {
     this.major = major;
     this.minor = minor;
     revision = 0;

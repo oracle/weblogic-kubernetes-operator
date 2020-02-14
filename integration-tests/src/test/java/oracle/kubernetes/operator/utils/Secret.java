@@ -1,10 +1,9 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Secret {
 
@@ -17,6 +16,14 @@ public class Secret {
     secretName = "";
   }
 
+  /**
+   * Construct secret.
+   * @param namespace namespace
+   * @param secretName name
+   * @param username username
+   * @param password password
+   * @throws Exception on failure
+   */
   public Secret(String namespace, String secretName, String username, String password)
       throws Exception {
     this.namespace = namespace;

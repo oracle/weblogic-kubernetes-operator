@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -6,6 +6,8 @@ package oracle.kubernetes.operator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
@@ -18,6 +20,7 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.utils.RandomStringGenerator;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -64,6 +67,10 @@ public class DomainStatusUpdaterTest {
   private String reason = generator.getUniqueString();
   private RuntimeException failure = new RuntimeException(message);
 
+  /**
+   * Setup test environment.
+   * @throws NoSuchFieldException if test support fails to install.
+   */
   @Before
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -83,9 +90,15 @@ public class DomainStatusUpdaterTest {
     return new V1ObjectMeta().namespace(NS).name(serverName).labels(ImmutableMap.of());
   }
 
+  /**
+   * Cleanup test environment.
+   * @throws Exception if test support fails.
+   */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }
@@ -130,8 +143,11 @@ public class DomainStatusUpdaterTest {
   }
 
   private ServerStatus getServerStatus(Domain domain, String serverName) {
-    for (ServerStatus status : domain.getStatus().getServers())
-      if (status.getServerName().equals(serverName)) return status;
+    for (ServerStatus status : domain.getStatus().getServers()) {
+      if (status.getServerName().equals(serverName)) {
+        return status;
+      }
+    }
 
     return null;
   }
@@ -141,7 +157,7 @@ public class DomainStatusUpdaterTest {
   }
 
   private void setClusterAndNodeName(V1Pod pod, String clusterName, String nodeName) {
-    pod.getMetadata().setLabels(ImmutableMap.of(LabelConstants.CLUSTERNAME_LABEL, clusterName));
+    Objects.requireNonNull(pod.getMetadata()).setLabels(ImmutableMap.of(LabelConstants.CLUSTERNAME_LABEL, clusterName));
     pod.setSpec(new V1PodSpec().nodeName(nodeName));
   }
 
@@ -510,6 +526,25 @@ public class DomainStatusUpdaterTest {
     assertThat(getRecordedDomain(), not(hasCondition(Available)));
   }
 
+  @Test
+  public void whenTwoConditionUpdatesScheduled_useResultOfFirstToComputeSecond() {
+    domain.getStatus().addCondition(new DomainCondition(Available).withStatus("False"));
+    domain.getStatus().addCondition(new DomainCondition(Progressing).withStatus("True").withReason("Initial"));
+
+    testSupport.runSteps(
+          Step.chain(
+                DomainStatusUpdater.createProgressingStep("Modifying", false, null),
+                DomainStatusUpdater.createAvailableStep("Test complete", null))
+    );
+
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("True"));
+
+  }
+
+  // 1. response step must call onFailure to repeat the initiating step on a 500 error, in order to recompute the patch;
+  //    potentially, multiple repeats may be needed, but that should be rare. Maybe 3 tries?
+  // 2. will still need to update the packet for this to work. That probably needs to happen on as part of this.
+
   private void failPod(String serverName) {
     getPod(serverName).setStatus(new V1PodStatus().phase("Failed"));
   }
@@ -524,7 +559,9 @@ public class DomainStatusUpdaterTest {
 
   private void generateStartupInfos(String... serverNames) {
     List<DomainPresenceInfo.ServerStartupInfo> startupInfos = new ArrayList<>();
-    for (String serverName : serverNames) configSupport.addWlsServer(serverName);
+    for (String serverName : serverNames) {
+      configSupport.addWlsServer(serverName);
+    }
     WlsDomainConfig domainConfig = configSupport.createDomainConfig();
     for (String serverName : serverNames) {
       String clusterName = getClusterName(serverName);
@@ -538,11 +575,16 @@ public class DomainStatusUpdaterTest {
   }
 
   private String getClusterName(String serverName) {
-    return getPod(serverName).getMetadata().getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
+    return Optional.ofNullable(getPod(serverName).getMetadata())
+          .map(V1ObjectMeta::getLabels)
+          .map(l -> l.get(LabelConstants.CLUSTERNAME_LABEL))
+          .orElse(null);
   }
 
   private void defineCluster(String clusterName, String... serverNames) {
-    for (String serverName : serverNames) definePodWithCluster(serverName, clusterName);
+    for (String serverName : serverNames) {
+      definePodWithCluster(serverName, clusterName);
+    }
   }
 
   private void definePodWithCluster(String serverName, String clusterName) {

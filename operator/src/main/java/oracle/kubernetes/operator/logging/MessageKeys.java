@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -157,6 +157,12 @@ public class MessageKeys {
   public static final String JOB_LOG_PARSE_FAILURE = "WLSKO-0155";
   public static final String VERIFY_ACCESS_DENIED_WITH_NS = "WLSKO-0156";
   public static final String DOMAIN_VALIDATION_FAILED = "WLSKO-0157";
+  public static final String CRD_NO_WRITE_ACCESS = "WLSKO-0158";
+  public static final String CRD_NO_READ_ACCESS = "WLSKO-0159";
+  public static final String VERIFY_CLUSTER_VIEW_ACCESS_START = "WLSKO-0160";
+  public static final String NS_NO_READ_ACCESS = "WLSKO-0161";
+  public static final String NO_INTERNAL_CERTIFICATE = "WLSKO-162";
+  public static final String NO_EXTERNAL_CERTIFICATE = "WLSKO-163";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
