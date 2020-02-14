@@ -327,7 +327,13 @@ function createFiles {
 
   if [ "${domainHomeInImage}" == "true" ]; then
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
-    domainHome="/u01/oracle/user_projects/domains/${domainName}"
+
+    # change this when domainHomeSourceType is used in new schema
+    if [ -z $wdtDomainType ]; then
+      domainHome="/u01/oracle/user_projects/domains/${domainName}"
+    else
+      domainHome="/u01/domains/${domainName}"
+    fi
 
     if [ -z $domainHomeImageBuildPath ]; then
       domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image"
@@ -351,6 +357,7 @@ function createFiles {
     sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
     sed -i -e "s:%EXPOSE_T3_CHANNEL%:${exposeAdminT3Channel}:g" ${domainPropertiesOutput}
     sed -i -e "s:%FMW_DOMAIN_TYPE%:${fmwDomainType}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${domainPropertiesOutput}
 
     if [ -z "${image}" ]; then
       # calculate the internal name to tag the generated image
@@ -421,6 +428,7 @@ function createFiles {
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
     sed -i -e "s:%WDT_VERSION%:${wdtVersion}:g" ${createJobOutput}
+    sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
     echo Generating ${deleteJobOutput}
@@ -480,6 +488,7 @@ function createFiles {
   sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
+  sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${dcrOutput}
 
   buildServerPodResources
   if [ -z "${serverPodResources}" ]; then
