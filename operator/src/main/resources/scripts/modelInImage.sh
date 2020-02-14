@@ -32,6 +32,7 @@ IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
 WDT_ROOT="/u01/wdt/weblogic-deploy"
+WDT_OUTPUT="/tmp/wdt_output.log"
 WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model_filters.json"
 WDT_CREATE_FILTER="/weblogic-operator/scripts/wdt_create_filter.py"
@@ -100,7 +101,6 @@ function compareArtifactsMD5() {
       WDT_ARTIFACTS_CHANGED=1
       echoFilesDifferences ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5}
     fi
-    # TODO check for archives changes  grep ".zip" /tmp/imgmd5diff | wc -l
   fi
 
   trace "Checking wdt artifacts in config map"
@@ -516,19 +516,19 @@ function wdtCreatePrimordialDomain() {
     if [ ! -z ${WDT_PASSPHRASE} ]; then
       yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \
       ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
-      ${OPSS_FLAGS}
+      ${OPSS_FLAGS} >  ${WDT_OUTPUT}
     else
       ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-      ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}
+      ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS} > ${WDT_OUTPUT}
     fi
     ret=$?
     if [ $ret -ne 0 ]; then
       trace SEVERE "Create Domain Failed "
       if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
-        cp ${WDT_BINDIR}/../logs/createDomain.log ${LOG_HOME}/introspectJob_createDomain.log
-      else
-        tail -100 ${WDT_BINDIR}/../logs/createDomain.log
+        cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
       fi
+      local WDT_ERROR=$(cat ${WDT_OUTPUT})
+      trace SEVERE ${WDT_ERROR}
       exit 1
     fi
 
@@ -570,19 +570,19 @@ function wdtCreateDomain() {
   if [ ! -z ${WDT_PASSPHRASE} ]; then
     yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home \
     ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
-    ${OPSS_FLAGS}
+    ${OPSS_FLAGS} > ${WDT_OUTPUT}
   else
     ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}
+    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS} >  ${WDT_OUTPUT}
   fi
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "Create Domain Failed "
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
-      cp ${WDT_BINDIR}/../logs/updateDomain.log ${LOG_HOME}/introspectJob_updateDomain.log
-    else
-      tail -100 ${WDT_BINDIR}/../logs/createDomain.log
+      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_updateDomain.log
     fi
+    local WDT_ERROR=$(cat ${WDT_OUTPUT})
+    trace SEVERE ${WDT_ERROR}
     exit 1
   fi
 
