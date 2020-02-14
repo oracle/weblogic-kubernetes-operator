@@ -22,8 +22,6 @@ artifacts of the corresponding domain.
 Before you begin, we recommend the following:
 
 * Review the [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}) documentation.
-* Review the [operator-prerequisites](https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/#operator-prerequisites) 
-section for the supported versions of Kubernetes and Helm.
 * Complete the preliminary required steps documented [here]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md" >}}).
 
 
