@@ -116,6 +116,12 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven-failsafe-plugin-version}</version>
                         <configuration>
+                            <!-- run all tests -->
+                            <includes>
+                                <include>**/*Test.java</include>
+                                <include>**/*IT.java</include>
+                                <include>**/*AT.java</include>
+                            </includes>
                             <argLine>
                                 --illegal-access=permit
                             </argLine>
