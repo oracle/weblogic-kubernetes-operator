@@ -36,6 +36,11 @@ public class IntrospectorJobEnvVars {
   public static final String WDT_ENCRYPTION_PASSPHRASE_NAME = "WDT_ENCRYPTION_PASSPHRASE_NAME";
 
   /**
+   * The domain source type.
+   */
+  public static final String DOMAIN_SOURCE_TYPE = "DOMAIN_SOURCE_TYPE";
+
+  /**
    * The wdt domain type.
    */
   public static final String WDT_DOMAIN_TYPE = "WDT_DOMAIN_TYPE";

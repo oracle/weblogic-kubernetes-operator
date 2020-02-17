@@ -252,6 +252,7 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.OPSS_KEY_SECRET_NAME, getOpssWalletPasswordSecretName());
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_ENCRYPTION_PASSPHRASE_NAME, getWdtEncryptSecretName());
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType());
+      addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainSourceType());
 
       String dataHome = getDataHome();
       if (dataHome != null && !dataHome.isEmpty()) {

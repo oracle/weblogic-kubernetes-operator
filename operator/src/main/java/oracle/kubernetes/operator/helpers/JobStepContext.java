@@ -152,6 +152,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtDomainType();
   }
 
+  protected String getDomainSourceType() {
+    return getDomain().getDomainHomeSourceType();
+  }
+
   private boolean isIstioEnabled() {
     return getDomain().isIstioEnabled();
   }
