@@ -329,4 +329,3 @@ type: Opaque
 
 Now that you have your Docker images and you have created your RCU schemas, you are ready
 to create your domain.  To continue, follow the instructions in the [SOA Domain sample]({{< relref "/samples/simple/domains/soa-domain/_index.md" >}}).
-
