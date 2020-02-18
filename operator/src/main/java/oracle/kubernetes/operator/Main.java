@@ -189,12 +189,15 @@ public class Main {
     try {
       version = HealthCheckHelper.performK8sVersionCheck();
 
+      Step strategy = Step.chain(
+          new InitializeNamespacesSecurityStep(targetNamespaces),
+          CrdHelper.createDomainCrdStep(version,
+              new StartNamespacesStep(targetNamespaces)));
+      if (!isDedicated()) {
+        strategy = Step.chain(strategy, readExistingNamespaces());
+      }
       runSteps(
-          Step.chain(
-              new InitializeNamespacesSecurityStep(targetNamespaces),
-              CrdHelper.createDomainCrdStep(version,
-                  new StartNamespacesStep(targetNamespaces)),
-              readExistingNamespaces()),
+          strategy,
           Main::completeBegin);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
