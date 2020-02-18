@@ -40,7 +40,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-/** Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved. */
 public class WlsDomainConfigTest {
 
   // The log messages to be checked during this test

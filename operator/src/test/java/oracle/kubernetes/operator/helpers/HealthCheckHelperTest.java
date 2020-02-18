@@ -1,24 +1,19 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.openapi.models.V1ResourceAttributes;
 import io.kubernetes.client.openapi.models.V1ResourceRule;
-import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
-import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.ClientFactoryStub;
-import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.After;
@@ -92,9 +87,6 @@ public class HealthCheckHelperTest {
       Arrays.asList(get, list, watch, update, patch);
 
   private static final String POD_LOGS = "pods/log";
-  private static final String DOMAINS = "domains//weblogic.oracle";
-  private static final String NAMESPACES = "namespaces";
-  private static final KubernetesVersion MINIMAL_KUBERNETES_VERSION = new KubernetesVersion(1, 7);
   private static final KubernetesVersion RULES_REVIEW_VERSION = new KubernetesVersion(1, 8);
 
   private List<Memento> mementos = new ArrayList<>();
@@ -102,6 +94,10 @@ public class HealthCheckHelperTest {
   private CallTestSupport testSupport = new CallTestSupport();
   private AccessChecks accessChecks = new AccessChecks();
 
+  /**
+   * Setup test.
+   * @throws Exception if failure occurs
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS));
@@ -109,14 +105,14 @@ public class HealthCheckHelperTest {
     mementos.add(testSupport.installSynchronousCallDispatcher());
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
-  }
-
-  private void expectAccessChecks() {
-    TARGET_NAMESPACES.forEach(this::expectAccessReviewsByNamespace);
-    expectClusterAccessChecks();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
@@ -142,61 +138,16 @@ public class HealthCheckHelperTest {
 
   private void expectSelfSubjectRulesReview() {
     testSupport
-        .createCannedResponse("selfSubjectRulesReview")
+        .createCannedResponse("createSelfSubjectRulesReview")
         .ignoringBody()
         .returning(new V1SelfSubjectRulesReview().status(accessChecks.createRulesStatus()));
-  }
-
-  private void expectAccessReviewsByNamespace(String namespace) {
-    CRUD_RESOURCES.forEach(resource -> expectCrudAccessChecks(namespace, resource));
-    READ_WATCH_RESOURCES.forEach(resource -> expectReadWatchAccessChecks(namespace, resource));
-
-    READ_ONLY_OPERATIONS.forEach(operation -> expectAccessCheck(namespace, POD_LOGS, operation));
-    CREATE_ONLY_RESOURCES.forEach(resource -> expectAccessCheck(namespace, resource, create));
-  }
-
-  private void expectCrudAccessChecks(String namespace, String resource) {
-    CRUD_OPERATIONS.forEach(operation -> expectAccessCheck(namespace, resource, operation));
-  }
-
-  private void expectReadWatchAccessChecks(String namespace, String resource) {
-    READ_WATCH_OPERATIONS.forEach(operation -> expectAccessCheck(namespace, resource, operation));
-  }
-
-  private void expectClusterAccessChecks() {
-    CLUSTER_CRUD_RESOURCES.forEach(this::expectClusterCrudAccessChecks);
-    READ_UPDATE_OPERATIONS.forEach(operation -> expectClusterAccessCheck(DOMAINS, operation));
-    READ_WATCH_OPERATIONS.forEach(operation -> expectClusterAccessCheck(NAMESPACES, operation));
-  }
-
-  private void expectClusterCrudAccessChecks(String resource) {
-    CRUD_OPERATIONS.forEach(operation -> expectClusterAccessCheck(resource, operation));
-  }
-
-  private void expectClusterAccessCheck(String resource, Operation operation) {
-    expectAccessCheck(null, resource, operation);
-  }
-
-  private void expectAccessCheck(String namespace, String resource, Operation operation) {
-    accessChecks.expectAccessCheck(namespace, resource, operation);
   }
 
   @SuppressWarnings("SameParameterValue")
   static class AccessChecks {
 
-    private List<V1ResourceAttributes> expectedAccessChecks = new ArrayList<>();
     private boolean mayAccessNamespace = true;
     private boolean mayAccessCluster = true;
-
-    private static V1ResourceAttributes createResourceAttributes(
-        String namespace, String resource, Operation operation) {
-      return new V1ResourceAttributes()
-          .verb(operation.toString())
-          .resource(getResource(resource))
-          .subresource(getSubresource(resource))
-          .group(getApiGroup(resource))
-          .namespace(namespace);
-    }
 
     private static String getResource(String resourceString) {
       return resourceString.split("/")[0];
@@ -212,24 +163,8 @@ public class HealthCheckHelperTest {
       return split.length <= 2 ? "" : split[2];
     }
 
-    private void expectAccessCheck(String namespace, String resource, Operation operation) {
-      this.expectedAccessChecks.add(createResourceAttributes(namespace, resource, operation));
-    }
-
     void setMayAccessNamespace(boolean mayAccessNamespace) {
       this.mayAccessNamespace = mayAccessNamespace;
-    }
-
-    void setMayAccessCluster(boolean mayAccessCluster) {
-      this.mayAccessCluster = mayAccessCluster;
-    }
-
-    List<V1ResourceAttributes> getExpectedAccessChecks() {
-      return Collections.unmodifiableList(expectedAccessChecks);
-    }
-
-    private boolean isAllowedByDefault(V1ResourceAttributes resourceAttributes) {
-      return resourceAttributes.getNamespace() == null ? mayAccessCluster : mayAccessNamespace;
     }
 
     private V1SubjectRulesReviewStatus createRulesStatus() {
@@ -238,8 +173,12 @@ public class HealthCheckHelperTest {
 
     private List<V1ResourceRule> createRules() {
       List<V1ResourceRule> rules = new ArrayList<>();
-      if (mayAccessNamespace) addNamespaceRules(rules);
-      if (mayAccessCluster) addClusterRules(rules);
+      if (mayAccessNamespace) {
+        addNamespaceRules(rules);
+      }
+      if (mayAccessCluster) {
+        addClusterRules(rules);
+      }
       return rules;
     }
 
@@ -282,21 +221,6 @@ public class HealthCheckHelperTest {
 
     private List<String> toVerbs(List<Operation> operations) {
       return operations.stream().map(Enum::name).collect(Collectors.toList());
-    }
-
-    private boolean isResourceCheckAllowed(V1SelfSubjectAccessReview body) {
-      V1ResourceAttributes resourceAttributes = body.getSpec().getResourceAttributes();
-      return isAllowedByDefault(resourceAttributes)
-          && expectedAccessChecks.remove(resourceAttributes);
-    }
-
-    private V1SelfSubjectAccessReview computeResponse(RequestParams requestParams) {
-      return computeResponse((V1SelfSubjectAccessReview) requestParams.body);
-    }
-
-    private V1SelfSubjectAccessReview computeResponse(V1SelfSubjectAccessReview body) {
-      body.setStatus(new V1SubjectAccessReviewStatus().allowed(isResourceCheckAllowed(body)));
-      return body;
     }
   }
 }

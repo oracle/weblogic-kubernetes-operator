@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -26,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1EventList;
@@ -375,10 +375,17 @@ public class Main {
   }
 
   private static Collection<String> getTargetNamespaces() {
-    return getTargetNamespaces(
+    return isDedicated()
+        ? Collections.singleton(operatorNamespace)
+        : getTargetNamespaces(
         Optional.ofNullable(getHelmVariable.apply("OPERATOR_TARGET_NAMESPACES"))
             .orElse(tuningAndConfig.get("targetNamespaces")),
         operatorNamespace);
+  }
+
+  public static boolean isDedicated() {
+    return "true".equalsIgnoreCase(Optional.ofNullable(getHelmVariable.apply("OPERATOR_DEDICATED"))
+        .orElse(tuningAndConfig.get("dedicated")));
   }
 
   private static void startRestServer(String principal, Collection<String> targetNamespaces)
@@ -484,7 +491,9 @@ public class Main {
       String ns = c.getMetadata().getName();
 
       // We only care about namespaces that are in our targetNamespaces
-      if (!targetNamespaces.contains(ns)) return;
+      if (!targetNamespaces.contains(ns)) {
+        return;
+      }
 
       switch (item.type) {
         case "ADDED":

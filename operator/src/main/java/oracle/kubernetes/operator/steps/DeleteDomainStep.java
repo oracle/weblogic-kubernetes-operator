@@ -6,9 +6,7 @@ package oracle.kubernetes.operator.steps;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
