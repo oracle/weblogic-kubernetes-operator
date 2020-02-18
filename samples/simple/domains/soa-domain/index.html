@@ -12,18 +12,18 @@
     <title>SOA domain :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1581640281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1581640281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1581640281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1581640281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1581640281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1581640281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1581640281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1581640281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1581640281" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1582040779" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1582040779" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1582040779" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1582040779" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1582040779" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1582040779" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1582040779" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1582040779" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1582040779" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1581640281"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1582040779"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1581640281"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1581640281"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1582040779"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1582040779"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1581640281"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1582040779"></script>
 
     
   </div>
@@ -2498,7 +2498,7 @@
 	
 
 
-<div class="notices warning" ><p>Oracle SOA Suite is currently only supported for non-production use in Docker and Kubernetes.  The information provided
+<div class="notices warning" ><p>Oracle SOA Suite is currently supported only for non-production use in Docker and Kubernetes.  The information provided
 in this document is a <em>preview</em> for early adopters who wish to experiment with Oracle SOA Suite in Kubernetes before
 it is supported for production use.</p>
 </div>
@@ -2838,45 +2838,45 @@ metadata:
 spec:
   # The WebLogic Domain Home
   domainHome: /u01/oracle/user_projects/domains/soainfra
- 
+
   # If the domain home is in the image
   domainHomeInImage: false
- 
+
   # The WebLogic Server Docker image that the Operator uses to start the domain
   image: &quot;container-registry.oracle.com/middleware/soasuite:12.2.1.3&quot;
- 
+
   # imagePullPolicy defaults to &quot;Always&quot; if image version is :latest
   imagePullPolicy: &quot;IfNotPresent&quot;
- 
+
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
   #- name:
- 
+
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
   webLogicCredentialsSecret:
     name: soainfra-domain-credentials
- 
+
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: true
- 
+
   # Whether to enable log home
   logHomeEnabled: true
- 
+
   # The in-pod location for domain log, server logs, server out, and Node Manager log files
   logHome: /u01/oracle/user_projects/domains/logs/soainfra
   # An (optional) in-pod location for data storage of default and custom file stores.
   # If not specified or the value is either not set or empty (e.g. dataHome: &quot;&quot;) then the
   # data storage directories are determined from the WebLogic domain home configuration.
   dataHome: &quot;&quot;
- 
+
   # serverStartPolicy legal values are &quot;NEVER&quot;, &quot;IF_NEEDED&quot;, or &quot;ADMIN_ONLY&quot;
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - &quot;NEVER&quot; will not start any server in the domain
   # - &quot;ADMIN_ONLY&quot; will start up only the administration server (no managed servers will be started)
   # - &quot;IF_NEEDED&quot; will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: &quot;IF_NEEDED&quot;
- 
+
   serverService:
     precreateService: true
 
@@ -2894,7 +2894,7 @@ spec:
     volumeMounts:
     - mountPath: /u01/oracle/user_projects
       name: weblogic-domain-storage-volume
- 
+
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
     # serverStartState legal values are &quot;RUNNING&quot; or &quot;ADMIN&quot;
@@ -2908,7 +2908,7 @@ spec:
     #      nodePort: 30701
     # Uncomment to export the T3Channel as a service
     #    - channelName: T3Channel
- 
+
   # clusters is used to configure the desired behavior for starting member servers of a cluster.
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
@@ -2919,7 +2919,7 @@ spec:
     replicas: 2
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
- 
+
   - clusterName: soa_cluster
     serverService:
       precreateService: true
@@ -4824,19 +4824,19 @@ home that is generated using the <code>create-domain.sh</code> script. Do this b
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1581640281"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1581640281"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1581640281"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1581640281"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1581640281"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1581640281"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1582040779"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1582040779"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1582040779"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1582040779"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1582040779"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1582040779"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1581640281"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1581640281"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1581640281"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1582040779"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1582040779"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1582040779"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1581640281" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1581640281"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1582040779" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1582040779"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
