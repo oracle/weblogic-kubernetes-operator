@@ -7,7 +7,7 @@ PVC, and the domain resource YAML file for deploying the generated SOA domain."
 ---
 
 {{% notice warning %}}
-Oracle SOA Suite is currently only supported for non-production use in Docker and Kubernetes.  The information provided
+Oracle SOA Suite is currently supported only for non-production use in Docker and Kubernetes.  The information provided
 in this document is a *preview* for early adopters who wish to experiment with Oracle SOA Suite in Kubernetes before
 it is supported for production use.
 {{% /notice %}}
@@ -22,7 +22,7 @@ artifacts of the corresponding domain.
 Before you begin, we recommend the following:
 
 * Review the [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}) documentation.
-* Review the [operator-prerequisites](https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/#operator-prerequisites) 
+* Review the [operator-prerequisites](https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/#operator-prerequisites)
 section for the supported versions of Kubernetes and Helm.
 * Complete the preliminary required steps documented [here]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md" >}}).
 
@@ -30,7 +30,7 @@ section for the supported versions of Kubernetes and Helm.
 #### Prepare to use the create domain script
 
 The sample scripts for Oracle SOA Suite domain deployment are available at `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts/create-soa-domain`.
-  
+
 You must edit `create-domain-inputs.yaml` (or a copy of it) to provide the details for your domain.
 Please refer to the configuration parameters below to understand what information you must
 provide in this file.
@@ -160,45 +160,45 @@ metadata:
 spec:
   # The WebLogic Domain Home
   domainHome: /u01/oracle/user_projects/domains/soainfra
- 
+
   # If the domain home is in the image
   domainHomeInImage: false
- 
+
   # The WebLogic Server Docker image that the Operator uses to start the domain
   image: "container-registry.oracle.com/middleware/soasuite:12.2.1.3"
- 
+
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
- 
+
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
   #- name:
- 
+
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
   webLogicCredentialsSecret:
     name: soainfra-domain-credentials
- 
+
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: true
- 
+
   # Whether to enable log home
   logHomeEnabled: true
- 
+
   # The in-pod location for domain log, server logs, server out, and Node Manager log files
   logHome: /u01/oracle/user_projects/domains/logs/soainfra
   # An (optional) in-pod location for data storage of default and custom file stores.
   # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
   # data storage directories are determined from the WebLogic domain home configuration.
   dataHome: ""
- 
+
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "NEVER" will not start any server in the domain
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "IF_NEEDED"
- 
+
   serverService:
     precreateService: true
 
@@ -216,7 +216,7 @@ spec:
     volumeMounts:
     - mountPath: /u01/oracle/user_projects
       name: weblogic-domain-storage-volume
- 
+
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
     # serverStartState legal values are "RUNNING" or "ADMIN"
@@ -230,7 +230,7 @@ spec:
     #      nodePort: 30701
     # Uncomment to export the T3Channel as a service
     #    - channelName: T3Channel
- 
+
   # clusters is used to configure the desired behavior for starting member servers of a cluster.
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
@@ -241,7 +241,7 @@ spec:
     replicas: 2
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
- 
+
   - clusterName: soa_cluster
     serverService:
       precreateService: true
@@ -463,7 +463,7 @@ $ kubectl get services -n NAMESPACE
 ```
 
 Here is an example of the output of this command. You can verify that services for Administration Server and Managed Servers (for SOA and OSB clusters) are created for `soaessosb` domain type.
-  
+
 ```
 $ kubectl get services -n soans
 NAME                            TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                       AGE
