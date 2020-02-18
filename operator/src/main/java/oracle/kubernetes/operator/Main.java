@@ -39,6 +39,7 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
@@ -340,8 +341,9 @@ public class Main {
   }
 
   private static Step readExistingNamespaces() {
-    return new CallBuilder()
-        .listNamespaceAsync(new NamespaceListStep());
+    return HealthCheckHelper.skipIfNotAuthorized(
+        AuthorizationProxy.Resource.NAMESPACES, AuthorizationProxy.Operation.list,
+        new CallBuilder().listNamespaceAsync(new NamespaceListStep()));
   }
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {

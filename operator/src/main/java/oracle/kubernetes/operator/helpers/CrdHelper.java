@@ -230,10 +230,12 @@ public class CrdHelper {
     }
 
     Step createCrd(Step next) {
-      return HealthCheckHelper.skipIfNotAuthorized(
+      return HealthCheckHelper.failIfNotAuthorized(
           AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.create,
           new CallBuilder().createCustomResourceDefinitionAsync(
-              model, createCreateResponseStep(next)), next);
+              model, createCreateResponseStep(next)), () -> {
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "create the CRD");
+          });
     }
 
     ResponseStep<V1beta1CustomResourceDefinition> createCreateResponseStep(Step next) {
@@ -267,10 +269,12 @@ public class CrdHelper {
                   .name(KubernetesConstants.DOMAIN_VERSION)
                   .served(true));
 
-      return HealthCheckHelper.skipIfNotAuthorized(
+      return HealthCheckHelper.failIfNotAuthorized(
           AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.replace,
           new CallBuilder().replaceCustomResourceDefinitionAsync(
-              existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next)), next);
+              existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next)), () -> {
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "add a new version to the existing CRD");
+          });
     }
 
     Step updateCrd(Step next, V1beta1CustomResourceDefinition existingCrd) {
@@ -293,10 +297,12 @@ public class CrdHelper {
         }
       }
 
-      return HealthCheckHelper.skipIfNotAuthorized(
+      return HealthCheckHelper.failIfNotAuthorized(
           AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.replace,
           new CallBuilder().replaceCustomResourceDefinitionAsync(
-              model.getMetadata().getName(), model, createReplaceResponseStep(next)), next);
+              model.getMetadata().getName(), model, createReplaceResponseStep(next)), () -> {
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "replace the existing CRD");
+          });
     }
 
     ResponseStep<V1beta1CustomResourceDefinition> createReplaceResponseStep(Step next) {
