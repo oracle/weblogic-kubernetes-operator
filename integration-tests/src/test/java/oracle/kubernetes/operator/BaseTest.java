@@ -50,6 +50,8 @@ public class BaseTest {
   public static String GRAFANA_CHART_VERSION;
   public static String MONITORING_EXPORTER_VERSION;
   public static String MONITORING_EXPORTER_BRANCH;
+  public static String HELM_VERSION;
+  public static String VOYAGER_VERSION;
   public static boolean INGRESSPERDOMAIN = true;
   protected static String appLocationInPod = "/u01/oracle/apps";
   private static String resultRootCommon = "";
@@ -82,6 +84,17 @@ public class BaseTest {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
 
+    HELM_VERSION = System.getenv("HELM_VERSION");
+    if (HELM_VERSION == null) {
+      HELM_VERSION = "V2";
+    }
+ 
+    VOYAGER_VERSION = System.getenv("VOYAGER_VERSION");
+    if (VOYAGER_VERSION == null) {
+      VOYAGER_VERSION = "10.0.0";
+    }
+
+    System.out.println("(PANI) HELM VERSION IS " + HELM_VERSION);
     // if QUICKTEST is false, run all the tests including QUICKTEST
     if (!QUICKTEST) {
       FULLTEST = true;
