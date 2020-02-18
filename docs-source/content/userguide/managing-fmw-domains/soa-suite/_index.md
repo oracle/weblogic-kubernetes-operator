@@ -15,7 +15,7 @@ it is supported for production use.
 #### Contents
 
 * [Introduction](#introduction)
-* [Prerequisites for SOA Suite Domains](#prerequisites-for-soa-suite-domains)
+* [Prerequisites for SOA Suite domains](#prerequisites-for-soa-suite-domains)
 * [Limitations](#limitations)
 * [Obtaining the SOA Suite Docker image](#obtaining-the-soa-suite-docker-image)
 * [Creating a SOA Suite Docker image](#creating-a-soa-suite-docker-image)
@@ -42,12 +42,12 @@ Other than those considerations listed here, SOA Suite domains work in the same 
 In this release, SOA Suite domains are supported using the “domain on a persistent volume”
 [model]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) only, where the domain home is located in a persistent volume (PV).
 
-#### Prerequisites for SOA Suite Domains
+#### Prerequisites for SOA Suite domains
 
-* Kubernetes 1.11.5+, 1.12.3+, 1.13.0+, 1.14.0+, and 1.15.0+ (check with `kubectl version`).
-* Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`).
+* Kubernetes 1.13.5+, 1.14.3+ and 1.15.2+ (check with `kubectl version`).
+* Flannel networking v0.11.0-amd64 (check with `docker images | grep flannel`).
 * Docker 18.9.1 (check with `docker version`)
-* Helm 2.14.3+ (check with `helm version`).
+* Helm 2.14.0+ (check with `helm version`).
 * Oracle Fusion Middleware Infrastructure 12.2.1.3.0 image with patch 29135930.
   * The existing Fusion Middleware Infrastructure Docker image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, has all the necessary patches applied.
   * Check the Fusion Middleware Infrastructure patches with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3 sh -c '$ORACLE_HOME/OPatch/opatch lspatches'`.    
@@ -73,7 +73,7 @@ following limitations currently exist for SOA Suite domains:
   been added yet.
 
 {{% notice note %}}
-For early access customers, with bundle patch access, it is recommended to build and use the Oracle SOA Suite Docker image with the latest bundle patches for Oracle SOA and Oracle Service Bus (OSB). The Oracle SOA Suite Docker image in `container-registry.oracle.com` does not have the bundle patches installed. However the customers who do not have access to the bundle patches can obtain the Oracle SOA Suite Docker image from `container-registry.oracle.com` as described in below section.
+For early access customers, with bundle patch access, we recommend that you build and use the Oracle SOA Suite Docker image with the latest bundle patch for Oracle SOA. The Oracle SOA Suite Docker image in `container-registry.oracle.com` does not have the bundle patch installed. However, if you do not have access to the bundle patches, you can obtain the Oracle SOA Suite Docker image without bundle patches from `container-registry.oracle.com`, as described below.
 {{% /notice %}}
 
 #### Obtaining the SOA Suite Docker Image
@@ -100,14 +100,12 @@ $ docker pull container-registry.oracle.com/middleware/soasuite:12.2.1.3
 
 #### Creating a SOA Suite Docker image
 
-You can also create a Docker image containing the Oracle SOA Suite binaries. This is the recommended approach for the customers who have access to Oracle SOA and Oracle Service Bus bundle patches.
+You can also create a Docker image containing the Oracle SOA Suite binaries. This is the recommended approach if you have access to Oracle SOA bundle patches. 
 
 Please consult the [README](https://github.com/oracle/docker-images/blob/master/OracleSOASuite/dockerfiles/README.md) file for important prerequisite steps,
 such as building or pulling the Server JRE Docker image, Oracle FMW Infrastructure Docker image, and downloading the Oracle SOA Suite installer and bundle patch binaries.
 
-For the Fusion Middleware Infrastructure image you must install the [required patch]({{< relref "/userguide/introduction/introduction/_index.md#prerequisites" >}})
-to use this image with the Oracle Weblogic operator.  A [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s)
-is provided that demonstrates how to create a Docker image with the necessary patch installed. Use this patched Fusion Middleware image for building the Oracle SOA Suite image.
+For the Fusion Middleware Infrastructure image, you must install the [required patch]({{< relref "/userguide/introduction/introduction/_index.md#prerequisites" >}}) to use this image with the Oracle WebLogic Kubernetes operator. A [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s) is provided that demonstrates how to create a Docker image with the necessary patch installed. Use this patched Fusion Middleware image for building the Oracle SOA Suite image.
 
 Follow these steps to build the necessary images - a patched Fusion Middleware
 Infrastructure image, and then the SOA Suite image as a layer on top of that:
@@ -137,8 +135,8 @@ the patch applied by running the provided script:
     ```
     $ docker tag oracle/fmw-infrastructure:12213-update-k8s oracle/fmw-infrastructure:12.2.1.3
     ```
-* Download the Oracle SOA Suite installer, latest Oracle SOA bundle patch (`30638100` or later) and Oracle Service Bus (OSB) bundle patch (`30059259` or later) from Oracle Technology Network or e-delivery.
-  >NOTE: Copy the installer binaries to the same location as the Dockerfile and the bundle patch zip files under the `docker-images/OracleSOASuite/dockerfiles/12.2.1.3/patches` folder.
+* Download the Oracle SOA Suite installer and latest Oracle SOA bundle patch (`30638100` or later) from Oracle Technology Network or e-delivery.
+  >NOTE: Copy the installer binaries to the same location as the Dockerfile and the bundle patch ZIP files under the `docker-images/OracleSOASuite/dockerfiles/12.2.1.3/patches` folder.
 
 * Create the Oracle SOA Suite image by running the provided script:
 
