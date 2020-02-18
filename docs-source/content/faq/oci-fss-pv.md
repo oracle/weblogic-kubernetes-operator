@@ -5,7 +5,7 @@ draft: false
 weight: 6
 ---
 
-If you are running your Kubernetes cluster on Oracle Container Engine 
+If you are running your Kubernetes cluster on Oracle Container Engine
 for Kubernetes (commonly known as OKE), and you use OCI File Storage (FSS)
 for persistent volumes to store the WebLogic domain home, then the file system
 handling demonstrated in the operator persistent volume sample will require
@@ -23,7 +23,7 @@ see [Persistent storage]({{< relref "/userguide/managing-domains/persistent-stor
 {{% /notice %}}
 
 
-### Failure during domain creation with persistent volume sample
+#### Failure during domain creation with persistent volume sample
 
 The existing sample for [creation of a domain home on persistent volume](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv)
 uses a Kubernetes job to create the domain. The sample uses an
@@ -60,7 +60,7 @@ Init Containers:
    :
 ```
 
-### Updating the domain on persistent volume sample
+#### Updating the domain on persistent volume sample
 In the following snippet of the [create-domain-job-template.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml),
 you can see the updated `command` for the init container:
 ```
