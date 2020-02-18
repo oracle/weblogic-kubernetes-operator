@@ -12,6 +12,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
+import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -45,6 +46,15 @@ public final class HealthCheckHelper {
       Operation.deletecollection
   };
 
+  private static final Operation[] crdOperations = {
+      Operation.get,
+      Operation.list,
+      Operation.watch,
+      Operation.create,
+      Operation.update,
+      Operation.patch
+  };
+
   private static final Operation[] cOperations = {
       Operation.create
   };
@@ -72,7 +82,7 @@ public final class HealthCheckHelper {
 
   static {
     clusterAccessChecks.put(Resource.NAMESPACES, glwOperations);
-    clusterAccessChecks.put(Resource.CRDS, crudOperations);
+    clusterAccessChecks.put(Resource.CRDS, crdOperations);
 
     namespaceAccessChecks.put(Resource.DOMAINS, glwupOperations);
     namespaceAccessChecks.put(Resource.DOMAINSTATUSES, glwupOperations);
@@ -126,9 +136,11 @@ public final class HealthCheckHelper {
           check(rules, r, op, ns);
         }
       }
-      for (Resource r : clusterAccessChecks.keySet()) {
-        for (Operation op : clusterAccessChecks.get(r)) {
-          check(rules, r, op, ns);
+      if (!Main.isDedicated()) {
+        for (Resource r : clusterAccessChecks.keySet()) {
+          for (Operation op : clusterAccessChecks.get(r)) {
+            check(rules, r, op, ns);
+          }
         }
       }
 

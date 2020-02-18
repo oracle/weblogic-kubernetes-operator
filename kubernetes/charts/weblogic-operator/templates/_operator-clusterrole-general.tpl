@@ -26,7 +26,7 @@ rules:
   verbs: ["get", "list", "watch"]
 - apiGroups: ["apiextensions.k8s.io"]
   resources: ["customresourcedefinitions"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
 {{- end }}
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains", "domains/status"]

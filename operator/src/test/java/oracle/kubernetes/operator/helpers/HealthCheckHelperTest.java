@@ -79,6 +79,9 @@ public class HealthCheckHelperTest {
   private static final List<Operation> CRUD_OPERATIONS =
       Arrays.asList(get, list, watch, create, update, patch, delete, deletecollection);
 
+  private static final List<Operation> CRD_OPERATIONS =
+      Arrays.asList(get, list, watch, create, update, patch);
+
   private static final List<Operation> READ_ONLY_OPERATIONS = Arrays.asList(get, list);
 
   private static final List<Operation> READ_WATCH_OPERATIONS = Arrays.asList(get, list, watch);
@@ -190,7 +193,7 @@ public class HealthCheckHelperTest {
     }
 
     private void addClusterRules(List<V1ResourceRule> rules) {
-      rules.add(createRule(CLUSTER_CRUD_RESOURCES, CRUD_OPERATIONS));
+      rules.add(createRule(CLUSTER_CRUD_RESOURCES, CRD_OPERATIONS));
       rules.add(createRule(CLUSTER_READ_UPDATE_RESOURCES, READ_UPDATE_OPERATIONS));
       rules.add(createRule(CLUSTER_READ_WATCH_RESOURCES, READ_WATCH_OPERATIONS));
     }

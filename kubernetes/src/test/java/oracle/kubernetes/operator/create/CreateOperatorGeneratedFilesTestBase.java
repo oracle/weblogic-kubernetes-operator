@@ -416,9 +416,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                         "watch",
                         "create",
                         "update",
-                        "patch",
-                        "delete",
-                        "deletecollection")))
+                        "patch")))
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("weblogic.oracle")

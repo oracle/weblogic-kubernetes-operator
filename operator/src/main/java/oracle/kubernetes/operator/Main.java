@@ -192,6 +192,7 @@ public class Main {
 
       Step strategy = Step.chain(
           new InitializeNamespacesSecurityStep(targetNamespaces),
+          new NamespaceRulesReviewStep(operatorNamespace),
           CrdHelper.createDomainCrdStep(version,
               new StartNamespacesStep(targetNamespaces)));
       if (!isDedicated()) {
@@ -382,10 +383,8 @@ public class Main {
   private static Collection<String> getTargetNamespaces() {
     return isDedicated()
         ? Collections.singleton(operatorNamespace)
-        : getTargetNamespaces(
-        Optional.ofNullable(getHelmVariable.apply("OPERATOR_TARGET_NAMESPACES"))
-            .orElse(tuningAndConfig.get("targetNamespaces")),
-        operatorNamespace);
+        : getTargetNamespaces(Optional.ofNullable(getHelmVariable.apply("OPERATOR_TARGET_NAMESPACES"))
+            .orElse(tuningAndConfig.get("targetNamespaces")), operatorNamespace);
   }
 
   public static boolean isDedicated() {
@@ -640,6 +639,7 @@ public class Main {
       packet.getComponents().put(
           NamespaceRulesReviewStep.class.getName(),
           Component.createFor(V1SubjectRulesReviewStatus.class, srrs));
+
       return doNext(packet);
     }
   }
