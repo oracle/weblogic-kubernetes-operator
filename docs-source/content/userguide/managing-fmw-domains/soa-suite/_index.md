@@ -329,12 +329,3 @@ type: Opaque
 
 Now that you have your Docker images and you have created your RCU schemas, you are ready
 to create your domain.  To continue, follow the instructions in the [SOA Domain sample]({{< relref "/samples/simple/domains/soa-domain/_index.md" >}}).
-
-#### Monitoring a SOA domain
-
-After the SOA domain is set up, you can:
-
-* Monitor the SOA instance using Prometheus and Grafana. See
-[Monitor a SOA domain]({{< relref "/samples/simple/elastic-stack/soa-domain/weblogic-monitoring-exporter-setup.md" >}}).
-* Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
-See [Publish logs to Elasticsearch]({{< relref "/samples/simple/elastic-stack/soa-domain/weblogic-logging-exporter-setup.md" >}}).
