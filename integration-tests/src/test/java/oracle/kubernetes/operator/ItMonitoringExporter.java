@@ -34,6 +34,7 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.Ignore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -51,7 +52,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * This test is used for testing Monitoring Exporter with Operator(s) .
  */
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Ignore
 public class ItMonitoringExporter extends BaseTest {
 
   private static int number = 5;
