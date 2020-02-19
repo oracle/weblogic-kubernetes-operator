@@ -10,7 +10,7 @@ import io.kubernetes.client.openapi.models.VersionInfo;
 /** Major and minor version of Kubernetes API Server. */
 public class KubernetesVersion {
   public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(1, 10);
-  private static final String[] MINIMUM_K8S_VERSIONS = {"1.11.5", "1.12.3", "1.13.0"};
+  private static final String[] MINIMUM_K8S_VERSIONS = {"1.13.5", "1.14.8", "1.15.7"};
   static KubernetesVersion UNREADABLE = new KubernetesVersion(0, 0);
   private final int major;
   private final int minor;
