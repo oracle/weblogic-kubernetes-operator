@@ -5,12 +5,8 @@ package oracle.kubernetes.operator.steps;
 
 import java.util.stream.Collectors;
 
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -42,23 +38,11 @@ public class DeleteDomainStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    Step serverDownStep = null;
-    // we don't delete PV unless we have the permission
-    if (!Main.isAccessAllowed(AuthorizationProxy.Resource.PERSISTENTVOLUMES, AuthorizationProxy.Operation.delete)) {
-      serverDownStep = Step.chain(
-          deletePods(),
-          deleteServices(),
-          deletePersistentVolumeClaims(),
-          ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(domainUid, namespace, getNext()));
-    } else {
-      serverDownStep = Step.chain(
-          deletePods(),
-          deleteServices(),
-          deletePersistentVolumes(),
-          deletePersistentVolumeClaims(),
-          ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(domainUid, namespace, getNext()));
-    }
-
+    Step serverDownStep =
+        Step.chain(
+            deletePods(),
+            deleteServices(),
+            ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(domainUid, namespace, getNext()));
     if (info != null) {
       serverDownStep =
           new ServerDownIteratorStep(
@@ -85,31 +69,6 @@ public class DeleteDomainStep extends Step {
     return new CallBuilder()
         .withLabelSelectors(forDomainUidSelector(domainUid), getCreatedbyOperatorSelector())
         .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(null));
-  }
-
-  private Step deletePersistentVolumes() {
-    return new CallBuilder()
-        .withLabelSelectors(forDomainUidSelector(domainUid), getCreatedbyOperatorSelector())
-        .listPersistentVolumeAsync(
-            new ActionResponseStep<V1PersistentVolumeList>() {
-              @Override
-              Step createSuccessStep(V1PersistentVolumeList result, Step next) {
-                return new DeletePersistentVolumeListStep(result.getItems(), next);
-              }
-            });
-  }
-
-  private Step deletePersistentVolumeClaims() {
-    return new CallBuilder()
-        .withLabelSelectors(forDomainUidSelector(domainUid), getCreatedbyOperatorSelector())
-        .listPersistentVolumeClaimAsync(
-            namespace,
-            new ActionResponseStep<V1PersistentVolumeClaimList>() {
-              @Override
-              Step createSuccessStep(V1PersistentVolumeClaimList result, Step next) {
-                return new DeletePersistentVolumeClaimListStep(result.getItems(), next);
-              }
-            });
   }
 
   /**

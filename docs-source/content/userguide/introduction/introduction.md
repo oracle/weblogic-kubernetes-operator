@@ -16,10 +16,10 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Operator prerequisites
 
-* Kubernetes 1.11.5+, 1.12.3+, 1.13.0+, 1.14.0+, and 1.15.0+  (check with `kubectl version`).
-* Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`).
+* Kubernetes 1.13.5+, 1.14.8+, and 1.15.7+  (check with `kubectl version`).
+* Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`) *or* OpenShift SDN on OpenShift 4.3 systems.
 * Docker 18.9.1 (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
-* Helm 2.14.3+ (check with `helm version`).
+* Helm 2.14.3+, 3.0.3+ (check with `helm version --client --short`).
 * Either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930, or Oracle WebLogic Server 12.2.1.4.0.
    * The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3 `,
    has all the necessary patches applied.
@@ -28,12 +28,11 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 * You must have the `cluster-admin` role to install the operator.
 * We do not currently support running WebLogic in non-Linux containers.
 
-### Important note about Kubernetes 1.16
+### Important note about Kubernetes 1.16.0+
 
 Kubernetes 1.16 introduced changes to some Kubernetes APIs that are used by the operator.
-At this time, the operator is not guaranteed to work on Kubernetes 1.16.
-When we have completed testing and made any necessary code changes, we will update this
-page to confirm support of 1.16.
+At this time, the operator will not work on Kubernetes 1.16.0+.
+When we have made the necessary code changes, we will update this page to confirm support of 1.16.
 
 ### Cloud providers
 

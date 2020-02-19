@@ -603,8 +603,9 @@ class TopologyGenerator(Generator):
       self.undent()
 
   def addDynamicServer(self, dynamicServer):
-    name=self.name(dynamicServer)
-    self.writeln("name: " + name)
+    if dynamicServer.getName() is not None:
+      name=self.name(dynamicServer)
+      self.writeln("name: " + name)
     self.writeln("serverTemplateName: " + self.quote(dynamicServer.getServerTemplate().getName()))
     self.writeln("calculatedListenPorts: " + str(dynamicServer.isCalculatedListenPorts()))
     self.writeln("serverNamePrefix: " + self.quote(dynamicServer.getServerNamePrefix()))
