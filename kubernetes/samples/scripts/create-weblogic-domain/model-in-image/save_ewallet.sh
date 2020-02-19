@@ -26,8 +26,8 @@ namespace=$2
 passphrase=$3
 secret=${4:-sample-domain1-opss-walletfile-secret}
 
-echo kubectl -n ${namespace} describe configmap ${domainuid}-weblogic-domain-introspect-cm | sed -n '/ewallet.p12/ {n;n;p}' > ewallet.p12
-echo kubectl -n ${namespace} delete secret ${secret} --ignore-not-found
-echo kubectl -n ${namespace} \
+kubectl -n ${namespace} describe configmap ${domainuid}-weblogic-domain-introspect-cm | sed -n '/ewallet.p12/ {n;n;p}' > ewallet.p12
+kubectl -n ${namespace} delete secret ${secret} --ignore-not-found
+kubectl -n ${namespace} \
   create secret generic ${secret} \
   --from-file=ewallet.p12 
