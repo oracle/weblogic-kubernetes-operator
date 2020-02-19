@@ -262,7 +262,7 @@ public class AuthorizationProxy {
     CRONJOBS("cronjobs", "batch"),
     CRDS("customresourcedefinitions", "apiextensions.k8s.io"),
     DOMAINS("domains", "weblogic.oracle"),
-    DOMAINSTATUSS("domains", "status", "weblogic.oracle"),
+    DOMAINSTATUSES("domains", "status", "weblogic.oracle"),
     SUBJECTACCESSREVIEWS("subjectaccessreviews", "authorization.k8s.io"),
     SELFSUBJECTACCESSREVIEWS("selfsubjectaccessreviews", "authorization.k8s.io"),
     LOCALSUBJECTACCESSREVIEWS("localsubjectaccessreviews", "authorization.k8s.io"),
