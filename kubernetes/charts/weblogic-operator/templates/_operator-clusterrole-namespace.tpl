@@ -21,7 +21,7 @@ metadata:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
 - apiGroups: [""]
-  resources: ["services", "configmaps", "pods", "podtemplates", "events", "persistentvolumeclaims"]
+  resources: ["services", "configmaps", "pods", "events"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: [""]
   resources: ["secrets"]
@@ -33,15 +33,6 @@ rules:
   resources: ["pods/exec"]
   verbs: ["create"]
 - apiGroups: ["batch"]
-  resources: ["jobs", "cronjobs"]
+  resources: ["jobs"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
-- apiGroups: ["settings.k8s.io"]
-  resources: ["podpresets"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
-- apiGroups: ["extensions"]
-  resources: ["podsecuritypolicies", "networkpolicies"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
-- apiGroups: ["storage.k8s.io"]
-  resources: ["storageclasses"]
-  verbs: ["get", "list", "watch"]
 {{- end }}
