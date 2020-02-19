@@ -372,6 +372,8 @@ public class ConfigMapHelper {
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
       String topologyYaml = data.get("topology.yaml");
+      String miiModelSecretsHash = data.get("secrets.md5");
+      String miiDomainZipHash = data.get("domainzip_hash");
       String updateDomainResult = data.get("UPDATEDOMAINRESULT");
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
@@ -387,6 +389,12 @@ public class ConfigMapHelper {
         ScanCache.INSTANCE.registerScan(
             info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, new DateTime()));
         packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
+        if (miiDomainZipHash != null) {
+          packet.put(ProcessingConstants.DOMAIN_HASH, miiDomainZipHash);
+        }
+        if (miiModelSecretsHash != null) {
+          packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
+        }
         LOGGER.info(
             MessageKeys.WLS_CONFIGURATION_READ,
             (System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME))),

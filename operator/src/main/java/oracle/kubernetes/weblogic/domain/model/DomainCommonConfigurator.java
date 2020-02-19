@@ -210,6 +210,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withIntrospectVersion(String introspectVersion) {
+    getDomainSpec().setIntrospectVersionn(introspectVersion);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withWebLogicCredentialsSecret(String secretName, String namespace) {
     getDomainSpec().setWebLogicCredentialsSecret(new V1SecretReference().name(secretName).namespace(namespace));
     return this;

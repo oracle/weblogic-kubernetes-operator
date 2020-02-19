@@ -6,6 +6,7 @@ UNSAFE_ONLINE_UPDATE=0
 SAFE_ONLINE_UPDATE=1
 FATAL_MODEL_CHANGES=2
 MODELS_SAME=3
+UNSAFE_SECURITY_UPDATE=4
 
 # The following class is borrowed directly from the WDT project's yaml_tranlator.py
 class PythonToYaml:
@@ -266,6 +267,12 @@ class ModelDiffer:
             2 for fatal
             3 for no difference
         """
+
+        # check for phase 1 any security changes in the domainInfo intersection
+
+        if model.has_key('domainInfo'):
+            if model['domainInfo'].has_key('AdminUserName') or model['domainInfo'].has_key('AdminPassword') or model['domainInfo'].has_key('WLSRoles'):
+                return UNSAFE_SECURITY_UPDATE
 
         # filter out any appDeployments for now. It is possible to support app but
         # case to handle include deletion, redeploy...

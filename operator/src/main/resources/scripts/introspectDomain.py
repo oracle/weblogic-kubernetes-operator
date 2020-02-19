@@ -77,7 +77,7 @@
 #
 
 
-import base64
+import base64, md5
 import distutils.dir_util
 import inspect
 import os
@@ -133,6 +133,7 @@ class OfflineWlstEnv(object):
     self.WLS_VERSION  = self.INTROSPECT_HOME + "/wls.version"
     self.JDK_PATH  = self.INTROSPECT_HOME + "/jdk.path"
     self.SECRETS_MD5 = self.INTROSPECT_HOME + "/secrets.md5"
+    self.DOMAINZIP_HASH = self.INTROSPECT_HOME + "/domainzip_hash"
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
@@ -863,6 +864,10 @@ class DomainSeedGenerator(Generator):
     for s in base64.encodestring(domain_data).splitlines():
       b64 = b64 + s
     self.writeln(b64)
+    domainzip_hash = md5.new(domain_data).hexdigest()
+    fh = open("/tmp/domainzip_hash", "w")
+    fh.write(domainzip_hash)
+    fh.close()
     trace('done zipping up domain ')
 
 
@@ -1434,8 +1439,12 @@ class DomainIntrospector(SecretManager):
         InventoryMD5Generator(self.env, self.env.JDK_PATH, '/tmp/jdk_path').generate()
         trace("cfgmap write jdk_path")
         InventoryMD5Generator(self.env, self.env.SECRETS_MD5, '/tmp/secrets.md5').generate()
-        trace("cfgmap write primordial_domain")
+        trace("cfgmap write model secrets")
+        # Must be called after DomainSeedGenerator
+        InventoryMD5Generator(self.env, self.env.DOMAINZIP_HASH, '/tmp/domainzip_hash').generate()
+        trace("cfgmap write model secrets")
         PrimordialDomainGenerator(self.env).generate()
+        trace("cfgmap write primordial_domain")
 
         if self.env.WDT_DOMAIN_TYPE == 'JRF':
           OpssKeyGenerator(self.env).generate()

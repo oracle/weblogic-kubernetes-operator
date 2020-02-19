@@ -18,6 +18,8 @@ public interface LabelConstants {
   String DOMAINRESTARTVERSION_LABEL = "weblogic.domainRestartVersion";
   String CLUSTERRESTARTVERSION_LABEL = "weblogic.clusterRestartVersion";
   String SERVERRESTARTVERSION_LABEL = "weblogic.serverRestartVersion";
+  String MODEL_IN_IMAGE_MODEL_SECRETS_HASH = "weblogic.modelInImageModelSecretsHash";
+  String MODEL_IN_IMAGE_DOMAINZIP_HASH = "weblogic.modelInImageDomainZipHash";
 
   static String forDomainUidSelector(String uid) {
     return String.format("%s=%s", DOMAINUID_LABEL, uid);

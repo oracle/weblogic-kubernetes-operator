@@ -73,10 +73,8 @@ public class JobHelper {
     return runningServersCount(info) == 0 && creatingServers(info);
   }
 
-  // TODO: ... is there anyway to optimize it?
-
   private static boolean isModelInImageUpdate(DomainPresenceInfo info) {
-    return true;
+    return info.getDomain().getDomainHomeSourceType().equals("FromModel");
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {
