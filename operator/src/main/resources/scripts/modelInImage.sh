@@ -25,7 +25,7 @@ INTROSPECTJOB_PASSPHRASE_MD5="/tmp/inventory_passphrase.md5"
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 WDT_ENCRYPTION_PASSPHRASE="/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
 OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/passphrase"
-OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secretewallet.p12"
+OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/ewallet.p12"
 IMG_MODELS_HOME="/u01/wdt/models"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
@@ -599,10 +599,10 @@ function wdtCreateDomain() {
   if [ ! -z ${WDT_PASSPHRASE} ]; then
     yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home \
     ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
-    ${OPSS_FLAGS} > ${WDT_OUTPUT}
+     > ${WDT_OUTPUT}
   else
     ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS} >  ${WDT_OUTPUT}
+    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  >  ${WDT_OUTPUT}
   fi
   ret=$?
   if [ $ret -ne 0 ]; then
