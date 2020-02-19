@@ -356,6 +356,15 @@ public class Domain {
   }
 
   /**
+   * Returns the opss wallet file secret.
+   *
+   * @return opss wallet file secret.
+   */
+  public String getOpssWalletFileSecret() {
+    return spec.getOpssWalletFileSecret();
+  }
+
+  /**
    * Reference to secret wdt encryption key passphrase.
    *
    * @return wdt encryption passphrase
@@ -486,14 +495,6 @@ public class Domain {
         .map(Configuration::getSecrets).orElse(spec.getConfigOverrideSecrets());
   }
 
-  /**
-   * Returns the opss wallet config map.
-   *
-   * @return opss wallet config map.
-   */
-  public String getOpssWalletFileSecret() {
-    return spec.getOpssWalletFileSecret();
-  }
 
   @Override
   public String toString() {

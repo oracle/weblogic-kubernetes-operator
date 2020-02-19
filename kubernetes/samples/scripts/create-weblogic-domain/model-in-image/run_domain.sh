@@ -54,8 +54,8 @@ sed -i s/@@DOMTYPE@@/${WDT_DOMAIN_TYPE}/ k8s-domain.yaml
 
 # TBD Can we just remove the sed and leave this always uncommented in the template? The sample always deploys the secret even for non-JRF domains.  Or even simpler, maintain 3 (nearly identical) templates.  
 if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
-  sed -i 's/\#opssWalletSecret:/opssWalletSecret:/' k8s-domain.yaml
-  sed -i 's/\#  name: sample-domain1-opss-key-passphrase-secret/  name: sample-domain1-opss-key-passphrase-secret/' k8s-domain.yaml
+  sed -i 's/\#opss:/opss:/' k8s-domain.yaml
+  sed -i 's/\#walletPasswordSecret: sample-domain1-opss-key-passphrase-secret/walletPasswordSecret: sample-domain1-opss-key-passphrase-secret/' k8s-domain.yaml
 fi
 
 echo "@@ Info: Applying domain resource yaml 'k8s-domain.yaml'"
