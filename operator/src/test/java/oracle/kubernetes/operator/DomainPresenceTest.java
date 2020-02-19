@@ -238,8 +238,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     readExistingResources();
 
     assertThat(testSupport.getResources(KubernetesTestSupport.SERVICE), empty());
-    assertThat(testSupport.getResources(KubernetesTestSupport.PV), empty());
-    assertThat(testSupport.getResources(KubernetesTestSupport.PVC), empty());
   }
 
   public abstract static class DomainProcessorStub implements DomainProcessor {
