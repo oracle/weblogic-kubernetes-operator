@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -20,6 +20,10 @@ public class LoggerHelper {
     initLocal(null);
   }
 
+  /**
+   * initialize local logger.
+   * @param cl logger
+   */
   public static void initLocal(Logger cl) {
     //cl.setUseParentHandlers(false);
     //cl.addHandler(new ConsoleHandler());
@@ -27,9 +31,15 @@ public class LoggerHelper {
 
   }
 
+  /**
+   * get local.
+   * @return logger
+   */
   public static Logger getLocal() {
     Logger cl = localLogger.get();
-    if (cl == null) return globalLogger;
+    if (cl == null) {
+      return globalLogger;
+    }
     return cl;
   }
 

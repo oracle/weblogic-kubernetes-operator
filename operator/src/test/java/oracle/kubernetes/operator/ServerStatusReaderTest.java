@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -60,6 +60,10 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
       new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(new DomainSpec());
   private DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
+  /**
+   * Setup test.
+   * @throws NoSuchFieldException on no such field
+   */
   @Before
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -80,9 +84,15 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
         .putLabelsItem(LabelConstants.SERVERNAME_LABEL, serverName);
   }
 
+  /**
+   * Tear down test.
+   * @throws Exception on failure
+   */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }

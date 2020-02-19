@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -298,7 +298,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     @Override
     public NextAction doPotentialRetry(Step conflictStep, Packet packet, int statusCode) {
       // Check statusCode, many statuses should not be retried
-      // https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#http-status-codes
+      // https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#http-status-codes
       if (statusCode == 0 /* simple timeout */
           || statusCode == 429 /* StatusTooManyRequests */
           || statusCode == 500 /* StatusInternalServerError */

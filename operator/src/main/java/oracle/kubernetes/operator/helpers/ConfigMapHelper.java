@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -137,6 +137,11 @@ public class ConfigMapHelper {
     return fname;
   }
 
+  /**
+   * parse domain topology yaml.
+   * @param topologyYaml topology yaml.
+   * @return parsed object hierarchy
+   */
   public static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
@@ -597,17 +602,21 @@ public class ConfigMapHelper {
     }
   }
 
+  /**
+   * Domain topology.
+   */
   public static class DomainTopology {
     private boolean domainValid;
     private WlsDomainConfig domain;
     private List<String> validationErrors;
 
+    /**
+     * check if domain is valid.
+     * @return true, if valid
+     */
     public boolean getDomainValid() {
       // domainValid = true AND no validation errors exist
-      if (domainValid && getValidationErrors().isEmpty()) {
-        return true;
-      }
-      return false;
+      return domainValid && getValidationErrors().isEmpty();
     }
 
     public void setDomainValid(boolean domainValid) {
@@ -623,6 +632,10 @@ public class ConfigMapHelper {
       this.domain = domain;
     }
 
+    /**
+     * Retrieve validation errors.
+     * @return validation errors
+     */
     public List<String> getValidationErrors() {
       if (validationErrors == null) {
         validationErrors = Collections.emptyList();
@@ -643,6 +656,10 @@ public class ConfigMapHelper {
       this.validationErrors = validationErrors;
     }
 
+    /**
+     * to string.
+     * @return string
+     */
     public String toString() {
       if (domainValid) {
         return "domain: " + domain;

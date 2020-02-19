@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -53,6 +53,9 @@ public class AsyncRequestStepTest {
           null);
   private List<Memento> mementos = new ArrayList<>();
 
+  /**
+   * Setup test.
+   */
   @Before
   public void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -60,9 +63,14 @@ public class AsyncRequestStepTest {
     testSupport.runSteps(asyncRequestStep);
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test

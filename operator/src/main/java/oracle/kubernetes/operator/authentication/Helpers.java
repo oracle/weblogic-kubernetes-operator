@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.authentication;
@@ -30,6 +30,10 @@ public class Helpers {
   private final ApiClient apiClient;
   private final CoreV1Api coreApi;
 
+  /**
+   * Construct helpers.
+   * @param authenticator authenticator
+   */
   public Helpers(Authenticator authenticator) {
     this.authenticator = authenticator;
     apiClient = authenticator.getApiClient();

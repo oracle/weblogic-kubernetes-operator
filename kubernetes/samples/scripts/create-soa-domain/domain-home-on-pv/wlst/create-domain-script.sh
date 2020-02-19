@@ -1,14 +1,17 @@
 #!/bin/bash
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 export DOMAIN_HOME=${DOMAIN_HOME_DIR}
 
 # Create the domain
+if [ -z "${JAVA_HOME}" ]; then
+  JAVA_HOME=/usr/java/latest
+fi  
 wlst.sh -skipWLSModuleScanning \
         ${CREATE_DOMAIN_SCRIPT_DIR}/createSOADomain.py \
         -oh /u01/oracle \
-        -jh /usr/java/latest \
+        -jh ${JAVA_HOME} \
         -parent ${DOMAIN_HOME}/.. \
         -name ${CUSTOM_DOMAIN_NAME} \
         -user `cat /weblogic-operator/secrets/username` \

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -47,6 +47,10 @@ public class PodHelperTest {
     return new DomainPresenceInfo(new Domain().withMetadata(new V1ObjectMeta().namespace(NS)));
   }
 
+  /**
+   * Setup test.
+   * @throws NoSuchFieldException on no such field
+   */
   @Before
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -54,9 +58,15 @@ public class PodHelperTest {
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
 
+  /**
+   * Tear down test.
+   * @throws Exception on failure
+   */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }

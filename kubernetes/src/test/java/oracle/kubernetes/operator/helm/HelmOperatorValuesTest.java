@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
@@ -544,39 +544,5 @@ public class HelmOperatorValuesTest {
     assertThat(values.getServiceAccount(), equalTo("test-account"));
     assertThat(values.getWeblogicOperatorImage(), equalTo("test-image"));
     assertThat(values.getJavaLoggingLevel(), equalTo("FINE"));
-  }
-
-  @Test
-  public void operatorHelmChartDefault_areCorrect() throws Exception {
-    assertThat(
-        getActualOperatorHelmChartDefaultValues(),
-        equalTo(getExpectedOperatorHelmChartDefaultValues()));
-  }
-
-  private String getExpectedOperatorHelmChartDefaultValues() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("dedicated: false\n")
-        .append("domainNamespaces:\n")
-        .append("- default\n")
-        .append("elasticSearchHost: elasticsearch.default.svc.cluster.local\n")
-        .append("elasticSearchPort: 9200\n")
-        .append("elkIntegrationEnabled: false\n")
-        .append("externalDebugHttpPort: 30999\n")
-        .append("externalRestEnabled: false\n")
-        .append("externalRestHttpsPort: 31001\n")
-        .append("image: oracle/weblogic-kubernetes-operator:2.4.0\n")
-        .append("imagePullPolicy: IfNotPresent\n")
-        .append("internalDebugHttpPort: 30999\n")
-        .append("istioEnabled: false\n")
-        .append("javaLoggingLevel: INFO\n")
-        .append("logStashImage: logstash:6.6.0\n")
-        .append("remoteDebugNodePortEnabled: false\n")
-        .append("serviceAccount: default\n")
-        .append("suspendOnDebugStartup: false\n");
-    return sb.toString();
-  }
-
-  private String getActualOperatorHelmChartDefaultValues() throws Exception {
-    return (new ChartDefaultValues(OPERATOR_CHART)).getDefaultValuesAsYaml();
   }
 }

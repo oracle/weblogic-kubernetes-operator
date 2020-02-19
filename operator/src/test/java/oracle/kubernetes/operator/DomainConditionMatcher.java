@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -47,8 +47,11 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
 
   @Override
   protected boolean matchesSafely(Domain item, Description mismatchDescription) {
-    for (DomainCondition condition : getStatus(item).getConditions())
-      if (matches(condition)) return true;
+    for (DomainCondition condition : getStatus(item).getConditions()) {
+      if (matches(condition)) {
+        return true;
+      }
+    }
 
     mismatchDescription.appendValueList(
         "found domain with conditions ", ", ", ".", getStatus(item).getConditions());
@@ -56,9 +59,15 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
   }
 
   private boolean matches(DomainCondition condition) {
-    if (expectedType != condition.getType()) return false;
-    if (expectedStatus != null && !expectedStatus.equals(condition.getStatus())) return false;
-    if (expectedMessage != null && !expectedMessage.equals(condition.getMessage())) return false;
+    if (expectedType != condition.getType()) {
+      return false;
+    }
+    if (expectedStatus != null && !expectedStatus.equals(condition.getStatus())) {
+      return false;
+    }
+    if (expectedMessage != null && !expectedMessage.equals(condition.getMessage())) {
+      return false;
+    }
     return expectedReason == null || expectedReason.equals(condition.getReason());
   }
 
@@ -70,9 +79,15 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
   public void describeTo(Description description) {
     List<String> expectations = new ArrayList<>();
     expectations.add(expectation("type", expectedType.toString()));
-    if (expectedStatus != null) expectations.add(expectation("status", expectedStatus));
-    if (expectedReason != null) expectations.add(expectation("reason", expectedReason));
-    if (expectedMessage != null) expectations.add(expectation("reason", expectedMessage));
+    if (expectedStatus != null) {
+      expectations.add(expectation("status", expectedStatus));
+    }
+    if (expectedReason != null) {
+      expectations.add(expectation("reason", expectedReason));
+    }
+    if (expectedMessage != null) {
+      expectations.add(expectation("reason", expectedMessage));
+    }
     description
         .appendText("domain containing condition: ")
         .appendText(OperatorUtils.joinListGrammatically(expectations));

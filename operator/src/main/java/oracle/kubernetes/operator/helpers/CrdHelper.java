@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionNames;
@@ -28,10 +27,8 @@ import io.kubernetes.client.openapi.models.V1beta1CustomResourceSubresources;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.openapi.models.V1beta1JSONSchemaProps;
 import io.kubernetes.client.util.Yaml;
-
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.Main;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -68,7 +65,7 @@ public class CrdHelper {
 
     try (Writer writer = Files.newBufferedWriter(outputFilePath)) {
       writer.write(
-          "# Copyright (c) 2020, Oracle Corporation and/or its affiliates.  All rights reserved.\n"
+          "# Copyright (c) 2020, Oracle Corporation and/or its affiliates.\n"
               + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
       writer.write("\n");
       Yaml.dump(context.model, writer);
@@ -109,7 +106,7 @@ public class CrdHelper {
         V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected);
   }
 
-  public static class CrdStep extends Step {
+  static class CrdStep extends Step {
     CrdContext context;
 
     CrdStep(KubernetesVersion version, Step next) {
@@ -119,11 +116,6 @@ public class CrdHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-
-      if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get)) {
-        return doNext(packet);
-      }
-
       return doNext(context.verifyCrd(getNext()), packet);
     }
   }
@@ -227,9 +219,10 @@ public class CrdHelper {
     }
 
     Step verifyCrd(Step next) {
-      return new CallBuilder()
-          .readCustomResourceDefinitionAsync(
-              model.getMetadata().getName(), createReadResponseStep(next));
+      return HealthCheckHelper.skipIfNotAuthorized(
+          AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.get,
+          new CallBuilder().readCustomResourceDefinitionAsync(
+              model.getMetadata().getName(), createReadResponseStep(next)), next);
     }
 
     ResponseStep<V1beta1CustomResourceDefinition> createReadResponseStep(Step next) {
@@ -237,8 +230,12 @@ public class CrdHelper {
     }
 
     Step createCrd(Step next) {
-      return new CallBuilder()
-          .createCustomResourceDefinitionAsync(model, createCreateResponseStep(next));
+      return HealthCheckHelper.failIfNotAuthorized(
+          AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.create,
+          new CallBuilder().createCustomResourceDefinitionAsync(
+              model, createCreateResponseStep(next)), () -> {
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "create the CRD");
+          });
     }
 
     ResponseStep<V1beta1CustomResourceDefinition> createCreateResponseStep(Step next) {
@@ -272,9 +269,12 @@ public class CrdHelper {
                   .name(KubernetesConstants.DOMAIN_VERSION)
                   .served(true));
 
-      return new CallBuilder()
-          .replaceCustomResourceDefinitionAsync(
-              existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
+      return HealthCheckHelper.failIfNotAuthorized(
+          AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.replace,
+          new CallBuilder().replaceCustomResourceDefinitionAsync(
+              existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next)), () -> {
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "add a new version to the existing CRD");
+          });
     }
 
     Step updateCrd(Step next, V1beta1CustomResourceDefinition existingCrd) {
@@ -297,9 +297,12 @@ public class CrdHelper {
         }
       }
 
-      return new CallBuilder()
-          .replaceCustomResourceDefinitionAsync(
-              model.getMetadata().getName(), model, createReplaceResponseStep(next));
+      return HealthCheckHelper.failIfNotAuthorized(
+          AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.replace,
+          new CallBuilder().replaceCustomResourceDefinitionAsync(
+              model.getMetadata().getName(), model, createReplaceResponseStep(next)), () -> {
+            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "replace the existing CRD");
+          });
     }
 
     ResponseStep<V1beta1CustomResourceDefinition> createReplaceResponseStep(Step next) {
@@ -315,35 +318,21 @@ public class CrdHelper {
       public NextAction onSuccess(
           Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
         V1beta1CustomResourceDefinition existingCrd = callResponse.getResult();
-        RuntimeException  exception = null;
-        
         if (existingCrd == null) {
-          if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.create)) {
-            exception = new RuntimeException("Failed to find CustomResourceDefinition domains.weblogic.oracle.");
-            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "create the CRD");
-          } else {
-            return doNext(createCrd(getNext()), packet);
-          }
+          return doNext(createCrd(getNext()), packet);
         } else if (isOutdatedCrd(existingCrd)) {
-          if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.update)) {
-            exception = new RuntimeException("Found an outdated CustomResourceDefinition domains.weblogic.oracle.");
-            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "add a new version to the existing CRD");
-          } else {
-            return doNext(updateCrd(getNext(), existingCrd), packet);
-          }
+          return doNext(updateCrd(getNext(), existingCrd), packet);
         } else if (!existingCrdContainsVersion(existingCrd)) {
-          if (!Main.isAccessAllowed(AuthorizationProxy.Resource.CRDS, AuthorizationProxy.Operation.replace)) {
-            exception = new RuntimeException(
-                "Failed to find the expected version of CustomResourceDefinition domain.weblogic.oracle. ");
-            LOGGER.warning(MessageKeys.CRD_NO_WRITE_ACCESS, "replace the existing CRD");
-          } else {
-            return doNext(updateExistingCrd(getNext(), existingCrd), packet);
-          }
+          return doNext(updateExistingCrd(getNext(), existingCrd), packet);
+        } else {
+          return doNext(packet);
         }
+      }
 
-        if (exception == null) return doNext(packet);
-    
-        return super.doTerminate(exception, packet);
+      @Override
+      protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
+        return isNotAuthorizedOrForbidden(callResponse)
+            ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
     }
 

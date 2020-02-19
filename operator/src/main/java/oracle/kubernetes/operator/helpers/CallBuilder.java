@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -24,8 +24,6 @@ import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -234,12 +232,6 @@ public class CallBuilder {
   private final CallFactory<V1EventList> listEvent =
       (requestParams, usage, cont, callback) ->
           wrap(listEventAsync(usage, requestParams.namespace, cont, callback));
-  private final CallFactory<V1PersistentVolumeList> listPersistentvolume =
-      (requestParams, usage, cont, callback) ->
-          wrap(listPersistentVolumeAsync(usage, cont, callback));
-  private final CallFactory<V1PersistentVolumeClaimList> listPersistentvolumeclaim =
-      (requestParams, usage, cont, callback) ->
-          wrap(listPersistentVolumeClaimAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1NamespaceList> listNamespace =
       (requestParams, usage, cont, callback) ->
           wrap(listNamespaceAsync(usage, cont, callback));
@@ -1381,154 +1373,6 @@ public class CallBuilder {
   public Step listNamespaceAsync(ResponseStep<V1NamespaceList> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("listNamespace", null, null, null), listNamespace);
-  }
-
-  private Call listPersistentVolumeAsync(
-      ApiClient client, String cont, ApiCallback<V1PersistentVolumeList> callback)
-      throws ApiException {
-    return new CoreV1Api(client)
-        .listPersistentVolumeAsync(
-            pretty,
-            allowWatchBookmarks,
-            cont,
-            fieldSelector,
-            labelSelector,
-            limit,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            callback);
-  }
-
-  /**
-   * Asynchronous step for listing persistent volumes.
-   *
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step listPersistentVolumeAsync(ResponseStep<V1PersistentVolumeList> responseStep) {
-    return createRequestAsync(
-        responseStep,
-        new RequestParams("listPersistentVolume", null, null, null),
-        listPersistentvolume);
-  }
-
-  public V1PersistentVolume createPersistentVolume(V1PersistentVolume volume) throws ApiException {
-    RequestParams requestParams = new RequestParams("createPV", null, null, volume);
-    return executeSynchronousCall(requestParams, createPvCall);
-  }
-
-  /**
-   * Asynchronous step for creating persistent volumes.
-   *
-   * @param persistentVolume a resource describing the volume to create
-   * @param responseStep the step to invoke when the call completes
-   * @return a new asynchronous step
-   */
-  public Step createPersistentVolumeAsync(
-      V1PersistentVolume persistentVolume, ResponseStep<V1PersistentVolume> responseStep) {
-    return createRequestAsync(
-        responseStep,
-        new RequestParams("createPersistentVolume", null, null, persistentVolume),
-        createPersistentvolume);
-  }
-
-  /* Subject Access Review */
-
-  public V1Status deletePersistentVolume(String name, V1DeleteOptions deleteOptions)
-      throws ApiException {
-    RequestParams requestParams =
-        new RequestParams("deletePersistentVolume", null, name, deleteOptions);
-    return executeSynchronousCall(requestParams, deletePvCall);
-  }
-
-  /**
-   * Asynchronous step for deleting persistent volumes.
-   *
-   * @param name the name of the volume to delete
-   * @param deleteOptions options to control deletion
-   * @param responseStep the step to invoke when the call completes
-   * @return a new asynchronous step
-   */
-  public Step deletePersistentVolumeAsync(
-      String name, V1DeleteOptions deleteOptions, ResponseStep<V1Status> responseStep) {
-    return createRequestAsync(
-        responseStep,
-        new RequestParams("deletePersistentVolume", null, name, deleteOptions),
-        deletePersistentvolume);
-  }
-
-  private Call listPersistentVolumeClaimAsync(
-      ApiClient client,
-      String namespace,
-      String cont,
-      ApiCallback<V1PersistentVolumeClaimList> callback)
-      throws ApiException {
-    return new CoreV1Api(client)
-        .listNamespacedPersistentVolumeClaimAsync(
-            namespace,
-            pretty,
-            allowWatchBookmarks,
-            cont,
-            fieldSelector,
-            labelSelector,
-            limit,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            callback);
-  }
-
-  /**
-   * Asynchronous step for listing persistent volume claims.
-   *
-   * @param namespace Namespace
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step listPersistentVolumeClaimAsync(
-      String namespace, ResponseStep<V1PersistentVolumeClaimList> responseStep) {
-    return createRequestAsync(
-        responseStep,
-        new RequestParams("listPersistentVolumeClaim", namespace, null, null),
-        listPersistentvolumeclaim);
-  }
-
-  public V1PersistentVolumeClaim createPersistentVolumeClaim(V1PersistentVolumeClaim claim)
-      throws ApiException {
-    RequestParams requestParams = new RequestParams("createPVC", getNamespace(claim), null, claim);
-    return executeSynchronousCall(requestParams, createPvcCall);
-  }
-
-  /* Self Subject Access Review */
-
-  protected String getNamespace(V1PersistentVolumeClaim claim) {
-    return claim.getMetadata().getNamespace();
-  }
-
-  public Step createPersistentVolumeClaimAsync(
-      V1PersistentVolumeClaim claim, ResponseStep<V1PersistentVolumeClaim> responseStep) {
-    return createRequestAsync(
-        responseStep,
-        new RequestParams("createPersistentVolumeClaim", getNamespace(claim), null, claim),
-        createPersistentvolumeclaim);
-  }
-
-  public V1Status deletePersistentVolumeClaim(
-      String name, String namespace, V1DeleteOptions deleteOptions) throws ApiException {
-    return executeSynchronousCall(
-        new RequestParams("deletePVC", namespace, name, deleteOptions), deletePvcCall);
-  }
-
-  public Step deletePersistentVolumeClaimAsync(
-      String name,
-      String namespace,
-      V1DeleteOptions deleteOptions,
-      ResponseStep<V1Status> responseStep) {
-    return createRequestAsync(
-        responseStep,
-        new RequestParams("deletePersistentVolumeClaim", namespace, name, deleteOptions),
-        deletePersistentvolumeclaim);
   }
 
   /**

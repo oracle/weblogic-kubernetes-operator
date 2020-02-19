@@ -1,5 +1,5 @@
 #!/bin/bash -x
-# Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upload
 monitoringExporterDir=$1
 resourceExporterDir=$2
@@ -21,4 +21,5 @@ helm install --wait --name prometheus --namespace monitoring --values  ${monitor
 
 #remove version after https://github.com/helm/charts/issues/18215 will be fixed
 helm install --wait --name grafana --namespace monitoring --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version=3.12.0
+
 echo "Run the script [redeployPromGrafanaLatestChart.sh] ..."

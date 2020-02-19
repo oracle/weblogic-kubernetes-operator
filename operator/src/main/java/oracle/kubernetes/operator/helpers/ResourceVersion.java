@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,6 +11,10 @@ public class ResourceVersion implements Comparable<ResourceVersion> {
   private final String prerelease;
   private final Integer prereleaseVersion;
 
+  /**
+   * Construct resource version.
+   * @param value version
+   */
   public ResourceVersion(String value) {
     this.value = value;
 
@@ -159,6 +163,11 @@ public class ResourceVersion implements Comparable<ResourceVersion> {
     return value;
   }
 
+  /**
+   * Check equality.
+   * @param o other
+   * @return true, if equal
+   */
   public boolean equals(Object o) {
     if (!(o instanceof ResourceVersion)) {
       return false;
