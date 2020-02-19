@@ -21,7 +21,8 @@ RUN groupadd -g 1000 oracle && \
     useradd -d /operator -M -s /bin/bash -g 1000 -u 1000 oracle && \
     mkdir /operator && \
     mkdir /operator/lib && \
-    chown -R 1000:1000 /operator
+    mkdir /logs && \
+    chown -R 1000:1000 /operator /logs
 USER 1000
 
 ENV PATH=$PATH:/operator

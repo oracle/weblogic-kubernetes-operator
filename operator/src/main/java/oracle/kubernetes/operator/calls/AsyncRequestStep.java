@@ -298,7 +298,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     @Override
     public NextAction doPotentialRetry(Step conflictStep, Packet packet, int statusCode) {
       // Check statusCode, many statuses should not be retried
-      // https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#http-status-codes
+      // https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#http-status-codes
       if (statusCode == 0 /* simple timeout */
           || statusCode == 429 /* StatusTooManyRequests */
           || statusCode == 500 /* StatusInternalServerError */
