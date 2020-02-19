@@ -45,7 +45,7 @@ echo "@@ Info: Creating 'k8s-domain.yaml' from 'k8s-domain.yaml.template' and se
 
 if [ ! "${WDT_DOMAIN_TYPE}" == "WLS" ] \
    && [ ! "${WDT_DOMAIN_TYPE}" == "RestrictedJRF" ] \
-   && [ ! "${WDT_DOMAIN_TYPE}" == "JRF"]; then
+   && [ ! "${WDT_DOMAIN_TYPE}" == "JRF" ]; then
   echo "Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1
 fi
 
