@@ -619,6 +619,9 @@ public class ConfigMapHelper {
       if (result != null) {
         Map<String, String> data = result.getData();
         String topologyYaml = data.get("topology.yaml");
+        String miiModelSecretsHash = data.get("secrets.md5");
+        String miiDomainZipHash = data.get("domainzip_hash");
+
         if (topologyYaml != null) {
           ConfigMapHelper.DomainTopology domainTopology =
               ConfigMapHelper.parseDomainTopologyYaml(topologyYaml);
@@ -631,7 +634,16 @@ public class ConfigMapHelper {
             packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
           }
         }
+
+        if (miiDomainZipHash != null) {
+          packet.put(ProcessingConstants.DOMAIN_HASH, miiDomainZipHash);
+        }
+
+        if (miiModelSecretsHash != null) {
+          packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
+        }
       }
+      LOGGER.info("DEBUG: onSuccess result is null");
 
       return doNext(packet);
     }

@@ -465,7 +465,7 @@ function checkDirNotExistsOrEmpty() {
   trap - ERR
 }
 
-}# getSecretsMD5
+# getSecretsMD5
 #
 # concatenate all the secrets, calculate the md5 and delete the file.
 # The md5 is used to determine whether the domain needs to be recreated
