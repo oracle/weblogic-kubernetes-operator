@@ -39,7 +39,6 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
@@ -342,9 +341,7 @@ public class Main {
   }
 
   private static Step readExistingNamespaces() {
-    return HealthCheckHelper.skipIfNotAuthorized(
-        AuthorizationProxy.Resource.NAMESPACES, AuthorizationProxy.Operation.list,
-        new CallBuilder().listNamespaceAsync(new NamespaceListStep()));
+    return new CallBuilder().listNamespaceAsync(new NamespaceListStep());
   }
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
@@ -840,6 +837,12 @@ public class Main {
       return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
           ? onSuccess(packet, callResponse)
           : super.onFailure(packet, callResponse);
+    }
+
+    @Override
+    protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
+      return isNotAuthorizedOrForbidden(callResponse)
+          ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
     }
 
     @Override
