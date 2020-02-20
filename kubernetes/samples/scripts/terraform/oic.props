@@ -1,0 +1,15 @@
+user.ocid=ocid1.user.oc1..aaaaaaaat6fyeghhivixxwx7buvsbl5smdt75ocpz42e2bt5dzmrcog6b2iq
+tfvars.filename=k8swlstf
+okeclustername=k8swls
+tenancy.ocid=ocid1.tenancy.oc1..aaaaaaaagoadkxsrg5fyhpztuvernoiaglfgbgbekokeoccjfemn3gg5e2ja
+region=eu-frankfurt-1
+compartment.ocid=ocid1.compartment.oc1..aaaaaaaakzz67ck33blyln3tj45twxeldgav5dmf2fdmbcj43ijtgwt2ne5q
+compartment.name=mnemonic01
+ociapi.pubkey.fingerprint=71\:9a\:c4\:f3\:d5\:93\:a5\:97\:b7\:d5\:3a\:d0\:fe\:19\:fd\:bb
+ocipk.path=/home/opc/.oci/oci_api_key.pem
+vcn.cidr.prefix=10.1
+nodepool.shape=VM.Standard2.1
+k8s.version=v1.15.7
+nodepool.imagename=Oracle-Linux-7.4
+nodepool.ssh.pubkey=ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC8KlH9jou9CWXbkrirEWdkRvvg7iAn2p3XbhZBpXddHrhMU4Lb0Rz0VorKO2DL7CD2Mg69/jJxjDmb5z9Cf6vLl5dn19Jvl750wyrQdmSk8pO5iErUm3MlaCEXaknHzsd5RKu9d/kWRi9fzgMy4IylyruoufOfXLUU7Ea1ZB2W8+Z6nXkOyRpVARykvZBXTK9EWiivc9bBZfOKczG1dTIh2WJKhOuJwOm7RdAxg7YphQ0z0qeiPA3XJkU/BSFYuioMvhjNRfjmfMpaqVKdri5NMOTYF4Wquh5gYDg1BdZ13QntEQr802cvDlsicUBBmyctIzm3Ro8fES1B+/9btGeN opc@k8s-client
+terraform.installdir=/usr/local/bin
