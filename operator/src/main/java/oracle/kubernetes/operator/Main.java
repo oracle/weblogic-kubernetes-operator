@@ -191,7 +191,7 @@ public class Main {
 
       Step strategy = Step.chain(
           new InitializeNamespacesSecurityStep(targetNamespaces),
-          new NamespaceRulesReviewStep(operatorNamespace),
+          new NamespaceRulesReviewStep(),
           CrdHelper.createDomainCrdStep(version,
               new StartNamespacesStep(targetNamespaces)));
       if (!isDedicated()) {
@@ -613,13 +613,18 @@ public class Main {
   private static class NamespaceRulesReviewStep extends Step {
     private final String ns;
 
+    NamespaceRulesReviewStep() {
+      this(null);
+    }
+
     NamespaceRulesReviewStep(String ns) {
       this.ns = ns;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      NamespaceStatus nss = namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
+      NamespaceStatus nss = namespaceStatuses.computeIfAbsent(
+          ns != null ? ns : operatorNamespace, (key) -> new NamespaceStatus());
       V1SubjectRulesReviewStatus srrs = nss.getRulesReviewStatus().updateAndGet(prev -> {
         if (prev != null) {
           return prev;
