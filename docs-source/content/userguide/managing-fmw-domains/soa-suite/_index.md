@@ -147,8 +147,8 @@ Follow these steps to build the necessary images - a patched Fusion Middleware I
     ```
     $ docker tag oracle/fmw-infrastructure:12213-update-k8s oracle/fmw-infrastructure:12.2.1.3
     ```
-* Download the Oracle SOA Suite installer and latest Oracle SOA bundle patch (`30638100` or later) from Oracle Technology Network or e-delivery.
-  >NOTE: Copy the installer binaries to the same location as the Dockerfile and the bundle patch ZIP file under the `docker-images/OracleSOASuite/dockerfiles/12.2.1.3/patches` folder.
+* Download the Oracle SOA Suite installer, latest Oracle SOA bundle patch (`30638100` or later) and the patch `27117282` from Oracle Technology Network or e-delivery.
+  >NOTE: Copy the installer binaries to the same location as the Dockerfile and the patch ZIP files under the `docker-images/OracleSOASuite/dockerfiles/12.2.1.3/patches` folder.
 
 * Create the Oracle SOA Suite image by running the provided script:
 
