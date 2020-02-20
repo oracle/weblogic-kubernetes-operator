@@ -84,17 +84,39 @@ public class BaseTest {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
 
-    HELM_VERSION = System.getenv("HELM_VERSION");
-    if (HELM_VERSION == null) {
-      HELM_VERSION = "V2";
-    }
- 
     VOYAGER_VERSION = System.getenv("VOYAGER_VERSION");
     if (VOYAGER_VERSION == null) {
       VOYAGER_VERSION = "10.0.0";
     }
 
-    System.out.println("Helm Version is " + HELM_VERSION);
+    String cmd = "helm version --short --client";
+    ExecResult result = null;
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmd);
+    try {
+      result = ExecCommand.exec(cmd);
+    } catch (Exception ex) {
+      throw new RuntimeException(
+            "FAILURE: command to get Helm Version "
+                + cmd
+                + " failed, returned "
+                + result.stdout()
+                + result.stderr());
+    }
+    LoggerHelper.getLocal().log(Level.INFO, result.stdout());
+    System.out.println("Detected Helm Client Version[" + result.stdout() + "]");
+    if (result.stdout().contains("v2")) {
+      HELM_VERSION = "V2";
+    } else if (result.stdout().contains("v3")) {
+      HELM_VERSION = "V3";
+    } else {
+      HELM_VERSION = "UNKNOWN";
+      throw new RuntimeException(
+            "FAILURE: Unsupported Helm Version ["
+                + result.stdout()
+                + "]");
+    }
+    System.out.println("HELM_VERSION set to [" + HELM_VERSION  + "]");
+
     // if QUICKTEST is false, run all the tests including QUICKTEST
     if (!QUICKTEST) {
       FULLTEST = true;

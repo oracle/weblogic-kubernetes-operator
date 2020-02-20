@@ -59,7 +59,7 @@ public class LoadBalancer {
 
     if (lbMap.get("loadBalancer").equals("VOYAGER")) {
       String cmdLb = "";
-      if ( BaseTest.HELM_VERSION.equals("V2")) {
+      if (BaseTest.HELM_VERSION.equals("V2")) {
         cmdLb = "helm list voyager-operator | grep DEPLOYED";
       } else {
         cmdLb = "helm list --namespace voyager | grep voyager-operator | grep -i DEPLOYED";

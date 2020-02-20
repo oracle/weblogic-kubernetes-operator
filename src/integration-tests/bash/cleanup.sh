@@ -334,13 +334,6 @@ if [ -x "$(command -v helm)" ]; then
      done
   done
 
-  # Remove namespace(s) from usablity Integration tests
-  usabns=`kubectl get ns | grep -v NAME | grep usab |  awk '{ print $1 }'`
-  for ns in $usabns
-  do 
-    kubectl $FAST_DELETE delete ns ${ns} --ignore-not-found
-  done
-  
   # cleanup tiller artifacts
   if [ "$SHARED_CLUSTER" = "true" ]; then
     cleanup_tiller
