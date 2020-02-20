@@ -39,7 +39,6 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ClientPool;
@@ -192,7 +191,7 @@ public class Main {
 
       Step strategy = Step.chain(
           new InitializeNamespacesSecurityStep(targetNamespaces),
-          new NamespaceRulesReviewStep(operatorNamespace),
+          new NamespaceRulesReviewStep(),
           CrdHelper.createDomainCrdStep(version,
               new StartNamespacesStep(targetNamespaces)));
       if (!isDedicated()) {
@@ -342,9 +341,7 @@ public class Main {
   }
 
   private static Step readExistingNamespaces() {
-    return HealthCheckHelper.skipIfNotAuthorized(
-        AuthorizationProxy.Resource.NAMESPACES, AuthorizationProxy.Operation.list,
-        new CallBuilder().listNamespaceAsync(new NamespaceListStep()));
+    return new CallBuilder().listNamespaceAsync(new NamespaceListStep());
   }
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
@@ -616,13 +613,21 @@ public class Main {
   private static class NamespaceRulesReviewStep extends Step {
     private final String ns;
 
+    NamespaceRulesReviewStep() {
+      this(null);
+    }
+
     NamespaceRulesReviewStep(String ns) {
       this.ns = ns;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      NamespaceStatus nss = namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
+      // Looking up namespace status.  If ns is null, then this step will check the status of the
+      // operator's own namespace.  If the namespace status is missing, then generate it with
+      // the health check helper.
+      NamespaceStatus nss = namespaceStatuses.computeIfAbsent(
+          ns != null ? ns : operatorNamespace, (key) -> new NamespaceStatus());
       V1SubjectRulesReviewStatus srrs = nss.getRulesReviewStatus().updateAndGet(prev -> {
         if (prev != null) {
           return prev;
@@ -840,6 +845,12 @@ public class Main {
       return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
           ? onSuccess(packet, callResponse)
           : super.onFailure(packet, callResponse);
+    }
+
+    @Override
+    protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
+      return isNotAuthorizedOrForbidden(callResponse)
+          ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
     }
 
     @Override
