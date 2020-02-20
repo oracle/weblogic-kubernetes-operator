@@ -36,7 +36,7 @@ public class LoadBalancer {
         Paths.get(userProjectsDir + "/load-balancers/" + lbMap.get("domainUID")));
 
     if (lbMap.get("loadBalancer").equals("TRAEFIK")) {
-      String cmdLb = "Empty String";
+      String cmdLb = "";
       if (! BaseTest.HELM_VERSION.equals("V2")) {
         cmdLb = "helm list traefik-operator | grep DEPLOYED";
       } else {
@@ -58,8 +58,8 @@ public class LoadBalancer {
     }
 
     if (lbMap.get("loadBalancer").equals("VOYAGER")) {
-      String cmdLb = "Empty String";
-      if (! BaseTest.HELM_VERSION.equals("V2")) {
+      String cmdLb = "";
+      if ( BaseTest.HELM_VERSION.equals("V2")) {
         cmdLb = "helm list voyager-operator | grep DEPLOYED";
       } else {
         cmdLb = "helm list --namespace voyager | grep voyager-operator | grep -i DEPLOYED";
@@ -171,9 +171,9 @@ public class LoadBalancer {
    * @throws Exception when could not get values
    */
   private String getKubernetesNamespaceToUpdate(String domainNamespace) throws Exception {
-    String cmd = new String("helm get values traefik-operator ");
+    String cmd = "helm get values traefik-operator ";
     if (! BaseTest.HELM_VERSION.equals("V2")) {
-      cmd = cmd + new String(" --namespace traefik ");
+      cmd = cmd + " --namespace traefik ";
     }
     ExecResult result = TestUtils.exec(cmd, true);
     Map<String, Object> yamlMap = TestUtils.loadYamlFromString(result.stdout());
@@ -242,7 +242,7 @@ public class LoadBalancer {
    * @throws Exception on failure
    */
   public void createVoyagerLoadBalancer() throws Exception {
-    String cmdLb = "Empty String";
+    String cmdLb = "";
     String vversion = BaseTest.VOYAGER_VERSION;
     cmdLb = BaseTest.getProjectRoot() + "/kubernetes/samples/charts/util/setup.sh create voyager " + vversion;
     LoggerHelper.getLocal().log(Level.INFO, "Executing Install voyager operator cmd " + cmdLb);

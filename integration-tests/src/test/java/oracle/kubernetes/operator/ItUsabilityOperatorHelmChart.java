@@ -172,7 +172,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         cmdLb = "helm list --failed " + "  | grep " + oprelease;
       }
       if (BaseTest.HELM_VERSION.equals("V3")) {
-        cmdLb = "helm list --failed --namesapce " + opnamespace + "  | grep " + oprelease;
+        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
       }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
@@ -256,7 +256,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         cmdLb = "helm list --failed " + "  | grep " + oprelease;
       }
       if (BaseTest.HELM_VERSION.equals("V3")) {
-        cmdLb = "helm list --failed --namesapce " + opnamespace + "  | grep " + oprelease;
+        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
       }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
@@ -339,7 +339,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         cmdLb = "helm list --failed " + "  | grep " + oprelease;
       }
       if (BaseTest.HELM_VERSION.equals("V3")) {
-        cmdLb = "helm list --failed --namesapce " + opnamespace + "  | grep " + oprelease;
+        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
       }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
@@ -401,7 +401,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         cmdLb = "helm list --failed " + "  | grep " + oprelease;
       }
       if (BaseTest.HELM_VERSION.equals("V3")) {
-        cmdLb = "helm list --failed --namesapce " + opnamespace + "  | grep " + oprelease;
+        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
       }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
@@ -464,7 +464,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         cmdLb = "helm list --failed " + "  | grep " + oprelease;
       }
       if (BaseTest.HELM_VERSION.equals("V3")) {
-        cmdLb = "helm list --failed --namesapce " + opnamespace + "  | grep " + oprelease;
+        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
       }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
@@ -522,7 +522,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
         cmdLb = "helm list --failed " + "  | grep " + oprelease;
       }
       if (BaseTest.HELM_VERSION.equals("V3")) {
-        cmdLb = "helm list --failed --namesapce " + opnamespace + "  | grep " + oprelease;
+        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
       }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);

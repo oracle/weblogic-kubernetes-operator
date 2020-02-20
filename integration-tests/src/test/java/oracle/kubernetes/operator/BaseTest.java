@@ -94,7 +94,7 @@ public class BaseTest {
       VOYAGER_VERSION = "10.0.0";
     }
 
-    System.out.println("(PANI) HELM VERSION IS " + HELM_VERSION);
+    System.out.println("Helm Version is " + HELM_VERSION);
     // if QUICKTEST is false, run all the tests including QUICKTEST
     if (!QUICKTEST) {
       FULLTEST = true;
