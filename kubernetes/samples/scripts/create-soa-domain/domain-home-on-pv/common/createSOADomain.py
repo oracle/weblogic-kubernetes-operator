@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import os
@@ -317,6 +317,12 @@ class SOA12213Provisioner:
         self.readAndApplyJRFTemplates(domainHome, db, dbPrefix, dbPassword, exposeAdminT3Channel, t3ChannelPublicAddress, t3ChannelPort)
         self.applySOATemplates()
         print 'Extension Templates added'
+        
+        if 'soa_server1' not in self.MANAGED_SERVERS:
+            print 'INFO: deleting soa_server1'
+            cd('/')
+            delete('soa_server1','Server')
+            print 'INFO: deleted soa_server1'
 
         self.configureJDBCTemplates(db,dbPrefix,dbPassword)
         self.configureXADataSources()
@@ -345,6 +351,12 @@ class SOA12213Provisioner:
         self.applySOAESSTemplates()
 
         print 'Extension Templates added'
+        
+        if 'soa_server1' not in self.MANAGED_SERVERS:
+            print 'INFO: deleting soa_server1'
+            cd('/')
+            delete('soa_server1','Server')
+            print 'INFO: deleted soa_server1'
 
         print 'Deleting ess_server1'
         cd('/')
@@ -377,6 +389,12 @@ class SOA12213Provisioner:
         self.readAndApplyJRFTemplates(domainHome, db, dbPrefix, dbPassword, exposeAdminT3Channel, t3ChannelPublicAddress, t3ChannelPort)
         self.applyOSBTemplates()
         print 'Extension Templates added'
+
+        if 'osb_server1' not in self.ADDL_MANAGED_SERVERS:
+            print 'INFO: deleting osb_server1'
+            cd('/')
+            delete('osb_server1','Server')
+            print 'INFO: deleted osb_server1'
 
         self.configureJDBCTemplates(db,dbPrefix,dbPassword)
         cd('/JDBCSystemResources/SOADataSource/JdbcResource/SOADataSource')

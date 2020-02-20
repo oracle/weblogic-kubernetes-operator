@@ -31,6 +31,7 @@ DomainSpec is a description of a domain.
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
 | `includeServerOutInPodLog` | Boolean | If true (the default), the server .out file will be included in the pod's stdout. |
+| `introspectVersion` | string | If present, every time this value is updated, the operator will start introspect domain job |
 | `logHome` | string | The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files. Defaults to /shared/logs/<domainUID>. Ignored if logHomeEnabled is false. |
 | `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise. |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
@@ -63,6 +64,7 @@ AdminServer represents the operator configuration for the Administration Server.
 | Name | Type | Description |
 | --- | --- | --- |
 | `adminService` | [Admin Service](#admin-service) | Configures which of the Administration Server's WebLogic admin channels should be exposed outside the Kubernetes cluster via a node port service. |
+| `introspectVersion` | string | If present, every time this value is updated, the operator will start introspect domain job |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
 | `serverPod` | [Server Pod](#server-pod) | Configuration affecting server pods. |
 | `serverService` | [Server Service](#server-service) | Customization affecting ClusterIP Kubernetes services for WebLogic Server instances. |
@@ -77,6 +79,7 @@ An element representing a cluster in the domain configuration.
 | --- | --- | --- |
 | `clusterName` | string | The name of this cluster. Required |
 | `clusterService` | [Kubernetes Resource](#kubernetes-resource) | Customization affecting ClusterIP Kubernetes services for the WebLogic cluster. |
+| `introspectVersion` | string | If present, every time this value is updated, the operator will start introspect domain job |
 | `maxUnavailable` | number | The maximum number of cluster members that can be temporarily unavailable. Defaults to 1. |
 | `replicas` | number | The number of cluster members to run. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
@@ -106,6 +109,7 @@ ManagedServer represents the operator configuration for a single Managed Server.
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `introspectVersion` | string | If present, every time this value is updated, the operator will start introspect domain job |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
 | `serverName` | string | The name of the Managed Server. Required. |
 | `serverPod` | [Server Pod](#server-pod) | Configuration affecting server pods. |
