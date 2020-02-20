@@ -111,11 +111,12 @@ public final class HealthCheckHelper {
    *
    * @param version Kubernetes version
    * @param operatorNamespace operator namespace
-   * @param ns target namespace
+   * @param namespace target namespace
    * @return self subject rules review for the target namespace
    */
   public static V1SubjectRulesReviewStatus performSecurityChecks(
-      KubernetesVersion version, String operatorNamespace, String ns) {
+      KubernetesVersion version, String operatorNamespace, String namespace) {
+    String ns = namespace != null ? namespace : operatorNamespace;
 
     // Validate namespace
     if (DEFAULT_NAMESPACE.equals(operatorNamespace)) {
@@ -131,12 +132,14 @@ public final class HealthCheckHelper {
       V1SubjectRulesReviewStatus status = review.getStatus();
       List<V1ResourceRule> rules = status.getResourceRules();
 
-      for (Resource r : namespaceAccessChecks.keySet()) {
-        for (Operation op : namespaceAccessChecks.get(r)) {
-          check(rules, r, op, ns);
+      if (namespace != null) {
+        for (Resource r : namespaceAccessChecks.keySet()) {
+          for (Operation op : namespaceAccessChecks.get(r)) {
+            check(rules, r, op, namespace);
+          }
         }
       }
-      if (!Main.isDedicated()) {
+      if (!Main.isDedicated() && operatorNamespace.equals(ns)) {
         for (Resource r : clusterAccessChecks.keySet()) {
           for (Operation op : clusterAccessChecks.get(r)) {
             check(rules, r, op, ns);
