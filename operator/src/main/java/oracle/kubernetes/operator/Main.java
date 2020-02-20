@@ -623,6 +623,9 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
+      // Looking up namespace status.  If ns is null, then this step will check the status of the
+      // operator's own namespace.  If the namespace status is missing, then generate it with
+      // the health check helper.
       NamespaceStatus nss = namespaceStatuses.computeIfAbsent(
           ns != null ? ns : operatorNamespace, (key) -> new NamespaceStatus());
       V1SubjectRulesReviewStatus srrs = nss.getRulesReviewStatus().updateAndGet(prev -> {
