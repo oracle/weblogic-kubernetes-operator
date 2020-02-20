@@ -261,7 +261,6 @@ function buildWDTParams_MD5() {
     else
       # Set it for introspectDomain.py to use
       export OPSS_PASSPHRASE=$(cat ${OPSS_KEY_PASSPHRASE})
-      echo "DEBUG: OPSS PASSPHRASE SET "
     fi
   fi
 
