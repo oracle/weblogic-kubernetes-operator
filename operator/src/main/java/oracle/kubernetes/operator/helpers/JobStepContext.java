@@ -300,15 +300,7 @@ public abstract class JobStepContext extends BasePodStepContext {
               .name(getWdtConfigMap() + "-volume")
               .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
     }
-
-    String opssKeyWalletConfigMap = getOpssWalletFileSecretName();
-    if (opssKeyWalletConfigMap != null) {
-      podSpec.addVolumesItem(
-          new V1Volume()
-              .name(opssKeyWalletConfigMap + "-volume")
-              .configMap(getOpssKeyWalletVolumeSource(opssKeyWalletConfigMap)));
-    }
-
+    
     return podSpec;
   }
 
