@@ -23,6 +23,7 @@ it is supported for production use.
 * [Running the Repository Creation Utility to set up your database schemas](#running-the-repository-creation-utility-to-set-up-your-database-schemas)
 * [Create a Kubernetes secret with the RCU credentials](#create-a-kubernetes-secret-with-the-rcu-credentials)
 * [Creating a SOA domain](#creating-a-soa-domain)
+* [Configuring a Load balancer for SOA Suite domains](#configuring-a-load-balancer-for-soa-suite-domains)
 * [Monitoring a SOA domain](#monitoring-a-soa-domain)
 
 
@@ -73,7 +74,7 @@ following limitations currently exist for SOA Suite domains:
   been added yet.
 
 {{% notice note %}}
-For early access customers, with bundle patch access, we recommend that you build and use the Oracle SOA Suite Docker image with the latest bundle patch for Oracle SOA. The Oracle SOA Suite Docker image in `container-registry.oracle.com` does not have the bundle patch installed. However, if you do not have access to the bundle patches, you can obtain the Oracle SOA Suite Docker image without bundle patches from `container-registry.oracle.com`, as described below.
+For early access customers, with bundle patch access, we recommend that you build and use the Oracle SOA Suite Docker image with the latest bundle patch for Oracle SOA. The Oracle SOA Suite Docker image in `container-registry.oracle.com` does not have the bundle patch installed. However, if you do not have access to the bundle patch, you can obtain the Oracle SOA Suite Docker image without the bundle patch from `container-registry.oracle.com`, as described below.
 {{% /notice %}}
 
 #### Obtaining the SOA Suite Docker Image
@@ -100,43 +101,54 @@ $ docker pull container-registry.oracle.com/middleware/soasuite:12.2.1.3
 
 #### Creating a SOA Suite Docker image
 
-You can also create a Docker image containing the Oracle SOA Suite binaries. This is the recommended approach if you have access to Oracle SOA bundle patches. 
+You can also create a Docker image containing the Oracle SOA Suite binaries. This is the recommended approach if you have access to the Oracle SOA bundle patch.
 
 Please consult the [README](https://github.com/oracle/docker-images/blob/master/OracleSOASuite/dockerfiles/README.md) file for important prerequisite steps,
 such as building or pulling the Server JRE Docker image, Oracle FMW Infrastructure Docker image, and downloading the Oracle SOA Suite installer and bundle patch binaries.
 
-For the Fusion Middleware Infrastructure image, you must install the [required patch]({{< relref "/userguide/introduction/introduction/_index.md#prerequisites" >}}) to use this image with the Oracle WebLogic Kubernetes operator. A [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s) is provided that demonstrates how to create a Docker image with the necessary patch installed. Use this patched Fusion Middleware image for building the Oracle SOA Suite image.
+For the Fusion Middleware Infrastructure image, you must install the [required patch]({{< relref "/userguide/introduction/introduction/_index.md#prerequisites" >}}) to use this image with the Oracle WebLogic Kubernetes operator. A pre-built (and already patched) Fusion Middleware Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109`, is available at `container-registry.oracle.com`. We recommend to pull and rename this image to build the Oracle SOA Suite image.
 
-Follow these steps to build the necessary images - a patched Fusion Middleware
-Infrastructure image, and then the SOA Suite image as a layer on top of that:
 
-* Make a local clone of the sample repsitory.
+  ```bash
+    $ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109
+    $ docker tag container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109  oracle/fmw-infrastructure:12.2.1.3
+  ```
+
+{{% notice warning %}}
+If you are pulling the Fusion Middleware Infrastructure image from `container-registry.oracle.com` you must use the image with the tag `12.2.1.3-200109`, no other tagged image will work for the Oracle SOA Suite image build.
+{{% /notice %}}
+
+You can also build the Fusion Middleware
+Infrastructure image with the required patch (29135930) applied. A [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s) is provided that demonstrates how to create a Docker image with the necessary patch installed. Use this patched Fusion Middleware Infrastructure image for building the Oracle SOA Suite image.
+
+Follow these steps to build the necessary images - a patched Fusion Middleware Infrastructure image, and then the SOA Suite image as a layer on top of that:
+
+* Make a local clone of the sample repository.
 
     ```bash
     $ git clone https://github.com/oracle/docker-images
     ```
+* Build `oracle/fmw-infrastructure:12.2.1.3` image as shown below:
 
+  ```bash
+    $ cd docker-images/OracleFMWInfrastructure/dockerfiles
+    $ sh buildDockerImage.sh -v 12.2.1.3 -s
+  ```
 * Download the required patch (29135930) from My Oracle Support.
-* Create a Docker image containing the Fusion Middleware Infrastructure binaries with
-the patch applied by running the provided script:
+* Create a Docker image containing the Fusion Middleware Infrastructure binaries with the patch applied by running the provided script:
 
     ```bash
     $ cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
     $ ./build.sh
     ```
-
-    This will produce an image named `oracle/fmw-infrastructure:12213-update-k8s`.
-    The samples and instructions in this document assume you are using the
-    pre-built (and already patched) image, `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3`.
-    When building your own image, you will need to rename your image, for example from `oracle/fmw-infrastructure:12213-update-k8s`
-    to `oracle/fmw-infrastructure:12.2.1.3`, or update the samples to refer to the
-    image you created.
+    This will produce an image named `oracle/fmw-infrastructure:12213-update-k8s`. You will need to rename this image , for example from `oracle/fmw-infrastructure:12213-update-k8s`
+    to `oracle/fmw-infrastructure:12.2.1.3`, or update the samples to refer to the image you created.
 
     ```
     $ docker tag oracle/fmw-infrastructure:12213-update-k8s oracle/fmw-infrastructure:12.2.1.3
     ```
 * Download the Oracle SOA Suite installer and latest Oracle SOA bundle patch (`30638100` or later) from Oracle Technology Network or e-delivery.
-  >NOTE: Copy the installer binaries to the same location as the Dockerfile and the bundle patch ZIP files under the `docker-images/OracleSOASuite/dockerfiles/12.2.1.3/patches` folder.
+  >NOTE: Copy the installer binaries to the same location as the Dockerfile and the bundle patch ZIP file under the `docker-images/OracleSOASuite/dockerfiles/12.2.1.3/patches` folder.
 
 * Create the Oracle SOA Suite image by running the provided script:
 
@@ -145,7 +157,7 @@ the patch applied by running the provided script:
     $ ./buildDockerImage.sh -v 12.2.1.3 -s
     ```
 
-    The image produced will be named `oracle/soa:12.2.1.3`.  The samples and
+    The image produced will be named `oracle/soa:12.2.1.3`. The samples and
     instructions assume the Oracle SOA Suite image is named
     `container-registry.oracle.com/middleware/soasuite:12.2.1.3`.
     You will need to rename your image to match this name,
@@ -335,6 +347,73 @@ type: Opaque
 
 Now that you have your Docker images and you have created your RCU schemas, you are ready
 to create your domain.  To continue, follow the instructions in the [SOA Domain sample]({{< relref "/samples/simple/domains/soa-domain/_index.md" >}}).
+
+#### Configuring a Load balancer for SOA Suite domains
+
+An Ingress based load balancer can be configured to access the Oracle SOA and Oracle Service Bus domain application URLs.
+Refer the [setup Ingress](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/ingress/) document for details.
+
+As part of the `ingress-per-domain` setup for Oracle SOA and Oracle Service Bus domains the `values.yaml` (under `ingress-per-domain` directory) need to be updated with the appropriate values from your environment. A sample `values.yaml` (for Traefik load balancer) is below:
+
+```bash
+# Default values for ingress-per-domain.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+ 
+# Load balancer type.  Supported values are: TRAEFIK, VOYAGER
+type: TRAEFIK
+ 
+# WLS domain as backend to the load balancer
+wlsDomain:
+  domainUID: soainfra
+  soaClusterName: soa_cluster
+  osbClusterName: osb_cluster
+  soaManagedServerPort: 8001
+  osbManagedServerPort: 9001
+  adminServerName: adminserver
+  adminServerPort: 7001
+ 
+# Traefik specific values
+traefik:
+  # hostname used by host-routing
+  hostname: testhost.domain.com
+ 
+# Voyager specific values
+voyager:
+  # web port
+  webPort: 30305
+  # stats port
+  statsPort: 30315
+```
+
+Below are the path based Ingress routing rules (`spec.rules` section) that needs to be defined for Oracle SOA and Oracle Service Bus domains. You need to update the appropriate Ingress template yaml file based on the load balancer being used. For instance the template yaml for Traefik load balancer is located at `kubernetes/samples/charts/ingress-per-domain/templates/traefik-ingress.yaml`.
+
+```bash
+rules:
+  - host: '{{ .Values.traefik.hostname }}'
+    http:
+      paths:
+      - path: /console
+        backend:
+          serviceName: '{{ .Values.wlsDomain.domainUID }}-{{ .Values.wlsDomain.adminServerName | lower | replace "_" "-" }}'
+          servicePort: {{ .Values.wlsDomain.adminServerPort }}
+      - path: /em
+        backend:
+          serviceName: '{{ .Values.wlsDomain.domainUID }}-{{ .Values.wlsDomain.adminServerName | lower | replace "_" "-" }}'
+          servicePort: {{ .Values.wlsDomain.adminServerPort }}
+      - path: /servicebus
+        backend:
+          serviceName: '{{ .Values.wlsDomain.domainUID }}-{{ .Values.wlsDomain.adminServerName | lower | replace "_" "-" }}'
+          servicePort: {{ .Values.wlsDomain.adminServerPort }}
+      - path: /lwpfconsole
+        backend:
+          serviceName: '{{ .Values.wlsDomain.domainUID }}-{{ .Values.wlsDomain.adminServerName | lower | replace "_" "-" }}'
+          servicePort: {{ .Values.wlsDomain.adminServerPort }}
+      - path:
+        backend:
+          serviceName: '{{ .Values.wlsDomain.domainUID }}-cluster-{{ .Values.wlsDomain.soaClusterName | lower | replace "_" "-" }}'
+          servicePort: {{ .Values.wlsDomain.soaManagedServerPort }}
+```
 
 #### Monitoring a SOA domain
 
