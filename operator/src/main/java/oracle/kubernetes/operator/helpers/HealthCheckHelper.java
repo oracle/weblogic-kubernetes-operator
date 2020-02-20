@@ -132,10 +132,10 @@ public final class HealthCheckHelper {
       V1SubjectRulesReviewStatus status = review.getStatus();
       List<V1ResourceRule> rules = status.getResourceRules();
 
-      if (ns != null) {
+      if (namespace != null) {
         for (Resource r : namespaceAccessChecks.keySet()) {
           for (Operation op : namespaceAccessChecks.get(r)) {
-            check(rules, r, op, ns);
+            check(rules, r, op, namespace);
           }
         }
       }
