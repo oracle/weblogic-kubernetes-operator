@@ -73,11 +73,11 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static final Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
   private static final Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
   // Map from namespace to map of domainUID to Domain
-  private static final Map<String, Map<String, DomainPresenceInfo>> DOMAINS =
+  private static Map<String, Map<String, DomainPresenceInfo>> DOMAINS =
         new ConcurrentHashMap<>();
   private static final ConcurrentMap<String, ConcurrentMap<String, ScheduledFuture<?>>>
         statusUpdaters = new ConcurrentHashMap<>();
-  private DomainProcessorDelegate delegate;
+  private final DomainProcessorDelegate delegate;
 
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
     this.delegate = delegate;
@@ -823,9 +823,9 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private class DomainStatusUpdate {
-    private Domain domain;
-    private V1Pod pod;
-    private String domainUid;
+    private final Domain domain;
+    private final V1Pod pod;
+    private final String domainUid;
 
     DomainStatusUpdate(Domain domain, V1Pod pod, String domainUid) {
       this.domain = domain;

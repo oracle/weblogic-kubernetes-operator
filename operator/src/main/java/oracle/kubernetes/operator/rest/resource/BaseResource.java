@@ -23,8 +23,8 @@ import oracle.kubernetes.operator.rest.model.LinkContainerModel;
  */
 public class BaseResource {
 
-  private String pathSegment;
-  private BaseResource parent;
+  private final String pathSegment;
+  private final BaseResource parent;
 
   @Context private UriInfo uriInfo;
   @Context private ContainerRequestContext containerRequestContext;

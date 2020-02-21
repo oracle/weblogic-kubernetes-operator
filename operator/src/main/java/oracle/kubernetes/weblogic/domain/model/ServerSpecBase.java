@@ -29,7 +29,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEP
 @SuppressWarnings("WeakerAccess")
 public abstract class ServerSpecBase implements ServerSpec {
 
-  protected DomainSpec domainSpec;
+  protected final DomainSpec domainSpec;
 
   public ServerSpecBase(DomainSpec domainSpec) {
     this.domainSpec = domainSpec;

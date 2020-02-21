@@ -36,7 +36,7 @@ abstract class Watcher<T> {
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
   private final WatchTuning tuning;
   private Long resourceVersion;
-  private AtomicBoolean stopping;
+  private final AtomicBoolean stopping;
   private WatchListener<T> listener;
   private Thread thread = null;
   private long lastInitialize = 0;

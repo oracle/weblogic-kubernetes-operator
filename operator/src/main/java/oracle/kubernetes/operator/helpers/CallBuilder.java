@@ -75,12 +75,12 @@ public class CallBuilder {
       };
 
   private static SynchronousCallDispatcher DISPATCHER = DEFAULT_DISPATCHER;
-  private static AsyncRequestStepFactory DEFAULT_STEP_FACTORY = AsyncRequestStep::new;
+  private static final AsyncRequestStepFactory DEFAULT_STEP_FACTORY = AsyncRequestStep::new;
   private static AsyncRequestStepFactory STEP_FACTORY = DEFAULT_STEP_FACTORY;
   private final ClientPool helper;
-  private Boolean allowWatchBookmarks = false;
-  private String dryRun = null;
-  private String pretty = "false";
+  private final Boolean allowWatchBookmarks = false;
+  private final String dryRun = null;
+  private final String pretty = "false";
   private final CallFactory<Domain> replaceDomain =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -207,12 +207,12 @@ public class CallBuilder {
   private Integer limit = 500;
 
   /* Namespaces */
-  private String resourceVersion = "";
+  private final String resourceVersion = "";
   private Integer timeoutSeconds = 5;
 
   /* Domains */
   private Integer maxRetryCount = 10;
-  private Boolean watch = Boolean.FALSE;
+  private final Boolean watch = Boolean.FALSE;
   private final CallFactory<DomainList> listDomain =
       (requestParams, usage, cont, callback) ->
           wrap(listDomainAsync(usage, requestParams.namespace, cont, callback));
@@ -235,8 +235,8 @@ public class CallBuilder {
   private final CallFactory<V1NamespaceList> listNamespace =
       (requestParams, usage, cont, callback) ->
           wrap(listNamespaceAsync(usage, cont, callback));
-  private Boolean exact = Boolean.FALSE;
-  private Boolean export = Boolean.FALSE;
+  private final Boolean exact = Boolean.FALSE;
+  private final Boolean export = Boolean.FALSE;
   private final CallFactory<Domain> readDomain =
       (requestParams, usage, cont, callback) ->
           wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
@@ -258,9 +258,9 @@ public class CallBuilder {
   private final CallFactory<V1Secret> readSecret =
       (requestParams, usage, cont, callback) ->
           wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private Integer gracePeriodSeconds = null;
-  private Boolean orphanDependents = null;
-  private String propagationPolicy = null;
+  private final Integer gracePeriodSeconds = null;
+  private final Boolean orphanDependents = null;
+  private final String propagationPolicy = null;
 
   /* Custom Resource Definitions */
   private final CallFactory<V1Status> deleteConfigMap =
@@ -326,7 +326,7 @@ public class CallBuilder {
                       propagationPolicy,
                       (V1DeleteOptions) requestParams.body,
                       callback));
-  private SynchronousCallFactory<DomainList> listDomainCall =
+  private final SynchronousCallFactory<DomainList> listDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .listNamespacedDomain(
@@ -339,14 +339,14 @@ public class CallBuilder {
                   resourceVersion,
                   timeoutSeconds,
                   watch);
-  private SynchronousCallFactory<Domain> replaceDomainCall =
+  private final SynchronousCallFactory<Domain> replaceDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .replaceNamespacedDomain(
                   requestParams.name,
                   requestParams.namespace,
                   (Domain) requestParams.body);
-  private SynchronousCallFactory<Domain> patchDomainCall =
+  private final SynchronousCallFactory<Domain> patchDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .patchNamespacedDomain(
@@ -389,22 +389,22 @@ public class CallBuilder {
                   orphanDependents,
                   propagationPolicy,
                   (V1DeleteOptions) requestParams.body);
-  private SynchronousCallFactory<V1SubjectAccessReview> createSubjectaccessreviewCall =
+  private final SynchronousCallFactory<V1SubjectAccessReview> createSubjectaccessreviewCall =
       ((client, requestParams) ->
           new AuthorizationV1Api(client)
               .createSubjectAccessReview(
                   (V1SubjectAccessReview) requestParams.body, null, null, pretty));
-  private SynchronousCallFactory<V1SelfSubjectAccessReview> createSelfsubjectacessreviewCall =
+  private final SynchronousCallFactory<V1SelfSubjectAccessReview> createSelfsubjectacessreviewCall =
       (client, requestParams) ->
           new AuthorizationV1Api(client)
               .createSelfSubjectAccessReview(
                   (V1SelfSubjectAccessReview) requestParams.body, null, null, pretty);
-  private SynchronousCallFactory<V1SelfSubjectRulesReview> createSelfsubjectrulesreviewCall =
+  private final SynchronousCallFactory<V1SelfSubjectRulesReview> createSelfsubjectrulesreviewCall =
       (client, requestParams) ->
           new AuthorizationV1Api(client)
               .createSelfSubjectRulesReview(
                   (V1SelfSubjectRulesReview) requestParams.body, null, null, pretty);
-  private SynchronousCallFactory<V1TokenReview> createTokenReviewCall =
+  private final SynchronousCallFactory<V1TokenReview> createTokenReviewCall =
       (client, requestParams) ->
           new AuthenticationV1Api(client)
               .createTokenReview((V1TokenReview) requestParams.body, null, null, pretty);

@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.List;
 
 abstract class CollectiveCompatibility implements CompatibilityCheck {
-  protected List<CompatibilityCheck> checks = new ArrayList<>();
+  protected final List<CompatibilityCheck> checks = new ArrayList<>();
 
   void add(CompatibilityCheck check) {
     checks.add(check);

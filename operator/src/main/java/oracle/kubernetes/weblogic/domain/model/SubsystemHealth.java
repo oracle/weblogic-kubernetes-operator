@@ -164,7 +164,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth>, PatchableCo
     return other.subsystemName != null && other.subsystemName.equals(subsystemName);
   }
 
-  private static ObjectPatch<SubsystemHealth> healthPatch = createObjectPatch(SubsystemHealth.class)
+  private static final ObjectPatch<SubsystemHealth> healthPatch = createObjectPatch(SubsystemHealth.class)
         .withStringField("health", SubsystemHealth::getHealth)
         .withStringField("subsystemName", SubsystemHealth::getSubsystemName)
         .withListField("symptoms", SubsystemHealth::getSymptoms);

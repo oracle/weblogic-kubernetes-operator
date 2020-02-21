@@ -132,11 +132,11 @@ public class ManagedServersUpStep extends Step {
   }
 
   class ServersUpStepFactory {
-    WlsDomainConfig domainTopology;
-    Domain domain;
+    final WlsDomainConfig domainTopology;
+    final Domain domain;
     Collection<ServerStartupInfo> startupInfos;
-    Collection<String> servers = new ArrayList<>();
-    Map<String, Integer> replicas = new HashMap<>();
+    final Collection<String> servers = new ArrayList<>();
+    final Map<String, Integer> replicas = new HashMap<>();
 
     ServersUpStepFactory(WlsDomainConfig domainTopology, Domain domain) {
       this.domainTopology = domainTopology;

@@ -195,7 +195,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Configuration for individual Managed Servers.")
-  private List<ManagedServer> managedServers = new ArrayList<>();
+  private final List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
    * The configured clusters.
@@ -203,7 +203,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Configuration for the clusters.")
-  protected List<Cluster> clusters = new ArrayList<>();
+  protected final List<Cluster> clusters = new ArrayList<>();
 
   @SuppressWarnings("unused")
   @Description("Experimental feature configurations.")

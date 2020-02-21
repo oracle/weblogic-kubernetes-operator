@@ -13,7 +13,7 @@ import io.kubernetes.client.openapi.ApiException;
 public class ForbiddenErrorBuilder implements FailureStatusSource {
   private static final String FORBIDDEN_REASON = "Forbidden";
 
-  private String message;
+  private final String message;
 
   private ForbiddenErrorBuilder(ApiException e) {
     this.message = e.getMessage();

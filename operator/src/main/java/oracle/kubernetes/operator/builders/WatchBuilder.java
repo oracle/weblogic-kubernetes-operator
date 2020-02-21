@@ -35,11 +35,9 @@ public class WatchBuilder {
 
   private static final Boolean ALLOW_BOOKMARKS = false;
 
-  private static final int ADDITIONAL_TIMEOUT_FOR_SOCKET = 60;
-
   private static WatchFactory FACTORY = new WatchFactoryImpl();
 
-  private CallParamsImpl callParams = new CallParamsImpl();
+  private final CallParamsImpl callParams = new CallParamsImpl();
 
   public WatchBuilder() {
   }
@@ -155,10 +153,6 @@ public class WatchBuilder {
         new ListNamespaceCall());
   }
 
-  private Integer getSocketTimeout(CallParams callParams) {
-    return callParams.getTimeoutSeconds() + ADDITIONAL_TIMEOUT_FOR_SOCKET;
-  }
-
   /**
    * Sets a value for the fieldSelector parameter for the call that will set up this watch. Defaults
    * to null.
@@ -228,7 +222,7 @@ public class WatchBuilder {
   }
 
   private class ListNamespacedServiceCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
+    private final String namespace;
 
     ListNamespacedServiceCall(String namespace) {
       this.namespace = namespace;
@@ -263,7 +257,7 @@ public class WatchBuilder {
   }
 
   private class ListPodCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
+    private final String namespace;
 
     ListPodCall(String namespace) {
       this.namespace = namespace;
@@ -298,7 +292,7 @@ public class WatchBuilder {
   }
 
   private class ListJobCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
+    private final String namespace;
 
     ListJobCall(String namespace) {
       this.namespace = namespace;
@@ -333,7 +327,7 @@ public class WatchBuilder {
   }
 
   private class ListEventCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
+    private final String namespace;
 
     ListEventCall(String namespace) {
       this.namespace = namespace;
@@ -368,7 +362,7 @@ public class WatchBuilder {
   }
 
   private class ListDomainsCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
+    private final String namespace;
 
     ListDomainsCall(String namespace) {
       this.namespace = namespace;
@@ -402,7 +396,7 @@ public class WatchBuilder {
   }
 
   private class ListNamespacedConfigMapCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
+    private final String namespace;
 
     ListNamespacedConfigMapCall(String namespace) {
       this.namespace = namespace;

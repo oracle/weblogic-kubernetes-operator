@@ -49,7 +49,7 @@ public class RestBackendImpl implements RestBackend {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String NEW_CLUSTER =
       "{'clusterName':'%s','replicas':%d}".replaceAll("'", "\"");
-  private static final TopologyRetriever INSTANCE =
+  private static TopologyRetriever INSTANCE =
       (String ns, String domainUid) -> {
         Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUid);
         if (s != null) {
