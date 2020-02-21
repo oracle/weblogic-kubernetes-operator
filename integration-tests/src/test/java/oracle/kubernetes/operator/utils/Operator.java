@@ -337,7 +337,9 @@ public class Operator {
       cmd.append("cd ");
       cmd.append(BaseTest.getProjectRoot());
       if (BaseTest.HELM_VERSION.equals("V2")) { 
-        cmd.append(" && helm install kubernetes/charts/weblogic-operator ");
+        cmd.append(" && helm install kubernetes/charts/weblogic-operator ")
+           .append(" --name ")
+            .append(operatorMap.get("releaseName"));
       }
 
       if (BaseTest.HELM_VERSION.equals("V3")) { 
@@ -347,18 +349,21 @@ public class Operator {
       } 
 
     }
-    if (BaseTest.HELM_VERSION.equals("V2")) { 
-      cmd.append(" --name ").append(operatorMap.get("releaseName"))
-          .append(" --timeout 180");
-    }
-
     cmd.append(" --values ")
        .append(generatedInputYamlFile)
        .append(" --namespace ")
        .append(operatorNS)
        .append(" --set \"imagePullPolicy=")
        .append(imagePullPolicy)
-        .append("\" --wait ");
+        .append("\" ");
+
+    if (BaseTest.HELM_VERSION.equals("V2")) { 
+      cmd.append(" --wait --timeout 180");
+    }
+    if (BaseTest.HELM_VERSION.equals("V3")) { 
+      cmd.append(" --wait --timeout 3m0s");
+    }
+
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
