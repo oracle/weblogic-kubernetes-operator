@@ -92,7 +92,7 @@ public class Main {
   private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
   private static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
   private static NamespaceWatcher namespaceWatcher = null;
-  private static Function<String,String> getHelmVariable = System::getenv;
+  private static final Function<String,String> getHelmVariable = System::getenv;
   private static final String operatorNamespace = computeOperatorNamespace();
   private static final AtomicReference<DateTime> lastFullRecheck =
       new AtomicReference<>(DateTime.now());
@@ -101,7 +101,7 @@ public class Main {
   private static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
       "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
   private static final Semaphore shutdownSignal = new Semaphore(0);
-  private static Engine engine = new Engine(wrappedExecutorService);
+  private static final Engine engine = new Engine(wrappedExecutorService);
   private static String principal;
   private static KubernetesVersion version = null;
 
@@ -870,7 +870,7 @@ public class Main {
   }
 
   private static class NullCompletionCallback implements CompletionCallback {
-    private Runnable completionAction;
+    private final Runnable completionAction;
 
     NullCompletionCallback(Runnable completionAction) {
       this.completionAction = completionAction;

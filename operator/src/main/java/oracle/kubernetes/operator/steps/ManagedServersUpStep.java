@@ -36,7 +36,7 @@ public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
       "Running servers for domain with UID: {0}, running list: {1}";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static NextStepFactory NEXT_STEP_FACTORY =
+  private static final NextStepFactory NEXT_STEP_FACTORY =
       (info, config, servers, next) ->
           scaleDownIfNecessary(info, config, servers, new ClusterServicesStep(next));
 
@@ -132,11 +132,11 @@ public class ManagedServersUpStep extends Step {
   }
 
   class ServersUpStepFactory {
-    WlsDomainConfig domainTopology;
-    Domain domain;
+    final WlsDomainConfig domainTopology;
+    final Domain domain;
     Collection<ServerStartupInfo> startupInfos;
-    Collection<String> servers = new ArrayList<>();
-    Map<String, Integer> replicas = new HashMap<>();
+    final Collection<String> servers = new ArrayList<>();
+    final Map<String, Integer> replicas = new HashMap<>();
 
     ServersUpStepFactory(WlsDomainConfig domainTopology, Domain domain) {
       this.domainTopology = domainTopology;

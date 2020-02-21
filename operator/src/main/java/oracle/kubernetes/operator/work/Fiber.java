@@ -865,7 +865,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private static final class OnExitRunnableException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
-    Throwable target;
+    final Throwable target;
 
     OnExitRunnableException(Throwable target) {
       super((Throwable) null); // see pattern for InvocationTargetException

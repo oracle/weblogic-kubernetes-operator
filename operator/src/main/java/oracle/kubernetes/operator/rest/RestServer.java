@@ -53,10 +53,10 @@ public class RestServer {
     SSL_PROTOCOL
   }; // ONLY support TLSv1.2 (by default, we would get TLSv1 and TLSv1.1 too)
   private static RestServer INSTANCE = null;
-  private RestConfig config;
+  private final RestConfig config;
   // private String baseHttpUri;
-  private String baseExternalHttpsUri;
-  private String baseInternalHttpsUri;
+  private final String baseExternalHttpsUri;
+  private final String baseInternalHttpsUri;
   private HttpServer externalHttpsServer;
   private HttpServer internalHttpsServer;
 

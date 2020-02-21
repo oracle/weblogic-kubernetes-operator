@@ -241,16 +241,6 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Removes the pod associated with the specified server name, if any.
-   *
-   * @param serverName the name of the server
-   * @return the deleted pod, or null if there was no such pod
-   */
-  public V1Pod removeServerPod(String serverName) {
-    return getSko(serverName).getPod().getAndSet(null);
-  }
-
-  /**
    * Returns the last status reported for the specified server.
    *
    * @param serverName the name of the server
@@ -480,9 +470,9 @@ public class DomainPresenceInfo {
   /** Details about a specific managed server that will be started up. */
   public static class ServerStartupInfo {
     public final WlsServerConfig serverConfig;
-    private String clusterName;
-    private ServerSpec serverSpec;
-    private boolean isServiceOnly;
+    private final String clusterName;
+    private final ServerSpec serverSpec;
+    private final boolean isServiceOnly;
 
     /**
      * Create server startup info.

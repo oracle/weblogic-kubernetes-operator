@@ -26,14 +26,14 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 public class JsonSchemaMojo extends AbstractMojo {
 
   private static final String DOT = "\\.";
-  private static Main main = new MainImpl();
-  private static FileSystem fileSystem = FileSystem.LIVE_FILE_SYSTEM;
+  private static final Main main = new MainImpl();
+  private static final FileSystem fileSystem = FileSystem.LIVE_FILE_SYSTEM;
   @Parameter(defaultValue = "${project.compileClasspathElements}", readonly = true, required = true)
   private List<String> compileClasspathElements;
   @Parameter(defaultValue = "${project.build.outputDirectory}/schema")
   private String targetDir;
   @Parameter private String kubernetesVersion;
-  @Parameter private List<ExternalSchema> externalSchemas = Collections.emptyList();
+  @Parameter private final List<ExternalSchema> externalSchemas = Collections.emptyList();
   @Parameter(required = true)
   private String rootClass;
   @Parameter private boolean includeDeprecated;
@@ -41,7 +41,7 @@ public class JsonSchemaMojo extends AbstractMojo {
   @Parameter private boolean includeAdditionalProperties;
   @SuppressWarnings("FieldCanBeLocal")
   @Parameter
-  private boolean supportObjectReferences = true;
+  private final boolean supportObjectReferences = true;
   @Parameter(defaultValue = "${basedir}")
   private String baseDir;
   @Parameter private String outputFile;

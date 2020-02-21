@@ -40,7 +40,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 public class ThreadLocalContainerResolver extends ContainerResolver {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private ThreadLocal<Container> containerThreadLocal =
+  private final ThreadLocal<Container> containerThreadLocal =
       new ThreadLocal<Container>() {
         @Override
         protected Container initialValue() {

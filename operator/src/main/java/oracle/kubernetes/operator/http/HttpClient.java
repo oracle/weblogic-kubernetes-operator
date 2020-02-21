@@ -32,8 +32,8 @@ public class HttpClient {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String HTTP_PROTOCOL = "http://";
   private static final String HTTPS_PROTOCOL = "https://";
-  private Client httpClient;
-  private String encodedCredentials;
+  private final Client httpClient;
+  private final String encodedCredentials;
 
   // Please use one of the factory methods to get an instance of HttpClient.
   // Constructor is package access for unit testing

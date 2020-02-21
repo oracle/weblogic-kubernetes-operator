@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.rest;
 
-import java.io.IOException;
 import java.io.InputStream;
 import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -28,7 +27,7 @@ public class ResponseDebugLoggingFilter extends BaseDebugLoggingFilter
   }
 
   @Override
-  public void filter(ContainerRequestContext req, ContainerResponseContext res) throws IOException {
+  public void filter(ContainerRequestContext req, ContainerResponseContext res) {
     if (!LOGGER.isFineEnabled()) {
       return; // don't waste time doing all the calculations
     }

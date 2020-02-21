@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.rest;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import javax.annotation.Priority;
@@ -31,7 +30,7 @@ public class RequestDebugLoggingFilter extends BaseDebugLoggingFilter
   }
 
   @Override
-  public void filter(ContainerRequestContext req) throws IOException {
+  public void filter(ContainerRequestContext req) {
     LOGGER.entering();
     if (!LOGGER.isFineEnabled()) {
       return; // don't waste time doing all the calculations

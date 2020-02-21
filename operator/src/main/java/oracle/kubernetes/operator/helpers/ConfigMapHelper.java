@@ -166,7 +166,7 @@ public class ConfigMapHelper {
   }
 
   static class ScriptConfigMapStep extends Step {
-    ConfigMapContext context;
+    final ConfigMapContext context;
 
     ScriptConfigMapStep(String operatorNamespace, String domainNamespace) {
       context = new ScriptConfigMapContext(this, operatorNamespace, domainNamespace);
@@ -405,9 +405,9 @@ public class ConfigMapHelper {
   }
 
   public static class SitConfigMapContext extends ConfigMapContext {
-    Map<String, String> data;
-    String domainUid;
-    String cmName;
+    final Map<String, String> data;
+    final String domainUid;
+    final String cmName;
 
     SitConfigMapContext(
         Step conflictStep,
@@ -526,8 +526,8 @@ public class ConfigMapHelper {
   }
 
   private static class DeleteIntrospectorConfigMapStep extends Step {
-    private String domainUid;
-    private String namespace;
+    private final String domainUid;
+    private final String namespace;
 
     DeleteIntrospectorConfigMapStep(String domainUid, String namespace, Step next) {
       super(next);

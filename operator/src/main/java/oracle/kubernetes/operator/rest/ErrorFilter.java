@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.rest;
 
-import java.io.IOException;
 import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
@@ -22,14 +21,14 @@ import oracle.kubernetes.operator.rest.model.ErrorModel;
 @Priority(FilterPriorities.ERROR_FILTER_PRIORITY)
 public class ErrorFilter implements ContainerResponseFilter {
 
-  private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   public ErrorFilter() {
     // nothing to do
   }
 
   @Override
-  public void filter(ContainerRequestContext req, ContainerResponseContext res) throws IOException {
+  public void filter(ContainerRequestContext req, ContainerResponseContext res) {
     LOGGER.entering();
     int status = res.getStatus();
     LOGGER.finer("status=" + status);

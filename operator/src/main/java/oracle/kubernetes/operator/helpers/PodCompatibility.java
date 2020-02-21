@@ -208,7 +208,7 @@ class PodCompatibility extends CollectiveCompatibility {
   }
 
   static class Mismatch implements CompatibilityCheck {
-    private String errorMessage;
+    private final String errorMessage;
 
     Mismatch(String format, Object... params) {
       this.errorMessage = String.format(format, params);
