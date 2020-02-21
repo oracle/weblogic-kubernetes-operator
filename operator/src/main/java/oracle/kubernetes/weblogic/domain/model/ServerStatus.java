@@ -234,7 +234,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     return other.getServerName() != null && other.getServerName().equals(serverName);
   }
 
-  private static ObjectPatch<ServerStatus> serverPatch = createObjectPatch(ServerStatus.class)
+  private static final ObjectPatch<ServerStatus> serverPatch = createObjectPatch(ServerStatus.class)
         .withStringField("serverName", ServerStatus::getServerName)
         .withStringField("clusterName", ServerStatus::getClusterName)
         .withStringField("state", ServerStatus::getState)

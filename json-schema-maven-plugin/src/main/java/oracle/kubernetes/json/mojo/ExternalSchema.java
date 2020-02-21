@@ -9,8 +9,8 @@ import java.net.URL;
 
 class ExternalSchema {
 
-  private String url;
-  private String cache;
+  private final String url;
+  private final String cache;
 
   ExternalSchema(String url, String cache) {
     this.url = url;

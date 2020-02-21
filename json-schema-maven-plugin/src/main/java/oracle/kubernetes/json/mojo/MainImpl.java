@@ -15,7 +15,7 @@ import oracle.kubernetes.json.YamlDocGenerator;
 import org.apache.maven.plugin.MojoExecutionException;
 
 public class MainImpl implements Main {
-  private SchemaGenerator generator = new SchemaGenerator();
+  private final SchemaGenerator generator = new SchemaGenerator();
   private ClassLoader classLoader;
   private String kubernetesVersion;
 

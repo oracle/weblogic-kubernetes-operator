@@ -16,7 +16,6 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import org.apache.commons.codec.binary.Base64;
 
 /**
  * This class provides helper methods for getting Service Accounts and Secrets for authentication
@@ -176,15 +175,5 @@ public class Helpers {
 
     LOGGER.exiting(secret);
     return secret;
-  }
-
-  // decode base64
-  protected byte[] decodeSecret(byte[] encoded) {
-    return Base64.decodeBase64(encoded);
-  }
-
-  // encode base64
-  protected byte[] encodeSecret(byte[] decoded) {
-    return Base64.encodeBase64(decoded);
   }
 }

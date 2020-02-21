@@ -12,7 +12,7 @@ public class KubernetesSchemaReference {
   private static final String K8S_SCHEMA_CACHE = "caches/kubernetes-%s.json";
   private static final String K8S_MARKDOWN_LINK = "k8s%s.md";
 
-  private String version;
+  private final String version;
 
   private KubernetesSchemaReference(String version) {
     this.version = version;

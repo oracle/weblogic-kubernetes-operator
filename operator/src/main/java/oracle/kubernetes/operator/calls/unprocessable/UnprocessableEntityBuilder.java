@@ -11,7 +11,7 @@ import oracle.kubernetes.operator.calls.FailureStatusSource;
 
 public class UnprocessableEntityBuilder implements FailureStatusSource {
   static final int HTTP_UNPROCESSABLE_ENTITY = 422;
-  private ErrorBody errorBody;
+  private final ErrorBody errorBody;
 
   /**
    * Create an UnprocessableEntityBuilder from the provided Exception.

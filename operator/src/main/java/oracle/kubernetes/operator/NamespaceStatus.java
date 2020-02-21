@@ -9,8 +9,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 
 public class NamespaceStatus {
-  private AtomicBoolean isNamespaceStarting = new AtomicBoolean(false);
-  private AtomicReference<V1SubjectRulesReviewStatus> rulesReviewStatus = new AtomicReference<>();
+  private final AtomicBoolean isNamespaceStarting = new AtomicBoolean(false);
+  private final AtomicReference<V1SubjectRulesReviewStatus> rulesReviewStatus = new AtomicReference<>();
 
   public AtomicBoolean isNamespaceStarting() {
     return isNamespaceStarting;

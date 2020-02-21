@@ -10,11 +10,6 @@ public interface KubernetesConstants {
   String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IfNotPresent.name();
   String LATEST_IMAGE_SUFFIX = ":latest";
 
-  String EXTENSIONS_API_VERSION = "extensions/v1beta1";
-  String KIND_INGRESS = "Ingress";
-  String CLASS_INGRESS = "kubernetes.io/ingress.class";
-  String CLASS_INGRESS_VALUE = "traefik";
-
   String CRD_NAME = "domains.weblogic.oracle";
   String DOMAIN = "Domain";
   String DOMAIN_GROUP = "weblogic.oracle";

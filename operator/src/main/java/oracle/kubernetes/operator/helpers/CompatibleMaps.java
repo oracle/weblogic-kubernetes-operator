@@ -16,7 +16,7 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
   private final String description;
   private final Map<K, V> expected;
   private final Map<K, V> actual;
-  private List<String> ignoredKeys = new ArrayList<>();
+  private final List<String> ignoredKeys = new ArrayList<>();
 
   CompatibleMaps(String description, Map<K, V> expected, Map<K, V> actual) {
     this.description = description;
