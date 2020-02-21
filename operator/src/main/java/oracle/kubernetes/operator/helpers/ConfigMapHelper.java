@@ -41,7 +41,7 @@ public class ConfigMapHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String SCRIPT_LOCATION = "/scripts";
-  private static final ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
+  private static ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
 
   private static final FileGroupReader scriptReader = new FileGroupReader(SCRIPT_LOCATION);
 

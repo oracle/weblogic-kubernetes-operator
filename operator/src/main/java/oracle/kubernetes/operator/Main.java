@@ -84,15 +84,15 @@ public class Main {
       Engine.wrappedExecutorService("operator", container);
   private static final TuningParameters tuningAndConfig;
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
-  private static final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
-  private static final Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
+  private static Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
+  private static Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
   private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
   private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
   private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
   private static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
   private static NamespaceWatcher namespaceWatcher = null;
-  private static final Function<String,String> getHelmVariable = System::getenv;
+  private static Function<String,String> getHelmVariable = System::getenv;
   private static final String operatorNamespace = computeOperatorNamespace();
   private static final AtomicReference<DateTime> lastFullRecheck =
       new AtomicReference<>(DateTime.now());

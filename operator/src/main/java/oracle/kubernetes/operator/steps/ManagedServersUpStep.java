@@ -36,7 +36,7 @@ public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
       "Running servers for domain with UID: {0}, running list: {1}";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final NextStepFactory NEXT_STEP_FACTORY =
+  private static NextStepFactory NEXT_STEP_FACTORY =
       (info, config, servers, next) ->
           scaleDownIfNecessary(info, config, servers, new ClusterServicesStep(next));
 

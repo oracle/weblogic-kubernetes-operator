@@ -26,8 +26,8 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 public class JsonSchemaMojo extends AbstractMojo {
 
   private static final String DOT = "\\.";
-  private static final Main main = new MainImpl();
-  private static final FileSystem fileSystem = FileSystem.LIVE_FILE_SYSTEM;
+  private static Main main = new MainImpl();
+  private static FileSystem fileSystem = FileSystem.LIVE_FILE_SYSTEM;
   @Parameter(defaultValue = "${project.compileClasspathElements}", readonly = true, required = true)
   private List<String> compileClasspathElements;
   @Parameter(defaultValue = "${project.build.outputDirectory}/schema")

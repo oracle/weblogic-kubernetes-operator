@@ -24,7 +24,7 @@ public class Certificates {
   static final String INTERNAL_CERTIFICATE_KEY = INTERNAL_ID_DIR + "internalOperatorKey";
   static final String INTERNAL_CERTIFICATE = INTERNAL_ID_DIR + "internalOperatorCert";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final Function<String, Path> GET_PATH = p -> Paths.get(p);
+  private static Function<String, Path> GET_PATH = p -> Paths.get(p);
 
   public static String getOperatorExternalKeyFile() {
     return getKeyOrNull(Certificates.EXTERNAL_CERTIFICATE_KEY);
