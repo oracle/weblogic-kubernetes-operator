@@ -7,8 +7,8 @@ package oracle.kubernetes.weblogic.domain.model;
  * Describes a problem with a domain resource.
  */
 public class DomainValidationFailure {
-  private String reason;
-  private String message;
+  private final String reason;
+  private final String message;
 
   DomainValidationFailure(String reason, String message) {
     this.reason = reason;

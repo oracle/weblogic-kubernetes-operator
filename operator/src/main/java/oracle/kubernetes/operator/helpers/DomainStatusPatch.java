@@ -17,7 +17,7 @@ public class DomainStatusPatch {
 
   private final String name;
   private final String namespace;
-  private JsonPatchBuilder patchBuilder;
+  private final JsonPatchBuilder patchBuilder;
 
   /**
    * Update the domain status synchronously. This may involve either replacing the current status or adding to it.

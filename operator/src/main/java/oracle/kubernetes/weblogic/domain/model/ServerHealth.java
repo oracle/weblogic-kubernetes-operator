@@ -144,7 +144,7 @@ public class ServerHealth {
         .isEquals();
   }
 
-  private static ObjectPatch<ServerHealth> healthPatch = createObjectPatch(ServerHealth.class)
+  private static final ObjectPatch<ServerHealth> healthPatch = createObjectPatch(ServerHealth.class)
         .withDateTimeField("activationTime", ServerHealth::getActivationTime)
         .withStringField("overallHealth", ServerHealth::getOverallHealth)
         .withListField("subsystems", SubsystemHealth.getObjectPatch(), ServerHealth::getSubsystems);

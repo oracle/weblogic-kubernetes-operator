@@ -27,7 +27,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   private final Server server;
   private final Cluster cluster;
-  private Integer clusterLimit;
+  private final Integer clusterLimit;
 
   /**
    * Constructs an object to return the effective configuration.

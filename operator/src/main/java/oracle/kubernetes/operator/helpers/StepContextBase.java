@@ -18,14 +18,10 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 public abstract class StepContextBase implements StepContextConstants {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   abstract ServerSpec getServerSpec();
 
   abstract String getContainerName();

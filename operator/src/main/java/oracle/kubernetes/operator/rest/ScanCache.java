@@ -4,7 +4,7 @@
 package oracle.kubernetes.operator.rest;
 
 public interface ScanCache {
-  public static final ScanCache INSTANCE = ScanCacheImpl.INSTANCE;
+  public static ScanCache INSTANCE = ScanCacheImpl.INSTANCE;
 
   public void registerScan(String ns, String domainUid, Scan domainScan);
 

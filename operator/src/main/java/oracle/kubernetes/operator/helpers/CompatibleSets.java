@@ -11,7 +11,7 @@ import static oracle.kubernetes.operator.helpers.PodCompatibility.getMissingElem
 class CompatibleSets<T> implements CompatibilityCheck {
   private final Collection<T> expected;
   private final Collection<T> actual;
-  private String description;
+  private final String description;
 
   CompatibleSets(String description, Collection<T> expected, Collection<T> actual) {
     this.description = description;

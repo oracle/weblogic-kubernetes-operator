@@ -13,7 +13,7 @@ import oracle.kubernetes.operator.utils.Certificates;
 /** RestConfigImpl provides the WebLogic Operator REST api configuration. */
 public class RestConfigImpl implements RestConfig {
 
-  private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final String principal;
   private final Collection<String> targetNamespaces;

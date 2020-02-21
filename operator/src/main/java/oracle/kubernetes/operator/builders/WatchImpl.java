@@ -17,7 +17,7 @@ import oracle.kubernetes.operator.helpers.Pool;
 public class WatchImpl<T> implements WatchI<T> {
   private final Pool<ApiClient> pool;
   private ApiClient client;
-  private Watch<T> impl;
+  private final Watch<T> impl;
 
   WatchImpl(Pool<ApiClient> pool, ApiClient client, Watch<T> impl) {
     this.pool = pool;
