@@ -245,7 +245,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     return type.compareTo(o.type);
   }
 
-  private static ObjectPatch<DomainCondition> conditionPatch = createObjectPatch(DomainCondition.class)
+  private static final ObjectPatch<DomainCondition> conditionPatch = createObjectPatch(DomainCondition.class)
         .withStringField("message", DomainCondition::getMessage)
         .withStringField("reason", DomainCondition::getReason)
         .withStringField("status", DomainCondition::getStatus)

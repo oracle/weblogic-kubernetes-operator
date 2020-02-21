@@ -193,7 +193,7 @@ public class DomainStatusUpdater {
   }
 
   static class PatchResponseStep extends DefaultResponseStep<Domain> {
-    private DomainStatusUpdaterStep updaterStep;
+    private final DomainStatusUpdaterStep updaterStep;
     private final DomainStatusUpdaterContext context;
 
     public PatchResponseStep(DomainStatusUpdaterStep updaterStep, DomainStatusUpdaterContext context, Step nextStep) {
@@ -234,7 +234,7 @@ public class DomainStatusUpdater {
 
   static class DomainStatusUpdaterContext {
     private final DomainPresenceInfo info;
-    private DomainStatusUpdaterStep domainStatusUpdaterStep;
+    private final DomainStatusUpdaterStep domainStatusUpdaterStep;
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = packet.getSpi(DomainPresenceInfo.class);

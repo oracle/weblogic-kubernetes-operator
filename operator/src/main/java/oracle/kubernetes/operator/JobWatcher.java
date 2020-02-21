@@ -213,10 +213,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   static class JobWatcherFactory {
-    private ThreadFactory threadFactory;
-    private WatchTuning watchTuning;
+    private final ThreadFactory threadFactory;
+    private final WatchTuning watchTuning;
 
-    private Function<String, AtomicBoolean> isNamespaceStopping;
+    private final Function<String, AtomicBoolean> isNamespaceStopping;
 
     JobWatcherFactory(
         ThreadFactory threadFactory,
@@ -239,7 +239,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   private class WaitForJobReadyStep extends WaitForReadyStep<V1Job> {
-    private long jobCreationTime;
+    private final long jobCreationTime;
 
     private WaitForJobReadyStep(V1Job job, Step next) {
       super(job, next);

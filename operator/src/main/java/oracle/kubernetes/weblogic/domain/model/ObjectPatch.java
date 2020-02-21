@@ -28,7 +28,7 @@ import org.joda.time.format.ISODateTimeFormat;
  */
 @SuppressWarnings("SameParameterValue")
 class ObjectPatch<T> {
-  private List<FieldPatch<T>> fields = new ArrayList<>();
+  private final List<FieldPatch<T>> fields = new ArrayList<>();
   private Supplier<T> constructor;
 
   @SuppressWarnings("unused")
@@ -121,7 +121,7 @@ class ObjectPatch<T> {
   }
 
   abstract static class FieldPatch<T> {
-    private String fieldName;
+    private final String fieldName;
 
     FieldPatch(String fieldName) {
       this.fieldName = fieldName;
@@ -138,8 +138,8 @@ class ObjectPatch<T> {
 
   abstract static class ScalarFieldPatch<T, S> extends FieldPatch<T> {
 
-    private String name;
-    private Function<T, S> getter;
+    private final String name;
+    private final Function<T, S> getter;
 
     ScalarFieldPatch(String name, Function<T, S> getter) {
       super(name);
@@ -269,8 +269,8 @@ class ObjectPatch<T> {
   static class ObjectListField<T, P extends PatchableComponent<P>> extends FieldPatch<T> {
 
     private final ObjectPatch<P> objectPatch;
-    private Function<T,List<P>> getter;
-    private String fieldName;
+    private final Function<T,List<P>> getter;
+    private final String fieldName;
 
     ObjectListField(String fieldName, ObjectPatch<P> objectPatch, Function<T, List<P>> getter) {
       super(fieldName);
@@ -350,8 +350,8 @@ class ObjectPatch<T> {
   }
 
   static class Disposition {
-    private DispositionType type;
-    private int newIndex;
+    private final DispositionType type;
+    private final int newIndex;
 
     Disposition(DispositionType type, int newIndex) {
       this.type = type;
@@ -377,8 +377,8 @@ class ObjectPatch<T> {
 
   static class StringListField<T> extends FieldPatch<T> {
 
-    private Function<T,List<String>> getter;
-    private String fieldName;
+    private final Function<T,List<String>> getter;
+    private final String fieldName;
 
     StringListField(String fieldName, Function<T, List<String>> getter) {
       super(fieldName);

@@ -8,7 +8,7 @@ import okhttp3.Call;
 /** A wrapper for an OKHttp call to isolate its own callers. */
 public class CallWrapper implements CancellableCall {
 
-  private Call underlyingCall;
+  private final Call underlyingCall;
 
   public CallWrapper(Call underlyingCall) {
     this.underlyingCall = underlyingCall;

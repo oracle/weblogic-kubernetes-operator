@@ -23,13 +23,13 @@ public class AdminService implements ServiceConfigurator {
           + "the Kubernetes cluster via a node port service, along with the node port for "
           + "each channel. If not specified, the Administration Server's node port service will "
           + "not be created.")
-  private List<Channel> channels = new ArrayList<>();
+  private final List<Channel> channels = new ArrayList<>();
 
   @Description("Labels to associate with the external channel service.")
-  private Map<String, String> labels = new HashMap<>();
+  private final Map<String, String> labels = new HashMap<>();
 
   @Description("Annotations to associate with the external channel service.")
-  private Map<String, String> annotations = new HashMap<>();
+  private final Map<String, String> annotations = new HashMap<>();
 
   /**
    * Adds a channel to expose an admin server port outside the cluster via a specified port.

@@ -75,7 +75,7 @@ public class DomainValidationSteps {
 
   static class KubernetesResourceLookupImpl implements KubernetesResourceLookup {
 
-    private Packet packet;
+    private final Packet packet;
 
     KubernetesResourceLookupImpl(Packet packet) {
       this.packet = packet;

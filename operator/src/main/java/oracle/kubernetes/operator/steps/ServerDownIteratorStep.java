@@ -12,7 +12,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 public class ServerDownIteratorStep extends Step {
-  private List<String> serverNames;
+  private final List<String> serverNames;
 
   ServerDownIteratorStep(List<String> serverNames, Step next) {
     super(next);

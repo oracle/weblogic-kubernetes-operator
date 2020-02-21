@@ -485,9 +485,9 @@ public class Domain {
   }
 
   class Validator {
-    private List<String> failures = new ArrayList<>();
-    private Set<String> clusterNames = new HashSet<>();
-    private Set<String> serverNames = new HashSet<>();
+    private final List<String> failures = new ArrayList<>();
+    private final Set<String> clusterNames = new HashSet<>();
+    private final Set<String> serverNames = new HashSet<>();
 
     List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
       addDuplicateNames();
@@ -585,7 +585,7 @@ public class Domain {
     }
 
     class EnvironmentVariableCheck {
-      private Predicate<String> isReserved;
+      private final Predicate<String> isReserved;
 
       EnvironmentVariableCheck(Predicate<String> isReserved) {
         this.isReserved = isReserved;

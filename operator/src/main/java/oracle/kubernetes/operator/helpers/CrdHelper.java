@@ -107,7 +107,7 @@ public class CrdHelper {
   }
 
   static class CrdStep extends Step {
-    CrdContext context;
+    final CrdContext context;
 
     CrdStep(KubernetesVersion version, Step next) {
       super(next);
