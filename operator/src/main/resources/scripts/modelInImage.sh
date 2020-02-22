@@ -348,6 +348,9 @@ function createWLDomain() {
 
   compareArtifactsMD5
 
+  # Set this so that the introspectDomain.sh can decidde to call the python script of not
+  DOMAIN_CREATED=0
+
   # something changed in the wdt artifacts or wls version changed
   # create domain again
 
@@ -356,7 +359,9 @@ function createWLDomain() {
 
     trace "Need to create domain ${WDT_DOMAIN_TYPE}"
     createModelDomain
-
+    DOMAIN_CREATED=1
+  else
+    trace "Nothing changed no op"
   fi
   trace "Exiting createWLDomain"
   stop_trap
@@ -501,6 +506,7 @@ function createPrimordialDomain() {
   # If there is no primordial domain or needs to recreate one due to password changes
 
   if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
+    trace "No primordial domain or need to recreate again"
     wdtCreatePrimordialDomain
     create_primordial_tgz=1
   fi
@@ -528,7 +534,7 @@ function createPrimordialDomain() {
 function generateMergedModel() {
   # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
   # temporarily disable it
-
+  trace "Entering generateMergedModel"
   stop_trap
 
   local NEW_MERGED_MODEL="/tmp/new_merged_model.json"
@@ -554,6 +560,7 @@ function generateMergedModel() {
 
   # restore trap
   start_trap
+  trace "Exiting generateMergedModel"
 }
 
 # wdtCreatePrimordialDomain
@@ -563,7 +570,7 @@ function generateMergedModel() {
 function wdtCreatePrimordialDomain() {
   # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
   # temporarily disable it
-
+  trace "Entering wdtCreatePrimordialDomain"
   stop_trap
 
   export __WLSDEPLOY_STORE_MODEL__=1
@@ -589,6 +596,7 @@ function wdtCreatePrimordialDomain() {
 
   # restore trap
   start_trap
+  trace "Exiting wdtCreatePrimordialDomain"
 
 }
 
@@ -597,6 +605,8 @@ function wdtCreatePrimordialDomain() {
 #
 
 function wdtUpdateModelDomain() {
+
+  trace "Entering wdtUpdateModelDomain"
   # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
   # temporarily disable it
 
@@ -625,6 +635,8 @@ function wdtUpdateModelDomain() {
   # restore trap
   start_trap
 
+
+  trace "Exiting wdtUpdateModelDomain"
 }
 #
 # Generic error handler
