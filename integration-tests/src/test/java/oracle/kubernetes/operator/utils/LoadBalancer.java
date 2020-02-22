@@ -50,6 +50,10 @@ public class LoadBalancer {
         LoggerHelper.getLocal().log(Level.INFO, "Is going to createTraefikIngressPerDomain");
         createTraefikIngressPerDomain();
       }
+      if (BaseTest.OKE_CLUSTER) {
+        createTraefikPathRouting();
+      }
+
     }
 
     if (lbMap.get("loadBalancer").equals("VOYAGER")) {
@@ -78,7 +82,8 @@ public class LoadBalancer {
     String cmdLb =
         "helm install --name traefik-operator --namespace traefik --values "
             + BaseTest.getProjectRoot()
-            + "/integration-tests/src/test/resources/charts/traefik/values.yaml stable/traefik";
+            + "/integration-tests/src/test/resources/charts/traefik/values.yaml "
+            + " stable/traefik --set serviceType=LoadBalancer";
     LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
 
     ExecResult result = ExecCommand.exec(cmdLb);
@@ -92,6 +97,82 @@ public class LoadBalancer {
                 + result.stderr());
       }
     }
+  }
+
+  /**
+   * Create Traefik path routing.
+   * @throws Exception on failure
+   */
+  public void createTraefikPathRouting() throws Exception {
+
+    TestUtils.copyFile(
+            BaseTest.getProjectRoot()
+                    + "/integration-tests/src/test/resources/traefik-path-routing.yaml",
+            userProjectsDir
+                    + "/load-balancers/"
+                    + lbMap.get("domainUID")
+                    + "/traefik-path-routing.yaml");
+    TestUtils.replaceStringInFile(userProjectsDir
+            + "/load-balancers/"
+            + lbMap.get("domainUID")
+            + "/traefik-path-routing.yaml", "%DOMAIN_UID%",(String)lbMap.get("domainUID"));
+    TestUtils.replaceStringInFile(userProjectsDir
+            + "/load-balancers/"
+            + lbMap.get("domainUID")
+            + "/traefik-path-routing.yaml", "%DOMAIN_NAMESPACE%",(String)lbMap.get("namespace"));
+
+    String cmdLb =
+            "kubectl create -f "
+                    + userProjectsDir
+                    + "/load-balancers/"
+                    + lbMap.get("domainUID")
+                    + "/traefik-path-routing.yaml";
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
+
+    ExecResult result = ExecCommand.exec(cmdLb);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+              "FAILURE: command to create hostpath ingress "
+                      + cmdLb
+                      + " failed, returned "
+                      + result.stdout()
+                      + result.stderr());
+    }
+    /*
+    TestUtils.copyFile(
+            BaseTest.getProjectRoot()
+                    + "/integration-tests/src/test/resources/traefik-operatorhp.yaml",
+            userProjectsDir
+                    + "/load-balancers/"
+                    + lbMap.get("domainUID")
+                    + "/traefik-operatorhp.yaml");
+
+    TestUtils.replaceStringInFile(userProjectsDir
+            + "/load-balancers/"
+            + lbMap.get("domainUID")
+            + "/traefik-operatorhp", "%OPERATOR_NS%","itoperator-opns-1");
+
+
+
+    cmdLb =
+            "kubectl create -f "
+                    + userProjectsDir
+                    + "/load-balancers/"
+                    + lbMap.get("domainUID")
+                    + "/operatorhp.yaml";
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
+
+    result = ExecCommand.exec(cmdLb);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+              "FAILURE: command to create hostpath ingress "
+                      + cmdLb
+                      + " failed, returned "
+                      + result.stdout()
+                      + result.stderr());
+    }
+    */
+
   }
 
   /**
@@ -216,6 +297,7 @@ public class LoadBalancer {
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
+
 
   /**
    * Create Voyager load balancer.

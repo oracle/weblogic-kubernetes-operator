@@ -139,9 +139,21 @@ public class Domain {
     verifyServicesCreated();
     verifyServersReady();
     if (createLoadBalancer) {
-      String cmd = "curl --silent --noproxy '*' -H 'host: " + domainUid
+      String cmd;
+      if (getLoadBalancerName().equalsIgnoreCase("TRAEFIK") && BaseTest.OKE_CLUSTER) {
+        String cmdip = "kubectl describe svc traefik-operator --namespace traefik | grep Ingress | awk '{print $3}'";
+        result = TestUtils.exec(cmdip);
+        BaseTest.LB_PUBLIC_IP = result.stdout();
+        cmd = "curl --silent  -H 'host: " + domainUid
+          + ".org' http://" + BaseTest.LB_PUBLIC_IP
+          + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+      } else {
+        cmd = "curl --silent --noproxy '*' -H 'host: " + domainUid
           + ".org' http://" + getHostNameForCurl() + ":" + getLoadBalancerWebPort()
           + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+      }
+      LoggerHelper.getLocal().log(Level.INFO,
+              "Checking ready app with cmd " + cmd);
       callWebAppAndWaitTillReady(cmd);
     }
   }
@@ -310,18 +322,30 @@ public class Domain {
           "nodePortHost " + nodePortHost + " nodePort " + nodePort);
 
       StringBuffer cmd = new StringBuffer();
-      cmd.append("curl --silent --show-error --noproxy ")
-          .append(nodePortHost)
-          .append(" http://")
-          .append(nodePortHost)
-          .append(":")
-          .append(nodePort)
-          .append("/management/weblogic/latest/serverRuntime")
-          .append(" --user ")
-          .append(username)
-          .append(":")
-          .append(password)
-          .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
+      if (BaseTest.OKE_CLUSTER) {
+        cmd.append("curl --silent --show-error  --noproxy ")
+                .append(" http://")
+                .append(BaseTest.LB_PUBLIC_IP)
+                .append("/management/weblogic/latest/serverRuntime")
+                .append(" --user ")
+                .append(username)
+                .append(":")
+                .append(password)
+                .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
+      } else {
+        cmd.append("curl --silent --show-error --noproxy ")
+                .append(nodePortHost)
+                .append(" http://")
+                .append(nodePortHost)
+                .append(":")
+                .append(nodePort)
+                .append("/management/weblogic/latest/serverRuntime")
+                .append(" --user ")
+                .append(username)
+                .append(":")
+                .append(password)
+                .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
+      }
       LoggerHelper.getLocal().log(Level.INFO, "cmd for curl " + cmd);
       ExecResult result = TestUtils.exec(cmd.toString());
       String output = result.stdout().trim();
@@ -418,23 +442,41 @@ public class Domain {
   public void deployWebAppViaRest(
       String webappName, String webappLocation, String username, String password) throws Exception {
     StringBuffer cmd = new StringBuffer();
-    cmd.append("curl --noproxy '*' --silent  --user ")
-        .append(username)
-        .append(":")
-        .append(password)
-        .append(" -H X-Requested-By:MyClient -H Accept:application/json")
-        .append(" -H Content-Type:multipart/form-data -F \"model={ name: '")
-        .append(webappName)
-        .append("', targets: [ { identity: [ clusters, '")
-        .append(clusterName)
-        .append("' ] } ] }\" -F \"sourcePath=@")
-        .append(webappLocation)
-        .append("\" -H \"Prefer:respond-async\" -X POST http://")
-        .append(getNodeHost())
-        .append(":")
-        .append(getNodePort())
-        .append("/management/weblogic/latest/edit/appDeployments")
-        .append(" --write-out %{http_code} ");
+    if (BaseTest.OKE_CLUSTER) {
+      cmd.append("curl  --silent --noproxy '*' --user ")
+              .append(username)
+              .append(":")
+              .append(password)
+              .append(" -H X-Requested-By:MyClient -H Accept:application/json")
+              .append(" -H Content-Type:multipart/form-data -F \"model={ name: '")
+              .append(webappName)
+              .append("', targets: [ { identity: [ clusters, '")
+              .append(clusterName)
+              .append("' ] } ] }\" -F \"sourcePath=@")
+              .append(webappLocation)
+              .append("\" -H \"Prefer:respond-async\" -X POST http://")
+              .append(BaseTest.LB_PUBLIC_IP)
+              .append("/management/weblogic/latest/edit/appDeployments")
+              .append(" --write-out %{http_code} ");
+    } else {
+      cmd.append("curl --noproxy '*' --silent  --user ")
+              .append(username)
+              .append(":")
+              .append(password)
+              .append(" -H X-Requested-By:MyClient -H Accept:application/json")
+              .append(" -H Content-Type:multipart/form-data -F \"model={ name: '")
+              .append(webappName)
+              .append("', targets: [ { identity: [ clusters, '")
+              .append(clusterName)
+              .append("' ] } ] }\" -F \"sourcePath=@")
+              .append(webappLocation)
+              .append("\" -H \"Prefer:respond-async\" -X POST http://")
+              .append(getNodeHost())
+              .append(":")
+              .append(getNodePort())
+              .append("/management/weblogic/latest/edit/appDeployments")
+              .append(" --write-out %{http_code} ");
+    }
     LoggerHelper.getLocal().log(Level.INFO, "Command to deploy webapp " + cmd);
     ExecResult result = TestUtils.exec(cmd.toString());
     String output = result.stdout().trim();
@@ -452,19 +494,34 @@ public class Domain {
   public void undeployWebAppViaRest(
       String webappName, String webappLocation, String username, String password) throws Exception {
     StringBuffer cmd = new StringBuffer();
-    cmd.append("curl --noproxy '*' --silent  --user ")
-        .append(username)
-        .append(":")
-        .append(password)
-        .append(" -H X-Requested-By:MyClient -H Accept:application/json")
-        .append(" -H Content-Type:application/json -d \"{}\" ")
-        .append(" -X DELETE http://")
-        .append(getNodeHost())
-        .append(":")
-        .append(getNodePort())
-        .append("/management/weblogic/latest/edit/appDeployments/")
-        .append(webappName)
-        .append(" --write-out %{http_code} -o /dev/null");
+    if (BaseTest.OKE_CLUSTER) {
+      cmd.append("curl --noproxy '*' --silent  --user ")
+              .append(username)
+              .append(":")
+              .append(password)
+              .append(" -H X-Requested-By:MyClient -H Accept:application/json")
+              .append(" -H Content-Type:application/json -d \"{}\" ")
+              .append(" -X DELETE http://")
+              .append(BaseTest.LB_PUBLIC_IP)
+              .append(":80")
+              .append("/management/weblogic/latest/edit/appDeployments/")
+              .append(webappName)
+              .append(" --write-out %{http_code} -o /dev/null");
+    } else {
+      cmd.append("curl --noproxy '*' --silent  --user ")
+              .append(username)
+              .append(":")
+              .append(password)
+              .append(" -H X-Requested-By:MyClient -H Accept:application/json")
+              .append(" -H Content-Type:application/json -d \"{}\" ")
+              .append(" -X DELETE http://")
+              .append(getNodeHost())
+              .append(":")
+              .append(getNodePort())
+              .append("/management/weblogic/latest/edit/appDeployments/")
+              .append(webappName)
+              .append(" --write-out %{http_code} -o /dev/null");
+    }
     LoggerHelper.getLocal().fine("Command to undeploy webapp " + cmd);
     ExecResult result = TestUtils.exec(cmd.toString());
     String output = result.stdout().trim();
@@ -660,13 +717,21 @@ public class Domain {
     if (!loadBalancer.equals("NONE")) {
       // url
       StringBuffer testAppUrl = new StringBuffer("http://");
-      testAppUrl.append(getHostNameForCurl()).append(":").append(loadBalancerWebPort).append("/");
+      if (BaseTest.OKE_CLUSTER) {
+        testAppUrl.append(BaseTest.LB_PUBLIC_IP).append("/");
+      }
       if (loadBalancer.equals("APACHE")) {
         testAppUrl.append("weblogic/");
       }
       testAppUrl.append(webappName).append("/");
       // curl cmd to call webapp
       StringBuffer curlCmd = new StringBuffer("curl --silent --noproxy '*' ");
+      //FIXME
+      /*
+      if (BaseTest.OKE_CLUSTER) {
+        curlCmd = new StringBuffer("curl --silent  ");
+      }
+       */
       curlCmd
           .append(" -H 'host: ")
           .append(domainUid)
@@ -724,6 +789,7 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO,
         "command to delete domain " + cmd + " \n returned " + output);
     verifyDomainDeleted(replicas);
+
 
   }
 
@@ -933,15 +999,25 @@ public class Domain {
         Level.INFO, "nodePortHost " + nodePortHost + " nodePort " + nodePort);
 
     StringBuffer cmd = new StringBuffer();
-    cmd.append("curl --silent --show-error --noproxy ")
-        .append(nodePortHost)
-        .append(" http://")
-        .append(nodePortHost)
-        .append(":")
-        .append(nodePort)
-        .append("/console/login/LoginForm.jsp")
-        .append(" --write-out %{http_code} -o ")
-        .append(responseBodyFile);
+    if (BaseTest.OKE_CLUSTER) {
+      cmd.append("curl --silent --show-error --noproxy ")
+              .append(nodePortHost)
+              .append(" http://")
+              .append(BaseTest.LB_PUBLIC_IP)
+              .append("/console/login/LoginForm.jsp")
+              .append(" --write-out %{http_code} -o ")
+              .append(responseBodyFile);
+    } else {
+      cmd.append("curl --silent --show-error --noproxy ")
+              .append(nodePortHost)
+              .append(" http://")
+              .append(nodePortHost)
+              .append(":")
+              .append(nodePort)
+              .append("/console/login/LoginForm.jsp")
+              .append(" --write-out %{http_code} -o ")
+              .append(responseBodyFile);
+    }
     LoggerHelper.getLocal().log(Level.INFO, "cmd for curl " + cmd);
 
     ExecResult result = TestUtils.exec(cmd.toString());
@@ -1488,17 +1564,25 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO, "Running " + createDomainScriptCmd);
     ExecResult result = ExecCommand.exec(createDomainScriptCmd, true, additionalEnvMap);
     if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command "
-              + createDomainScriptCmd
-              + " failed, returned "
-              + result.stdout()
-              + "\n"
-              + result.stderr());
+      LoggerHelper.getLocal().log(Level.INFO, "Running delete-domain-job.yaml ");
+      TestUtils.deleteDomainHomeDir(userProjectsDir
+              + "/weblogic-domains/" + domainUid, domainNS);
+      
+      result = ExecCommand.exec(createDomainScriptCmd, true, additionalEnvMap);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+                "FAILURE: command "
+                        + createDomainScriptCmd
+                        + " failed, returned "
+                        + result.stdout()
+                        + "\n"
+                        + result.stderr());
+      }
+
     }
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
-  
+
     // for remote k8s cluster and domain in image case, push the domain image to OCIR
     if (domainMap.containsKey("domainHomeImageBase") && BaseTest.SHARED_CLUSTER) {
       String image = (String)domainMap.get("image");
@@ -1939,8 +2023,10 @@ public class Domain {
    * @throws Exception on failure
    */
   public String getHostNameForCurl() throws Exception {
-    if (System.getenv("K8S_NODEPORT_HOST") != null) {
+    if (System.getenv("K8S_NODEPORT_HOST") != null && (!BaseTest.OKE_CLUSTER)) {
       return System.getenv("K8S_NODEPORT_HOST");
+    } else if (BaseTest.OKE_CLUSTER) {
+      return BaseTest.LB_PUBLIC_IP;
     } else if (BaseTest.OPENSHIFT) {
       ExecResult result = ExecCommand.exec("hostname -i");
       return result.stdout().trim();
@@ -2078,6 +2164,15 @@ public class Domain {
           "/samples/scripts/create-weblogic-domain/domain-home-on-pv/"
               + "create-domain-job-template.yaml");
       TestUtils.exec("sed -i -e 's?DYNAMIC?CONFIGURED?g' " + createDomainJobTemplateFile);
+    }
+    if (BaseTest.OKE_CLUSTER) {
+      TestUtils.replaceStringInFile(resultsDir
+              + "/samples/scripts/create-weblogic-domain/domain-home-on-pv/"
+              +  "create-domain-job-template.yaml",
+              "chown -R 1000:1000 %DOMAIN_ROOT_DIR%",
+              "chown 1000:1000 %DOMAIN_ROOT_DIR%/. && find %DOMAIN_ROOT_DIR%/. "
+              + "-maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 "
+              + "| xargs -r -0 chown -R 1000:1000 ");
     }
   }
 

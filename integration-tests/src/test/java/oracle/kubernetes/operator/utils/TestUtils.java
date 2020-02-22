@@ -2012,4 +2012,28 @@ public class TestUtils {
     return exec(cmd, true);
   }
 
+  /**
+   * Run script to delete DomainHome dir.
+   *
+   * @throws Exception exception
+   */
+  public static void deleteDomainHomeDir(String scriptDir, String namespace) throws Exception {
+    StringBuffer command = new StringBuffer();
+    command.append("kubectl delete -f  ").append(scriptDir).append("/create-domain-job.yaml");
+    ExecResult result = TestUtils.exec(command.toString());
+    command = new StringBuffer();
+    command.append("kubectl create -f  ").append(scriptDir).append("/delete-domain-job.yaml");
+    result = TestUtils.exec(command.toString());
+    if (!result.stdout().contains("sample-domain-job created")) {
+      throw new RuntimeException("FAILURE: delete domain job fails, exiting!");
+    }
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pods ").append(" -n ").append(namespace).append(" | grep delete");
+
+    // check for completion
+    checkAnyCmdInLoop(cmd.toString(), "Completed");
+    command = new StringBuffer();
+    command.append("kubectl delete -f  ").append(scriptDir).append("/delete-domain-job.yaml");
+    TestUtils.exec(command.toString());
+  }
 }

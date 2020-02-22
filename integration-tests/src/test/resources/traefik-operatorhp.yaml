@@ -1,0 +1,15 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-pathrouting-%OPERATOR_NS%
+  namespace: %OPERATOR_NS%
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /operator
+            backend:
+              serviceName: internal-weblogic-operator-svc
+              servicePort: 8082

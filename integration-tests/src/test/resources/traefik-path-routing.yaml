@@ -1,0 +1,24 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-pathrouting-%DOMAIN_UID%
+  namespace: %DOMAIN_NAMESPACE%
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    #- host: itoperator-domain-2.org
+    - http:
+        paths:
+          - path: /
+            backend:
+              serviceName: %DOMAIN_UID%-cluster-cluster-1
+              servicePort: 8001
+          - path: /console
+            backend:
+              serviceName: %DOMAIN_UID%-admin-server
+              servicePort: 7001
+          - path: /management
+            backend:
+              serviceName: %DOMAIN_UID%-admin-server
+              servicePort: 7001
