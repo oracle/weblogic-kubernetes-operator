@@ -21,6 +21,7 @@ INTROSPECTJOB_IMAGE_MD5="/tmp/inventory_image.md5"
 INTROSPECTJOB_CM_MD5="/tmp/inventory_cm.md5"
 INTROSPECTJOB_PASSPHRASE_MD5="/tmp/inventory_passphrase.md5"
 
+NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 WDT_ENCRYPTION_PASSPHRASE="/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
@@ -537,8 +538,7 @@ function generateMergedModel() {
   trace "Entering generateMergedModel"
   stop_trap
 
-  local NEW_MERGED_MODEL="/tmp/new_merged_model.json"
-  export __WLSDEPLOY_STORE_MODEL__=""${NEW_MERGED_MODEL}""
+  export __WLSDEPLOY_STORE_MODEL__="${NEW_MERGED_MODEL}"
 
   if [ ! -z ${WDT_PASSPHRASE} ]; then
     yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/validateModel.sh -oracle_home ${MW_HOME}  ${model_list} \
