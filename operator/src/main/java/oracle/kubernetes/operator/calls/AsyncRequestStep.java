@@ -285,9 +285,9 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
   private final class DefaultRetryStrategy implements RetryStrategy {
     private long retryCount = 0;
-    private int maxRetryCount;
-    private Step retryStep;
-    private RetryStrategyListener listener;
+    private final int maxRetryCount;
+    private final Step retryStep;
+    private final RetryStrategyListener listener;
 
     DefaultRetryStrategy(int maxRetryCount, Step retryStep, RetryStrategyListener listener) {
       this.maxRetryCount = maxRetryCount;
@@ -298,7 +298,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     @Override
     public NextAction doPotentialRetry(Step conflictStep, Packet packet, int statusCode) {
       // Check statusCode, many statuses should not be retried
-      // https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#http-status-codes
+      // https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#http-status-codes
       if (statusCode == 0 /* simple timeout */
           || statusCode == 429 /* StatusTooManyRequests */
           || statusCode == 500 /* StatusInternalServerError */

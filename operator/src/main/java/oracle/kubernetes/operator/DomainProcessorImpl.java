@@ -26,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -63,7 +64,6 @@ import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 
 public class DomainProcessorImpl implements DomainProcessor {
@@ -73,11 +73,11 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static final Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
   private static final Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
   // Map from namespace to map of domainUID to Domain
-  private static final Map<String, Map<String, DomainPresenceInfo>> DOMAINS =
+  private static Map<String, Map<String, DomainPresenceInfo>> DOMAINS =
         new ConcurrentHashMap<>();
   private static final ConcurrentMap<String, ConcurrentMap<String, ScheduledFuture<?>>>
         statusUpdaters = new ConcurrentHashMap<>();
-  private DomainProcessorDelegate delegate;
+  private final DomainProcessorDelegate delegate;
 
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
     this.delegate = delegate;
@@ -414,12 +414,14 @@ public class DomainProcessorImpl implements DomainProcessor {
         delegate.scheduleWithFixedDelay(
             () -> {
               try {
+                V1SubjectRulesReviewStatus srrs = delegate.getSubjectRulesReviewStatus(info.getNamespace());
                 Packet packet = new Packet();
                 packet
                     .getComponents()
                     .put(
                         ProcessingConstants.DOMAIN_COMPONENT_NAME,
-                        Component.createFor(info, delegate.getVersion()));
+                        Component.createFor(info, delegate.getVersion(),
+                            V1SubjectRulesReviewStatus.class, srrs));
                 packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
                 Step strategy =
                     ServerStatusReader.createStatusStep(main.statusUpdateTimeoutSeconds, null);
@@ -522,8 +524,16 @@ public class DomainProcessorImpl implements DomainProcessor {
         strategy = DomainValidationSteps.createDomainValidationSteps(ns, strategy);
       }
 
+      PodAwaiterStepFactory pw = delegate.getPodAwaiterStepFactory(info.getNamespace());
+      V1SubjectRulesReviewStatus srrs = delegate.getSubjectRulesReviewStatus(info.getNamespace());
       Packet packet = new Packet();
-      packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
+      packet
+          .getComponents()
+          .put(
+              ProcessingConstants.DOMAIN_COMPONENT_NAME,
+              Component.createFor(info, delegate.getVersion(),
+                  PodAwaiterStepFactory.class, pw,
+                  V1SubjectRulesReviewStatus.class, srrs));
       runDomainPlan(
           dom,
           domainUid,
@@ -770,13 +780,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      PodAwaiterStepFactory pw = delegate.getPodAwaiterStepFactory(info.getNamespace());
       info.setDeleting(false);
-      packet
-            .getComponents()
-            .put(
-                  ProcessingConstants.DOMAIN_COMPONENT_NAME,
-                  Component.createFor(info, delegate.getVersion(), PodAwaiterStepFactory.class, pw));
       return doNext(packet);
     }
   }
@@ -814,20 +818,14 @@ public class DomainProcessorImpl implements DomainProcessor {
     public NextAction apply(Packet packet) {
       info.setDeleting(true);
       unregisterStatusUpdater(ns, info.getDomainUid());
-      PodAwaiterStepFactory pw = delegate.getPodAwaiterStepFactory(ns);
-      packet
-            .getComponents()
-            .put(
-                  ProcessingConstants.DOMAIN_COMPONENT_NAME,
-                  Component.createFor(info, delegate.getVersion(), PodAwaiterStepFactory.class, pw));
       return doNext(packet);
     }
   }
 
   private class DomainStatusUpdate {
-    private Domain domain;
-    private V1Pod pod;
-    private String domainUid;
+    private final Domain domain;
+    private final V1Pod pod;
+    private final String domainUid;
 
     DomainStatusUpdate(Domain domain, V1Pod pod, String domainUid) {
       this.domain = domain;

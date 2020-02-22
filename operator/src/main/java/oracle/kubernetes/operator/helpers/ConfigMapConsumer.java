@@ -37,11 +37,9 @@ public class ConfigMapConsumer implements Map<String, String> {
    * @param executorService executor
    * @param mountPoint mount point
    * @param onUpdate on update flag
-   * @throws IOException on failure
    */
   public ConfigMapConsumer(
-      ScheduledExecutorService executorService, String mountPoint, Runnable onUpdate)
-      throws IOException {
+      ScheduledExecutorService executorService, String mountPoint, Runnable onUpdate) {
     this.threadPool = executorService;
     this.mountPointDir = new File(mountPoint);
     this.onUpdate = onUpdate;

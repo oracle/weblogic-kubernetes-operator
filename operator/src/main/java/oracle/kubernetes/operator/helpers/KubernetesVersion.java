@@ -10,8 +10,8 @@ import io.kubernetes.client.openapi.models.VersionInfo;
 /** Major and minor version of Kubernetes API Server. */
 public class KubernetesVersion {
   public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(1, 10);
-  private static final String[] MINIMUM_K8S_VERSIONS = {"1.11.5", "1.12.3", "1.13.0"};
-  static KubernetesVersion UNREADABLE = new KubernetesVersion(0, 0);
+  private static final String[] MINIMUM_K8S_VERSIONS = {"1.13.5", "1.14.8", "1.15.7"};
+  static final KubernetesVersion UNREADABLE = new KubernetesVersion(0, 0);
   private final int major;
   private final int minor;
   private final int revision;
@@ -115,21 +115,8 @@ public class KubernetesVersion {
     return this.major > 1 || (this.major == 1 && this.minor >= 8);
   }
 
-  boolean isRulesReviewSupported() {
-    return this.major > 1 || (this.major == 1 && this.minor >= 8);
-  }
-
   boolean isCrdSubresourcesSupported() {
     return this.major > 1 || (this.major == 1 && this.minor >= 10);
-  }
-
-  // Even though subresources are supported at version 1.10, we've determined that the
-  // 'status' subresource and the pattern of using "/status" doesn't actually work
-  // until 1.13.  This is validated against the published recent changes doc.
-  // *NOTE*: To use this, update CrdHelper to include the status subresource and also
-  // update DomainStatusUpdater to use replaceDomainStatusAsync
-  boolean isCrdSubresourcesStatusPatternSupported() {
-    return this.major > 1 || (this.major == 1 && this.minor >= 13);
   }
 
   @Override
