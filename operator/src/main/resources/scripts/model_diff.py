@@ -1,7 +1,7 @@
 import re
 import sets
 import sys, os, traceback
-
+from java.lang import System
 UNSAFE_ONLINE_UPDATE=0
 SAFE_ONLINE_UPDATE=1
 FATAL_MODEL_CHANGES=2
@@ -500,13 +500,14 @@ def main():
         rcfh = open('/tmp/model_diff_rc', 'w')
         rcfh.write(str(rc))
         rcfh.close()
-        exit(exitcode=0)
+        System.exit(0)
+        exit(0)
     except:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         eeString = traceback.format_exception(exc_type, exc_obj, exc_tb)
         print eeString
-        exit(exitcode=-1)
-
+        #System.exit(-1)
+        exit(1)
 if __name__ == "main":
     all_changes = []
     all_added = []

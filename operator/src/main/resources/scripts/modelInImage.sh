@@ -85,7 +85,6 @@ function sort_files() {
 #
 
 function compareArtifactsMD5() {
-  trap 'error_handler There was an error at compareArtifactsMD5 line $LINENO' ERR
 
   local has_md5=0
 
@@ -142,7 +141,6 @@ function compareArtifactsMD5() {
   fi
 
   trace "Exiting checkExistInventory"
-  trap - ERR
 }
 
 # echo file contents
@@ -175,9 +173,6 @@ function get_opss_key_wallet() {
 #
 
 function buildWDTParams_MD5() {
-
-  trap 'error_handler There was an error at buildWDTParams_MD5 line $LINENO' ERR
-
   trace "Entering setupInventoryList"
 
   model_list=""
@@ -278,7 +273,6 @@ function buildWDTParams_MD5() {
   fi
 
   trace "Exiting setupInventoryList"
-  trap - ERR
 }
 
 # createWLDomain
@@ -298,8 +292,7 @@ function buildWDTParams_MD5() {
 
 
 function createWLDomain() {
-  trap 'error_handler There was an error at createWLDomain line $LINENO' ERR
-
+  start_trap
   trace "Entering createWLDomain"
 
   # Check if /u01/wdt/models and /u01/wdt/weblogic-deploy exists
@@ -437,15 +430,13 @@ function createWLDomain() {
 
   fi
   trace "Exiting createWLDomain"
-  trap - ERR
+  stop_trap
 }
 
 # checkDirNotExistsOrEmpty
 #  Test directory exists or empty
 
 function checkDirNotExistsOrEmpty() {
-  trap 'error_handler There was an error at dirNotExistsOrEmpty line $LINENO' ERR
-
   trace "Entering checkDirNotExistsOrEmpty"
 
   if [ $# -eq 1 ] ; then
@@ -461,7 +452,6 @@ function checkDirNotExistsOrEmpty() {
   fi
 
   trace "Exiting checkDirNotExistsOrEmpty"
-  trap - ERR
 }
 
 # getSecretsMD5
@@ -472,7 +462,6 @@ function checkDirNotExistsOrEmpty() {
 # output:  /tm/secrets.md5
 
 function getSecretsMD5() {
-  trap 'error_handler There was an error at getSecretsMD5 line $LINENO' ERR
   trace "Entering getSecretsMD5"
 
   local secrets_text="/tmp/secrets.txt"
@@ -497,7 +486,6 @@ function getSecretsMD5() {
   trace "Found secrets ${secrets_md5}"
   rm ${secrets_text}
   trace "Exiting getSecretsMD5"
-  trap - ERR
 }
 
 #
@@ -505,39 +493,41 @@ function getSecretsMD5() {
 #
 
 function wdtCreatePrimordialDomain() {
-  trap 'error_handler There was an error at wdtCreatePrimordialDomain line $LINENO' ERR
-
   trace "Entering wdtCreatePrimodialDomain"
-
-  #if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
-    # make sure wdt create write out the merged model to a file in the root of the domain
-  export __WLSDEPLOY_STORE_MODEL__=1
-
-  if [ ! -z ${WDT_PASSPHRASE} ]; then
-    yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \
-    ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
-    ${OPSS_FLAGS} >  ${WDT_OUTPUT}
-  else
-    ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS} > ${WDT_OUTPUT}
-  fi
-  ret=$?
-  if [ $ret -ne 0 ]; then
-    trace SEVERE "Create Domain Failed "
-    if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
-      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
-    fi
-    local WDT_ERROR=$(cat ${WDT_OUTPUT})
-    trace SEVERE ${WDT_ERROR}
-    exit 1
-  fi
-
-  # TODO: temporary logic (use validate to checck for changes once ready
   local create_primordial_tgz=0
-  if [ -f  ${INTROSPECTCM_MERGED_MODEL} ] ; then
+  local recreate_domain=0
 
-    ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${DOMAIN_HOME}/wlsdeploy/domain_model.json \
-        ${INTROSPECTCM_MERGED_MODEL}
+  if [  -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
+
+    # Call WDT validateModel.sh to generate the new merged mdoel
+    trace "Checking if security info has been changed"
+    local NEW_MERGED_MODEL="/tmp/new_merged_model.json"
+    export __WLSDEPLOY_STORE_MODEL__=""${NEW_MERGED_MODEL}""
+
+    if [ ! -z ${WDT_PASSPHRASE} ]; then
+      yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/validateModel.sh -oracle_home ${MW_HOME}  ${model_list} \
+      ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} >  ${WDT_OUTPUT}
+    else
+      ${WDT_BINDIR}/validateModel.sh -oracle_home ${MW_HOME} ${model_list} \
+      ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
+    fi
+    ret=$?
+    if [ $ret -ne 0 ]; then
+      trace SEVERE "Validate Model Failed "
+      if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
+        cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_validateDomain.log
+      fi
+      local WDT_ERROR=$(cat ${WDT_OUTPUT})
+      trace SEVERE ${WDT_ERROR}
+      exit 1
+    fi
+    cat ${WDT_OUTPUT}
+    diff_model ${NEW_MERGED_MODEL} ${INTROSPECTCM_MERGED_MODEL}
+
+    if [ $? -ne 0 ]; then
+      trace SEVERE "model diff failed"
+      exit 1
+    fi
 
     diff_rc=$(cat /tmp/model_diff_rc)
 
@@ -545,16 +535,43 @@ function wdtCreatePrimordialDomain() {
 
     cat /tmp/diffed_model.json
 
-    # only needs to targz if security info changed in domainInfo
+    # recreate the domain if there is an unsafe security update such as admin password update
     if [ ${diff_rc} -eq ${UNSAFE_SECURITY_UPDATE} ]; then
-      create_primordial_tgz=1
+      recreate_domain=1
     fi
-  else
+
+  fi
+
+  # If there is no primordial domain or needs to recreate one due to password changes
+
+  if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
+    # make sure wdt create write out the merged model to a file in the root of the domain
+    export __WLSDEPLOY_STORE_MODEL__=1
+
+    if [ ! -z ${WDT_PASSPHRASE} ]; then
+      yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \
+      ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
+      ${OPSS_FLAGS} >  ${WDT_OUTPUT}
+    else
+      ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
+      ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS} > ${WDT_OUTPUT}
+    fi
+    ret=$?
+    if [ $ret -ne 0 ]; then
+      trace SEVERE "Create Domain Failed "
+      if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
+        cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
+      fi
+      local WDT_ERROR=$(cat ${WDT_OUTPUT})
+      trace SEVERE ${WDT_ERROR}
+      exit 1
+    fi
     create_primordial_tgz=1
   fi
 
   # tar up primodial domain with em.ear if it is there.  The zip will be added to the introspect config map by the
   # introspectDomain.py
+
   if [ ${create_primordial_tgz} -eq 1 ]; then
     empath=""
     if [ "${WDT_DOMAIN_TYPE}" != "WLS" ] ; then
@@ -565,11 +582,7 @@ function wdtCreatePrimordialDomain() {
     ${DOMAIN_HOME}/*
   fi
 
-  #fi
-
-
   trace "Exiting wdtCreatePrimordialDomain"
-  trap - ERR
 
 }
 
@@ -578,7 +591,6 @@ function wdtCreatePrimordialDomain() {
 #
 
 function wdtCreateDomain() {
-  trap 'error_handler There was an error at wdtCreateDomain line $LINENO' ERR
 
   trace "Entering wdtCreateDomain"
 
@@ -615,9 +627,9 @@ function wdtCreateDomain() {
   fi
 
   trace "Exiting wdtCreateDomain"
-  trap - ERR
 }
 
+# Phase 2 - TO BE REMOVED
 
 function handleOnlineUpdate() {
 
@@ -673,10 +685,49 @@ function handleOnlineUpdate() {
 
 }
 
+function diff_model() {
+  trace "Entering diff_model"
+
+  # jython version but it doesn't understand wlst style  true
+  #
+  #  local ORACLE_SERVER_DIR=${MW_HOME}/wlserver
+  #  local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
+  #  local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
+  #  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS}"
+  #  local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar
+  #  set -x
+  #  ${JAVA_HOME}/bin/java -cp ${CP} \
+  #    ${JAVA_PROPS} \
+  #    org.python.util.jython \
+  #    ${SCRIPTPATH}/model_diff.py $1 $2
+  #  rc=$?
+  #  set +x
+  #  ls -l /tmp
+
+  ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py $1 $2
+  rc=$?
+
+  trace "Exiting diff_model"
+  return ${rc}
+}
+
 #
 # Generic error handler
 #
 function error_handler() {
-    echo $*
-    exit 1
+    if [ $1 -ne 0 ]; then
+        echo "There was an error at line: " $2 " command: " ${@:3:20}
+        stop_trap
+        exit 1
+    fi
+}
+
+function start_trap() {
+    set -eE
+    trap 'error_handler $? $LINENO $BASH_COMMAND ' ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
+}
+
+function stop_trap() {
+    trap -  ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
+    set +eE
 }
