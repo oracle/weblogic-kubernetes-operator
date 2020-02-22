@@ -254,7 +254,8 @@ public class ItMonitoringExporter extends BaseTest {
             + fileName
             + " "
             + args
-            + " | tee script.log";
+            + " | tee "
+            + "script.log";
     TestUtils.exec(crdCmd, true);
     crdCmd = " cat " + destLoc + "/" + outLogFile;
     ExecResult result = ExecCommand.exec(crdCmd);

@@ -32,7 +32,7 @@ if [ ${SHARED_CLUSTER} = "true" ]; then
                         --dry-run -o yaml | kubectl apply -f -
 fi
 
-kubectl apply -f ${resourceExporterDir}/server.yaml --validate=false
+kubectl apply -f ${resourceExporterDir}/server.yaml
 echo "Getting info about webhook"
 kubectl get pods -n webhook
 
