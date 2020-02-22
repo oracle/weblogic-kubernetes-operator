@@ -34,7 +34,6 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.Ignore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -54,7 +53,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@Ignore
 public class ItMonitoringExporter extends BaseTest {
 
   private static int number = 5;
@@ -227,7 +225,7 @@ public class ItMonitoringExporter extends BaseTest {
         monitoringExporterScriptDir,
         "buildMonitoringExporter.sh",
         monitoringExporterDir + " " + resourceExporterDir + " " + MONITORING_EXPORTER_BRANCH + " "
-            + MONITORING_EXPORTER_VERSION);
+            + MONITORING_EXPORTER_VERSION, "buildMonitoringExporter.out");
   }
 
   /**
@@ -239,7 +237,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @param args     - args to pass to the shell script
    * @throws Exception if could not run the command successfully to clone from github
    */
-  private static void executeShelScript(String srcLoc, String destLoc, String fileName, String args)
+  private static void executeShelScript(String srcLoc, String destLoc, String fileName, String args, String outLogFile)
       throws Exception {
     if (!new File(destLoc).exists()) {
       LoggerHelper.getLocal().log(Level.INFO," creating script dir " + destLoc);
@@ -258,7 +256,7 @@ public class ItMonitoringExporter extends BaseTest {
             + args
             + " | tee script.log";
     TestUtils.exec(crdCmd, true);
-    crdCmd = " cat " + destLoc + "/script.log";
+    crdCmd = " cat " + destLoc + "/" + outLogFile;
     ExecResult result = ExecCommand.exec(crdCmd);
     assertFalse(
         result.stdout().contains("BUILD FAILURE"), "Shell script failed: " + result.stdout());
@@ -783,7 +781,7 @@ public class ItMonitoringExporter extends BaseTest {
         monitoringExporterScriptDir,
         "redeployPromGrafanaLatestChart.sh",
         monitoringExporterDir + " " + resourceExporterDir + " " + domainNS1
-        + " " + domainNS2);
+        + " " + domainNS2, "redeployPromGrafanaLatestChart.out");
 
 
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_webapp.yml");
@@ -1145,9 +1143,44 @@ public class ItMonitoringExporter extends BaseTest {
     executeShelScript(
         resourceExporterDir,
         monitoringExporterScriptDir,
-        "createPromGrafanaMySqlCoordWebhook.sh",
-        monitoringExporterDir + " " + resourceExporterDir + " " + PROMETHEUS_CHART_VERSION + " "
-            + GRAFANA_CHART_VERSION + " " + domainNS1 + " " + domainNS2);
+        "createProm.sh",
+        monitoringExporterDir + " " + resourceExporterDir + " " + PROMETHEUS_CHART_VERSION
+            + " " + domainNS1 + " " + domainNS2, "createProm.out");
+
+    executeShelScript(
+        resourceExporterDir,
+        monitoringExporterScriptDir,
+        "createGrafana.sh",
+        monitoringExporterDir + " " + resourceExporterDir +  " "
+            + GRAFANA_CHART_VERSION + " " + domainNS1 + " " + domainNS2, "createGrafana.out");
+
+    executeShelScript(
+        resourceExporterDir,
+        monitoringExporterScriptDir,
+        "createMySql.sh",
+        monitoringExporterDir + " " + resourceExporterDir
+            + " " + domainNS2, "createMySql.out");
+
+    executeShelScript(
+        resourceExporterDir,
+        monitoringExporterScriptDir,
+        "createWLSImage.sh",
+        monitoringExporterDir + " " + resourceExporterDir
+            + " " + domainNS2, "createWLSImage.out");
+
+    executeShelScript(
+        resourceExporterDir,
+        monitoringExporterScriptDir,
+        "createWebhook.sh",
+        monitoringExporterDir + " " + resourceExporterDir + " " + domainNS1
+            + " " + domainNS2, "createWebHook.out");
+
+    executeShelScript(
+        resourceExporterDir,
+        monitoringExporterScriptDir,
+        "createCoord.sh",
+        monitoringExporterDir + " " + resourceExporterDir + " " + domainNS1,
+        "createCoord.out");
 
     String webhookPod = getPodName("app=webhook", "webhook");
     TestUtils.checkPodReady(webhookPod, "webhook");
@@ -1225,7 +1258,8 @@ public class ItMonitoringExporter extends BaseTest {
         webhookResourceDir,
         monitoringExporterScriptDir,
         "setupWebHook.sh",
-        webhookDir + " " + webhookResourceDir + " " + operator.getOperatorNamespace());
+        webhookDir + " " + webhookResourceDir + " " + operator.getOperatorNamespace(),
+        "setupWebHook.out");
     String webhookPod = getPodName("name=webhook", "monitoring");
     TestUtils.checkPodReady(webhookPod, "monitoring");
   }
@@ -1241,7 +1275,8 @@ public class ItMonitoringExporter extends BaseTest {
         resourceExporterDir,
         monitoringExporterScriptDir,
         "deletePromGrafanaMySqlCoordWebhook.sh",
-        monitoringExporterDir + " " + resourceExporterDir + " " + domainNS1);
+        monitoringExporterDir + " " + resourceExporterDir + " " + domainNS1,
+        "deletePromGrafanaMySqlCoordWebhook.out");
 
     deletePvDir();
   }
