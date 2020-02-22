@@ -323,7 +323,7 @@ public class Domain {
 
       StringBuffer cmd = new StringBuffer();
       if (BaseTest.OKE_CLUSTER) {
-        cmd.append("curl --silent --show-error  --noproxy ")
+        cmd.append("curl --silent --show-error  --noproxy '*' ")
                 .append(" http://")
                 .append(BaseTest.LB_PUBLIC_IP)
                 .append("/management/weblogic/latest/serverRuntime")
@@ -1000,8 +1000,7 @@ public class Domain {
 
     StringBuffer cmd = new StringBuffer();
     if (BaseTest.OKE_CLUSTER) {
-      cmd.append("curl --silent --show-error --noproxy ")
-              .append(nodePortHost)
+      cmd.append("curl --silent --show-error --noproxy '*' ")
               .append(" http://")
               .append(BaseTest.LB_PUBLIC_IP)
               .append("/console/login/LoginForm.jsp")
