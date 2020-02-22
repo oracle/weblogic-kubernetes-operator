@@ -716,7 +716,7 @@ function diff_model() {
 #
 function error_handler() {
     if [ $1 -ne 0 ]; then
-        echo "There was an error at line: " $2 " command: " ${@:3:20}
+        trace SEVERE  "There was an error at line: " $2 " command: " ${@:3:20}
         stop_trap
         exit 1
     fi
