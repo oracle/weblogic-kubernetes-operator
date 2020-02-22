@@ -144,7 +144,7 @@ public class Domain {
         String cmdip = "kubectl describe svc traefik-operator --namespace traefik | grep Ingress | awk '{print $3}'";
         result = TestUtils.exec(cmdip);
         BaseTest.LB_PUBLIC_IP = result.stdout();
-        cmd = "curl --silent  -H 'host: " + domainUid
+        cmd = "curl --silent --noproxy '*' -H 'host: " + domainUid
           + ".org' http://" + BaseTest.LB_PUBLIC_IP
           + "/weblogic/ready --write-out %{http_code} -o /dev/null";
       } else {
@@ -323,7 +323,8 @@ public class Domain {
 
       StringBuffer cmd = new StringBuffer();
       if (BaseTest.OKE_CLUSTER) {
-        cmd.append("curl --silent --show-error  --noproxy '*' ")
+        cmd.append("curl --silent --show-error  --noproxy ")
+                .append(BaseTest.LB_PUBLIC_IP)
                 .append(" http://")
                 .append(BaseTest.LB_PUBLIC_IP)
                 .append("/management/weblogic/latest/serverRuntime")
@@ -1000,7 +1001,8 @@ public class Domain {
 
     StringBuffer cmd = new StringBuffer();
     if (BaseTest.OKE_CLUSTER) {
-      cmd.append("curl --silent --show-error --noproxy '*' ")
+      cmd.append("curl --silent --show-error --noproxy ")
+              .append(BaseTest.LB_PUBLIC_IP)
               .append(" http://")
               .append(BaseTest.LB_PUBLIC_IP)
               .append("/console/login/LoginForm.jsp")
