@@ -130,6 +130,7 @@ public class ItOperator extends BaseTest {
         domain.shutdown();
       }
       if (domainMap != null) {
+        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
         TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
                 + "/weblogic-domains/" + domainMap.get("domainUID"), (String)domainMap.get("namespace"));
       }
@@ -164,6 +165,7 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
     Operator operator = null;
     boolean testCompletedSuccessfully = false;
+    Map<String, Object> domainMap = null;
     try {
       //create operator just for this test to match the namespaces with wldf-policy.yaml
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
@@ -176,7 +178,7 @@ public class ItOperator extends BaseTest {
       namespaceList.append(" ").append((String)operatorMap.get("namespace"));
 
       // create domain
-      Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
+      domainMap = createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("namespace", "test2");
       domainMap.put("createDomainFilesDir", "wdt");
       domainMap.put("domainUID", "domainonpvwdt");
@@ -189,6 +191,15 @@ public class ItOperator extends BaseTest {
       // domain.verifyAdminConsoleViaLB();
       testCompletedSuccessfully = true;
     } finally {
+      if (domain != null) {
+        domain.shutdown();
+      }
+      if (domainMap != null) {
+        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
+        TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
+                + "/weblogic-domains/" + domainMap.get("domainUID"), (String)domainMap.get("namespace"));
+      }
+
       // if (domain != null && (JENKINS || testCompletedSuccessfully)) {
       if (domain != null && testCompletedSuccessfully) {
         LoggerHelper.getLocal().log(Level.INFO, "About to delete domain: " + domain.getDomainUid());
