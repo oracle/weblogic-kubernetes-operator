@@ -271,7 +271,7 @@ public class ItOperator extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
+  //@Test
   public void testCreateDomainPvReclaimPolicyRecycle() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
