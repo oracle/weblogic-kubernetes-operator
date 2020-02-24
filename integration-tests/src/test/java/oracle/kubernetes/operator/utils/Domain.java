@@ -1567,7 +1567,7 @@ public class Domain {
     if (result.exitValue() != 0) {
       LoggerHelper.getLocal().log(Level.INFO, "Running delete-domain-job.yaml ");
       TestUtils.deleteDomainHomeDir(userProjectsDir
-              + "/weblogic-domains/" + domainUid, domainNS);
+              + "/weblogic-domains/" + domainUid, domainNS, domainUid);
       
       result = ExecCommand.exec(createDomainScriptCmd, true, additionalEnvMap);
       if (result.exitValue() != 0) {

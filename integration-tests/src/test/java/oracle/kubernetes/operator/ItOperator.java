@@ -132,7 +132,9 @@ public class ItOperator extends BaseTest {
       if (domainMap != null) {
         LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
         TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
-                + "/weblogic-domains/" + domainMap.get("domainUID"), (String)domainMap.get("namespace"));
+                + "/weblogic-domains/" + (String)domainMap.get("domainUID"),
+                (String)domainMap.get("namespace"),
+                (String)domainMap.get("domainUID"));
       }
 
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
@@ -197,7 +199,9 @@ public class ItOperator extends BaseTest {
       if (domainMap != null) {
         LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
         TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
-                + "/weblogic-domains/" + domainMap.get("domainUID"), (String)domainMap.get("namespace"));
+                + "/weblogic-domains/" + (String)domainMap.get("domainUID"),
+                (String)domainMap.get("namespace"),
+                (String)domainMap.get("domainUID"));
       }
 
       // if (domain != null && (JENKINS || testCompletedSuccessfully)) {
@@ -259,7 +263,9 @@ public class ItOperator extends BaseTest {
     if (domainMap != null) {
       LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
       TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
-              + "/weblogic-domains/" + domainMap.get("domainUID"), (String)domainMap.get("namespace"));
+              + "/weblogic-domains/" + (String)domainMap.get("domainUID"),
+              (String)domainMap.get("namespace"),
+              (String)domainMap.get("domainUID"));
     }
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
@@ -297,15 +303,15 @@ public class ItOperator extends BaseTest {
       if (domain != null) {
         domain.shutdown();
       }
-
-      if (domainMap != null) {
-        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
-        TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
-                + "/weblogic-domains/" + domainMap.get("domainUID"), (String)domainMap.get("namespace"));
-      }
-
     }
     domain.deletePvcAndCheckPvReleased();
+    if (domainMap != null) {
+      LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
+      TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
+              + "/weblogic-domains/" + (String)domainMap.get("domainUID"),
+              (String)domainMap.get("namespace"),
+              (String)domainMap.get("domainUID"));
+    }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -352,7 +358,9 @@ public class ItOperator extends BaseTest {
       if (domainMap != null) {
         LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
         TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
-                + "/weblogic-domains/" + domainMap.get("domainUID"), (String)domainMap.get("namespace"));
+                + "/weblogic-domains/" + (String)domainMap.get("domainUID"),
+                (String)domainMap.get("namespace"),
+                (String)domainMap.get("domainUID"));
       }
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());

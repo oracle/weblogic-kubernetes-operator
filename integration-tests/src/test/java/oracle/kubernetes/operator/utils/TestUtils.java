@@ -320,6 +320,7 @@ public class TestUtils {
    */
   public static void deletePvc(String pvcName, String namespace, String domainUid, String jobName)
       throws Exception {
+    /*
     StringBuffer cmdDelJob = new StringBuffer("kubectl get job ");
     cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
     if (checkPodContains(cmdDelJob.toString(), jobName, jobName)) {
@@ -328,6 +329,11 @@ public class TestUtils {
       LoggerHelper.getLocal().log(Level.INFO, "Deleting job " + cmdDelJob);
       exec(cmdDelJob.toString());
     }
+    */
+    StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
+    cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
+    LoggerHelper.getLocal().log(Level.INFO, "Deleting job " + cmdDelJob);
+    exec(cmdDelJob.toString());
 
     StringBuffer cmdDelPvc = new StringBuffer("kubectl delete pvc ");
     cmdDelPvc.append(pvcName).append(" -n ").append(namespace);
@@ -2021,13 +2027,21 @@ public class TestUtils {
    *
    * @throws Exception exception
    */
-  public static void deleteDomainHomeDir(String scriptDir, String namespace) throws Exception {
+  public static void deleteDomainHomeDir(String scriptDir, String namespace, String domainUid ) throws Exception {
+
+    String jobName = "create-weblogic-sample-domain-job";
+    StringBuffer cmdDelJob = new StringBuffer("kubectl get job ");
+    cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
+    if (checkPodContains(cmdDelJob.toString(), jobName, jobName)) {
+      cmdDelJob = new StringBuffer("kubectl delete job ");
+      cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
+      LoggerHelper.getLocal().log(Level.INFO, "Deleting job " + cmdDelJob);
+      exec(cmdDelJob.toString());
+    }
+
     StringBuffer command = new StringBuffer();
-    command.append("kubectl delete -f  ").append(scriptDir).append("/create-domain-job.yaml");
-    ExecResult result = TestUtils.exec(command.toString());
-    command = new StringBuffer();
     command.append("kubectl create -f  ").append(scriptDir).append("/delete-domain-job.yaml");
-    result = TestUtils.exec(command.toString());
+    ExecResult result = TestUtils.exec(command.toString());
     if (!result.stdout().contains("sample-domain-job created")) {
       throw new RuntimeException("FAILURE: delete domain job fails, exiting!");
     }
