@@ -79,7 +79,7 @@ For early access customers, with bundle patch access, we recommend that you buil
 
 #### Obtaining the SOA Suite Docker Image
 
-The pre-built Oracle SOA Suite image is available at, `container-registry.oracle.com/middleware/soasuite:12.2.1.3`. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
+The pre-built Oracle SOA Suite image is available at, `container-registry.oracle.com/middleware/soasuite:12.2.1.3`.
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
 using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.
@@ -414,6 +414,27 @@ rules:
           serviceName: '{{ .Values.wlsDomain.domainUID }}-cluster-{{ .Values.wlsDomain.soaClusterName | lower | replace "_" "-" }}'
           servicePort: {{ .Values.wlsDomain.soaManagedServerPort }}
 ```
+
+Now you can access the Oracle SOA Suite domain URLs as below, based on the domain type selected.
+
+* Oracle SOA:
+
+  http://\<hostname\>:\<port\>/weblogic/ready  
+  http://\<hostname\>:\<port\>/console  
+  http://\<hostname\>:\<port\>/em
+  http://\<hostname\>:\<port\>/soa-infra  
+  http://\<hostname\>:\<port\>/soa/composer  
+  http://\<hostname\>:\<port\>/integration/worklistapp
+
+* Oracle Enterprise Scheduler Service (ESS):
+
+  http://\<hostname\>:\<port\>/ess  
+  http://\<hostname\>:\<port\>/EssHealthCheck
+
+* Oracle Service Bus (OSB):
+
+  http://\<hostname\>:\<port\>/servicebus  
+  http://\<hostname\>:\<port\>/lwpfconsole  
 
 #### Monitoring a SOA domain
 
