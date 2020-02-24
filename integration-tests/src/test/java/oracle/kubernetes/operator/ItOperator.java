@@ -297,13 +297,13 @@ public class ItOperator extends BaseTest {
       if (domain != null) {
         domain.shutdown();
       }
-      /*
+
       if (domainMap != null) {
         LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
         TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
                 + "/weblogic-domains/" + domainMap.get("domainUID"), (String)domainMap.get("namespace"));
       }
-       */
+       
     }
     domain.deletePvcAndCheckPvReleased();
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);

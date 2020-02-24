@@ -320,10 +320,14 @@ public class TestUtils {
    */
   public static void deletePvc(String pvcName, String namespace, String domainUid, String jobName)
       throws Exception {
-    StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
+    StringBuffer cmdDelJob = new StringBuffer("kubectl get job ");
     cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
-    LoggerHelper.getLocal().log(Level.INFO, "Deleting job " + cmdDelJob);
-    exec(cmdDelJob.toString());
+    if (checkPodContains(cmdDelJob.toString(), jobName, " " )) {
+      cmdDelJob = new StringBuffer("kubectl delete job ");
+      cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
+      LoggerHelper.getLocal().log(Level.INFO, "Deleting job " + cmdDelJob);
+      exec(cmdDelJob.toString());
+    }
 
     StringBuffer cmdDelPvc = new StringBuffer("kubectl delete pvc ");
     cmdDelPvc.append(pvcName).append(" -n ").append(namespace);
