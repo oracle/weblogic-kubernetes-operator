@@ -396,6 +396,8 @@ class ModelFileDiffer:
         self.past_dict_file = past_dict
 
     def eval_file(self, file):
+        true = True
+        false = False
         fh = open(file, 'r')
         content = fh.read()
         return eval(content)
@@ -508,7 +510,7 @@ def main():
         print eeString
         #System.exit(-1)
         exit(1)
-if __name__ == "main":
+if __name__ == "__main__":
     all_changes = []
     all_added = []
     all_removed = []

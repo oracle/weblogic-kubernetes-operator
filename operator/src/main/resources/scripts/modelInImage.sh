@@ -450,25 +450,21 @@ function createModelDomain() {
 function diff_model() {
   trace "Entering diff_model"
 
-  # jython version but it doesn't understand wlst style  true
   #
-  #  local ORACLE_SERVER_DIR=${MW_HOME}/wlserver
-  #  local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
-  #  local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
-  #  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS}"
-  #  local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar
-  #  set -x
-  #  ${JAVA_HOME}/bin/java -cp ${CP} \
-  #    ${JAVA_PROPS} \
-  #    org.python.util.jython \
-  #    ${SCRIPTPATH}/model_diff.py $1 $2
-  #  rc=$?
-  #  set +x
-  #  ls -l /tmp
-
-  ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py $1 $2
+  local ORACLE_SERVER_DIR=${MW_HOME}/wlserver
+  local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS}"
+  local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar
+  ${JAVA_HOME}/bin/java -cp ${CP} \
+    ${JAVA_PROPS} \
+    org.python.util.jython \
+    ${SCRIPTPATH}/model_diff.py $1 $2
   rc=$?
-
+  #  WLST version
+  #  ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py $1 $2
+  #  rc=$?
+  #
   trace "Exiting diff_model"
   return ${rc}
 }

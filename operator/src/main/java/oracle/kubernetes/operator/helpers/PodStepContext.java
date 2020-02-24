@@ -74,6 +74,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   private V1Pod podModel;
   private String miiModelSecretsHash;
   private String miiDomainZipHash;
+  private String domainRestartVersion;
+  private String domainIntrospectVersion;
 
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
@@ -81,6 +83,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     miiModelSecretsHash = (String)packet.get(ProcessingConstants.SECRETS_HASH);
     miiDomainZipHash = (String)packet.get(ProcessingConstants.DOMAIN_HASH);
+    domainIntrospectVersion = (String)packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
+    domainRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSOIN);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
 
@@ -486,6 +490,15 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected V1ObjectMeta createMetadata() {
     V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
+
+    LOGGER.finest("PodStepContext.createMetaData domainRestartVersion from INIT "
+        + domainRestartVersion);
+    LOGGER.finest("PodStepContext.createMetaData domainIntrospectVersion from INIT "
+        + domainIntrospectVersion);
+    LOGGER.finest("PodStepContext.createMetaData domainRestartVersion from serverspec "
+        + getServerSpec().getDomainRestartVersion());
+    LOGGER.finest("PodStepContext.createMetaData domainIntrospectVersion from serverspec "
+        + getServerSpec().getDomainIntrospectVersion());
     metadata
         .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
@@ -494,6 +507,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
         .putLabelsItem(
             LabelConstants.DOMAINRESTARTVERSION_LABEL, getServerSpec().getDomainRestartVersion())
+        .putLabelsItem(LabelConstants.DOMAININTROSPECTVERSION_LABEL, getServerSpec().getDomainIntrospectVersion())
         .putLabelsItem(
             LabelConstants.CLUSTERRESTARTVERSION_LABEL, getServerSpec().getClusterRestartVersion())
         .putLabelsItem(
