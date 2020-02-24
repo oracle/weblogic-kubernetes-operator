@@ -322,7 +322,7 @@ public class TestUtils {
       throws Exception {
     StringBuffer cmdDelJob = new StringBuffer("kubectl get job ");
     cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
-    if (checkPodContains(cmdDelJob.toString(), jobName, " ")) {
+    if (checkPodContains(cmdDelJob.toString(), jobName, jobName)) {
       cmdDelJob = new StringBuffer("kubectl delete job ");
       cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
       LoggerHelper.getLocal().log(Level.INFO, "Deleting job " + cmdDelJob);
