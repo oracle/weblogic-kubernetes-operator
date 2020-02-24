@@ -74,7 +74,6 @@ public class JobHelper {
   }
 
   private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
-    boolean result = false;
     if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
 
       String currentPodRestartVersion = info.getDomain().getAdminServerSpec().getDomainRestartVersion();
@@ -91,16 +90,25 @@ public class JobHelper {
 
       if (currentPodIntrospectVersion != null
             && !currentPodIntrospectVersion.equals(configMapIntrospectVersion)) {
-        result = true;
+        return true;
       }
 
       if (currentPodRestartVersion != null
             && !currentPodRestartVersion.equals(configMapRestartVersion)) {
-        result = true;
+        return true;
       }
 
+      if (configMapRestartVersion != null
+          && !configMapRestartVersion.equals(currentPodRestartVersion)) {
+        return true;
+      }
+
+      if (configMapIntrospectVersion !=null
+          && !configMapIntrospectVersion.equals(currentPodIntrospectVersion)) {
+        return true;
+      }
     }
-    return result;
+    return false;
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {
