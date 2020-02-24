@@ -66,15 +66,41 @@ public class JobHelper {
     LOGGER.fine("runIntrospector topology: " + topology);
     LOGGER.fine("runningServersCount: " + runningServersCount(info));
     LOGGER.fine("creatingServers: " + creatingServers(info));
-    return topology == null || isBringingUpNewDomain(info) || isModelInImageUpdate(info);
+    return topology == null || isBringingUpNewDomain(info) || isModelInImageUpdate(packet, info);
   }
 
   private static boolean isBringingUpNewDomain(DomainPresenceInfo info) {
     return runningServersCount(info) == 0 && creatingServers(info);
   }
 
-  private static boolean isModelInImageUpdate(DomainPresenceInfo info) {
-    return info.getDomain().getDomainHomeSourceType().equals("FromModel");
+  private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
+    boolean result = false;
+    if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
+
+      String currentPodRestartVersion = info.getDomain().getAdminServerSpec().getDomainRestartVersion();
+      String currentPodIntrospectVersion = info.getDomain().getAdminServerSpec().getDomainIntrospectVersion();
+      String configMapRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSOIN);
+      String configMapIntrospectVersion = (String)packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
+
+      LOGGER.finest("JobHelpr.isModelInImageUpdate currentPodRestartVersion " + currentPodRestartVersion);
+      LOGGER.finest("JobHelpr.isModelInImageUpdate currentPodIntrospectVersion " + currentPodIntrospectVersion);
+      LOGGER.finest("JobHelpr.isModelInImageUpdate configMapRestartVersion " + configMapRestartVersion);
+      LOGGER.finest("JobHelpr.isModelInImageUpdate configMapIntrospectVersion " + configMapIntrospectVersion);
+
+      // If either one is set, check for differences and decide to run intropsect job
+
+      if (currentPodIntrospectVersion != null
+            && !currentPodIntrospectVersion.equals(configMapIntrospectVersion)) {
+        result = true;
+      }
+
+      if (currentPodRestartVersion != null
+            && !currentPodRestartVersion.equals(configMapRestartVersion)) {
+        result = true;
+      }
+
+    }
+    return result;
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {
