@@ -271,7 +271,7 @@ public class ItOperator extends BaseTest {
    *
    * @throws Exception exception
    */
-  //@Test
+  @Test
   public void testCreateDomainPvReclaimPolicyRecycle() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -303,7 +303,7 @@ public class ItOperator extends BaseTest {
         TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
                 + "/weblogic-domains/" + domainMap.get("domainUID"), (String)domainMap.get("namespace"));
       }
-       
+
     }
     domain.deletePvcAndCheckPvReleased();
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
