@@ -235,8 +235,9 @@ public class ItOperator extends BaseTest {
         "Creating Domain domain & verifing the domain creation");
     // create domain
     Domain domain = null;
+    Map<String, Object> domainMap = null;
     try {
-      Map<String, Object> domainMap = createDomainMap(
+      domainMap = createDomainMap(
                         getNewSuffixCount(), testClassName);
       domainMap.put("serverStartPolicy", "ADMIN_ONLY");
       domainMap.put("namespace", domainNS1);
@@ -255,6 +256,12 @@ public class ItOperator extends BaseTest {
 
     domain.createDomainOnExistingDirectory();
 
+    if (domainMap != null) {
+      LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
+      TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
+              + "/weblogic-domains/" + domainMap.get("domainUID"), (String)domainMap.get("namespace"));
+    }
+
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -264,7 +271,7 @@ public class ItOperator extends BaseTest {
    *
    * @throws Exception exception
    */
-  //@Test
+  @Test
   public void testCreateDomainPvReclaimPolicyRecycle() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -275,9 +282,9 @@ public class ItOperator extends BaseTest {
         "Creating Domain domain & verifing the domain creation");
     // create domain
     Domain domain = null;
-
+    Map<String, Object> domainMap = null;
     try {
-      Map<String, Object> domainMap = createDomainMap(
+      domainMap = createDomainMap(
                   getNewSuffixCount(), testClassName);
       domainMap.put("weblogicDomainStorageReclaimPolicy", "Recycle");
       domainMap.put("clusterType", "CONFIGURED");
@@ -289,6 +296,11 @@ public class ItOperator extends BaseTest {
     } finally {
       if (domain != null) {
         domain.shutdown();
+      }
+      if (domainMap != null) {
+        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
+        TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
+                + "/weblogic-domains/" + domainMap.get("domainUID"), (String)domainMap.get("namespace"));
       }
     }
     domain.deletePvcAndCheckPvReleased();
@@ -305,7 +317,7 @@ public class ItOperator extends BaseTest {
    *
    * @throws Exception exception
    */
-  //@Test
+  @Test
   public void testCreateDomainWithDefaultValuesInSampleInputs() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -317,8 +329,9 @@ public class ItOperator extends BaseTest {
     // create domain10
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
+    Map<String, Object> domainMap = null;
     try {
-      Map<String, Object> domainMap = new HashMap<String, Object>();
+      domainMap = new HashMap<String, Object>();
       domainMap.put("domainUID", "domainsampledefaults");
       domainMap.put("namespace", domainNS1);
       domainMap.put("resultDir", getResultDir());
@@ -331,6 +344,14 @@ public class ItOperator extends BaseTest {
       // testAdvancedUseCasesForADomain(operator1, domain10);
       testCompletedSuccessfully = true;
     } finally {
+      if (domain != null) {
+        domain.shutdown();
+      }
+      if (domainMap != null) {
+        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
+        TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
+                + "/weblogic-domains/" + domainMap.get("domainUID"), (String)domainMap.get("namespace"));
+      }
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
