@@ -2027,7 +2027,7 @@ public class TestUtils {
    *
    * @throws Exception exception
    */
-  public static void deleteDomainHomeDir(String scriptDir, String namespace, String domainUid ) throws Exception {
+  public static void deleteDomainHomeDir(String scriptDir, String namespace, String domainUid) throws Exception {
 
     String jobName = "create-weblogic-sample-domain-job";
     StringBuffer cmdDelJob = new StringBuffer("kubectl get job ");
