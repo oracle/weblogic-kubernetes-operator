@@ -7,6 +7,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.work.FiberGate;
@@ -35,6 +36,11 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   @Override
   public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
     return new PassthroughPodAwaiterStepFactory();
+  }
+
+  @Override
+  public V1SubjectRulesReviewStatus getSubjectRulesReviewStatus(String namespace) {
+    return null;
   }
 
   @Override

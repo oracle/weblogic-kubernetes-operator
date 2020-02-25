@@ -372,6 +372,8 @@ public class ConfigMapHelper {
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
       String topologyYaml = data.get("topology.yaml");
+      String miiModelSecretsHash = data.get("secrets.md5");
+      String miiDomainZipHash = data.get("domainzip_hash");
       String updateDomainResult = data.get("UPDATEDOMAINRESULT");
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
@@ -387,6 +389,23 @@ public class ConfigMapHelper {
         ScanCache.INSTANCE.registerScan(
             info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, new DateTime()));
         packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
+        if (miiDomainZipHash != null) {
+          packet.put(ProcessingConstants.DOMAIN_HASH, miiDomainZipHash);
+        }
+        if (miiModelSecretsHash != null) {
+          packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
+        }
+        String domainRestartVersion = info.getDomain().getAdminServerSpec().getDomainRestartVersion();
+        String domainIntrospectVersion = info.getDomain().getAdminServerSpec().getDomainIntrospectVersion();
+
+        if (domainRestartVersion != null) {
+          packet.put(ProcessingConstants.DOMAIN_RESTART_VERSOIN, domainRestartVersion);
+          data.put(ProcessingConstants.DOMAIN_RESTART_VERSOIN, domainRestartVersion);
+        }
+        if (domainIntrospectVersion != null) {
+          packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
+          data.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
+        }
         LOGGER.info(
             MessageKeys.WLS_CONFIGURATION_READ,
             (System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME))),
@@ -611,6 +630,19 @@ public class ConfigMapHelper {
       if (result != null) {
         Map<String, String> data = result.getData();
         String topologyYaml = data.get("topology.yaml");
+        String miiModelSecretsHash = data.get("secrets.md5");
+        String miiDomainZipHash = data.get("domainzip_hash");
+        String domainRestartVersion = data.get(ProcessingConstants.DOMAIN_RESTART_VERSOIN);
+        String domainIntrospectVersion = data.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
+        LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version (from ino spec) "
+            + info.getDomain().getAdminServerSpec().getDomainRestartVersion());
+        LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version  (from ino spec) "
+            + info.getDomain().getAdminServerSpec().getDomainIntrospectVersion());
+        LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version from cm result "
+            + domainRestartVersion);
+        LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version from cm result "
+            + domainIntrospectVersion);
+
         if (topologyYaml != null) {
           ConfigMapHelper.DomainTopology domainTopology =
               ConfigMapHelper.parseDomainTopologyYaml(topologyYaml);
@@ -623,8 +655,23 @@ public class ConfigMapHelper {
             packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
           }
         }
-      }
 
+        if (miiDomainZipHash != null) {
+          packet.put(ProcessingConstants.DOMAIN_HASH, miiDomainZipHash);
+        }
+
+        if (miiModelSecretsHash != null) {
+          packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
+        }
+
+        if (domainIntrospectVersion != null) {
+          packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
+        }
+
+        if (domainRestartVersion != null) {
+          packet.put(ProcessingConstants.DOMAIN_RESTART_VERSOIN, domainRestartVersion);
+        }
+      }
       return doNext(packet);
     }
   }

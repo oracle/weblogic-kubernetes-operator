@@ -66,6 +66,16 @@ public abstract class BaseConfiguration {
   private String restartVersion;
 
   /**
+   * Tells the operator to start the introspect domain job.
+   *
+   * @since 2.4
+   */
+  @Description(
+          "If present, every time this value is updated, the operator will start introspect domain job")
+  private String introspectVersion;
+
+
+  /**
    * Fills in any undefined settings in this configuration from another configuration.
    *
    * @param other the other configuration which can override this one
@@ -348,6 +358,14 @@ public abstract class BaseConfiguration {
     this.restartVersion = restartVersion;
   }
 
+  String getIntrospectVersion() {
+    return introspectVersion;
+  }
+
+  void setIntrospectVersionn(String introspectVersion) {
+    this.introspectVersion = introspectVersion;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -355,6 +373,7 @@ public abstract class BaseConfiguration {
         .append("serverPod", serverPod)
         .append("serverService", serverService)
         .append("restartVersion", restartVersion)
+        .append("introspectVersion", introspectVersion)
         .toString();
   }
 
@@ -375,6 +394,7 @@ public abstract class BaseConfiguration {
         .append(serverService, that.serverService)
         .append(serverStartState, that.serverStartState)
         .append(restartVersion, that.restartVersion)
+        .append(introspectVersion, that.introspectVersion)
         .isEquals();
   }
 
@@ -385,6 +405,7 @@ public abstract class BaseConfiguration {
         .append(serverService)
         .append(serverStartState)
         .append(restartVersion)
+        .append(introspectVersion)
         .toHashCode();
   }
 }

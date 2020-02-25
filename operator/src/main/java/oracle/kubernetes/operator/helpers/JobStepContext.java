@@ -105,6 +105,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getOpssWalletPasswordSecret();
   }
 
+  String getOpssWalletFileSecretName() {
+    return getDomain().getOpssWalletFileSecret();
+  }
+
   String getWdtEncryptSecretName() {
     return getDomain().getWdtEncryptionSecret();
   }
@@ -152,6 +156,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtDomainType();
   }
 
+  protected String getDomainSourceType() {
+    return getDomain().getDomainHomeSourceType();
+  }
+
   private boolean isIstioEnabled() {
     return getDomain().isIstioEnabled();
   }
@@ -180,10 +188,6 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   String getWdtConfigMap() {
     return getDomain().getWdtConfigMap();
-  }
-
-  String getOpssWalletFileSecretName() {
-    return getDomain().getOpssWalletFileSecret();
   }
 
 
@@ -261,6 +265,10 @@ public abstract class JobStepContext extends BasePodStepContext {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
           getOpssWalletPasswordSecretVolume()));
     }
+    if (getOpssWalletFileSecretName() != null) {
+      podSpec.addVolumesItem(new V1Volume().name(OPSS_WALLETFILE_VOLUME).secret(
+              getOpssWalletFileSecretVolume()));
+    }
     if (getWdtEncryptPassPhraseVolume() != null) {
       podSpec.addVolumesItem(new V1Volume().name(WDT_ENCRYPT_PASSPHRASE_VOLUME)
           .secret(getWdtEncryptPassPhraseVolume()));
@@ -292,15 +300,7 @@ public abstract class JobStepContext extends BasePodStepContext {
               .name(getWdtConfigMap() + "-volume")
               .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
     }
-
-    String opssKeyWalletConfigMap = getOpssWalletFileSecretName();
-    if (opssKeyWalletConfigMap != null) {
-      podSpec.addVolumesItem(
-          new V1Volume()
-              .name(opssKeyWalletConfigMap + "-volume")
-              .configMap(getOpssKeyWalletVolumeSource(opssKeyWalletConfigMap)));
-    }
-
+    
     return podSpec;
   }
 
@@ -316,6 +316,9 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     if (getOpssWalletPasswordSecretVolume() != null) {
       container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_KEYPASSPHRASE_VOLUME, OPSS_KEY_MOUNT_PATH));
+    }
+    if (getOpssWalletFileSecretVolume() != null) {
+      container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_WALLETFILE_VOLUME, OPSS_WALLETFILE_MOUNT_PATH));
     }
     if (getWdtEncryptPassPhraseVolume() != null) {
       container.addVolumeMountsItem(readOnlyVolumeMount(WDT_ENCRYPT_PASSPHRASE_VOLUME, WDT_ENCRYPT_KEY_MOUNT_PATH));
@@ -343,13 +346,6 @@ public abstract class JobStepContext extends BasePodStepContext {
           readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
     }
 
-    String opssKeyWalletConfigMap = getOpssWalletFileSecretName();
-    if (opssKeyWalletConfigMap != null) {
-      container.addVolumeMountsItem(
-          readOnlyVolumeMount(
-              opssKeyWalletConfigMap + "-volume",
-              OPSS_KEY_WALLET_CM_MOUNT_PATH + '/' + opssKeyWalletConfigMap));
-    }
 
     return container;
   }
@@ -383,6 +379,17 @@ public abstract class JobStepContext extends BasePodStepContext {
       V1SecretVolumeSource result =  new V1SecretVolumeSource()
           .secretName(getOpssWalletPasswordSecretName())
           .defaultMode(420);
+      result.setOptional(true);
+      return result;
+    }
+    return null;
+  }
+
+  private V1SecretVolumeSource getOpssWalletFileSecretVolume() {
+    if (getOpssWalletFileSecretName() != null) {
+      V1SecretVolumeSource result =  new V1SecretVolumeSource()
+              .secretName(getOpssWalletFileSecretName())
+              .defaultMode(420);
       result.setOptional(true);
       return result;
     }

@@ -45,7 +45,7 @@ public class NamespaceTest {
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(StaticStubSupport.preserve(Main.class, "isNamespaceStarted"));
+    mementos.add(StaticStubSupport.preserve(Main.class, "namespaceStatuses"));
     mementos.add(StaticStubSupport.preserve(Main.class, "isNamespaceStopping"));
     mementos.add(StaticStubSupport.install(Main.class, "getHelmVariable", getTestHelmValue));
 
@@ -90,8 +90,13 @@ public class NamespaceTest {
   }
 
   private void cacheStartedNamespaces() throws NoSuchFieldException {
-    StaticStubSupport.install(Main.class, "isNamespaceStarted", createNamespaceFlags());
+    StaticStubSupport.install(Main.class, "namespaceStatuses", createNamespaceStatuses());
     StaticStubSupport.install(Main.class, "isNamespaceStopping", createNamespaceFlags());
+  }
+
+  private Map<String, NamespaceStatus> createNamespaceStatuses() {
+    return currentNamespaces.stream()
+        .collect(Collectors.toMap(identity(), a -> new NamespaceStatus()));
   }
 
   private Map<String, AtomicBoolean> createNamespaceFlags() {

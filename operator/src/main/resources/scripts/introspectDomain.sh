@@ -107,8 +107,7 @@ fi
 # Add another env/attribute in domain yaml for model in image
 # log error if dir exists and attribute set
 DOMAIN_CREATED=0
-#OPSS_PASSPHRASE=""
-if [ ! -d "${DOMAIN_HOME}" ]; then
+if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
     trace "Beginning Model In Image"
     command -v gzip
     if [ $? -ne 0 ] ; then

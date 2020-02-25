@@ -15,6 +15,10 @@
             "ADMIN"
           ]
         },
+        "introspectVersion": {
+          "description": "If present, every time this value is updated, the operator will start introspect domain job",
+          "type": "string"
+        },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
@@ -90,6 +94,10 @@
             "RUNNING",
             "ADMIN"
           ]
+        },
+        "introspectVersion": {
+          "description": "If present, every time this value is updated, the operator will start introspect domain job",
+          "type": "string"
         },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.",
@@ -336,6 +344,10 @@
           "description": "If present, every time this value is updated the operator will restart the required servers.",
           "type": "string"
         },
+        "introspectVersion": {
+          "description": "If present, every time this value is updated, the operator will start introspect domain job",
+          "type": "string"
+        },
         "dataHome": {
           "description": "An optional, in-pod location for data storage of default and custom file stores. If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") then the data storage directories are determined from the WebLogic domain home configuration.",
           "type": "string"
@@ -452,6 +464,10 @@
             "RUNNING",
             "ADMIN"
           ]
+        },
+        "introspectVersion": {
+          "description": "If present, every time this value is updated, the operator will start introspect domain job",
+          "type": "string"
         },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.",

@@ -35,7 +35,7 @@ WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 
 if [ ! "${WDT_DOMAIN_TYPE}" == "WLS" ] \
    && [ ! "${WDT_DOMAIN_TYPE}" == "RestrictedJRF" ] \
-   && [ ! "${WDT_DOMAIN_TYPE}" == "JRF"]; then
+   && [ ! "${WDT_DOMAIN_TYPE}" == "JRF"] ; then
   echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1
 fi
 

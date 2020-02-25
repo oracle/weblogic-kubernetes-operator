@@ -17,34 +17,36 @@ INTROSPECTCM_JDK_PATH="/weblogic-operator/introspectormd5/jdk.path"
 INTROSPECTCM_SECRETS_MD5="/weblogic-operator/introspectormd5/secrets.md5"
 DOMAIN_ZIPPED="/weblogic-operator/introspectormd5/domainzip.secure"
 PRIMORDIAL_DOMAIN_ZIPPED="/weblogic-operator/introspectormd5/primordial_domainzip.secure"
-
 INTROSPECTJOB_IMAGE_MD5="/tmp/inventory_image.md5"
 INTROSPECTJOB_CM_MD5="/tmp/inventory_cm.md5"
 INTROSPECTJOB_PASSPHRASE_MD5="/tmp/inventory_passphrase.md5"
 
+NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 WDT_ENCRYPTION_PASSPHRASE="/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
-OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-wallet-secret/passphrase"
-OPSS_KEY_B64EWALLET="/weblogic-operator/opss-wallet-secret/ewallet.p12"
+OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/passphrase"
+OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/ewallet.p12"
 IMG_MODELS_HOME="/u01/wdt/models"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
 WDT_ROOT="/u01/wdt/weblogic-deploy"
+WDT_OUTPUT="/tmp/wdt_output.log"
 WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model_filters.json"
 WDT_CREATE_FILTER="/weblogic-operator/scripts/wdt_create_filter.py"
 
 ARCHIVE_ZIP_CHANGED=0
-UNSAFE_ONLINE_UPDATE=0
 WDT_ARTIFACTS_CHANGED=0
+ROLLBACK_ERROR=3
 
-# return codes
+# return codes for model_diff
+UNSAFE_ONLINE_UPDATE=0
 SAFE_ONLINE_UPDATE=1
 FATAL_MODEL_CHANGES=2
 MODELS_SAME=3
-ROLLBACK_ERROR=3
+UNSAFE_SECURITY_UPDATE=4
 SCRIPT_ERROR=255
 
 operator_md5=${DOMAIN_HOME}/operatormd5
@@ -84,7 +86,6 @@ function sort_files() {
 #
 
 function compareArtifactsMD5() {
-  trap 'error_handler There was an error at compareArtifactsMD5 line $LINENO' ERR
 
   local has_md5=0
 
@@ -100,7 +101,6 @@ function compareArtifactsMD5() {
       WDT_ARTIFACTS_CHANGED=1
       echoFilesDifferences ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5}
     fi
-    # TODO check for archives changes  grep ".zip" /tmp/imgmd5diff | wc -l
   fi
 
   trace "Checking wdt artifacts in config map"
@@ -142,7 +142,6 @@ function compareArtifactsMD5() {
   fi
 
   trace "Exiting checkExistInventory"
-  trap - ERR
 }
 
 # echo file contents
@@ -175,9 +174,6 @@ function get_opss_key_wallet() {
 #
 
 function buildWDTParams_MD5() {
-
-  trap 'error_handler There was an error at buildWDTParams_MD5 line $LINENO' ERR
-
   trace "Entering setupInventoryList"
 
   model_list=""
@@ -261,7 +257,6 @@ function buildWDTParams_MD5() {
     else
       # Set it for introspectDomain.py to use
       export OPSS_PASSPHRASE=$(cat ${OPSS_KEY_PASSPHRASE})
-      echo "DEBUG: OPSS PASSPHRASE SET "
     fi
   fi
 
@@ -279,28 +274,13 @@ function buildWDTParams_MD5() {
   fi
 
   trace "Exiting setupInventoryList"
-  trap - ERR
 }
 
 # createWLDomain
 #
-# 1. Create the parameter list for WDT
-# 2. Check if any WDT artifacts changed
-# 3. If nothing changed return 0
-# 4. If something changed (or new) then use WDT createDomain.sh
-# 5. With the new domain created, the generated merged model is compare with the previous one (if any)
-# 6. If there are safe changes and  user select useOnlineUpdate, use wdt online update
-# 6.1.   if online update failed then exit the introspect job
-# 6.2    if online update succeeded and no restart is need then go to 7.1
-# 6.3    if online update succeeded and restart is needed but user set rollbackIfRequireRestart then exit the job
-# 6.4    go to 7.1.
-# 7. else
-# 7.1    unzip the old domain and use wdt offline updates
-
 
 function createWLDomain() {
-  trap 'error_handler There was an error at createWLDomain line $LINENO' ERR
-
+  start_trap
   trace "Entering createWLDomain"
 
   # Check if /u01/wdt/models and /u01/wdt/weblogic-deploy exists
@@ -368,6 +348,8 @@ function createWLDomain() {
   buildWDTParams_MD5
 
   compareArtifactsMD5
+
+  # Set this so that the introspectDomain.sh can decidde to call the python script of not
   DOMAIN_CREATED=0
 
   # something changed in the wdt artifacts or wls version changed
@@ -377,76 +359,19 @@ function createWLDomain() {
     || [ ${secrets_changed} -ne 0 ] ; then
 
     trace "Need to create domain ${WDT_DOMAIN_TYPE}"
-    wdtCreateDomain
+    createModelDomain
     DOMAIN_CREATED=1
-
-    # For lifecycle updates:
-    # 1. If there is a merged model in the cm and
-    # 2. If the archive changed and
-    # 3. If the useOnlineUpdate is define in the spec and set to true and
-    # 4. not for version upgrade
-    #
-    # Experimental Phase 2 logic for handling dynamic online lifecycle update of weblogic configuration
-
-    if [ -f ${INTROSPECTCM_MERGED_MODEL} ] && [ ${ARCHIVE_ZIP_CHANGED} -eq 0 ] && [ "true" == "${USE_ONLINE_UPDATE}" \
-            ] && [ ${version_changed} -ne 1 ]; then
-
-      ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py ${DOMAIN_HOME}/wlsdeploy/domain_model.json \
-          ${INTROSPECTCM_MERGED_MODEL}
-
-      diff_rc=$(cat /tmp/model_diff_rc)
-      # 0 not safe
-      # 1 safe for online changes
-      # 2 fatal
-      # 3 no difference
-
-      trace "model diff returns "${diff_rc}
-
-      cat /tmp/diffed_model.json
-
-      if [ ${diff_rc} -eq ${SCRIPT_ERROR} ]; then
-        exit 1
-      fi
-
-      # Perform online changes
-      if [ ${diff_rc} -eq ${SAFE_ONLINE_UPDATE} ] ; then
-        trace "Using online update"
-        handleOnlineUpdate
-      fi
-
-      # Changes are not supported - shape changes
-      if [ ${diff_rc} -eq ${FATAL_MODEL_CHANGES} ] ; then
-        trace "Introspect job terminated: Unsupported changes in the model is not supported"
-        exit 1
-      fi
-
-      if [ ${diff_rc} -eq ${MODELS_SAME} ] ; then
-        trace "Introspect job terminated: Nothing changed"
-        return 0
-      fi
-
-      # Changes are not supported yet for online update - non shape changes.. deletion, deploy app.
-      # app deployments may involve shared libraries, shared library impacted apps, although WDT online support
-      # it but it has not been fully tested - forbid it for now.
-
-      if [ ${diff_rc} -eq ${UNSAFE_ONLINE_UPDATE} ] ; then
-        trace "Introspect job terminated: Changes are not safe to do online updates. Use offline changes. See introspect job logs for
-        details"
-        exit 1
-      fi
-    fi
-
+  else
+    trace "Nothing changed no op"
   fi
   trace "Exiting createWLDomain"
-  trap - ERR
+  stop_trap
 }
 
 # checkDirNotExistsOrEmpty
 #  Test directory exists or empty
 
 function checkDirNotExistsOrEmpty() {
-  trap 'error_handler There was an error at dirNotExistsOrEmpty line $LINENO' ERR
-
   trace "Entering checkDirNotExistsOrEmpty"
 
   if [ $# -eq 1 ] ; then
@@ -454,7 +379,7 @@ function checkDirNotExistsOrEmpty() {
       trace SEVERE "Directory $1 does not exists"
       exit 1
     else
-      if [ -z $(ls $1) ] ; then
+      if [ -z "$(ls -A $1)" ] ; then
         trace SEVERE "Directory $1 is empty"
         exit 1
       fi
@@ -462,10 +387,9 @@ function checkDirNotExistsOrEmpty() {
   fi
 
   trace "Exiting checkDirNotExistsOrEmpty"
-  trap - ERR
 }
 
-}# getSecretsMD5
+# getSecretsMD5
 #
 # concatenate all the secrets, calculate the md5 and delete the file.
 # The md5 is used to determine whether the domain needs to be recreated
@@ -473,7 +397,6 @@ function checkDirNotExistsOrEmpty() {
 # output:  /tm/secrets.md5
 
 function getSecretsMD5() {
-  trap 'error_handler There was an error at getSecretsMD5 line $LINENO' ERR
   trace "Entering getSecretsMD5"
 
   local secrets_text="/tmp/secrets.txt"
@@ -498,43 +421,97 @@ function getSecretsMD5() {
   trace "Found secrets ${secrets_md5}"
   rm ${secrets_text}
   trace "Exiting getSecretsMD5"
-  trap - ERR
+}
+
+
+#
+# createModelDomain call WDT to create the domain
+#
+
+function createModelDomain() {
+
+  trace "Entering createModelDomain"
+
+  createPrimordialDomain
+
+  # if the primordial domain already in the configmap, restore it
+
+  if [ -f "/tmp/prim_domain.tar.gz" ] ; then
+    trace "Using newly created domain"
+  elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
+    cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > /tmp/primordial_tar.gz && tar -xzvf /tmp/primordial_tar.gz
+  fi
+
+  wdtUpdateModelDomain
+
+  trace "Exiting createModelDomain"
+}
+
+function diff_model() {
+  trace "Entering diff_model"
+
+  #
+  local ORACLE_SERVER_DIR=${MW_HOME}/wlserver
+  local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS}"
+  local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar
+  ${JAVA_HOME}/bin/java -cp ${CP} \
+    ${JAVA_PROPS} \
+    org.python.util.jython \
+    ${SCRIPTPATH}/model_diff.py $1 $2
+  rc=$?
+  #  WLST version
+  #  ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py $1 $2
+  #  rc=$?
+  #
+  trace "Exiting diff_model"
+  return ${rc}
 }
 
 #
-# wdtCreatePrimordialDomain call WDT to create the domain
+# createPrimordialDomain will create the primordial domain
 #
 
-function wdtCreatePrimordialDomain() {
+function createPrimordialDomain() {
+  trace "Entering createPrimordialDomain"
+  local create_primordial_tgz=0
+  local recreate_domain=0
 
-  trace "Entering wdtCreatePrimodialDomain"
+  if [  -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
+    # If there is an existing domain in the cm - this is update in the lifecycle
+    # Call WDT validateModel.sh to generate the new merged mdoel
+    trace "Checking if security info has been changed"
 
-  if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
-    # make sure wdt create write out the merged model to a file in the root of the domain
-    export __WLSDEPLOY_STORE_MODEL__=1
+    generateMergedModel
 
-    if [ ! -z ${WDT_PASSPHRASE} ]; then
-      yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \
-      ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
-      ${OPSS_FLAGS}
-    else
-      ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-      ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}
-    fi
-    ret=$?
-    if [ $ret -ne 0 ]; then
-      trace SEVERE "Create Domain Failed "
-      if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
-        cp ${WDT_BINDIR}/../logs/createDomain.log ${LOG_HOME}/introspectJob_createDomain.log
-      else
-        tail -100 ${WDT_BINDIR}/../logs/createDomain.log
-      fi
-      exit 1
+    diff_model ${NEW_MERGED_MODEL} ${INTROSPECTCM_MERGED_MODEL}
+
+    diff_rc=$(cat /tmp/model_diff_rc)
+
+    trace "createPrimordialDomain: model diff returns "${diff_rc}
+
+    cat /tmp/diffed_model.json
+
+    # recreate the domain if there is an unsafe security update such as admin password update
+    if [ ${diff_rc} -eq ${UNSAFE_SECURITY_UPDATE} ]; then
+      recreate_domain=1
     fi
 
-    # tar up primodial domain with em.ear if it is there.  The zip will be added to the introspect config map by the
-    # introspectDomain.py
+  fi
 
+  # If there is no primordial domain or needs to recreate one due to password changes
+
+  if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
+    trace "No primordial domain or need to recreate again"
+    wdtCreatePrimordialDomain
+    create_primordial_tgz=1
+  fi
+
+  # tar up primodial domain with em.ear if it is there.  The zip will be added to the introspect config map by the
+  # introspectDomain.py
+
+  if [ ${create_primordial_tgz} -eq 1 ]; then
     empath=""
     if [ "${WDT_DOMAIN_TYPE}" != "WLS" ] ; then
       empath=$(grep "/em.ear" ${DOMAIN_HOME}/config/config.xml | grep -oPm1 "(?<=<source-path>)[^<]+")
@@ -544,110 +521,136 @@ function wdtCreatePrimordialDomain() {
     ${DOMAIN_HOME}/*
   fi
 
+  trace "Exiting createPrimordialDomain"
 
-  trace "Exiting wdtCreatePrimordialDomain"
 }
 
 #
-# wdtCreateDomain call WDT to create the domain
+# Generate model from wdt artifacts
 #
+function generateMergedModel() {
+  # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
+  # temporarily disable it
+  trace "Entering generateMergedModel"
+  stop_trap
 
-function wdtCreateDomain() {
+  export __WLSDEPLOY_STORE_MODEL__="${NEW_MERGED_MODEL}"
 
-  trace "Entering wdtCreateDomain"
-
-  wdtCreatePrimordialDomain
-
-  # if the primordial domain already in the configmap, restore it
-
-  if [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
-    cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > /tmp/primordial_tar.gz && tar -xzvf /tmp/primordial_tar.gz
+  if [ ! -z ${WDT_PASSPHRASE} ]; then
+    yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/validateModel.sh -oracle_home ${MW_HOME}  ${model_list} \
+    ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} >  ${WDT_OUTPUT}
+  else
+    ${WDT_BINDIR}/validateModel.sh -oracle_home ${MW_HOME} ${model_list} \
+    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
+  fi
+  ret=$?
+  if [ $ret -ne 0 ]; then
+    trace SEVERE "Validate Model Failed "
+    if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
+      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_validateDomain.log
+    fi
+    local WDT_ERROR=$(cat ${WDT_OUTPUT})
+    trace SEVERE ${WDT_ERROR}
+    exit 1
   fi
 
+  # restore trap
+  start_trap
+  trace "Exiting generateMergedModel"
+}
+
+# wdtCreatePrimordialDomain
+# Create the actual primordial domain using WDT
+#
+
+function wdtCreatePrimordialDomain() {
+  # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
+  # temporarily disable it
+  trace "Entering wdtCreatePrimordialDomain"
+  stop_trap
+
+  export __WLSDEPLOY_STORE_MODEL__=1
+
+  if [ ! -z ${WDT_PASSPHRASE} ]; then
+    yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \
+    ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
+    ${OPSS_FLAGS} >  ${WDT_OUTPUT}
+  else
+    ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
+    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS} > ${WDT_OUTPUT}
+  fi
+  ret=$?
+  if [ $ret -ne 0 ]; then
+    trace SEVERE "Create Domain Failed "
+    if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
+      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
+    fi
+    local WDT_ERROR=$(cat ${WDT_OUTPUT})
+    trace SEVERE ${WDT_ERROR}
+    exit 1
+  fi
+
+  # restore trap
+  start_trap
+  trace "Exiting wdtCreatePrimordialDomain"
+
+}
+
+#
+# wdtUpdateModelDomain  use WDT to update the model domain over the primordial domain
+#
+
+function wdtUpdateModelDomain() {
+
+  trace "Entering wdtUpdateModelDomain"
+  # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
+  # temporarily disable it
+
+  stop_trap
   # make sure wdt create write out the merged model to a file in the root of the domain
   export __WLSDEPLOY_STORE_MODEL__=1
 
   if [ ! -z ${WDT_PASSPHRASE} ]; then
     yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home \
     ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
-    ${OPSS_FLAGS}
+     > ${WDT_OUTPUT}
   else
     ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}
+    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  >  ${WDT_OUTPUT}
   fi
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "Create Domain Failed "
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
-      cp ${WDT_BINDIR}/../logs/updateDomain.log ${LOG_HOME}/introspectJob_updateDomain.log
-    else
-      tail -100 ${WDT_BINDIR}/../logs/createDomain.log
+      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_updateDomain.log
     fi
+    local WDT_ERROR=$(cat ${WDT_OUTPUT})
+    trace SEVERE ${WDT_ERROR}
     exit 1
   fi
+  # restore trap
+  start_trap
 
-  trace "Exiting wdtCreateDomain"
+
+  trace "Exiting wdtUpdateModelDomain"
 }
-
-
-function handleOnlineUpdate() {
-
-  cp ${DOMAIN_HOME}/wlsdeploy/domain_model.json /tmp/domain_model.json.new
-  admin_user=$(cat /weblogic-operator/secrets/username)
-  admin_pwd=$(cat /weblogic-operator/secrets/password)
-
-
-  ROLLBACK_FLAG=""
-  if [ ! -z "${ROLLBACK_IF_REQUIRE_RESTART}" ] && [ "${ROLLBACK_IF_REQUIRE_RESTART}" == "true" ]; then
-      ROLLBACK_FLAG="-rollback_if_require_restart"
-  fi
-  # no need for encryption phrase because the diffed model has real value
-  # note: using yes seems to et a 141 return code, switch to echo seems to be ok
-  # the problem is likely due to how wdt closing the input stream
-
-
-  echo ${admin_pwd} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} \
-   -admin_url "t3://${AS_SERVICE_NAME}:${ADMIN_PORT}" -admin_user ${admin_user} -model_file \
-   /tmp/diffed_model.json -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG}
-
-  ret=$?
-
-  echo "Completed online update="${ret}
-
-  if [ ${ret} -eq ${ROLLBACK_ERROR} ] ; then
-    trace ">>>  updatedomainResult=3"
-    exit 1
-  elif [ ${ret} -ne 0 ] ; then
-    trace "Introspect job terminated: Online update failed. Check error in the logs"
-    trace "Note: Changes in the optional configmap and/or image may needs to be correction"
-    trace ">>>  updatedomainResult=${ret}"
-    exit 1
-  else
-    trace ">>>  updatedomainResult=${ret}"
-  fi
-
-  trace "wrote updateResult"
-
-  # if online update is successful, then we extract the old domain and use offline update, so that
-  # we can update the domain and reuse the old ldap
-  rm -fr ${DOMAIN_HOME}
-  cd / && base64 -d ${DOMAIN_ZIPPED} > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
-  chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
-
-  # We do not need OPSS key for offline update
-
-  ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} \
-   -model_file /tmp/diffed_model.json ${variable_list} -domain_home ${DOMAIN_HOME} -domain_type \
-   ${WDT_DOMAIN_TYPE}
-
-  mv  /tmp/domain_model.json.new ${DOMAIN_HOME}/wlsdeploy/domain_model.json
-
-}
-
 #
 # Generic error handler
 #
 function error_handler() {
-    echo $*
-    exit 1
+    if [ $1 -ne 0 ]; then
+        trace SEVERE  "There was an error at line: " $2 " command: " ${@:3:20}
+        stop_trap
+        exit 1
+    fi
+}
+
+function start_trap() {
+    set -eE
+    trap 'error_handler $? $LINENO $BASH_COMMAND ' ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
+}
+
+function stop_trap() {
+    trap -  ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
+    set +eE
 }

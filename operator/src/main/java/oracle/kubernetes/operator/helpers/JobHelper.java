@@ -66,17 +66,49 @@ public class JobHelper {
     LOGGER.fine("runIntrospector topology: " + topology);
     LOGGER.fine("runningServersCount: " + runningServersCount(info));
     LOGGER.fine("creatingServers: " + creatingServers(info));
-    return topology == null || isBringingUpNewDomain(info) || isModelInImageUpdate(info);
+    return topology == null || isBringingUpNewDomain(info) || isModelInImageUpdate(packet, info);
   }
 
   private static boolean isBringingUpNewDomain(DomainPresenceInfo info) {
     return runningServersCount(info) == 0 && creatingServers(info);
   }
 
-  // TODO: ... is there anyway to optimize it?
+  private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
+    if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
 
-  private static boolean isModelInImageUpdate(DomainPresenceInfo info) {
-    return true;
+      String currentPodRestartVersion = info.getDomain().getAdminServerSpec().getDomainRestartVersion();
+      String currentPodIntrospectVersion = info.getDomain().getAdminServerSpec().getDomainIntrospectVersion();
+      String configMapRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSOIN);
+      String configMapIntrospectVersion = (String)packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
+
+      LOGGER.finest("JobHelpr.isModelInImageUpdate currentPodRestartVersion " + currentPodRestartVersion);
+      LOGGER.finest("JobHelpr.isModelInImageUpdate currentPodIntrospectVersion " + currentPodIntrospectVersion);
+      LOGGER.finest("JobHelpr.isModelInImageUpdate configMapRestartVersion " + configMapRestartVersion);
+      LOGGER.finest("JobHelpr.isModelInImageUpdate configMapIntrospectVersion " + configMapIntrospectVersion);
+
+      // If either one is set, check for differences and decide to run intropsect job
+
+      if (currentPodIntrospectVersion != null
+            && !currentPodIntrospectVersion.equals(configMapIntrospectVersion)) {
+        return true;
+      }
+
+      if (currentPodRestartVersion != null
+            && !currentPodRestartVersion.equals(configMapRestartVersion)) {
+        return true;
+      }
+
+      if (configMapRestartVersion != null
+          && !configMapRestartVersion.equals(currentPodRestartVersion)) {
+        return true;
+      }
+
+      if (configMapIntrospectVersion !=null
+          && !configMapIntrospectVersion.equals(currentPodIntrospectVersion)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {
@@ -250,8 +282,10 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.INTROSPECT_HOME, getIntrospectHome());
       addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
       addEnvVar(vars, IntrospectorJobEnvVars.OPSS_KEY_SECRET_NAME, getOpssWalletPasswordSecretName());
+      addEnvVar(vars, IntrospectorJobEnvVars.OPSS_WALLETFILE_SECRET_NAME, getOpssWalletFileSecretName());
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_ENCRYPTION_PASSPHRASE_NAME, getWdtEncryptSecretName());
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType());
+      addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainSourceType());
 
       String dataHome = getDataHome();
       if (dataHome != null && !dataHome.isEmpty()) {

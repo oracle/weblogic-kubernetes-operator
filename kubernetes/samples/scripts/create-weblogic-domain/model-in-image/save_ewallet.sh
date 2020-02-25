@@ -3,7 +3,9 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
-# Usage: save_ewallet.sh <domain uid> <namespace> <secret name> <opss paasphase>
+# Usage: save_ewallet.sh <domain uid> <namespace> <secret name> <opss paasphase> [<secret name>]
+#
+# default secret name is sample-domain1-opss-walletfile-secret}
 #
 #
 
@@ -15,18 +17,17 @@
 
 set -eu
 
-if [ "$#" -ne 4 ]; then
-    echo "Usage: save_ewallet.sh <domain uid> <namespace> <secret name> <opss paasphase>"
+if [ "$#" -lt 3 ]; then
+    echo "Usage: save_ewallet.sh <domain uid> <namespace> <opss paasphase> <secret name>"
     exit 1
 fi
 domainuid=$1
 namespace=$2
-secret=$3
-passphrase=$4
+passphrase=$3
+secret=${4:-sample-domain1-opss-walletfile-secret}
 
 kubectl -n ${namespace} describe configmap ${domainuid}-weblogic-domain-introspect-cm | sed -n '/ewallet.p12/ {n;n;p}' > ewallet.p12
-kubectl -n ${namespace} delete secret ${secret}
+kubectl -n ${namespace} delete secret ${secret} --ignore-not-found
 kubectl -n ${namespace} \
   create secret generic ${secret} \
-  --from-literal=passphrase=${passphrase} \
   --from-file=ewallet.p12 

@@ -322,6 +322,18 @@ public abstract class DomainConfigurator {
    */
   public abstract DomainConfigurator withRestartVersion(String restartVersion);
 
+
+  /**
+   * Tells the operator to start the introspect domain job.
+   *
+   * @since 2.0
+   * @param introspectVersion If present, every time this value is updated the operator will start
+   *     the introspect domain job.
+   * @return this object
+   */
+  public abstract DomainConfigurator withIntrospectVersion(String introspectVersion);
+
+
   /**
    * Defines a secret reference for the domain.
    * @param secretName the name of the secret

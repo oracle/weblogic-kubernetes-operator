@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: apiextensions.k8s.io/v1beta1
@@ -169,6 +169,10 @@ spec:
                   enum:
                   - RUNNING
                   - ADMIN
+                introspectVersion:
+                  type: string
+                  description: If present, every time this value is updated, the operator
+                    will start introspect domain job
                 serverService:
                   type: object
                   description: Customization affecting ClusterIP Kubernetes services
@@ -2206,6 +2210,10 @@ spec:
                     enum:
                     - RUNNING
                     - ADMIN
+                  introspectVersion:
+                    description: If present, every time this value is updated, the
+                      operator will start introspect domain job
+                    type: string
                   serverService:
                     description: Customization affecting ClusterIP Kubernetes services
                       for WebLogic Server instances.
@@ -4245,6 +4253,10 @@ spec:
               type: string
               description: If present, every time this value is updated the operator
                 will restart the required servers.
+            introspectVersion:
+              type: string
+              description: If present, every time this value is updated, the operator
+                will start introspect domain job
             dataHome:
               type: string
               description: 'An optional, in-pod location for data storage of default
@@ -6209,6 +6221,10 @@ spec:
                     enum:
                     - RUNNING
                     - ADMIN
+                  introspectVersion:
+                    description: If present, every time this value is updated, the
+                      operator will start introspect domain job
+                    type: string
                   serverService:
                     description: Customization affecting ClusterIP Kubernetes services
                       for WebLogic Server instances.
