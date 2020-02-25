@@ -1163,13 +1163,13 @@ public class Domain {
       // set pv path
       domainMap.put(
           "weblogicDomainStoragePath",
-           //"/ci-oke-2");
-           "/ci-oke-2/acceptance_test_pv/persistentVolume-" + domainUid);
+           "/ci-oke-2");
+           //"/ci-oke-2/acceptance_test_pv/persistentVolume-" + domainUid);
 
       pvMap.put(
           "weblogicDomainStoragePath",
-          //"/ci-oke-2");
-          "/ci-oke-2/acceptance_test_pv/persistentVolume-" + domainUid);
+          "/ci-oke-2");
+          //"/ci-oke-2/acceptance_test_pv/persistentVolume-" + domainUid);
     } else {
       pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
       // set pv path

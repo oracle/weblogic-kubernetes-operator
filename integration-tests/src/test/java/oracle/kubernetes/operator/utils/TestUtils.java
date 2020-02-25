@@ -2070,4 +2070,35 @@ public class TestUtils {
     command.append("kubectl delete -f  ").append(scriptDir).append("/delete-domain-job.yaml");
     TestUtils.exec(command.toString());
   }
+  /**
+   * Run script to delete DomainHome dirs in oke.
+   *
+   * @throws Exception exception
+   */
+  public static void deleteDomainHomeDirOKE() throws Exception {
+    String resourceDir = BaseTest.getProjectRoot()
+            + "/integration-tests/src/test/resources/oke";
+    String cmd = " kubectl create ns cleanupoke";
+    ExecResult result = ExecCommand.exec(cmd);
+
+    cmd = " kubectl create -f " + resourceDir + "/cleanupokepv.yaml";
+    result = ExecCommand.exec(cmd);
+    LoggerHelper.getLocal().log(
+            Level.INFO, "created  pv to cleanup nfs mounted dirs " + result.stdout() + " err " + result.stderr());
+    cmd = " kubectl create -f " + resourceDir + "/cleanupokepvc.yaml";
+    result = ExecCommand.exec(cmd);
+    LoggerHelper.getLocal().log(
+            Level.INFO, "created  pvc to cleanup nfs mounted dirs " + result.stdout() + " err " + result.stderr());
+
+    LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmd);
+    cmd =
+            BaseTest.getProjectRoot()
+                    + "/src/integration-tests/bash/krun.sh -m "
+                    + "cleanupoke-weblogic-sample-pvc:/shared/ -n cleanupoke -c \"rm -rf /shared/wdt/* /shared/domains/*\"";
+
+    LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmd);
+    result = ExecCommand.exec(cmd);
+    LoggerHelper.getLocal().log(
+            Level.INFO, "rm -rf output " + result.stdout() + " err " + result.stderr());
+  }
 }
