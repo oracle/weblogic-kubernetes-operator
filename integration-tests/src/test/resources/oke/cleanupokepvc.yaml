@@ -1,0 +1,18 @@
+Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: cleanupoke-weblogic-sample-pvc
+  namespace: cleanupoke
+  labels:
+    weblogic.resourceVersion: domain-v2
+    weblogic.domainUID: cleanupoke
+spec:
+  storageClassName: cleanupoke-weblogic-sample-storage-class
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
