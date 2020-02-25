@@ -103,7 +103,7 @@ public class JobHelper {
         return true;
       }
 
-      if (configMapIntrospectVersion !=null
+      if (configMapIntrospectVersion != null
           && !configMapIntrospectVersion.equals(currentPodIntrospectVersion)) {
         return true;
       }
