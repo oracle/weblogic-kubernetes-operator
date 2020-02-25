@@ -1667,18 +1667,19 @@ public class Domain {
     if (Files.exists(Paths.get(resultsDir + "/samples"))) {
       TestUtils.exec("rm -rf " + resultsDir + "/samples");
     }
-    if (domainMap.containsKey("projectRoot")) {
-      TestUtils.exec(
-          "cp -rf "
-              + domainMap.get("projectRoot")
-              + "/kubernetes/samples "
-              + resultsDir,
-          true);
-    } else {
-      TestUtils.exec(
-          "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + resultsDir,
-          true);
-    }
+    TestUtils.exec("cp -rf "
+            + (domainMap.containsKey("projectRoot")
+            ? domainMap.get("projectRoot") : BaseTest.getProjectRoot())
+            + "/kubernetes/samples "
+            + resultsDir,
+        true);
+
+    TestUtils.exec("cp -rf "
+            + (domainMap.containsKey("projectRoot")
+            ? domainMap.get("projectRoot") : BaseTest.getProjectRoot())
+            + "/integration-tests/src/test/resources/model-in-image "
+            + resultsDir + "/samples",
+        true);
 
     this.voyager =
         (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
@@ -1694,7 +1695,12 @@ public class Domain {
     // read sample domain inputs
     String sampleDomainInputsFile =
         "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml";
-    if (domainMap.containsKey("domainHomeImageBase")) {
+    if (domainMap.containsKey("domainHomeSourceType")
+            && ((String)domainMap.get("domainHomeSourceType")).equals("FromModel")) {
+      sampleDomainInputsFile =
+          "/samples/model-in-image/create-domain-inputs.yaml";
+
+    } else if (domainMap.containsKey("domainHomeImageBase")) {
       sampleDomainInputsFile =
           "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml";
     } else if (domainMap.containsKey("rcuDatabaseURL")) {
@@ -1735,6 +1741,7 @@ public class Domain {
     }
     LoggerHelper.getLocal().log(Level.INFO, "pvSharing for this domain is: " + pvSharing);
 
+
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
@@ -1749,6 +1756,7 @@ public class Domain {
       LoggerHelper.getLocal().log(Level.INFO, "IMAGE_TAG_WEBLOGIC " + imageTag);
     }
     domainMap.put("logHome", "/shared/logs/" + domainUid);
+
     if (domainMap.containsKey("weblogicImageTagWIT")) {
       domainMap.put("image", domainMap.get("weblogicImageTagWIT"));
     } else if (!domainMap.containsKey("domainHomeImageBase")) {
@@ -1788,11 +1796,28 @@ public class Domain {
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
 
+    checkModelInImageAttributes();
+
     // create config map and secret for custom sit config
     createConfigMapAndSecretForSitConfig();
     
     if (!domainMap.containsKey("domainHomeImageBase")) {
       createDockerRegistrySecret();
+    }
+  }
+
+  private void checkModelInImageAttributes() {
+    //model in image attributes
+    if (!domainMap.containsKey("wdtModelFile")) {
+      throw new RuntimeException("wdtModelFile is required for Model-In-Image");
+    } else {
+      domainMap.put("wdtModelFile",
+          resultsDir + "/samples/model-in-image/" + domainMap.get("wdtModelFile"));
+    }
+
+    if (domainMap.containsKey("wdtModelPropertiesFile")) {
+      domainMap.put("wdtModelPropertiesFile",
+          resultsDir + "/samples/model-in-image/" + domainMap.get("wdtModelPropertiesFile"));
     }
   }
 
@@ -2005,7 +2030,16 @@ public class Domain {
     createDomainScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
         .append(resultsDir);
     // call different create-domain.sh based on the domain type
-    if (domainMap.containsKey("domainHomeImageBase")) {
+    if (domainMap.containsKey("domainHomeSourceType")
+        && domainMap.get("domainHomeSourceType").equals("FromModel")) {
+      createDomainScriptCmd
+          .append(
+              "/samples/model-in-image/create-domain.sh -u ")
+          .append(BaseTest.getUsername())
+          .append(" -p ")
+          .append(BaseTest.getPassword())
+          .append(" -i ");
+    } else if (domainMap.containsKey("domainHomeImageBase")) {
       createDomainScriptCmd
           .append(
               "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")

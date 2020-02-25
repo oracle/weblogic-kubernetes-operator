@@ -21,8 +21,8 @@
 # Initialize
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/../../../../../kubernetes/samples/scripts/common/utility.sh
-source ${scriptDir}/../../../../../kubernetes/samples/scripts/common/validate.sh
+source ${scriptDir}/../scripts/common/utility.sh
+source ${scriptDir}/../scripts/common/validate.sh
 
 function usage {
   echo usage: ${script} -o dir -i file -u username -p password [-k] [-e] [-v] [-h]
@@ -43,8 +43,8 @@ function usage {
 #
 doValidation=false
 executeIt=false
-#downloadTools=true
-downloadTools=false
+downloadTools=true
+#downloadTools=false
 while getopts "evhki:o:u:p:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
@@ -144,7 +144,7 @@ function initialize {
     validationError "The template file ${domainPropertiesInput} for creating a WebLogic domain was not found"
   fi
 
-  dcrInput="${scriptDir}/../../../../../kubernetes/samples/scripts/common/domain-template.yaml"
+  dcrInput="${scriptDir}/../scripts/common/domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain resource was not found"
   fi
@@ -159,8 +159,8 @@ function initialize {
   initOutputDir
 
   if [ "${downloadTools}" = true ] ; then
-    downloadTool oracle/weblogic-deploy-tooling $miiWorkDir/weblogic-deploy-tooling.zip
-    downloadTool oracle/weblogic-image-tool $miiWorkDir/weblogic-image-tool.zip
+    downloadTool oracle/weblogic-deploy-tooling ${miiWorkDir}/weblogic-deploy-tooling.zip
+    downloadTool oracle/weblogic-image-tool ${miiWorkDir}/weblogic-image-tool.zip
   fi
 }
 
@@ -250,7 +250,7 @@ function createDomainHome {
 #
 
 function buildApp {
-    cp -r sample_app ${miiWorkDir}
+    cp -r ${scriptDir}/sample_app ${miiWorkDir}
     cd ${miiWorkDir}/sample_app/wlsdeploy/applications
     rm -f sample_app.ear
     jar cvfM sample_app.ear *
