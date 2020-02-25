@@ -551,6 +551,7 @@ public class Domain {
       addUnmappedLogHome();
       addReservedEnvironmentVariables();
       addMissingSecrets(kubernetesResources);
+      addIllegalSitConfigForMII();
       verifyNoAlternateSecretNamespaceSpecified();
 
       return failures;
@@ -626,6 +627,13 @@ public class Domain {
         return path;
       } else {
         return path + File.separator;
+      }
+    }
+
+    private void addIllegalSitConfigForMII() {
+      if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType()) 
+          && getConfigOverrides() != null) {
+        failures.add(DomainValidationMessages.illegalSitConfigForMII(getConfigOverrides()));
       }
     }
 
