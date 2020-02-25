@@ -210,7 +210,7 @@ public class ItOperator extends BaseTest {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
 
         //FIXME
-        //TestUtils.verifyAfterDeletion(domain);
+        TestUtils.verifyAfterDeletion(domain);
       }
       // if (operator != null && (JENKINS || testCompletedSuccessfully)) {
       if (operator != null && testCompletedSuccessfully) {
