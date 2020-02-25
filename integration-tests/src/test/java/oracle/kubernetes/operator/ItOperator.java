@@ -49,8 +49,8 @@ public class ItOperator extends BaseTest {
     }.getClass().getEnclosingClass().getSimpleName();
     // initialize test properties and create the directories
     initialize(APP_PROPS_FILE, testClassName);
-    if(BaseTest.OKE_CLUSTER) {
-      TestUtils.deleteDomainHomeDirOKE();
+    if (BaseTest.OKE_CLUSTER) {
+      TestUtils.deleteDomainHomeDirOke();
     }
   }
 
