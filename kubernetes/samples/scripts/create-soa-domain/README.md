@@ -21,9 +21,8 @@ environment. You can:
 
 ### Limitations
 
-Refer to the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/) for limitations in this release.
+Refer to the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/#limitations) for limitations in this release.
 
 ### Getting started
 
-The fastest way to experience the operator is to follow the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/)
-or try out the deployment [scripts](https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/soa-domain/).
+The fastest way to experience the operator is to follow the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/).
