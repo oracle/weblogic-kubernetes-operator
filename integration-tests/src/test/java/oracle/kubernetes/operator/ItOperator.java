@@ -126,6 +126,7 @@ public class ItOperator extends BaseTest {
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
+      /*
       if (domain != null) {
         domain.shutdown();
       }
@@ -136,7 +137,7 @@ public class ItOperator extends BaseTest {
                 (String)domainMap.get("namespace"),
                 (String)domainMap.get("domainUID"));
       }
-
+      */
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
@@ -193,6 +194,7 @@ public class ItOperator extends BaseTest {
       // domain.verifyAdminConsoleViaLB();
       testCompletedSuccessfully = true;
     } finally {
+      /*
       if (domain != null) {
         domain.shutdown();
       }
@@ -203,7 +205,7 @@ public class ItOperator extends BaseTest {
                 (String)domainMap.get("namespace"),
                 (String)domainMap.get("domainUID"));
       }
-
+      */
       // if (domain != null && (JENKINS || testCompletedSuccessfully)) {
       if (domain != null && testCompletedSuccessfully) {
         LoggerHelper.getLocal().log(Level.INFO, "About to delete domain: " + domain.getDomainUid());
@@ -231,7 +233,7 @@ public class ItOperator extends BaseTest {
    *
    * @throws Exception exception
    */
-  //@Test
+  @Test
   public void testCreateDomainWithStartPolicyAdminOnly() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -261,7 +263,7 @@ public class ItOperator extends BaseTest {
     }
 
     domain.createDomainOnExistingDirectory();
-
+    /*
     if (domainMap != null) {
       LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
       TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
@@ -269,6 +271,7 @@ public class ItOperator extends BaseTest {
               (String)domainMap.get("namespace"),
               (String)domainMap.get("domainUID"));
     }
+    */
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -347,6 +350,7 @@ public class ItOperator extends BaseTest {
       // testAdvancedUseCasesForADomain(operator1, domain10);
       testCompletedSuccessfully = true;
     } finally {
+      /*
       if (domain != null) {
         domain.shutdown();
       }
@@ -357,6 +361,7 @@ public class ItOperator extends BaseTest {
                 (String)domainMap.get("namespace"),
                 (String)domainMap.get("domainUID"));
       }
+      */
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }

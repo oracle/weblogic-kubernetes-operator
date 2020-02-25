@@ -1565,21 +1565,22 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO, "Running " + createDomainScriptCmd);
     ExecResult result = ExecCommand.exec(createDomainScriptCmd, true, additionalEnvMap);
     if (result.exitValue() != 0) {
+      /*
       LoggerHelper.getLocal().log(Level.INFO, "Running delete-domain-job ");
       TestUtils.deleteDomainHomeDir(userProjectsDir
               + "/weblogic-domains/" + domainUid, domainNS, domainUid);
-      
+
       result = ExecCommand.exec(createDomainScriptCmd, true, additionalEnvMap);
       if (result.exitValue() != 0) {
-        throw new RuntimeException(
-                "FAILURE: command "
-                        + createDomainScriptCmd
-                        + " failed, returned "
-                        + result.stdout()
-                        + "\n"
-                        + result.stderr());
-      }
 
+      */
+      throw new RuntimeException(
+              "FAILURE: command "
+                      + createDomainScriptCmd
+                      + " failed, returned "
+                      + result.stdout()
+                      + "\n"
+                      + result.stderr());
     }
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
