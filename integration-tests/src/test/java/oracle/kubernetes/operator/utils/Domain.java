@@ -1163,7 +1163,7 @@ public class Domain {
       // set pv path
       domainMap.put(
           "weblogicDomainStoragePath",
-          //"/ci-oke-2");
+           //"/ci-oke-2");
            "/ci-oke-2/acceptance_test_pv/persistentVolume-" + domainUid);
 
       pvMap.put(
