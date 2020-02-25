@@ -67,7 +67,7 @@ public class K8sTestUtils {
     try {
       V1beta1CustomResourceDefinition domainCrd =
           apiextensionsV1beta1Api.readCustomResourceDefinition(
-              "domains.weblogic.oracle", "true", true, true);
+              "domains.weblogic.oracle", "true", null, null);
       assertNotNull(domainCrd, "Domain CRD exists");
     } catch (ApiException aex) {
       if (aex.getCode() == 404) {
