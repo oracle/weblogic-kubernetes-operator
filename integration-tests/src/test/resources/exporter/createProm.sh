@@ -29,4 +29,4 @@ helm install --wait --name prometheus --namespace monitoring --values  ${monitor
 
 POD_NAME=$(kubectl get pod -l app=prometheus -n monitoring -o jsonpath="{.items[0].metadata.name}")
 
-echo "Run the script [createProm.sh] ..."
+echo "Finished - [createProm.sh] ..."

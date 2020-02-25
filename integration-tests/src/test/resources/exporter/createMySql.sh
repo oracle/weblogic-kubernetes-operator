@@ -22,4 +22,4 @@ kubectl exec -it $POD_NAME -n $domainNS1 -- mysql -p123456 -e "CREATE USER 'wlus
 kubectl exec -it $POD_NAME -n $domainNS1 -- mysql -p123456 -e "GRANT ALL ON domain1.* TO 'wluser1';"
 kubectl exec -it $POD_NAME -n $domainNS1 -- mysql -u wluser1 -pwlpwd123 -D domain1 -e "show tables;"
 
-echo "Run the script [createMySql.sh] ..."
+echo "Finished - [createMySql.sh] ..."

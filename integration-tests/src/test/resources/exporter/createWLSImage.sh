@@ -10,4 +10,4 @@ monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/en
 sed -i "s/default/${domainNS1}/g"  ${monitoringExporterEndToEndDir}/demo-domains/domainBuilder/scripts/simple-topology.yaml
 sed -i "s/3306\/@@PROP:DOMAIN_NAME@@/3306\/domain1/g" ${monitoringExporterEndToEndDir}/demo-domains/domainBuilder/scripts/simple-topology.yaml
 
-echo "Run the script [createWLSImage.sh] ..."
+echo "Finished - [createWLSImage.sh] ..."

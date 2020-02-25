@@ -10,15 +10,16 @@ monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/en
 cd ${monitoringExporterEndToEndDir}
 docker build ./webhook -t webhook-log:1.0;
 if [ ${SHARED_CLUSTER} = "true" ]; then
+    tag=`date +"%Y-%m-%d-%s"`
     docker login $REPO_REGISTRY -u $REPO_USERNAME -p $REPO_PASSWORD
-    echo "tag image " $REPO_REGISTRY/$REPO_USERNAME/webhook-log:1.0
-    docker tag webhook-log:1.0 $REPO_REGISTRY/weblogick8s/webhook-log:1.0
-    docker push $REPO_REGISTRY/weblogick8s/webhook-log:1.0
+    echo "tag image " $REPO_REGISTRY/$REPO_USERNAME/webhook-log:$tag
+    docker tag webhook-log:1.0 $REPO_REGISTRY/weblogick8s/webhook-log:$tag
+    docker push $REPO_REGISTRY/weblogick8s/webhook-log:$tag
     if [ ! "$?" = "0" ] ; then
        echo "Error: Could not push the image to $REPO_REGISTRY".
       #exit 1
     fi
-    sed -i "s/webhook-log:1.0/$REPO_REGISTRY\/weblogick8s\/webhook-log:1.0/g"  ${resourceExporterDir}/server.yaml
+    sed -i "s/webhook-log:1.0/$REPO_REGISTRY\/weblogick8s\/webhook-log:$tag/g"  ${resourceExporterDir}/server.yaml
     sed -i "s/IfNotPresent/Always/g"  ${resourceExporterDir}/server.yaml
 fi
 
@@ -36,4 +37,4 @@ kubectl apply -f ${resourceExporterDir}/server.yaml
 echo "Getting info about webhook"
 kubectl get pods -n webhook
 
-echo "Run the script [createWebhook.sh] ..."
+echo "Finished - [createWebhook.sh] ..."

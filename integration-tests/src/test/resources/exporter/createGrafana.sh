@@ -19,4 +19,4 @@ kubectl --namespace monitoring create secret generic grafana-secret --from-liter
 kubectl apply -f ${monitoringExporterEndToEndDir}/grafana/persistence.yaml
 helm install --wait --name grafana --namespace monitoring --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version ${grafanaVersionArgs}
 
-echo "Run the script [createGrafana.sh] ..."
+echo "Finished - [createGrafana.sh] ..."
