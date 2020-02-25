@@ -297,7 +297,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   class AdminServerConfiguratorImpl extends ServerConfiguratorImpl
       implements AdminServerConfigurator {
-    private AdminServer adminServer;
+    private final AdminServer adminServer;
 
     AdminServerConfiguratorImpl(AdminServer adminServer) {
       super(adminServer);
@@ -311,7 +311,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   class ServerConfiguratorImpl implements ServerConfigurator {
-    private Server server;
+    private final Server server;
 
     ServerConfiguratorImpl(Server server) {
       this.server = server;
@@ -489,7 +489,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
-    private Cluster cluster;
+    private final Cluster cluster;
 
     ClusterConfiguratorImpl(Cluster cluster) {
       this.cluster = cluster;

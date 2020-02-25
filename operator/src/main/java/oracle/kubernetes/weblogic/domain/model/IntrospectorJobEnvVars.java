@@ -62,5 +62,5 @@ public class IntrospectorJobEnvVars {
     return ServerEnvVars.isReserved(name) || RESERVED_NAMES.contains(name);
   }
 
-  private static List<String> RESERVED_NAMES = Arrays.asList(NAMESPACE, INTROSPECT_HOME, CREDENTIALS_SECRET_NAME);
+  private static final List<String> RESERVED_NAMES = Arrays.asList(NAMESPACE, INTROSPECT_HOME, CREDENTIALS_SECRET_NAME);
 }

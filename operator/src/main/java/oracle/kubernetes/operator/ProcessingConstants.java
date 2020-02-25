@@ -11,13 +11,11 @@ public interface ProcessingConstants {
   public static final String FIBER_COMPONENT_NAME = "fiber";
   public static final String PODWATCHER_COMPONENT_NAME = "podWatcher";
 
-  public static final String PRINCIPAL = "principal";
   public static final String SERVER_SCAN = "serverScan";
   public static final String ENVVARS = "envVars";
 
   public static final String SERVER_NAME = "serverName";
   public static final String CLUSTER_NAME = "clusterName";
-  public static final String NETWORK_ACCESS_POINT = "nap";
 
   public static final String SERVERS_TO_ROLL = "roll";
 

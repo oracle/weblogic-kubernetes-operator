@@ -18,7 +18,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
  */
 public class SwaggerResource extends BaseResource {
 
-  private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
    * Construct a SwaggerResource.

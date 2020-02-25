@@ -33,14 +33,14 @@ public class JsonSchemaMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project.build.outputDirectory}/schema")
   private String targetDir;
   @Parameter private String kubernetesVersion;
-  @Parameter private List<ExternalSchema> externalSchemas = Collections.emptyList();
+  @Parameter private final List<ExternalSchema> externalSchemas = Collections.emptyList();
   @Parameter(required = true)
   private String rootClass;
   @Parameter private boolean generateMarkdown;
   @Parameter private boolean includeAdditionalProperties;
   @SuppressWarnings("FieldCanBeLocal")
   @Parameter
-  private boolean supportObjectReferences = true;
+  private final boolean supportObjectReferences = true;
   @Parameter(defaultValue = "${basedir}")
   private String baseDir;
   @Parameter private String outputFile;

@@ -95,10 +95,6 @@ public class ServiceHelper {
     OperatorServiceType.getType(service).updateFromEvent(info, service);
   }
 
-  public static V1Service[] getServerServices(DomainPresenceInfo info) {
-    return OperatorServiceType.SERVER.getServices(info);
-  }
-
   public static boolean isServerService(V1Service service) {
     return OperatorServiceType.getType(service) == OperatorServiceType.SERVER;
   }
@@ -383,9 +379,9 @@ public class ServiceHelper {
   private abstract static class ServiceStepContext {
     private final Step conflictStep;
     protected List<V1ServicePort> ports;
-    DomainPresenceInfo info;
-    WlsDomainConfig domainTopology;
-    private OperatorServiceType serviceType;
+    final DomainPresenceInfo info;
+    final WlsDomainConfig domainTopology;
+    private final OperatorServiceType serviceType;
 
     ServiceStepContext(Step conflictStep, Packet packet, OperatorServiceType serviceType) {
       this.conflictStep = conflictStep;
@@ -617,7 +613,7 @@ public class ServiceHelper {
     }
 
     private class CreateResponse extends ResponseStep<V1Service> {
-      private String messageKey;
+      private final String messageKey;
 
       CreateResponse(String messageKey, Step next) {
         super(next);
@@ -687,7 +683,7 @@ public class ServiceHelper {
   private static class ClusterStepContext extends ServiceStepContext {
     private final String clusterName;
     private final WlsDomainConfig config;
-    Map<String, V1ServicePort> ports = new HashMap<>();
+    final Map<String, V1ServicePort> ports = new HashMap<>();
 
     ClusterStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet, OperatorServiceType.CLUSTER);

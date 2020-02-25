@@ -23,12 +23,8 @@ public interface StepContextConstants {
   static final String WDTCONFIGMAP_MOUNT_PATH = "/weblogic-operator/wdt-config-map";
   static final String OPSS_WALLETFILE_MOUNT_PATH = "/weblogic-operator/opss-walletfile-secret";
   static final String DEBUG_CM_MOUNTS_PATH = "/weblogic-operator/debug";
-  static final String STORAGE_MOUNT_PATH = "/shared";
   static final String NODEMGR_HOME = "/u01/nodemanager";
-  static final String DEFAULT_LOG_HOME = "/shared/logs";
   static final int FAILURE_THRESHOLD = 1;
-
-  static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";
 
   @SuppressWarnings("OctalInteger")
   static final int ALL_READ_AND_EXECUTE = 0555;

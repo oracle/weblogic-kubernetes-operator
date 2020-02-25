@@ -413,7 +413,7 @@ public class DomainStatus {
         .isEquals();
   }
 
-  private static ObjectPatch<DomainStatus> statusPatch = createObjectPatch(DomainStatus.class)
+  private static final ObjectPatch<DomainStatus> statusPatch = createObjectPatch(DomainStatus.class)
         .withConstructor(DomainStatus::new)
         .withStringField("message", DomainStatus::getMessage)
         .withStringField("reason", DomainStatus::getReason)

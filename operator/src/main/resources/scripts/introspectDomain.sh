@@ -9,6 +9,7 @@
 #   - encrypted login files for accessing a NM
 #   - encrypted boot.ini for booting WL 
 #   - encrypted admin user password passed in via a plain-text secret (for use in sit config)
+#   - md5 checksum of the DOMAIN_HOME/security/SerializedSystemIni.dat domain secret file
 #   - situational config files for overriding the configuration within the DOMAIN_HOME
 # 
 # It works as part of the following flow:
@@ -20,11 +21,13 @@
 #       (2B) Calls introspectDomain.py, which depends on the NM
 #       (2C) Exits 0 on success, non-zero otherwise.
 #   (5) Operator parses the output of introspectDomain.py into files and:
-#       (5A) Uses one to get the domain's name, cluster name, ports, etc.
+#       (5A) Uses one of the files to get the domain's name, cluster name, ports, etc.
 #       (5B) Deploys a config map for the domain containing the files.
 #   (6) Operator starts pods for domain's WebLogic servers.
 #   (7) Pod 'startServer.sh' script loads files from the config map, 
-#       copies/uses encrypted files, and applies sit config files.
+#       copies/uses encrypted files, and applies sit config files. It
+#       also checks that domain secret md5 cksum matches the cksum
+#       obtained by this script.
 #
 # Prerequisites:
 #
@@ -149,6 +152,11 @@ if [ ${created_domain} -ne 0 ]; then
     # start node manager -why ??
     trace "Starting node manager"
     ${SCRIPTPATH}/startNodeManager.sh || exit 1
+
+    # put domain secret's md5 cksum in file '/tmp/DomainSecret.md5'
+    # the introspector wlst script and WL server pods will use this value
+    generateDomainSecretMD5File '/tmp/DomainSecret.md5' || exit 1
+
     trace "Running introspector WLST script ${SCRIPTPATH}/introspectDomain.py"
     ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
 fi
