@@ -1568,21 +1568,37 @@ public class TestUtils {
 
     LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: " + domainUid);
     k8sTestUtils.verifyDomainCrd();
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyDomainCrd " );
     k8sTestUtils.verifyDomain(domainNs, domainUid, false);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyDomain " );
     k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 0);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyPods " );
     k8sTestUtils.verifyJobs(domain1LabelSelector, 0);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyJobs " );
     k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoDeployments " );
     k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoReplicaSets " );
     k8sTestUtils.verifyServices(domain1LabelSelector, 0);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyServices " );
     k8sTestUtils.verifyPvcs(domain1LabelSelector, 0);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyPvcs " );
     k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 0);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyConfigMaps " );
     k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoServiceAccounts " );
     k8sTestUtils.verifyNoRoles(domain1LabelSelector);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoRoles " );
     k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoRoleBindings " );
     k8sTestUtils.verifySecrets(credentialsName, 0);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifySecrets " );
     k8sTestUtils.verifyPvs(domain1LabelSelector, 0);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyPvs " );
     k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoClusterRoles " );
     k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
+    LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoClusterRoleBindings " );
   }
 
   /**
