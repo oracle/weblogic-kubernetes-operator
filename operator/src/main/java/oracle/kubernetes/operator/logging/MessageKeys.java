@@ -171,6 +171,7 @@ public class MessageKeys {
   public static final String BAD_VOLUME_MOUNT_PATH = "WLSDO-0004";
   public static final String RESERVED_ENVIRONMENT_VARIABLES = "WLSDO-0005";
   public static final String ILLEGAL_SECRET_NAMESPACE = "WLSDO-0006";
+  public static final String ILLEGAL_SIT_CONFIG_MII = "WLSDO-0007";
 
   private MessageKeys() {
   }

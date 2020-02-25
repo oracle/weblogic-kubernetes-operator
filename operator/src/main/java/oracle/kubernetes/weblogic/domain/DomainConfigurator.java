@@ -59,6 +59,17 @@ public abstract class DomainConfigurator {
   }
 
   /**
+   * Specifies the domain home source type.
+   *
+   * @param domainHomeSourceType String indicating the type of the domain home source
+   * @return this object
+   */
+  public DomainConfigurator withDomainHomeSourceType(String domainHomeSourceType) {
+    getDomainSpec().setDomainHomeSourceType(domainHomeSourceType);
+    return this;
+  }
+
+  /**
    * Configure admin server.
    *
    * @return An AdminServerConfigurator object for configuring an admin server

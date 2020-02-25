@@ -94,4 +94,8 @@ class DomainValidationMessages {
   static String illegalSecretNamespace(String namespace) {
     return getMessage(MessageKeys.ILLEGAL_SECRET_NAMESPACE, namespace);
   }
+
+  static String illegalSitConfigForMII(String configOverrides) {
+    return getMessage(MessageKeys.ILLEGAL_SIT_CONFIG_MII, configOverrides);
+  }
 }

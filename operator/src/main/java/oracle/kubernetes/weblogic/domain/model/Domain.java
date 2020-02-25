@@ -29,6 +29,8 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.helpers.SecretType;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -40,6 +42,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 @Description(
     "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
 public class Domain {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   /**
    * The pattern for computing the default shared logs directory.
    */
@@ -551,6 +555,7 @@ public class Domain {
       addUnmappedLogHome();
       addReservedEnvironmentVariables();
       addMissingSecrets(kubernetesResources);
+      addIllegalSitConfigForMII();
       verifyNoAlternateSecretNamespaceSpecified();
 
       return failures;
@@ -626,6 +631,13 @@ public class Domain {
         return path;
       } else {
         return path + File.separator;
+      }
+    }
+
+    private void addIllegalSitConfigForMII() {
+      if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType()) 
+          && getConfigOverrides() != null) {
+        failures.add(DomainValidationMessages.illegalSitConfigForMII(getConfigOverrides()));
       }
     }
 
