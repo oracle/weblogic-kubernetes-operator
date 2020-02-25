@@ -271,7 +271,7 @@ public class DomainValidationTest {
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("Configuration overridesConfigMap", 
-            "overrides-cm", "not allowed", "FromModel")));
+            "overrides-cm", "not supported", "FromModel")));
   }
 
   private DomainConfigurator configureDomain(Domain domain) {
