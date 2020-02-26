@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Frequently asked questions on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/faq/</link>
+    <description>Recent content in Frequently asked questions on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 23 Feb 2019 08:14:59 -0500</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/faq/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Using OCI File Storage (FSS) for Persistent Volumes</title>
+      <link>/weblogic-kubernetes-operator/faq/oci-fss-pv/</link>
+      <pubDate>Wed, 12 Feb 2020 12:12:12 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/oci-fss-pv/</guid>
+      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), and you use OCI File Storage (FSS) for persistent volumes to store the WebLogic domain home, then the file system handling demonstrated in the operator persistent volume sample will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.
+File permission handling on persistent volumes can differ between cloud providers and even with the underlying storage handling on Linux based systems.</description>
+    </item>
+    
+    <item>
+      <title>Disabling Fast Application Notifications</title>
+      <link>/weblogic-kubernetes-operator/faq/fan/</link>
+      <pubDate>Fri, 11 Oct 2019 17:20:00 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/fan/</guid>
+      <description>To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure). GRID is typically associated with (and required by) Oracle RAC databases but can also be used in other configurations. Oracle Autonomous Database-Serverless (ATP-S) does not provide GRID.
+When connecting to a database that does not have GRID, the only type of WebLogic Server data source that is supported is the Generic Data Sources. Multi Data Sources and Active GridLink data sources cannot be used because they work with RAC.</description>
+    </item>
+    
+    <item>
+      <title>Using an OCI Load Balancer</title>
+      <link>/weblogic-kubernetes-operator/faq/oci-lb/</link>
+      <pubDate>Wed, 25 Sep 2019 12:41:38 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/oci-lb/</guid>
+      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), you can have OCI automatically provision load balancers for you by creating a Service of type LoadBalancer instead of (or in addition to) installing an ingress controller like Traefik or Voyager.
+OKE Kubernetes worker nodes normally do not have public IP addresses. This means that the NodePort services created by the operator are not usable, because they would expose ports on the worker node&amp;rsquo;s private IP addresses only, which are not reachable from outside the cluster.</description>
+    </item>
+    
+    <item>
+      <title>Managing Domain Namespaces</title>
+      <link>/weblogic-kubernetes-operator/faq/namespace-management/</link>
+      <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/namespace-management/</guid>
+      <description>Each WebLogic operator deployment manages a number of Kubernetes namespaces (for information about setting domain namespaces, see Operator Helm configuration values). A number of Kubernetes resources must be present in a namespace before any WebLogic domain custom resources can be successfully deployed into it. Those Kubernetes resources are created either as part of the installation of the operator&amp;rsquo;s Helm chart, or created by the operator at runtime.
+This FAQ describes some considerations to be aware of when you manage the namespaces while the WebLogic operator is running.</description>
+    </item>
+    
+    <item>
+      <title>Coherence Requirements</title>
+      <link>/weblogic-kubernetes-operator/faq/coherence-requirements/</link>
+      <pubDate>Mon, 12 Aug 2019 12:41:38 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/coherence-requirements/</guid>
+      <description>If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.
+Note that some Fusion Middleware products, like SOA Suite, use Coherence and so these requirements apply to them.
+Unicast and Well Known Address When the first Coherence process starts, it will form a cluster. The next Coherence process to start (i.e. in a different pod) will use UDP to try to contact the senior member.</description>
+    </item>
+    
+    <item>
+      <title>Cannot Pull Image</title>
+      <link>/weblogic-kubernetes-operator/faq/cannot-pull-image/</link>
+      <pubDate>Sat, 23 Mar 2019 08:08:19 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/cannot-pull-image/</guid>
+      <description>My domain will not start and I see errors like ImagePullBackoff or Cannot pull image
+ When you see these kinds of errors, it means that Kubernetes cannot find your Docker image. The most common causes are:
+ The image value in your domain resource is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission in order to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
+    </item>
+    
+  </channel>
+</rss>
