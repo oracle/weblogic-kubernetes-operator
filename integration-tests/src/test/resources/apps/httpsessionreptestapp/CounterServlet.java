@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package apps.httpsessionreptestapp;
@@ -72,13 +72,25 @@ public class CounterServlet extends HttpServlet {
 
       if (request.getParameter("delayTime") != null) {
         try {
+          Integer ival = (Integer)currentSession.getAttribute("simplesession.counter");
+          if (ival == null) {
+            // Initialize the counter
+            ival = new Integer(1);
+          } else {
+            // Increment the counter
+            ival = new Integer(ival.intValue() + 1);
+          }
+          // Set the new attribute value in the session
+          currentSession.setAttribute("simplesession.counter", ival);
+
+          currentSession.setMaxInactiveInterval(Integer.valueOf(request.getParameter("delayTime")));
           out.println(
               "<sleep>Starting to sleep : "
                   + (Integer.valueOf(request.getParameter("delayTime")))
                   + "</sleep>");
           Thread.sleep(Integer.valueOf(request.getParameter("delayTime")));
           out.println("<sleep>Ending to sleep</sleep>");
-        } catch (InterruptedException ex) {
+        } catch (Exception ex) {
           // just ignore
         }
       }

@@ -107,7 +107,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
-    self.DATA_HOME                 = self.getEnvOrDef('DATA_HOME', "")
+    self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
     # initialize globals
@@ -118,12 +118,13 @@ class OfflineWlstEnv(object):
     self.CUSTOM_PREFIX_WLDF = 'Sit-Cfg-WLDF--'
     self.CUSTOM_PREFIX_CFG  = 'Sit-Cfg-CFG--'
 
-    self.INTROSPECT_HOME    = '/tmp/introspect/' + self.DOMAIN_UID
-    self.TOPOLOGY_FILE      = self.INTROSPECT_HOME + '/topology.yaml'
-    self.CM_FILE            = self.INTROSPECT_HOME + '/' + self.CUSTOM_PREFIX_CFG + 'introspector-situational-config.xml'
-    self.BOOT_FILE          = self.INTROSPECT_HOME + '/boot.properties'
-    self.USERCONFIG_FILE    = self.INTROSPECT_HOME + '/userConfigNodeManager.secure'
-    self.USERKEY_FILE       = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
+    self.INTROSPECT_HOME        = '/tmp/introspect/' + self.DOMAIN_UID
+    self.TOPOLOGY_FILE          = self.INTROSPECT_HOME + '/topology.yaml'
+    self.CM_FILE                = self.INTROSPECT_HOME + '/' + self.CUSTOM_PREFIX_CFG + 'introspector-situational-config.xml'
+    self.BOOT_FILE              = self.INTROSPECT_HOME + '/boot.properties'
+    self.USERCONFIG_FILE        = self.INTROSPECT_HOME + '/userConfigNodeManager.secure'
+    self.USERKEY_FILE           = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
+    self.DOMAIN_SECRET_MD5_FILE = '/tmp/DomainSecret.md5'
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
@@ -603,8 +604,9 @@ class TopologyGenerator(Generator):
       self.undent()
 
   def addDynamicServer(self, dynamicServer):
-    name=self.name(dynamicServer)
-    self.writeln("name: " + name)
+    if dynamicServer.getName() is not None:
+      name=self.name(dynamicServer)
+      self.writeln("name: " + name)
     self.writeln("serverTemplateName: " + self.quote(dynamicServer.getServerTemplate().getName()))
     self.writeln("calculatedListenPorts: " + str(dynamicServer.isCalculatedListenPorts()))
     self.writeln("serverNamePrefix: " + self.quote(dynamicServer.getServerNamePrefix()))
@@ -1225,6 +1227,7 @@ def main(env):
   try:
     env.open()
     try:
+      env.addGeneratedFile(env.DOMAIN_SECRET_MD5_FILE)
       DomainIntrospector(env).introspect()
       env.printGeneratedFiles()
       trace("Domain introspection complete.")

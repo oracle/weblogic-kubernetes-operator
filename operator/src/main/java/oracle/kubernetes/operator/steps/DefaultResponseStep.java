@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -15,7 +15,7 @@ import oracle.kubernetes.operator.work.Step;
  * nothing on success. Subclasses must override #doSuccess to take action.
  */
 public class DefaultResponseStep<T> extends ResponseStep<T> {
-  DefaultResponseStep() {
+  public DefaultResponseStep() {
   }
 
   public DefaultResponseStep(Step nextStep) {

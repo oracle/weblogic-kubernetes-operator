@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -150,7 +150,15 @@ public abstract class ResponseStep<T> extends Step {
    */
   public NextAction onFailure(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
     return Optional.ofNullable(doPotentialRetry(conflictStep, packet, callResponse))
-        .orElse(doTerminate(callResponse.getE(), packet));
+        .orElse(onFailureNoRetry(packet, callResponse));
+  }
+
+  protected NextAction onFailureNoRetry(Packet packet, CallResponse<T> callResponse) {
+    return doTerminate(callResponse.getE(), packet);
+  }
+
+  protected boolean isNotAuthorizedOrForbidden(CallResponse<T> callResponse) {
+    return callResponse.getStatusCode() == 401 || callResponse.getStatusCode() == 403;
   }
 
   /**

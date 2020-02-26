@@ -119,8 +119,8 @@ to a `Role` or `ClusterRole` granting permission to the operator.
 | Role Binding | Mapped to Role | Resource Access | Notes |
 | --- | --- | --- | --- |
 | `weblogic-operator-rolebinding` | `weblogic-operator-role` | **Edit**: secrets, configmaps, events | The role binding is created in the namespace `weblogic-operator-ns` [^1] |
-| `weblogic-operator-rolebinding-namespace` | Operator Cluster Role `namespace` | **Read**: secrets, pod/log, storageclasses | The role binding is created in the namespace `domain1-ns` [^2] |
-| | | **Edit**: configmaps, events, pods, podtemplates, services, persistentvolumeclaims, newtworkpolicies, podsecuritypolicies, podpresets, jobs.batch, cronjobs.batch | |
+| `weblogic-operator-rolebinding-namespace` | Operator Cluster Role `namespace` | **Read**: secrets, pods/log | The role binding is created in the namespace `domain1-ns` [^2] |
+| | | **Edit**: configmaps, events, pods, services, jobs.batch | |
 | | | **Create**: pods/exec | |
 
 #### Cluster role bindings
@@ -132,13 +132,13 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
 
 | Cluster Role Binding | Mapped to Cluster Role | Resource Access | Notes |
 | --- | --- | --- | --- |
-| Operator `general` | Operator `general` | **Read**: namespaces | [^1] |
-| | | **Edit**: customresourcedefinitions, ingresses, persistentvolumes | |
+| Operator `general` | Operator `general` | **Read**: namespaces | [^3] |
+| | | **Edit**: customresourcedefinitions | |
 | | | **Update**: domains (weblogic.oracle), domains/status | |
-| | | **Create**: tokenreviews, subjectaccessreviews, localsubjectaccessreviews, selfsubjectaccessreviews, selfsubjectrulesreviews | |
+| | | **Create**: tokenreviews, selfsubjectrulesreviews | |
 | Operator `nonresource` | Operator `nonresource` | **Get**: /version/* | [^1] |
-| Operator `discovery` | Kubernetes `system:discovery` | **See**: [Kubernetes Discovery Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#discovery-roles) | [^1] |
-| Operator `auth-delegator` | Kubernetes `system:auth-delegator` | **See**: [Kubernetes Component Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#other-component-roles) | [^1] |
+| Operator `discovery` | Kubernetes `system:discovery` | **See**: [Kubernetes Discovery Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#discovery-roles) | [^3] |
+| Operator `auth-delegator` | Kubernetes `system:auth-delegator` | **See**: [Kubernetes Component Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#other-component-roles) | [^3] |
 
 
 [^1]: The binding is assigned to the operator `ServiceAccount`.
@@ -146,3 +146,4 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
       in each namespace listed with the `domainNamespaces` setting.
       The `domainNamespaces` setting contains the list of namespaces
       that the operator is configured to manage.
+[^3]: The binding is assigned to the operator `ServiceAccount`. In addition, the Kubernetes RBAC resources that the operator installation actually set up will be adjusted based on the value of the `dedicated` setting. By default,  the `dedicated` value is set to `false`, those security resources are created as `ClusterRole` and `ClusterRoleBindings`. If the `dedicated` value is set to `true`,  those resources will be created as `Roles` and `RoleBindings` in the namespace of the operator.

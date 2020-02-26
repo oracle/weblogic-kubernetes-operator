@@ -2,6 +2,7 @@
 title: "Coherence Requirements"
 date: 2019-08-12T12:41:38-04:00
 draft: false
+weight: 4
 ---
 
 If you are running Coherence on Kubernetes, either inside a WebLogic domain

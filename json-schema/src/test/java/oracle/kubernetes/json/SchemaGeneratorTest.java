@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -243,7 +243,8 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.properties.anInt.description", equalTo("An int\nvalue")));
     assertThat(schema, hasJsonPath("$.properties.depth.type", equalTo("number")));
     assertThat(
-        schema, hasJsonPath("$.required", arrayContainingInAnyOrder("aaBoolean", "anInt", "depth")));
+        schema,
+        hasJsonPath("$.required", arrayContainingInAnyOrder("aaBoolean", "anInt", "depth")));
   }
 
   @Test

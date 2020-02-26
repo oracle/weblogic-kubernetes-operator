@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -28,7 +28,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 class FileGroupReader {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private String pathToGroup;
+  private final String pathToGroup;
 
   /**
    * Creates a reader for a specific file location.
@@ -98,7 +98,7 @@ class FileGroupReader {
   }
 
   class FileScriptPath implements ScriptPath {
-    private URI uri;
+    private final URI uri;
 
     FileScriptPath(URI uri) {
       this.uri = uri;

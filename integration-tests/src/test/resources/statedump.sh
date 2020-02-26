@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
  
@@ -11,12 +11,12 @@
 #   - IMPORTANT: this method should not rely on exports 
 #
 function state_dump {
-     local RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
-     local PV_ROOT="$PV_ROOT"
+     local RESULT_DIR="$RESULT_ROOT/$IT_CLASS/acceptance_test_tmp"
+     local PV_ROOT="$PV_ROOT/$IT_CLASS"
      local PROJECT_ROOT="$PROJECT_ROOT"
      local SCRIPTPATH="$PROJECT_ROOT/src/integration-tests/bash"
      local LEASE_ID="$LEASE_ID"
-     local ARCHIVE_DIR="$RESULT_ROOT/acceptance_test_pv_archive"
+     local ARCHIVE_DIR="$RESULT_ROOT/$IT_CLASS/acceptance_test_pv_archive"
      local ARCHIVE_FILE="IntSuite.${IT_CLASS}.PV.`date '+%Y%m%d%H%M%S'`.jar"
      local ARCHIVE="$ARCHIVE_DIR/$ARCHIVE_FILE"
 
@@ -26,7 +26,7 @@ function state_dump {
      fi
 
   local kubectlcmd
-  if ["$OPENSHIFT" = "true"]; then
+  if [ "$OPENSHIFT" = "true" ]; then
     kubectlcmd="oc"
   else
     kubectlcmd="kubectl"
@@ -52,7 +52,12 @@ function state_dump {
   # Get all pod logs/describes and redirect/copy to files 
 
   set +x
-  local namespaces="`$kubectlcmd get namespaces | egrep -v -e "(STATUS|kube)" | awk '{ print $1 }'`"
+  local namespaces
+  if [ -z "$NAMESPACE_LIST" ]; then
+    namespaces="`$kubectlcmd get namespaces | egrep -v -e "(STATUS|kube)" | awk '{ print $1 }'`"
+  else
+    namespaces="$NAMESPACE_LIST"
+  fi
   set -x
 
   local namespace
@@ -117,10 +122,10 @@ function state_dump {
 
   if [ "$JENKINS" = "true" ] || [ "$SHARED_CLUSTER" = "true" ]; then
     # echo "Running $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m ${PV_ROOT}:/sharedparent -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}"
-  	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
+  	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -p "pod-${IT_CLASS,,}-1" -d ${RESULT_DIR} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
   	if [ "$?" = "0" ]; then
   		#echo "Running $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m  ${PV_ROOT}:/sharedparent -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1"
-    	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1
+    	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -p "pod-${IT_CLASS,,}-2" -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1
 	 	if [ "$?" = "0" ]; then
 	 		#echo "Running base64 -di $RESULT_DIR/pvarchive.b64 > $ARCHIVE"
    			base64 -di $RESULT_DIR/pvarchive.b64 > $ARCHIVE
@@ -131,6 +136,7 @@ function state_dump {
    			fi
    			# Jenkins can only publish logs under the workspace
 			mkdir -p ${JENKINS_RESULTS_DIR}
+			rm -f $RESULT_DIR/pvarchive.b64
 			cp $ARCHIVE ${JENKINS_RESULTS_DIR}
 			if [ "$?" = "0" ]; then
    				echo Copy complete. Archive $ARCHIVE copied to ${JENKINS_RESULTS_DIR}
@@ -164,9 +170,9 @@ function state_dump {
  # fi
 
   # remove docker-images project before archiving
-  rm -rf ${RESULT_DIR}/docker-images
+  rm -rf ${RESULT_DIR}/**/docker-images
   
-  rm -rf ${RESULT_DIR}/samples
+  rm -rf ${RESULT_DIR}/**/samples
   
   # now archive all the local test files
   if [ "$JENKINS" = "true" ] || [ "$SHARED_CLUSTER" = "true" ]; then
@@ -182,6 +188,6 @@ export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
 export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
 export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
-echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
+echo "RESULT_ROOT $RESULT_ROOT PV_ROOT $PV_ROOT"
     
 state_dump

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -69,10 +69,6 @@ public class SecretHelper {
     return secretData;
   }
 
-  public enum SecretType {
-    AdminCredentials
-  }
-
   private static class SecretDataStep extends Step {
     private final SecretType secretType;
     private final String secretName;
@@ -87,7 +83,7 @@ public class SecretHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (secretType != SecretType.AdminCredentials) {
+      if (secretType != SecretType.WebLogicCredentials) {
         throw new IllegalArgumentException("Invalid secret type");
       } else if (secretName == null) {
         throw new IllegalArgumentException("Invalid secret name");
@@ -112,7 +108,7 @@ public class SecretHelper {
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Secret> callResponse) {
         if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
-          LOGGER.warning(loggingFilter, MessageKeys.SECRET_NOT_FOUND, secretName);
+          LOGGER.warning(loggingFilter, MessageKeys.SECRET_NOT_FOUND, secretName, namespace, secretType);
           return doNext(packet);
         }
         return super.onFailure(packet, callResponse);

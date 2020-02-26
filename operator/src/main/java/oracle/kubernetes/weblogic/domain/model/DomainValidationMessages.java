@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.utils.OperatorUtils;
 
@@ -86,4 +87,11 @@ class DomainValidationMessages {
                             new String[] {getBundleString("singularToBe"), getBundleString("pluralToBe")});
   }
 
+  static String noSuchSecret(String secretName, String namespace, SecretType type) {
+    return getMessage(MessageKeys.SECRET_NOT_FOUND, secretName, namespace, type);
+  }
+
+  static String illegalSecretNamespace(String namespace) {
+    return getMessage(MessageKeys.ILLEGAL_SECRET_NAMESPACE, namespace);
+  }
 }

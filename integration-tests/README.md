@@ -197,9 +197,16 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
     - Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
 		
 		
-* Command to run the tests: This will run QUICKTEST. To run all the tests, `export QUICKTEST=false`
+* Command to run the tests: This will run the tests sequentially.
+
 ```
 mvn clean verify -P wls-integration-tests 2>&1 | tee log.txt
+```
+To run QUICKTEST, `export QUICKTEST=true`. 
+
+To run the test classes in parallel, 
+```
+mvn -DPARALLEL=true clean verify -P wls-integration-tests 2>&1 | tee log.txt
 ```
 
 The tests accepts optional env var overrides:
@@ -317,11 +324,11 @@ mvn clean verify -P jrf-integration-tests 2>&1 | tee log.txt
 
 # How to run a single test
 
-mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST" -DfailIfNoTests=false integration-test -P wls-integration-tests
+mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST" -DfailIfNoTests=false clean verify -P wls-integration-tests
 
 # How to run multiple tests
 
-mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST+testDomainOnPVUsingWDT" -DfailIfNoTests=false integration-test -P wls-integration-tests
+mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST+testDomainOnPVUsingWDT" -DfailIfNoTests=false clean verify -P wls-integration-tests
 
 # How to run cleanup script
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -106,8 +106,9 @@ public abstract class InMemoryFileSystem extends FileSystem {
     private Map<String, String> fileContents = new HashMap<>();
 
     static String getFilePath(Path path) {
-      if (!(path instanceof PathStub))
+      if (!(path instanceof PathStub)) {
         throw new IllegalArgumentException(path.getClass() + " not supported");
+      }
 
       return ((PathStub) path).filePath;
     }
@@ -116,8 +117,9 @@ public abstract class InMemoryFileSystem extends FileSystem {
     @Override
     public <A extends BasicFileAttributes> A readAttributes(
         Path path, Class<A> type, LinkOption... options) {
-      if (!type.equals(BasicFileAttributes.class))
+      if (!type.equals(BasicFileAttributes.class)) {
         throw new IllegalArgumentException("attributes type " + type + " not supported");
+      }
       return (A) createAttributes(getFilePath(path));
     }
 
@@ -143,8 +145,12 @@ public abstract class InMemoryFileSystem extends FileSystem {
 
     private PathType isDirectory(String filePath) {
       for (String key : fileContents.keySet()) {
-        if (key.startsWith(filePath + '/')) return PathType.DIRECTORY;
-        if (key.equals(filePath)) return PathType.FILE;
+        if (key.startsWith(filePath + '/')) {
+          return PathType.DIRECTORY;
+        }
+        if (key.equals(filePath)) {
+          return PathType.FILE;
+        }
       }
       return PathType.NONE;
     }
@@ -177,8 +183,11 @@ public abstract class InMemoryFileSystem extends FileSystem {
     List<Path> paths = new ArrayList<>();
 
     public DirectoryStreamStub(FileSystemProviderStub parent, String root) {
-      for (String key : parent.fileContents.keySet())
-        if (key.startsWith(root + "/")) paths.add(createStrictStub(PathStub.class, key));
+      for (String key : parent.fileContents.keySet()) {
+        if (key.startsWith(root + "/")) {
+          paths.add(createStrictStub(PathStub.class, key));
+        }
+      }
     }
 
     @SuppressWarnings("unchecked")
@@ -208,7 +217,9 @@ public abstract class InMemoryFileSystem extends FileSystem {
 
     @Override
     public int read(ByteBuffer dst) {
-      if (index >= contents.length) return -1;
+      if (index >= contents.length) {
+        return -1;
+      }
 
       dst.put(contents);
       index = contents.length;

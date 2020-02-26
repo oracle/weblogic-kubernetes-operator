@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
@@ -61,6 +61,10 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     callBacks.add(response);
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(hasNextException));
@@ -72,10 +76,16 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     mementos.add(memento);
   }
 
+  /**
+   * Tear down test.
+   * @throws Exception on failure
+   */
   @After
   public void tearDown() throws Exception {
     shutDownThreads();
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   void sendInitialRequest(int initialResourceVersion) {

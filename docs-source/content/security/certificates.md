@@ -24,7 +24,11 @@ certificate(s) and key:
 ```bash
 $ kubectl create secret tls weblogic-operator-cert -n weblogic-operator-ns \
   --cert=<path-to-certificate> --key=<path-to-private-key>
+```
 
+For Helm 2.x:
+
+```bash
 $ helm get values weblogic-operator
 
 $ helm upgrade --wait --recreate-pods --reuse-values \
@@ -32,6 +36,19 @@ $ helm upgrade --wait --recreate-pods --reuse-values \
   --set externalRestIdentitySecret=weblogic-operator-cert \
   weblogic-operator kubernetes/charts/weblogic-operator
 ```
+
+For Helm 3.x:
+
+```bash
+$ helm get values weblogic-operator -n weblogic-operator-ns
+
+$ helm -n weblogic-operator-ns upgrade weblogic-operator kubernetes/charts/weblogic-operator \
+  --wait --recreate-pods --reuse-values \
+  --set externalRestEnabled=true \
+  --set externalRestIdentitySecret=weblogic-operator-cert 
+```
+
+
 #### Additional reading
 * [Configure the external REST interface SSL/TLS identity]({{<relref "/userguide/managing-operators/_index.md#optional-configure-the-operator-s-external-rest-https-interface">}})
 * [REST interface configuration settings]({{<relref "/userguide/managing-operators/using-the-operator/using-helm/_index.md#rest-interface-configuration">}})

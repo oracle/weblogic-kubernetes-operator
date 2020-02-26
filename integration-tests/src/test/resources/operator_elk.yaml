@@ -1,11 +1,11 @@
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #any property can be provided here from kubernetes/charts/weblogic-operator/values.yaml
-releaseName: op1
+releaseName: opelk
 serviceAccount: weblogic-operator
 namespace: weblogic-operator-elk
-domainNamespaces: [ "default", "test1" ]
+domainNamespaces: [ "testelk" ]
 externalRestEnabled: true
 javaLoggingLevel: INFO
 elkIntegrationEnabled: true

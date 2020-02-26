@@ -1,9 +1,9 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.work.Step;
 
 public interface PodAwaiterStepFactory {

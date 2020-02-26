@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
@@ -15,7 +15,7 @@ import oracle.kubernetes.json.YamlDocGenerator;
 import org.apache.maven.plugin.MojoExecutionException;
 
 public class MainImpl implements Main {
-  private SchemaGenerator generator = new SchemaGenerator();
+  private final SchemaGenerator generator = new SchemaGenerator();
   private ClassLoader classLoader;
   private String kubernetesVersion;
 
@@ -80,14 +80,18 @@ public class MainImpl implements Main {
 
     YamlDocGenerator generator = new YamlDocGenerator(schema);
     try (FileWriter writer = new FileWriter(outputFile)) {
-      if (kubernetesVersion != null) generator.useKubernetesVersion(kubernetesVersion);
+      if (kubernetesVersion != null) {
+        generator.useKubernetesVersion(kubernetesVersion);
+      }
       writer.write(generator.generate(rootName));
     } catch (IOException e) {
       throw new MojoExecutionException("Error generating markdown", e);
     }
 
     String kubernetesSchemaMarkdownFile = generator.getKubernetesSchemaMarkdownFile();
-    if (kubernetesSchemaMarkdownFile == null) return;
+    if (kubernetesSchemaMarkdownFile == null) {
+      return;
+    }
 
     File kubernetesFile = new File(outputFile.getParent(), kubernetesSchemaMarkdownFile);
     try (FileWriter writer = new FileWriter(kubernetesFile)) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,10 +21,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
-/** A Domain CRD utility class to manipulate domain yaml files. */
+/**
+ * A Domain CRD utility class to manipulate domain yaml files.
+ */
 public class DomainCrd {
 
-  public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+
   private final ObjectMapper objectMapper;
   private final JsonNode root;
 
@@ -92,7 +93,7 @@ public class DomainCrd {
     JsonNode envNodes = (ArrayNode) specNode.path("serverPod").path("env");
 
     if (specNode.path("serverPod").isMissingNode()) {
-      logger.info("Missing serverPod Node");
+      LoggerHelper.getLocal().log(Level.INFO, "Missing serverPod Node");
       podOptions = objectMapper.createObjectNode();
       envNodes = objectMapper.createArrayNode();
       ((ObjectNode) podOptions).set("env", envNodes);
@@ -107,7 +108,7 @@ public class DomainCrd {
       if (envNodes.size() != 0) {
         for (JsonNode envNode1 : envNodes) {
 
-          logger.info(" checking node " + envNode1.get("name"));
+          LoggerHelper.getLocal().log(Level.INFO, " checking node " + envNode1.get("name"));
           if (envNode1.get("name").equals(entry.getKey())) {
             ((ObjectNode) envNode1).put("value", entry.getValue());
           }
@@ -143,7 +144,7 @@ public class DomainCrd {
    * A utility method to add attributes to cluster node in domain.yaml.
    *
    * @param clusterName - Name of the cluster to which the attributes to be added
-   * @param attributes - A HashMap of key value pairs
+   * @param attributes  - A HashMap of key value pairs
    */
   public void addObjectNodeToCluster(String clusterName, Map<String, Object> attributes) {
 
@@ -162,8 +163,8 @@ public class DomainCrd {
    * A utility method to add attributes to cluster node's server pod in domain.yaml.
    *
    * @param clusterName - Name of the cluster to which the attributes to be added
-   * @param objectName - name of the object in cluster to which the attributes to be added
-   * @param attributes - A HashMap of key value pairs
+   * @param objectName  - name of the object in cluster to which the attributes to be added
+   * @param attributes  - A HashMap of key value pairs
    */
   public void addObjectNodeToClusterServerPod(
       String clusterName, String objectName, Map<String, String> attributes) {
@@ -180,7 +181,7 @@ public class DomainCrd {
    * A utility method to add shutdown element and attributes to cluster node in domain.yaml.
    *
    * @param clusterName - Name of the cluster to which the attributes to be added
-   * @param attributes - A HashMap of key value pairs
+   * @param attributes  - A HashMap of key value pairs
    */
   public void addShutdownOptionsToCluster(String clusterName, Map<String, Object> attributes)
       throws Exception {
@@ -193,7 +194,7 @@ public class DomainCrd {
    * A utility method to add attributes to managed server node in domain.yaml.
    *
    * @param managedServerName - Name of the managed server to which the attributes to be added
-   * @param attributes - A HashMap of key value pairs
+   * @param attributes        - A HashMap of key value pairs
    */
   public void addObjectNodeToMS(String managedServerName, Map<String, String> attributes) {
     JsonNode managedServerNode = getManagedServerNode(managedServerName);
@@ -229,6 +230,15 @@ public class DomainCrd {
     }
   }
 
+  /**
+   * add init container node.
+   * @param parentNodeName parent node name
+   * @param clusterName cluster name
+   * @param msName managed server name
+   * @param containerName container name
+   * @param command command
+   * @return JSON node content
+   */
   public JsonNode addInitContNode(
       String parentNodeName,
       String clusterName,
@@ -275,7 +285,7 @@ public class DomainCrd {
    * A utility method to add attributes to managed server node in domain.yaml.
    *
    * @param managedServerName - Name of the managed server to which the attributes to be added
-   * @param attributes - A HashMap of key value pairs
+   * @param attributes        - A HashMap of key value pairs
    */
   public void addShutDownOptionToMS(String managedServerName, Map<String, Object> attributes)
       throws Exception {
@@ -286,8 +296,8 @@ public class DomainCrd {
   /**
    * A utility method to add attributes to managed server node in domain.yaml.
    *
-   * @param jsonNode - the json node (domain,cluster,or manserver to which the attributes to be
-   *     added
+   * @param jsonNode   - the json node (domain,cluster,or manserver to which the attributes to be
+   *                   added
    * @param attributes - A HashMap of key value pairs
    */
   private void addShutdownOptionToObjectNode(JsonNode jsonNode, Map<String, Object> attributes)
@@ -297,7 +307,7 @@ public class DomainCrd {
     for (int i = 0; i < propNames.length; i++) {
       if (myNode.path(propNames[i]).isMissingNode()) {
 
-        logger.info("  property " + propNames[i] + " is not present, adding it  crd ");
+        LoggerHelper.getLocal().log(Level.INFO, "  property " + propNames[i] + " is not present, adding it  crd ");
 
         ObjectNode someSubNode = objectMapper.createObjectNode();
         ((ObjectNode) myNode).put(propNames[i], someSubNode);
@@ -312,17 +322,17 @@ public class DomainCrd {
       String dataType = entry.getValue().getClass().getSimpleName();
 
       if (dataType.equalsIgnoreCase("Integer")) {
-        logger.info(
+        LoggerHelper.getLocal().log(Level.INFO,
             "Read Json Key :" + entry.getKey() + " | type :int | value:" + entry.getValue());
         ((ObjectNode) myNode).put(entry.getKey(), (int) entry.getValue());
 
       } else if (dataType.equalsIgnoreCase("Boolean")) {
-        logger.info(
+        LoggerHelper.getLocal().log(Level.INFO,
             "Read Json Key :" + entry.getKey() + " | type :boolean | value:" + entry.getValue());
         ((ObjectNode) myNode).put(entry.getKey(), (boolean) entry.getValue());
 
       } else if (dataType.equalsIgnoreCase("String")) {
-        logger.info(
+        LoggerHelper.getLocal().log(Level.INFO,
             "Read Json Key :" + entry.getKey() + " | type :string | value:" + entry.getValue());
         ((ObjectNode) myNode).put(entry.getKey(), (String) entry.getValue());
       }
@@ -331,7 +341,9 @@ public class DomainCrd {
     System.out.println(jsonString);
   }
 
-  /** Gets the spec node entry from Domain CRD JSON tree. */
+  /**
+   * Gets the spec node entry from Domain CRD JSON tree.
+   */
   private JsonNode getSpecNode() {
     return root.path("spec");
   }
@@ -357,13 +369,6 @@ public class DomainCrd {
   /**
    * Gets the cluster node entry from Domain CRD JSON tree for the given cluster name.
    *
-   * @param root - Root JSON node of the Domain CRD JSON tree
-   * @param clusterName - Name of the cluster
-   * @return - cluster node entry from Domain CRD JSON tree
-   */
-  /**
-   * Gets the cluster node entry from Domain CRD JSON tree for the given cluster name.
-   *
    * @param clusterName - Name of the cluster
    * @return - JsonNode of named cluster
    */
@@ -372,7 +377,7 @@ public class DomainCrd {
     JsonNode clusterNode = null;
     for (JsonNode cluster : clusters) {
       if (cluster.get("clusterName").asText().equals(clusterName)) {
-        logger.info("Got the cluster");
+        LoggerHelper.getLocal().log(Level.INFO, "Got the cluster");
         clusterNode = cluster;
       }
     }
@@ -391,7 +396,7 @@ public class DomainCrd {
     JsonNode managedserverNode = null;
     JsonNode specNode = getSpecNode();
     if (root.path("spec").path("managedServers").isMissingNode()) {
-      logger.info("Missing MS Node");
+      LoggerHelper.getLocal().log(Level.INFO, "Missing MS Node");
       managedservers = objectMapper.createArrayNode();
       ObjectNode managedserver = objectMapper.createObjectNode();
       managedserver.put("serverName", managedServerName);
@@ -404,12 +409,12 @@ public class DomainCrd {
       if (managedservers.size() != 0) {
         for (JsonNode managedserver : managedservers) {
           if (managedserver.get("serverName").asText().equals(managedServerName)) {
-            logger.info("Found managedServer with name " + managedServerName);
+            LoggerHelper.getLocal().log(Level.INFO, "Found managedServer with name " + managedServerName);
             managedserverNode = managedserver;
           }
         }
       } else {
-        logger.info("Creating node for managedServer with name " + managedServerName);
+        LoggerHelper.getLocal().log(Level.INFO, "Creating node for managedServer with name " + managedServerName);
         ObjectNode managedserver = objectMapper.createObjectNode();
         managedserver.put("serverName", managedServerName);
         managedservers.add(managedserver);
@@ -423,14 +428,14 @@ public class DomainCrd {
    * tree.
    *
    * @param serverPodsParentNode parent node of the server pod
-   * @param objectName Name of the object for which to get the JSON node
+   * @param objectName           Name of the object for which to get the JSON node
    * @return object node
    */
   private JsonNode getObjectNodeFromServerPod(JsonNode serverPodsParentNode, String objectName) {
     JsonNode serverPodNode = null;
     JsonNode objectNode = null;
     if (serverPodsParentNode.path("serverPod").isMissingNode()) {
-      logger.info("Missing serverPod Node");
+      LoggerHelper.getLocal().log(Level.INFO, "Missing serverPod Node");
       serverPodNode = objectMapper.createObjectNode();
       ((ObjectNode) serverPodsParentNode).set("serverPod", serverPodNode);
       objectNode = objectMapper.createObjectNode();
@@ -439,7 +444,7 @@ public class DomainCrd {
     } else {
       serverPodNode = serverPodsParentNode.path("serverPod");
       if (serverPodNode.path(objectName).isMissingNode()) {
-        logger.info("Creating node with name " + objectName);
+        LoggerHelper.getLocal().log(Level.INFO, "Creating node with name " + objectName);
         objectNode = objectMapper.createObjectNode();
         ((ObjectNode) serverPodNode).set(objectName, objectNode);
       } else {
@@ -454,14 +459,14 @@ public class DomainCrd {
    * tree.
    *
    * @param serverPodsParentNode parent node of the server pod
-   * @param arrayNodeName Name of the object for which to get the JSON node
+   * @param arrayNodeName        Name of the object for which to get the JSON node
    * @return object node
    */
   private ArrayNode getArrayNodeFromServerPod(JsonNode serverPodsParentNode, String arrayNodeName) {
     JsonNode serverPodNode = null;
     ArrayNode arrayNode = null;
     if (serverPodsParentNode.path("serverPod").isMissingNode()) {
-      logger.info("Missing serverPod Node");
+      LoggerHelper.getLocal().log(Level.INFO, "Missing serverPod Node");
       serverPodNode = objectMapper.createObjectNode();
       ((ObjectNode) serverPodsParentNode).set("serverPod", serverPodNode);
       arrayNode = objectMapper.createArrayNode();
@@ -469,7 +474,7 @@ public class DomainCrd {
     } else {
       serverPodNode = serverPodsParentNode.path("serverPod");
       if (serverPodNode.path(arrayNodeName).isMissingNode()) {
-        logger.log(Level.INFO, "Creating node with name {0}", arrayNodeName);
+        LoggerHelper.getLocal().log(Level.INFO, "Creating node with name {0}", arrayNodeName);
         arrayNode = objectMapper.createArrayNode();
         ((ObjectNode) serverPodNode).set(arrayNodeName, arrayNode);
       } else {
@@ -482,8 +487,8 @@ public class DomainCrd {
   /**
    * Utility method to create a file and write to it.
    *
-   * @param dir - Directory in which to create the file
-   * @param file - Name of the file to write the content to
+   * @param dir     - Directory in which to create the file
+   * @param file    - Name of the file to write the content to
    * @param content - String content to write to the file
    * @throws IOException - When file cannot opened or written
    */
@@ -492,4 +497,5 @@ public class DomainCrd {
     Charset charset = StandardCharsets.UTF_8;
     Files.write(path, content.getBytes(charset));
   }
+
 }

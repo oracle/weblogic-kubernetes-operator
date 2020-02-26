@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -28,6 +28,9 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   private AdminServer server2;
   private Domain domain = new Domain();
 
+  /**
+   * Administration server tests.
+   */
   public AdminServerTest() {
     super(new AdminServer(), new AdminServer());
     server1 = getInstance1();
@@ -106,16 +109,16 @@ public class AdminServerTest extends BaseConfigurationTestBase {
 
   @Test
   public void whenHaveSameAdminServiceChannels_objectsAreEqual() {
-    server1.getAdminService().withChannel(CHANNEL1, PORT1).withChannel(CHANNEL2, PORT2);
-    server2.getAdminService().withChannel(CHANNEL2, PORT2).withChannel(CHANNEL1, PORT1);
+    server1.createAdminService().withChannel(CHANNEL1, PORT1).withChannel(CHANNEL2, PORT2);
+    server2.createAdminService().withChannel(CHANNEL2, PORT2).withChannel(CHANNEL1, PORT1);
 
     assertThat(server1, equalTo(server2));
   }
 
   @Test
   public void whenHaveDifferentAdminServiceChannels_objectsAreNotEqual() {
-    server1.getAdminService().withChannel(CHANNEL1, PORT1).withChannel(CHANNEL2, PORT2);
-    server2.getAdminService().withChannel(CHANNEL1, PORT2).withChannel(CHANNEL2, PORT1);
+    server1.createAdminService().withChannel(CHANNEL1, PORT1).withChannel(CHANNEL2, PORT2);
+    server2.createAdminService().withChannel(CHANNEL1, PORT2).withChannel(CHANNEL2, PORT1);
 
     assertThat(server1, not(equalTo(server2)));
   }
@@ -134,16 +137,16 @@ public class AdminServerTest extends BaseConfigurationTestBase {
 
   @Test
   public void whenHaveSameAdminServiceLabels_objectsAreEqual() {
-    server1.getAdminService().withServiceLabel(NAME1, VALUE1).withServiceLabel(NAME2, VALUE2);
-    server2.getAdminService().withServiceLabel(NAME2, VALUE2).withServiceLabel(NAME1, VALUE1);
+    server1.createAdminService().withServiceLabel(NAME1, VALUE1).withServiceLabel(NAME2, VALUE2);
+    server2.createAdminService().withServiceLabel(NAME2, VALUE2).withServiceLabel(NAME1, VALUE1);
 
     assertThat(server1, equalTo(server2));
   }
 
   @Test
   public void whenHaveDifferentAdminServiceLabels_objectsAreNotEqual() {
-    server1.getAdminService().withServiceLabel(NAME1, VALUE1).withServiceLabel(NAME2, VALUE2);
-    server2.getAdminService().withServiceLabel(NAME1, VALUE2).withServiceLabel(NAME2, VALUE1);
+    server1.createAdminService().withServiceLabel(NAME1, VALUE1).withServiceLabel(NAME2, VALUE2);
+    server2.createAdminService().withServiceLabel(NAME1, VALUE2).withServiceLabel(NAME2, VALUE1);
 
     assertThat(server1, not(equalTo(server2)));
   }
@@ -163,11 +166,11 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   @Test
   public void whenHaveSameAdminServiceAnnotations_objectsAreEqual() {
     server1
-        .getAdminService()
+        .createAdminService()
         .withServiceAnnotation(NAME1, VALUE1)
         .withServiceAnnotation(NAME2, VALUE2);
     server2
-        .getAdminService()
+        .createAdminService()
         .withServiceAnnotation(NAME2, VALUE2)
         .withServiceAnnotation(NAME1, VALUE1);
 
@@ -177,14 +180,21 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   @Test
   public void whenHaveDifferentAdminServiceAnnotations_objectsAreNotEqual() {
     server1
-        .getAdminService()
+        .createAdminService()
         .withServiceAnnotation(NAME1, VALUE1)
         .withServiceAnnotation(NAME2, VALUE2);
     server2
-        .getAdminService()
+        .createAdminService()
         .withServiceAnnotation(NAME1, VALUE2)
         .withServiceAnnotation(NAME2, VALUE1);
 
     assertThat(server1, not(equalTo(server2)));
+  }
+
+  @Test
+  public void callingGetAdminService_doesNotChangeTheObject() {
+    server1.getAdminService();
+
+    assertThat(server1, equalTo(server2));
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -14,13 +14,13 @@ import java.util.logging.Level;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
-import io.kubernetes.client.models.V1Event;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1ObjectReference;
-import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -59,6 +59,10 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return StaticStubSupport.install(containingClass, fieldName, newValue);
   }
 
+  /**
+   * Setup test environment.
+   * @throws Exception if StaticStubSupport fails to install
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().withLogLevel(Level.OFF));
@@ -78,12 +82,18 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return stoppingMemento.getOriginalValue();
   }
 
+  /**
+   * Cleanup test environment.
+   * @throws Exception if test support fails.
+   */
   @After
   public void tearDown() throws Exception {
     isNamespaceStopping.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
     shutDownThreads();
 
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
   }
@@ -228,8 +238,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     readExistingResources();
 
     assertThat(testSupport.getResources(KubernetesTestSupport.SERVICE), empty());
-    assertThat(testSupport.getResources(KubernetesTestSupport.PV), empty());
-    assertThat(testSupport.getResources(KubernetesTestSupport.PVC), empty());
   }
 
   public abstract static class DomainProcessorStub implements DomainProcessor {

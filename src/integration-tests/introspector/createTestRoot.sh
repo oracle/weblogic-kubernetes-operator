@@ -15,9 +15,9 @@
 
 DOMAIN_UID=${1?}
 
-mkdir -p /pv-root/acceptance_test_pv/domain-${DOMAIN_UID}-storage/domains || exit 1
-mkdir -p /pv-root/acceptance_test_pv/domain-${DOMAIN_UID}-storage/mysql || exit 1
-chmod 777 /pv-root/acceptance_test_pv || exit 1
-chmod 777 /pv-root/acceptance_test_pv/domain-${DOMAIN_UID}-storage || exit 1
-chmod 777 /pv-root/acceptance_test_pv/domain-${DOMAIN_UID}-storage/domains || exit 1
-chmod 777 /pv-root/acceptance_test_pv/domain-${DOMAIN_UID}-storage/mysql || exit 1
+mkdir -p /pv-root/introspect/acceptance_test_pv/domain-${DOMAIN_UID}-storage/domains || exit 1
+mkdir -p /pv-root/introspect/acceptance_test_pv/domain-${DOMAIN_UID}-storage/mysql || exit 1
+chmod 777 /pv-root/introspect/acceptance_test_pv || exit 1
+chmod 777 /pv-root/introspect/acceptance_test_pv/domain-${DOMAIN_UID}-storage || exit 1
+chmod 777 /pv-root/introspect/acceptance_test_pv/domain-${DOMAIN_UID}-storage/domains || exit 1
+chmod 777 /pv-root/introspect/acceptance_test_pv/domain-${DOMAIN_UID}-storage/mysql || exit 1

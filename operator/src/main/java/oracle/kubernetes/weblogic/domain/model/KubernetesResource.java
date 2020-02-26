@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -22,7 +22,7 @@ class KubernetesResource {
   @Description(
       "The labels to be attached to generated resources. The label names must "
           + "not start with 'weblogic.'.")
-  private Map<String, String> labels = new HashMap<>();
+  private final Map<String, String> labels = new HashMap<>();
 
   /**
    * The annotations to be attached to generated resources.
@@ -30,7 +30,7 @@ class KubernetesResource {
    * @since 2.0
    */
   @Description("The annotations to be attached to generated resources.")
-  private Map<String, String> annotations = new HashMap<>();
+  private final Map<String, String> annotations = new HashMap<>();
 
   void fillInFrom(KubernetesResource kubernetesResource1) {
     kubernetesResource1.getLabels().forEach(this::addLabelIfMissing);

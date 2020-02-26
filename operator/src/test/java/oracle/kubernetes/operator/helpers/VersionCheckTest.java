@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.VersionInfo;
+import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
@@ -51,6 +51,15 @@ public class VersionCheckTest {
   private Matcher<KubernetesVersion> matcher;
   private String[] ignoredLogMessages;
 
+  /**
+   * Version check test constructor.
+   * @param testType test type
+   * @param majorVersion major
+   * @param minorVersion minor
+   * @param revision rev
+   * @param matcher matcher
+   * @param ignoredLogMessages ignored log messages
+   */
   public VersionCheckTest(
       TestType testType,
       String majorVersion,
@@ -66,6 +75,10 @@ public class VersionCheckTest {
     this.ignoredLogMessages = ignoredLogMessages;
   }
 
+  /**
+   * Initialize data.
+   * @return data
+   */
   @Parameters(name = "{0}: {1}.{2}.{3}")
   public static Collection<Object[]> data() {
     return Arrays.asList(
@@ -76,11 +89,11 @@ public class VersionCheckTest {
           {LOG_MSG_TEST, "1", "10", "1+cor.0", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()},
           {LOG_MSG_TEST, "1", "10", "11", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()},
           {LOG_MSG_TEST, "1", "11", "4", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()},
-          {LOG_MSG_TEST, "1", "11", "6", containsInfo(K8S_VERSION_CHECK), noIgnores()},
+          {LOG_MSG_TEST, "1", "13", "5", containsInfo(K8S_VERSION_CHECK), noIgnores()},
           {LOG_MSG_TEST, "1", "12", "2", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()},
-          {LOG_MSG_TEST, "1", "12", "3", containsInfo(K8S_VERSION_CHECK), noIgnores()},
-          {VERSION_TEST, "1", "13", "3", returnsVersion(1, 13), ignoring(K8S_VERSION_CHECK)},
-          {LOG_MSG_TEST, "1", "13", "3", containsInfo(K8S_VERSION_CHECK), noIgnores()},
+          {LOG_MSG_TEST, "1", "14", "8", containsInfo(K8S_VERSION_CHECK), noIgnores()},
+          {VERSION_TEST, "1", "15", "7", returnsVersion(1, 15), ignoring(K8S_VERSION_CHECK)},
+          {LOG_MSG_TEST, "1", "13", "6", containsInfo(K8S_VERSION_CHECK), noIgnores()},
           {VERSION_TEST, "2", "7", "", returnsVersion(2, 7), ignoring(K8S_VERSION_CHECK)},
           {LOG_MSG_TEST, "2", "", "", containsInfo(K8S_VERSION_CHECK), noIgnores()},
         });
@@ -102,6 +115,10 @@ public class VersionCheckTest {
     return versionInfo;
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS);
@@ -110,16 +127,22 @@ public class VersionCheckTest {
     mementos.add(testSupport.installSynchronousCallDispatcher());
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
   public void test() {
     specifyK8sVersion(majorVersion, minorVersion, revision);
-    for (String ignoredLogMessage : ignoredLogMessages)
+    for (String ignoredLogMessage : ignoredLogMessages) {
       consoleControl.ignoreMessage(ignoredLogMessage);
+    }
 
     testType.runTest(logRecords, matcher);
   }
@@ -166,7 +189,9 @@ public class VersionCheckTest {
 
     @Override
     protected boolean matchesSafely(KubernetesVersion item, Description mismatchDescription) {
-      if (item.getMajor() == expectedMajor && item.getMinor() == expectedMinor) return true;
+      if (item.getMajor() == expectedMajor && item.getMinor() == expectedMinor) {
+        return true;
+      }
 
       describe(mismatchDescription, item.getMajor(), item.getMinor());
       return false;

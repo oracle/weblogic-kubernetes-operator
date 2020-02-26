@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -39,13 +39,13 @@ public class SchemaGenerator {
   private static final String JSON_SCHEMA_REFERENCE = "http://json-schema.org/draft-04/schema#";
 
   // A map of classes to their $ref values
-  private Map<Class<?>, String> references = new HashMap<>();
+  private final Map<Class<?>, String> references = new HashMap<>();
 
   // A map of found classes to their definitions or the constant EXTERNAL_CLASS.
-  private Map<Class<?>, Object> definedObjects = new HashMap<>();
+  private final Map<Class<?>, Object> definedObjects = new HashMap<>();
 
   // a map of external class names to the external schema that defines them
-  private Map<String, String> schemaUrls = new HashMap<>();
+  private final Map<String, String> schemaUrls = new HashMap<>();
 
   // true if deprecated fields should be included in the schema
   private boolean includeDeprecated;
@@ -74,7 +74,9 @@ public class SchemaGenerator {
     try (BufferedReader schemaReader =
         new BufferedReader(new InputStreamReader(cacheUrl.openStream()))) {
       String inputLine;
-      while ((inputLine = schemaReader.readLine()) != null) sb.append(inputLine).append('\n');
+      while ((inputLine = schemaReader.readLine()) != null) {
+        sb.append(inputLine).append('\n');
+      }
     }
 
     return fromJson(sb.toString());
@@ -94,7 +96,9 @@ public class SchemaGenerator {
   public void useKubernetesVersion(String version) throws IOException {
     KubernetesSchemaReference reference = KubernetesSchemaReference.create(version);
     URL cacheUrl = reference.getKubernetesSchemaCacheUrl();
-    if (cacheUrl == null) throw new IOException("No schema cached for Kubernetes " + version);
+    if (cacheUrl == null) {
+      throw new IOException("No schema cached for Kubernetes " + version);
+    }
 
     addExternalSchema(reference.getKubernetesSchemaUrl(), cacheUrl);
   }
@@ -110,7 +114,9 @@ public class SchemaGenerator {
     Map<String, Map<String, Object>> objectObjectMap = loadCachedSchema(cacheUrl);
     Map<String, Object> definitions = objectObjectMap.get("definitions");
     for (Map.Entry<String, Object> entry : definitions.entrySet()) {
-      if (isDefinitionToUse(entry.getValue())) schemaUrls.put(entry.getKey(), schemaUrl.toString());
+      if (isDefinitionToUse(entry.getValue())) {
+        schemaUrls.put(entry.getKey(), schemaUrl.toString());
+      }
     }
   }
 
@@ -178,9 +184,11 @@ public class SchemaGenerator {
     if (!definedObjects.isEmpty()) {
       Map<String, Object> definitions = new TreeMap<>();
       result.put("definitions", definitions);
-      for (Class<?> type : definedObjects.keySet())
-        if (!definedObjects.get(type).equals(EXTERNAL_CLASS))
+      for (Class<?> type : definedObjects.keySet()) {
+        if (!definedObjects.get(type).equals(EXTERNAL_CLASS)) {
           definitions.put(getDefinitionKey(type), definedObjects.get(type));
+        }
+      }
     }
 
     return result;
@@ -210,9 +218,11 @@ public class SchemaGenerator {
 
   private String getPropertyName(Field field) {
     SerializedName serializedName = field.getAnnotation(SerializedName.class);
-    if (serializedName != null && serializedName.value().length() > 0)
+    if (serializedName != null && serializedName.value().length() > 0) {
       return serializedName.value();
-    else return field.getName();
+    } else {
+      return field.getName();
+    }
   }
 
   private Object getSubSchema(Field field) {
@@ -222,9 +232,15 @@ public class SchemaGenerator {
 
     sub.generateTypeIn(result, field.getType());
     String description = getDescription(field);
-    if (description != null) result.put("description", description);
-    if (isString(field.getType())) addStringRestrictions(result, field);
-    if (isNumeric(field.getType())) addRange(result, field);
+    if (description != null) {
+      result.put("description", description);
+    }
+    if (isString(field.getType())) {
+      addStringRestrictions(result, field);
+    }
+    if (isNumeric(field.getType())) {
+      addRange(result, field);
+    }
 
     return result;
   }
@@ -253,10 +269,14 @@ public class SchemaGenerator {
 
   private void addStringRestrictions(Map<String, Object> result, Field field) {
     Class<? extends Enum> enumClass = getEnumClass(field);
-    if (enumClass != null) addEnumValues(result, enumClass, getEnumQualifier(field));
+    if (enumClass != null) {
+      addEnumValues(result, enumClass, getEnumQualifier(field));
+    }
 
     String pattern = getPattern(field);
-    if (pattern != null) result.put("pattern", pattern);
+    if (pattern != null) {
+      result.put("pattern", pattern);
+    }
   }
 
   private Class<? extends java.lang.Enum> getEnumClass(Field field) {
@@ -281,15 +301,25 @@ public class SchemaGenerator {
 
   private void addRange(Map<String, Object> result, Field field) {
     Range annotation = field.getAnnotation(Range.class);
-    if (annotation == null) return;
+    if (annotation == null) {
+      return;
+    }
 
-    if (annotation.minimum() > Integer.MIN_VALUE) result.put("minimum", annotation.minimum());
-    if (annotation.maximum() < Integer.MAX_VALUE) result.put("maximum", annotation.maximum());
+    if (annotation.minimum() > Integer.MIN_VALUE) {
+      result.put("minimum", annotation.minimum());
+    }
+    if (annotation.maximum() < Integer.MAX_VALUE) {
+      result.put("maximum", annotation.maximum());
+    }
   }
 
   private void addReference(Class<?> type) {
-    if (definedObjects.containsKey(type)) return;
-    if (addedKubernetesClass(type)) return;
+    if (definedObjects.containsKey(type)) {
+      return;
+    }
+    if (addedKubernetesClass(type)) {
+      return;
+    }
 
     Map<String, Object> definition = new HashMap<>();
     definedObjects.put(type, definition);
@@ -298,7 +328,9 @@ public class SchemaGenerator {
   }
 
   private boolean addedKubernetesClass(Class<?> theClass) {
-    if (!theClass.getName().startsWith("io.kubernetes.client")) return false;
+    if (!theClass.getName().startsWith("io.kubernetes.client")) {
+      return false;
+    }
 
     for (String externalName : schemaUrls.keySet()) {
       if (KubernetesApiNames.matches(externalName, theClass)) {
@@ -330,7 +362,9 @@ public class SchemaGenerator {
     Method qualifierMethod = getQualifierMethod(enumType, qualifier);
 
     for (Object enumConstant : enumType.getEnumConstants()) {
-      if (satisfiesQualifier(enumConstant, qualifierMethod)) values.add(enumConstant.toString());
+      if (satisfiesQualifier(enumConstant, qualifierMethod)) {
+        values.add(enumConstant.toString());
+      }
     }
 
     return values.toArray(new String[0]);
@@ -339,7 +373,9 @@ public class SchemaGenerator {
   private Method getQualifierMethod(Class<?> enumType, String methodName) {
     try {
       Method method = enumType.getDeclaredMethod(methodName);
-      if (!isBooleanMethod(method)) return null;
+      if (!isBooleanMethod(method)) {
+        return null;
+      }
       return method;
     } catch (NoSuchMethodException e) {
       return null;
@@ -367,28 +403,38 @@ public class SchemaGenerator {
       final Map<String, Object> properties = new HashMap<>();
       List<String> requiredFields = new ArrayList<>();
       result.put("type", "object");
-      if (includeAdditionalProperties) result.put("additionalProperties", "false");
+      if (includeAdditionalProperties) {
+        result.put("additionalProperties", "false");
+      }
       Optional.ofNullable(getDescription(type)).ifPresent(s -> result.put("description", s));
       result.put("properties", properties);
 
       for (Field field : getPropertyFields(type)) {
-        if (!isSelfReference(field)) generateFieldIn(properties, field);
+        if (!isSelfReference(field)) {
+          generateFieldIn(properties, field);
+        }
         if (isRequired(field) && includeInSchema(field)) {
           requiredFields.add(getPropertyName(field));
         }
       }
 
-      if (!requiredFields.isEmpty()) result.put("required", requiredFields.toArray(new String[0]));
+      if (!requiredFields.isEmpty()) {
+        result.put("required", requiredFields.toArray(new String[0]));
+      }
     }
   }
 
   private Collection<Field> getPropertyFields(Class<?> type) {
     Set<Field> result = new HashSet<>();
-    for (Class<?> cl = type; cl != null && !cl.equals(Object.class); cl = cl.getSuperclass())
+    for (Class<?> cl = type; cl != null && !cl.equals(Object.class); cl = cl.getSuperclass()) {
       result.addAll(Arrays.asList(cl.getDeclaredFields()));
+    }
 
-    for (Iterator<Field> each = result.iterator(); each.hasNext(); )
-      if (isSelfReference(each.next())) each.remove();
+    for (Iterator<Field> each = result.iterator(); each.hasNext(); ) {
+      if (isSelfReference(each.next())) {
+        each.remove();
+      }
+    }
 
     return result;
   }
@@ -410,7 +456,7 @@ public class SchemaGenerator {
   }
 
   private class SubSchemaGenerator {
-    Field field;
+    final Field field;
 
     SubSchemaGenerator(Field field) {
       this.field = field;
@@ -418,13 +464,21 @@ public class SchemaGenerator {
 
     @SuppressWarnings("unchecked")
     private void generateTypeIn(Map<String, Object> result, Class<?> type) {
-      if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) result.put("type", "boolean");
-      else if (isNumeric(type)) result.put("type", "number");
-      else if (isString(type)) result.put("type", "string");
-      else if (type.isEnum()) generateEnumTypeIn(result, (Class<? extends Enum>) type);
-      else if (type.isArray()) this.generateArrayTypeIn(result, type);
-      else if (Collection.class.isAssignableFrom(type)) generateCollectionTypeIn(result);
-      else generateObjectFieldIn(result, type);
+      if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) {
+        result.put("type", "boolean");
+      } else if (isNumeric(type)) {
+        result.put("type", "number");
+      } else if (isString(type)) {
+        result.put("type", "string");
+      } else if (type.isEnum()) {
+        generateEnumTypeIn(result, (Class<? extends Enum>) type);
+      } else if (type.isArray()) {
+        this.generateArrayTypeIn(result, type);
+      } else if (Collection.class.isAssignableFrom(type)) {
+        generateCollectionTypeIn(result);
+      } else {
+        generateObjectFieldIn(result, type);
+      }
     }
 
     private void generateObjectFieldIn(Map<String, Object> result, Class<?> type) {
