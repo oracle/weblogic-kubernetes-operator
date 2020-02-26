@@ -6,10 +6,20 @@
     <description>Recent content on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 15 Aug 2019 13:30:04 -0400</lastBuildDate>
+    <lastBuildDate>Thu, 19 Sep 2019 10:41:32 -0500</lastBuildDate>
     
 	<atom:link href="/weblogic-kubernetes-operator/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Managing Domain Namespaces</title>
+      <link>/weblogic-kubernetes-operator/faq/namespace-management/</link>
+      <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/namespace-management/</guid>
+      <description>Each WebLogic operator deployment manages a number of Kubernetes namespaces (for information about setting domain namespaces, see Operator Helm configuration values). A number of Kubernetes resources must be present in a namespace before any WebLogic domain custom resources can be successfully deployed into it. Those Kubernetes resources are created either as part of the installation of the operator&amp;rsquo;s Helm chart, or created by the operator at runtime.
+This FAQ describes some considerations to be aware of when you manage the namespaces while the WebLogic operator is running.</description>
+    </item>
     
     <item>
       <title>Istio support</title>
@@ -28,6 +38,17 @@
       <guid>/weblogic-kubernetes-operator/userguide/cicd/layering/</guid>
       <description>Docker images are composed of layers, as shown in the diagram below. If you download the standard weblogic:12.2.1.3 image from the Oracle Container Registry, then you can see these layers using the command docker inspect container-registry.oracle.com/middleware/weblogic:12.2.1.3 (the domain layer will not be there). You are not required to use layers, but efficient use of layers is considered a best practice.
 Why is it important to maintain the layering of images?</description>
+    </item>
+    
+    <item>
+      <title>Cannot Pull Image</title>
+      <link>/weblogic-kubernetes-operator/faq/cannot-pull-image/</link>
+      <pubDate>Sat, 23 Mar 2019 08:08:19 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/cannot-pull-image/</guid>
+      <description>My domain will not start and I see errors like ImagePullBackoff or Cannot pull image
+ When you see these kinds of errors, it means that Kubernetes cannot find your Docker image. The most common causes are:
+ The image value in your domain resource is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission in order to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
     </item>
     
     <item>
@@ -313,8 +334,30 @@ The Oracle Database Docker images are only supported for non-production use. For
       <description>Get these images and put them into your local registry.  If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store and accept the license agreement for the WebLogic Server image.
  Log in to the Docker store from your Docker client:
 $ docker login  Pull the operator image:
-$ docker pull oracle/weblogic-kubernetes-operator:2.4.0  Pull the Traefik load balancer image:
+$ docker pull oracle/weblogic-kubernetes-operator:2.5.0  Pull the Traefik load balancer image:
 $ docker pull traefik:1.</description>
+    </item>
+    
+    <item>
+      <title>Publish logs to Elasticsearch</title>
+      <link>/weblogic-kubernetes-operator/samples/simple/elastic-stack/soa-domain/weblogic-logging-exporter-setup/</link>
+      <pubDate>Thu, 05 Dec 2019 06:46:23 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/samples/simple/elastic-stack/soa-domain/weblogic-logging-exporter-setup/</guid>
+      <description>The WebLogic Logging Exporter adds a log event handler to WebLogic Server. WebLogic Server logs can be pushed to Elasticsearch in Kubernetes directly by using the Elasticsearch REST API. For more details, refer to the WebLogic Logging Exporter project.
+This sample shows you how to publish WebLogic Server logs to Elasticsearch and view them in Kibana. For publishing operator logs, see this sample.
+Prerequisites This document assumes that you have already set up Elasticsearch and Kibana for logs collection.</description>
+    </item>
+    
+    <item>
+      <title>Coherence Requirements</title>
+      <link>/weblogic-kubernetes-operator/faq/coherence-requirements/</link>
+      <pubDate>Mon, 12 Aug 2019 12:41:38 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/coherence-requirements/</guid>
+      <description>If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.
+Note that some Fusion Middleware products, like SOA Suite, use Coherence and so these requirements apply to them.
+Unicast and Well Known Address When the first Coherence process starts, it will form a cluster. The next Coherence process to start (i.e. in a different pod) will use UDP to try to contact the senior member.</description>
     </item>
     
     <item>
@@ -374,8 +417,31 @@ Because we want to balance separating destabilizing work into feature branches a
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/quickstart/install/</guid>
-      <description>Grant the Helm service account the cluster-admin role. $ cat &amp;lt;&amp;lt;EOF | kubectl apply -f - apiVersion: rbac.authorization.k8s.io/v1 kind: ClusterRoleBinding metadata: name: helm-user-cluster-admin-role roleRef: apiGroup: rbac.authorization.k8s.io kind: ClusterRole name: cluster-admin subjects: - kind: ServiceAccount name: default namespace: kube-system EOF  Create a Traefik (Ingress-based) load balancer. Use helm to install the Traefik load balancer. Use the values.yaml in the sample but set kubernetes.namespaces specifically.
-$ helm install stable/traefik \ --name traefik-operator \ --namespace traefik \ --values kubernetes/samples/charts/traefik/values.</description>
+      <description>Grant the Helm service account the cluster-admin role. $ cat &amp;lt;&amp;lt;EOF | kubectl apply -f - apiVersion: rbac.authorization.k8s.io/v1 kind: ClusterRoleBinding metadata: name: helm-user-cluster-admin-role roleRef: apiGroup: rbac.authorization.k8s.io kind: ClusterRole name: cluster-admin subjects: - kind: ServiceAccount name: default namespace: kube-system EOF  Use Helm to install the operator and Traefik load balancer. First, set up Helm.
+For Helm version 2.x:
+$ helm init  For Helm version 3.x:
+$ helm repo add stable https://kubernetes-charts.</description>
+    </item>
+    
+    <item>
+      <title>Monitor a SOA domain</title>
+      <link>/weblogic-kubernetes-operator/samples/simple/elastic-stack/soa-domain/weblogic-monitoring-exporter-setup/</link>
+      <pubDate>Thu, 05 Dec 2019 06:46:23 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/samples/simple/elastic-stack/soa-domain/weblogic-monitoring-exporter-setup/</guid>
+      <description>Monitor a SOA domain using Prometheus and Grafana by exporting the metrics from the domain instance using the WebLogic Monitoring Exporter. This sample shows you how to set up the WebLogic Monitoring Exporter to push the data to Prometheus.
+Prerequisites This document assumes that the Prometheus Operator is deployed on the Kubernetes cluster. If it is not already deployed, follow the steps below for deploying the Prometheus Operator.
+Clone the kube-prometheus project $ git clone https://github.</description>
+    </item>
+    
+    <item>
+      <title>Disabling Fast Application Notifications</title>
+      <link>/weblogic-kubernetes-operator/faq/fan/</link>
+      <pubDate>Fri, 11 Oct 2019 17:20:00 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/fan/</guid>
+      <description>To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure). GRID is typically associated with (and required by) Oracle RAC databases but can also be used in other configurations. Oracle Autonomous Database-Serverless (ATP-S) does not provide GRID.
+When connecting to a database that does not have GRID, the only type of WebLogic Server data source that is supported is the Generic Data Sources. Multi Data Sources and Active GridLink data sources cannot be used because they work with RAC.</description>
     </item>
     
     <item>
@@ -415,8 +481,8 @@ The best practice/recommended approach is to create a &amp;ldquo;primordial doma
       <guid>/weblogic-kubernetes-operator/quickstart/prepare/</guid>
       <description> Create a namespace that can host one or more domains:
 $ kubectl create namespace sample-domain1-ns  Use helm to configure the operator to manage domains in this namespace:
-$ helm upgrade \ --reuse-values \ --set &amp;quot;domainNamespaces={sample-domain1-ns}&amp;quot; \ --wait \ sample-weblogic-operator \ kubernetes/charts/weblogic-operator  Configure Traefik to manage Ingresses created in this namespace:
-$ helm upgrade \ --reuse-values \ --set &amp;quot;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;quot; \ --wait \ traefik-operator \ stable/traefik   </description>
+$ helm upgrade sample-weblogic-operator kubernetes/charts/weblogic-operator \ --namespace sample-weblogic-operator-ns \ --reuse-values \ --set &amp;quot;domainNamespaces={sample-domain1-ns}&amp;quot; \ --wait  Configure Traefik to manage Ingresses created in this namespace:
+$ helm upgrade traefik-operator stable/traefik \ --namespace traefik \ --reuse-values \ --set &amp;quot;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;quot; \ --wait   </description>
     </item>
     
     <item>
@@ -427,6 +493,16 @@ $ helm upgrade \ --reuse-values \ --set &amp;quot;kubernetes.namespaces={traefik
       <guid>/weblogic-kubernetes-operator/faq/oci-fss-pv/</guid>
       <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), and you use OCI File Storage (FSS) for persistent volumes to store the WebLogic domain home, then the file system handling demonstrated in the operator persistent volume sample will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.
 File permission handling on persistent volumes can differ between cloud providers and even with the underlying storage handling on Linux based systems.</description>
+    </item>
+    
+    <item>
+      <title>External WebLogic Clients</title>
+      <link>/weblogic-kubernetes-operator/faq/external-clients/</link>
+      <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/external-clients/</guid>
+      <description>Approaches There are two supported approaches for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster: Load Balancer Tunneling and Kubernetes NodePorts.
+This FAQ is for remote EJB and JMS clients - not JTA clients. The operator does not currently support external WebLogic JTA access to a WebLogic cluster, as (A) external JTA access requires each server in the cluster to be individually addressable by the client, but this conflicts with (B) the current operator requirement that a network channel in a cluster have the same port across all servers in the cluster.</description>
     </item>
     
     <item>
@@ -494,9 +570,11 @@ $ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-
       
       <guid>/weblogic-kubernetes-operator/quickstart/cleanup/</guid>
       <description>Remove the domain.  Remove the domain&amp;rsquo;s Ingress by using helm:
-$ helm delete --purge sample-domain1-ingress  Remove the domain resources by using the sample delete-weblogic-domain-resources script:
+For Helm 2.x:
+$ helm delete --purge sample-domain1-ingress  For Helm 3.x:
+$ helm uninstall sample-domain1-ingress -n sample-domain1-ns  Remove the domain resources by using the sample delete-weblogic-domain-resources script:
 $ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1  Use kubectl to confirm that the server pods and domain resource are gone:
-$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns   Remove the domain namespace.  Configure the Traefik load balancer to stop managing the Ingresses in the domain namespace:</description>
+$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns   Remove the domain namespace.</description>
     </item>
     
     <item>
@@ -531,13 +609,23 @@ git checkout master git pull origin master git checkout -b your-branch  Make you
     </item>
     
     <item>
-      <title>Disabling Fast Application Notifications</title>
-      <link>/weblogic-kubernetes-operator/faq/fan/</link>
-      <pubDate>Fri, 11 Oct 2019 17:20:00 -0500</pubDate>
+      <title>Providing access to a Persistent Volume Claim</title>
+      <link>/weblogic-kubernetes-operator/faq/volumes/</link>
+      <pubDate>Tue, 07 Jan 2020 15:02:28 -0500</pubDate>
       
-      <guid>/weblogic-kubernetes-operator/faq/fan/</guid>
-      <description>To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure). GRID is typically associated with (and required by) Oracle RAC databases but can also be used in other configurations. Oracle Autonomous Database-Serverless (ATP-S) does not provide GRID.
-When connecting to a database that does not have GRID, the only type of WebLogic Server data source that is supported is the Generic Data Sources. Multi Data Sources and Active GridLink data sources cannot be used because they work with RAC.</description>
+      <guid>/weblogic-kubernetes-operator/faq/volumes/</guid>
+      <description>I need to provide an instance with access to a Persistent Volume Claim.
+ Some applications need access to a file, either to read data or to provide additional logging beyond what is built into the operator. One common way of doing that within Kubernetes is to create a PersistentVolumeClaim (PVC) and map it to a file. The domain configuration can then be used to provide access to the claim across the domain, within a single cluster, or for a single server.</description>
+    </item>
+    
+    <item>
+      <title>Providing access to a Config Map</title>
+      <link>/weblogic-kubernetes-operator/faq/configmaps/</link>
+      <pubDate>Tue, 07 Jan 2020 15:02:28 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/configmaps/</guid>
+      <description>I need to provide an instance with access to a Config Map.
+ Configuration files can be supplied to Kubernetes pods and jobs by a ConfigMap, which consists of a set of key-value pairs. Each entry may be accessed by one or more operator-managed nodes as a read-only text file. Access can be provided across the domain, within a single cluster, or for a single server. In each case, the access is configured within the serverPod element of the desired scope.</description>
     </item>
     
     <item>
@@ -551,44 +639,12 @@ OKE Kubernetes worker nodes normally do not have public IP addresses. This means
     </item>
     
     <item>
-      <title>Managing Domain Namespaces</title>
-      <link>/weblogic-kubernetes-operator/faq/namespace-management/</link>
-      <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/faq/namespace-management/</guid>
-      <description>Each WebLogic operator deployment manages a number of Kubernetes namespaces (for information about setting domain namespaces, see Operator Helm configuration values). A number of Kubernetes resources must be present in a namespace before any WebLogic domain custom resources can be successfully deployed into it. Those Kubernetes resources are created either as part of the installation of the operator&amp;rsquo;s Helm chart, or created by the operator at runtime.
-This FAQ describes some considerations to be aware of when you manage the namespaces while the WebLogic operator is running.</description>
-    </item>
-    
-    <item>
-      <title>Coherence Requirements</title>
-      <link>/weblogic-kubernetes-operator/faq/coherence-requirements/</link>
-      <pubDate>Mon, 12 Aug 2019 12:41:38 -0400</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/faq/coherence-requirements/</guid>
-      <description>If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.
-Note that some Fusion Middleware products, like SOA Suite, use Coherence and so these requirements apply to them.
-Unicast and Well Known Address When the first Coherence process starts, it will form a cluster. The next Coherence process to start (i.e. in a different pod) will use UDP to try to contact the senior member.</description>
-    </item>
-    
-    <item>
-      <title>Cannot Pull Image</title>
-      <link>/weblogic-kubernetes-operator/faq/cannot-pull-image/</link>
-      <pubDate>Sat, 23 Mar 2019 08:08:19 -0400</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/faq/cannot-pull-image/</guid>
-      <description>My domain will not start and I see errors like ImagePullBackoff or Cannot pull image
- When you see these kinds of errors, it means that Kubernetes cannot find your Docker image. The most common causes are:
- The image value in your domain resource is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission in order to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
-    </item>
-    
-    <item>
       <title>Release Notes</title>
       <link>/weblogic-kubernetes-operator/release-notes/</link>
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Recent changes    Date Version Introduces backward incompatibilities Change     November 15, 2019 v2.4.0 no Includes fixes for a variety of issues related to FMW infrastructure domains and pod variable substitution. Operator now uses WebLogic Deploy Tooling 1.6.0 and the latest version of the Kubernetes Java Client.   August 27, 2019 v2.3.0 no Added support for Coherence cluster rolling, pod templating and additional pod content, and experimental support for running under an Istio service mesh.</description>
+      <description>Recent changes    Date Version Introduces backward incompatibilities Change     February 26, 2020 v2.5.0 no Support for Helm 3.x and OpenShift 4.3. Operator can be installed in a namespace-dedicated mode where operator requires no cluster-level Kubernetes privileges. This version is not supported on Kubernetes 1.16+, check the prerequisites.   November 15, 2019 v2.4.0 no Includes fixes for a variety of issues related to FMW infrastructure domains and pod variable substitution.</description>
     </item>
     
   </channel>
