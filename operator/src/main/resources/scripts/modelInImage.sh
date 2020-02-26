@@ -20,6 +20,7 @@ PRIMORDIAL_DOMAIN_ZIPPED="/weblogic-operator/introspectormd5/primordial_domainzi
 INTROSPECTJOB_IMAGE_MD5="/tmp/inventory_image.md5"
 INTROSPECTJOB_CM_MD5="/tmp/inventory_cm.md5"
 INTROSPECTJOB_PASSPHRASE_MD5="/tmp/inventory_passphrase.md5"
+LOCAL_PRIM_DOMAIN_ZIP="/tmp/prim_domain.tar.gz"
 
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 
@@ -431,15 +432,14 @@ function getSecretsMD5() {
 function createModelDomain() {
 
   trace "Entering createModelDomain"
-  local prim_domain_zip="/tmp/prim_domain.tar.gz"
   createPrimordialDomain
 
   # if the primordial domain already in the configmap, restore it
 
-  if [ -f "${prim_domain_zip}" ] ; then
+  if [ -f "${LOCAL_PRIM_DOMAIN_ZIP}" ] ; then
     trace "Using newly created domain"
   elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
-    cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${prim_domain_zip} && tar -xzvf ${prim_domain_zip}
+    cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP} && tar -xzvf ${LOCAL_PRIM_DOMAIN_ZIP}
   fi
 
   wdtUpdateModelDomain
@@ -517,7 +517,7 @@ function createPrimordialDomain() {
       empath=$(grep "/em.ear" ${DOMAIN_HOME}/config/config.xml | grep -oPm1 "(?<=<source-path>)[^<]+")
     fi
 
-    tar -pczf /tmp/prim_domain.tar.gz --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/lib  ${empath} \
+    tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/lib  ${empath} \
     ${DOMAIN_HOME}/*
   fi
 
