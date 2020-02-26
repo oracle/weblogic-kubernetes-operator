@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Manage WebLogic domains on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/userguide/managing-domains/</link>
+    <description>Recent content in Manage WebLogic domains on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 23 Feb 2019 16:43:45 -0500</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/userguide/managing-domains/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Prepare to run a domain</title>
+      <link>/weblogic-kubernetes-operator/userguide/managing-domains/prepare/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/userguide/managing-domains/prepare/</guid>
+      <description>Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
+ Create the domain namespace(s). One or more domains can share a namespace. A single instance of the operator can manage multiple namespaces.
+$ kubectl create namespace domain-namespace-1  Replace domain-namespace-1 with name you want to use. The name must follow standard Kubernetes naming conventions, that is, lower case, numbers, and hyphens.
+ Create a Kubernetes secret containing the Administration Server boot credentials.</description>
+    </item>
+    
+    <item>
+      <title>Domain resource</title>
+      <link>/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/</guid>
+      <description>Use this document to set up and configure your own domain resource which can be used to configure the operation of your WebLogic domain. The domain resource does not replace the traditional configuration of WebLogic domains found in the domain configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain. For instance, the WebLogic domain configuration will still specify deployed applications, data sources, and most other details about the domain while the domain resource will specify the number of cluster members currently running or the persistent volumes that will be mounted into the containers running WebLogic Server instances.</description>
+    </item>
+    
+  </channel>
+</rss>
