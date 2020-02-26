@@ -326,7 +326,9 @@ public class Operator {
           .append("/weblogic-kubernetes-operator");
       
       if (BaseTest.HELM_VERSION.equals("V2")) { 
-        cmd.append(" && helm install kubernetes/charts/weblogic-operator ");
+        cmd.append(" && helm install kubernetes/charts/weblogic-operator ")
+           .append(" --name ")
+            .append(operatorMap.get("releaseName"));
       }
       if (BaseTest.HELM_VERSION.equals("V3")) {
         cmd.append(" && helm install ")
