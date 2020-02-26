@@ -20,7 +20,11 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Djava.security.egd=file:/dev/./urandom "
     - name: USER_MEM_ARGS
-      value: "-XX:+UseContainerSupport "
+      value: "-XX:MaxRAMFraction=1 "
+    - name: NODEMGR_JAVA_OPTIONS
+      value: "-Dnodemgr.java.options"
+    - name: NODEMGR_MEM_ARGS
+      value: "${NODEMGR_MEM_ARGS}"
     - name: DOMAIN_NAME
       value: "${DOMAIN_NAME}"
     - name: DOMAIN_HOME

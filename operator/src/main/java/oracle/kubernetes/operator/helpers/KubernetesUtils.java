@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.json.JsonPatchBuilder;
 
-import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.LabelConstants;
 import org.apache.commons.collections.MapUtils;
 import org.joda.time.DateTime;
@@ -85,7 +85,7 @@ public class KubernetesUtils {
    * @return the name, if found
    */
   static String getResourceName(Object resource) {
-    return getResourceMetadata(resource).getName();
+    return Optional.ofNullable(getResourceMetadata(resource)).map(V1ObjectMeta::getName).orElse(null);
   }
 
   /**
@@ -117,8 +117,12 @@ public class KubernetesUtils {
    * @return true if the first object is newer than the second object
    */
   public static boolean isFirstNewer(V1ObjectMeta first, V1ObjectMeta second) {
-    if (second == null) return true;
-    if (first == null) return false;
+    if (second == null) {
+      return true;
+    }
+    if (first == null) {
+      return false;
+    }
 
     DateTime time1 = first.getCreationTimestamp();
     DateTime time2 = second.getCreationTimestamp();

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -25,6 +25,10 @@ import org.yaml.snakeyaml.representer.Representer;
 /** Yaml utilities for the create script tests. */
 public class YamlUtils {
 
+  /**
+   * Create Yaml instance.
+   * @return Yaml instance
+   */
   public static Yaml newYaml() {
     // always make a new yaml object since it appears to be stateful
     // so there are problems if you try to use the same one to
@@ -117,15 +121,19 @@ public class YamlUtils {
     @Override
     protected boolean matchesSafely(Object returnedObject, Description description) {
       String returnedString = objectToYaml(returnedObject);
-      if (Objects.equals(expectedString, returnedString)) return true;
+      if (Objects.equals(expectedString, returnedString)) {
+        return true;
+      }
 
       int index = StringUtils.indexOfDifference(expectedString, returnedString);
-      if (index < 10) description.appendText("\nwas\n").appendText(returnedString);
-      else
+      if (index < 10) {
+        description.appendText("\nwas\n").appendText(returnedString);
+      } else {
         description
             .appendText("\ndiffers at position ")
             .appendValue(index)
             .appendText(toDifference(index, returnedString));
+      }
       return false;
     }
 
@@ -136,7 +144,9 @@ public class YamlUtils {
       int lastMatchLineIndex =
           Math.max(0, returnedString.substring(0, firstDiffLineIndex).lastIndexOf('\n'));
       sb.append(returnedString, lastMatchLineIndex, firstDiffLineIndex);
-      if (sb.length() > 0) sb.append("\n-----\n");
+      if (sb.length() > 0) {
+        sb.append("\n-----\n");
+      }
       sb.append(returnedString, firstDiffLineIndex, firstDiffLineIndex + 100);
       return sb.toString();
     }

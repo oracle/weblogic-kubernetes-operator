@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorRoleBindingNamespace" }}
@@ -17,7 +17,12 @@ subjects:
   namespace: {{ .Release.Namespace | quote }}
   apiGroup: ""
 roleRef:
+  {{- if .dedicated }}
+  kind: "Role"
+  name: "weblogic-operator-role-namespace"
+  {{- else }}
   kind: "ClusterRole"
   name: {{ list .Release.Namespace "weblogic-operator-clusterrole-namespace" | join "-" | quote }}
+  {{- end }}
   apiGroup: "rbac.authorization.k8s.io"
 {{- end }}

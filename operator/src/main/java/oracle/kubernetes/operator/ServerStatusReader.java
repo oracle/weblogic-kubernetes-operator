@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -17,9 +17,9 @@ import java.util.stream.Collectors;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.LastKnownStatus;
@@ -68,6 +68,18 @@ public class ServerStatusReader {
       DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds) {
     return new ServerStatusReaderStep(
         info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, pod, null));
+  }
+
+  /**
+   * Asynchronous step to set Domain status to indicate WebLogic server status.
+   *
+   * @param timeoutSeconds Timeout in seconds
+   * @param next Next step
+   * @return Step
+   */
+  @SuppressWarnings("SameParameterValue")
+  static Step createStatusStep(int timeoutSeconds, Step next) {
+    return new StatusUpdateHookStep(timeoutSeconds, next);
   }
 
   private static class DomainStatusReaderStep extends Step {
@@ -245,6 +257,24 @@ public class ServerStatusReader {
       }
 
       return doNext(packet);
+    }
+  }
+
+  static class StatusUpdateHookStep extends Step {
+    private final int timeoutSeconds;
+
+    StatusUpdateHookStep(int timeoutSeconds, Step next) {
+      super(next);
+      this.timeoutSeconds = timeoutSeconds;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      return doNext(
+          createDomainStatusReaderStep(
+              info, timeoutSeconds, DomainStatusUpdater.createStatusUpdateStep(getNext())),
+          packet);
     }
   }
 }

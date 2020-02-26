@@ -1,14 +1,10 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -18,9 +14,9 @@ import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -263,6 +259,10 @@ public class ConfigMapHelperTest {
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(
@@ -273,9 +273,15 @@ public class ConfigMapHelperTest {
     mementos.add(TestComparator.install());
   }
 
+  /**
+   * Tear down test.
+   * @throws Exception on failure
+   */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
 
     testSupport.throwOnCompletionFailure();
     testSupport.verifyAllDefinedResponsesInvoked();
@@ -356,47 +362,6 @@ public class ConfigMapHelperTest {
 
     testSupport.verifyCompletionThrowable(ApiException.class);
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptConfigMapStep));
-  }
-
-  // @Test
-  @Ignore
-  public void parseIntrospectorResult() {
-    Map<String, String> result =
-        ConfigMapHelper.parseIntrospectorResult(introspectResult, DOMAIN_UID);
-    System.out.println("ConfigMapHelperTest.parseIntrospectorResult: " + result);
-    assertEquals(3, result.size());
-    assertTrue(result.containsKey("userConfigNodeManager.secure"));
-    assertTrue(result.containsKey("userKeyNodeManager.secure"));
-    assertTrue(result.containsKey("topology.yaml"));
-  }
-
-  // @Test
-  @Ignore
-  public void readSingleFile() throws IOException {
-    final Map<String, String> map = new HashMap<>();
-    String text =
-        ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
-            + "#WebLogic User Configuration File; 2\n"
-            + "#Thu Oct 04 21:07:06 GMT 2018\n"
-            + "weblogic.management.username={AES}fq11xKVoE927O07IUKhQ00d4A8QY598Dvd+KSnHNTEA\\=\n"
-            + "weblogic.management.password={AES}LIxVY+aqI8KBkmlBTwkvAnQYQs4PS0FX3Ili4uLBggo\\=\n"
-            + "\n"
-            + ">>> EOF\n"
-            + "\n"
-            + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file "
-            + "/u01/introspect/domain1/userKeyNodeManager.secure\n"
-            + "\n";
-
-    BufferedReader reader = new BufferedReader(new StringReader(text));
-    String line = reader.readLine();
-    System.out.println("ConfigMapHelperTest.readSingleFile line: " + line);
-    assertTrue(line.startsWith(">>>"));
-    String fileName = ConfigMapHelper.extractFilename(line);
-    System.out.println("ConfigMapHelperTest.readSingleFile fileName: " + fileName);
-    ConfigMapHelper.readFile(reader, fileName, map, DOMAIN_UID);
-    System.out.println("ConfigMapHelperTest.readSingleFile map: " + map);
-    assertEquals(1, map.size());
-    assertTrue(map.containsKey("userConfigNodeManager.secure"));
   }
 
   private CallTestSupport.CannedResponse expectReadConfigMap() {

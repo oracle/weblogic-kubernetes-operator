@@ -1,12 +1,12 @@
 #!/bin/bash
-# Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Configure RCU schema based on schemaPreifix and rcuDatabaseURL
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/common/utility.sh
+source ${scriptDir}/../common/utility.sh
 
 function usage {
   echo "usage: ${script} -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -p <docker-store> [-h]"
@@ -65,17 +65,6 @@ fi
 
 echo "ImagePullSecret[$pullsecret] Image[${fmwimage}] dburl[${dburl}] rcuType[${rcuType}]"
 
-dbpod=`kubectl get po | grep oracle | cut -f1 -d " " `
-if [ -z ${dbpod} ]; then
-  echo "Oracle deployment pod not found in [default] namespace"
-  echo "Execute the script start-db-service.sh"
-  exit -2
-fi
-
-# Make sure the DB deployment Pod is RUNNING
-checkPod ${dbpod} default
-checkPodState ${dbpod} default "1/1"
-
 #kubectl run rcu --generator=run-pod/v1 --image ${jrf_image} -- sleep infinity
 # Modify the ImagePullSecret based on input
 sed -i -e '$d' ${scriptDir}/common/rcu.yaml
@@ -94,8 +83,8 @@ kubectl get po/rcu
 echo "Oradoc_db1" > pwd.txt
 echo "Oradoc_db1" >> pwd.txt
 
-kubectl cp ${scriptDir}/common/createRepository.sh  rcu:/u01/oracle
-kubectl cp pwd.txt rcu:/u01/oracle
+kubectl exec -i rcu -- bash -c 'cat > /u01/oracle/createRepository.sh' < ${scriptDir}/common/createRepository.sh 
+kubectl exec -i rcu -- bash -c 'cat > /u01/oracle/pwd.txt' < pwd.txt 
 rm -rf createRepository.sh pwd.txt
 
 kubectl exec -it rcu /bin/bash /u01/oracle/createRepository.sh ${dburl} ${schemaPrefix} ${rcuType}

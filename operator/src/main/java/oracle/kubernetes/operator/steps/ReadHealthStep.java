@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -12,9 +12,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
@@ -34,7 +34,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.SubsystemHealth;
 import org.joda.time.DateTime;
@@ -79,15 +78,11 @@ public class ReadHealthStep extends Step {
 
     Domain dom = info.getDomain();
     V1ObjectMeta meta = dom.getMetadata();
-    DomainSpec spec = dom.getSpec();
     String namespace = meta.getNamespace();
 
     String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
 
-    String secretName =
-        spec.getWebLogicCredentialsSecret() == null
-            ? null
-            : spec.getWebLogicCredentialsSecret().getName();
+    String secretName = dom.getWebLogicCredentialsSecretName();
 
     V1Service service = info.getServerService(serverName);
     V1Pod pod = info.getServerPod(serverName);
@@ -201,7 +196,9 @@ public class ReadHealthStep extends Step {
     }
 
     private Pair<String, ServerHealth> parseServerHealthJson(String jsonResult) throws IOException {
-      if (jsonResult == null) return null;
+      if (jsonResult == null) {
+        return null;
+      }
 
       ObjectMapper mapper = new ObjectMapper();
       JsonNode root = mapper.readTree(jsonResult);

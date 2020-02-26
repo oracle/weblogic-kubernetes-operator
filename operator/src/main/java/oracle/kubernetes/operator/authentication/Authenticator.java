@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.authentication;
@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.squareup.okhttp.OkHttpClient;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ObjectReference;
-import io.kubernetes.client.models.V1Secret;
-import io.kubernetes.client.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.util.Config;
+import okhttp3.OkHttpClient;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
@@ -92,9 +92,8 @@ public class Authenticator {
    * @param token service token for search.
    * @return ApiClient that has been properly authenticated
    * @throws ApiException on API Exception
-   * @throws IOException on IO Exception
    */
-  public ApiClient createClientByToken(String token) throws ApiException, IOException {
+  public ApiClient createClientByToken(String token) throws ApiException {
     V1ServiceAccount serviceAccount = helper.findServiceAccountByToken(token);
     return authenticateByServiceAccount(serviceAccount);
   }
@@ -177,9 +176,8 @@ public class Authenticator {
    * Close the ApiClient to make sure any open connection is cleaned up.
    *
    * @param apiClient ApiClient object that you want to close.
-   * @throws ApiException if there is an API error.
    */
-  public void closeClient(ApiClient apiClient) throws ApiException {
+  public void closeClient(ApiClient apiClient) {
 
     OkHttpClient httpClient = apiClient.getHttpClient();
     if (httpClient != null) {

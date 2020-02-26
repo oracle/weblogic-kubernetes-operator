@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -20,10 +20,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.models.V1TokenReviewStatus;
-import io.kubernetes.client.models.V1UserInfo;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
+import io.kubernetes.client.openapi.models.V1UserInfo;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
@@ -49,7 +49,7 @@ public class RestBackendImpl implements RestBackend {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String NEW_CLUSTER =
       "{'clusterName':'%s','replicas':%d}".replaceAll("'", "\"");
-  private static final TopologyRetriever INSTANCE =
+  private static TopologyRetriever INSTANCE =
       (String ns, String domainUid) -> {
         Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUid);
         if (s != null) {
@@ -143,7 +143,7 @@ public class RestBackendImpl implements RestBackend {
       LOGGER.throwing(e);
       throw e;
     }
-    if (!status.isAuthenticated()) {
+    if (!status.getAuthenticated()) {
       // don't know why the user didn't get authenticated
       WebApplicationException e = createWebApplicationException(Status.UNAUTHORIZED, null);
       LOGGER.throwing(e);
@@ -241,14 +241,18 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private void patchDomain(Domain domain, String cluster, int replicas) {
-    if (replicas == domain.getReplicaCount(cluster)) return;
+    if (replicas == domain.getReplicaCount(cluster)) {
+      return;
+    }
 
     try {
       JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
       int index = getClusterIndex(domain, cluster);
-      if (index < 0)
+      if (index < 0) {
         patchBuilder.add("/spec/clusters/0", String.format(NEW_CLUSTER, cluster, replicas));
-      else patchBuilder.replace("/spec/clusters/" + index + "/replicas", replicas);
+      } else {
+        patchBuilder.replace("/spec/clusters/" + index + "/replicas", replicas);
+      }
 
       new CallBuilder()
           .patchDomain(
@@ -260,8 +264,11 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private int getClusterIndex(Domain domain, String cluster) {
-    for (int i = 0; i < domain.getSpec().getClusters().size(); i++)
-      if (cluster.equals(domain.getSpec().getClusters().get(i).getClusterName())) return i;
+    for (int i = 0; i < domain.getSpec().getClusters().size(); i++) {
+      if (cluster.equals(domain.getSpec().getClusters().get(i).getClusterName())) {
+        return i;
+      }
+    }
 
     return -1;
   }

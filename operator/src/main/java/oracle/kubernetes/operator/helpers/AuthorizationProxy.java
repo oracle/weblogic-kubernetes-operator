@@ -1,20 +1,20 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import java.util.List;
 
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1ResourceAttributes;
-import io.kubernetes.client.models.V1SelfSubjectAccessReview;
-import io.kubernetes.client.models.V1SelfSubjectAccessReviewSpec;
-import io.kubernetes.client.models.V1SelfSubjectRulesReview;
-import io.kubernetes.client.models.V1SelfSubjectRulesReviewSpec;
-import io.kubernetes.client.models.V1SubjectAccessReview;
-import io.kubernetes.client.models.V1SubjectAccessReviewSpec;
-import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ResourceAttributes;
+import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
+import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReviewSpec;
+import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
+import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReviewSpec;
+import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
+import io.kubernetes.client.openapi.models.V1SubjectAccessReviewSpec;
+import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -81,7 +81,7 @@ public class AuthorizationProxy {
       return Boolean.FALSE;
     }
     V1SubjectAccessReviewStatus subjectAccessReviewStatus = subjectAccessReview.getStatus();
-    Boolean result = subjectAccessReviewStatus.isAllowed();
+    Boolean result = subjectAccessReviewStatus.getAllowed();
     LOGGER.exiting(result);
     return result;
   }
@@ -117,7 +117,7 @@ public class AuthorizationProxy {
     try {
       subjectAccessReview = new CallBuilder().createSelfSubjectAccessReview(subjectAccessReview);
       V1SubjectAccessReviewStatus subjectAccessReviewStatus = subjectAccessReview.getStatus();
-      return subjectAccessReviewStatus.isAllowed();
+      return subjectAccessReviewStatus.getAllowed();
     } catch (ApiException e) {
       LOGGER.severe(MessageKeys.APIEXCEPTION_FROM_SUBJECT_ACCESS_REVIEW, e);
       return false;
@@ -262,7 +262,7 @@ public class AuthorizationProxy {
     CRONJOBS("cronjobs", "batch"),
     CRDS("customresourcedefinitions", "apiextensions.k8s.io"),
     DOMAINS("domains", "weblogic.oracle"),
-    DOMAINSTATUSS("domains", "status", "weblogic.oracle"),
+    DOMAINSTATUSES("domains", "status", "weblogic.oracle"),
     SUBJECTACCESSREVIEWS("subjectaccessreviews", "authorization.k8s.io"),
     SELFSUBJECTACCESSREVIEWS("selfsubjectaccessreviews", "authorization.k8s.io"),
     LOCALSUBJECTACCESSREVIEWS("localsubjectaccessreviews", "authorization.k8s.io"),

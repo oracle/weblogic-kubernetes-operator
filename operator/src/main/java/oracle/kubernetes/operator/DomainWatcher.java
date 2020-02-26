@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -6,7 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.kubernetes.client.ApiException;
+import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -30,6 +30,16 @@ public class DomainWatcher extends Watcher<Domain> {
     this.ns = ns;
   }
 
+  /**
+   * Create domain watcher.
+   * @param factory thread factory
+   * @param ns namespace
+   * @param initialResourceVersion initial resource version
+   * @param tuning tuning parameter
+   * @param listener listener
+   * @param isStopping stopping flag
+   * @return watcher
+   */
   public static DomainWatcher create(
       ThreadFactory factory,
       String ns,

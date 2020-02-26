@@ -1,9 +1,8 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
 
-import java.io.IOException;
 import java.io.InputStream;
 import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -28,7 +27,7 @@ public class ResponseDebugLoggingFilter extends BaseDebugLoggingFilter
   }
 
   @Override
-  public void filter(ContainerRequestContext req, ContainerResponseContext res) throws IOException {
+  public void filter(ContainerRequestContext req, ContainerResponseContext res) {
     if (!LOGGER.isFineEnabled()) {
       return; // don't waste time doing all the calculations
     }

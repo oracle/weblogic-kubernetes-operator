@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -27,6 +27,14 @@ public class ExecCommand {
     return exec(command, isRedirectToOut, null);
   }
 
+  /**
+   * execute command.
+   * @param command command
+   * @param isRedirectToOut redirect to out flag
+   * @param additionalEnvMap additional environment map
+   * @return result
+   * @throws Exception on failure
+   */
   public static ExecResult exec(
       String command, boolean isRedirectToOut, Map<String, String> additionalEnvMap)
       throws Exception {

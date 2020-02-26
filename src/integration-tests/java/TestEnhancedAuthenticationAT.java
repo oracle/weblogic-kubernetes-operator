@@ -1,13 +1,13 @@
-/* Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved. */
-/* Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. */
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetestests;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.apis.ApiextensionsV1beta1Api;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.apis.CustomObjectsApi;
-import io.kubernetes.client.models.V1APIResourceList;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1APIResourceList;
 import oracle.kubernetes.operator.authentication.Authenticator;
 import org.junit.Test;
 

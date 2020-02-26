@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.resource;
@@ -18,7 +18,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
  */
 public class SwaggerResource extends BaseResource {
 
-  private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
    * Construct a SwaggerResource.

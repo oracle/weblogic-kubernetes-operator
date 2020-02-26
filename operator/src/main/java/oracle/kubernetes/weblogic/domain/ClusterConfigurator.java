@@ -1,13 +1,13 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
 
-import io.kubernetes.client.models.V1Affinity;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1Toleration;
 
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")

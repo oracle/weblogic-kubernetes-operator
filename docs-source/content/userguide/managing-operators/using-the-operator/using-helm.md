@@ -94,6 +94,23 @@ Example:
 serviceAccount: "weblogic-operator"
 ```
 
+##### `dedicated`
+
+Specifies if this operator will only manage WebLogic domains in the same namespace in which the operator itself is deployed.  If set to `true`, then the `domainNamespaces` value is ignored. 
+
+Defaults to `false`.
+
+Example:
+```
+dedicated: false
+```
+
+In the `dedicated` mode, the operator does not require permissions to access the cluster-scoped Kubernetes resources, such as `CustomResourceDefinitions`, `PersistentVolumes`, and `Namespaces`. In those situations, the operator may skip some of its operations, such as verifying the WebLogic domain `CustomResoruceDefinition` `domains.weblogic.oracle` (and creating it when it is absent), watching namespace events, and cleaning up `PersistentVolumes` as part of deleting a domain. 
+
+{{% notice note %}}
+It is the responsibility of the administrator to make sure that the required `CustomResourceDefinition (CRD)` `domains.weblogic.oracle` is deployed in the Kubernetes cluster before the operator is installed. The creation of the `CRD` requires the Kubernetes `cluster-admin` privileges. A YAML file for creating the `CRD` can be found at [domain-crd.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/crd/domain-crd.yaml).
+{{% /notice %}}
+
 ##### `javaLoggingLevel`
 
 Specifies the level of Java logging that should be enabled in the operator. Valid values are:  `SEVERE`, `WARNING`, `INFO`, `CONFIG`, `FINE`, `FINER`, and `FINEST`.
@@ -111,7 +128,7 @@ javaLoggingLevel:  "FINE"
 
 Specifies the Docker image containing the operator code.
 
-Defaults to `weblogic-kubernetes-operator:2.4.0`.
+Defaults to `weblogic-kubernetes-operator:2.5.0`.
 
 Example:
 ```
@@ -162,6 +179,10 @@ These examples show two valid YAML syntax options for arrays.
 
 {{% notice note %}}
 You must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
+{{% /notice %}}
+
+{{% notice note %}}
+This value is ignored if `dedicated` is set to `true`. Then, the operator will manage only domains in its own namespace.
 {{% /notice %}}
 
 Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about managing `domainNamespaces`.

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,7 +11,7 @@ import static oracle.kubernetes.operator.helpers.PodCompatibility.getMissingElem
 class CompatibleSets<T> implements CompatibilityCheck {
   private final Collection<T> expected;
   private final Collection<T> actual;
-  private String description;
+  private final String description;
 
   CompatibleSets(String description, Collection<T> expected, Collection<T> actual) {
     this.description = description;
@@ -21,7 +21,9 @@ class CompatibleSets<T> implements CompatibilityCheck {
 
   @Override
   public boolean isCompatible() {
-    if (expected == actual) return true;
+    if (expected == actual) {
+      return true;
+    }
     return asSet(actual).containsAll(asSet(expected));
   }
 

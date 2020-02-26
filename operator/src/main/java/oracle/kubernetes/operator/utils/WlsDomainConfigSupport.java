@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -15,12 +15,12 @@ import oracle.kubernetes.operator.wlsconfig.WlsMachineConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 
 public class WlsDomainConfigSupport {
-  private String domain;
+  private final String domain;
   private String adminServerName;
-  private Map<String, WlsClusterConfig> wlsClusters = new HashMap<>();
-  private Map<String, WlsServerConfig> wlsServers = new HashMap<>();
-  private Map<String, WlsServerConfig> templates = new HashMap<>();
-  private Map<String, WlsMachineConfig> machineConfigs = new HashMap<>();
+  private final Map<String, WlsClusterConfig> wlsClusters = new HashMap<>();
+  private final Map<String, WlsServerConfig> wlsServers = new HashMap<>();
+  private final Map<String, WlsServerConfig> templates = new HashMap<>();
+  private final Map<String, WlsMachineConfig> machineConfigs = new HashMap<>();
 
   public WlsDomainConfigSupport(String domain) {
     this.domain = domain;
@@ -145,8 +145,8 @@ public class WlsDomainConfigSupport {
   }
 
   static class ServerConfigBuilder {
-    private String name;
-    private Integer listenPort;
+    private final String name;
+    private final Integer listenPort;
     private Integer adminPort;
 
     ServerConfigBuilder(String name, Integer listenPort) {
@@ -165,8 +165,8 @@ public class WlsDomainConfigSupport {
   }
 
   static class ClusterConfigBuilder {
-    List<WlsServerConfig> serverConfigs = new ArrayList<>();
-    private String name;
+    final List<WlsServerConfig> serverConfigs = new ArrayList<>();
+    private final String name;
 
     ClusterConfigBuilder(String name) {
       this.name = name;

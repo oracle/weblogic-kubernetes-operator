@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
@@ -9,8 +9,8 @@ import java.net.URL;
 
 class ExternalSchema {
 
-  private String url;
-  private String cache;
+  private final String url;
+  private final String cache;
 
   ExternalSchema(String url, String cache) {
     this.url = url;

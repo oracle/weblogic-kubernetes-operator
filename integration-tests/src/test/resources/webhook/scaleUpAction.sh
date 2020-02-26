@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upload
 echo scale up action > scaleUpAction.log
 MASTER=https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT

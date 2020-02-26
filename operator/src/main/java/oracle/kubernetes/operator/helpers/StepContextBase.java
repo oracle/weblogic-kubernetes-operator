@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,21 +11,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 public abstract class StepContextBase implements StepContextConstants {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   abstract ServerSpec getServerSpec();
 
   abstract String getContainerName();
@@ -91,7 +87,7 @@ public abstract class StepContextBase implements StepContextConstants {
     List<V1EnvVar> vars = getConfiguredEnvVars(tuningParameters);
 
     addDefaultEnvVarIfMissing(
-        vars, "USER_MEM_ARGS", "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom");
+        vars, "USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom");
 
     hideAdminUserCredentials(vars);
     return doDeepSubstitution(varsToSubVariables(vars), vars);
@@ -112,9 +108,9 @@ public abstract class StepContextBase implements StepContextConstants {
     return doDeepSubstitution(substitutionVariables, obj, false);
   }
 
-  protected <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj, boolean requiresDNS1123) {
+  protected <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj, boolean requiresDns1123) {
     if (obj instanceof String) {
-      return (T) translate(substitutionVariables, (String) obj, requiresDNS1123);
+      return (T) translate(substitutionVariables, (String) obj, requiresDns1123);
     } else if (obj instanceof List) {
       List<Object> result = new ArrayList<>();
       for (Object o : (List) obj) {
@@ -144,7 +140,7 @@ public abstract class StepContextBase implements StepContextConstants {
                     doDeepSubstitution(
                         substitutionVariables,
                         item.getLeft().invoke(obj),
-                        isDNS1123Required(item.getLeft())));
+                        isDns1123Required(item.getLeft())));
           }
           return subObj;
         } catch (NoSuchMethodException
@@ -158,10 +154,10 @@ public abstract class StepContextBase implements StepContextConstants {
     return obj;
   }
 
-  boolean isDNS1123Required(Method method) {
+  boolean isDns1123Required(Method method) {
     // value requires to be in DNS1123 if the value is for a name, which is assumed to be
     // name for a kubernetes object
-    return LegalNames.isDNS1123Required(method.getName().substring(3));
+    return LegalNames.isDns1123Required(method.getName().substring(3));
   }
 
   private static final String MODELS_PACKAGE = V1Pod.class.getPackageName();
@@ -202,12 +198,12 @@ public abstract class StepContextBase implements StepContextConstants {
     return translate(substitutionVariables, rawValue, false);
   }
 
-  private String translate(final Map<String, String> substitutionVariables, String rawValue, boolean requiresDNS1123) {
+  private String translate(final Map<String, String> substitutionVariables, String rawValue, boolean requiresDns1123) {
     String result = rawValue;
     for (Map.Entry<String, String> entry : substitutionVariables.entrySet()) {
       if (result != null && entry.getValue() != null) {
         result = result.replace(String.format("$(%s)", entry.getKey()),
-            requiresDNS1123 ? LegalNames.toDns1123LegalName(entry.getValue()) : entry.getValue());
+            requiresDns1123 ? LegalNames.toDns1123LegalName(entry.getValue()) : entry.getValue());
       }
     }
     return result;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -20,10 +20,10 @@ public class YamlDocGenerator {
   private static final String CLASS_TABLE_HEADER =
       "| Name | Type | Description |\n" + "| --- | --- | --- |";
   private static final String DEFINITION_PREFIX = "#/definitions/";
-  private static List NON_REFERENCE_TYPES = Arrays.asList("Map", "DateTime");
-  private Map<String, Object> schema;
-  private List<String> referencesNeeded = new ArrayList<>();
-  private Set<String> referencesGenerated = new HashSet<>();
+  private static final List NON_REFERENCE_TYPES = Arrays.asList("Map", "DateTime");
+  private final Map<String, Object> schema;
+  private final List<String> referencesNeeded = new ArrayList<>();
+  private final Set<String> referencesGenerated = new HashSet<>();
   private KubernetesSchemaReference kubernetesReference;
   private YamlDocGenerator kubernetesGenerator;
 
@@ -79,7 +79,9 @@ public class YamlDocGenerator {
   }
 
   private String getDescription(String fieldName, Map<String, Object> subSchema) {
-    if (subSchema == null) return "";
+    if (subSchema == null) {
+      return "";
+    }
     Map<String, Object> fieldMap = subMap(subSchema, fieldName);
     String rawDescription = (String) fieldMap.get("description");
     return rawDescription == null ? "" : rawDescription.replace("\n", "<br/>");
@@ -97,8 +99,9 @@ public class YamlDocGenerator {
 
     Map<String, Object> properties =
         Optional.ofNullable(subMap(classSchema, "properties")).orElse(new HashMap<>());
-    for (String propertyName : getSortedKeys(properties))
+    for (String propertyName : getSortedKeys(properties)) {
       sb.append("\n").append(generateForProperty(propertyName, properties));
+    }
     return sb.toString();
   }
 
@@ -121,7 +124,9 @@ public class YamlDocGenerator {
   }
 
   private String getType(String fieldName, Map<String, Object> subSchema) {
-    if (subSchema == null) return "";
+    if (subSchema == null) {
+      return "";
+    }
     Map<String, Object> fieldMap = subMap(subSchema, fieldName);
     Type type = new Type(fieldMap);
     String val = type.getString();
@@ -140,8 +145,9 @@ public class YamlDocGenerator {
   public void useKubernetesVersion(String k8sVersion) throws IOException {
     kubernetesReference = KubernetesSchemaReference.create(k8sVersion);
     URL cacheUrl = kubernetesReference.getKubernetesSchemaCacheUrl();
-    if (cacheUrl != null)
+    if (cacheUrl != null) {
       kubernetesGenerator = new YamlDocGenerator(SchemaGenerator.loadCachedSchema(cacheUrl));
+    }
   }
 
   /**
@@ -163,16 +169,21 @@ public class YamlDocGenerator {
   }
 
   private void addReferenceIfNeeded(String reference) {
-    if (referencesNeeded.contains(reference) || referencesGenerated.contains(reference)) return;
+    if (referencesNeeded.contains(reference) || referencesGenerated.contains(reference)) {
+      return;
+    }
 
     referencesNeeded.add(reference);
   }
 
   private Reference createReference(String referenceString) {
-    if (referenceString == null) return new NullReference();
-    else if (referenceString.startsWith(DEFINITION_PREFIX))
+    if (referenceString == null) {
+      return new NullReference();
+    } else if (referenceString.startsWith(DEFINITION_PREFIX)) {
       return new LocalReference(referenceString);
-    else return new ExternalReference(referenceString);
+    } else {
+      return new ExternalReference(referenceString);
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -185,8 +196,8 @@ public class YamlDocGenerator {
   }
 
   private class Type {
-    Map<String, Object> fieldMap;
-    String specifiedType;
+    final Map<String, Object> fieldMap;
+    final String specifiedType;
 
     Type(Map<String, Object> fieldMap) {
       this.fieldMap = fieldMap;
@@ -222,7 +233,7 @@ public class YamlDocGenerator {
   }
 
   private abstract class Reference {
-    private String typeName;
+    private final String typeName;
 
     private Reference(String typeName) {
       this.typeName = typeName;
@@ -261,7 +272,9 @@ public class YamlDocGenerator {
 
     LocalReference(String ref) {
       super(toLocalTypeName(ref));
-      if (isReferenceType()) addReferenceIfNeeded(getTypeName());
+      if (isReferenceType()) {
+        addReferenceIfNeeded(getTypeName());
+      }
     }
 
     @Override
@@ -280,7 +293,9 @@ public class YamlDocGenerator {
     ExternalReference(String ref) {
       super(ref.substring(ref.lastIndexOf(".") + 1));
       url = ref.substring(0, ref.indexOf("#"));
-      if (kubernetesGenerator != null) kubernetesGenerator.addReferenceIfNeeded(toK8sName(ref));
+      if (kubernetesGenerator != null) {
+        kubernetesGenerator.addReferenceIfNeeded(toK8sName(ref));
+      }
     }
 
     private String toK8sName(String ref) {

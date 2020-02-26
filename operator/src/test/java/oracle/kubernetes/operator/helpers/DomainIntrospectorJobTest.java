@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,14 +11,15 @@ import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1SecretReference;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
+import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -78,6 +79,10 @@ public class DomainIntrospectorJobTest {
     return LegalNames.toJobIntrospectorName(UID);
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(
@@ -86,6 +91,7 @@ public class DomainIntrospectorJobTest {
             .withLogLevel(Level.INFO));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
+    mementos.add(ScanCacheStub.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
   }
@@ -94,9 +100,14 @@ public class DomainIntrospectorJobTest {
     return new String[] {getJobCreatedMessageKey(), getJobDeletedMessageKey()};
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   private Domain createDomain() {

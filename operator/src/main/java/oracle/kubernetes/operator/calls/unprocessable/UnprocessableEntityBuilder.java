@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls.unprocessable;
@@ -6,15 +6,22 @@ package oracle.kubernetes.operator.calls.unprocessable;
 import java.util.Collections;
 
 import com.google.gson.Gson;
-import io.kubernetes.client.ApiException;
+import io.kubernetes.client.openapi.ApiException;
+import oracle.kubernetes.operator.calls.FailureStatusSource;
 
-public class UnprocessableEntityBuilder {
+public class UnprocessableEntityBuilder implements FailureStatusSource {
   static final int HTTP_UNPROCESSABLE_ENTITY = 422;
-  private ErrorBody errorBody;
+  private final ErrorBody errorBody;
 
+  /**
+   * Create an UnprocessableEntityBuilder from the provided Exception.
+   * @param exception the exception
+   * @return the UnprocessableEntityBuilder
+   */
   public static UnprocessableEntityBuilder fromException(ApiException exception) {
-    if (exception.getCode() != HTTP_UNPROCESSABLE_ENTITY)
+    if (exception.getCode() != HTTP_UNPROCESSABLE_ENTITY) {
       throw new IllegalArgumentException("Is not unprocessable entity exception");
+    }
 
     return new UnprocessableEntityBuilder(exception);
   }
@@ -31,16 +38,25 @@ public class UnprocessableEntityBuilder {
     errorBody = new ErrorBody();
   }
 
+  @Override
   public String getMessage() {
     return errorBody.getMessage();
   }
 
+  @Override
   public String getReason() {
     return errorBody.getDetails().getCauses()[0].getReason();
   }
 
+  /**
+   * Build with reason.
+   * @param reason reason
+   * @return builder
+   */
   public UnprocessableEntityBuilder withReason(String reason) {
-    if (errorBody.getDetails() == null) errorBody.addDetails();
+    if (errorBody.getDetails() == null) {
+      errorBody.addDetails();
+    }
     errorBody.getDetails().addCause(new Cause().withReason(reason));
     return this;
   }
