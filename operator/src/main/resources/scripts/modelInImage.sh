@@ -630,8 +630,6 @@ function wdtUpdateModelDomain() {
   fi
   # restore trap
   start_trap
-
-
   trace "Exiting wdtUpdateModelDomain"
 }
 #
