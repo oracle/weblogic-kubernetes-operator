@@ -48,10 +48,16 @@ function startWLS() {
   [ $? -ne 0 ] && trace SEVERE "failed to start node manager" && exitOrLoop
 
   #
+  # Verify that the domain secret hasn't changed
+  #
+
+  checkDomainSecretMD5 || exitOrLoop
+
+  #
   # Start WL Server
   #
 
-  # TBD We should probably || exit 1 if start-server.py itself fails, and dump NM log to stdout
+  # TBD We should probably || exitOrLoop if start-server.py itself fails, and dump NM log to stdout
 
   trace "Start WebLogic Server via the nodemanager"
   ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py

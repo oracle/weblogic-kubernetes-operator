@@ -542,14 +542,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     return v1Container;
   }
 
-  private String getImageName() {
-    return getServerSpec().getImage();
-  }
-
-  String getImagePullPolicy() {
-    return getServerSpec().getImagePullPolicy();
-  }
-
   protected String getContainerName() {
     return KubernetesConstants.CONTAINER_NAME;
   }

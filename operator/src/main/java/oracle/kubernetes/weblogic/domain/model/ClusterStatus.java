@@ -155,7 +155,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return other.getClusterName() != null && other.getClusterName().equals(clusterName);
   }
 
-  private static ObjectPatch<ClusterStatus> clusterPatch = createObjectPatch(ClusterStatus.class)
+  private static final ObjectPatch<ClusterStatus> clusterPatch = createObjectPatch(ClusterStatus.class)
         .withStringField("clusterName", ClusterStatus::getClusterName)
         .withIntegerField("maximumReplicas", ClusterStatus::getMaximumReplicas)
         .withIntegerField("readyReplicas", ClusterStatus::getReadyReplicas)

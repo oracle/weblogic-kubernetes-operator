@@ -84,8 +84,8 @@ public class Main {
       Engine.wrappedExecutorService("operator", container);
   private static final TuningParameters tuningAndConfig;
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
-  private static final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
-  private static final Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
+  private static Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
+  private static Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
   private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
   private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
@@ -101,7 +101,7 @@ public class Main {
   private static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
       "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
   private static final Semaphore shutdownSignal = new Semaphore(0);
-  private static Engine engine = new Engine(wrappedExecutorService);
+  private static final Engine engine = new Engine(wrappedExecutorService);
   private static String principal;
   private static KubernetesVersion version = null;
 
@@ -870,7 +870,7 @@ public class Main {
   }
 
   private static class NullCompletionCallback implements CompletionCallback {
-    private Runnable completionAction;
+    private final Runnable completionAction;
 
     NullCompletionCallback(Runnable completionAction) {
       this.completionAction = completionAction;

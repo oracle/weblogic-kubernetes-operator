@@ -21,7 +21,7 @@ import oracle.kubernetes.operator.work.Step;
  * @param <T> the type of resource handled by this step
  */
 abstract class WaitForReadyStep<T> extends Step {
-  private T initialResource;
+  private final T initialResource;
 
   /**
    * Creates a step which will only proceed once the specified resource is ready.
@@ -172,8 +172,8 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   private class Callback implements Consumer<T> {
-    private Fiber fiber;
-    private Packet packet;
+    private final Fiber fiber;
+    private final Packet packet;
     private final AtomicBoolean didResume = new AtomicBoolean(false);
 
     Callback(Fiber fiber, Packet packet) {
