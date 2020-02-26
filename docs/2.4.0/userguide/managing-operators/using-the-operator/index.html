@@ -1,0 +1,5264 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Hugo 0.59.1" />
+    <meta name="description" content="">
+
+
+    <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
+
+    <title>Use the operator :: WebLogic Kubernetes Operator</title>
+
+    
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1582730633" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1582730633" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1582730633" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1582730633" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1582730633" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1582730633" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1582730633" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1582730633" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1582730633" rel="stylesheet">
+    
+
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1582730633"></script>
+
+    <style>
+      :root #header + #content > #left > #rlblock_left{
+          display:none !important;
+      }
+      
+    </style>
+    
+  </head>
+  <body class="" data-url="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/">
+    <nav id="sidebar" class="">
+
+
+
+  <div id="header-wrapper">
+    <div id="header">
+      <a id="logo" href="/weblogic-kubernetes-operator/">
+  <img src="/weblogic-kubernetes-operator//images/logo.png" height="60"><br/>
+  Kubernetes Operator
+</a>
+
+    </div>
+    
+        <div class="searchbox">
+    <label for="search-by"><i class="fas fa-search"></i></label>
+    <input data-search-input id="search-by" type="search" placeholder="Search...">
+    <span data-search-clear=""><i class="fas fa-times"></i></span>
+</div>
+
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1582730633"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1582730633"></script>
+<script type="text/javascript">
+    
+        var baseurl = "\/weblogic-kubernetes-operator\/";
+    
+</script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1582730633"></script>
+
+    
+  </div>
+
+    <div class="highlightable">
+    <ul class="topics">
+        <li><a  class="padding" href="/weblogic-kubernetes-operator/">Home</a></li>
+        
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/quickstart/" title="Quick Start" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/quickstart/">
+          <b>1. </b>Quick Start
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/introduction/" title="Introduction" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/quickstart/introduction/">
+        Introduction
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/prerequisites/" title="Before you begin" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/quickstart/prerequisites/">
+        Before you begin
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/get-images/" title="Get images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/quickstart/get-images/">
+        Get images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/install/" title="Install the operator and load balancer" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/quickstart/install/">
+        Install the operator and load balancer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/prepare/" title="Prepare for a domain" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/quickstart/prepare/">
+        Prepare for a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/create-domain/" title="Create a domain" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/quickstart/create-domain/">
+        Create a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/cleanup/" title="Clean up" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/quickstart/cleanup/">
+        Clean up
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/" title="User Guide" class="dd-item 
+        parent
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/">
+          <b>2. </b>User Guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/introduction/" title="Introduction" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/introduction/">
+          Introduction
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/introduction/introduction/" title="Get started" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/introduction/introduction/">
+        Get started
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/introduction/demo/" title="Demo" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/introduction/demo/">
+        Demo
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/introduction/architecture/" title="Architecture" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/introduction/architecture/">
+        Architecture
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/introduction/design/" title="Design philosophy" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/introduction/design/">
+        Design philosophy
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/overview/" title="Overview" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/overview/">
+          Overview
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/overview/prepare/" title="Prepare your environment" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/overview/prepare/">
+        Prepare your environment
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/overview/k8s-setup/" title="Set up Kubernetes" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/overview/k8s-setup/">
+        Set up Kubernetes
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/overview/database/" title="Run a database" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/overview/database/">
+        Run a database
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/" title="Manage operators" class="dd-item 
+        parent
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-operators/">
+          Manage operators
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/installation/" title="Install the operator" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/">
+          Install the operator
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/" title="Use the operator" class="dd-item 
+        parent
+        active
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/">
+          <b> </b>Use the operator
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/" title="Use Helm" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/">
+        Use Helm
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/the-rest-api/" title="The REST API" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/the-rest-api/">
+        The REST API
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/" title="Manage WebLogic domains" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/">
+          Manage WebLogic domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/" title="Choose a model" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">
+          <b> </b>Choose a model
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/prepare/" title="Prepare to run a domain" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/prepare/">
+        <b> </b>Prepare to run a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/" title="Domain resource" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/">
+        <b> </b>Domain resource
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/persistent-storage/" title="Persistent storage" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/persistent-storage/">
+          <b> </b>Persistent storage
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/" title="Domain in image" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/">
+          <b> </b>Domain in image
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/" title="Base images" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/">
+          Base images
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/patching/" title="Patching" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/patching/">
+          <b> </b>Patching
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/" title="Configuration overrides" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/">
+          <b> </b>Configuration overrides
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/ingress/" title="Ingress" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/ingress/">
+          <b> </b>Ingress
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/" title="Accessing the domain" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/">
+          <b> </b>Accessing the domain
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/" title="Using WLST" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/">
+        Using WLST
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/" title="Domain life cycle" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/">
+          <b> </b>Domain life cycle
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/" title="Startup and shutdown" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/">
+        Startup and shutdown
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/restarting/" title="Restarting" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/restarting/">
+        Restarting
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/scaling/" title="Scaling" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/scaling/">
+        Scaling
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/integrations/" title="Integrations" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/integrations/">
+          <b> </b>Integrations
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/integrations/exporting-metrics/" title="Export metrics" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/integrations/exporting-metrics/">
+          <b> </b>Export metrics
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/integrations/exporting-logs/" title="Export logs" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/integrations/exporting-logs/">
+          <b> </b>Export logs
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/" title="Manage FMW Domains" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/">
+          Manage FMW Domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/" title="Manage FMW Infrastructure domains" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/">
+          Manage FMW Infrastructure domains
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/" title="Manage SOA domains" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/">
+          Manage SOA domains
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/" title="CI/CD considerations" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/cicd/">
+          CI/CD considerations
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/layering/" title="Docker image layering" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/cicd/layering/">
+        Docker image layering
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/why-layering-matters/" title="Why layering matters" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/cicd/why-layering-matters/">
+        Why layering matters
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/choose-an-approach/" title="Choose an approach" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/cicd/choose-an-approach/">
+        Choose an approach
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/mutate-the-domain-layer/" title="Mutate the domain layer" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/cicd/mutate-the-domain-layer/">
+        Mutate the domain layer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/how-to-copy-domains/" title="Copy domains" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/cicd/how-to-copy-domains/">
+        Copy domains
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/tools/" title="Tools" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/cicd/tools/">
+        Tools
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/experimental/" title="Experimental features" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/experimental/">
+          Experimental features
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/experimental/istio/" title="Istio support" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/experimental/istio/">
+        Istio support
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/" title="Samples" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/">
+          <b>3. </b>Samples
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/" title="Simple samples" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/">
+          <b> </b>Simple samples
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/credentials/" title="Credentials" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/credentials/">
+          Credentials
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/storage/" title="Storage" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/storage/">
+          Storage
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/" title="Domains" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/">
+          Domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/manually-create-domain/" title="Manually" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/manually-create-domain/">
+          Manually
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">
+          FMW Infrastructure domain
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/soa-domain/" title="SOA domain" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/soa-domain/">
+          SOA domain
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/domain-home-in-image/" title="Domain home in image" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/domain-home-in-image/">
+          Domain home in image
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/domain-home-on-pv/" title="Domain home on a PV" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/domain-home-on-pv/">
+          Domain home on a PV
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/" title="Delete domain resources" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/">
+          Delete domain resources
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/rest/" title="REST APIs" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/rest/">
+          REST APIs
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/ingress/" title="Ingress" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/ingress/">
+          Ingress
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/elastic-stack/" title="Elastic Stack" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/elastic-stack/">
+          Elastic Stack
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/elastic-stack/operator/" title="Operator" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/elastic-stack/operator/">
+          Operator
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/elastic-stack/weblogic-domain/" title="WebLogic domain" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/elastic-stack/weblogic-domain/">
+          WebLogic domain
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/production/" title="Production samples" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/production/">
+          <b> </b>Production samples
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/developerguide/" title="Developer Guide" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/developerguide/">
+          <b>4. </b>Developer Guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/developerguide/requirements/" title="Requirements" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/developerguide/requirements/">
+        Requirements
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/developerguide/building/" title="Building" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/developerguide/building/">
+        Building
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/developerguide/integration-tests/" title="Integration tests" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/developerguide/integration-tests/">
+        Integration tests
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/developerguide/branching/" title="Branching" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/developerguide/branching/">
+        Branching
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/developerguide/coding-standards/" title="Coding standards" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/developerguide/coding-standards/">
+        Coding standards
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/developerguide/code-structure/" title="Code structure" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/developerguide/code-structure/">
+        Code structure
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/developerguide/asynchronous-call-model/" title="Asynchronous call model" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/developerguide/asynchronous-call-model/">
+        Asynchronous call model
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/developerguide/domain-processing/" title="Domain processing" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/developerguide/domain-processing/">
+        Domain processing
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/developerguide/documentation/" title="Documentation" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/developerguide/documentation/">
+        Documentation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/developerguide/backwards-compatibility/" title="Backward compatibility" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/developerguide/backwards-compatibility/">
+        Backward compatibility
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/reference/" title="Reference" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/reference/">
+          <b>5. </b>Reference
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/reference/javadoc/" title="Javadoc" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/reference/javadoc/">
+        Javadoc
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/reference/swagger/" title="Swagger" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/reference/swagger/">
+        Swagger
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/reference/domain-resource/" title="Domain resource" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/reference/domain-resource/">
+        Domain resource
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/security/" title="Security" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/security/">
+          <b>6. </b>Security
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/security/certificates/" title="Certificates" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/security/certificates/">
+        Certificates
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/" title="Domain security" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/security/domain-security/">
+          Domain security
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/image-protection/" title="Docker image protection" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/">
+        Docker image protection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="Channels" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">
+        Channels
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/security/encryption/" title="Encryption" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/security/encryption/">
+        Encryption
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/security/service-accounts/" title="Service accounts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/security/service-accounts/">
+        Service accounts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/security/rbac/" title="RBAC" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/security/rbac/">
+        RBAC
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/security/secrets/" title="Secrets" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/security/secrets/">
+        Secrets
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/security/openshift/" title="OpenShift" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/security/openshift/">
+        OpenShift
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/faq/" title="Frequently asked questions" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/faq/">
+          <b>7. </b>Frequently asked questions
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/oci-fss-pv/" title="Using OCI File Storage (FSS) for Persistent Volumes" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/faq/oci-fss-pv/">
+        Using OCI File Storage (FSS) for Persistent Volumes
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/fan/" title="Disabling Fast Application Notifications" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/faq/fan/">
+        Disabling Fast Application Notifications
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/oci-lb/" title="Using an OCI Load Balancer" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/faq/oci-lb/">
+        Using an OCI Load Balancer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/namespace-management/" title="Managing Domain Namespaces" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/faq/namespace-management/">
+        Managing Domain Namespaces
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/coherence-requirements/" title="Coherence Requirements" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/faq/coherence-requirements/">
+        Coherence Requirements
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/cannot-pull-image/" title="Cannot Pull Image" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/faq/cannot-pull-image/">
+        Cannot Pull Image
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+         
+        <li><a  class="padding" href="/weblogic-kubernetes-operator/release-notes">Release Notes</a></li>
+    </ul>
+
+    
+    
+
+    
+    <section id="footer">
+      <p>Created with <i class="fas fa-heart"></i> from <a href="https://www.oracle.com">Oracle</a></p>
+<p>&nbsp;</p>
+<table border="1" bgcolor="white">
+  <tbody>
+    <tr>
+      <td align="center">
+        <p style="color:red">You are viewing the archived documentation for version 2.4.0.
+          To view the documentation for the current release, please <a href="https://oracle.github.io/weblogic-kubernetes-operator">click here</a></p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p>&nbsp;</p>
+<p><a href="https://github.com/oracle/weblogic-kubernetes-operator"><i class="fab fa-github"></i> GitHub repo</a></p>
+<p><a href="https://weblogic-slack-inviter.herokuapp.com/"><i class="fab fa-slack"></i> Public Slack #operator</a></p>
+
+    </section>
+  </div>
+</nav>
+
+
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+              
+              <div>
+                <div id="top-bar">
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fas fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fas fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                 
+                 
+                    
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/userguide/'>User Guide</a> > <a href='/weblogic-kubernetes-operator/userguide/managing-operators/'>Manage operators</a> > Use the operator
+          
+         
+          
+         
+          
+         
+          
+        
+                 
+                  </span>
+                </div>
+                
+                    <div class="progress">
+    <div class="wrapper">
+
+    </div>
+</div>
+
+                
+              </div>
+            </div>
+            
+        <div id="head-tags">
+        
+        </div>
+        
+        <div id="body-inner">
+          
+            <h1>
+              
+              Use the operator
+            </h1>
+          
+
+        
+
+
+
+
+	
+
+
+
+
+
+
+<ul class="children children-h4">
+	
+
+	
+		
+	
+
+	
+
+	
+		
+	
+		
+			
+				
+					
+					
+
+<h4>
+<a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/" >Use Helm</a>
+</h4>
+
+				
+
+				
+					
+<p>Useful Helm operations.</p>
+					
+				
+			
+			
+		
+	
+		
+			
+				
+					
+					
+
+<h4>
+<a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/the-rest-api/" >The REST API</a>
+</h4>
+
+				
+
+				
+					
+<p>Use the operator&#39;s REST services.</p>
+					
+				
+			
+			
+		
+	
+
+	
+</ul>
+
+
+
+
+
+
+
+
+
+<footer class=" footline" >
+	
+</footer>
+
+        
+        </div> 
+        
+
+      </div>
+
+    <div id="navigation">
+        
+        
+        
+        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+        
+        
+
+
+	 
+	 
+		
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/" title="Install the operator"> <i class="fa fa-chevron-left"></i></a>
+		
+		
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/" title="Use Helm" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+	
+    </div>
+
+    </section>
+    
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1582730633"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1582730633"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1582730633"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1582730633"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1582730633"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1582730633"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1582730633"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1582730633"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1582730633"></script>
+
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1582730633" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1582730633"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    
+
+  </body>
+</html>

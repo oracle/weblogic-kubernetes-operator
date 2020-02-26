@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Experimental features on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/userguide/experimental/</link>
+    <description>Recent content in Experimental features on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 15 Aug 2019 13:29:04 -0400</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/userguide/experimental/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Istio support</title>
+      <link>/weblogic-kubernetes-operator/userguide/experimental/istio/</link>
+      <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/userguide/experimental/istio/</guid>
+      <description>Overview WebLogic Kubernetes Operator version 2.3 includes experimental support for Istio 1.2.2. This support allows you to run the operator itself, and WebLogic domains managed by the operator with Istio sidecar injection enabled. It will allow you to use Istio gateways and virtual services to access applications deployed in these domains. If your applications have suitable tracing code in them, you will also be able to use distributed tracing, such as Jaeger, to trace requests across domains and to other components and services that have tracing enabled.</description>
+    </item>
+    
+  </channel>
+</rss>
