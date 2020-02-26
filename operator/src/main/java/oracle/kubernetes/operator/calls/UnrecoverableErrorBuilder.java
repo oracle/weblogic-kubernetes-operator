@@ -11,6 +11,7 @@ public class UnrecoverableErrorBuilder {
   /**
    * Returns true if the specified call response indicates an unprocessable entity response from Kubernetes.
    * @param callResponse the response from a Kubernetes call
+   * @param <T> call response type
    * @return true if an unprocessable entity failure has been reported
    */
   public static <T> boolean isAsyncCallFailure(CallResponse<T> callResponse) {
