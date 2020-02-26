@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -30,7 +30,9 @@ class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
 
   @Override
   protected boolean matchesSafely(Domain item, Description mismatchDescription) {
-    if (hasExpectedReason(item) && hasExpectedMessage(item)) return true;
+    if (hasExpectedReason(item) && hasExpectedMessage(item)) {
+      return true;
+    }
 
     mismatchDescription.appendText("domain status with reason ").appendValue(getStatusReason(item))
                        .appendText(" and message ").appendValue(getStatusMessage(item));

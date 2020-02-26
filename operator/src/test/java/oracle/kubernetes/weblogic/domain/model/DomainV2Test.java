@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -8,17 +8,17 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.V1Capabilities;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1HostPathVolumeSource;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SELinuxOptions;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Sysctl;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1Capabilities;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1SELinuxOptions;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1Sysctl;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
 import org.hamcrest.Matcher;
@@ -507,7 +507,7 @@ public class DomainV2Test extends DomainTestBase {
 
     // These are inherited from the cluster
     assertThat(ms1PodSecCtx.getSysctls(), contains(CLUSTER_SYSCTL));
-    assertThat(ms1PodSecCtx.isRunAsNonRoot(), is(true));
+    assertThat(ms1PodSecCtx.getRunAsNonRoot(), is(true));
 
     // The following are not defined either in domain, cluster or server, so they should be null
     assertThat(ms1PodSecCtx.getRunAsUser(), nullValue());
@@ -524,7 +524,7 @@ public class DomainV2Test extends DomainTestBase {
     // Since "any" is not defined in the domain, it will take the values from CLUSTER_NAME
     assertThat(msPodSecCtx.getRunAsGroup(), is(421L));
     assertThat(msPodSecCtx.getSysctls(), contains(CLUSTER_SYSCTL));
-    assertThat(msPodSecCtx.isRunAsNonRoot(), is(true));
+    assertThat(msPodSecCtx.getRunAsNonRoot(), is(true));
     assertThat(msPodSecCtx.getSeLinuxOptions().getLevel(), is("cluster"));
     assertThat(msPodSecCtx.getSeLinuxOptions().getRole(), is("admin"));
     assertThat(msPodSecCtx.getSeLinuxOptions().getType(), is("admin"));
@@ -542,7 +542,7 @@ public class DomainV2Test extends DomainTestBase {
     V1PodSecurityContext asPodSecCtx = domain.getAdminServerSpec().getPodSecurityContext();
 
     // Since admin server only defines runAsNonRoot = false
-    assertThat(asPodSecCtx.isRunAsNonRoot(), is(false));
+    assertThat(asPodSecCtx.getRunAsNonRoot(), is(false));
 
     // The rest should be identical to the domain
     assertThat(asPodSecCtx.getRunAsGroup(), is(420L));
@@ -599,7 +599,7 @@ public class DomainV2Test extends DomainTestBase {
 
     // Since SERVER1 only overrides runAsGroup = 422, Capabilities to be SYS_TIME
     assertThat(ms1ContainerSecSpec.getRunAsGroup(), is(422L));
-    assertThat(ms1ContainerSecSpec.isAllowPrivilegeEscalation(), is(false));
+    assertThat(ms1ContainerSecSpec.getAllowPrivilegeEscalation(), is(false));
     assertThat(
         ms1ContainerSecSpec.getCapabilities().getAdd(), contains("SYS_TIME", "CHOWN", "SYS_BOOT"));
     assertThat(ms1ContainerSecSpec.getSeLinuxOptions().getLevel(), is("server"));
@@ -616,7 +616,7 @@ public class DomainV2Test extends DomainTestBase {
 
     // Since "any" is not defined in the domain, it will take the values from CLUSTER_NAME
     assertThat(ms2ContainerSecSpec.getRunAsGroup(), is(421L));
-    assertThat(ms2ContainerSecSpec.isAllowPrivilegeEscalation(), is(false));
+    assertThat(ms2ContainerSecSpec.getAllowPrivilegeEscalation(), is(false));
     assertThat(
         ms2ContainerSecSpec.getCapabilities().getAdd(), contains("SYS_TIME", "CHOWN", "SYS_BOOT"));
     assertThat(ms2ContainerSecSpec.getSeLinuxOptions().getLevel(), is("cluster"));
@@ -625,7 +625,7 @@ public class DomainV2Test extends DomainTestBase {
 
     // The following are not defined either in domain, cluster or server, so they should be null
     assertThat(ms2ContainerSecSpec.getRunAsUser(), nullValue());
-    assertThat(ms2ContainerSecSpec.isPrivileged(), nullValue());
+    assertThat(ms2ContainerSecSpec.getPrivileged(), nullValue());
   }
 
   @Test
@@ -635,11 +635,11 @@ public class DomainV2Test extends DomainTestBase {
         domain.getAdminServerSpec().getContainerSecurityContext();
 
     // Since admin server only defines runAsNonRoot = false
-    assertThat(asContainerSecSpec.isRunAsNonRoot(), is(false));
+    assertThat(asContainerSecSpec.getRunAsNonRoot(), is(false));
 
     // The rest should be identical to the domain
     assertThat(asContainerSecSpec.getRunAsGroup(), is(420L));
-    assertThat(asContainerSecSpec.isAllowPrivilegeEscalation(), is(false));
+    assertThat(asContainerSecSpec.getAllowPrivilegeEscalation(), is(false));
     assertThat(asContainerSecSpec.getCapabilities().getAdd(), contains("CHOWN", "SYS_BOOT"));
     assertThat(asContainerSecSpec.getSeLinuxOptions().getLevel(), is("domain"));
     assertThat(asContainerSecSpec.getSeLinuxOptions().getRole(), is("admin"));
@@ -648,7 +648,7 @@ public class DomainV2Test extends DomainTestBase {
     // The following are not defined either in domain or admin server, so they should be null
     assertThat(asContainerSecSpec.getSeLinuxOptions().getType(), nullValue());
     assertThat(asContainerSecSpec.getRunAsUser(), nullValue());
-    assertThat(asContainerSecSpec.isPrivileged(), nullValue());
+    assertThat(asContainerSecSpec.getPrivileged(), nullValue());
   }
 
   private void configureDomainWithContainerSecurityContext(Domain domain) {
@@ -780,7 +780,7 @@ public class DomainV2Test extends DomainTestBase {
             envVar("JAVA_OPTIONS", "-server"),
             envVar(
                 "USER_MEM_ARGS",
-                "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "),
+                "-Djava.security.egd=file:/dev/./urandom "),
             envVar("var1", "value0")));
     assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
     assertThat(
@@ -944,7 +944,7 @@ public class DomainV2Test extends DomainTestBase {
     V1SecurityContext server2ContainerSecCtx =
         domain.getServer("server2", null).getContainerSecurityContext();
     assertThat(server2ContainerSecCtx.getRunAsGroup(), is(422L));
-    assertThat(server2ContainerSecCtx.isAllowPrivilegeEscalation(), is(false));
+    assertThat(server2ContainerSecCtx.getAllowPrivilegeEscalation(), is(false));
     assertThat(server2ContainerSecCtx.getCapabilities().getAdd(), contains("CHOWN", "SYS_BOOT"));
     assertThat(server2ContainerSecCtx.getSeLinuxOptions().getLevel(), is("server"));
     assertThat(server2ContainerSecCtx.getSeLinuxOptions().getRole(), is("slave"));
@@ -960,7 +960,7 @@ public class DomainV2Test extends DomainTestBase {
     V1SecurityContext server1ContainerSecCtx =
         domain.getServer("server1", "cluster1").getContainerSecurityContext();
     assertThat(server1ContainerSecCtx.getRunAsGroup(), is(421L));
-    assertThat(server1ContainerSecCtx.isAllowPrivilegeEscalation(), is(false));
+    assertThat(server1ContainerSecCtx.getAllowPrivilegeEscalation(), is(false));
     assertThat(
         server1ContainerSecCtx.getCapabilities().getAdd(),
         contains("SYS_TIME", "CHOWN", "SYS_BOOT"));
@@ -977,13 +977,13 @@ public class DomainV2Test extends DomainTestBase {
 
     V1SecurityContext asContainerSecCtx = domain.getAdminServerSpec().getContainerSecurityContext();
     assertThat(asContainerSecCtx.getRunAsGroup(), is(420L));
-    assertThat(asContainerSecCtx.isAllowPrivilegeEscalation(), is(false));
+    assertThat(asContainerSecCtx.getAllowPrivilegeEscalation(), is(false));
     assertThat(asContainerSecCtx.getCapabilities().getAdd(), contains("CHOWN", "SYS_BOOT"));
     assertThat(asContainerSecCtx.getSeLinuxOptions().getLevel(), is("domain"));
     assertThat(asContainerSecCtx.getSeLinuxOptions().getRole(), is("admin"));
     assertThat(asContainerSecCtx.getSeLinuxOptions().getType(), nullValue());
     assertThat(asContainerSecCtx.getRunAsUser(), nullValue());
-    assertThat(asContainerSecCtx.isPrivileged(), nullValue());
+    assertThat(asContainerSecCtx.getPrivileged(), nullValue());
   }
 
   @Test

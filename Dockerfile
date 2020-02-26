@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # HOW TO BUILD THIS IMAGE
@@ -16,8 +16,15 @@ RUN yum -y install openssl && yum clean all
 # ----------
 MAINTAINER Ryan Eberhard <ryan.eberhard@oracle.com>
 
-RUN mkdir /operator
-RUN mkdir /operator/lib
+# make the operator run with a non-root user id (1000 is the `oracle` user)
+RUN groupadd -g 1000 oracle && \
+    useradd -d /operator -M -s /bin/bash -g 1000 -u 1000 oracle && \
+    mkdir /operator && \
+    mkdir /operator/lib && \
+    mkdir /logs && \
+    chown -R 1000:1000 /operator /logs
+USER 1000
+
 ENV PATH=$PATH:/operator
 
 ARG VERSION

@@ -1,10 +1,10 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
 import java.util.Properties;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class OracleDB {
 
@@ -18,7 +18,7 @@ public class OracleDB {
   public static final String DEFAULT_DB_PDB = "InfraPDB1";
   public static final String DEFAULT_DB_DOMAIN = "us.oracle.com";
   public static final String DEFAULT_DB_BUNDLE = "basic";
-  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+
   // db instance variables
   private String name;
   private String namespace;
@@ -29,6 +29,11 @@ public class OracleDB {
   private String dbdomain;
   private String dbbundle;
 
+  /**
+   * Construct Oracle DB.
+   * @param dbPropFile DB properties file
+   * @throws Exception on failure
+   */
   public OracleDB(String dbPropFile) throws Exception {
     Properties dbprops = TestUtils.loadProps(dbPropFile);
     name = dbprops.getProperty("name", DEFAULT_DB_NAME);
@@ -66,7 +71,7 @@ public class OracleDB {
             + "\" --env=\"DB_BUNDLE="
             + dbbundle
             + "\" --expose";
-    logger.info("Running " + command);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
     TestUtils.exec(command);
   }
 
@@ -110,12 +115,12 @@ public class OracleDB {
     } else {
       // delete the deployment and service
       command = "kubectl delete deployment " + name + " -n " + namespace;
-      logger.info("Running " + command);
+      LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
       ExecCommand.exec(command);
 
       // delete the service
       command = "kubectl delete service " + name + " -n " + namespace;
-      logger.info("Running " + command);
+      LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
       ExecCommand.exec(command);
     }
   }

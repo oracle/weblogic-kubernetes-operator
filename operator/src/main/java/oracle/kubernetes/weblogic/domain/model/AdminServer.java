@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -97,8 +97,18 @@ public class AdminServer extends Server {
         .toHashCode();
   }
 
+  /**
+   * Create the AdminService.
+   * @return the AdminService
+   */
+  public AdminService createAdminService() {
+    if (adminService == null) {
+      adminService = new AdminService();
+    }
+    return adminService;
+  }
+
   public AdminService getAdminService() {
-    if (adminService == null) adminService = new AdminService();
     return adminService;
   }
 }

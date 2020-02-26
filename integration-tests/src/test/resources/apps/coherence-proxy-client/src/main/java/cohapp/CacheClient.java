@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package cohapp;
@@ -55,6 +55,9 @@ public class CacheClient {
   private static final String SUCCESS = "Success";
   private static final String FAILURE = "Failure";
 
+  /**
+   * Load cache.
+   */
   public void loadCache() {
     try {
       init();
@@ -64,6 +67,9 @@ public class CacheClient {
     }
   }
 
+  /**
+   * Validate cache.
+   */
   public void validateCache() {
     try {
       init();
@@ -267,8 +273,9 @@ public class CacheClient {
 
       // Fill value buff
       StringBuffer valBuf = new StringBuffer(VALUE_SIZE);
-      for (int i = 0; i < VALUE_SIZE; i++)
+      for (int i = 0; i < VALUE_SIZE; i++) {
         valBuf.append('a');
+      }
 
       try {
         System.out.println("Running " + config.operation + " thread " + config.prefix);
@@ -291,7 +298,9 @@ public class CacheClient {
           try {
             //  System.out.println("Key = " + key);
             error = doCacheOperation(cache, map);
-            if (error != null) return;
+            if (error != null) {
+              return;
+            }
             if (delay > 0) {
               Thread.sleep(delay);
             }

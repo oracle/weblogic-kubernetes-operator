@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -132,11 +132,11 @@ public class ManagedServersUpStep extends Step {
   }
 
   class ServersUpStepFactory {
-    WlsDomainConfig domainTopology;
-    Domain domain;
+    final WlsDomainConfig domainTopology;
+    final Domain domain;
     Collection<ServerStartupInfo> startupInfos;
-    Collection<String> servers = new ArrayList<>();
-    Map<String, Integer> replicas = new HashMap<>();
+    final Collection<String> servers = new ArrayList<>();
+    final Map<String, Integer> replicas = new HashMap<>();
 
     ServersUpStepFactory(WlsDomainConfig domainTopology, Domain domain) {
       this.domainTopology = domainTopology;

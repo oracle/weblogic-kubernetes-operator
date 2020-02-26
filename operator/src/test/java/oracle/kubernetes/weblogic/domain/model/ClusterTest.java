@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -13,6 +13,9 @@ public class ClusterTest extends BaseConfigurationTestBase {
   private final Cluster cluster1;
   private final Cluster cluster2;
 
+  /**
+   * Construct cluster test.
+   */
   public ClusterTest() {
     super(new Cluster(), new Cluster());
     cluster1 = getInstance1();

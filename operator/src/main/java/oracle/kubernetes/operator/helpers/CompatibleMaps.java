@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -16,7 +16,7 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
   private final String description;
   private final Map<K, V> expected;
   private final Map<K, V> actual;
-  private List<String> ignoredKeys = new ArrayList<>();
+  private final List<String> ignoredKeys = new ArrayList<>();
 
   CompatibleMaps(String description, Map<K, V> expected, Map<K, V> actual) {
     this.description = description;
@@ -26,7 +26,11 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
 
   @Override
   public boolean isCompatible() {
-    for (K key : expected.keySet()) if (isKeyToCheck(key) && isIncompatible(key)) return false;
+    for (K key : expected.keySet()) {
+      if (isKeyToCheck(key) && isIncompatible(key)) {
+        return false;
+      }
+    }
     return true;
   }
 
@@ -47,15 +51,18 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
     StringBuilder sb = new StringBuilder();
 
     Set<K> missingKeys = getMissingElements(expected.keySet(), actual.keySet());
-    if (!missingKeys.isEmpty())
+    if (!missingKeys.isEmpty()) {
       sb.append(String.format("actual %s has no entry for '%s'%n", description, missingKeys));
+    }
 
-    for (K key : expected.keySet())
-      if (isKeyToCheck(key) && actual.containsKey(key) && valuesDiffer(key))
+    for (K key : expected.keySet()) {
+      if (isKeyToCheck(key) && actual.containsKey(key) && valuesDiffer(key)) {
         sb.append(
             String.format(
                 "actual %s has entry '%s' with value '%s' rather than '%s'%n",
                 description, key, actual.get(key), expected.get(key)));
+      }
+    }
 
     return sb.toString();
   }

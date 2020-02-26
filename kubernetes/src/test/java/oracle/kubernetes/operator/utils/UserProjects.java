@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -29,7 +29,7 @@ public class UserProjects {
     return this.path;
   }
 
-  public void remove() throws Exception {
+  protected void remove() throws Exception {
     final List<Path> pathsToDelete = getContents(path);
     for (Path p : pathsToDelete) {
       Files.deleteIfExists(p);

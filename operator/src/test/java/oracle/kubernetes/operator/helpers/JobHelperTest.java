@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -14,20 +14,19 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.V1Affinity;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1JobSpec;
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PodReadinessGate;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1PodTemplateSpec;
-import io.kubernetes.client.models.V1SecretReference;
-
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodReadinessGate;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -85,14 +84,23 @@ public class JobHelperTest {
   private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
   protected List<Memento> mementos = new ArrayList<>();
 
+  /**
+   * Setup test environment.
+   * @throws Exception if TuningParameterStub fails to install
+   */
   @Before
   public void setup() throws Exception {
     mementos.add(TuningParametersStub.install());
   }
 
+  /**
+   * Cleanup test environment.
+   */
   @After
-  public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+  public void tearDown() {
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
@@ -215,19 +223,7 @@ public class JobHelperTest {
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
         hasEnvVar(
-            "USER_MEM_ARGS", "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom"));
-  }
-
-  @Test
-  public void whenDomainHasUser_Mem_Args_EnvironmentItem_introspectorPodStartupWithIt() {
-    configureDomain()
-        .withEnvironmentVariable("USER_MEM_ARGS", "-XX:+UseContainerSupport");
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        hasEnvVar("USER_MEM_ARGS", "-XX:+UseContainerSupport"));
+            "USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom"));
   }
 
   @Test

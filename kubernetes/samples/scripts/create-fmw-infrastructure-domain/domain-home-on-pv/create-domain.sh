@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -177,7 +177,7 @@ function createDomainConfigmap {
  
   # create the configmap and label it properly
   local cmName=${domainUID}-create-fmw-infra-sample-domain-job-cm
-  kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir
+  kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir --dry-run -o yaml | kubectl apply -f -
 
   echo Checking the configmap $cmName was created
   local num=`kubectl get cm -n $namespace | grep ${cmName} | wc | awk ' { print $1; } '`

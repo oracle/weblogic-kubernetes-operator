@@ -326,7 +326,7 @@ function createTestRootPVDir() {
   mkdir -p ${PV_ROOT} || exit 1
   chmod 777 ${PV_ROOT} || exit 1
 
-  trace "Info: Creating k8s cluster physical directory 'PV_ROOT/acceptance_test_pv/domain-${DOMAIN_UID}-storage' via 'kubectl run'."
+  trace "Info: Creating k8s cluster physical directory 'PV_ROOT/introspect/acceptance_test_pv/domain-${DOMAIN_UID}-storage' via 'kubectl run'."
   trace "Info: Test k8s resources use this physical directory via a PV/PVC '/shared' logical directory."
 
   ${SCRIPTPATH}/util_krun.sh -m ${PV_ROOT}:/pv-root \
@@ -522,10 +522,12 @@ function deployPod() {
       export LOCAL_SERVER_DEFAULT_PORT=$ADMIN_PORT
       export KEEP_DEFAULT_DATA_HOME="true"
       export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR=""
+      export NODEMGR_MEM_ARGS="-Xms32m -Xmx200m -Djava.security.egd=file:/dev/./urandom"
     else
       export LOCAL_SERVER_DEFAULT_PORT=$MANAGED_SERVER_PORT
       export KEEP_DEFAULT_DATA_HOME=""
       export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR="true"
+      export NODEMGR_MEM_ARGS=""
     fi
     ${SCRIPTPATH}/util_subst.sh -g wl-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
@@ -742,6 +744,161 @@ function checkFileStores() {
   fi
 }
 
+#############################################################################
+#
+# Validate NODEMGR_MEM_ARGS environment variable values (-Xms64m -Xmx100m)
+# applied to Node Manager command line.
+#
+
+function checkNodeManagerMemArg() {
+
+  trace "Verifying node manager memory arguments"
+
+  # Verify that default NODEMGR_MEM_ARGS environment value (-Xms64m -Xmx100m) was applied to the Node Manager
+  # command line when NODEMGR_MEM_ARGS was not defined.
+  linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "\-Xms64m -Xmx100m" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
+       | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
+  logstatus=0
+
+  if [ "$linecount" != "1" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep '-Xms64m -Xmx100m' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+
+  # Verify that NODEMGR_MEM_ARGS environment value (-Xms32m -Xmx200m) was applied to the Node Manager
+  # command line, of the Admin Server pod, when NODEMGR_MEM_ARGS was explicitly defined.
+  adminLinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "\-Xms32m -Xmx200m" /shared/logs/${ADMIN_NAME?}_nodemanager.out \
+       | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
+  logstatus=0
+
+  if [ "$adminLinecount" != "1" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN-NAME?}' does not contain exactly 1 line that match ' grep '-Xms32m -Xmx200m' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+
+  # Verify that NODEMGR_MEM_ARGS environment value contains "-Djava.security.egd=file:/dev/./urandom" in the Node Manager
+  # command line of the Managed Server pod.
+  adminLinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "urandom" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
+       | grep -v "NODEMGR_MEM_ARGS"  |  grep -v "JAVA_OPTIONS" | wc -l`"
+  logstatus=0
+
+  if [ "$adminLinecount" != "1" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN-NAME?}' does not contain exactly 1 line that match ' grep '-Djava.security.egd=file:/dev/./urandom' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+
+  # Verify that USER_MEM_ARGS environment value did not get applied to the Node Manager command line
+  maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "MaxRAMFraction=1" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
+       | grep -v "JAVA_OPTIONS" | wc -l`"
+  logstatus=0
+
+  if [ "$maxRamlinecount" != "0" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep 'MaxRAMFraction=1' ', this probably means that it's reporting USER_MEM_ARGS was applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+}
+
+#############################################################################
+#
+# Validate USER_MEM_ARGS environment variable values (-MaxRAMFraction)
+# applied to Managed Server command line.
+#
+function checkManagedServer1MemArg() {
+
+  trace "Verifying managed server memory arguments"
+
+  # Verify that USER_MEM_ARGS environment value was applied to the Managed Server 1 command line
+  maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "MaxRAMFraction=1"  /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
+       | grep -v "JAVA_OPTIONS" | wc -l`"
+  logstatus=0
+
+  if [ "$maxRamlinecount" != "1" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep 'MaxRAMFraction=1' ', this probably means that it's reporting USER_MEM_ARGS not applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+
+  # Verify that NODEMGR_MEM_ARGS environment value did not get applied to the Managed Server 1 command line
+  linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "\-Xms64m -Xmx100m" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
+       | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
+  logstatus=0
+
+  if [ "$linecount" != "0" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep '-Xms64m -Xmx100m' ', this probably means that it's reporting NODEMGR_MEM_ARGS was applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+}
+
+#############################################################################
+#
+# Validate NODEMGR_JAVA_OPTIONS environment variable values (-Dnodemgr.java.options)
+# applied to Node Manager command line.
+#
+
+function checkNodeManagerJavaOptions() {
+
+  trace "Verifying node manager java options"
+
+  # Verify that NODEMGR_JAVA_OPTIONS environment value was applied to the Node Manager command line
+  nodeMgrlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "\-Dnodemgr.java.options" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
+       | grep -v "NODEMGR_JAVA_OPTIONS"  | wc -l`"
+  logstatus=0
+
+  if [ "$nodeMgrlinecount" != "1" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep '-Dnodemgr.java.options' ', this probably means that it's reporting NODEMGR_JAVA_OPTIONS not applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+
+  # Verify that NODEMGR_JAVA_OPTIONS environment value did not get applied to the Managed Server command line
+  nmJavaOptlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+       grep "\-Dnodemgr.java.options" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
+       | grep -v "NODEMGR_JAVA_OPTIONS" | wc -l`"
+  logstatus=0
+
+  if [ "$nmJavaOptlinecount" != "0" ]; then
+    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep 'M-Dnodemgr.java.options' ', this probably means that it's reporting NODEMGR_JAVA_OPTIONS was applied"
+    logstatus=1
+  fi
+
+  if [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+}
+
 
 #############################################################################
 #
@@ -810,5 +967,14 @@ checkFileStores util_test_adminfilestores.sh ${ADMIN_NAME}
 
 # Verify default file store was created for managed-server1
 checkFileStores util_test_ms1filestores.sh ${MANAGED_SERVER_NAME_BASE?}1
+
+# Verify node manager memory args
+checkNodeManagerMemArg
+
+# Verify Managed Server memory args
+checkManagedServer1MemArg
+
+# Verify node manager java options
+checkNodeManagerJavaOptions
 
 trace "Info: Success!"

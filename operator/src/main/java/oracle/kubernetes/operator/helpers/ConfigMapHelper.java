@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -14,9 +14,9 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -41,7 +41,7 @@ public class ConfigMapHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String SCRIPT_LOCATION = "/scripts";
-  private static final ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
+  private static ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
 
   private static final FileGroupReader scriptReader = new FileGroupReader(SCRIPT_LOCATION);
 
@@ -137,6 +137,11 @@ public class ConfigMapHelper {
     return fname;
   }
 
+  /**
+   * parse domain topology yaml.
+   * @param topologyYaml topology yaml.
+   * @return parsed object hierarchy
+   */
   public static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
@@ -161,7 +166,7 @@ public class ConfigMapHelper {
   }
 
   static class ScriptConfigMapStep extends Step {
-    ConfigMapContext context;
+    final ConfigMapContext context;
 
     ScriptConfigMapStep(String operatorNamespace, String domainNamespace) {
       context = new ScriptConfigMapContext(this, operatorNamespace, domainNamespace);
@@ -256,7 +261,8 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_CREATED, domainNamespace);
+        LOGGER.info(MessageKeys.CM_CREATED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME,
+            domainNamespace);
         packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }
@@ -274,7 +280,8 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_REPLACED, domainNamespace);
+        LOGGER.info(MessageKeys.CM_REPLACED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME,
+            domainNamespace);
         packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }
@@ -322,7 +329,8 @@ public class ConfigMapHelper {
     }
 
     void logConfigMapExists() {
-      LOGGER.fine(MessageKeys.CM_EXISTS, domainNamespace);
+      LOGGER.fine(MessageKeys.CM_EXISTS, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME, 
+          domainNamespace);
     }
   }
 
@@ -397,9 +405,9 @@ public class ConfigMapHelper {
   }
 
   public static class SitConfigMapContext extends ConfigMapContext {
-    Map<String, String> data;
-    String domainUid;
-    String cmName;
+    final Map<String, String> data;
+    final String domainUid;
+    final String cmName;
 
     SitConfigMapContext(
         Step conflictStep,
@@ -490,7 +498,8 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_CREATED, domainNamespace);
+        LOGGER.info(MessageKeys.CM_CREATED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME, 
+            domainNamespace);
         packet.put(ProcessingConstants.SIT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }
@@ -508,7 +517,8 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_REPLACED, domainNamespace);
+        LOGGER.info(MessageKeys.CM_REPLACED, KubernetesConstants.DOMAIN_CONFIG_MAP_NAME,
+            domainNamespace);
         packet.put(ProcessingConstants.SIT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }
@@ -516,8 +526,8 @@ public class ConfigMapHelper {
   }
 
   private static class DeleteIntrospectorConfigMapStep extends Step {
-    private String domainUid;
-    private String namespace;
+    private final String domainUid;
+    private final String namespace;
 
     DeleteIntrospectorConfigMapStep(String domainUid, String namespace, Step next) {
       super(next);
@@ -592,17 +602,21 @@ public class ConfigMapHelper {
     }
   }
 
+  /**
+   * Domain topology.
+   */
   public static class DomainTopology {
     private boolean domainValid;
     private WlsDomainConfig domain;
     private List<String> validationErrors;
 
+    /**
+     * check if domain is valid.
+     * @return true, if valid
+     */
     public boolean getDomainValid() {
       // domainValid = true AND no validation errors exist
-      if (domainValid && getValidationErrors().isEmpty()) {
-        return true;
-      }
-      return false;
+      return domainValid && getValidationErrors().isEmpty();
     }
 
     public void setDomainValid(boolean domainValid) {
@@ -618,6 +632,10 @@ public class ConfigMapHelper {
       this.domain = domain;
     }
 
+    /**
+     * Retrieve validation errors.
+     * @return validation errors
+     */
     public List<String> getValidationErrors() {
       if (validationErrors == null) {
         validationErrors = Collections.emptyList();
@@ -638,6 +656,10 @@ public class ConfigMapHelper {
       this.validationErrors = validationErrors;
     }
 
+    /**
+     * to string.
+     * @return string
+     */
     public String toString() {
       if (domainValid) {
         return "domain: " + domain;

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -13,8 +13,8 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
@@ -106,14 +106,20 @@ class CallTestSupport {
   /** Throws an exception if any of the canned responses were not used. */
   void verifyAllDefinedResponsesInvoked() {
     List<CannedResponse> unusedResponses = new ArrayList<>();
-    for (CannedResponse cannedResponse : this.cannedResponses.keySet())
-      if (isUnused(cannedResponse)) unusedResponses.add(cannedResponse);
+    for (CannedResponse cannedResponse : this.cannedResponses.keySet()) {
+      if (isUnused(cannedResponse)) {
+        unusedResponses.add(cannedResponse);
+      }
+    }
 
-    if (unusedResponses.isEmpty()) return;
+    if (unusedResponses.isEmpty()) {
+      return;
+    }
 
     StringBuilder sb = new StringBuilder("The following expected calls were not made:\n");
-    for (CannedResponse cannedResponse : unusedResponses)
+    for (CannedResponse cannedResponse : unusedResponses) {
       sb.append("  ").append(cannedResponse).append('\n');
+    }
 
     throw new AssertionError(sb.toString());
   }
@@ -125,8 +131,11 @@ class CallTestSupport {
   CannedResponse getMatchingResponse(
       RequestParams requestParams, String fieldSelector, String labelSelector) {
     AdditionalParams params = new AdditionalParams(fieldSelector, labelSelector);
-    for (CannedResponse cannedResponse : this.cannedResponses.keySet())
-      if (cannedResponse.matches(requestParams, params)) return afterMarking(cannedResponse);
+    for (CannedResponse cannedResponse : this.cannedResponses.keySet()) {
+      if (cannedResponse.matches(requestParams, params)) {
+        return afterMarking(cannedResponse);
+      }
+    }
 
     throw new AssertionError("Unexpected request for " + toString(requestParams, params));
   }
@@ -172,10 +181,11 @@ class CallTestSupport {
     }
 
     CallResponse getCallResponse() {
-      if (result == null)
+      if (result == null) {
         return CallResponse.createFailure(new ApiException(), status);
-      else
+      } else {
         return CallResponse.createSuccess(result, HttpURLConnection.HTTP_OK);
+      }
     }
 
     boolean matches(@Nonnull RequestParams requestParams, AdditionalParams params) {
@@ -278,8 +288,9 @@ class CallTestSupport {
     @Override
     public String toString() {
       ErrorFormatter formatter = new ErrorFormatter(methodName);
-      for (Map.Entry<String, Object> entry : requestParamExpectations.entrySet())
+      for (Map.Entry<String, Object> entry : requestParamExpectations.entrySet()) {
         formatter.addDescriptor(entry.getKey(), entry.getValue());
+      }
 
       return formatter.toString();
     }
@@ -300,7 +311,9 @@ class CallTestSupport {
     }
 
     ErrorFormatter addDescriptor(String type, Object value) {
-      if (isDefined(value)) descriptors.add(String.format("%s '%s'", type, value));
+      if (isDefined(value)) {
+        descriptors.add(String.format("%s '%s'", type, value));
+      }
       return this;
     }
 
@@ -320,9 +333,12 @@ class CallTestSupport {
       StringBuilder sb = new StringBuilder(call);
       if (!descriptors.isEmpty()) {
         sb.append(" with ").append(descriptors.get(0));
-        for (int i = 1; i < descriptors.size() - 1; i++) sb.append(", ").append(descriptors.get(i));
-        if (descriptors.size() > 1)
+        for (int i = 1; i < descriptors.size() - 1; i++) {
+          sb.append(", ").append(descriptors.get(i));
+        }
+        if (descriptors.size() > 1) {
           sb.append(" and ").append(descriptors.get(descriptors.size() - 1));
+        }
       }
       return sb.toString();
     }

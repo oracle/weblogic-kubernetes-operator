@@ -1,9 +1,9 @@
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorDeployment" }}
 ---
-apiVersion: "apps/v1beta1"
+apiVersion: "apps/v1"
 kind: "Deployment"
 metadata:
   name: "weblogic-operator"
@@ -12,6 +12,10 @@ metadata:
     weblogic.resourceVersion: "operator-v2"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 spec:
+  selector:
+    matchLabels:
+      weblogic.resourceVersion: "operator-v2"
+      weblogic.operatorName: {{ .Release.Namespace | quote }}
   replicas: 1
   template:
     metadata:

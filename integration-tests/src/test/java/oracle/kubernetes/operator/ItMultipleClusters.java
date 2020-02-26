@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -7,28 +7,32 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Multiple clusters in a domain tests.
  *
  * <p>More than 1 cluster is created in a domain , like configured and dynamic
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(Alphanumeric.class)
 public class ItMultipleClusters extends BaseTest {
 
   private static final String TWO_CONFIGURED_CLUSTER_SCRIPT =
@@ -37,6 +41,9 @@ public class ItMultipleClusters extends BaseTest {
   private static final String DOMAINUID = "twoconfigclustdomain";
   private static Operator operator1;
   private static String customDomainTemplate;
+  private static String testClassName;
+  private static String domainNS1;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -45,23 +52,50 @@ public class ItMultipleClusters extends BaseTest {
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      // initialize test properties and create the directories
-      initialize(APP_PROPS_FILE);
-      String template =
-          BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
-      String add =
-          "  - clusterName: %CLUSTER_NAME%-2\n"
-              + "    serverStartState: \"RUNNING\"\n"
-              + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
-      customDomainTemplate = BaseTest.getResultDir() + "/customDomainTemplate.yaml";
-      Files.copy(
-          Paths.get(template),
-          Paths.get(customDomainTemplate),
-          StandardCopyOption.REPLACE_EXISTING);
-      Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
+      namespaceList = new StringBuffer();
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
+      initialize(APP_PROPS_FILE, testClassName);
+    }
+  }
+
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
+  @BeforeEach
+  public void prepare() throws Exception {
+    if (FULLTEST) {
+      createResultAndPvDirs(testClassName);
+      // create operator1
+      if (operator1 == null) {
+        String template =
+            BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
+        String add =
+            "  - clusterName: %CLUSTER_NAME%-2\n"
+                + "    serverStartState: \"RUNNING\"\n"
+                + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
+        customDomainTemplate = getResultDir() + "/customDomainTemplate.yaml";
+        Files.copy(
+            Paths.get(template),
+            Paths.get(customDomainTemplate),
+            StandardCopyOption.REPLACE_EXISTING);
+        Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
+
+        Map<String, Object> operatorMap =
+            createOperatorMap(getNewSuffixCount(), true, testClassName);
+        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assertions.assertNotNull(operator1);
+        domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList.append((String)operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS1);
+      }
+
     }
   }
 
@@ -70,14 +104,13 @@ public class ItMultipleClusters extends BaseTest {
    *
    * @throws Exception exception
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-      logger.info("SUCCESS");
+      tearDown(new Object() {
+      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+
+      LoggerHelper.getLocal().info("SUCCESS");
     }
   }
 
@@ -89,52 +122,44 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoConfiguredCluster() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
 
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    logger.info("Creating Operator & waiting for the script to complete execution");
-    // create operator1
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+      Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("domainUID", DOMAINUID);
       domainMap.put("clusterType", "CONFIGURED");
       domainMap.put("customDomainTemplate", customDomainTemplate);
+      domainMap.put("namespace", domainNS1);
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/"
               + TWO_CONFIGURED_CLUSTER_SCRIPT);
-      if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
-          || (domainMap.containsKey("loadBalancer")
-              && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
-        domainMap.put("voyagerWebPort", new Integer("30366"));
-      }
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
-        DOMAINUID + "-" + domain.getAdminServerName(),
-        DOMAINUID + "-managed-server",
-        DOMAINUID + "-managed-server1",
-        DOMAINUID + "-managed-server2",
-        DOMAINUID + "-new-managed-server1",
-        DOMAINUID + "-new-managed-server2",
+          DOMAINUID + "-" + domain.getAdminServerName(),
+          DOMAINUID + "-managed-server",
+          DOMAINUID + "-managed-server1",
+          DOMAINUID + "-managed-server2",
+          DOMAINUID + "-new-managed-server1",
+          DOMAINUID + "-new-managed-server2",
       };
       verifyServersStatus(domain, pods);
-      testBasicUseCases(domain);
+      testBasicUseCases(domain, false);
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        domain.destroy();
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
     }
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -145,51 +170,42 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoMixedCluster() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String domainuid = "twomixedclusterdomain";
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String template =
-        BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
-    logger.info("Creating Operator & waiting for the script to complete execution");
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+      Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("domainUID", domainuid);
       domainMap.put("customDomainTemplate", customDomainTemplate);
+      domainMap.put("namespace", domainNS1);
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/" + TWO_MIXED_CLUSTER_SCRIPT);
-      if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
-          || (domainMap.containsKey("loadBalancer")
-              && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
-        domainMap.put("voyagerWebPort", new Integer("30377"));
-      }
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
-        domainuid + "-" + domain.getAdminServerName(),
-        domainuid + "-managed-server",
-        domainuid + "-managed-server1",
-        domainuid + "-managed-server2",
-        domainuid + "-new-managed-server1",
-        domainuid + "-new-managed-server2",
+          domainuid + "-" + domain.getAdminServerName(),
+          domainuid + "-managed-server",
+          domainuid + "-managed-server1",
+          domainuid + "-managed-server2",
+          domainuid + "-new-managed-server1",
+          domainuid + "-new-managed-server2",
       };
       verifyServersStatus(domain, pods);
 
-      testBasicUseCases(domain);
+      testBasicUseCases(domain, false);
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        domain.destroy();
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
     }
-    logger.info("SUCCESS - " + testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
@@ -200,25 +216,20 @@ public class ItMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoClusterWdtInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String domainuid = "twoclusterdomainwdt";
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Creating Operator & waiting for the script to complete execution");
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-    }
+
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
+      Map<String, Object> domainMap =
+          createDomainInImageMap(getNewSuffixCount(), true, testClassName);
       domainMap.put("domainUID", domainuid);
       domainMap.put("customDomainTemplate", customDomainTemplate);
-      if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
-          || (domainMap.containsKey("loadBalancer")
-              && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
-        domainMap.put("voyagerWebPort", new Integer("30377"));
-      }
+      domainMap.put("namespace", domainNS1);
       domainMap.put(
           "customWdtTemplate",
           BaseTest.getProjectRoot()
@@ -226,29 +237,32 @@ public class ItMultipleClusters extends BaseTest {
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String[] pods = {
-        domainuid + "-" + domain.getAdminServerName(),
-        domainuid + "-managed-server1",
-        domainuid + "-managed-server2",
-        domainuid + "-managed-server-21",
-        domainuid + "-managed-server-22",
+          domainuid + "-" + domain.getAdminServerName(),
+          domainuid + "-managed-server1",
+          domainuid + "-managed-server2",
+          domainuid + "-managed-server-21",
+          domainuid + "-managed-server-22",
       };
       verifyServersStatus(domain, pods);
-      testBasicUseCases(domain);
+      testBasicUseCases(domain, false);
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        domain.destroy();
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+      if (domain != null) {
+        domain.deleteImage();
       }
     }
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
    * Verifies all of the servers in the cluster are in Running status.
    *
    * @param domain Domain
-   * @param pods array pod names to check the status for
+   * @param pods   array pod names to check the status for
    */
   private void verifyServersStatus(Domain domain, String[] pods) {
     K8sTestUtils testUtil = new K8sTestUtils();
@@ -256,7 +270,7 @@ public class ItMultipleClusters extends BaseTest {
     String namespace = domain.getDomainNs();
     for (String pod : pods) {
       assertTrue(
-          pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
+          testUtil.isPodRunning(namespace, domain1LabelSelector, pod), pod + " Pod not running");
     }
   }
 }
