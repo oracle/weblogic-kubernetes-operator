@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -13,8 +13,8 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
@@ -195,7 +195,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Configuration for individual Managed Servers.")
-  private List<ManagedServer> managedServers = new ArrayList<>();
+  private final List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
    * The configured clusters.
@@ -203,8 +203,9 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Configuration for the clusters.")
-  protected List<Cluster> clusters = new ArrayList<>();
+  protected final List<Cluster> clusters = new ArrayList<>();
 
+  @SuppressWarnings("unused")
   @Description("Experimental feature configurations.")
   private Experimental experimental;
 
@@ -312,12 +313,13 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  public V1SecretReference getWebLogicCredentialsSecret() {
+  // NOTE: we ignore the namespace, which could be confusing. We should change it with the next schema update.
+  V1SecretReference getWebLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
   }
 
   @SuppressWarnings("unused")
-  public void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+  void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
   }
 
@@ -351,10 +353,6 @@ public class DomainSpec extends BaseConfiguration {
     this.imagePullPolicy = imagePullPolicy;
   }
 
-  private boolean hasImagePullSecrets() {
-    return imagePullSecrets != null && imagePullSecrets.size() != 0;
-  }
-
   /**
    * Gets image pull secrets.
    *
@@ -362,11 +360,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Nullable
   public List<V1LocalObjectReference> getImagePullSecrets() {
-    if (hasImagePullSecrets()) {
-      return imagePullSecrets;
-    } else {
-      return Collections.emptyList();
-    }
+    return Optional.ofNullable(imagePullSecrets).orElse(Collections.emptyList());
   }
 
   public void setImagePullSecrets(@Nullable List<V1LocalObjectReference> imagePullSecrets) {
@@ -392,8 +386,12 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private String validatePath(String s) {
-    if (s.isBlank()) return null;
-    if (s.endsWith(File.separator)) return s;
+    if (s.isBlank()) {
+      return null;
+    }
+    if (s.endsWith(File.separator)) {
+      return s;
+    }
     return s + File.separator;
   }
 
@@ -521,17 +519,9 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  private boolean hasConfigOverrideSecrets() {
-    return configOverrideSecrets != null && configOverrideSecrets.size() != 0;
-  }
-
   @Nullable
   List<String> getConfigOverrideSecrets() {
-    if (hasConfigOverrideSecrets()) {
-      return configOverrideSecrets;
-    } else {
-      return Collections.emptyList();
-    }
+    return Optional.ofNullable(configOverrideSecrets).orElse(Collections.emptyList());
   }
 
   public void setConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {

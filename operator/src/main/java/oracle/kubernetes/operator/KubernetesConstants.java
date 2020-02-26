@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -10,11 +10,6 @@ public interface KubernetesConstants {
   String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IfNotPresent.name();
   String LATEST_IMAGE_SUFFIX = ":latest";
 
-  String EXTENSIONS_API_VERSION = "extensions/v1beta1";
-  String KIND_INGRESS = "Ingress";
-  String CLASS_INGRESS = "kubernetes.io/ingress.class";
-  String CLASS_INGRESS_VALUE = "traefik";
-
   String CRD_NAME = "domains.weblogic.oracle";
   String DOMAIN = "Domain";
   String DOMAIN_GROUP = "weblogic.oracle";
@@ -23,6 +18,11 @@ public interface KubernetesConstants {
   String DOMAIN_SHORT = "dom";
   String DOMAIN_VERSION = "v6";
   String[] DOMAIN_ALTERNATE_VERSIONS = {"v2", "v3", "v4", "v5"};
+
+  String DOMAIN_PATH = "/apis/" + DOMAIN_GROUP + "/" + DOMAIN_VERSION + "/namespaces/{namespace}/" + DOMAIN_PLURAL;
+  String DOMAIN_SPECIFIC_PATH = DOMAIN_PATH + "/{name}";
+  String DOMAIN_SCALE_PATH = DOMAIN_SPECIFIC_PATH + "/scale";
+  String DOMAIN_STATUS_PATH = DOMAIN_SPECIFIC_PATH + "/status";
 
   boolean DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,13 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodCondition;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -49,6 +49,11 @@ public class PodHelper {
     return new ManagedPodStepContext(null, packet).createPodModel();
   }
 
+  /**
+   * check if pod is ready.
+   * @param pod pod
+   * @return true, if pod is ready
+   */
   public static boolean isReady(V1Pod pod) {
     boolean ready = getReadyStatus(pod);
     if (ready) {
@@ -57,6 +62,11 @@ public class PodHelper {
     return ready;
   }
 
+  /**
+   * get if pod is in ready state.
+   * @param pod pod
+   * @return true, if pod is ready
+   */
   public static boolean getReadyStatus(V1Pod pod) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
@@ -76,6 +86,11 @@ public class PodHelper {
     return false;
   }
 
+  /**
+   * Check if pod is deleting.
+   * @param pod pod
+   * @return true, if pod is deleting
+   */
   public static boolean isDeleting(V1Pod pod) {
     V1ObjectMeta meta = pod.getMetadata();
     if (meta != null) {
@@ -84,6 +99,11 @@ public class PodHelper {
     return false;
   }
 
+  /**
+   * Check if pod is in failed state.
+   * @param pod pod
+   * @return true, if pod is in failed state
+   */
   public static boolean isFailed(V1Pod pod) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
@@ -95,6 +115,11 @@ public class PodHelper {
     return false;
   }
 
+  /**
+   * get pod domain UID.
+   * @param pod pod
+   * @return domain UID
+   */
   public static String getPodDomainUid(V1Pod pod) {
     V1ObjectMeta meta = pod.getMetadata();
     Map<String, String> labels = meta.getLabels();
@@ -104,6 +129,11 @@ public class PodHelper {
     return null;
   }
 
+  /**
+   * get pod's server name.
+   * @param pod pod
+   * @return server name
+   */
   public static String getPodServerName(V1Pod pod) {
     V1ObjectMeta meta = pod.getMetadata();
     Map<String, String> labels = meta.getLabels();

@@ -14,7 +14,7 @@ alertmanager:
     existingClaim: pvc-alertmanager
   service:
     type: NodePort
-    nodePort: 32000
+    nodePort: 32500
   securityContext:
     runAsNonRoot: false
     runAsUser: 0
@@ -24,7 +24,7 @@ server:
     existingClaim: pvc-prometheus
   service:
     type: NodePort
-    nodePort: 30000
+    nodePort: 30500
   securityContext:
     runAsNonRoot: false
     runAsUser: 0

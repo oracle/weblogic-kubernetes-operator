@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -8,7 +8,6 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.utils.SystemClockTestSupport;
-import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,9 +27,14 @@ public class DomainConditionTest {
     mementos.add(SystemClockTestSupport.installClock());
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
@@ -50,5 +54,14 @@ public class DomainConditionTest {
     SystemClockTestSupport.increment();
 
     assertThat(oldCondition.equals(new DomainCondition(Available).withStatus("True")), is(true));
+  }
+
+  @Test
+  public void mayNotPatchObjects() {
+    DomainCondition oldCondition = new DomainCondition(Available).withStatus("False");
+    DomainCondition newCondition = new DomainCondition(Available).withStatus("True");
+
+    assertThat(newCondition.isPatchableFrom(oldCondition), is(false));
+
   }
 }

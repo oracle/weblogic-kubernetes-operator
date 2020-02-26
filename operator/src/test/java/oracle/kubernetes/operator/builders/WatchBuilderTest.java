@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
@@ -16,10 +16,10 @@ import com.meterware.pseudoserver.PseudoServlet;
 import com.meterware.pseudoserver.WebResource;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.utils.TestUtils;
@@ -71,10 +71,17 @@ public class WatchBuilderTest extends HttpUserAgentTest {
   private List<Memento> mementos = new ArrayList<>();
 
   private static String getSingleValue(String[] values) {
-    if (values == null || values.length == 0) return null;
-    else return values[0];
+    if (values == null || values.length == 0) {
+      return null;
+    } else {
+      return values[0];
+    }
   }
 
+  /**
+   * Cleanup test environment.
+   * @throws Exception if ClientPoolStub fails to install.
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -82,10 +89,17 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     validationErrors = new ArrayList<>();
   }
 
+  /**
+   * Cleanup test environment.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
-    if (!validationErrors.isEmpty()) throw validationErrors.get(0);
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
+    if (!validationErrors.isEmpty()) {
+      throw validationErrors.get(0);
+    }
   }
 
   @Test
@@ -306,12 +320,14 @@ public class WatchBuilderTest extends HttpUserAgentTest {
 
     @Override
     public WebResource getGetResponse() {
-      if (requestNum >= actions.size())
+      if (requestNum >= actions.size()) {
         return new WebResource("Unexpected Request #" + requestNum, HTTP_UNAVAILABLE);
+      }
 
       JsonServletAction action = actions.get(requestNum++);
-      for (ParameterValidation validation : action.validations)
+      for (ParameterValidation validation : action.validations) {
         validation.verify(getParameter(validation.parameterName));
+      }
 
       return action.webResource;
     }

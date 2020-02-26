@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -12,18 +12,21 @@ import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
-/** Operator upgrade JUnit test file testing the operator upgrade from older releases to develop. */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+/**
+ * Operator upgrade JUnit test file testing the operator upgrade from older releases to develop.
+ */
+@TestMethodOrder(Alphanumeric.class)
 public class ItOperatorUpgrade extends BaseTest {
 
   private static final String OP_BASE_REL = "2.0";
@@ -36,55 +39,59 @@ public class ItOperatorUpgrade extends BaseTest {
   private static String opUpgradeTmpDir;
   private Domain domain = null;
   private static Operator operator;
+  boolean testCompletedSuccessfully = false;
+  static String testClassName = null;
 
   /**
    * This method gets called only once before any of the test methods are executed.
    *
    * @throws Exception exception
    */
-  @BeforeClass
+  @BeforeAll
   public static void staticPrepare() throws Exception {
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
+  }
+
+  /**
+   * This method gets called before every test. It creates the result/pv root directories
+   * for the test. Creates the operator and domain if its not running.
+   *
+   * @throws Exception exception if result/pv/operator/domain creation fails
+   */
+  @BeforeEach
+  public void prepare() throws Exception {
+    createResultAndPvDirs(testClassName);
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       OP_TARGET_RELEASE = System.getenv("IMAGE_NAME_OPERATOR") + ":"
-        + System.getenv("IMAGE_TAG_OPERATOR");
+          + System.getenv("IMAGE_TAG_OPERATOR");
     }
   }
-  
+
   /**
    * cleanup the domain and operator after every test.
    *
    * @throws Exception when domain and operator cleanup fails
    */
-  @After
+  @AfterEach
   public void cleanupOperatorAndDomain() throws Exception {
-    logger.log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
-    if (domain != null) {
-      domain.destroy();
+    if (testCompletedSuccessfully) {
+      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
+      if (domain != null) {
+        //domain.destroy();
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        TestUtils.verifyAfterDeletion(domain);
+        domain.deleteImage();
+      }
+      if (operator != null) {
+        operator.destroy();
+      }
+      TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
+      //ExecResult result = cleanup();
+      LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
     }
-    if (operator != null) {
-      operator.destroy();
-    }
-    ExecResult result = cleanup();
-    logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
-    
-  }
-
-  /**
-   * Releases k8s cluster lease, archives result, pv directories.
-   *
-   * @throws Exception when deleting pv directories or other tearDown tasks fail.
-   */
-  @AfterClass
-  public static void staticUnPrepare() throws Exception {
-    if (FULLTEST) {
-      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-      logger.info("SUCCESS");
-    }
-  
   }
 
   /**
@@ -94,8 +101,10 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_0() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    testCompletedSuccessfully = false;
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator20";
     OP_DEP_NAME = "operator-upgrade20";
@@ -104,7 +113,8 @@ public class ItOperatorUpgrade extends BaseTest {
     DUID = "operatordomain20";
     setupOperatorAndDomain("2.0", "2.0");
     upgradeOperator(true);
-    logger.info("SUCCESS - " + testMethod);
+    testCompletedSuccessfully = true;
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
   }
 
   /**
@@ -114,8 +124,10 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_0_1() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    testCompletedSuccessfully = false;
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator201";
     OP_DEP_NAME = "operator-upgrade201";
@@ -124,7 +136,8 @@ public class ItOperatorUpgrade extends BaseTest {
     DUID = "operatordomain201";
     setupOperatorAndDomain("release/2.0.1", "2.0.1");
     upgradeOperator(true);
-    logger.info("SUCCESS - " + testMethod);
+    testCompletedSuccessfully = true;
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
   }
 
   /**
@@ -134,8 +147,10 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_1() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    testCompletedSuccessfully = false;
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator21";
     OP_DEP_NAME = "operator-upgrade21";
@@ -144,7 +159,8 @@ public class ItOperatorUpgrade extends BaseTest {
     DUID = "operatordomain21";
     setupOperatorAndDomain("release/2.1", "2.1");
     upgradeOperator(false);
-    logger.info("SUCCESS - " + testMethod);
+    testCompletedSuccessfully = true;
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
   }
 
   /**
@@ -154,8 +170,10 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_2_0() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    testCompletedSuccessfully = false;
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator220";
     OP_DEP_NAME = "operator-upgrade220";
@@ -164,7 +182,8 @@ public class ItOperatorUpgrade extends BaseTest {
     DUID = "operatordomain220";
     setupOperatorAndDomain("release/2.2", "2.2.0");
     upgradeOperator(false);
-    logger.info("SUCCESS - " + testMethod);
+    testCompletedSuccessfully = true;
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
   }
 
   /**
@@ -174,8 +193,10 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_2_1() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    testCompletedSuccessfully = false;
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator221";
     OP_DEP_NAME = "operator-upgrade221";
@@ -184,7 +205,8 @@ public class ItOperatorUpgrade extends BaseTest {
     DUID = "operatordomain221";
     setupOperatorAndDomain("release/2.2.1", "2.2.1");
     upgradeOperator(false);
-    logger.info("SUCCESS - " + testMethod);
+    testCompletedSuccessfully = true;
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
   }
 
   /**
@@ -194,8 +216,10 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_3_0() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(QUICKTEST);
+    testCompletedSuccessfully = false;
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator230";
     OP_DEP_NAME = "operator-upgrade230";
@@ -204,9 +228,10 @@ public class ItOperatorUpgrade extends BaseTest {
     DUID = "operatordomain230";
     setupOperatorAndDomain("release/2.3.0", "2.3.0");
     upgradeOperator(false);
-    logger.info("SUCCESS - " + testMethod);
+    testCompletedSuccessfully = true;
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
   }
-  
+
   /**
    * Upgrades operator to develop branch by using the helm upgrade.
    *
@@ -219,10 +244,7 @@ public class ItOperatorUpgrade extends BaseTest {
       checkDomainRollingRestarted();
     }
     checkOperatorVersion();
-    testBasicUseCases(domain);
-    if (FULLTEST) {
-      testClusterScaling(operator, domain);
-    }
+    testClusterScaling(operator, domain, false);
   }
 
   /**
@@ -233,7 +255,7 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   private void checkOperatorVersion() throws Exception {
     boolean result = false;
-    logger.log(
+    LoggerHelper.getLocal().log(
         Level.INFO,
         "Checking for the domain apiVersion "
             + getDomainApiVersion()
@@ -243,7 +265,7 @@ public class ItOperatorUpgrade extends BaseTest {
           TestUtils.exec(
               "kubectl get domain -n " + DOM_NS + "  " + DUID + " -o jsonpath={.apiVersion}", true);
       if (exec.stdout().contains(getDomainApiVersion())) {
-        logger.log(Level.INFO, "Got the expected apiVersion");
+        LoggerHelper.getLocal().log(Level.INFO, "Got the expected apiVersion");
         result = true;
         break;
       }
@@ -263,32 +285,31 @@ public class ItOperatorUpgrade extends BaseTest {
     domain.verifyAdminServerRestarted();
     TestUtils.checkPodReady(DUID + "-" + domain.getAdminServerName(), DOM_NS);
     for (int i = 2; i >= 1; i--) {
-      logger.info(
+      LoggerHelper.getLocal().log(Level.INFO,
           "Checking if managed server pod(" + DUID + "--managed-server" + i + ") is restarted");
       TestUtils.checkPodTerminating(DUID + "-managed-server" + i, DOM_NS);
       TestUtils.checkPodCreated(DUID + "-managed-server" + i, DOM_NS);
       TestUtils.checkPodReady(DUID + "-managed-server" + i, DOM_NS);
     }
   }
-  
+
 
   /**
    * Creates operator based on operatorRelease passed to it and then creates a WebLogic domain
    * controlled by that operator.
    *
    * @param operatorGitRelease Git branch name of the operator release version
-   * @param operatorRelease Operator release version from the
-   *     https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/tags
+   * @param operatorRelease    Operator release version from the
+   *                           https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/tags
    * @throws Exception when operator or domain creation fails
    */
   private void setupOperatorAndDomain(String operatorGitRelease, String operatorRelease)
       throws Exception {
-    logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
-    initialize(APP_PROPS_FILE);
-    opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
+    LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
+    opUpgradeTmpDir = getResultDir() + "/operatorupgrade";
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
-    Map<String, Object> operatorMap = TestUtils.loadYaml(OPERATOR1_YAML);
+    Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, "");
     operatorMap.put("operatorImageName", "oracle/weblogic-kubernetes-operator");
     operatorMap.put("operatorImageTag", operatorRelease);
     operatorMap.put("operatorGitVersion", operatorGitRelease);
@@ -296,21 +317,24 @@ public class ItOperatorUpgrade extends BaseTest {
     operatorMap.put("namespace", OP_NS);
     operatorMap.put("releaseName", OP_DEP_NAME);
     operatorMap.put("serviceAccount", OP_SA);
+    operatorMap.put("externalRestEnabled", true);
     List<String> domNs = new ArrayList<String>();
     domNs.add(DOM_NS);
     operatorMap.put("domainNamespaces", domNs);
     operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
-    TestUtils.exec("kubectl get all --all-namespaces", true);
+    // TestUtils.exec("kubectl get all --all-namespaces", true);
 
-    Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
+    // Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
+    Map<String, Object> wlstDomainMap = createDomainInImageMap(getNewSuffixCount(), false, testClassName);
     wlstDomainMap.put("domainUID", DUID);
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
     domain = TestUtils.createDomain(wlstDomainMap);
-    TestUtils.exec("kubectl get all --all-namespaces", true);
+    // TestUtils.exec("kubectl get all --all-namespaces", true);
     domain.verifyPodsCreated();
     domain.verifyServicesCreated();
     domain.verifyServersReady();
-    logger.log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
+    LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
   }
+
 }

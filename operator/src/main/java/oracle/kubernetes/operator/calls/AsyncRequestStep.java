@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -12,10 +12,10 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.kubernetes.client.ApiCallback;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ListMeta;
+import io.kubernetes.client.openapi.ApiCallback;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ListMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -285,9 +285,9 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
   private final class DefaultRetryStrategy implements RetryStrategy {
     private long retryCount = 0;
-    private int maxRetryCount;
-    private Step retryStep;
-    private RetryStrategyListener listener;
+    private final int maxRetryCount;
+    private final Step retryStep;
+    private final RetryStrategyListener listener;
 
     DefaultRetryStrategy(int maxRetryCount, Step retryStep, RetryStrategyListener listener) {
       this.maxRetryCount = maxRetryCount;
@@ -298,7 +298,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     @Override
     public NextAction doPotentialRetry(Step conflictStep, Packet packet, int statusCode) {
       // Check statusCode, many statuses should not be retried
-      // https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#http-status-codes
+      // https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#http-status-codes
       if (statusCode == 0 /* simple timeout */
           || statusCode == 429 /* StatusTooManyRequests */
           || statusCode == 500 /* StatusInternalServerError */

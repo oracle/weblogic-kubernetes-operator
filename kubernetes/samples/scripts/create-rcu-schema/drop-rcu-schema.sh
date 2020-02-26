@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
@@ -7,7 +7,7 @@
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/common/utility.sh
+source ${scriptDir}/../common/utility.sh
 
 function usage {
   echo "usage: ${script} -s <schemaPrefix> -d <dburl>  [-h]"
@@ -50,7 +50,7 @@ fi
 
 rcupod=`kubectl get po | grep rcu | cut -f1 -d " " `
 if [ -z ${rcupod} ]; then
-  echo "RCU deployment pod not found in [default] namespace"
+  echo "RCU deployment pod not found in [default] NameSpace"
   exit -2
 fi
 

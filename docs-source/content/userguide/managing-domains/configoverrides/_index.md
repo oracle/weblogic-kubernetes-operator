@@ -71,9 +71,11 @@ Typical attributes for overrides include:
 * User names, passwords, and URLs for:
   * JDBC data sources
   * JMS bridges, foreign servers, and SAF
-* Network channel public addresses:
-  * For remote RMI clients (T3, JMS, EJB, JTA)
-  * For remote WLST clients
+* Network channel external/public addresses
+  * For remote RMI clients (T3, JMS, EJB)
+  * For remote WLST clients 
+* Network channel external/public ports
+  * For remote RMI clients (T3, JMS, EJB)
 * Debugging
 * Tuning (`MaxMessageSize`, and such)
 
@@ -104,7 +106,7 @@ Typical attributes for overrides include:
   * Node Manager access credentials
   * Any existing MBean name (for example, you cannot change the domain name)
 
-Note that it's OK, even expected, to override Network Access Point `public` or `external` addresses and ports.
+Note that it's OK, even expected, to override Network Access Point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the Network Access Point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
 
 The behavior when using an unsupported override is undefined.
 

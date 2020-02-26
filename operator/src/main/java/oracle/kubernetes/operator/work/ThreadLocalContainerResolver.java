@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -40,7 +40,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 public class ThreadLocalContainerResolver extends ContainerResolver {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private ThreadLocal<Container> containerThreadLocal =
+  private final ThreadLocal<Container> containerThreadLocal =
       new ThreadLocal<Container>() {
         @Override
         protected Container initialValue() {

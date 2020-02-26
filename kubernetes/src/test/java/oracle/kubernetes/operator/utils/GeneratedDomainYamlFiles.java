@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -23,6 +23,12 @@ public class GeneratedDomainYamlFiles {
   private ParsedWeblogicDomainPersistentVolumeYaml weblogicDomainPersistentVolumeYaml;
   private ParsedWeblogicDomainPersistentVolumeClaimYaml weblogicDomainPersistentVolumeClaimYaml;
 
+  /**
+   * Construct generate domain YAML files.
+   * @param createDomainJobYaml create domain job YAML
+   * @param deleteDomainJobYaml delete domain job YAML
+   * @param domainYaml domain YAML
+   */
   public GeneratedDomainYamlFiles(
       ParsedCreateWeblogicDomainJobYaml createDomainJobYaml,
       ParsedDeleteWeblogicDomainJobYaml deleteDomainJobYaml,
@@ -39,6 +45,12 @@ public class GeneratedDomainYamlFiles {
     this.weblogicDomainPersistentVolumeClaimYaml = persistentVolumeClaimYaml;
   }
 
+  /**
+   * define Voyager YAML.
+   * @param voyagerOperatorYaml operator yaml
+   * @param voyagerOperatorSecurityYaml operator security yaml
+   * @param voyagerIngressYaml ingress yaml
+   */
   public void defineYoyagerYaml(
       ParsedVoyagerOperatorYaml voyagerOperatorYaml,
       ParsedVoyagerOperatorSecurityYaml voyagerOperatorSecurityYaml,

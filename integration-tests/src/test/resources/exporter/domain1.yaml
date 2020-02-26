@@ -1,0 +1,36 @@
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+# This is an sample domain resource which has domainHome in image.
+#
+
+apiVersion: "weblogic.oracle/v3"
+kind: Domain
+metadata:
+  name: domain1
+  namespace: default
+  labels:
+    weblogic.resourceVersion: domain-v2
+    weblogic.domainUID: domain1
+spec:
+  domainHome: /u01/oracle/user-projects/domains/domain1
+  domainHomeInImage: true
+  image: domain1-image:1.0
+  imagePullPolicy: "Always"
+  imagePullSecrets:
+    - name: ocirsecret
+  webLogicCredentialsSecret:
+    name: domain1-weblogic-credentials
+  includeServerOutInPodLog: true
+  serverStartPolicy: "IF_NEEDED"
+  replicas: 2
+  serverPod:
+    annotations:
+      prometheus.io/scrape: "false"
+  adminServer:
+    adminService:
+      channels:
+      - channelName: default
+        nodePort: 30701
+      - channelName: T3Channel
+        nodePort: 30703

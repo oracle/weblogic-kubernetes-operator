@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -11,6 +11,13 @@ public class ExecResult {
   private String stdout;
   private String stderr;
 
+  /**
+   * Construct exec result.
+   * @param exitValue exit value
+   * @param stdout standard out
+   * @param stderr standard err
+   * @throws Exception on failure
+   */
   public ExecResult(int exitValue, String stdout, String stderr) throws Exception {
     this.exitValue = exitValue;
     this.stdout = stdout;

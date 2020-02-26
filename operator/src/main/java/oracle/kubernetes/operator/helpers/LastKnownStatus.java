@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -17,6 +17,11 @@ public class LastKnownStatus {
     this(status, 0);
   }
 
+  /**
+   * Construct last known status.
+   * @param status status
+   * @param unchangedCount unchanged count
+   */
   public LastKnownStatus(String status, int unchangedCount) {
     this.status = status;
     this.unchangedCount = unchangedCount;

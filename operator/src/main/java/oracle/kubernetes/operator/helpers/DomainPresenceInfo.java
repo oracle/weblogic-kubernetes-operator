@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -16,10 +16,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -73,8 +73,11 @@ public class DomainPresenceInfo {
       ConcurrentMap<K, V> map, K key, Predicate<? super V> predicateFunction) {
     Objects.requireNonNull(predicateFunction);
     for (V oldValue; (oldValue = map.get(key)) != null; ) {
-      if (!predicateFunction.test(oldValue)) return false;
-      else if (map.remove(key, oldValue)) return true;
+      if (!predicateFunction.test(oldValue)) {
+        return false;
+      } else if (map.remove(key, oldValue)) {
+        return true;
+      }
     }
     return false;
   }
@@ -210,11 +213,14 @@ public class DomainPresenceInfo {
    * @return the new value for the pod.
    */
   public boolean deleteServerPodFromEvent(String serverName, V1Pod event) {
-    if (serverName == null) return false;
+    if (serverName == null) {
+      return false;
+    }
     ServerKubernetesObjects sko = getSko(serverName);
     V1Pod deletedPod = sko.getPod().getAndAccumulate(event, this::getNewerCurrentOrNull);
-    if (deletedPod != null)
+    if (deletedPod != null) {
       sko.getLastKnownStatus().set(new LastKnownStatus(WebLogicConstants.SHUTDOWN_STATE));
+    }
     return deletedPod != null;
   }
 
@@ -232,16 +238,6 @@ public class DomainPresenceInfo {
    */
   private V1Service getNewerCurrentOrNull(V1Service service, V1Service event) {
     return KubernetesUtils.isFirstNewer(getMetadata(service), getMetadata(event)) ? service : null;
-  }
-
-  /**
-   * Removes the pod associated with the specified server name, if any.
-   *
-   * @param serverName the name of the server
-   * @return the deleted pod, or null if there was no such pod
-   */
-  public V1Pod removeServerPod(String serverName) {
-    return getSko(serverName).getPod().getAndSet(null);
   }
 
   /**
@@ -296,7 +292,9 @@ public class DomainPresenceInfo {
    * @return true if the service was actually removed
    */
   boolean deleteServerServiceFromEvent(String serverName, V1Service event) {
-    if (serverName == null) return false;
+    if (serverName == null) {
+      return false;
+    }
     V1Service deletedService =
         getSko(serverName).getService().getAndAccumulate(event, this::getNewerCurrentOrNull);
     return deletedService != null;
@@ -315,7 +313,9 @@ public class DomainPresenceInfo {
   }
 
   void setClusterServiceFromEvent(String clusterName, V1Service event) {
-    if (clusterName == null) return;
+    if (clusterName == null) {
+      return;
+    }
 
     clusters.compute(clusterName, (k, s) -> getNewerService(s, event));
   }
@@ -344,7 +344,9 @@ public class DomainPresenceInfo {
   }
 
   boolean deleteExternalServiceFromEvent(String serverName, V1Service event) {
-    if (serverName == null) return false;
+    if (serverName == null) {
+      return false;
+    }
     V1Service deletedService =
         getSko(serverName)
             .getExternalService()
@@ -468,9 +470,9 @@ public class DomainPresenceInfo {
   /** Details about a specific managed server that will be started up. */
   public static class ServerStartupInfo {
     public final WlsServerConfig serverConfig;
-    private String clusterName;
-    private ServerSpec serverSpec;
-    private boolean isServiceOnly;
+    private final String clusterName;
+    private final ServerSpec serverSpec;
+    private final boolean isServiceOnly;
 
     /**
      * Create server startup info.

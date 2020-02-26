@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -7,9 +7,9 @@ import java.lang.reflect.Method;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
@@ -36,7 +36,7 @@ abstract class Watcher<T> {
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
   private final WatchTuning tuning;
   private Long resourceVersion;
-  private AtomicBoolean stopping;
+  private final AtomicBoolean stopping;
   private WatchListener<T> listener;
   private Thread thread = null;
   private long lastInitialize = 0;

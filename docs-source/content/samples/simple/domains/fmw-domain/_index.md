@@ -210,7 +210,7 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+      value: "-Djava.security.egd=file:/dev/./urandom "
     volumes:
     - name: weblogic-domain-storage-volume
       persistentVolumeClaim:
@@ -338,7 +338,7 @@ Spec:
       Name:   JAVA_OPTIONS
       Value:  -Dweblogic.StdoutDebugEnabled=false
       Name:   USER_MEM_ARGS
-      Value:  -XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom
+      Value:  -Djava.security.egd=file:/dev/./urandom
     Init Containers:
     Labels:
     Liveness Probe:

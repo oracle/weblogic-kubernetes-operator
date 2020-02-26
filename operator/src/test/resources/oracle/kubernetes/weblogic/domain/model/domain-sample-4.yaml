@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 kind: Domain
@@ -104,7 +104,7 @@ spec:
           - name: JAVA_OPTIONS
             value: "-server"
           - name: USER_MEM_ARGS
-            value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+            value: "-Djava.security.egd=file:/dev/./urandom "
         nodeSelector:
           os_arch: arm64
         resources:
