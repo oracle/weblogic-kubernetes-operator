@@ -431,15 +431,15 @@ function getSecretsMD5() {
 function createModelDomain() {
 
   trace "Entering createModelDomain"
-
+  local prim_domain_zip="/tmp/prim_domain.tar.gz"
   createPrimordialDomain
 
   # if the primordial domain already in the configmap, restore it
 
-  if [ -f "/tmp/prim_domain.tar.gz" ] ; then
+  if [ -f "${prim_domain_zip}" ] ; then
     trace "Using newly created domain"
   elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
-    cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > /tmp/primordial_tar.gz && tar -xzvf /tmp/primordial_tar.gz
+    cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${prim_domain_zip} && tar -xzvf ${prim_domain_zip}
   fi
 
   wdtUpdateModelDomain
