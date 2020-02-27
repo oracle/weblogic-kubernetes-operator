@@ -21,32 +21,7 @@ topology:
         "cluster-1-template":
             Cluster: "cluster-1"
             ListenPort : '@@PROP:MANSVR_PORT@@'
-resources:
-    WebAppContainer:
-        WAPEnabled: '@@PROP:WAPENABLED@@'
-        FilterDispatchedRequestsEnabled: true
-        AllowAllRoles: true
-        XPoweredByHeaderLevel: NONE
-        ServletAuthenticationFormURL: true
-        ServletReloadCheckSecs: 1
-        ChangeSessionIDOnAuthentication: true
-        MimeMappingFile: wlsdeploy/config/amimemappings.properties
-        AuthCookieEnabled: true
-        WorkContextPropagationEnabled: true
-        ReloginEnabled: true
-        GzipCompression:
-            GzipCompressionContentType: [ text/html, text/xml, text/plain ]
-            GzipCompressionEnabled: true
 appDeployments:
-    Library:
-        'jsf#1.2@1.2.9.0':
-            SourcePath: '@@WL_HOME@@/common/deployable-libraries/jsf-1.2.war'
-            ModuleType: war
-            Target: 'cluster-1'
-        'jax-rs#2.0@2.22.4.0':
-            SourcePath: '@@WL_HOME@@/common/deployable-libraries/jax-rs-2.0.war'
-            ModuleType: war
-            Target: 'cluster-1'
     Application:
         myear:
             SourcePath: wlsdeploy/applications/sample_app.ear
