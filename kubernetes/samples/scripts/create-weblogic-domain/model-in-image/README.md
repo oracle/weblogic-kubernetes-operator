@@ -127,7 +127,7 @@ It is helpful to understand the following high-level flow before running the sam
 
 ## Prerequisites for all domain types
 
-1. The JAVA_HOME environment variable must be set and must reference a valid JDK8 installation.
+1. The JAVA_HOME environment variable must be set and must reference a valid JDK8 installation. (JAVA_HOME is used by the WebLogic Image Tool.)
 
 2. Setup a source directory env variable `SRCDIR`, an empty test directory, and a test directory environment variable `WORKDIR`.  Specifically:
 
