@@ -10,13 +10,14 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
 import io.kubernetes.client.openapi.apis.AuthenticationV1Api;
 import io.kubernetes.client.openapi.apis.AuthorizationV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.VersionApi;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -35,7 +36,6 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
-import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import okhttp3.Call;
 import oracle.kubernetes.operator.TuningParameters;
@@ -108,18 +108,18 @@ public class CallBuilder {
                   requestParams.namespace,
                   (Domain) requestParams.body,
                   callback));
-  private final CallFactory<V1beta1CustomResourceDefinition> createCrd =
+  private final CallFactory<V1CustomResourceDefinition> createCrd =
       (requestParams, usage, cont, callback) ->
           wrap(
               createCustomResourceDefinitionAsync(
-                  usage, (V1beta1CustomResourceDefinition) requestParams.body, callback));
-  private final CallFactory<V1beta1CustomResourceDefinition> replaceCrd =
+                  usage, (V1CustomResourceDefinition) requestParams.body, callback));
+  private final CallFactory<V1CustomResourceDefinition> replaceCrd =
       (requestParams, usage, cont, callback) ->
           wrap(
               replaceCustomResourceDefinitionAsync(
                   usage,
                   requestParams.name,
-                  (V1beta1CustomResourceDefinition) requestParams.body,
+                  (V1CustomResourceDefinition) requestParams.body,
                   callback));
   private final CallFactory<V1ConfigMap> createConfigmap =
       (requestParams, usage, cont, callback) ->
@@ -240,7 +240,7 @@ public class CallBuilder {
   private final CallFactory<Domain> readDomain =
       (requestParams, usage, cont, callback) ->
           wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final CallFactory<V1beta1CustomResourceDefinition> readCrd =
+  private final CallFactory<V1CustomResourceDefinition> readCrd =
       (requestParams, usage, cont, callback) ->
           wrap(readCustomResourceDefinitionAsync(usage, requestParams.name, callback));
   private final CallFactory<V1ConfigMap> readConfigmap =
@@ -697,9 +697,9 @@ public class CallBuilder {
   }
 
   private Call readCustomResourceDefinitionAsync(
-      ApiClient client, String name, ApiCallback<V1beta1CustomResourceDefinition> callback)
+      ApiClient client, String name, ApiCallback<V1CustomResourceDefinition> callback)
       throws ApiException {
-    return new ApiextensionsV1beta1Api(client)
+    return new ApiextensionsV1Api(client)
         .readCustomResourceDefinitionAsync(name, pretty, exact, export, callback);
   }
 
@@ -711,7 +711,7 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step readCustomResourceDefinitionAsync(
-      String name, ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
+      String name, ResponseStep<V1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("readCRD", null, name, null), readCrd);
   }
@@ -720,10 +720,10 @@ public class CallBuilder {
 
   private Call createCustomResourceDefinitionAsync(
       ApiClient client,
-      V1beta1CustomResourceDefinition body,
-      ApiCallback<V1beta1CustomResourceDefinition> callback)
+      V1CustomResourceDefinition body,
+      ApiCallback<V1CustomResourceDefinition> callback)
       throws ApiException {
-    return new ApiextensionsV1beta1Api(client)
+    return new ApiextensionsV1Api(client)
         .createCustomResourceDefinitionAsync(body, pretty, null, null, callback);
   }
 
@@ -735,8 +735,8 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step createCustomResourceDefinitionAsync(
-      V1beta1CustomResourceDefinition body,
-      ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
+      V1CustomResourceDefinition body,
+      ResponseStep<V1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("createCRD", null, null, body), createCrd);
   }
@@ -744,10 +744,10 @@ public class CallBuilder {
   private Call replaceCustomResourceDefinitionAsync(
       ApiClient client,
       String name,
-      V1beta1CustomResourceDefinition body,
-      ApiCallback<V1beta1CustomResourceDefinition> callback)
+      V1CustomResourceDefinition body,
+      ApiCallback<V1CustomResourceDefinition> callback)
       throws ApiException {
-    return new ApiextensionsV1beta1Api(client)
+    return new ApiextensionsV1Api(client)
         .replaceCustomResourceDefinitionAsync(name, body, pretty, null, null, callback);
   }
 
@@ -761,8 +761,8 @@ public class CallBuilder {
    */
   public Step replaceCustomResourceDefinitionAsync(
       String name,
-      V1beta1CustomResourceDefinition body,
-      ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
+      V1CustomResourceDefinition body,
+      ResponseStep<V1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("replaceCRD", null, name, body), replaceCrd);
   }

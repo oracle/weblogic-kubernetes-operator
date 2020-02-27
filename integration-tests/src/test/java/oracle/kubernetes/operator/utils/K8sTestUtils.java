@@ -9,7 +9,7 @@ import java.util.logging.Level;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
-import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleList;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1DeploymentList;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -33,7 +34,6 @@ import io.kubernetes.client.openapi.models.V1RoleList;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -57,7 +57,7 @@ public class K8sTestUtils {
   private AppsV1Api appsV1Api = new AppsV1Api();
   private ExtensionsV1beta1Api extensionsV1beta1Api = new ExtensionsV1beta1Api();
   private RbacAuthorizationV1Api rbacAuthorizationV1Api = new RbacAuthorizationV1Api();
-  private ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
+  private ApiextensionsV1Api apiextensionsV1Api = new ApiextensionsV1Api();
 
   /**
    * verify domain CRD.
@@ -65,8 +65,8 @@ public class K8sTestUtils {
    */
   public void verifyDomainCrd() throws Exception {
     try {
-      V1beta1CustomResourceDefinition domainCrd =
-          apiextensionsV1beta1Api.readCustomResourceDefinition(
+      V1CustomResourceDefinition domainCrd =
+          apiextensionsV1Api.readCustomResourceDefinition(
               "domains.weblogic.oracle", null, null, null);
       assertNotNull(domainCrd, "Domain CRD exists");
     } catch (ApiException aex) {
