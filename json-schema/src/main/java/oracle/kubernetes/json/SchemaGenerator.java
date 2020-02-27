@@ -24,9 +24,12 @@ import java.util.Set;
 import java.util.TreeMap;
 import javax.annotation.Nonnull;
 
+import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.joda.time.DateTime;
 
 public class SchemaGenerator {
@@ -259,12 +262,33 @@ public class SchemaGenerator {
 
   private String getDescription(Field field) {
     Description description = field.getAnnotation(Description.class);
-    return description != null ? description.value() : null;
+    if (description != null) {
+      return description.value();
+    }
+    // ApiModelProperty is on the getter method
+    String fieldName = field.getName();
+    String getterName = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+    try {
+      Method getter = field.getDeclaringClass().getMethod(getterName);
+      ApiModelProperty apiModelProperty = getter.getAnnotation(ApiModelProperty.class);
+      String desc = apiModelProperty != null ? apiModelProperty.value() : null;
+      if (Strings.isNullOrEmpty(desc)) {
+        return getDescription(field.getType());
+      }
+      return desc;
+    } catch (NoSuchMethodException e) {
+      // no op
+      return null;
+    }
   }
 
   private String getDescription(Class<?> someClass) {
     Description description = someClass.getAnnotation(Description.class);
-    return description != null ? description.value() : null;
+    if (description != null) {
+      return description.value();
+    }
+    ApiModel apiModel = someClass.getAnnotation(ApiModel.class);
+    return apiModel != null ? apiModel.description() : null;
   }
 
   private void addStringRestrictions(Map<String, Object> result, Field field) {
@@ -452,7 +476,21 @@ public class SchemaGenerator {
   }
 
   private boolean isNonNull(Field field) {
-    return field.getAnnotation(Nonnull.class) != null;
+    if (field.getAnnotation(Nonnull.class) != null) {
+      return true;
+    }
+
+    // ApiModelProperty is on the getter method
+    String fieldName = field.getName();
+    String getterName = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+    try {
+      Method getter = field.getDeclaringClass().getMethod(getterName);
+      ApiModelProperty apiModelProperty = getter.getAnnotation(ApiModelProperty.class);
+      return apiModelProperty != null && apiModelProperty.required();
+    } catch (NoSuchMethodException e) {
+      // no op
+      return false;
+    }
   }
 
   private class SubSchemaGenerator {
