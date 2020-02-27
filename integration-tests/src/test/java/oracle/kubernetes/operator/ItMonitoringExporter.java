@@ -10,7 +10,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -84,6 +87,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static StringBuffer namespaceList;
   private static String domainNS1;
   private static String domainNS2;
+  private static String currentDateTime;
 
 
   /**
@@ -184,11 +188,11 @@ public class ItMonitoringExporter extends BaseTest {
           String image = System.getenv("REPO_REGISTRY")
               + "/weblogick8s/"
               + domainNS2
-              + "-image:1.0";
+              + "-image:" + currentDateTime;
           String cmd = "docker rmi -f " + image;
           TestUtils.exec(cmd, true);
         }
-        String cmd = "docker rmi -f " + domainNS2 + "-image:1.0";
+        String cmd = "docker rmi -f " + domainNS2 + "-image:" + currentDateTime;
         TestUtils.exec(cmd, true);
       }
       if (operator != null) {
@@ -255,7 +259,7 @@ public class ItMonitoringExporter extends BaseTest {
             + " "
             + args
             + " | tee "
-            + "script.log";
+            + outLogFile;
     TestUtils.exec(crdCmd, true);
     crdCmd = " cat " + destLoc + "/" + outLogFile;
     ExecResult result = ExecCommand.exec(crdCmd);
@@ -368,7 +372,9 @@ public class ItMonitoringExporter extends BaseTest {
   private void upgradeTraefikHostName() throws Exception {
     String chartDir =
         BaseTest.getProjectRoot()
-            + "/integration-tests/src/test/resources/charts/ingress-per-domain";
+           + "/kubernetes/samples/charts/ingress-per-domain";
+
+
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append("--reuse-values ")
         .append("--set ")
@@ -814,7 +820,7 @@ public class ItMonitoringExporter extends BaseTest {
       throw ex;
     } finally {
       String crdCmd =
-          " kubectl delete -f " + resourceExporterDir + "/domainInImage.yaml";
+          " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domainInImage.yaml";
       ExecCommand.exec(crdCmd);
       crdCmd = "kubectl delete secret " + domainNS2 + "-weblogic-credentials";
       ExecCommand.exec(crdCmd);
@@ -827,11 +833,11 @@ public class ItMonitoringExporter extends BaseTest {
   private void fireAlert() throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Fire Alert by changing replca count");
     replaceStringInFile(
-        resourceExporterDir + "/domainInImage.yaml", "replicas: 2", "replicas: 1");
+        monitoringExporterEndToEndDir + "/demo-domains/domainInImage.yaml", "replicas: 2", "replicas: 1");
 
     // apply new domain yaml and verify pod restart
     String crdCmd =
-        " kubectl apply -f " + resourceExporterDir + "/domainInImage.yaml";
+        " kubectl apply -f " + monitoringExporterEndToEndDir + "/demo-domains/domainInImage.yaml";
     TestUtils.exec(crdCmd);
 
     TestUtils.checkPodReady(domainNS2 + "-admin-server", domainNS2);
@@ -1012,27 +1018,22 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static void createWlsImageAndDeploy() throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, " Starting to create WLS Image");
-    String image = domainNS2 + "-image:1.0";
-    String command =
-        "cd "
-            + monitoringExporterEndToEndDir
-            + "/demo-domains/domainBuilder/ && ./build.sh " + domainNS2 + " "
-            + wlsUser
-            + " "
-            + wlsPassword
-            + " wluser1 wlpwd123 | tee buidImage.log";
-    TestUtils.exec(command);
-    String crdCmd = " cat " + monitoringExporterEndToEndDir
-        + "/demo-domains/domainBuilder/"
-        + "/buidImage.log";
-    ExecResult result = ExecCommand.exec(crdCmd);
-    assertFalse(
-        result.stdout().contains("BUILD FAILURE"), "Shell script failed: " + result.stdout());
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    Date date = new Date();
+    currentDateTime = dateFormat.format(date) + "-" + System.currentTimeMillis();
+    String image = domainNS2 + "-image:" + currentDateTime;
+    executeShelScript(
+        resourceExporterDir,
+        monitoringExporterScriptDir,
+        "createWLSImage.sh",
+        monitoringExporterDir + " " + resourceExporterDir
+            + " " + domainNS2
+        + " " + currentDateTime
+        + " " + wlsUser
+        + " " +  wlsPassword, "createWLSImage.out");
 
-    LoggerHelper.getLocal().log(Level.INFO, "Result output from  the command " + crdCmd + " : " + result.stdout());
     // for remote k8s cluster and domain in image case, push the domain image to OCIR
     if (BaseTest.SHARED_CLUSTER) {
-      TestUtils.copyFile(resourceExporterDir + "/domain1.yaml", resourceExporterDir + "/domainInImage.yaml");
       TestUtils.createDockerRegistrySecret(
           "ocirsecret",
           System.getenv("REPO_REGISTRY"),
@@ -1043,37 +1044,32 @@ public class ItMonitoringExporter extends BaseTest {
       String oldImage = image;
       image = System.getenv("REPO_REGISTRY")
             + "/weblogick8s/"
-            + domainNS2
-            + "-image:1.0";
+            + oldImage;
       loginAndTagImage(oldImage, image);
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
       // image
 
       TestUtils.loginAndPushImageToOcir(image);
-    } else {
-      TestUtils.copyFile(monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml",
-          resourceExporterDir + "/domainInImage.yaml");
     }
-    replaceStringInFile(resourceExporterDir + "/domainInImage.yaml", "domain1-image:1.0", image);
-    replaceStringInFile(resourceExporterDir + "/domainInImage.yaml", "v3", "v6");
-    replaceStringInFile(resourceExporterDir + "/domainInImage.yaml", "default", domainNS2);
-    replaceStringInFile(resourceExporterDir + "/domainInImage.yaml", "domain1", domainNS2);
-    replaceStringInFile(resourceExporterDir + "/domainInImage.yaml",
+
+    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domainInImage.yaml",
+        domainNS2 + "-image:1.0", image);
+    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domainInImage.yaml",
         "30703", String.valueOf(31000 + getNewSuffixCount()));
-    replaceStringInFile(resourceExporterDir + "/domainInImage.yaml",
+    replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domainInImage.yaml",
         "30701", String.valueOf(30800 + getNewSuffixCount()));
     LoggerHelper.getLocal().log(Level.INFO, " Starting to create secret");
-    command =
+    String crdCmd =
         "kubectl -n " + domainNS2 + " create secret generic " + domainNS2 + "-weblogic-credentials "
             + "  --from-literal=username="
             + wlsUser
             + "  --from-literal=password="
             + wlsPassword;
-    TestUtils.exec(command);
+    TestUtils.exec(crdCmd);
 
     // apply new domain yaml and verify pod restart
     crdCmd =
-        " kubectl apply -f " + resourceExporterDir + "/domainInImage.yaml";
+        " kubectl apply -f " + monitoringExporterEndToEndDir + "/demo-domains/domainInImage.yaml";
     TestUtils.exec(crdCmd);
 
     TestUtils.checkPodReady(domainNS2 + "-admin-server", domainNS2);
@@ -1093,7 +1089,7 @@ public class ItMonitoringExporter extends BaseTest {
             + ":"
             + wlsPassword
             + "@" + domainNS2 + "-managed-server-1:8001/wls-exporter/metrics";
-    result = TestUtils.exec(crdCmd);
+    ExecResult result = TestUtils.exec(crdCmd);
     assertTrue((result.stdout().contains("wls_servlet_execution_time_average")));
     crdCmd =
         "kubectl exec -n " + domainNS2 + " curl -- curl http://"
@@ -1135,53 +1131,29 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static void installPrometheusGrafanaWebHookMySqlCoordinator() throws Exception {
     prometheusPort = "30500";
+    String crdCmd = " cp " + resourceExporterDir + "/promvalues.yaml"
+        + " " + monitoringExporterEndToEndDir
+        + "/prometheus/promvalues.yaml";
+    TestUtils.exec(crdCmd, true);
     String promalertmanagerPort = String.valueOf(32500 + getNewSuffixCount());
     replaceStringInFile(
-        resourceExporterDir + "/promvalues.yaml", "32500", promalertmanagerPort);
+        monitoringExporterEndToEndDir + "/prometheus/promvalues.yaml", "32500", promalertmanagerPort);
     grafanaPort = String.valueOf(31000 + getNewSuffixCount());
     replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
         "31000", grafanaPort);
+    
     executeShelScript(
         resourceExporterDir,
         monitoringExporterScriptDir,
-        "createProm.sh",
-        monitoringExporterDir + " " + resourceExporterDir + " " + PROMETHEUS_CHART_VERSION
-            + " " + domainNS1 + " " + domainNS2, "createProm.out");
+        "createPromGrafanaMySqlCoordWebhook.sh",
+        monitoringExporterDir
+            + " " + resourceExporterDir
+            + " " + PROMETHEUS_CHART_VERSION
+            + " " + GRAFANA_CHART_VERSION
+            + " " + domainNS1
+            + " " + domainNS2,
+            "createPromGrafanaMySqlCoordWebhook.out");
 
-    executeShelScript(
-        resourceExporterDir,
-        monitoringExporterScriptDir,
-        "createGrafana.sh",
-        monitoringExporterDir + " " + resourceExporterDir +  " "
-            + GRAFANA_CHART_VERSION + " " + domainNS1 + " " + domainNS2, "createGrafana.out");
-
-    executeShelScript(
-        resourceExporterDir,
-        monitoringExporterScriptDir,
-        "createMySql.sh",
-        monitoringExporterDir + " " + resourceExporterDir
-            + " " + domainNS2, "createMySql.out");
-
-    executeShelScript(
-        resourceExporterDir,
-        monitoringExporterScriptDir,
-        "createWLSImage.sh",
-        monitoringExporterDir + " " + resourceExporterDir
-            + " " + domainNS2, "createWLSImage.out");
-
-    executeShelScript(
-        resourceExporterDir,
-        monitoringExporterScriptDir,
-        "createWebhook.sh",
-        monitoringExporterDir + " " + resourceExporterDir + " " + domainNS1
-            + " " + domainNS2, "createWebHook.out");
-
-    executeShelScript(
-        resourceExporterDir,
-        monitoringExporterScriptDir,
-        "createCoord.sh",
-        monitoringExporterDir + " " + resourceExporterDir + " " + domainNS1,
-        "createCoord.out");
 
     String webhookPod = getPodName("app=webhook", "webhook");
     TestUtils.checkPodReady(webhookPod, "webhook");

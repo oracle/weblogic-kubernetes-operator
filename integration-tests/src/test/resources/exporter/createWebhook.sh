@@ -1,9 +1,7 @@
-#!/bin/bash
+#!/bin/bash -x
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upload
 monitoringExporterDir=$1
-domainNS=$3
-domainNS1=$4
 resourceExporterDir=$2
 monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/end2end
 

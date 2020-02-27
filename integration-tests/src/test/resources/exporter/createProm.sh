@@ -9,8 +9,6 @@ promVersionArgs=$3
 monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/end2end
 
 
-cp ${resourceExporterDir}/promvalues.yaml ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
-
 sed -i "s/default;domain1/${domainNS};${domainNS}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
 
 kubectl create ns monitoring
@@ -20,13 +18,20 @@ kubectl apply -f ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.y
 kubectl get pv -n monitoring
 kubectl get pvc -n monitoring
 
+HELM_VERSION=$(helm version --short --client)
+
 helm repo update
 
 export appname=prometheus
 for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
 
-helm install --wait --name prometheus --namespace monitoring --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus  --version ${promVersionArgs}
-
+if [[ "$HELM_VERSION" =~ "v2" ]]; then
+  helm install --wait --name prometheus --namespace monitoring --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus  --version ${promVersionArgs}
+elif [[ "$HELM_VERSION" =~ "v3" ]]; then
+  helm install prometheus --wait --namespace monitoring --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus  --version ${promVersionArgs}
 POD_NAME=$(kubectl get pod -l app=prometheus -n monitoring -o jsonpath="{.items[0].metadata.name}")
-
+else
+    echo "Detected Unsuppoted Helm Version [${HELM_VERSION}]"
+    exit 1
+fi
 echo "Finished - [createProm.sh] ..."
