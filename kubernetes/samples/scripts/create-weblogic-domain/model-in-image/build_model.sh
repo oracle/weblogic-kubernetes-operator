@@ -23,9 +23,11 @@
 #
 #    WDT_DOMAIN_TYPE - 'WLS' (default), 'JRF', or 'RestrictedJRF'.
 #
-
-# TBD rename 'build_model' or some-such.  This now stages the entire model.
-
+# NOTE: If you want to specify your own model files, then you don't
+#       need to run this script. Instead set environment variables
+#       that indicate the location of your model files as per
+#       the instructions in './build_image_model.sh'.
+#
 
 set -eu
 

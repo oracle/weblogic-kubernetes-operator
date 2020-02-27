@@ -21,11 +21,13 @@
 #
 #    WDT_INSTALLER_URL WIT_INSTALLER_URL
 #      Defaults to 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
-#      and 'https://github.com/oracle/weblogic-image-tooling/releases/latest' respectively.
+#      and 'https://github.com/oracle/weblogic-image-tool/releases/latest' respectively.
 #
 #      To override an installer URL, export the URL env to point to a specific zip file, for example:
 #      export WDT_INSTALLER_URL=https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.7.0/weblogic-deploy.zip
 #
+
+set -o pipefail
 
 set -eu
 
@@ -34,7 +36,7 @@ cd ${WORKDIR}
 DOWNLOAD_WIT=${DOWNLOAD_WIT:-when-missing}
 DOWNLOAD_WDT=${DOWNLOAD_WDT:-when-missing}
 WDT_INSTALLER_URL=${WDT_INSTALLER_URL:-https://github.com/oracle/weblogic-deploy-tooling/releases/latest}
-WIT_INSTALLER_URL=${WIT_INSTALLER_URL:-https://github.com/oracle/weblogic-image-tooling/releases/latest}
+WIT_INSTALLER_URL=${WIT_INSTALLER_URL:-https://github.com/oracle/weblogic-image-tool/releases/latest}
 
 download_zip() {
   set -eu
@@ -47,7 +49,7 @@ download_zip() {
     echo "@@"
     echo "@@ -----------------------------------------------------------------------"
     echo "@@ Info: NOTE! Skipping '$LOCATION' download since local                  "
-    echo "@@             file '$ZIPFILE' already exists.                            "
+    echo "@@             file '$WORKDIR/$ZIPFILE' already exists.                   "
     echo "@@             To force a download, 'export $DOWNLOAD_VAR_NAME=always'.   "
     echo "@@ -----------------------------------------------------------------------"
     echo "@@"
@@ -55,16 +57,22 @@ download_zip() {
     return
   fi
 
-  echo "@@ Downloading '$LOCATION' to '$ZIPFILE' from 'https://github.com$downloadlink'."
+  echo "@@ Downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
 
-  local iurl=$1
-  if [ "`echo $iurl | grep -c '/latest$'`" = "1" ]; then
-    LOCATION=$(curl -sL https://github.com/$LOCATION/releases/latest | grep "releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
-    echo "@@ URL ends in 'latest' so it was converted to '$LOCATION'"
+  local iurl="$LOCATION"
+  if [ "`echo $iurl | grep -c 'https://github.com.*/latest$'`" = "1" ]; then
+    echo "@@ The location URL matches regex 'https://github.com.*/latest$'. About to convert to direct location."
+    local tempfile="$(mktemp -u).$(basename $0).$SECONDS.$PPID.$RANDOM"
+    curl -fL $LOCATION -o $tempfile
+    LOCATION=https://github.com/$(cat $tempfile | grep "releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
+    rm -f $tempfile
+    echo "@@ The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
+    echo "@@ Now downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
   fi
 
-  curl -L $LOCATION -o $ZIPFILE
+  rm -f $ZIPFILE
+  curl -fL $LOCATION -o $ZIPFILE
 }
 
-download_zip weblogic-deploy-tooling.zip $WDT_INSTALLER_DIR DOWNLOAD_WDT
-download_zip weblogic-image-tool.zip $WIT_INSTALLER_DIR DOWNLOAD_WIT
+download_zip weblogic-deploy-tooling.zip $WDT_INSTALLER_URL DOWNLOAD_WDT
+download_zip weblogic-image-tool.zip $WIT_INSTALLER_URL DOWNLOAD_WIT
