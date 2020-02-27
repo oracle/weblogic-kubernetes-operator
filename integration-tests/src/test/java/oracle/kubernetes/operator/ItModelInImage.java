@@ -87,7 +87,9 @@ public class ItModelInImage extends BaseTest {
   }
 
   /**
-   *
+   * Create a domain using model in image and having configmap in the domain.yaml
+   * before deploying the domain. Verify the running domain has configuration given
+   * in configmap
    * @throws Exception exception
    */
   @Test
@@ -104,10 +106,69 @@ public class ItModelInImage extends BaseTest {
       Map<String, Object> domainMap =
           createModelInImageMap(getNewSuffixCount(), testClassName);
       domainMap.put("namespace", domainNS);
-      //domain = TestUtils.createDomain(domainMap);
-      domain = new Domain(domainMap, true, false);
+      domainMap.put("miiConfigMap", domainMap.get("domainUID") + "-mii-config-map");
+      domainMap.put("miiConfigMapFileOrDir", "./model.cm.properties");
 
+      // domain = TestUtils.createDomain(domainMap);
+      domain = new Domain(domainMap, true, false);
       domain.verifyDomainCreated();
+
+      //ToDo: access MS using port given in configmap props
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+    }
+
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Create a domain using model in image and deploy the domain.
+   * After deploying the domain, update domain crd with overrides configmap and apply the crd.
+   * Verify the running domain has configuration given in overrides configmap
+   *
+   * @throws Exception exception
+   */
+  @Test
+  public void testModelInImageOverridesUseCase() throws Exception {
+    Assumptions.assumeTrue(QUICKTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Creating Domain & waiting for the script to complete execution");
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> domainMap =
+          createModelInImageMap(getNewSuffixCount(), testClassName);
+      domainMap.put("namespace", domainNS);
+      String domainUid = (String)domainMap.get("domainUID");
+      String overridesConfigMap = domainUid + "-mii-overrides-config-map";
+      String overridesConfigMapFileOrDir = "./model.cm.properties";
+      // the below override attributes are just place holders,
+      // they are not used while creating the domain first time
+      domainMap.put("overridesConfigMap", overridesConfigMap);
+      domainMap.put("overridesConfigMapFileOrDir", overridesConfigMapFileOrDir);
+
+      // domain = TestUtils.createDomain(domainMap);
+      domain = new Domain(domainMap, true, false);
+      domain.verifyDomainCreated();
+
+      domain.createMIIConfigMap("overridesConfigMap",
+          "overridesConfigMapFileOrDir");
+
+      //append overridesConfigMap to domain.yaml
+      domain.appendOverridesConfigMapAndApply();
+
+      // verify the servers in the domain are being restarted in a sequence
+      domain.verifyAdminServerRestarted();
+      domain.verifyManagedServersRestarted();
+
+      //ToDo: access MS using port given in configmap props
+
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {

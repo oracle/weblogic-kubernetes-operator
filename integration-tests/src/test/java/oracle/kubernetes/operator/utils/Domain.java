@@ -1503,6 +1503,9 @@ public class Domain {
           domainNS);
     }
 
+    //create configmap for MII
+    createMIIConfigMap("miiConfigMap", "miiConfigMapFileOrDir");
+
     // write configOverride and configOverrideSecrets to domain.yaml and/or create domain
     if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")
         || !createDomainResource) {
@@ -1571,7 +1574,7 @@ public class Domain {
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
-      ExecResult result = ExecCommand.exec(curlCmd);
+      ExecResult result = TestUtils.exec(curlCmd, true);
       String responseCode = result.stdout().trim();
       if (result.exitValue() != 0 || !responseCode.equals("200")) {
         LoggerHelper.getLocal().log(Level.INFO,
@@ -2391,4 +2394,44 @@ public class Domain {
         appName, scriptName, username, password, infoDirName, archiveExt);
   }
 
+  /**
+   * create config map with given keys for map name and file
+   * @param cmKeyName
+   * @param cmFileKeyName
+   * @throws Exception
+   */
+  public void createMIIConfigMap(String cmKeyName, String cmFileKeyName) throws Exception {
+    if (domainMap.containsKey("domainHomeSourceType")
+        && domainMap.get("domainHomeSourceType").equals("FromModel")) {
+      if (domainMap.containsKey(cmKeyName)) {
+        if (!domainMap.containsKey(cmFileKeyName)) {
+          throw new RuntimeException("FAILED: Missing " + cmFileKeyName + " when "
+              + cmKeyName + " is configured");
+        }
+        TestUtils.createConfigMap(domainMap.get(cmKeyName).toString(),
+            resultsDir + "/samples/model-in-image/"
+                  + domainMap.get(cmFileKeyName), domainNS);
+
+      }
+    }
+  }
+
+  /**
+   * append overridesConfigMap to domain.yaml and apply
+   * @throws Exception
+   */
+  public void appendOverridesConfigMapAndApply() throws Exception {
+    if (!domainMap.containsKey("overridesConfigMap")) {
+      throw new RuntimeException("FAILED: Missing overridesConfigMap in domain map");
+    }
+    String domainYaml =
+        (String)domainMap.get("userProjectsDir")
+            + "/weblogic-domains/"
+            + domainMap.get("domainUID")
+            + "/domain.yaml";
+
+    String contentToAppend = "  overridesConfigMap: " + domainMap.get("overridesConfigMap");
+    Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
+    TestUtils.exec("kubectl apply -f " + domainYaml, true);
+  }
 }

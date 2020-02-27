@@ -98,41 +98,28 @@ spec:
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
 
-  # Optional configmap for additional models and variable files
-  # wdtConfigMap : %DOMAIN_UID%-wdt-config-map
+  %MII_PREFIX%configuration:
+    # secrets: [ %DOMAIN_UID%-rcu-access ]
 
-  # user model-in-image online update or not (default is false)
-  #useOnlineUpdate: "true"
+  %MII_PREFIX%  model:
+      #
+      # Optional configmap for additional models and variable files
+      #
+  %MII_CONFIG_MAP_PREFIX%    configMap: %MII_CONFIG_MAP%
 
-  #
-  # For life cycle online update, if it is set to true it will cancel the update and error out
-  # default is false if not set
-  #
-  #rollbackIfRequireStart: true
+      #
+      # wdt domain type for model in image case
+      # Valid WDT_DOMAIN_TYPE_VALUES are 'WLS', 'JRF', and 'RestrictedJRF'
+      #
+  %MII_PREFIX%    domainType: %WDT_DOMAIN_TYPE%
 
-  #
-  # The wdt domain type for model in image case.
-  # Valid values are 'WLS', 'JRF', and 'RestrictedJRF'
-  #
-  wdtDomainType: %WDT_DOMAIN_TYPE%
-
-  #
-  #
-  # Keep jrf schema between updates. If not set, defaults to true.
-  #
-  #keepJRFSchema: "true"
-
-  #
-  # k8 secret name for the opss extract wallet.  It contains the key passphrase used to extract the
-  # opss wallet and optional key ewallet.p12 containing the base64 encoded opss wallet
-  #
-  #
-  #opssWalletSecret:
-  #  name: sample-domain1-opss-key-passphrase-secret
-
-  #
-  # Use this if the wdt model is encrypted
-  #
-  #wdtEncryptionPassPhrase:
-  #  name: wdt-encrypt-passphrase-secret
-
+    #opss:
+      #
+      # k8 secret for the opss extract wallet.  It contains the key passphrase used to extract the wallet
+      #
+      #walletPasswordSecret: %DOMAIN_UID%-opss-key-passphrase-secret
+      #
+      # opss wallet file secret containing key ewallet.p12 containing the base64 encoded opss wallet
+      #walletFileSecret: %DOMAIN_UID%-opss-walletfile-secret
+      #
+      #

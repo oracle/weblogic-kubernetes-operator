@@ -302,6 +302,18 @@ function createFiles {
     istioPrefix="${disabledPrefix}"
   fi
 
+  if [ "${domainHomeSourceType}" == "FromModel" ]; then
+    miiPrefix="${enabledPrefix}"
+  else
+    miiPrefix="${disabledPrefix}"
+  fi
+
+  if [ -z "${miiConfigMap}" ]; then
+    miiConfigMapPrefix="${disabledPrefix}"
+  else
+    miiConfigMapPrefix="${enabledPrefix}"
+  fi
+
   # For some parameters, use the default value if not defined.
   if [ -z "${domainPVMountPath}" ]; then
     domainPVMountPath="/shared"
@@ -327,13 +339,7 @@ function createFiles {
 
   if [ "${domainHomeInImage}" == "true" ]; then
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
-
-    # change this when domainHomeSourceType is used in new schema
-    if [ -z $wdtDomainType ]; then
-      domainHome="/u01/oracle/user_projects/domains/${domainName}"
-    else
-      domainHome="/u01/domains/${domainName}"
-    fi
+    domainHome="/u01/domains/${domainName}"
 
     if [ -z $domainHomeImageBuildPath ]; then
       domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image"
@@ -428,7 +434,6 @@ function createFiles {
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
     sed -i -e "s:%WDT_VERSION%:${wdtVersion}:g" ${createJobOutput}
-    sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
     echo Generating ${deleteJobOutput}
@@ -447,7 +452,14 @@ function createFiles {
     sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${deleteJobOutput}
   fi
 
-  if [ "${domainHomeInImage}" == "true" ]; then
+  if [ "${domainHomeSourceType}" == "FromModel" ]; then
+    # leave domainHomeSourceType to FromModel
+    if [ "${logHomeOnPV}" == "true" ]; then
+      logHomeOnPVPrefix="${enabledPrefix}"
+    else
+      logHomeOnPVPrefix="${disabledPrefix}"
+    fi
+  elif [ "${domainHomeInImage}" == "true" ]; then
     domainHomeSourceType="Image"
     if [ "${logHomeOnPV}" == "true" ]; then
       logHomeOnPVPrefix="${enabledPrefix}"
@@ -490,6 +502,9 @@ function createFiles {
   sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
+  sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%MII_CONFIG_MAP%:${miiConfigMap}:g" ${dcrOutput}
   sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${dcrOutput}
 
   buildServerPodResources

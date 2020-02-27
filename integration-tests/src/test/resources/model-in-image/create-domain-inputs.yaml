@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # The version of this inputs file.  Do not modify.
@@ -145,6 +145,9 @@ domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.3
 # serverPodMemoryLimit: "1Gi"
 # serverPodCpuLimit: "1000m"
 
+# domainHomeSourceType is FromModel for MII
+domainHomeSourceType: FromModel
+
 # The wdt domain type for model in image case.
 # Valid values are 'WLS', 'JRF', and 'RestrictedJRF'
 wdtDomainType: WLS
@@ -155,8 +158,20 @@ wdtModelFile: ./model.yaml.wls
 # wdt properties file to be used for the model
 wdtModelPropertiesFile: ./model.properties
 
-#configMapModelFile: ./configmap.model.yaml
+# configMap for MII
+#miiConfigMap: domain1-mii-config-map
 
-#configMapPropertiesFile: ./configmap.model.properties
+# To create configmap with multiple files, create a sub directory at the same directory
+# as this inputs file and give path here, example ./advancedusecase/
+#miiConfigMapFileOrDir: ./model.cm.properties
+
+# configmap for overrides -- not required in this file??
+#overridesConfigMap: domain1-mii-overrides-config-map
+
+# To create configmap with multiple files, create a sub directory at the same directory
+# as this inputs file and give path here, example ./overridesusecase/
+#overridesConfigMapFileOrDir: ./model.cm.properties
+
+
 
 
