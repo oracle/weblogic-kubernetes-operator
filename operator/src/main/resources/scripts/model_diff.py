@@ -6,7 +6,8 @@ UNSAFE_ONLINE_UPDATE=0
 SAFE_ONLINE_UPDATE=1
 FATAL_MODEL_CHANGES=2
 MODELS_SAME=3
-UNSAFE_SECURITY_UPDATE=4
+SECURITY_INFO_UPDATED=4
+RCU_PASSWORD_CHANGED=5
 
 # The following class is borrowed directly from the WDT project's yaml_tranlator.py
 class PythonToYaml:
@@ -260,46 +261,29 @@ class ModelDiffer:
 
     def is_safe_diff(self, model):
         """
-        Is it a safe difference to do online update.
+        Is it a safe difference for update.
         :param model: diffed model
-        return 0 false ;
-            1 true ;
-            2 for fatal
-            3 for no difference
+        return 0 - always return 0 for V1
         """
 
         # check for phase 1 any security changes in the domainInfo intersection
 
         if model.has_key('domainInfo'):
-            if model['domainInfo'].has_key('AdminUserName') or model['domainInfo'].has_key('AdminPassword') or model['domainInfo'].has_key('WLSRoles'):
-                return UNSAFE_SECURITY_UPDATE
+            domain_info = model['domainInfo']
+            if domain_info.has_key('AdminUserName') or domain_info.has_key('AdminPassword') \
+                    or domain_info.has_key('WLSRoles'):
+                changed_items.append(SECURITY_INFO_UPDATED)
 
-        # filter out any appDeployments for now. It is possible to support app but
-        # case to handle include deletion, redeploy...
-        #
-        if model.has_key('appDeployments'):
-            return UNSAFE_ONLINE_UPDATE
+            if domain_info.has_key('RCUDbInfo'):
+                rcu_db_info = domain_info['RCUDbInfo']
+                if rcu_db_info.has_key('rcu_schema_password'):
+                    changed_items.append(RCU_PASSWORD_CHANGED)
 
-        # if nothing changed
-        if not model or not bool(model):
-            return MODELS_SAME
+                if rcu_db_info.has_key('rcu_db_conn_string') \
+                    or rcu_db_info.has_key('rcu_prefix'):
+                    changed_items.append(SECURITY_INFO_UPDATED)
 
-        # if there is anything not in existing model
-        # WDT does not support certain type of deletion - entity level and no apps
-
-        if len(all_removed) > 0:
-            return UNSAFE_ONLINE_UPDATE
-
-        #if len(all_added) > 0:
-        rc = self._is_safe_addition(all_added)
-        if rc != SAFE_ONLINE_UPDATE:
-            return rc
-
-        rc = self._is_safe_addition(all_changes)
-        if rc != SAFE_ONLINE_UPDATE:
-            return rc
-
-        return SAFE_ONLINE_UPDATE
+        return 0
 
     def _is_safe_addition(self, items):
         """
@@ -500,7 +484,7 @@ def main():
         obj = ModelFileDiffer(sys.argv[1], sys.argv[2])
         rc=obj.compare()
         rcfh = open('/tmp/model_diff_rc', 'w')
-        rcfh.write(str(rc))
+        rcfh.write(",".join(map(str,changed_items)))
         rcfh.close()
         System.exit(0)
         exit(0)
@@ -514,6 +498,7 @@ if __name__ == "__main__":
     all_changes = []
     all_added = []
     all_removed = []
+    changed_items = []
     main()
 
 
