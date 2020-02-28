@@ -9,7 +9,7 @@
 # Pull base image
 # From the Docker store
 # -------------------------
-FROM openjdk:11-oracle
+FROM openjdk:15-oracle
 RUN yum -y install openssl && yum clean all
 
 # Maintainer
