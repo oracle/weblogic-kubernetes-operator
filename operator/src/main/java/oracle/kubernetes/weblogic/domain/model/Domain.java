@@ -541,9 +541,9 @@ public class Domain {
   }
 
   class Validator {
-    private List<String> failures = new ArrayList<>();
-    private Set<String> clusterNames = new HashSet<>();
-    private Set<String> serverNames = new HashSet<>();
+    private final List<String> failures = new ArrayList<>();
+    private final Set<String> clusterNames = new HashSet<>();
+    private final Set<String> serverNames = new HashSet<>();
 
     List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
       addDuplicateNames();
@@ -551,6 +551,7 @@ public class Domain {
       addUnmappedLogHome();
       addReservedEnvironmentVariables();
       addMissingSecrets(kubernetesResources);
+      addIllegalSitConfigForMII();
       verifyNoAlternateSecretNamespaceSpecified();
 
       return failures;
@@ -629,6 +630,13 @@ public class Domain {
       }
     }
 
+    private void addIllegalSitConfigForMII() {
+      if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType()) 
+          && getConfigOverrides() != null) {
+        failures.add(DomainValidationMessages.illegalSitConfigForMII(getConfigOverrides()));
+      }
+    }
+
     private void addReservedEnvironmentVariables() {
       checkReservedIntrospectorVariables(spec, "spec");
       Optional.ofNullable(spec.getAdminServer())
@@ -641,7 +649,7 @@ public class Domain {
     }
 
     class EnvironmentVariableCheck {
-      private Predicate<String> isReserved;
+      private final Predicate<String> isReserved;
 
       EnvironmentVariableCheck(Predicate<String> isReserved) {
         this.isReserved = isReserved;

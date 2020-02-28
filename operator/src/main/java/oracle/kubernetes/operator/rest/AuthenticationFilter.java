@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.rest;
 
-import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -43,7 +42,7 @@ public class AuthenticationFilter extends BaseDebugLoggingFilter implements Cont
 
   public static final String REST_BACKEND_PROPERTY = "RestBackend";
   public static final String ACCESS_TOKEN_PREFIX = "Bearer ";
-  private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @Context private Application application; // TBD - does this work?
 
   /** Construct an AuthenticationFilter. */
@@ -52,7 +51,7 @@ public class AuthenticationFilter extends BaseDebugLoggingFilter implements Cont
   }
 
   @Override
-  public void filter(ContainerRequestContext req) throws IOException {
+  public void filter(ContainerRequestContext req) {
     LOGGER.entering();
     try {
       ResourceConfig rc = (ResourceConfig) application;

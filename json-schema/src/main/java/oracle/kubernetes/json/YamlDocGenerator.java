@@ -20,10 +20,10 @@ public class YamlDocGenerator {
   private static final String CLASS_TABLE_HEADER =
       "| Name | Type | Description |\n" + "| --- | --- | --- |";
   private static final String DEFINITION_PREFIX = "#/definitions/";
-  private static List NON_REFERENCE_TYPES = Arrays.asList("Map", "DateTime");
-  private Map<String, Object> schema;
-  private List<String> referencesNeeded = new ArrayList<>();
-  private Set<String> referencesGenerated = new HashSet<>();
+  private static final List NON_REFERENCE_TYPES = Arrays.asList("Map", "DateTime");
+  private final Map<String, Object> schema;
+  private final List<String> referencesNeeded = new ArrayList<>();
+  private final Set<String> referencesGenerated = new HashSet<>();
   private KubernetesSchemaReference kubernetesReference;
   private YamlDocGenerator kubernetesGenerator;
 
@@ -196,8 +196,8 @@ public class YamlDocGenerator {
   }
 
   private class Type {
-    Map<String, Object> fieldMap;
-    String specifiedType;
+    final Map<String, Object> fieldMap;
+    final String specifiedType;
 
     Type(Map<String, Object> fieldMap) {
       this.fieldMap = fieldMap;
@@ -233,7 +233,7 @@ public class YamlDocGenerator {
   }
 
   private abstract class Reference {
-    private String typeName;
+    private final String typeName;
 
     private Reference(String typeName) {
       this.typeName = typeName;

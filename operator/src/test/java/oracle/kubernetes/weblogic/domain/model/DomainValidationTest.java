@@ -25,6 +25,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class DomainValidationTest {
 
   private static final String SECRET_NAME = "mysecret";
+  private static final String OVERRIDES_CM_NAME_IMAGE = "overrides-cm-image";
+  private static final String OVERRIDES_CM_NAME_MODEL = "overrides-cm-model";
   private Domain domain = createTestDomain();
   private KubernetesResourceLookupStub resourceLookup = new KubernetesResourceLookupStub();
 
@@ -34,7 +36,9 @@ public class DomainValidationTest {
    */
   @Before
   public void setUp() throws Exception {
-    resourceLookup.defineSecret(SECRET_NAME, NS);
+    resourceLookup.defineResource(SECRET_NAME, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, NS);
     configureDomain(domain)
         .withWebLogicCredentialsSecret(SECRET_NAME, null);
   }
@@ -202,7 +206,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenWebLogicCredentialsSecretNameNotFound_reportError() {
-    resourceLookup.undefineSecret(SECRET_NAME, NS);
+    resourceLookup.undefineResource(SECRET_NAME, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("WebLogicCredentials", SECRET_NAME, "not found", NS)));
@@ -210,7 +214,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenBadWebLogicCredentialsSecretNamespaceSpecified_reportError() {
-    resourceLookup.defineSecret(SECRET_NAME, "badNamespace");
+    resourceLookup.defineResource(SECRET_NAME, "badNamespace");
     configureDomain(domain)
         .withWebLogicCredentialsSecret(SECRET_NAME, "badNamespace");
 
@@ -229,7 +233,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenImagePullSecretExists_dontReportError() {
-    resourceLookup.defineSecret("a-secret", NS);
+    resourceLookup.defineResource("a-secret", NS);
     configureDomain(domain).withDefaultImagePullSecret(new V1LocalObjectReference().name("a-secret"));
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -246,10 +250,28 @@ public class DomainValidationTest {
 
   @Test
   public void whenConfigOverrideSecretExists_dontReportError() {
-    resourceLookup.defineSecret("override-secret", NS);
+    resourceLookup.defineResource("override-secret", NS);
     configureDomain(domain).withConfigOverrideSecrets("override-secret");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenConfigOverrideCMExistsTypeImage_dontReportError() {
+    resourceLookup.defineResource("overrides-cm-image", NS);
+    configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeSourceType("Image");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenConfigOverrideCMExistsTypeFromModel_reportError() {
+    resourceLookup.defineResource("overrides-cm-model", NS);
+    configureDomain(domain).withConfigOverrides("overrides-cm-model").withDomainHomeSourceType("FromModel");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Configuration overridesConfigMap", 
+            "overrides-cm", "not supported", "FromModel")));
   }
 
   private DomainConfigurator configureDomain(Domain domain) {
@@ -258,23 +280,27 @@ public class DomainValidationTest {
 
   @SuppressWarnings("SameParameterValue")
   private class KubernetesResourceLookupStub implements KubernetesResourceLookup {
-    private List<V1ObjectMeta> definedSecrets = new ArrayList<>();
+    private List<V1ObjectMeta> definedResources = new ArrayList<>();
 
-    void undefineSecret(String name, String namespace) {
-      for (Iterator<V1ObjectMeta> each = definedSecrets.iterator(); each.hasNext();) {
+    void undefineResource(String name, String namespace) {
+      for (Iterator<V1ObjectMeta> each = definedResources.iterator(); each.hasNext();) {
         if (hasSpecification(each.next(), name, namespace)) {
           each.remove();
         }
       }
     }
 
-    void defineSecret(String name, String namespace) {
-      definedSecrets.add(new V1ObjectMeta().name(name).namespace(namespace));
+    void defineResource(String name, String namespace) {
+      definedResources.add(new V1ObjectMeta().name(name).namespace(namespace));
     }
 
     @Override
     public boolean isSecretExists(String name, String namespace) {
-      return definedSecrets.stream().anyMatch(m -> hasSpecification(m, name, namespace));
+      return isResourceExists(name, namespace);
+    }
+
+    public boolean isResourceExists(String name, String namespace) {
+      return definedResources.stream().anyMatch(m -> hasSpecification(m, name, namespace));
     }
 
     boolean hasSpecification(V1ObjectMeta m, String name, String namespace) {

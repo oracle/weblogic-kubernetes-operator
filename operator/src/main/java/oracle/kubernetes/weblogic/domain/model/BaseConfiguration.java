@@ -36,13 +36,13 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public abstract class BaseConfiguration {
 
   @Description("Configuration affecting server pods.")
-  private ServerPod serverPod = new ServerPod();
+  private final ServerPod serverPod = new ServerPod();
 
   @Description(
       "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
   @SerializedName("serverService")
   @Expose
-  private ServerService serverService = new ServerService();
+  private final ServerService serverService = new ServerService();
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
   @EnumClass(ServerStartState.class)

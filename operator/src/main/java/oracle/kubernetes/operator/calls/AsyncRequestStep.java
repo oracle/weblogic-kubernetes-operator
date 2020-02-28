@@ -285,9 +285,9 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
   private final class DefaultRetryStrategy implements RetryStrategy {
     private long retryCount = 0;
-    private int maxRetryCount;
-    private Step retryStep;
-    private RetryStrategyListener listener;
+    private final int maxRetryCount;
+    private final Step retryStep;
+    private final RetryStrategyListener listener;
 
     DefaultRetryStrategy(int maxRetryCount, Step retryStep, RetryStrategyListener listener) {
       this.maxRetryCount = maxRetryCount;

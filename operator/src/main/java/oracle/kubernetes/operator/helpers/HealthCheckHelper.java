@@ -18,9 +18,6 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
 
 /** A Helper Class for checking the health of the WebLogic Operator. */
 public final class HealthCheckHelper {
@@ -151,74 +148,6 @@ public final class HealthCheckHelper {
     }
 
     return null;
-  }
-
-  public static Step skipIfNotAuthorized(Resource res, Operation op, Step authorizedStep) {
-    return skipIfNotAuthorized(res, op, authorizedStep, null);
-  }
-
-  public static Step skipIfNotAuthorized(Resource res, Operation op,
-                                         Step authorizedStep, Step notAuthorizedStep) {
-    return new SkipIfNotAuthorizedStep(res, op, authorizedStep, notAuthorizedStep);
-  }
-
-  private static class SkipIfNotAuthorizedStep extends Step {
-    private final Resource res;
-    private final Operation op;
-    private final Step notAuthorizedStep;
-
-    SkipIfNotAuthorizedStep(Resource res, Operation op,
-                            Step authorizedStep, Step notAuthorizedStep) {
-      super(authorizedStep);
-      this.res = res;
-      this.op = op;
-      this.notAuthorizedStep = notAuthorizedStep;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      V1SubjectRulesReviewStatus srrs = packet.getSpi(V1SubjectRulesReviewStatus.class);
-      if (srrs == null || check(srrs.getResourceRules(), res, op)) {
-        return doNext(packet);
-      }
-      Step skipTo = notAuthorizedStep;
-      if (skipTo == null && getNext() != null) {
-        skipTo = getNext().getNext();
-      }
-      return skipTo == null ? doEnd(packet) : doNext(skipTo, packet);
-    }
-  }
-
-  public static Step failIfNotAuthorized(Resource res, Operation op,
-                                         Step authorizedStep, Runnable onFailure) {
-    return new FailIfNotAuthorizedStep(res, op, authorizedStep, onFailure);
-  }
-
-  private static class FailIfNotAuthorizedStep extends Step {
-    private final Resource res;
-    private final Operation op;
-    private final Runnable onFailure;
-
-    FailIfNotAuthorizedStep(Resource res, Operation op,
-                            Step authorizedStep, Runnable onFailure) {
-      super(authorizedStep);
-      this.res = res;
-      this.op = op;
-      this.onFailure = onFailure;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      V1SubjectRulesReviewStatus srrs = packet.getSpi(V1SubjectRulesReviewStatus.class);
-      if (srrs == null || check(srrs.getResourceRules(), res, op)) {
-        return doNext(packet);
-      }
-      if (onFailure != null) {
-        onFailure.run();
-      }
-      return doTerminate(new IllegalStateException(
-          "Operator does not have privilege to op: " + op + " on res: " + res), packet);
-    }
   }
 
   /**

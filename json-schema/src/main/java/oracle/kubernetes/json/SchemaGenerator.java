@@ -39,13 +39,13 @@ public class SchemaGenerator {
   private static final String JSON_SCHEMA_REFERENCE = "http://json-schema.org/draft-04/schema#";
 
   // A map of classes to their $ref values
-  private Map<Class<?>, String> references = new HashMap<>();
+  private final Map<Class<?>, String> references = new HashMap<>();
 
   // A map of found classes to their definitions or the constant EXTERNAL_CLASS.
-  private Map<Class<?>, Object> definedObjects = new HashMap<>();
+  private final Map<Class<?>, Object> definedObjects = new HashMap<>();
 
   // a map of external class names to the external schema that defines them
-  private Map<String, String> schemaUrls = new HashMap<>();
+  private final Map<String, String> schemaUrls = new HashMap<>();
 
   // if true generate the additionalProperties field for each object. Defaults to true
   private boolean includeAdditionalProperties = true;
@@ -437,7 +437,7 @@ public class SchemaGenerator {
   }
 
   private class SubSchemaGenerator {
-    Field field;
+    final Field field;
 
     SubSchemaGenerator(Field field) {
       this.field = field;

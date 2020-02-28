@@ -28,7 +28,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 class FileGroupReader {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private String pathToGroup;
+  private final String pathToGroup;
 
   /**
    * Creates a reader for a specific file location.
@@ -98,7 +98,7 @@ class FileGroupReader {
   }
 
   class FileScriptPath implements ScriptPath {
-    private URI uri;
+    private final URI uri;
 
     FileScriptPath(URI uri) {
       this.uri = uri;

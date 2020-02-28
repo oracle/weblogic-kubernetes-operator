@@ -103,7 +103,7 @@ public class JobHelper {
         return true;
       }
 
-      if (configMapIntrospectVersion !=null
+      if (configMapIntrospectVersion != null
           && !configMapIntrospectVersion.equals(currentPodIntrospectVersion)) {
         return true;
       }
@@ -402,7 +402,7 @@ public class JobHelper {
 
   private static class ReadDomainIntrospectorPodLogResponseStep extends ResponseStep<String> {
     private StringBuilder logMessage = new StringBuilder();
-    private List<String> severeStatuses = new ArrayList<>();
+    private final List<String> severeStatuses = new ArrayList<>();
 
     ReadDomainIntrospectorPodLogResponseStep(Step nextStep) {
       super(nextStep);
