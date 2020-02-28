@@ -78,13 +78,15 @@ public class JobHelper {
 
       String currentPodRestartVersion = info.getDomain().getAdminServerSpec().getDomainRestartVersion();
       String currentPodIntrospectVersion = info.getDomain().getAdminServerSpec().getDomainIntrospectVersion();
-      String configMapRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSOIN);
+      String configMapRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
       String configMapIntrospectVersion = (String)packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
+      String configMapDomainName = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
+      String currentImageName = info.getDomain().getSpec().getImage();
 
-      LOGGER.finest("JobHelpr.isModelInImageUpdate currentPodRestartVersion " + currentPodRestartVersion);
-      LOGGER.finest("JobHelpr.isModelInImageUpdate currentPodIntrospectVersion " + currentPodIntrospectVersion);
-      LOGGER.finest("JobHelpr.isModelInImageUpdate configMapRestartVersion " + configMapRestartVersion);
-      LOGGER.finest("JobHelpr.isModelInImageUpdate configMapIntrospectVersion " + configMapIntrospectVersion);
+      LOGGER.finest("JobHelper.isModelInImageUpdate currentPodRestartVersion " + currentPodRestartVersion);
+      LOGGER.finest("JobHelper.isModelInImageUpdate currentPodIntrospectVersion " + currentPodIntrospectVersion);
+      LOGGER.finest("JobHelper.isModelInImageUpdate configMapRestartVersion " + configMapRestartVersion);
+      LOGGER.finest("JobHelper.isModelInImageUpdate configMapIntrospectVersion " + configMapIntrospectVersion);
 
       // If either one is set, check for differences and decide to run intropsect job
 
@@ -107,6 +109,11 @@ public class JobHelper {
           && !configMapIntrospectVersion.equals(currentPodIntrospectVersion)) {
         return true;
       }
+
+      if (!currentImageName.equals(configMapDomainName)) {
+        return true;
+      }
+
     }
     return false;
   }

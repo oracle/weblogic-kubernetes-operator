@@ -20,6 +20,7 @@ PRIMORDIAL_DOMAIN_ZIPPED="/weblogic-operator/introspectormd5/primordial_domainzi
 INTROSPECTJOB_IMAGE_MD5="/tmp/inventory_image.md5"
 INTROSPECTJOB_CM_MD5="/tmp/inventory_cm.md5"
 INTROSPECTJOB_PASSPHRASE_MD5="/tmp/inventory_passphrase.md5"
+LOCAL_PRIM_DOMAIN_ZIP="/tmp/prim_domain.tar.gz"
 
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 
@@ -36,6 +37,7 @@ WDT_OUTPUT="/tmp/wdt_output.log"
 WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model_filters.json"
 WDT_CREATE_FILTER="/weblogic-operator/scripts/wdt_create_filter.py"
+UPDATE_RCUPWD_FLAG=""
 
 ARCHIVE_ZIP_CHANGED=0
 WDT_ARTIFACTS_CHANGED=0
@@ -46,11 +48,12 @@ UNSAFE_ONLINE_UPDATE=0
 SAFE_ONLINE_UPDATE=1
 FATAL_MODEL_CHANGES=2
 MODELS_SAME=3
-UNSAFE_SECURITY_UPDATE=4
+SECURITY_INFO_UPDATED=4
+RCU_PASSWORD_CHANGED=5
+
 SCRIPT_ERROR=255
 
 operator_md5=${DOMAIN_HOME}/operatormd5
-
 # sort_files  sort the files according to the names and naming conventions and write the result to stdout
 #    $1  directory
 #    $2  extension
@@ -431,15 +434,14 @@ function getSecretsMD5() {
 function createModelDomain() {
 
   trace "Entering createModelDomain"
-
   createPrimordialDomain
 
   # if the primordial domain already in the configmap, restore it
 
-  if [ -f "/tmp/prim_domain.tar.gz" ] ; then
+  if [ -f "${LOCAL_PRIM_DOMAIN_ZIP}" ] ; then
     trace "Using newly created domain"
   elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
-    cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > /tmp/primordial_tar.gz && tar -xzvf /tmp/primordial_tar.gz
+    cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP} && tar -xzf ${LOCAL_PRIM_DOMAIN_ZIP}
   fi
 
   wdtUpdateModelDomain
@@ -493,11 +495,17 @@ function createPrimordialDomain() {
 
     cat /tmp/diffed_model.json
 
+    local security_info_updated="false"
+    security_info_updated=$(contain_returncode ${diff_rc} ${SECURITY_INFO_UPDATED})
+    local rcu_credentials_changed="false"
+    rcu_credentials_changed=$(contain_returncode ${diff_rc} ${RCU_PASSWORD_CHANGED})
     # recreate the domain if there is an unsafe security update such as admin password update
-    if [ ${diff_rc} -eq ${UNSAFE_SECURITY_UPDATE} ]; then
+    if [ ${security_info_updated} == "true" ]; then
       recreate_domain=1
     fi
-
+    if [ ${rcu_credentials_changed} == "true" ]; then
+      UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
+    fi
   fi
 
   # If there is no primordial domain or needs to recreate one due to password changes
@@ -517,7 +525,7 @@ function createPrimordialDomain() {
       empath=$(grep "/em.ear" ${DOMAIN_HOME}/config/config.xml | grep -oPm1 "(?<=<source-path>)[^<]+")
     fi
 
-    tar -pczf /tmp/prim_domain.tar.gz --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/lib  ${empath} \
+    tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/lib  ${empath} \
     ${DOMAIN_HOME}/*
   fi
 
@@ -574,10 +582,11 @@ function wdtCreatePrimordialDomain() {
   if [ ! -z ${WDT_PASSPHRASE} ]; then
     yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \
     ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
-    ${OPSS_FLAGS} >  ${WDT_OUTPUT}
+    ${OPSS_FLAGS} ${UPDATE_RCUPWD_FLAG} >  ${WDT_OUTPUT}
   else
     ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS} > ${WDT_OUTPUT}
+    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}  ${UPDATE_RCUPWD_FLAG}  \
+    > ${WDT_OUTPUT}
   fi
   ret=$?
   if [ $ret -ne 0 ]; then
@@ -613,10 +622,10 @@ function wdtUpdateModelDomain() {
   if [ ! -z ${WDT_PASSPHRASE} ]; then
     yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home \
     ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
-     > ${WDT_OUTPUT}
+      ${UPDATE_RCUPWD_FLAG} > ${WDT_OUTPUT}
   else
     ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  >  ${WDT_OUTPUT}
+    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT}
   fi
   ret=$?
   if [ $ret -ne 0 ]; then
@@ -630,16 +639,24 @@ function wdtUpdateModelDomain() {
   fi
   # restore trap
   start_trap
-
-
   trace "Exiting wdtUpdateModelDomain"
 }
+
+function contain_returncode() {
+  if echo ",$1," | grep -q ",$2,"
+  then
+    echo "true"
+  else
+    echo "false"
+  fi
+}
+
 #
 # Generic error handler
 #
 function error_handler() {
     if [ $1 -ne 0 ]; then
-        trace SEVERE  "There was an error at line: " $2 " command: " ${@:3:20}
+        trace SEVERE  "There was an error at line: ${2} command: ${@:3:20}"
         stop_trap
         exit 1
     fi

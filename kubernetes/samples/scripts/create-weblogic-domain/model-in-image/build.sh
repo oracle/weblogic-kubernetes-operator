@@ -20,7 +20,7 @@ set -eu
 
 # This step populates the model. It places a sample application and WDT files in the WORKDIR/model directory.
 
-./build_app.sh
+./build_model.sh
 
 # This step obtains a base image using a docker pull (WebLogic with patches).
 

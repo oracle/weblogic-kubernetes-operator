@@ -4,7 +4,7 @@
 
 #
 #  This script obtains a WebLogic docker image with patches.  The default
-#  version is 12.2.1.3 with interim patch 2915930
+#  version is 12.2.1.3 with interim patch 2915930. 
 #  
 #  Expects the following env vars to already be set:
 #
