@@ -76,6 +76,7 @@ public class Domain {
   private boolean voyager;
   private boolean createDomainResource = true;
   private boolean createLoadBalancer = true;
+  private String domainHomeSourceType = "";
 
   public Domain() throws Exception {
     domainMap = new HashMap<String, Object>();
@@ -1381,6 +1382,15 @@ public class Domain {
   }
 
   /**
+   * verify if all the servers in the domain are restarted
+   * @throws Exception
+   */
+  public void verifyDomainRestarted() throws Exception {
+    verifyAdminServerRestarted();
+    verifyManagedServersRestarted();
+  }
+
+  /**
    * Create a Kubernetes secret and label the secret with domainUid. This secret is used for
    * weblogicCredentialsSecretName in the domain inputs.
    *
@@ -1665,7 +1675,9 @@ public class Domain {
     resultsDir = (String) domainMap.get("resultDir");
     pvRoot = (String) domainMap.get("pvRoot");
     projectRoot = BaseTest.getProjectRoot();
-
+    if (domainMap.containsKey("domainHomeSourceType")) {
+      domainHomeSourceType = (String) domainMap.get("domainHomeSourceType");
+    }
     // copy samples to RESULT_DIR
     if (Files.exists(Paths.get(resultsDir + "/samples"))) {
       TestUtils.exec("rm -rf " + resultsDir + "/samples");
@@ -1698,8 +1710,7 @@ public class Domain {
     // read sample domain inputs
     String sampleDomainInputsFile =
         "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml";
-    if (domainMap.containsKey("domainHomeSourceType")
-            && ((String)domainMap.get("domainHomeSourceType")).equals("FromModel")) {
+    if (domainHomeSourceType.equals("FromModel")) {
       sampleDomainInputsFile =
           "/samples/model-in-image/create-domain-inputs.yaml";
 
@@ -1811,16 +1822,18 @@ public class Domain {
 
   private void checkModelInImageAttributes() {
     //model in image attributes
-    if (!domainMap.containsKey("wdtModelFile")) {
-      throw new RuntimeException("wdtModelFile is required for Model-In-Image");
-    } else {
-      domainMap.put("wdtModelFile",
-          resultsDir + "/samples/model-in-image/" + domainMap.get("wdtModelFile"));
-    }
+    if (domainHomeSourceType.equals("FromModel")) {
+      if (!domainMap.containsKey("wdtModelFile")) {
+        throw new RuntimeException("wdtModelFile is required for Model-In-Image");
+      } else {
+        domainMap.put("wdtModelFile",
+            resultsDir + "/samples/model-in-image/" + domainMap.get("wdtModelFile"));
+      }
 
-    if (domainMap.containsKey("wdtModelPropertiesFile")) {
-      domainMap.put("wdtModelPropertiesFile",
-          resultsDir + "/samples/model-in-image/" + domainMap.get("wdtModelPropertiesFile"));
+      if (domainMap.containsKey("wdtModelPropertiesFile")) {
+        domainMap.put("wdtModelPropertiesFile",
+            resultsDir + "/samples/model-in-image/" + domainMap.get("wdtModelPropertiesFile"));
+      }
     }
   }
 
@@ -2033,8 +2046,7 @@ public class Domain {
     createDomainScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
         .append(resultsDir);
     // call different create-domain.sh based on the domain type
-    if (domainMap.containsKey("domainHomeSourceType")
-        && domainMap.get("domainHomeSourceType").equals("FromModel")) {
+    if (domainHomeSourceType.equals("FromModel")) {
       createDomainScriptCmd
           .append(
               "/samples/model-in-image/create-domain.sh -u ")
@@ -2401,8 +2413,7 @@ public class Domain {
    * @throws Exception
    */
   public void createMIIConfigMap(String cmKeyName, String cmFileKeyName) throws Exception {
-    if (domainMap.containsKey("domainHomeSourceType")
-        && domainMap.get("domainHomeSourceType").equals("FromModel")) {
+    if (domainHomeSourceType.equals("FromModel")) {
       if (domainMap.containsKey(cmKeyName)) {
         if (!domainMap.containsKey(cmFileKeyName)) {
           throw new RuntimeException("FAILED: Missing " + cmFileKeyName + " when "

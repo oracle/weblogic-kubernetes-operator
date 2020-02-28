@@ -417,8 +417,10 @@ function validateDomainPVC {
 #
 function validateWdtModelFile {
   # Check if the model file exists
-  if [ ! -f $wdtModelFile ]; then
-    validationError "The WDT model file ${wdtModelFile} does not exist"
+  if [ ! -z $wdtModelFile ] then
+    if [ ! -f $wdtModelFile ]; then
+      validationError "The WDT model file ${wdtModelFile} does not exist"
+    fi
   fi
   failIfValidationErrors
 }
@@ -428,8 +430,10 @@ function validateWdtModelFile {
 #
 function validateWdtModelPropertiesFile {
   # Check if the model property file exists
-  if [ ! -f $wdtModelPropertiesFile ]; then
-    validationError "The WDT model property file ${wdtModelPropertiesFile} does not exist"
+  if [ ! -z $wdtModelPropertiesFile ] then
+    if [ ! -f $wdtModelPropertiesFile ]; then
+      validationError "The WDT model property file ${wdtModelPropertiesFile} does not exist"
+    fi
   fi
   failIfValidationErrors
 }
