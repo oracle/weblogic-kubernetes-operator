@@ -397,7 +397,7 @@ public class ConfigMapHelper {
         }
         String domainRestartVersion = info.getDomain().getAdminServerSpec().getDomainRestartVersion();
         String domainIntrospectVersion = info.getDomain().getAdminServerSpec().getDomainIntrospectVersion();
-
+        String domainImageName =  info.getDomain().getSpec().getImage();
         if (domainRestartVersion != null) {
           packet.put(ProcessingConstants.DOMAIN_RESTART_VERSOIN, domainRestartVersion);
           data.put(ProcessingConstants.DOMAIN_RESTART_VERSOIN, domainRestartVersion);
@@ -405,6 +405,10 @@ public class ConfigMapHelper {
         if (domainIntrospectVersion != null) {
           packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
           data.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
+        }
+        if (domainImageName != null) {
+          packet.put(ProcessingConstants.DOMAIN_IMAGE_NAME, domainImageName);
+          data.put(ProcessingConstants.DOMAIN_IMAGE_NAME, domainImageName);
         }
         LOGGER.info(
             MessageKeys.WLS_CONFIGURATION_READ,
@@ -634,6 +638,8 @@ public class ConfigMapHelper {
         String miiDomainZipHash = data.get("domainzip_hash");
         String domainRestartVersion = data.get(ProcessingConstants.DOMAIN_RESTART_VERSOIN);
         String domainIntrospectVersion = data.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
+        String domainImageName = data.get(ProcessingConstants.DOMAIN_IMAGE_NAME);
+
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version (from ino spec) "
             + info.getDomain().getAdminServerSpec().getDomainRestartVersion());
         LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version  (from ino spec) "
@@ -670,6 +676,10 @@ public class ConfigMapHelper {
 
         if (domainRestartVersion != null) {
           packet.put(ProcessingConstants.DOMAIN_RESTART_VERSOIN, domainRestartVersion);
+        }
+
+        if (domainImageName != null) {
+          packet.put(ProcessingConstants.DOMAIN_IMAGE_NAME, domainImageName);
         }
       }
       return doNext(packet);
