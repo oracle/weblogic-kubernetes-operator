@@ -397,18 +397,18 @@ public class ConfigMapHelper {
         }
         String domainRestartVersion = info.getDomain().getAdminServerSpec().getDomainRestartVersion();
         String domainIntrospectVersion = info.getDomain().getAdminServerSpec().getDomainIntrospectVersion();
-        String domainImageName =  info.getDomain().getSpec().getImage();
+        int modelInImageSpecHash =  info.getModelInImageSpecHash();
         if (domainRestartVersion != null) {
-          packet.put(ProcessingConstants.DOMAIN_RESTART_VERSOIN, domainRestartVersion);
-          data.put(ProcessingConstants.DOMAIN_RESTART_VERSOIN, domainRestartVersion);
+          packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
+          data.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
         }
         if (domainIntrospectVersion != null) {
           packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
           data.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
         }
-        if (domainImageName != null) {
-          packet.put(ProcessingConstants.DOMAIN_IMAGE_NAME, domainImageName);
-          data.put(ProcessingConstants.DOMAIN_IMAGE_NAME, domainImageName);
+        if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
+          packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
+          data.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
         }
         LOGGER.info(
             MessageKeys.WLS_CONFIGURATION_READ,
@@ -636,9 +636,9 @@ public class ConfigMapHelper {
         String topologyYaml = data.get("topology.yaml");
         String miiModelSecretsHash = data.get("secrets.md5");
         String miiDomainZipHash = data.get("domainzip_hash");
-        String domainRestartVersion = data.get(ProcessingConstants.DOMAIN_RESTART_VERSOIN);
+        String domainRestartVersion = data.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
         String domainIntrospectVersion = data.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
-        String domainImageName = data.get(ProcessingConstants.DOMAIN_IMAGE_NAME);
+        String modelInImageSpecHash = data.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
 
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version (from ino spec) "
             + info.getDomain().getAdminServerSpec().getDomainRestartVersion());
@@ -675,11 +675,11 @@ public class ConfigMapHelper {
         }
 
         if (domainRestartVersion != null) {
-          packet.put(ProcessingConstants.DOMAIN_RESTART_VERSOIN, domainRestartVersion);
+          packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
         }
 
-        if (domainImageName != null) {
-          packet.put(ProcessingConstants.DOMAIN_IMAGE_NAME, domainImageName);
+        if (modelInImageSpecHash != null) {
+          packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, modelInImageSpecHash);
         }
       }
       return doNext(packet);

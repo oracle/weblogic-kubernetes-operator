@@ -78,9 +78,9 @@ public class JobHelper {
 
       String currentPodRestartVersion = info.getDomain().getAdminServerSpec().getDomainRestartVersion();
       String currentPodIntrospectVersion = info.getDomain().getAdminServerSpec().getDomainIntrospectVersion();
-      String configMapRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSOIN);
+      String configMapRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
       String configMapIntrospectVersion = (String)packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
-      String configMapDomainName = (String)packet.get(ProcessingConstants.DOMAIN_IMAGE_NAME);
+      String configMapDomainName = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
       String currentImageName = info.getDomain().getSpec().getImage();
 
       LOGGER.finest("JobHelper.isModelInImageUpdate currentPodRestartVersion " + currentPodRestartVersion);
