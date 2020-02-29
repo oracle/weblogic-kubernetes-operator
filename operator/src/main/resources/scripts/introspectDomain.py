@@ -122,6 +122,9 @@ class OfflineWlstEnv(object):
     self.BOOT_FILE                = self.INTROSPECT_HOME + '/boot.properties'
     self.USERCONFIG_FILE          = self.INTROSPECT_HOME + '/userConfigNodeManager.secure'
     self.USERKEY_FILE             = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
+
+    # Model in image attributes
+
     self.DOMAIN_SECRET_MD5_FILE   = '/tmp/DomainSecret.md5'
     self.DOMAIN_ZIP               = self.INTROSPECT_HOME + '/domainzip.secure'
     self.PRIMORDIAL_DOMAIN_ZIP    = self.INTROSPECT_HOME + '/primordial_domainzip.secure'
@@ -135,14 +138,15 @@ class OfflineWlstEnv(object):
     self.JDK_PATH                 = self.INTROSPECT_HOME + "/jdk.path"
     self.SECRETS_MD5              = self.INTROSPECT_HOME + "/secrets.md5"
     self.DOMAINZIP_HASH           = self.INTROSPECT_HOME + "/domainzip_hash"
+    self.WDT_CONFIGMAP_PATH      = self.getEnvOrDef('WDT_CONFIGMAP_PATH',
+                                                    '/weblogic-operator/wdt-config-map')
+    self.DOMAIN_SOURCE_TYPE      = self.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
     self.CUSTOM_SECRET_ROOT      = self.getEnvOrDef('CUSTOM_SECRET_ROOT', '/weblogic-operator/config-overrides-secrets')
     self.CUSTOM_SITCFG_PATH      = self.getEnvOrDef('CUSTOM_SITCFG_PATH', '/weblogic-operator/config-overrides')
     self.NM_HOST                 = self.getEnvOrDef('NM_HOST', 'localhost')
-    self.WDT_CONFIGMAP_PATH      = self.getEnvOrDef('WDT_CONFIGMAP_PATH',
-                                                             '/weblogic-operator/wdt-config-map')
 
     # Set IS_FMW_INFRA to True if the image contains a FMW infrastructure domain
     # (dectected by checking the RCUPREFIX environment variable)
@@ -178,32 +182,33 @@ class OfflineWlstEnv(object):
     self.DOMAIN_NAME = self.getDomain().getName()
 
     # this should only be done for model in image case
+    if self.DOMAIN_SOURCE_TYPE == "FromModel":
+      self.handle_ModelInImageDomain()
 
-    if os.path.exists('/u01/wdt/models'):
-      self.WDT_DOMAIN_TYPE = self.getEnvOrDef('WDT_DOMAIN_TYPE', 'WLS')
+  def handle_ModelInImageDomain(self):
+    self.WDT_DOMAIN_TYPE = self.getEnvOrDef('WDT_DOMAIN_TYPE', 'WLS')
 
+    try:
+      # find the em ear source path
+      cd('Application/em')
+      em_attrs = ls(returnMap='true', returnType='a')
+      self.empath = em_attrs['SourcePath']
+    except:
+      self.empath = None
+      pass
+
+    if self.WDT_DOMAIN_TYPE == 'JRF':
       try:
-        # find the em ear source path
-        cd('Application/em')
-        em_attrs = ls(returnMap='true', returnType='a')
-        self.empath = em_attrs['SourcePath']
-      except:
-        self.empath = None
-        pass
-
-      if self.WDT_DOMAIN_TYPE == 'JRF':
-        try:
-          # Only export if it is not there already (i.e. have not been copied from the secrets
-          if not os.path.exists('/tmp/opsswallet/ewallet.p12'):
-            opss_passphrase = self.getEnv('OPSS_PASSPHRASE')
-            os.mkdir('/tmp/opsswallet')
-            exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml', \
+        # Only export if it is not there already (i.e. have not been copied from the secrets
+        if not os.path.exists('/tmp/opsswallet/ewallet.p12'):
+          opss_passphrase = self.getEnv('OPSS_PASSPHRASE')
+          os.mkdir('/tmp/opsswallet')
+          exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml', \
                               keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
-        except:
-          trace("SEVERE","Error in exporting OPSS key ")
-          dumpStack()
-          sys.exit(1)
-
+      except:
+        trace("SEVERE","Error in exporting OPSS key ")
+        dumpStack()
+        sys.exit(1)
 
   def getEmPath(self):
     return self.empath
@@ -832,7 +837,7 @@ class UserConfigAndKeyGenerator(Generator):
     finally:
       nmDisconnect()
 
-class DomainSeedGenerator(Generator):
+class MII_DomainConfigGenerator(Generator):
 
   def __init__(self, env):
     Generator.__init__(self, env, env.DOMAIN_ZIP)
@@ -841,13 +846,13 @@ class DomainSeedGenerator(Generator):
   def generate(self):
     self.open()
     try:
-      self.addDomainSeed()
+      self.addDomainConfig()
       self.close()
       self.addGeneratedFile()
     finally:
       self.close()
 
-  def addDomainSeed(self):
+  def addDomainConfig(self):
     em_ear_path = self.env.getEmPath()
     empath = ''
     if em_ear_path is not None and os.path.exists(em_ear_path):
@@ -855,9 +860,9 @@ class DomainSeedGenerator(Generator):
     #packcmd = "tar -pczf /tmp/domain.tar.gz --exclude %s/wlsdeploy --exclude %s/lib %s %s/*" % (self.domain_home,
     # self.domain_home, empath, self.domain_home)
     packcmd = "tar -pczf /tmp/domain.tar.gz %s/config/config.xml %s/config/jdbc/ %s/config/jms %s/config/coherence " \
-              "%s/config/diagnostics %s/config/startup %s/config/configCache %s/config/nodemanager" % (
+              "%s/config/diagnostics %s/config/startup %s/config/configCache %s/config/nodemanager %s" % (
               self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home,
-              self.domain_home, self.domain_home, self.domain_home)
+              self.domain_home, self.domain_home, self.domain_home, empath)
     trace(packcmd)
     rc = os.system(packcmd)
     trace("targz " + str(rc))
@@ -873,7 +878,7 @@ class DomainSeedGenerator(Generator):
     trace('done zipping up domain ')
 
 
-class OpssKeyGenerator(Generator):
+class MII_OpssWalletFileGenerator(Generator):
 
   def __init__(self, env):
     Generator.__init__(self, env, env.EWALLET)
@@ -897,7 +902,7 @@ class OpssKeyGenerator(Generator):
     trace("done writing opss key")
 
 
-class PrimordialDomainGenerator(Generator):
+class MII_PrimordialDomainGenerator(Generator):
 
   def __init__(self, env):
     Generator.__init__(self, env, env.PRIMORDIAL_DOMAIN_ZIP)
@@ -921,7 +926,7 @@ class PrimordialDomainGenerator(Generator):
     trace("done writing primordial domain")
 
 
-class InventoryMD5Generator(Generator):
+class MII_IntrospectCMFileGenerator(Generator):
 
   def __init__(self, env, inventory, fromfile):
     Generator.__init__(self, env, inventory)
@@ -931,14 +936,14 @@ class InventoryMD5Generator(Generator):
   def generate(self):
     self.open()
     try:
-      rc = self.addInventoryFile()
+      rc = self.addFile()
       self.close()
       if rc is not None:
         self.addGeneratedFile()
     finally:
       self.close()
 
-  def addInventoryFile(self):
+  def addFile(self):
     if os.path.exists(self.fromfile):
       file_str = self.env.readFile(self.fromfile)
       self.writeln(file_str)
@@ -1425,31 +1430,32 @@ class DomainIntrospector(SecretManager):
       BootPropertiesGenerator(self.env).generate()
       UserConfigAndKeyGenerator(self.env).generate()
       if os.path.exists('/u01/wdt/models'):
-        trace("md5 model")
-        InventoryMD5Generator(self.env, self.env.MERGED_MODEL_FILE,
-                              self.env.DOMAIN_HOME+"/wlsdeploy/domain_model.json").generate()
-        DomainSeedGenerator(self.env).generate()
+        trace("cfgmap write primordial_domain")
+        MII_PrimordialDomainGenerator(self.env).generate()
+        trace("cfgmap write domain zip")
+        MII_DomainConfigGenerator(self.env).generate()
+        trace("cfgmap write merged model")
+        MII_IntrospectCMFileGenerator(self.env, self.env.MERGED_MODEL_FILE,
+                                      self.env.DOMAIN_HOME +"/wlsdeploy/domain_model.json").generate()
         trace("cfgmap write md5 image")
-        InventoryMD5Generator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
+        MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
         trace("cfgmap write md5 cm")
-        InventoryMD5Generator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
+        MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
         trace("cfgmap write md5 passphrase")
-        InventoryMD5Generator(self.env, self.env.INVENTORY_PASSPHRASE_MD5, '/tmp/inventory_passphrase.md5').generate()
+        MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_PASSPHRASE_MD5, '/tmp/inventory_passphrase.md5').generate()
         trace("cfgmap write wls version")
-        InventoryMD5Generator(self.env, self.env.WLS_VERSION, '/tmp/wls_version').generate()
+        MII_IntrospectCMFileGenerator(self.env, self.env.WLS_VERSION, '/tmp/wls_version').generate()
         trace("cfgmap write jdk_path")
-        InventoryMD5Generator(self.env, self.env.JDK_PATH, '/tmp/jdk_path').generate()
+        MII_IntrospectCMFileGenerator(self.env, self.env.JDK_PATH, '/tmp/jdk_path').generate()
         trace("cfgmap write jdk_path")
-        InventoryMD5Generator(self.env, self.env.SECRETS_MD5, '/tmp/secrets.md5').generate()
+        MII_IntrospectCMFileGenerator(self.env, self.env.SECRETS_MD5, '/tmp/secrets.md5').generate()
         trace("cfgmap write model secrets")
         # Must be called after DomainSeedGenerator
-        InventoryMD5Generator(self.env, self.env.DOMAINZIP_HASH, '/tmp/domainzip_hash').generate()
-        trace("cfgmap write model secrets")
-        PrimordialDomainGenerator(self.env).generate()
-        trace("cfgmap write primordial_domain")
+        MII_IntrospectCMFileGenerator(self.env, self.env.DOMAINZIP_HASH, '/tmp/domainzip_hash').generate()
 
         if self.env.WDT_DOMAIN_TYPE == 'JRF':
-          OpssKeyGenerator(self.env).generate()
+          trace("cfgmap write JRF wallet")
+          MII_OpssWalletFileGenerator(self.env).generate()
 
 
     CustomSitConfigIntrospector(self.env).generateAndValidate()
