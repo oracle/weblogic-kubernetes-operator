@@ -196,7 +196,18 @@ public class ItOperator extends BaseTest {
       domain.verifyDomainCreated();
 
       TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-      TestUtils.verifyAfterDeletion(domain);
+      try {
+        TestUtils.verifyAfterDeletion(domain);
+      } catch (Exception ex) {
+        LoggerHelper.getLocal().log(Level.INFO,
+                "verifyAfterDeletion failed " + ex.getMessage());
+        LoggerHelper.getLocal().log(Level.INFO,
+                "verifyAfterDeletion failed " + ex.toString());
+        LoggerHelper.getLocal().log(Level.INFO,
+                "verifyAfterDeletion failed " + ex.getStackTrace());
+
+
+      }
 
 
       testCompletedSuccessfully = true;
