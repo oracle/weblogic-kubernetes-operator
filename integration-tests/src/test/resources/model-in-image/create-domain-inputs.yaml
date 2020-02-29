@@ -153,7 +153,7 @@ domainHomeSourceType: FromModel
 wdtDomainType: WLS
 
 # wdt model file containing WebLogic configuration
-wdtModelFile: ./model.yaml.wls
+wdtModelFile: ./model.wls.yaml
 
 # wdt properties file to be used for the model
 wdtModelPropertiesFile: ./model.empty.properties

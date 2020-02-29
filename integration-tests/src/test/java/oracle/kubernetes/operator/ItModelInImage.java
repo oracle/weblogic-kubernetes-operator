@@ -115,7 +115,7 @@ public class ItModelInImage extends BaseTest {
       Map<String, Object> domainMap =
           createModelInImageMap(getNewSuffixCount(), testClassName);
       domainMap.put("namespace", domainNS);
-      domainMap.put("wdtModelFile", "./model.yaml.wls");
+      domainMap.put("wdtModelFile", "./model.wls.yaml");
       domainMap.put("wdtModelPropertiesFile", "./model.properties");
 
       // domain = TestUtils.createDomain(domainMap);
@@ -157,7 +157,7 @@ public class ItModelInImage extends BaseTest {
       String cmFile = "./model.cm.properties";
 
       domainMap.put("namespace", domainNS);
-      domainMap.put("wdtModelFile", "./model.yaml.wls");
+      domainMap.put("wdtModelFile", "./model.wls.yaml");
       domainMap.put("wdtModelPropertiesFile", "./model.empty.properties");
 
       domainMap.put("miiConfigMap", cmName);
@@ -203,7 +203,7 @@ public class ItModelInImage extends BaseTest {
       String cmName = domainMap.get("domainUID") + "-mii-config-map1";
       String cmFile = "./model.properties";
       domainMap.put("namespace", domainNS);
-      domainMap.put("wdtModelFile", "./model.yaml.wls");
+      domainMap.put("wdtModelFile", "./model.wls.yaml");
       domainMap.put("wdtModelPropertiesFile", "./model.empty.properties");
 
       domainMap.put("miiConfigMap", cmName);
