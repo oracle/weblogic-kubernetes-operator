@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
@@ -143,6 +144,81 @@ public class ItOperator extends BaseTest {
       */
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+    }
+
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
+
+  //for debug only
+
+  /**
+   * Create operator if its not running. Create domain with dynamic cluster using WDT and verify the
+   * domain is started successfully. Verify cluster scaling by doing scale up for domain3 using WLDF
+   * scaling shutdown by deleting domain CRD using yaml
+   *
+   * <p>TODO: Create domain using APACHE load balancer and verify domain is started successfully and
+   * access admin console via LB port
+   *
+   * @throws Exception exception
+   */
+  @Test
+  public void testMarina() throws Exception {
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+
+
+    LoggerHelper.getLocal().log(Level.INFO,
+            "Creating Domain using DomainOnPVUsingWDT & verifing the domain creation");
+
+    Domain domain = null;
+    Operator operator = null;
+    boolean testCompletedSuccessfully = false;
+    Map<String, Object> domainMap = null;
+    try {
+      //create operator just for this test to match the namespaces with wldf-policy.yaml
+      Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
+              true, testClassName);
+      ArrayList<String> targetDomainsNS = new ArrayList<String>();
+      targetDomainsNS.add("test2");
+      operatorMap.put("domainNamespaces", targetDomainsNS);
+      operatorMap.put("namespace", "weblogic-operator2");
+      operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+      namespaceList.append(" ").append((String)operatorMap.get("namespace"));
+      K8sTestUtils k8sTestUtils = new K8sTestUtils();
+      k8sTestUtils.verifyDomainCrd();
+      k8sTestUtils.verifyDomain("test2", "test2", true);
+
+
+      testCompletedSuccessfully = true;
+    } finally {
+      /*
+      if (domain != null) {
+        domain.shutdown();
+      }
+      if (domainMap != null) {
+        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
+        TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
+                + "/weblogic-domains/" + (String)domainMap.get("domainUID"),
+                (String)domainMap.get("namespace"),
+                (String)domainMap.get("domainUID"));
+      }
+      */
+      // if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+      if (domain != null && testCompletedSuccessfully) {
+        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain: " + domain.getDomainUid());
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+
+        //FIXME in oke all k8s objects constructors return null obj
+        if (!BaseTest.OKE_CLUSTER) {
+          TestUtils.verifyAfterDeletion(domain);
+        }
+      }
+      // if (operator != null && (JENKINS || testCompletedSuccessfully)) {
+      if (operator != null && testCompletedSuccessfully) {
+        operator.destroy();
       }
     }
 
