@@ -3,9 +3,6 @@
 #
 # This is an example of how to define a Domain resource.
 #
-# TBD review this file line by line with Johnny and Tom.
-# 
-#
 apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:

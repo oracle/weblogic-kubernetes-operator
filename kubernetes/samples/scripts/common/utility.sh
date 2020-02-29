@@ -339,7 +339,7 @@ function createFiles {
 
   if [ "${domainHomeInImage}" == "true" ]; then
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
-    domainHome="/u01/domains/${domainName}"
+    domainHome="/u01/oracle/user_projects/domains/${domainName}"
 
     if [ -z $domainHomeImageBuildPath ]; then
       domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image"
