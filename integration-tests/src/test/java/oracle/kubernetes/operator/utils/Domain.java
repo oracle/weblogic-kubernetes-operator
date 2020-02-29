@@ -1689,12 +1689,14 @@ public class Domain {
             + resultsDir,
         true);
 
-    TestUtils.exec("cp -rf "
-            + (domainMap.containsKey("projectRoot")
-            ? domainMap.get("projectRoot") : BaseTest.getProjectRoot())
-            + "/integration-tests/src/test/resources/model-in-image "
-            + resultsDir + "/samples",
-        true);
+    if (domainHomeSourceType.equals("FromModel")) {
+      TestUtils.exec("cp -rf "
+              + (domainMap.containsKey("projectRoot")
+              ? domainMap.get("projectRoot") : BaseTest.getProjectRoot())
+              + "/integration-tests/src/test/resources/model-in-image "
+              + resultsDir + "/samples",
+          true);
+    }
 
     this.voyager =
         (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
