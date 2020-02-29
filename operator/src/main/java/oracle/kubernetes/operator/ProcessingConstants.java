@@ -32,5 +32,6 @@ public interface ProcessingConstants {
   public static final String SECRETS_HASH = "secretsHash";
   public static final String DOMAIN_RESTART_VERSOIN = "weblogic.domainRestartVersion";
   public static final String DOMAIN_INTROSPECT_VERSION = "weblogic.domainIntrospectVersion";
+  public static final String DOMAIN_IMAGE_NAME = "weblogic.domainImageName";
   public static final String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
 }

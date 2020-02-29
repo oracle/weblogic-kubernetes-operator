@@ -25,7 +25,7 @@ class PythonToYaml:
         """
         Do the actual heavy lifting of converting a dictionary and writing it to the file.  This method is
         called recursively when a value of the dictionary entry is itself a dictionary.
-        :param dictionary: the Python dictionarhy to converty
+        :param dictionary: the Python dictionary to convert
         :param writer: the java.io.PrintWriter for the output file
         :param indent: the amount of indent to use (based on the level of recursion)
         :raises: IOException: if an error occurs while writing the output
@@ -487,13 +487,11 @@ def main():
         rcfh.write(",".join(map(str,changed_items)))
         rcfh.close()
         System.exit(0)
-        exit(0)
     except:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         eeString = traceback.format_exception(exc_type, exc_obj, exc_tb)
         print eeString
-        #System.exit(-1)
-        exit(1)
+        System.exit(-1)
 if __name__ == "__main__":
     all_changes = []
     all_added = []

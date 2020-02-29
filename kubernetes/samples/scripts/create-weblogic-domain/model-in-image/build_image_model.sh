@@ -3,13 +3,14 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #  This script uses the WebLogic Image Tool to build a docker image with model in image
-#  artifacts. It is based on a base image obtained earlier with build_image_base.sh
+#  artifacts. By default, it uses the base image obtained earlier with build_image_base.sh,
+#  and it gets model files from the ./models directory that was setup by the build_model.sh script.
 #  
 #  Assumptions:
 #
 #    This script should be called by build.sh.  
-#    WebLogic Image Tool is downloaded to the current directory and named weblogic-image-tool.zip
-#    WebLogic Deploy Tool is downloaded to the current directory and named weblogic-deploy-tooling.zip
+#    The WebLogic Image Tool is downloaded to ./weblogic-image-tool.zip (see ./build_download.sh).
+#    The WebLogic Deploy Tool is downloaded to ./weblogic-deploy-tooling.zip (see ./build_download.sh).
 #    Model files have been populated into the "./models" directory.
 #
 #  Required environment variables:
@@ -22,6 +23,17 @@
 #    MODEL_IMAGE_NAME, MODEL_IMAGE_TYPE, MODEL_IMAGE_BUILD:
 #
 #      See build_image_init.sh for a description.
+#
+#    MODEL_DIR:
+#      
+#      Location of the model .zip, .properties, and .yaml files
+#      that will be copied in to the image.  Default is './models'.
+#
+#    MODEL_YAML_FILES, MODEL_ARCHIVE_FILES, MODEL_VARIABLES_FILES:
+#     
+#      Optionally set one or more of these with comma-separated lists of file
+#      locations to override the corresponding .yaml, .zip, and .properties
+#      files normally obtained from MODEL_DIR.
 #
 
 set -eu
@@ -42,6 +54,20 @@ if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && \
   sleep 3
   exit 0
 fi
+
+echo @@
+echo @@ Obtaining model files
+echo @@
+
+MODEL_DIR=${MODEL_DIR:-./models}
+MODEL_YAML_FILES="${MODEL_YAML_FILES:-$(ls $MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')}"
+MODEL_ARCHIVE_FILES="${MODEL_ARCHIVE_FILES:-$(ls $MODEL_DIR/*.zip | xargs | sed 's/ /,/g')}"
+MODEL_VARIABLE_FILES="${MODEL_VARIABLE_FILES:-$(ls $MODEL_DIR/*.properties | xargs | sed 's/ /,/g')}"
+
+echo @@ MODEL_YAML_FILES=${MODEL_YAML_FILES}
+echo @@ MODEL_ARCHIVE_FILES=${MODEL_ARCHIVE_FILES}
+echo @@ MODEL_VARIABLE_FILES=${MODEL_VARIABLE_FILES}
+
 
 echo @@
 echo @@ Info: Setting up imagetool and populating its caches
@@ -70,13 +96,14 @@ echo "@@"
 # use a different version of WDT, specify '--wdtVersion'.
 #
 
+
 set -x
 ${IMGTOOL_BIN} update \
   --tag $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG \
   --fromImage $BASE_IMAGE_NAME:$BASE_IMAGE_TAG \
-  --wdtModel models/model1.yaml \
-  --wdtVariables models/model1.10.properties \
-  --wdtArchive models/archive1.zip \
+  --wdtModel ${MODEL_YAML_FILES} \
+  --wdtVariables ${MODEL_VARIABLE_FILES} \
+  --wdtArchive ${MODEL_ARCHIVE_FILES} \
   --wdtModelOnly \
   --wdtDomainType ${WDT_DOMAIN_TYPE}
 

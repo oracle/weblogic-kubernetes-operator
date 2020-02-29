@@ -4,7 +4,7 @@
 #
 
 #
-# This script stages a wdt model in directory 'WORKDIR/models' for inclusion
+# This script stages a wdt model to directory 'WORKDIR/models' for future inclusion
 # in a model-in-image image:
 #
 #   - It builds the 'WORKDIR/sample_app' application 'ear' file, and puts the ear into
@@ -12,9 +12,10 @@
 #     file 'WORDIR/sample_app/wlsdeploy/config/amimemappings.properties'.
 #
 #   - It copies WDT model files that contain WebLogic configuration from
-#     'WORKDIR' into 'WORKDIR/models'.
+#     'WORKDIR' into 'WORKDIR/models'. It chooses the source model file
+#     based on WDT_DOMAIN_TYPE.
 #
-# Expects the following env vars to already be set:
+# This script expects the following env vars to already be set:
 #    
 #    WORKDIR - working directory for the sample with at least 10g of space
 #
@@ -22,9 +23,11 @@
 #
 #    WDT_DOMAIN_TYPE - 'WLS' (default), 'JRF', or 'RestrictedJRF'.
 #
-
-# TBD rename 'build_model' or some-such.  This now stages the entire model.
-
+# NOTE: If you want to specify your own model files, then you don't
+#       need to run this script. Instead set environment variables
+#       that indicate the location of your model files as per
+#       the instructions in './build_image_model.sh'.
+#
 
 set -eu
 
