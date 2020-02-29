@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
@@ -187,9 +186,17 @@ public class ItOperator extends BaseTest {
       operatorMap.put("namespace", "weblogic-operator2");
       operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       namespaceList.append(" ").append((String)operatorMap.get("namespace"));
-      K8sTestUtils k8sTestUtils = new K8sTestUtils();
-      k8sTestUtils.verifyDomainCrd();
-      k8sTestUtils.verifyDomain("test2", "test2", true);
+
+      // create domain
+      domainMap = createDomainMap(getNewSuffixCount(), testClassName);
+      domainMap.put("namespace", "test2");
+      domainMap.put("createDomainFilesDir", "wdt");
+      domainMap.put("domainUID", "domainonpvwdt");
+      domain = TestUtils.createDomain(domainMap);
+      domain.verifyDomainCreated();
+
+      TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      TestUtils.verifyAfterDeletion(domain);
 
 
       testCompletedSuccessfully = true;
@@ -206,16 +213,7 @@ public class ItOperator extends BaseTest {
                 (String)domainMap.get("domainUID"));
       }
       */
-      // if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-      if (domain != null && testCompletedSuccessfully) {
-        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain: " + domain.getDomainUid());
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
 
-        //FIXME in oke all k8s objects constructors return null obj
-        if (!BaseTest.OKE_CLUSTER) {
-          TestUtils.verifyAfterDeletion(domain);
-        }
-      }
       // if (operator != null && (JENKINS || testCompletedSuccessfully)) {
       if (operator != null && testCompletedSuccessfully) {
         operator.destroy();
