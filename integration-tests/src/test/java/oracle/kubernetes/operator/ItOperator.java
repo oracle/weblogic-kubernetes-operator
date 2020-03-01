@@ -199,7 +199,7 @@ public class ItOperator extends BaseTest {
       try {
         TestUtils.verifyAfterDeletion(domain);
       } catch (Throwable ex) {
-         ex.printStackTrace();
+        ex.printStackTrace();
         LoggerHelper.getLocal().log(Level.INFO,
                 "verifyAfterDeletion failed " + ex.getMessage());
         LoggerHelper.getLocal().log(Level.INFO,
