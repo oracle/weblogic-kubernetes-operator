@@ -200,18 +200,7 @@ public class ItOperator extends BaseTest {
         TestUtils.verifyAfterDeletion(domain);
       } catch (Throwable ex) {
         ex.printStackTrace();
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyAfterDeletion failed " + ex.getMessage());
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyAfterDeletion failed " + ex.toString());
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyAfterDeletion failed " + ex.getStackTrace());
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyAfterDeletion failed " + ex.getCause());
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyAfterDeletion failed " + ex.getCause().toString());
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyAfterDeletion failed " + ex.getCause().getMessage());
+
         LoggerHelper.getLocal().log(Level.INFO,
                 "verifyAfterDeletion failed " + ex);
 
