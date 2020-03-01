@@ -1529,33 +1529,33 @@ public class TestUtils {
    */
   public static void verifyBeforeDeletion(Domain domain) throws Exception {
 
-      final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
-      final String domainUid = domain.getDomainUid();
-      final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-      final String credentialsName =
-              String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
+    final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
+    final String domainUid = domain.getDomainUid();
+    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    final String credentialsName =
+            String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
 
-      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: " + domainUid);
-      if (!BaseTest.OKE_CLUSTER) {
-        //FIXME in oke
-        k8sTestUtils.verifyDomainCrd();
-      }
-      k8sTestUtils.verifyDomain(domainNs, domainUid, true);
-      k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 4);
-      k8sTestUtils.verifyJobs(domain1LabelSelector, 1);
-      k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
-      k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
-      k8sTestUtils.verifyServices(domain1LabelSelector, 5);
-      k8sTestUtils.verifyPvcs(domain1LabelSelector, 1);
-      k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 2);
-      k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
-      k8sTestUtils.verifyNoRoles(domain1LabelSelector);
-      k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
-      k8sTestUtils.verifySecrets(credentialsName, 1);
-      k8sTestUtils.verifyPvs(domain1LabelSelector, 1);
-      k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
-      k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
-    
+    LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: " + domainUid);
+    if (!BaseTest.OKE_CLUSTER) {
+      //FIXME in oke
+      k8sTestUtils.verifyDomainCrd();
+    }
+    k8sTestUtils.verifyDomain(domainNs, domainUid, true);
+    k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 4);
+    k8sTestUtils.verifyJobs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
+    k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
+    k8sTestUtils.verifyServices(domain1LabelSelector, 5);
+    k8sTestUtils.verifyPvcs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 2);
+    k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
+    k8sTestUtils.verifySecrets(credentialsName, 1);
+    k8sTestUtils.verifyPvs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
+
   }
 
   /**
