@@ -1447,10 +1447,10 @@ class DomainIntrospector(SecretManager):
         MII_IntrospectCMFileGenerator(self.env, self.env.WLS_VERSION, '/tmp/wls_version').generate()
         trace("cfgmap write jdk_path")
         MII_IntrospectCMFileGenerator(self.env, self.env.JDK_PATH, '/tmp/jdk_path').generate()
-        trace("cfgmap write jdk_path")
+        trace("cfgmap write md5 secrets")
         MII_IntrospectCMFileGenerator(self.env, self.env.SECRETS_MD5, '/tmp/secrets.md5').generate()
-        trace("cfgmap write model secrets")
-        # Must be called after DomainSeedGenerator
+        trace("cfgmap write model hash")
+        # Must be called after MII_PrimordialDomainGenerator
         MII_IntrospectCMFileGenerator(self.env, self.env.DOMAINZIP_HASH, '/tmp/domainzip_hash').generate()
 
         if self.env.WDT_DOMAIN_TYPE == 'JRF':
