@@ -128,7 +128,7 @@ javaLoggingLevel:  "FINE"
 
 Specifies the Docker image containing the operator code.
 
-Defaults to `weblogic-kubernetes-operator:2.4.0`.
+Defaults to `weblogic-kubernetes-operator:2.5.0`.
 
 Example:
 ```
