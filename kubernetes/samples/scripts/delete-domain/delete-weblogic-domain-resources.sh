@@ -84,8 +84,8 @@ function getDomainResources {
   fi
 
   # first, let's get all namespaced types with -l $LABEL_SELECTOR
-  #NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm"
-  NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
+  NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm"
+  #NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
 
   kubectl get $NAMESPACED_TYPES \
           -l "$LABEL_SELECTOR" \
