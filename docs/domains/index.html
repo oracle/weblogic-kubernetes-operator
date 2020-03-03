@@ -1107,6 +1107,10 @@ window.onload = function() {
         "overridesConfigMap": {
           "description": "The name of the config map for WebLogic configuration overrides. If this field is specified it overrides the value of spec.configOverrides.",
           "type": "string"
+        },
+        "introspectorJobActiveDeadlineSeconds": {
+          "description": "The introspector job timeout value in seconds. If this field is specified it overrides the Operator\u0027s config map data.introspectorJobActiveDeadlineSeconds value.",
+          "type": "number"
         }
       }
     },

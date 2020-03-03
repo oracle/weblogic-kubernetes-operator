@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -184,6 +185,11 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getConfigOverrides();
   }
 
+  private long getIntrospectorJobActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
+    return Optional.ofNullable(getDomain().getIntrospectorJobActiveDeadlineSeconds())
+        .orElse(podTuning.introspectorJobActiveDeadlineSeconds);
+  }
+
   // ---------------------- model methods ------------------------------
 
   String getWdtConfigMap() {
@@ -211,7 +217,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private long getActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
-    return podTuning.introspectorJobActiveDeadlineSeconds
+    return getIntrospectorJobActiveDeadlineSeconds(podTuning)
           + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * info.getRetryCount());
   }
 

@@ -398,6 +398,19 @@ public class JobHelperTest {
   }
 
   @Test
+  public void verify_introspectorPodSpec_activeDeadlineSeconds_domain_overrides_values() {
+    configureDomain().withIntrospectorJobActiveDeadlineSeconds(600L);
+   
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        jobSpec.getTemplate().getSpec().getActiveDeadlineSeconds(),
+        is(600L));
+    assertThat(
+        jobSpec.getActiveDeadlineSeconds(), is(600L));
+  }
+
+  @Test
   public void podTemplate_hasCreateByOperatorLabel() {
     V1JobSpec jobSpec = createJobSpec();
 

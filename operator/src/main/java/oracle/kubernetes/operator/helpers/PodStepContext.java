@@ -76,6 +76,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private String miiDomainZipHash;
   private String domainRestartVersion;
   private String domainIntrospectVersion;
+  private String domainImageName;
 
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
@@ -84,7 +85,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     miiModelSecretsHash = (String)packet.get(ProcessingConstants.SECRETS_HASH);
     miiDomainZipHash = (String)packet.get(ProcessingConstants.DOMAIN_HASH);
     domainIntrospectVersion = (String)packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
-    domainRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSOIN);
+    domainRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
+    domainImageName = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
 
