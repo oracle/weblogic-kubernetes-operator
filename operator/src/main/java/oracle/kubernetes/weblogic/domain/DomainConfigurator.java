@@ -416,4 +416,12 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withToleration(V1Toleration toleration);
+
+  /**
+   * Add the introspector job active deadline.
+   *
+   * @param deadline the deadline value to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withIntrospectorJobActiveDeadlineSeconds(long deadline);
 }

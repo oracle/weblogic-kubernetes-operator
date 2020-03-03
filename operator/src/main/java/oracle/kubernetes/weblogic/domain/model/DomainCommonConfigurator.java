@@ -291,6 +291,19 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withIntrospectorJobActiveDeadlineSeconds(long deadline) {
+    getOrCreateConfiguration().withIntrospectorJobActiveDeadlineSeconds(deadline);
+    return this;
+  }
+
+  private Configuration getOrCreateConfiguration() {
+    if (getDomainSpec().getConfiguration() == null) {
+      getDomainSpec().setConfiguration(new Configuration());
+    }
+    return getDomainSpec().getConfiguration();
+  }
+
+  @Override
   public void setShuttingDown(boolean shuttingDown) {
     configureAdminServer().withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
   }
