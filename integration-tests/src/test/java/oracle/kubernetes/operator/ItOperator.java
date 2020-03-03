@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
@@ -197,8 +198,9 @@ public class ItOperator extends BaseTest {
 
       //TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       try {
-
-        TestUtils.verifyAfterDeletion(domain);
+        K8sTestUtils k8sTestUtils = new K8sTestUtils();
+        k8sTestUtils.verifyDomainCrd();
+        //TestUtils.verifyAfterDeletion(domain);
       } catch (Throwable ex) {
         ex.printStackTrace();
 
