@@ -5,13 +5,17 @@
 #  This script uses the WebLogic Image Tool to build a docker image with model in image
 #  artifacts. By default, it uses the base image obtained earlier with build_image_base.sh,
 #  and it gets model files from the ./models directory that was setup by the build_model.sh script.
+#
+#  The model image is named MODEL_IMAGE_NAME:MODEL_IMAGE_TAG.  See build_init_image.sh for
+#  the defaults for these values.
 #  
 #  Assumptions:
 #
 #    This script should be called by build.sh.  
-#    The WebLogic Image Tool is downloaded to ./weblogic-image-tool.zip (see ./build_download.sh).
-#    The WebLogic Deploy Tool is downloaded to ./weblogic-deploy-tooling.zip (see ./build_download.sh).
-#    Model files have been populated into the "./models" directory.
+#    The WebLogic Image Tool is downloaded to WORKDIR/weblogic-image-tool.zip (see ./build_download.sh).
+#    The WebLogic Deploy Tool is downloaded to WORKDIR/weblogic-deploy-tooling.zip (see ./build_download.sh).
+#    Model files have been staged in the "WORKDIR/models" directory (see ./build_model.sh) or
+#    MODEL_DIR has been explicitly set to point to a different location.
 #
 #  Required environment variables:
 #
@@ -20,14 +24,15 @@
 #  Optional environment variables:
 #
 #    WDT_DOMAIN_TYPE, BASE_IMAGE_NAME, BASE_IMAGE_TAG, 
-#    MODEL_IMAGE_NAME, MODEL_IMAGE_TYPE, MODEL_IMAGE_BUILD:
+#    MODEL_IMAGE_NAME, MODEL_IMAGE_TAG, MODEL_IMAGE_BUILD:
 #
 #      See build_image_init.sh for a description.
 #
 #    MODEL_DIR:
 #      
 #      Location of the model .zip, .properties, and .yaml files
-#      that will be copied in to the image.  Default is './models'.
+#      that will be copied in to the image.  Default is 'WORKDIR/models'
+#      which is populated by the ./build_model.sh script.
 #
 #    MODEL_YAML_FILES, MODEL_ARCHIVE_FILES, MODEL_VARIABLES_FILES:
 #     
@@ -82,22 +87,19 @@ IMGTOOL_BIN=${WORKDIR}/imagetool/bin/imagetool.sh
 export WLSIMG_CACHEDIR=${WORKDIR}/cache
 export WLSIMG_BLDDIR=${WORKDIR}
 
-${IMGTOOL_BIN} cache deleteEntry --key wdt_latest
+${IMGTOOL_BIN} cache deleteEntry --key wdt_myversion
 ${IMGTOOL_BIN} cache addInstaller \
-  --type wdt --version latest --path ${WORKDIR}/weblogic-deploy-tooling.zip
+  --type wdt --version myversion --path ${WORKDIR}/weblogic-deploy-tooling.zip
 
 echo "@@"
 echo "@@ Info: Starting model image build for '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'"
 echo "@@"
 
 #
-# Run the image tool to create the image. It will implicitly use the latest WDT binaries
-# in the local image tool cache marked with key 'wdt_latest' (see 'cache' commands above). To
-# use a different version of WDT, specify '--wdtVersion'.
+# Run the image tool to create the image. It will use the WDT binaries
+# in the local image tool cache marked with key 'myversion' (see 'cache' commands above). 
 #
 
-
-set -x
 ${IMGTOOL_BIN} update \
   --tag $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG \
   --fromImage $BASE_IMAGE_NAME:$BASE_IMAGE_TAG \
@@ -105,5 +107,6 @@ ${IMGTOOL_BIN} update \
   --wdtVariables ${MODEL_VARIABLE_FILES} \
   --wdtArchive ${MODEL_ARCHIVE_FILES} \
   --wdtModelOnly \
+  --wdtVersion myversion \
   --wdtDomainType ${WDT_DOMAIN_TYPE}
 

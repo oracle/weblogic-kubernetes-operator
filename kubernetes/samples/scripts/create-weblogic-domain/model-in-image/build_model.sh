@@ -9,11 +9,25 @@
 #
 #   - It builds the 'WORKDIR/sample_app' application 'ear' file, and puts the ear into
 #     'WORKDIR/models/archive1.zip' along with the application's model mime mappings 
-#     file 'WORDIR/sample_app/wlsdeploy/config/amimemappings.properties'.
+#     file 'WORKDIR/sample_app/wlsdeploy/config/amimemappings.properties'.
 #
 #   - It copies WDT model files that contain WebLogic configuration from
 #     'WORKDIR' into 'WORKDIR/models'. It chooses the source model file
 #     based on WDT_DOMAIN_TYPE.
+#
+#   NOTE: If you want to specify your own model files for an image, then you
+#         don't need to run this script. Instead set environment variables
+#         that indicate the location of your model files as per
+#         the instructions in './build_image_model.sh'.
+#
+# This script also stages a wdt file to 'WORKDIR/wdtconfigmap' for future inclusion
+# in a config map that's in turn referenced by a domain resource.
+#
+#   - It copies 'WORKDIR/model1.20.properties' to 'WORKDIR/wdtconfigmap'.
+#
+#   NOTE: If you want to specify your own model files for inclusion
+#         in the wdt config map, then export WDTCONFIGMAPDIR prior
+#         to running.
 #
 # This script expects the following env vars to already be set:
 #    
@@ -23,10 +37,6 @@
 #
 #    WDT_DOMAIN_TYPE - 'WLS' (default), 'JRF', or 'RestrictedJRF'.
 #
-# NOTE: If you want to specify your own model files, then you don't
-#       need to run this script. Instead set environment variables
-#       that indicate the location of your model files as per
-#       the instructions in './build_image_model.sh'.
 #
 
 set -eu
@@ -70,4 +80,8 @@ else
 fi
 
 cp model1.10.properties models/model1.10.properties
+
+mkdir -p ${WORKDIR}/wdtconfigmap
+
+cp model1.20.properties ${WORKDIR}/wdtconfigmap
 

@@ -5,20 +5,23 @@
 #
 # Usage: build.sh 
 #
-# Expects the following env vars to already be set:
+# Expects the following env var to already be set:
 #
 #    WORKDIR - working directory for the sample with at least 10g of space
-#    WDT_DOMAIN_TYPE - WLS, RestrictedJRF, or JRF
+#
+# For other env vars, see the scripts that this script calls.
 #
 
 set -eu
+
+cd ${WORKDIR}
 
 # This step downloads the latest WebLogic Deploy Tool and WebLogic Image Tool in the current directory
 # If this is run behind a proxy, then environment variables http_proxy and https_proxy must be set.
 
 ./build_download.sh
 
-# This step populates the model. It places a sample application and WDT files in the WORKDIR/model directory.
+# This step populates the model. It places a sample application and WDT files in the WORKDIR/models directory.
 
 ./build_model.sh
 
@@ -26,7 +29,8 @@ set -eu
 
 ./build_image_base.sh
 
-# This step builds a model image for deploying to the Kubernetes Cluster using the base
-# image and the model files in WORKDIR/models
+# This step builds a model image using the base image. It embeds the model files
+# in WORKDIR/models that was setup by ./build_model.sh and embeds the 
+# WebLogic Deploy Tool that was downloaded by build_download.sh.
 
 ./build_image_model.sh

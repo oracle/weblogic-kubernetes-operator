@@ -13,21 +13,17 @@
 # Optional env vars:
 #
 #   WDT_DOMAIN_TYPE   - WLS (default), RestrictedJRF, or JRF
-#
 #   BASE_IMAGE_NAME   - defaults to container-registry.oracle.com/middleware/weblogic for
 #                       the 'WLS' domain type, and otherwise defaults to
 #                       container-registry.oracle.com/middleware/fmw-infrastructure
-#           
 #   BASE_IMAGE_TAG    - defaults to 12.2.1.3
-#
 #   BASE_IMAGE_BUILD  - 'when-missing' (default) or 'always'
-#
 #   MODEL_IMAGE_NAME  - defaults to 'model-in-image'
-#
 #   MODEL_IMAGE_TAG   - defaults to 'v1'
+#   MODEL_IMAGE_BUILD - 'when-missing' or 'always' (default)
 #
-#   MODEL_IMAGE_BUILD - 'when-missing' (default) or 'always'
-#
+# TBD Remove this file and copy parts into build_image_base/model - this will
+#     make the overall code easier to follow, even though it repeats some code...
 
 cd ${WORKDIR}
 
@@ -48,15 +44,6 @@ fi
 BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.3}
 BASE_IMAGE_BUILD=${BASE_IMAGE_BUILD:-when-missing}
 
-# If not using prebuilt image - TBD review this logic with JS
-# if [[ ${BASE_IMAGE_NAME} != container-registry.oracle.com* ]] ; then
-#   if [ "${WDT_DOMAIN_TYPE}" == "WLS" ] ; then
-#     BASE_IMAGE_NAME=${BASE_IMAGE_NAME}-wls
-#   else
-#     BASE_IMAGE_NAME=${BASE_IMAGE_NAME}-fmw
-#   fi
-# fi
-
 MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
 MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
-MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-missing}
+MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-always}

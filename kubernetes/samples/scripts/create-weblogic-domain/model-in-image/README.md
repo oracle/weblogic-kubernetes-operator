@@ -215,7 +215,7 @@ An image for Model in Image must contain a WebLogic install, a WebLogic Deploy T
     - Puts a WDT install in image location `/u01/wdt/weblogic-deploy`.
     - Copies the WDT model, properties, and application archive from `$WORDKIR/models` to image location `/u01/wdt/models`.
 
-The script expects WDT_DOMAIN_TYPE, SRCDIR, and WORKDIR to already be initialized (see [Prerequisites for all domain types](#prerequisites-for-all-domain-types)).
+The script expects WDT_DOMAIN_TYPE and WORKDIR to already be initialized (see [Prerequisites for all domain types](#prerequisites-for-all-domain-types)).
 
 To run the script:
 
@@ -236,7 +236,7 @@ To deploy the sample Operator domain and its required kubernetes resources, you 
   - Deploys `k8s-domain.yaml` 
   - Displays the status of the domain pods. 
 
-The script expects WDT_DOMAIN_TYPE, SRCDIR, and WORKDIR to already be initialized (see [Prerequisites for all domain types](#prerequisites-for-all-domain-types)).
+The script expects WDT_DOMAIN_TYPE and WORKDIR to already be initialized (see [Prerequisites for all domain types](#prerequisites-for-all-domain-types)).
 
 The script uses `domain1`
 
@@ -372,6 +372,7 @@ A JRF domain requires an infrastructure database and also requires initalizing t
 | infrastructure schema password | Oradoc_db1 |
 | database URL | oracle-db.default.svc.cluster.local:1521/devpdb.k8s |
 
+TBD Move mosgt of the following directions to the create-oracle-db-service sample README 
 
 1. Ensure you have access to the database image, and then deploy it:
 
@@ -450,7 +451,7 @@ If it is important to reuse or share the same database and data between deployme
 When a domain is first deployed, the WebLogic Kubernetes Operator will copy its OPSS wallet from the domain home and store it in the domain's introspect domain configmap. For a domain that has been created using model-in-image, here has how to export a wallet for reuse:
 
     ```
-    kubectl -n MY_NAMESPACE \
+    kubectl -n MY_DOMAIN_NAMESPACE \
       get configmap MY_DOMAIN_UID-weblogic-domain-introspect-cm \
       -o jsonpath='{.data.ewallet\.p12}' \
       > ewallet.p12
