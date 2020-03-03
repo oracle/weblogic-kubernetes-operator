@@ -199,7 +199,11 @@ public class ItOperator extends BaseTest {
       //TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       try {
         K8sTestUtils k8sTestUtils = new K8sTestUtils();
+        LoggerHelper.getLocal().log(Level.INFO,
+                "vverifyDomainCrd  before");
         k8sTestUtils.verifyDomainCrd();
+        LoggerHelper.getLocal().log(Level.INFO,
+                "vverifyDomainCrd  after");
         //TestUtils.verifyAfterDeletion(domain);
       } catch (Throwable ex) {
         ex.printStackTrace();
