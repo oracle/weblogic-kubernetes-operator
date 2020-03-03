@@ -317,9 +317,21 @@ mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
 
 # first, if helm is installed, delete all installed helm charts
 if [ -x "$(command -v helm)" ]; then
+  helm version --short --client  | grep v2
+  [[ $? == 0 ]] && HELM_VERSION=V2
+  [[ $? == 1 ]] && HELM_VERSION=V3
+  echo "Detected Helm Version [$(helm version --short --client)]"
   echo @@ Deleting installed helm charts
-  helm list --short | while read helm_name; do
-     helm delete --purge  $helm_name
+  namespaces=`kubectl get ns | grep -v NAME | awk '{ print $1 }'`
+  for ns in $namespaces
+  do 
+     helm list --short --namespace $ns | while read helm_name; do
+     if [ "$HELM_VERSION" == "V2" ]; then
+       helm delete --purge  $helm_name
+     else 
+      helm uninstall $helm_name -n $ns 
+     fi
+     done
   done
 
   # cleanup tiller artifacts

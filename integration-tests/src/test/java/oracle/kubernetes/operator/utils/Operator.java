@@ -219,7 +219,14 @@ public class Operator {
    * @throws Exception exception
    */
   public void destroy() throws Exception {
-    String cmd = "helm del --purge " + operatorMap.get("releaseName");
+    String cmd = "UnSuppored Helm Version [" + BaseTest.HELM_VERSION + "]";
+    if (BaseTest.HELM_VERSION.equals("V2")) {
+      cmd = "helm del --purge " + operatorMap.get("releaseName");
+    } 
+    if (BaseTest.HELM_VERSION.equals("V3")) {
+      cmd = "helm uninstall " + operatorMap.get("releaseName") + " --namespace " +  operatorMap.get("namespace");
+    } 
+    
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -316,22 +323,49 @@ public class Operator {
               + " https://github.com/oracle/weblogic-kubernetes-operator");
       cmd.append("cd ");
       cmd.append(operatorMap.get("operatorGitVersionDir"))
-          .append("/weblogic-kubernetes-operator")
-          .append(" && helm install kubernetes/charts/weblogic-operator ");
+          .append("/weblogic-kubernetes-operator");
+      
+      if (BaseTest.HELM_VERSION.equals("V2")) { 
+        cmd.append(" && helm install kubernetes/charts/weblogic-operator ")
+           .append(" --name ")
+            .append(operatorMap.get("releaseName"));
+      }
+      if (BaseTest.HELM_VERSION.equals("V3")) {
+        cmd.append(" && helm install ")
+           .append(operatorMap.get("releaseName"))
+            .append(" kubernetes/charts/weblogic-operator");
+      } 
     } else {
       cmd.append("cd ");
-      cmd.append(BaseTest.getProjectRoot())
-          .append(" && helm install kubernetes/charts/weblogic-operator ");
+      cmd.append(BaseTest.getProjectRoot());
+      if (BaseTest.HELM_VERSION.equals("V2")) { 
+        cmd.append(" && helm install kubernetes/charts/weblogic-operator ")
+           .append(" --name ")
+            .append(operatorMap.get("releaseName"));
+      }
+
+      if (BaseTest.HELM_VERSION.equals("V3")) { 
+        cmd.append(" && helm install ")
+           .append(operatorMap.get("releaseName"))
+            .append(" kubernetes/charts/weblogic-operator");
+      } 
+
     }
-    cmd.append(" --name ")
-        .append(operatorMap.get("releaseName"))
-        .append(" --values ")
-        .append(generatedInputYamlFile)
-        .append(" --namespace ")
-        .append(operatorNS)
-        .append(" --set \"imagePullPolicy=")
-        .append(imagePullPolicy)
-        .append("\" --wait --timeout 180");
+    cmd.append(" --values ")
+       .append(generatedInputYamlFile)
+       .append(" --namespace ")
+       .append(operatorNS)
+       .append(" --set \"imagePullPolicy=")
+       .append(imagePullPolicy)
+        .append("\" ");
+
+    if (BaseTest.HELM_VERSION.equals("V2")) { 
+      cmd.append(" --wait --timeout 180");
+    }
+    if (BaseTest.HELM_VERSION.equals("V3")) { 
+      cmd.append(" --wait --timeout 3m0s");
+    }
+
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -354,8 +388,15 @@ public class Operator {
         .append(" kubernetes/charts/weblogic-operator ")
         .append(" --set \"")
         .append(upgradeSet)
-        .append("\" --reuse-values ")
-        .append(" --wait --timeout 180");
+        .append("\" --reuse-values ");
+
+    if (BaseTest.HELM_VERSION.equals("V2")) { 
+      cmd.append(" --wait --timeout 180");
+    }
+    if (BaseTest.HELM_VERSION.equals("V3")) { 
+      cmd.append(" --wait --timeout 3m0s");
+    }
+
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -376,6 +417,9 @@ public class Operator {
         .append(" && helm get values ")
         .append(operatorMap.get("releaseName"));
 
+    if (BaseTest.HELM_VERSION.equals("V3")) { 
+      cmd.append(" --namespace " +  operatorMap.get("namespace"));
+    }
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
