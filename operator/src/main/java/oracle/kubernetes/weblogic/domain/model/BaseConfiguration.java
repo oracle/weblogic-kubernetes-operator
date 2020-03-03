@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -36,13 +36,13 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public abstract class BaseConfiguration {
 
   @Description("Configuration affecting server pods.")
-  private ServerPod serverPod = new ServerPod();
+  private final ServerPod serverPod = new ServerPod();
 
   @Description(
       "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
   @SerializedName("serverService")
   @Expose
-  private ServerService serverService = new ServerService();
+  private final ServerService serverService = new ServerService();
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
   @EnumClass(ServerStartState.class)

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -27,6 +27,15 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
     super(initialResourceVersion, tuning, isStopping, listener);
   }
 
+  /**
+   * Create a namespace watcher.
+   * @param factory the ThreadFactory to run the watcher
+   * @param initialResourceVersion at which to start returning watch events
+   * @param tuning any WatchTuning parameters
+   * @param listener the WatchListener
+   * @param isStopping whether the watcher is stopping
+   * @return the watcher
+   */
   public static NamespaceWatcher create(
       ThreadFactory factory,
       String initialResourceVersion,

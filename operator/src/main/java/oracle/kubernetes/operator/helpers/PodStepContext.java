@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -357,11 +357,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   private boolean canUseCurrentPod(V1Pod currentPod) {
     boolean useCurrent =
         AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
-    if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0)
+    if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0) {
       LOGGER.info(
           MessageKeys.POD_DUMP,
           AnnotationHelper.getDebugString(currentPod),
           AnnotationHelper.getDebugString(getPodModel()));
+    }
 
     return useCurrent;
   }
@@ -539,14 +540,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     return v1Container;
-  }
-
-  private String getImageName() {
-    return getServerSpec().getImage();
-  }
-
-  String getImagePullPolicy() {
-    return getServerSpec().getImagePullPolicy();
   }
 
   protected String getContainerName() {
@@ -786,10 +779,11 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse))
+      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
-      else
+      } else {
         return onFailure(getConflictStep(), packet, callResponse);
+      }
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Pod> callResponse) {

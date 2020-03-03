@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -144,7 +144,7 @@ public class ServerHealth {
         .isEquals();
   }
 
-  private static ObjectPatch<ServerHealth> healthPatch = createObjectPatch(ServerHealth.class)
+  private static final ObjectPatch<ServerHealth> healthPatch = createObjectPatch(ServerHealth.class)
         .withDateTimeField("activationTime", ServerHealth::getActivationTime)
         .withStringField("overallHealth", ServerHealth::getOverallHealth)
         .withListField("subsystems", SubsystemHealth.getObjectPatch(), ServerHealth::getSubsystems);

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -112,8 +112,15 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     factory = new JobWatcherFactory(threadFactory, tuning, isNamespaceStopping);
   }
 
+  /**
+   * Test if job is complete.
+   * @param job job
+   * @return true, if complete
+   */
   public static boolean isComplete(V1Job job) {
-    if (job == null) return false;
+    if (job == null) {
+      return false;
+    }
 
     V1JobStatus status = job.getStatus();
     LOGGER.fine(
@@ -136,7 +143,9 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   static boolean isFailed(V1Job job) {
-    if (job == null) return false;
+    if (job == null) {
+      return false;
+    }
 
     V1JobStatus status = job.getStatus();
     if (status != null) {
@@ -167,6 +176,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
         .createJobWatch(namespace);
   }
 
+  /**
+   * receive response.
+   * @param item item
+   */
   public void receivedResponse(Watch.Response<V1Job> item) {
     LOGGER.entering();
 
@@ -200,10 +213,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   static class JobWatcherFactory {
-    private ThreadFactory threadFactory;
-    private WatchTuning watchTuning;
+    private final ThreadFactory threadFactory;
+    private final WatchTuning watchTuning;
 
-    private Function<String, AtomicBoolean> isNamespaceStopping;
+    private final Function<String, AtomicBoolean> isNamespaceStopping;
 
     JobWatcherFactory(
         ThreadFactory threadFactory,
@@ -226,7 +239,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   private class WaitForJobReadyStep extends WaitForReadyStep<V1Job> {
-    private long jobCreationTime;
+    private final long jobCreationTime;
 
     private WaitForJobReadyStep(V1Job job, Step next) {
       super(job, next);

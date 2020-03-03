@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -27,7 +27,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   private final Server server;
   private final Cluster cluster;
-  private Integer clusterLimit;
+  private final Integer clusterLimit;
 
   /**
    * Constructs an object to return the effective configuration.

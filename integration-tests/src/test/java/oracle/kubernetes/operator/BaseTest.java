@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -50,6 +50,8 @@ public class BaseTest {
   public static String GRAFANA_CHART_VERSION;
   public static String MONITORING_EXPORTER_VERSION;
   public static String MONITORING_EXPORTER_BRANCH;
+  public static String HELM_VERSION;
+  public static String VOYAGER_VERSION;
   public static boolean INGRESSPERDOMAIN = true;
   protected static String appLocationInPod = "/u01/oracle/apps";
   private static String resultRootCommon = "";
@@ -81,6 +83,39 @@ public class BaseTest {
   static {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
+
+    VOYAGER_VERSION = System.getenv("VOYAGER_VERSION");
+    if (VOYAGER_VERSION == null) {
+      VOYAGER_VERSION = "10.0.0";
+    }
+
+    String cmd = "helm version --short --client";
+    ExecResult result = null;
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmd);
+    try {
+      result = ExecCommand.exec(cmd);
+    } catch (Exception ex) {
+      throw new RuntimeException(
+            "FAILURE: command to get Helm Version "
+                + cmd
+                + " failed, returned "
+                + result.stdout()
+                + result.stderr());
+    }
+    LoggerHelper.getLocal().log(Level.INFO, result.stdout());
+    System.out.println("Detected Helm Client Version[" + result.stdout() + "]");
+    if (result.stdout().contains("v2")) {
+      HELM_VERSION = "V2";
+    } else if (result.stdout().contains("v3")) {
+      HELM_VERSION = "V3";
+    } else {
+      HELM_VERSION = "UNKNOWN";
+      throw new RuntimeException(
+            "FAILURE: Unsupported Helm Version ["
+                + result.stdout()
+                + "]");
+    }
+    System.out.println("HELM_VERSION set to [" + HELM_VERSION  + "]");
 
     // if QUICKTEST is false, run all the tests including QUICKTEST
     if (!QUICKTEST) {
@@ -201,7 +236,7 @@ public class BaseTest {
 
   }
 
-  public void createResultAndPvDirs(String testClassName) throws Exception {
+  protected void createResultAndPvDirs(String testClassName) throws Exception {
 
     resultRoot = resultRootCommon + "/" + testClassName;
     pvRoot = pvRootCommon + "/" + testClassName;
@@ -305,7 +340,7 @@ public class BaseTest {
     return domainApiVersion;
   }
 
-  public ExecResult cleanup() throws Exception {
+  protected ExecResult cleanup() throws Exception {
     String cmd =
         "export RESULT_ROOT="
             + resultRootCommon
@@ -864,23 +899,6 @@ public class BaseTest {
     return operatorMap;
   }
 
-  public Map<String, Object> createOperatorMap(int number, boolean restEnabled) {
-    Map<String, Object> operatorMap = new HashMap<>();
-    ArrayList<String> targetDomainsNS = new ArrayList<String>();
-    targetDomainsNS.add("test" + number);
-    operatorMap.put("releaseName", "op" + number);
-    operatorMap.put("domainNamespaces", targetDomainsNS);
-    operatorMap.put("serviceAccount", "weblogic-operator" + number);
-    operatorMap.put("namespace", "weblogic-operator" + number);
-    operatorMap.put("resultDir", resultDir);
-    operatorMap.put("userProjectsDir", resultDir + "/user-projects");
-    if (restEnabled) {
-      operatorMap.put("externalRestHttpsPort", 31000 + number);
-      operatorMap.put("externalRestEnabled", restEnabled);
-    }
-    return operatorMap;
-  }
-
   /**
    * Creates a map with commonly used domain input attributes using suffixCount and prefix
    * to make the namespaces and ports unique.
@@ -911,7 +929,7 @@ public class BaseTest {
     return domainMap;
   }
 
-  public Map<String, Object> createDomainMap(int number) {
+  protected Map<String, Object> createDomainMap(int number) {
     Map<String, Object> domainMap = new HashMap<>();
     ArrayList<String> targetDomainsNS = new ArrayList<String>();
     targetDomainsNS.add("test" + number);

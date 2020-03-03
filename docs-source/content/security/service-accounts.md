@@ -22,6 +22,10 @@ the operator's Helm chart.
 For more information about access controls, see [RBAC]({{<relref "/security/rbac.md">}}) under **Security**.
 {{% /notice %}}
 
+{{% notice note %}}
+If the operator's service account cannot have the privileges to access the cluster-level resources, such as `CustomResourceDefinitions`, `Namespaces` and `PersistentVolumes`, consider using a `dedicated` namespace for each operator and the domains that the operator manages. See the `dedicated` setting in [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values" >}}).
+{{% /notice %}}
+
 In order to display the `ServiceAccount` used by the operator,
 where the operator was installed using the Helm release name `weblogic-operator`,
 look for the `serviceAccount` value using the Helm command:

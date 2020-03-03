@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
@@ -91,6 +91,10 @@ public class JsonSchemaMojoTest {
     return Paths.get(url.toURI()).toFile().getParentFile();
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     ClassReader classReader = new ClassReader(JsonSchemaMojo.class.getName());
@@ -124,9 +128,14 @@ public class JsonSchemaMojoTest {
     return field.get(mojo);
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test
@@ -300,8 +309,9 @@ public class JsonSchemaMojoTest {
     String[] classpathElements = new String[] {"a", "b", "c"};
     setMojoParameter("compileClasspathElements", Arrays.asList(classpathElements));
     URL[] classPathUrls = new URL[] {new URL("file:abc"), new URL("file:bcd"), new URL("file:cde")};
-    for (int i = 0; i < classpathElements.length; i++)
+    for (int i = 0; i < classpathElements.length; i++) {
       fileSystem.defineUrl(new File(classpathElements[i]), classPathUrls[i]);
+    }
 
     mojo.execute();
 
@@ -511,7 +521,9 @@ public class JsonSchemaMojoTest {
 
     private Object getEnumConstant(Class<?> enumClass, String value) {
       for (Object constant : enumClass.getEnumConstants()) {
-        if (value.equalsIgnoreCase(constant.toString())) return constant;
+        if (value.equalsIgnoreCase(constant.toString())) {
+          return constant;
+        }
       }
       throw new RuntimeException("No enum constant " + value + " in " + enumClass);
     }

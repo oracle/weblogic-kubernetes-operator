@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.authentication;
@@ -92,9 +92,8 @@ public class Authenticator {
    * @param token service token for search.
    * @return ApiClient that has been properly authenticated
    * @throws ApiException on API Exception
-   * @throws IOException on IO Exception
    */
-  public ApiClient createClientByToken(String token) throws ApiException, IOException {
+  public ApiClient createClientByToken(String token) throws ApiException {
     V1ServiceAccount serviceAccount = helper.findServiceAccountByToken(token);
     return authenticateByServiceAccount(serviceAccount);
   }
@@ -177,9 +176,8 @@ public class Authenticator {
    * Close the ApiClient to make sure any open connection is cleaned up.
    *
    * @param apiClient ApiClient object that you want to close.
-   * @throws ApiException if there is an API error.
    */
-  public void closeClient(ApiClient apiClient) throws ApiException {
+  public void closeClient(ApiClient apiClient) {
 
     OkHttpClient httpClient = apiClient.getHttpClient();
     if (httpClient != null) {

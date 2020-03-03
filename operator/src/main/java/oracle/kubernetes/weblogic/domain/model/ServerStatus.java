@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -234,7 +234,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     return other.getServerName() != null && other.getServerName().equals(serverName);
   }
 
-  private static ObjectPatch<ServerStatus> serverPatch = createObjectPatch(ServerStatus.class)
+  private static final ObjectPatch<ServerStatus> serverPatch = createObjectPatch(ServerStatus.class)
         .withStringField("serverName", ServerStatus::getServerName)
         .withStringField("clusterName", ServerStatus::getClusterName)
         .withStringField("state", ServerStatus::getState)

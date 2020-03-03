@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # The version of this inputs file.  Do not modify.
@@ -108,7 +108,7 @@ javaOptions: -Dweblogic.StdoutDebugEnabled=false
 persistentVolumeClaimName: soainfra-domain-pvc
 
 # Mount path of the domain persistent volume.
-domainPVMountPath: /u01/oracle/user_projects/domains
+domainPVMountPath: /u01/oracle/user_projects
 
 # Mount path where the create domain scripts are located inside a pod
 #
@@ -166,7 +166,7 @@ createDomainFilesDir: wlst
 rcuSchemaPrefix: SOA1
 
 # The database URL
-rcuDatabaseURL: soadb.soans:1521/soapdb.my.domain.com
+rcuDatabaseURL: oracle-db.default.svc.cluster.local:1521/devpdb.k8s
 
 # The kubernetes secret containing the database credentials
 rcuCredentialsSecret: soainfra-rcu-credentials

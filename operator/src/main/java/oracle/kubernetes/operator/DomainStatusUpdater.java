@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -193,7 +193,7 @@ public class DomainStatusUpdater {
   }
 
   static class PatchResponseStep extends DefaultResponseStep<Domain> {
-    private DomainStatusUpdaterStep updaterStep;
+    private final DomainStatusUpdaterStep updaterStep;
     private final DomainStatusUpdaterContext context;
 
     public PatchResponseStep(DomainStatusUpdaterStep updaterStep, DomainStatusUpdaterContext context, Step nextStep) {
@@ -204,7 +204,9 @@ public class DomainStatusUpdater {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
-      if (!isPatchFailure(callResponse)) return super.onFailure(packet, callResponse);
+      if (!isPatchFailure(callResponse)) {
+        return super.onFailure(packet, callResponse);
+      }
 
       return doNext(createRetry(context, getNext()), packet);
     }
@@ -232,7 +234,7 @@ public class DomainStatusUpdater {
 
   static class DomainStatusUpdaterContext {
     private final DomainPresenceInfo info;
-    private DomainStatusUpdaterStep domainStatusUpdaterStep;
+    private final DomainStatusUpdaterStep domainStatusUpdaterStep;
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = packet.getSpi(DomainPresenceInfo.class);
@@ -317,7 +319,9 @@ public class DomainStatusUpdater {
 
       @Override
       void modifyStatus(DomainStatus status) {
-        if (getDomain() == null) return;
+        if (getDomain() == null) {
+          return;
+        }
         
         if (getDomainConfig().isPresent()) {
           status.setServers(new ArrayList<>(getServerStatuses().values()));
@@ -495,7 +499,9 @@ public class DomainStatusUpdater {
     @Override
     void modifyStatus(DomainStatus status) {
       status.addCondition(new DomainCondition(Progressing).withStatus(TRUE).withReason(reason));
-      if (!isPreserveAvailable) status.removeConditionIf(c -> c.getType() == Available);
+      if (!isPreserveAvailable) {
+        status.removeConditionIf(c -> c.getType() == Available);
+      }
     }
   }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -76,6 +76,9 @@ public class ReadHealthStepTest {
   private List<LogRecord> logRecords = new ArrayList<>();
   private Memento consoleControl;
 
+  /**
+   * Setup test.
+   */
   @Before
   public void setup() {
     consoleControl =

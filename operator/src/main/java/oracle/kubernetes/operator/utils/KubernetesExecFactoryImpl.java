@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -18,9 +18,9 @@ public class KubernetesExecFactoryImpl implements KubernetesExecFactory {
   }
 
   public static class KubernetesExecImpl extends KubernetesExec {
-    private ApiClient client;
-    private V1Pod pod;
-    private String containerName;
+    private final ApiClient client;
+    private final V1Pod pod;
+    private final String containerName;
 
     KubernetesExecImpl(ApiClient client, V1Pod pod, String containerName) {
       this.client = client;

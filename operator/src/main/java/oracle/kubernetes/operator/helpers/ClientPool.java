@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -26,7 +26,7 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 
 public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final ClientFactory FACTORY = new DefaultClientFactory();
+  private static ClientFactory FACTORY = new DefaultClientFactory();
   private static ClientPool SINGLETON = new ClientPool();
   private static ThreadFactory threadFactory;
   private final AtomicBoolean isFirst = new AtomicBoolean(true);

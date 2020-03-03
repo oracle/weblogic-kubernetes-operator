@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.authentication;
@@ -16,7 +16,6 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import org.apache.commons.codec.binary.Base64;
 
 /**
  * This class provides helper methods for getting Service Accounts and Secrets for authentication
@@ -30,6 +29,10 @@ public class Helpers {
   private final ApiClient apiClient;
   private final CoreV1Api coreApi;
 
+  /**
+   * Construct helpers.
+   * @param authenticator authenticator
+   */
   public Helpers(Authenticator authenticator) {
     this.authenticator = authenticator;
     apiClient = authenticator.getApiClient();
@@ -172,15 +175,5 @@ public class Helpers {
 
     LOGGER.exiting(secret);
     return secret;
-  }
-
-  // decode base64
-  protected byte[] decodeSecret(byte[] encoded) {
-    return Base64.decodeBase64(encoded);
-  }
-
-  // encode base64
-  protected byte[] encodeSecret(byte[] decoded) {
-    return Base64.encodeBase64(decoded);
   }
 }

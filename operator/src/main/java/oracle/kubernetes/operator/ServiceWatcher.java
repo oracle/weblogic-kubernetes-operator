@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -30,6 +30,16 @@ public class ServiceWatcher extends Watcher<V1Service> {
     this.ns = ns;
   }
 
+  /**
+   * Create service watcher.
+   * @param factory thread factory
+   * @param ns namespace
+   * @param initialResourceVersion initial resource version
+   * @param tuning tuning parameters
+   * @param listener listener
+   * @param isStopping stopping flag
+   * @return watcher
+   */
   public static ServiceWatcher create(
       ThreadFactory factory,
       String ns,

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -15,7 +15,6 @@ import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -151,6 +150,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     operatorMap.replace("namespace", firstoperator.getOperatorMap().get("namespace"));
     Operator secondoperator = new Operator(operatorMap, false, true, true, RestCertType.SELF_SIGNED);
     String oprelease = (String)(secondoperator.getOperatorMap()).get("releaseName");
+    String opnamespace = (String)(secondoperator.getOperatorMap()).get("namespace");
     try {
       secondoperator.callHelmInstall();
       throw new RuntimeException(
@@ -167,7 +167,13 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 + "does not report expected message "
                 + ex.getMessage());
       }
-      String cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      String cmdLb = "";
+      if (BaseTest.HELM_VERSION.equals("V2")) {
+        cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      }
+      if (BaseTest.HELM_VERSION.equals("V3")) {
+        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
+      }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -238,13 +244,20 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
             true,
             RestCertType.SELF_SIGNED);
     String oprelease = (String)(operator.getOperatorMap()).get("releaseName");
+    String opnamespace = (String)(operator.getOperatorMap()).get("namespace");
     try {
       operator.callHelmInstall();
       throw new RuntimeException(
           "FAILURE: Helm installs operator with not preexisted service account ");
 
     } catch (Exception ex) {
-      String cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      String cmdLb = "";
+      if (BaseTest.HELM_VERSION.equals("V2")) {
+        cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      }
+      if (BaseTest.HELM_VERSION.equals("V3")) {
+        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
+      }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -302,6 +315,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     operatorMap.put("domainNamespaces", targetDomainsNS);
     Operator secondoperator = new Operator(operatorMap, true, true, false, RestCertType.SELF_SIGNED);
     String oprelease = (String)(secondoperator.getOperatorMap()).get("releaseName");
+    String opnamespace = (String)(secondoperator.getOperatorMap()).get("namespace");
     try {
       secondoperator.callHelmInstall();
       throw new RuntimeException(
@@ -320,7 +334,13 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 + "target domains namespaces does not report expected message "
                 + ex.getMessage());
       }
-      String cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      String cmdLb = "";
+      if (BaseTest.HELM_VERSION.equals("V2")) {
+        cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      }
+      if (BaseTest.HELM_VERSION.equals("V3")) {
+        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
+      }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -359,6 +379,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
             false,
             RestCertType.SELF_SIGNED);
     String oprelease = (String)(operator.getOperatorMap()).get("releaseName");
+    String opnamespace = (String)(operator.getOperatorMap()).get("namespace");
     try {
       operator.callHelmInstall();
       throw new RuntimeException(
@@ -375,7 +396,13 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 + "namespaces does not report expected message "
                 + ex.getMessage());
       }
-      String cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      String cmdLb = "";
+      if (BaseTest.HELM_VERSION.equals("V2")) {
+        cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      }
+      if (BaseTest.HELM_VERSION.equals("V3")) {
+        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
+      }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -415,6 +442,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, "usab");
     operatorMap.replace("externalRestHttpsPort", httpsRestPort);
     String oprelease = (String)operatorMap.get("releaseName");
+    String opnamespace = (String)operatorMap.get("namespace");
     Operator operator2 = new Operator(operatorMap, RestCertType.SELF_SIGNED);
     try {
       operator2.callHelmInstall();
@@ -431,7 +459,13 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
             "FAILURE: Helm install operator with dublicated rest port number does not report expected message "
                 + ex.getMessage());
       }
-      String cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      String cmdLb = "";
+      if (BaseTest.HELM_VERSION.equals("V2")) {
+        cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      }
+      if (BaseTest.HELM_VERSION.equals("V3")) {
+        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
+      }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -469,6 +503,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     operatorMap.replace("domainNamespaces", targetDomainsNS);
     operator = new Operator(operatorMap, RestCertType.SELF_SIGNED);
     String oprelease = (String)operatorMap.get("releaseName");
+    String opnamespace = (String)operatorMap.get("namespace");
     try {
       operator.callHelmInstall();
       throw new RuntimeException(
@@ -482,7 +517,13 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 + "domains namespace does not report expected message "
                 + ex.getMessage());
       }
-      String cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      String cmdLb = "";
+      if (BaseTest.HELM_VERSION.equals("V2")) {
+        cmdLb = "helm list --failed " + "  | grep " + oprelease;
+      }
+      if (BaseTest.HELM_VERSION.equals("V3")) {
+        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
+      }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {

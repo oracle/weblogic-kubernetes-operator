@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -23,6 +23,11 @@ public abstract class TuningParametersStub implements TuningParameters {
   static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 180L;
   static Map<String, String> namedParameters;
 
+  /**
+   * Install memento.
+   * @return memento
+   * @throws NoSuchFieldException on failure
+   */
   public static Memento install() throws NoSuchFieldException {
     namedParameters = new HashMap<>();
     return StaticStubSupport.install(

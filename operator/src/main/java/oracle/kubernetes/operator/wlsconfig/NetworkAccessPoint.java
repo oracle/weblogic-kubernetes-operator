@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -28,6 +28,13 @@ public class NetworkAccessPoint {
         (Integer) networkAccessPointConfigMap.get("publicPort"));
   }
 
+  /**
+   * Constructor for NetworkAccessPoint (channel).
+   * @param name the name of the network access point
+   * @param protocol the protocol, e.g. T3, HTTP
+   * @param listenPort the listen port (on the container)
+   * @param publicPort the public listen port (i.e. the node port)
+   */
   public NetworkAccessPoint(String name, String protocol, Integer listenPort, Integer publicPort) {
     this.name = name;
     this.protocol = protocol;

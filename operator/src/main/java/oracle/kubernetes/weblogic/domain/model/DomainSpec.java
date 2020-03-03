@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -195,7 +195,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Configuration for individual Managed Servers.")
-  private List<ManagedServer> managedServers = new ArrayList<>();
+  private final List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
    * The configured clusters.
@@ -203,7 +203,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Configuration for the clusters.")
-  protected List<Cluster> clusters = new ArrayList<>();
+  protected final List<Cluster> clusters = new ArrayList<>();
 
   @SuppressWarnings("unused")
   @Description("Experimental feature configurations.")
@@ -386,8 +386,12 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private String validatePath(String s) {
-    if (s.isBlank()) return null;
-    if (s.endsWith(File.separator)) return s;
+    if (s.isBlank()) {
+      return null;
+    }
+    if (s.endsWith(File.separator)) {
+      return s;
+    }
     return s + File.separator;
   }
 

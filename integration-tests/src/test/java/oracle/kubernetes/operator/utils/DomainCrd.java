@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -231,6 +230,15 @@ public class DomainCrd {
     }
   }
 
+  /**
+   * add init container node.
+   * @param parentNodeName parent node name
+   * @param clusterName cluster name
+   * @param msName managed server name
+   * @param containerName container name
+   * @param command command
+   * @return JSON node content
+   */
   public JsonNode addInitContNode(
       String parentNodeName,
       String clusterName,
@@ -358,13 +366,6 @@ public class DomainCrd {
     return root.path("spec").path("adminServer");
   }
 
-  /**
-   * Gets the cluster node entry from Domain CRD JSON tree for the given cluster name.
-   *
-   * @param root - Root JSON node of the Domain CRD JSON tree
-   * @param clusterName - Name of the cluster
-   * @return - cluster node entry from Domain CRD JSON tree
-   */
   /**
    * Gets the cluster node entry from Domain CRD JSON tree for the given cluster name.
    *

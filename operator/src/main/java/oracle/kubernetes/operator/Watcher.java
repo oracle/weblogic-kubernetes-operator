@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -36,7 +36,7 @@ abstract class Watcher<T> {
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
   private final WatchTuning tuning;
   private Long resourceVersion;
-  private AtomicBoolean stopping;
+  private final AtomicBoolean stopping;
   private WatchListener<T> listener;
   private Thread thread = null;
   private long lastInitialize = 0;

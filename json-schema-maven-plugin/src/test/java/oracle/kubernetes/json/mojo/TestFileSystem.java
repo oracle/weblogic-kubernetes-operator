@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
@@ -37,7 +37,9 @@ public class TestFileSystem extends FileSystem {
   }
 
   private void addFileIfNotDefined(File file) {
-    if (contents.containsKey(file)) return;
+    if (contents.containsKey(file)) {
+      return;
+    }
     addToParent(file);
     contents.put(file, "");
   }
@@ -51,7 +53,9 @@ public class TestFileSystem extends FileSystem {
   }
 
   private void addDirectoryIfNotDefined(File dir) {
-    if (directories.containsKey(dir)) return;
+    if (directories.containsKey(dir)) {
+      return;
+    }
     addToParent(dir);
     directories.put(dir, new ArrayList<File>());
   }
@@ -89,8 +93,11 @@ public class TestFileSystem extends FileSystem {
 
   private File[] getDirectoryContents(File directory, FilenameFilter filter) {
     List<File> files = new ArrayList<File>();
-    for (File file : directories.get(directory))
-      if (filter == null || filter.accept(file.getParentFile(), file.getName())) files.add(file);
+    for (File file : directories.get(directory)) {
+      if (filter == null || filter.accept(file.getParentFile(), file.getName())) {
+        files.add(file);
+      }
+    }
     return files.toArray(new File[files.size()]);
   }
 
@@ -111,7 +118,9 @@ public class TestFileSystem extends FileSystem {
   }
 
   void createDirectory(File directory) {
-    if (!isDirectory(directory)) directories.put(directory, new ArrayList<File>());
+    if (!isDirectory(directory)) {
+      directories.put(directory, new ArrayList<File>());
+    }
   }
 
   @Override
@@ -121,8 +130,9 @@ public class TestFileSystem extends FileSystem {
 
   @Override
   Writer createWriter(File file) throws IOException {
-    if (!exists(file.getParentFile()))
+    if (!exists(file.getParentFile())) {
       throw new IOException("Parent directory " + file.getParentFile() + " does not exist");
+    }
     return new TestFileWriter(file);
   }
 

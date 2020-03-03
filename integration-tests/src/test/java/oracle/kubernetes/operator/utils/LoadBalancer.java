@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -24,6 +24,11 @@ public class LoadBalancer {
   private static int maxIterationsPod = 60;
   private static int waitTimePod = 5;
 
+  /**
+   * Construct load balancer.
+   * @param lbMap load balancer map
+   * @throws Exception on failure
+   */
   public LoadBalancer(Map lbMap) throws Exception {
     this.lbMap = lbMap;
     userProjectsDir = (String) lbMap.get("userProjectsDir");
@@ -31,7 +36,12 @@ public class LoadBalancer {
         Paths.get(userProjectsDir + "/load-balancers/" + lbMap.get("domainUID")));
 
     if (lbMap.get("loadBalancer").equals("TRAEFIK")) {
-      String cmdLb = "helm list traefik-operator | grep DEPLOYED";
+      String cmdLb = "";
+      if (! BaseTest.HELM_VERSION.equals("V2")) {
+        cmdLb = "helm list traefik-operator | grep DEPLOYED";
+      } else {
+        cmdLb = "helm list --namespace traefik | grep traefik-operator | grep -i DEPLOYED";
+      }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -48,7 +58,12 @@ public class LoadBalancer {
     }
 
     if (lbMap.get("loadBalancer").equals("VOYAGER")) {
-      String cmdLb = "helm list voyager-operator | grep DEPLOYED";
+      String cmdLb = "";
+      if (BaseTest.HELM_VERSION.equals("V2")) {
+        cmdLb = "helm list voyager-operator | grep DEPLOYED";
+      } else {
+        cmdLb = "helm list --namespace voyager | grep voyager-operator | grep -i DEPLOYED";
+      }
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -65,13 +80,14 @@ public class LoadBalancer {
     }
   }
 
+  /**
+   * Create Traefik load balancer.
+   * @throws Exception on failure
+   */
   public void createTraefikLoadBalancer() throws Exception {
-    String cmdLb =
-        "helm install --name traefik-operator --namespace traefik --values "
-            + BaseTest.getProjectRoot()
-            + "/integration-tests/src/test/resources/charts/traefik/values.yaml stable/traefik";
+    String cmdLb = null;
+    cmdLb = BaseTest.getProjectRoot() + "/kubernetes/samples/charts/util/setup.sh create traefik ";
     LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
-
     ExecResult result = ExecCommand.exec(cmdLb);
     if (result.exitValue() != 0) {
       if (!result.stderr().contains("release named traefik-operator already exists")) {
@@ -85,6 +101,10 @@ public class LoadBalancer {
     }
   }
 
+  /**
+   * Create Traefik host routing.
+   * @throws Exception on failure
+   */
   public void createTraefikHostRouting() throws Exception {
 
     createInputFile(
@@ -124,14 +144,15 @@ public class LoadBalancer {
     String namespace = getKubernetesNamespaceToUpdate((String) lbMap.get("namespace"));
     LoggerHelper.getLocal().log(Level.INFO, "namespace to update" + namespace);
     StringBuffer cmd = new StringBuffer("helm upgrade ");
-    cmd.append("--reuse-values ")
-        .append("--set ")
-        .append("\"")
-        .append("kubernetes.namespaces=")
-        .append(namespace)
-        .append("\" --wait")
-        .append(" traefik-operator")
-        .append(" stable/traefik ");
+    cmd.append(" traefik-operator")
+       .append(" stable/traefik ")
+       .append("--namespace traefik ")
+       .append("--reuse-values ")
+       .append("--set ")
+       .append("\"")
+       .append("kubernetes.namespaces=")
+       .append(namespace)
+        .append("\" --wait");
 
     LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
     ExecResult result = ExecCommand.exec(cmd.toString());
@@ -150,7 +171,11 @@ public class LoadBalancer {
    * @throws Exception when could not get values
    */
   private String getKubernetesNamespaceToUpdate(String domainNamespace) throws Exception {
-    ExecResult result = TestUtils.exec("helm get values traefik-operator", true);
+    String cmd = "helm get values traefik-operator ";
+    if (! BaseTest.HELM_VERSION.equals("V2")) {
+      cmd = cmd + " --namespace traefik ";
+    }
+    ExecResult result = TestUtils.exec(cmd, true);
     Map<String, Object> yamlMap = TestUtils.loadYamlFromString(result.stdout());
     LoggerHelper.getLocal().log(Level.INFO, "map " + yamlMap);
     if (yamlMap.containsKey("kubernetes")) {
@@ -176,23 +201,31 @@ public class LoadBalancer {
 
   private void createTraefikIngress() throws Exception {
 
-    String chartDir = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/charts";
+    String chartDir = BaseTest.getProjectRoot() + "/kubernetes/samples/charts";
 
     StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(chartDir).append(" && helm install ingress-per-domain ");
-    cmd.append(" --name ")
-        .append(lbMap.get("name"))
-        .append(" --namespace ")
-        .append(lbMap.get("namespace"))
-        .append(" --set ")
-        .append("wlsDomain.domainUID=")
-        .append(lbMap.get("domainUID"))
-        .append(" --set ")
-        .append("wlsDomain.clusterName=")
-        .append(lbMap.get("clusterName"))
-        .append(" --set ")
-        .append("traefik.hostname=")
-        .append(lbMap.get("domainUID"))
+    cmd.append(chartDir).append(" && ");
+    
+    if (BaseTest.HELM_VERSION.equals("V2")) {
+      cmd.append(" helm install ingress-per-domain ")
+         .append(" --name ")
+          .append(lbMap.get("name"));
+    } else {
+      cmd.append(" helm install ")
+         .append(lbMap.get("name"))
+          .append(" ingress-per-domain");
+    }
+    cmd.append(" --namespace ")
+       .append(lbMap.get("namespace"))
+       .append(" --set ")
+       .append("wlsDomain.domainUID=")
+       .append(lbMap.get("domainUID"))
+       .append(" --set ")
+       .append("wlsDomain.clusterName=")
+       .append(lbMap.get("clusterName"))
+       .append(" --set ")
+       .append("traefik.hostname=")
+       .append(lbMap.get("domainUID"))
         .append(".org");
 
     LoggerHelper.getLocal().log(Level.INFO, "createTraefikIngress() Running " + cmd.toString());
@@ -204,24 +237,16 @@ public class LoadBalancer {
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
 
+  /**
+   * Create Voyager load balancer.
+   * @throws Exception on failure
+   */
   public void createVoyagerLoadBalancer() throws Exception {
-
-    String cmd1 = "helm repo add appscode https://charts.appscode.com/stable/";
-    LoggerHelper.getLocal().log(Level.INFO, "Executing Add Appscode Chart Repository cmd " + cmd1);
-
-    executeHelmCommand(cmd1);
-
-    String cmd2 = "helm repo update";
-    LoggerHelper.getLocal().log(Level.INFO, "Executing Appscode Chart Repository upgrade cmd " + cmd2);
-
-    executeHelmCommand(cmd2);
-
-    String cmd3 =
-        "helm install appscode/voyager --name voyager-operator --version 7.4.0 --namespace voyager "
-            + "--set cloudProvider=baremetal --set apiserver.enableValidatingWebhook=false";
-    LoggerHelper.getLocal().log(Level.INFO, "Executing Install voyager operator cmd " + cmd3);
-
-    executeHelmCommand(cmd3);
+    String cmdLb = "";
+    String vversion = BaseTest.VOYAGER_VERSION;
+    cmdLb = BaseTest.getProjectRoot() + "/kubernetes/samples/charts/util/setup.sh create voyager " + vversion;
+    LoggerHelper.getLocal().log(Level.INFO, "Executing Install voyager operator cmd " + cmdLb);
+    executeHelmCommand(cmdLb);
   }
 
   private void createVoyagerIngressPerDomain() throws Exception {
@@ -234,19 +259,23 @@ public class LoadBalancer {
   }
 
   private void upgradeVoyagerNamespace() throws Exception {
+    String vversion = BaseTest.VOYAGER_VERSION;
     StringBuffer cmd = new StringBuffer("helm upgrade ");
-    cmd.append("--reuse-values ")
+    cmd.append(" voyager-operator")
+        .append(" appscode/voyager ")
+        .append("--namespace voyager ")
+        .append("--reuse-values ")
         .append("--set ")
         .append("\"")
         .append("kubernetes.namespaces={voyager,")
         .append(lbMap.get("namespace"))
         .append("}")
         .append("\"")
-        .append(" --version 7.4.0")
+        .append(" --version ")
+        .append(vversion)
         .append(" --set cloudProvider=baremetal")
-        .append(" --set apiserver.enableValidatingWebhook=false")
-        .append(" voyager-operator")
-        .append(" appscode/voyager");
+        .append(" --set apiserver.enableValidatingWebhook=false");
+
     LoggerHelper.getLocal().log(Level.INFO, " upgradeVoyagerNamespace() Running " + cmd.toString());
 
     String returnStr = null;
@@ -277,23 +306,31 @@ public class LoadBalancer {
   }
 
   private void createVoyagerIngress() throws Exception {
-    String chartDir = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/charts";
+    String chartDir = BaseTest.getProjectRoot() + "/kubernetes/samples/charts";
 
     StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(chartDir).append(" && helm install ingress-per-domain ");
-    cmd.append(" --name ")
-        .append(lbMap.get("name"))
-        .append(" --namespace ")
-        .append(lbMap.get("namespace"))
-        .append(" --set type=VOYAGER")
-        .append(" --set ")
-        .append("wlsDomain.domainUID=")
-        .append(lbMap.get("domainUID"))
-        .append(" --set ")
-        .append("wlsDomain.clusterName=")
-        .append(lbMap.get("clusterName"))
-        .append(" --set ")
-        .append("voyager.webPort=")
+    cmd.append(chartDir).append(" && ");
+
+    if (BaseTest.HELM_VERSION.equals("V2")) {
+      cmd.append(" helm install ingress-per-domain ")
+         .append(" --name ")
+          .append(lbMap.get("name"));
+    } else {
+      cmd.append(" helm install ")
+         .append(lbMap.get("name"))
+          .append(" ingress-per-domain");
+    }
+    cmd.append(" --namespace ")
+       .append(lbMap.get("namespace"))
+       .append(" --set type=VOYAGER")
+       .append(" --set ")
+       .append("wlsDomain.domainUID=")
+       .append(lbMap.get("domainUID"))
+       .append(" --set ")
+       .append("wlsDomain.clusterName=")
+       .append(lbMap.get("clusterName"))
+       .append(" --set ")
+       .append("voyager.webPort=")
         .append(lbMap.get("loadBalancerWebPort"));
     LoggerHelper.getLocal().log(Level.INFO, "createVoyagerIngress() Running " + cmd.toString());
 
@@ -304,7 +341,7 @@ public class LoadBalancer {
       try {
         returnStr = executeHelmCommand(cmd.toString());
       } catch (RuntimeException rtex) {
-        LoggerHelper.getLocal().log(Level.INFO, "createVoyagerIngress() caight Exception. Retry");
+        LoggerHelper.getLocal().log(Level.INFO, "createVoyagerIngress() caught Exception. Retry");
       }
 
       if (null != returnStr && !returnStr.contains("failed")) {

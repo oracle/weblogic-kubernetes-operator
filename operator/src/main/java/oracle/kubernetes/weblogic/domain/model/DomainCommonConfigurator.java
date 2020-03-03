@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -291,7 +291,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   class AdminServerConfiguratorImpl extends ServerConfiguratorImpl
       implements AdminServerConfigurator {
-    private AdminServer adminServer;
+    private final AdminServer adminServer;
 
     AdminServerConfiguratorImpl(AdminServer adminServer) {
       super(adminServer);
@@ -305,7 +305,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   class ServerConfiguratorImpl implements ServerConfigurator {
-    private Server server;
+    private final Server server;
 
     ServerConfiguratorImpl(Server server) {
       this.server = server;
@@ -483,7 +483,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
-    private Cluster cluster;
+    private final Cluster cluster;
 
     ClusterConfiguratorImpl(Cluster cluster) {
       this.cluster = cluster;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.utils;
@@ -43,9 +43,13 @@ public class SystemClockTestSupport {
 
     @Override
     protected boolean matchesSafely(DateTime item, Description mismatchDescription) {
-      if (item == null) return foundNullTime(mismatchDescription);
+      if (item == null) {
+        return foundNullTime(mismatchDescription);
+      }
       long millis = item.getMillis();
-      if (clock.testStartTime <= millis && millis <= clock.currentTime) return true;
+      if (clock.testStartTime <= millis && millis <= clock.currentTime) {
+        return true;
+      }
 
       mismatchDescription.appendValue(item);
       return false;

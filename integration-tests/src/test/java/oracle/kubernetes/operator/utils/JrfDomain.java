@@ -1,12 +1,10 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
 import java.util.Map;
 import java.util.logging.Level;
-
-import oracle.kubernetes.operator.BaseTest;
 
 /**
  * JRF Domain class with all the utility methods.
@@ -36,6 +34,12 @@ public class JrfDomain extends Domain {
     this(inputDomainMap, false);
   }
 
+  /**
+   * Construct JRF domain.
+   * @param inputDomainMap input map
+   * @param adminPortEnabled admin port enabled flag
+   * @throws Exception on failure
+   */
   public JrfDomain(Map<String, Object> inputDomainMap, boolean adminPortEnabled) throws Exception {
     initialize(inputDomainMap);
     updateDomainMapForJrf(adminPortEnabled);

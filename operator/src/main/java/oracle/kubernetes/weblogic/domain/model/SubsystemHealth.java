@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -164,7 +164,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth>, PatchableCo
     return other.subsystemName != null && other.subsystemName.equals(subsystemName);
   }
 
-  private static ObjectPatch<SubsystemHealth> healthPatch = createObjectPatch(SubsystemHealth.class)
+  private static final ObjectPatch<SubsystemHealth> healthPatch = createObjectPatch(SubsystemHealth.class)
         .withStringField("health", SubsystemHealth::getHealth)
         .withStringField("subsystemName", SubsystemHealth::getSubsystemName)
         .withListField("symptoms", SubsystemHealth::getSymptoms);

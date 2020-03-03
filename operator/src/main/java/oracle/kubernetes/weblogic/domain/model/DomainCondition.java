@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -245,7 +245,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     return type.compareTo(o.type);
   }
 
-  private static ObjectPatch<DomainCondition> conditionPatch = createObjectPatch(DomainCondition.class)
+  private static final ObjectPatch<DomainCondition> conditionPatch = createObjectPatch(DomainCondition.class)
         .withStringField("message", DomainCondition::getMessage)
         .withStringField("reason", DomainCondition::getReason)
         .withStringField("status", DomainCondition::getStatus)

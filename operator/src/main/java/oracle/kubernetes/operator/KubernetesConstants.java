@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -9,11 +9,6 @@ public interface KubernetesConstants {
   String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.Always.name();
   String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IfNotPresent.name();
   String LATEST_IMAGE_SUFFIX = ":latest";
-
-  String EXTENSIONS_API_VERSION = "extensions/v1beta1";
-  String KIND_INGRESS = "Ingress";
-  String CLASS_INGRESS = "kubernetes.io/ingress.class";
-  String CLASS_INGRESS_VALUE = "traefik";
 
   String CRD_NAME = "domains.weblogic.oracle";
   String DOMAIN = "Domain";

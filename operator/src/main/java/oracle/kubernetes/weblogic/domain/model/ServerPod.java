@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -65,7 +65,7 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Description("Settings for the liveness probe associated with a server.")
-  private ProbeTuning livenessProbe = new ProbeTuning();
+  private final ProbeTuning livenessProbe = new ProbeTuning();
 
   /**
    * Defines the settings for the readiness probe. Any that are not specified will default to the
@@ -74,7 +74,7 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Description("Settings for the readiness probe associated with a server.")
-  private ProbeTuning readinessProbe = new ProbeTuning();
+  private final ProbeTuning readinessProbe = new ProbeTuning();
 
   /**
    * Defines the key-value pairs for the pod to fit on a node, the node must have each of the
@@ -84,7 +84,7 @@ class ServerPod extends KubernetesResource {
    */
   @Description(
       "Selector which must match a node's labels for the pod to be scheduled on that node.")
-  private Map<String, String> nodeSelector = new HashMap<>();
+  private final Map<String, String> nodeSelector = new HashMap<>();
 
   @Description("If specified, the pod's scheduling constraints")
   private V1Affinity affinity = null;
@@ -133,7 +133,7 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Description("Memory and CPU minimum requirements and limits for the server.")
-  private V1ResourceRequirements resources =
+  private final V1ResourceRequirements resources =
       new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
 
   /**
@@ -169,7 +169,7 @@ class ServerPod extends KubernetesResource {
    * @since 2.2
    */
   @Description("Configures how the operator should shutdown the server instance.")
-  private Shutdown shutdown = new Shutdown();
+  private final Shutdown shutdown = new Shutdown();
 
   /**
    * SecurityContext holds security configuration that will be applied to a container. Some fields
@@ -188,7 +188,7 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Description("Additional volumes to be created in the server pod.")
-  private List<V1Volume> volumes = new ArrayList<>();
+  private final List<V1Volume> volumes = new ArrayList<>();
 
   /**
    * The additional volume mounts.
@@ -196,7 +196,7 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Description("Additional volume mounts for the server pod.")
-  private List<V1VolumeMount> volumeMounts = new ArrayList<>();
+  private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
