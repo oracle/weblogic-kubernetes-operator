@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
@@ -8,17 +8,19 @@ import java.lang.reflect.Type;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
-import com.squareup.okhttp.Call;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.BatchV1Api;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Event;
-import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.BatchV1Api;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watch;
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.Pool;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
@@ -31,11 +33,11 @@ public class WatchBuilder {
   /** Ignored for watches. */
   private static final String START_LIST = null;
 
-  private static final int ADDITIONAL_TIMEOUT_FOR_SOCKET = 60;
+  private static final Boolean ALLOW_BOOKMARKS = false;
 
   private static WatchFactory FACTORY = new WatchFactoryImpl();
 
-  private CallParamsImpl callParams = new CallParamsImpl();
+  private final CallParamsImpl callParams = new CallParamsImpl();
 
   public WatchBuilder() {
   }
@@ -137,8 +139,18 @@ public class WatchBuilder {
         new ListNamespacedConfigMapCall(namespace));
   }
 
-  private Integer getSocketTimeout(CallParams callParams) {
-    return callParams.getTimeoutSeconds() + ADDITIONAL_TIMEOUT_FOR_SOCKET;
+  /**
+   * Creates a web hook object to track namespace calls.
+   *
+   * @return the active web hook
+   * @throws ApiException if there is an error on the call that sets up the web hook.
+   */
+  public WatchI<V1Namespace> createNamespacesWatch() throws ApiException {
+    return FACTORY.createWatch(
+        ClientPool.getInstance(),
+        callParams,
+        V1Namespace.class,
+        new ListNamespaceCall());
   }
 
   /**
@@ -210,7 +222,7 @@ public class WatchBuilder {
   }
 
   private class ListNamespacedServiceCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
+    private final String namespace;
 
     ListNamespacedServiceCall(String namespace) {
       this.namespace = namespace;
@@ -219,13 +231,17 @@ public class WatchBuilder {
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
       // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+      // infinite timeout
+      OkHttpClient httpClient =
+          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
+      client.setHttpClient(httpClient);
 
       try {
         return new CoreV1Api(client)
             .listNamespacedServiceCall(
                 namespace,
                 callParams.getPretty(),
+                ALLOW_BOOKMARKS,
                 START_LIST,
                 callParams.getFieldSelector(),
                 callParams.getLabelSelector(),
@@ -233,7 +249,6 @@ public class WatchBuilder {
                 callParams.getResourceVersion(),
                 callParams.getTimeoutSeconds(),
                 WATCH,
-                null,
                 null);
       } catch (ApiException e) {
         throw new UncheckedApiException(e);
@@ -242,7 +257,7 @@ public class WatchBuilder {
   }
 
   private class ListPodCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
+    private final String namespace;
 
     ListPodCall(String namespace) {
       this.namespace = namespace;
@@ -251,13 +266,17 @@ public class WatchBuilder {
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
       // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+      // infinite timeout
+      OkHttpClient httpClient =
+          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
+      client.setHttpClient(httpClient);
 
       try {
         return new CoreV1Api(client)
             .listNamespacedPodCall(
                 namespace,
                 callParams.getPretty(),
+                ALLOW_BOOKMARKS,
                 START_LIST,
                 callParams.getFieldSelector(),
                 callParams.getLabelSelector(),
@@ -265,7 +284,6 @@ public class WatchBuilder {
                 callParams.getResourceVersion(),
                 callParams.getTimeoutSeconds(),
                 WATCH,
-                null,
                 null);
       } catch (ApiException e) {
         throw new UncheckedApiException(e);
@@ -274,7 +292,7 @@ public class WatchBuilder {
   }
 
   private class ListJobCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
+    private final String namespace;
 
     ListJobCall(String namespace) {
       this.namespace = namespace;
@@ -283,13 +301,17 @@ public class WatchBuilder {
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
       // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+      // infinite timeout
+      OkHttpClient httpClient =
+          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
+      client.setHttpClient(httpClient);
 
       try {
         return new BatchV1Api(client)
             .listNamespacedJobCall(
                 namespace,
                 callParams.getPretty(),
+                ALLOW_BOOKMARKS,
                 START_LIST,
                 callParams.getFieldSelector(),
                 callParams.getLabelSelector(),
@@ -297,7 +319,6 @@ public class WatchBuilder {
                 callParams.getResourceVersion(),
                 callParams.getTimeoutSeconds(),
                 WATCH,
-                null,
                 null);
       } catch (ApiException e) {
         throw new UncheckedApiException(e);
@@ -306,7 +327,7 @@ public class WatchBuilder {
   }
 
   private class ListEventCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
+    private final String namespace;
 
     ListEventCall(String namespace) {
       this.namespace = namespace;
@@ -315,13 +336,17 @@ public class WatchBuilder {
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
       // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+      // infinite timeout
+      OkHttpClient httpClient =
+          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
+      client.setHttpClient(httpClient);
 
       try {
         return new CoreV1Api(client)
             .listNamespacedEventCall(
                 namespace,
                 callParams.getPretty(),
+                ALLOW_BOOKMARKS,
                 START_LIST,
                 callParams.getFieldSelector(),
                 callParams.getLabelSelector(),
@@ -329,7 +354,6 @@ public class WatchBuilder {
                 callParams.getResourceVersion(),
                 callParams.getTimeoutSeconds(),
                 WATCH,
-                null,
                 null);
       } catch (ApiException e) {
         throw new UncheckedApiException(e);
@@ -338,7 +362,7 @@ public class WatchBuilder {
   }
 
   private class ListDomainsCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
+    private final String namespace;
 
     ListDomainsCall(String namespace) {
       this.namespace = namespace;
@@ -347,7 +371,10 @@ public class WatchBuilder {
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
       // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+      // infinite timeout
+      OkHttpClient httpClient =
+          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
+      client.setHttpClient(httpClient);
 
       try {
         return new WeblogicApi(client)
@@ -361,7 +388,6 @@ public class WatchBuilder {
                 callParams.getResourceVersion(),
                 callParams.getTimeoutSeconds(),
                 WATCH,
-                null,
                 null);
       } catch (ApiException e) {
         throw new UncheckedApiException(e);
@@ -370,7 +396,7 @@ public class WatchBuilder {
   }
 
   private class ListNamespacedConfigMapCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
+    private final String namespace;
 
     ListNamespacedConfigMapCall(String namespace) {
       this.namespace = namespace;
@@ -379,13 +405,17 @@ public class WatchBuilder {
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
       // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+      // infinite timeout
+      OkHttpClient httpClient =
+          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
+      client.setHttpClient(httpClient);
 
       try {
         return new CoreV1Api(client)
             .listNamespacedConfigMapCall(
                 namespace,
                 callParams.getPretty(),
+                ALLOW_BOOKMARKS,
                 START_LIST,
                 callParams.getFieldSelector(),
                 callParams.getLabelSelector(),
@@ -393,11 +423,40 @@ public class WatchBuilder {
                 callParams.getResourceVersion(),
                 callParams.getTimeoutSeconds(),
                 WATCH,
-                null,
                 null);
       } catch (ApiException e) {
         throw new UncheckedApiException(e);
       }
     }
   }
+
+  private class ListNamespaceCall implements BiFunction<ApiClient, CallParams, Call> {
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      // infinite timeout
+      OkHttpClient httpClient =
+          client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
+      client.setHttpClient(httpClient);
+
+      try {
+        return new CoreV1Api(client)
+            .listNamespaceCall(
+                callParams.getPretty(),
+                ALLOW_BOOKMARKS,
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
+      }
+    }
+  }
+
 }

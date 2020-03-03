@@ -1,0 +1,66 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: NAMESPACE
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - image: mysql:5.6
+          name: mysql
+          env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: DOMAIN_UID-mysql-secret
+                key: root-password
+          ports:
+            - containerPort: 3306
+              name: mysql
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: pvc-mysql
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: default
+spec:
+  clusterIP: None
+  ports:
+    - port: 3306
+      protocol: TCP
+  selector:
+    app: mysql
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: DOMAIN_UID-mysql-secret
+  namespace: NAMESPACE
+  labels:
+    app: mysql
+data:
+  # echo -n "root" | base64
+  root-user: cm9vdA==
+  # echo -n "123456" | base64
+  root-password: MTIzNDU2

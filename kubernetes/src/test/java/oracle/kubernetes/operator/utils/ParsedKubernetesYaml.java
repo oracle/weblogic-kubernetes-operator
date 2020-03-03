@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -8,22 +8,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.appscode.voyager.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
-import io.kubernetes.client.models.V1ClusterRole;
-import io.kubernetes.client.models.V1ClusterRoleBinding;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.models.V1Role;
-import io.kubernetes.client.models.V1RoleBinding;
-import io.kubernetes.client.models.V1Secret;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceAccount;
-import io.kubernetes.client.models.V1beta1APIService;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
+import io.kubernetes.client.openapi.models.V1ClusterRole;
+import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1Role;
+import io.kubernetes.client.openapi.models.V1RoleBinding;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1beta1APIService;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.codec.binary.Base64;
 
@@ -54,6 +54,11 @@ public class ParsedKubernetesYaml {
   private Map<String, TypeHandler<?>> kindToHandler = new HashMap<>();
   private int objectCount = 0;
 
+  /**
+   * Construct parser.
+   * @param factory YAML reader factory
+   * @throws Exception on failure
+   */
   public ParsedKubernetesYaml(YamlReader factory) throws Exception {
     defineHandlers();
 
@@ -153,8 +158,8 @@ public class ParsedKubernetesYaml {
     return (TypeHandler<Domain>) getHandler(KIND_DOMAIN);
   }
 
-  TypeHandler<V1beta1Ingress> getIngresses() {
-    return (TypeHandler<V1beta1Ingress>) getHandler(KIND_INGRESS);
+  TypeHandler<NetworkingV1beta1Ingress> getIngresses() {
+    return (TypeHandler<NetworkingV1beta1Ingress>) getHandler(KIND_INGRESS);
   }
 
   TypeHandler<V1Job> getJobs() {
@@ -210,6 +215,11 @@ public class ParsedKubernetesYaml {
       this.k8sClass = k8sClass;
     }
 
+    /**
+     * fine.
+     * @param name name
+     * @return item
+     */
     public T find(String name) {
       T result = null;
       for (T instance : instances) {
@@ -270,6 +280,10 @@ public class ParsedKubernetesYaml {
       return sb.toString();
     }
 
+    /**
+     * Add objects.
+     * @param objectAsMap objects
+     */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void add(Map objectAsMap) {
       // convert the map to a yaml string then convert the yaml string to the
@@ -310,11 +324,14 @@ public class ParsedKubernetesYaml {
         return;
       }
       Object caBundle = specAsMap.get("caBundle");
-      if (caBundle == null) return;
+      if (caBundle == null) {
+        return;
+      }
 
       byte[] caBundleAsBytes;
-      if (caBundle instanceof byte[]) caBundleAsBytes = (byte[]) caBundle;
-      else {
+      if (caBundle instanceof byte[]) {
+        caBundleAsBytes = (byte[]) caBundle;
+      } else {
         String caBundleValueAsBase64EncodedString = (String) caBundle;
         caBundleAsBytes = Base64.decodeBase64(caBundleValueAsBase64EncodedString);
       }
@@ -389,13 +406,13 @@ public class ParsedKubernetesYaml {
     }
   }
 
-  private static class IngressHandler extends TypeHandler<V1beta1Ingress> {
+  private static class IngressHandler extends TypeHandler<NetworkingV1beta1Ingress> {
     private IngressHandler() {
-      super(V1beta1Ingress.class);
+      super(NetworkingV1beta1Ingress.class);
     }
 
     @Override
-    protected V1ObjectMeta getMetadata(V1beta1Ingress instance) {
+    protected V1ObjectMeta getMetadata(NetworkingV1beta1Ingress instance) {
       return instance.getMetadata();
     }
   }

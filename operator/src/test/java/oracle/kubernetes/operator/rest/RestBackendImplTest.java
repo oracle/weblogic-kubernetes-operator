@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -10,12 +10,12 @@ import javax.ws.rs.WebApplicationException;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1SubjectAccessReview;
-import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
-import io.kubernetes.client.models.V1TokenReview;
-import io.kubernetes.client.models.V1TokenReviewStatus;
-import io.kubernetes.client.models.V1UserInfo;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
+import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
+import io.kubernetes.client.openapi.models.V1TokenReview;
+import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
+import io.kubernetes.client.openapi.models.V1UserInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
@@ -65,6 +65,10 @@ public class RestBackendImplTest {
         .withSpec(new DomainSpec().withDomainUid(name));
   }
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -90,9 +94,14 @@ public class RestBackendImplTest {
     subjectAccessReview.setStatus(new V1SubjectAccessReviewStatus().allowed(true));
   }
 
+  /**
+   * Tear down test.
+   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) memento.revert();
+    for (Memento memento : mementos) {
+      memento.revert();
+    }
   }
 
   @Test(expected = WebApplicationException.class)

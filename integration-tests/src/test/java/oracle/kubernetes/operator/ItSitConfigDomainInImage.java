@@ -1,32 +1,83 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.logging.Level;
 
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.LoggerHelper;
+import oracle.kubernetes.operator.utils.Operator;
+import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-/** JUnit test class used for testing configuration override use cases for Domain In Image. */
+/**
+ * JUnit test class used for testing configuration override use cases for Domain In Image.
+ */
 public class ItSitConfigDomainInImage extends SitConfig {
 
+  private static String testClassName;
+  private static int testNumber;
+  private static Operator operator1;
+  private static Domain domain;
+  private static String mysqlYamlFile = "";
+  private static String domainNS;
+  private static String testprefix = "sitconfigdomaininimage";
+  private static String mysqldbport;
+  private static String JDBC_URL;
+  private static StringBuffer namespaceList;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
-   * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes.
-   *
-   * @throws Exception when the initialization, creating directories , copying files and domain
-   *     creation fails.
+   * initialization of the integration test properties defined in OperatorIT.properties.
+   * @throws Exception when the initialization fails.
    */
-  @BeforeClass
+
+  @BeforeAll
   public static void staticPrepare() throws Exception {
     if (FULLTEST) {
-      SitConfig.staticPrepare(
-          DOMAININIMAGE_WLST_YAML,
-          "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config-inimage.py");
+      namespaceList = new StringBuffer();
+      testClassName = new Object() {
+      }.getClass().getEnclosingClass().getSimpleName();
+      initialize(APP_PROPS_FILE, testClassName);
+      TEST_RES_DIR = getProjectRoot() + "/integration-tests/src/test/resources/";
+      testNumber = getNewSuffixCount();
+    }
+  }
+
+  /**
+   * This method gets called before every test. It creates the resultRoot, pvRoot directories, creates operator and
+   * domain if not running.
+   *
+   * @throws Exception if results/pv directory or operator or domain creation fails.
+   */
+
+  @BeforeEach
+  public void prepare() throws Exception {
+    // initialize test properties and create the directories
+    if (FULLTEST) {
+      // create operator1
+      if (operator1 == null) {
+        createResultAndPvDirs(testClassName);
+        Map<String, Object> operatorMap = createOperatorMap(testNumber, true, testprefix);
+        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+        Assertions.assertNotNull(operator1);
+        domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+        namespaceList.append((String) operatorMap.get("namespace"));
+        namespaceList.append(" ").append(domainNS);
+        mysqldbport = String.valueOf(31306 + testNumber);
+        domain = prepareDomainAndDB(true, domainNS, mysqldbport);
+        JDBC_URL = "jdbc:mysql://" + fqdn + ":" + mysqldbport + "/";
+        mysqlYamlFile = getResultDir() + "/sitconfigtemp" + testprefix + "/mysql/mysql-dbservices.yml";
+        Assertions.assertNotNull(domain);
+      }
     }
   }
 
@@ -35,10 +86,18 @@ public class ItSitConfigDomainInImage extends SitConfig {
    *
    * @throws Exception when domain destruction or MySQL container destruction fails
    */
-  @AfterClass
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      SitConfig.staticUnPrepare();
+      ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
+      destroySitConfigDomain(domain);
+      if (operator1 != null) {
+        LoggerHelper.getLocal().log(Level.INFO, "Destroying operator...");
+        operator1.destroy();
+        operator1 = null;
+      }
+      tearDown(new Object() {}.getClass()
+          .getEnclosingClass().getSimpleName(), namespaceList.toString());
     }
   }
 
@@ -55,11 +114,12 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testCustomSitConfigOverridesForDomain(testMethod);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+    testCustomSitConfigOverridesForDomain(testMethod,domain);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -74,11 +134,12 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForDomainMsInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testCustomSitConfigOverridesForDomainMS(testMethod);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+    testCustomSitConfigOverridesForDomainMS(testMethod,domain);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -97,11 +158,12 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJdbcInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testCustomSitConfigOverridesForJdbc(testMethod);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+    testCustomSitConfigOverridesForJdbc(testMethod,domain, JDBC_URL);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -116,11 +178,12 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForJmsInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testCustomSitConfigOverridesForJms(testMethod);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+    testCustomSitConfigOverridesForJms(testMethod,domain);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
@@ -137,10 +200,11 @@ public class ItSitConfigDomainInImage extends SitConfig {
    */
   @Test
   public void testCustomSitConfigOverridesForWldfInImage() throws Exception {
-    Assume.assumeTrue(FULLTEST);
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethod = new Object() {
+    }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    testCustomSitConfigOverridesForWldf(testMethod);
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+    testCustomSitConfigOverridesForWldf(testMethod,domain);
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 }

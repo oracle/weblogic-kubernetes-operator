@@ -1,10 +1,7 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
-
-import io.kubernetes.client.ProgressRequestBody;
-import io.kubernetes.client.ProgressResponseBody;
 
 public interface CallParams {
   /**
@@ -54,18 +51,4 @@ public interface CallParams {
    * @return the current setting. Defaults to null.
    */
   String getResourceVersion();
-
-  /**
-   * Returns a listener for responses received, to specify on calls.
-   *
-   * @return the set listener. Defaults to null.
-   */
-  ProgressResponseBody.ProgressListener getProgressListener();
-
-  /**
-   * Returns a listener for requests sent, to specify on calls.
-   *
-   * @return the set listener. Defaults to null.
-   */
-  ProgressRequestBody.ProgressRequestListener getProgressRequestListener();
 }

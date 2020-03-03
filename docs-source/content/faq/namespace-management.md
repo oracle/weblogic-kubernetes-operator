@@ -2,6 +2,7 @@
 title: "Managing Domain Namespaces"
 date: 2019-09-19T10:41:32-05:00
 draft: false
+weight: 1
 ---
 
 Each WebLogic operator deployment manages a number of Kubernetes namespaces (for information about setting domain namespaces, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values">}})). A number of Kubernetes resources
@@ -34,7 +35,7 @@ elkIntegrationEnabled: false
 externalDebugHttpPort: 30999
 externalRestEnabled: false
 externalRestHttpsPort: 31001
-image: oracle/weblogic-kubernetes-operator:2.4.0
+image: oracle/weblogic-kubernetes-operator:2.5.0
 imagePullPolicy: IfNotPresent
 internalDebugHttpPort: 30999
 istioEnabled: false
@@ -46,10 +47,14 @@ suspendOnDebugStartup: false
 
 ```
 
-If you don't know the release name of the operator, you can use `helm ls` to list all the releases.
+If you don't know the release name of the operator, you can use `helm ls` to list all the releases:
+
+```
+$ helm ls
+```
 
 #### Adding a Kubernetes namespace to an operator
-If you want a WebLogic operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be precreated, for example, using the `kubectl create` command.
+If you want a WebLogic operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be pre-created, for example, using the `kubectl create` command.
 
 Adding a namespace to the `domainNamespaces` list tells the operator deployment or runtime
 to initialize the necessary Kubernetes resources for the namespace so that the operator is ready to host WebLogic domain resources in that namespace.

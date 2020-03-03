@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -33,6 +33,12 @@ public class Packet extends AbstractMap<String, Object> implements ComponentRegi
     return new Packet(this);
   }
 
+  /**
+   * Get SPI by class.
+   * @param spiType SPI class
+   * @param <S> SPI class
+   * @return implementation object
+   */
   public <S> S getSpi(Class<S> spiType) {
     for (Component c : components.values()) {
       S s = c.getSpi(spiType);

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -6,7 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -21,7 +21,7 @@ import oracle.kubernetes.operator.work.Step;
  * @param <T> the type of resource handled by this step
  */
 abstract class WaitForReadyStep<T> extends Step {
-  private T initialResource;
+  private final T initialResource;
 
   /**
    * Creates a step which will only proceed once the specified resource is ready.
@@ -121,9 +121,9 @@ abstract class WaitForReadyStep<T> extends Step {
 
   @Override
   public final NextAction apply(Packet packet) {
-    if (shouldTerminateFiber(initialResource))
+    if (shouldTerminateFiber(initialResource)) {
       return doTerminate(createTerminationException(initialResource), packet);
-    else if (isReady(initialResource)) {
+    } else if (isReady(initialResource)) {
       return doNext(packet);
     }
 
@@ -163,16 +163,17 @@ abstract class WaitForReadyStep<T> extends Step {
     return new DefaultResponseStep<>(null) {
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
-        if (isReady(callResponse.getResult()))
+        if (isReady(callResponse.getResult())) {
           callback.proceedFromWait(callResponse.getResult());
+        }
         return doNext(packet);
       }
     };
   }
 
   private class Callback implements Consumer<T> {
-    private Fiber fiber;
-    private Packet packet;
+    private final Fiber fiber;
+    private final Packet packet;
     private final AtomicBoolean didResume = new AtomicBoolean(false);
 
     Callback(Fiber fiber, Packet packet) {

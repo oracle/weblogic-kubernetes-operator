@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -241,7 +241,9 @@ public class FiberTestSupport {
     @Override
     public void execute(@Nullable Runnable command) {
       queue.add(command);
-      if (current == null) runNextRunnable();
+      if (current == null) {
+        runNextRunnable();
+      }
     }
 
     private void runNextRunnable() {
@@ -258,7 +260,7 @@ public class FiberTestSupport {
     }
 
     /**
-     * Sets the simulated time, thus triggering the execution of any runnable iterms associated with
+     * Sets the simulated time, thus triggering the execution of any runnable items associated with
      * earlier times.
      *
      * @param time the time, in units
@@ -266,14 +268,17 @@ public class FiberTestSupport {
      */
     void setTime(long time, TimeUnit unit) {
       long newTime = unit.toMillis(time);
-      if (newTime < currentTime)
+      if (newTime < currentTime) {
         throw new IllegalStateException(
             "Attempt to move clock backwards from " + currentTime + " to " + newTime);
+      }
 
       List<ScheduledItem> rescheduledItems = new ArrayList<>();
       for (Iterator<ScheduledItem> it = scheduledItems.iterator(); it.hasNext(); ) {
         ScheduledItem item = it.next();
-        if (item.atTime > newTime) break;
+        if (item.atTime > newTime) {
+          break;
+        }
         it.remove();
         Optional.ofNullable(item.rescheduled()).ifPresent(rescheduledItems::add);
         execute(item.runnable);
@@ -291,8 +296,11 @@ public class FiberTestSupport {
      * @return true if such an item exists
      */
     boolean containsItemAt(int time, TimeUnit unit) {
-      for (ScheduledItem scheduledItem : scheduledItems)
-        if (scheduledItem.atTime == unit.toMillis(time)) return true;
+      for (ScheduledItem scheduledItem : scheduledItems) {
+        if (scheduledItem.atTime == unit.toMillis(time)) {
+          return true;
+        }
+      }
       return false;
     }
 
@@ -352,11 +360,13 @@ public class FiberTestSupport {
       Throwable actual = throwable;
       throwable = null;
 
-      if (actual == null)
+      if (actual == null) {
         throw new AssertionError("Expected exception: " + throwableClass.getName());
-      if (!throwableClass.isInstance(actual))
+      }
+      if (!throwableClass.isInstance(actual)) {
         throw new AssertionError(
             "Expected exception: " + throwableClass.getName() + " but was " + actual);
+      }
     }
 
     /**
@@ -366,8 +376,12 @@ public class FiberTestSupport {
      * @throws Exception the exception reported as a failure
      */
     void throwOnFailure() throws Exception {
-      if (throwable == null) return;
-      if (throwable instanceof Error) throw (Error) throwable;
+      if (throwable == null) {
+        return;
+      }
+      if (throwable instanceof Error) {
+        throw (Error) throwable;
+      }
       throw (Exception) throwable;
     }
   }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -21,6 +21,7 @@ public class OperatorValues {
   private static final String EXTERNAL_CUSTOM_CERT_PEM = "test-external-custom-certificate-pem";
   private static final String EXTERNAL_CUSTOM_KEY_PEM = "test-external-custom-private-key-pem";
   private String version = "";
+  private String dedicated = "";
   private String serviceAccount = "";
   private String namespace = "";
   private String targetNamespaces = "";
@@ -42,8 +43,13 @@ public class OperatorValues {
   private String elasticSearchHost = "";
   private String elasticSearchPort = "";
 
+  /**
+   * build with test defaults.
+   * @return values
+   */
   public OperatorValues withTestDefaults() {
     return this.namespace("test-operator-namespace")
+        .dedicated("false")
         .serviceAccount("test-operator-service-account")
         .targetNamespaces("test-target-namespace1,test-target-namespace2")
         .weblogicOperatorImage("test-operator-image")
@@ -54,12 +60,20 @@ public class OperatorValues {
         .elasticSearchPort("9200");
   }
 
+  /**
+   * enable debugging.
+   * @return values
+   */
   public OperatorValues enableDebugging() {
     return this.remoteDebugNodePortEnabled("true")
         .internalDebugHttpPort("9090")
         .externalDebugHttpPort("30090");
   }
 
+  /**
+   * setup external REST.
+   * @return values
+   */
   public OperatorValues setupExternalRestEnabled() {
     return this.externalRestHttpsPort("30070")
         .externalRestEnabled("true")
@@ -301,6 +315,19 @@ public class OperatorValues {
 
   public OperatorValues elkIntegrationEnabled(String val) {
     setElkIntegrationEnabled(val);
+    return this;
+  }
+
+  public String getDedicated() {
+    return dedicated;
+  }
+
+  public void setDedicated(String val) {
+    dedicated = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues dedicated(String val) {
+    setDedicated(val);
     return this;
   }
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -48,10 +48,16 @@ function startWLS() {
   [ $? -ne 0 ] && trace SEVERE "failed to start node manager" && exitOrLoop
 
   #
+  # Verify that the domain secret hasn't changed
+  #
+
+  checkDomainSecretMD5 || exitOrLoop
+
+  #
   # Start WL Server
   #
 
-  # TBD We should probably || exit 1 if start-server.py itself fails, and dump NM log to stdout
+  # TBD We should probably || exitOrLoop if start-server.py itself fails, and dump NM log to stdout
 
   trace "Start WebLogic Server via the nodemanager"
   ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
@@ -120,9 +126,10 @@ function copySitCfg() {
   fi
 }
 
-# trace env vars before export.*Home calls
+# trace env vars and dirs before export.*Home calls
 
 traceEnv before
+traceDirs before
 
 #
 # Configure startup mode
@@ -180,9 +187,10 @@ fi
 
 exportEffectiveDomainHome || exitOrLoop
 
-# trace env vars after export.*Home calls
+# trace env vars and dirs after export.*Home calls
 
 traceEnv after
+traceDirs after
 
 #
 # Check if introspector actually ran.  This should never fail since

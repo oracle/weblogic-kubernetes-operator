@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,35 +11,40 @@ import javax.json.JsonPatchBuilder;
 
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Event;
-import io.kubernetes.client.models.V1EventList;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1ObjectReference;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodList;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.models.V1SubjectAccessReview;
-import io.kubernetes.client.models.V1TokenReview;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.V1EventList;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1Status;
+import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
+import io.kubernetes.client.openapi.models.V1TokenReview;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.TOKEN_REVIEW;
@@ -47,24 +52,35 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class KubernetesTestSupportTest {
+
   private static final String NS = "namespace1";
   private static final String POD_LOG_CONTENTS = "asdfghjkl";
   List<Memento> mementos = new ArrayList<>();
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
+  /**
+   * Setup test.
+   * @throws Exception on failure
+   */
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
+    mementos.add(SystemClockTestSupport.installClock());
   }
 
+  /**
+   * Tear down test.
+   * @throws Exception on failure
+   */
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) memento.revert();
+    mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
   }
@@ -79,6 +95,16 @@ public class KubernetesTestSupportTest {
     testSupport.runSteps(new CallBuilder().createCustomResourceDefinitionAsync(crd, responseStep));
 
     assertThat(testSupport.getResources(CUSTOM_RESOURCE_DEFINITION), contains(crd));
+  }
+
+  @Test
+  public void afterCreateCrd_incrementNumCalls() {
+    V1beta1CustomResourceDefinition crd = createCrd("mycrd");
+
+    TestResponseStep<V1beta1CustomResourceDefinition> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().createCustomResourceDefinitionAsync(crd, responseStep));
+
+    assertThat(testSupport.getNumCalls(), equalTo(1));
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -102,7 +128,7 @@ public class KubernetesTestSupportTest {
 
     TestResponseStep<V1beta1CustomResourceDefinition> responseStep = new TestResponseStep<>();
     Step steps =
-        new CallBuilder().createCustomResourceDefinitionAsync(createCrd("mycrd"), responseStep);
+          new CallBuilder().createCustomResourceDefinitionAsync(createCrd("mycrd"), responseStep);
     testSupport.runSteps(steps);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
@@ -121,6 +147,53 @@ public class KubernetesTestSupportTest {
     testSupport.runSteps(steps);
 
     assertThat(testSupport.getResources(CUSTOM_RESOURCE_DEFINITION), contains(crd));
+  }
+
+  @Test
+  public void afterReplaceDomainWithTimeStampEnabled_timeStampIsChanged() {
+    Domain originalDomain = createDomain(NS, "domain1");
+    testSupport.defineResources(originalDomain);
+    testSupport.setAddCreationTimestamp(true);
+
+    SystemClockTestSupport.increment();
+    Step steps = new CallBuilder().replaceDomainAsync("domain1", NS, createDomain(NS, "domain1"), null);
+    testSupport.runSteps(steps);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    assertThat(getCreationTimestamp(updatedDomain), not(equalTo(getCreationTimestamp(originalDomain))));
+  }
+
+  @Test
+  public void afterReplaceDomainWithTimeStampDisabled_timeStampIsNotChanged() {
+    Domain originalDomain = createDomain(NS, "domain1");
+    testSupport.defineResources(originalDomain);
+
+    SystemClockTestSupport.increment();
+    Step steps = new CallBuilder().replaceDomainAsync("domain1", NS, createDomain(NS, "domain1"), null);
+    testSupport.runSteps(steps);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    assertThat(getCreationTimestamp(updatedDomain), equalTo(getCreationTimestamp(originalDomain)));
+  }
+
+  @Test
+  public void afterPatchDomainWithTimeStampEnabled_timeStampIsNotChanged() {
+    Domain originalDomain = createDomain(NS, "domain1");
+    testSupport.defineResources(originalDomain);
+    testSupport.setAddCreationTimestamp(true);
+    SystemClockTestSupport.increment();
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.add("/spec/replicas", 5);
+    Step steps = new CallBuilder().patchDomainAsync("domain1", NS, new V1Patch(patchBuilder.build().toString()), null);
+    testSupport.runSteps(steps);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    assertThat(getCreationTimestamp(updatedDomain), equalTo(getCreationTimestamp(originalDomain)));
+  }
+
+  private DateTime getCreationTimestamp(Domain domain) {
+    return domain.getMetadata().getCreationTimestamp();
   }
 
   @Test
@@ -227,7 +300,7 @@ public class KubernetesTestSupportTest {
 
     TestResponseStep<V1PodList> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
-        new CallBuilder().withLabelSelectors("k1=v1").listPodAsync("ns1", responseStep));
+          new CallBuilder().withLabelSelectors("k1=v1").listPodAsync("ns1", responseStep));
 
     assertThat(responseStep.callResponse.getResult().getItems(), containsInAnyOrder(pod1, pod3));
   }
@@ -245,8 +318,8 @@ public class KubernetesTestSupportTest {
 
     TestResponseStep<V1Pod> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
-        new CallBuilder().patchPodAsync("pod1", "ns1",
-            new V1Patch(patchBuilder.build().toString()), responseStep));
+          new CallBuilder().patchPodAsync("pod1", "ns1",
+                new V1Patch(patchBuilder.build().toString()), responseStep));
 
     V1Pod pod2 = (V1Pod) testSupport.getResources(POD).stream().findFirst().orElse(pod1);
     assertThat(pod2.getMetadata().getLabels(), hasEntry("k1", "v2"));
@@ -261,8 +334,8 @@ public class KubernetesTestSupportTest {
 
     TestResponseStep<V1Pod> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
-        new CallBuilder().patchPodAsync("pod1", "ns1",
-            new V1Patch(patchBuilder.build().toString()), responseStep));
+          new CallBuilder().patchPodAsync("pod1", "ns1",
+                new V1Patch(patchBuilder.build().toString()), responseStep));
 
     V1Pod pod2 = (V1Pod) testSupport.getResources(POD).stream().findFirst().orElse(pod1);
     assertThat(pod2.getMetadata().getLabels(), hasEntry("k1", "v2"));
@@ -314,9 +387,9 @@ public class KubernetesTestSupportTest {
 
     TestResponseStep<V1EventList> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
-        new CallBuilder()
-            .withFieldSelector("action=walk,involvedObject.kind=bird")
-            .listEventAsync("ns1", responseStep));
+          new CallBuilder()
+                .withFieldSelector("action=walk,involvedObject.kind=bird")
+                .listEventAsync("ns1", responseStep));
 
     assertThat(responseStep.callResponse.getResult().getItems(), containsInAnyOrder(s1, s3));
   }
@@ -327,6 +400,26 @@ public class KubernetesTestSupportTest {
 
   private V1Event createEvent(String namespace, String name, String act) {
     return new V1Event().metadata(new V1ObjectMeta().name(name).namespace(namespace)).action(act);
+  }
+
+  @Test
+  public void listSecrets_returnsAllInNamespace() {
+    V1Secret s1 = createSecret("ns1", "secret1");
+    V1Secret s2 = createSecret("ns1", "secret2");
+    V1Secret s3 = createSecret("ns2", "secret3");
+    testSupport.defineResources(s1, s2, s3);
+    
+    TestResponseStep<V1SecretList> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(
+          new CallBuilder()
+                .listSecretsAsync("ns1", responseStep));
+
+    assertThat(responseStep.callResponse.getResult().getItems(), containsInAnyOrder(s1, s2));
+
+  }
+
+  private V1Secret createSecret(String namespace, String name) {
+    return new V1Secret().metadata(new V1ObjectMeta().name(name).namespace(namespace));
   }
 
   @Test
@@ -349,6 +442,7 @@ public class KubernetesTestSupportTest {
   }
 
   static class TestResponseStep<T> extends DefaultResponseStep<T> {
+
     private CallResponse<T> callResponse;
 
     TestResponseStep() {

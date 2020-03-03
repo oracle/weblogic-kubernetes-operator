@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -6,12 +6,13 @@ package oracle.kubernetes.operator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1JobCondition;
-import io.kubernetes.client.models.V1JobStatus;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobStatus;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
@@ -30,6 +31,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 public class DomainProcessorTestSetup {
   public static final String UID = "test-domain";
   public static final String NS = "namespace";
+  public static final String SECRET_NAME = "secret-name";
 
   private static final String INTROSPECTION_JOB = LegalNames.toJobIntrospectorName(UID);
   private static final String INTROSPECT_RESULT =
@@ -62,6 +64,14 @@ public class DomainProcessorTestSetup {
     this.testSupport = testSupport;
   }
 
+  public static void defineRequiredResources(KubernetesTestSupport testSupport) {
+    testSupport.defineResources(createSecret());
+  }
+
+  private static V1Secret createSecret() {
+    return new V1Secret().metadata(new V1ObjectMeta().name(SECRET_NAME).namespace(NS));
+  }
+
   /**
    * Update the specified object metadata with usable time stamp and resource version data.
    *
@@ -82,7 +92,7 @@ public class DomainProcessorTestSetup {
         .withMetadata(withTimestamps(new V1ObjectMeta().name(UID).namespace(NS)))
         .withSpec(
             new DomainSpec()
-                .withWebLogicCredentialsSecret(new V1SecretReference().name("secret-name")));
+                .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME).namespace(NS)));
   }
 
   /**

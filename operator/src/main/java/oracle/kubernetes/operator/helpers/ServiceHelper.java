@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,16 +11,18 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServicePort;
-import io.kubernetes.client.models.V1ServiceSpec;
-import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.openapi.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServicePort;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import io.kubernetes.client.openapi.models.V1Status;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -93,10 +95,6 @@ public class ServiceHelper {
     OperatorServiceType.getType(service).updateFromEvent(info, service);
   }
 
-  public static V1Service[] getServerServices(DomainPresenceInfo info) {
-    return OperatorServiceType.SERVER.getServices(info);
-  }
-
   public static boolean isServerService(V1Service service) {
     return OperatorServiceType.getType(service) == OperatorServiceType.SERVER;
   }
@@ -110,7 +108,9 @@ public class ServiceHelper {
   }
 
   static String getLabelValue(V1Service service, String labelName) {
-    if (service == null) return null;
+    if (service == null) {
+      return null;
+    }
 
     V1ObjectMeta meta = service.getMetadata();
     Map<String, String> labels = meta.getLabels();
@@ -233,8 +233,9 @@ public class ServiceHelper {
               .clusterIP(isPreserveServices ? null : "None")
               .ports(createServicePorts())
               .putSelectorItem(LabelConstants.SERVERNAME_LABEL, getServerName());
-      if (isPublishNotReadyAddressesSupported())
+      if (isPublishNotReadyAddressesSupported()) {
         serviceSpec.setPublishNotReadyAddresses(Boolean.TRUE);
+      }
       return serviceSpec;
     }
 
@@ -249,8 +250,9 @@ public class ServiceHelper {
               .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
               .putAnnotationsItem("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
 
-      if (getClusterName() != null)
+      if (getClusterName() != null) {
         metadata.putLabelsItem(LabelConstants.CLUSTERNAME_LABEL, getClusterName());
+      }
 
       return metadata;
     }
@@ -306,7 +308,9 @@ public class ServiceHelper {
     }
 
     protected List<V1ServicePort> createServicePorts() {
-      if (scan == null) return null;
+      if (scan == null) {
+        return null;
+      }
 
       ports = null;
       addServicePorts(scan);
@@ -315,7 +319,9 @@ public class ServiceHelper {
 
     @Override
     void addServicePortIfNeeded(String portName, Integer port) {
-      if (port == null) return;
+      if (port == null) {
+        return;
+      }
 
       addPort(createServicePort(portName, port));
     }
@@ -347,7 +353,9 @@ public class ServiceHelper {
   }
 
   private static boolean testNodePort(List<V1ServicePort> ports, Integer port) {
-    if (ports == null) return true;
+    if (ports == null) {
+      return true;
+    }
     for (V1ServicePort servicePort : ports) {
       if (port.equals(servicePort.getPort())) {
         return false;
@@ -357,7 +365,9 @@ public class ServiceHelper {
   }
 
   private static boolean testNodePort(Map<String, V1ServicePort> ports, Integer port) {
-    if (ports == null) return true;
+    if (ports == null) {
+      return true;
+    }
     for (V1ServicePort servicePort : ports.values()) {
       if (port.equals(servicePort.getPort())) {
         return false;
@@ -369,9 +379,9 @@ public class ServiceHelper {
   private abstract static class ServiceStepContext {
     private final Step conflictStep;
     protected List<V1ServicePort> ports;
-    DomainPresenceInfo info;
-    WlsDomainConfig domainTopology;
-    private OperatorServiceType serviceType;
+    final DomainPresenceInfo info;
+    final WlsDomainConfig domainTopology;
+    private final OperatorServiceType serviceType;
 
     ServiceStepContext(Step conflictStep, Packet packet, OperatorServiceType serviceType) {
       this.conflictStep = conflictStep;
@@ -413,7 +423,9 @@ public class ServiceHelper {
     }
 
     void addPort(V1ServicePort port) {
-      if (ports == null) ports = new ArrayList<>();
+      if (ports == null) {
+        ports = new ArrayList<>();
+      }
 
       if (testNodePort(ports, port.getPort())) {
         ports.add(port);
@@ -601,7 +613,7 @@ public class ServiceHelper {
     }
 
     private class CreateResponse extends ResponseStep<V1Service> {
-      private String messageKey;
+      private final String messageKey;
 
       CreateResponse(String messageKey, Step next) {
         super(next);
@@ -610,14 +622,15 @@ public class ServiceHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
-        if (DomainStatusPatch.isUnprocessableEntityFailure(callResponse))
+        if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
           return updateDomainStatus(packet, callResponse);
-        else
+        } else {
           return onFailure(getConflictStep(), packet, callResponse);
+        }
       }
 
       private NextAction updateDomainStatus(Packet packet, CallResponse<V1Service> callResponse) {
-        return doNext(DomainStatusPatch.createStep(getDomain(), callResponse.getE()), packet);
+        return doNext(DomainStatusUpdater.createFailedStep(callResponse, null), packet);
       }
 
       @Override
@@ -670,7 +683,7 @@ public class ServiceHelper {
   private static class ClusterStepContext extends ServiceStepContext {
     private final String clusterName;
     private final WlsDomainConfig config;
-    Map<String, V1ServicePort> ports = new HashMap<>();
+    final Map<String, V1ServicePort> ports = new HashMap<>();
 
     ClusterStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet, OperatorServiceType.CLUSTER);
@@ -684,8 +697,9 @@ public class ServiceHelper {
     }
 
     protected List<V1ServicePort> createServicePorts() {
-      for (WlsServerConfig server : getServerConfigs(config.getClusterConfig(clusterName)))
+      for (WlsServerConfig server : getServerConfigs(config.getClusterConfig(clusterName))) {
         addServicePorts(server);
+      }
 
       return ports.isEmpty() ? null : new ArrayList<>(ports.values());
     }
@@ -833,12 +847,12 @@ public class ServiceHelper {
 
     @Override
     Map<String, String> getServiceLabels() {
-      return getAdminService().map(AdminService::getLabels).orElse(Collections.emptyMap());
+      return getNullableAdminService().map(AdminService::getLabels).orElse(Collections.emptyMap());
     }
 
     @Override
     Map<String, String> getServiceAnnotations() {
-      return getAdminService().map(AdminService::getAnnotations).orElse(Collections.emptyMap());
+      return getNullableAdminService().map(AdminService::getAnnotations).orElse(Collections.emptyMap());
     }
 
     @Override
@@ -853,7 +867,9 @@ public class ServiceHelper {
 
     protected List<V1ServicePort> createServicePorts() {
       WlsServerConfig scan = domainTopology.getServerConfig(domainTopology.getAdminServerName());
-      if (scan == null) return null;
+      if (scan == null) {
+        return null;
+      }
 
       addServicePorts(scan);
       return ports;
@@ -861,7 +877,9 @@ public class ServiceHelper {
 
     void addServicePortIfNeeded(String channelName, Integer internalPort) {
       Channel channel = getChannel(channelName);
-      if (channel == null || internalPort == null) return;
+      if (channel == null || internalPort == null) {
+        return;
+      }
 
       if (testNodePort(ports, internalPort)) {
         addPort(
@@ -871,10 +889,10 @@ public class ServiceHelper {
     }
 
     private Channel getChannel(String channelName) {
-      return getAdminService().map(a -> a.getChannel(channelName)).orElse(null);
+      return getNullableAdminService().map(a -> a.getChannel(channelName)).orElse(null);
     }
 
-    private Optional<AdminService> getAdminService() {
+    private Optional<AdminService> getNullableAdminService() {
       return Optional.ofNullable(getDomain().getAdminServerSpec())
           .map(AdminServerSpec::getAdminService);
     }

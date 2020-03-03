@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -13,6 +13,13 @@ public class WlsMachineConfig {
   final String nodeManagerListenAddress;
   final String nodeManagerType;
 
+  /**
+   * Constructor for WlsMachineConfig.
+   * @param name the machine name
+   * @param nodeManagerListenPort the port that the node manager will listen on, e.g. 1234
+   * @param nodeManagerListenAddress the listen address for the node manager to bind to, e.g. 0.0.0.0
+   * @param nodeManagerType the node manager type, e.g. plain, SSL
+   */
   public WlsMachineConfig(
       String name,
       Integer nodeManagerListenPort,

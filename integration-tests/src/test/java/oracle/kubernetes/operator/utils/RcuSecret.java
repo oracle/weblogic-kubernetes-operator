@@ -1,13 +1,25 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
+
+import java.util.logging.Level;
 
 public class RcuSecret extends Secret {
 
   private String sysUsername;
   private String sysPassword;
 
+  /**
+   * Construct RCU secret.
+   * @param namespace namespace
+   * @param secretName secret name
+   * @param username username
+   * @param password password
+   * @param sysUsername sys username
+   * @param sysPassword sys password
+   * @throws Exception on failure
+   */
   public RcuSecret(
       String namespace,
       String secretName,
@@ -40,9 +52,9 @@ public class RcuSecret extends Secret {
             + this.sysUsername
             + " --from-literal=sys_password="
             + this.sysPassword;
-    logger.info("Running " + command);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
     ExecResult result = TestUtils.exec(command);
-    logger.info("command result " + result.stdout().trim());
+    LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
   }
 
   public String getSysUsername() {
@@ -55,7 +67,8 @@ public class RcuSecret extends Secret {
 
   private void deleteSecret() throws Exception {
     String command = "kubectl -n " + namespace + " delete secret " + secretName;
-    logger.info("Running " + command);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
     ExecCommand.exec(command);
   }
+
 }

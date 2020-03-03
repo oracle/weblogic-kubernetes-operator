@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -304,6 +304,11 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return status.get() == DONE;
   }
 
+  /**
+   * Wait for Fiber to complete.
+   * @return none
+   * @throws InterruptedException on interruption
+   */
   public Void get() throws InterruptedException {
     int s = status.get();
     if (s == CANCELLED) {
@@ -338,6 +343,14 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return null;
   }
 
+  /**
+   * Wait for Fiber to terminate up to timeout.
+   * @param timeout timeout
+   * @param unit time unit
+   * @return none
+   * @throws InterruptedException on interruption
+   * @throws TimeoutException on timeout
+   */
   public Void get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
     int s = status.get();
     if (s == CANCELLED) {
@@ -852,7 +865,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private static final class OnExitRunnableException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
-    Throwable target;
+    final Throwable target;
 
     OnExitRunnableException(Throwable target) {
       super((Throwable) null); // see pattern for InvocationTargetException

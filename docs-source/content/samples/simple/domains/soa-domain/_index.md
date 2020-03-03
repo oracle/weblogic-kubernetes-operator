@@ -22,8 +22,6 @@ artifacts of the corresponding domain.
 Before you begin, we recommend the following:
 
 * Review the [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}) documentation.
-* Review the [operator-prerequisites](https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/#operator-prerequisites)
-section for the supported versions of Kubernetes and Helm.
 * Complete the preliminary required steps documented [here]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md" >}}).
 
 
@@ -32,7 +30,7 @@ section for the supported versions of Kubernetes and Helm.
 The sample scripts for Oracle SOA Suite domain deployment are available at `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts/create-soa-domain`.
 
 You must edit `create-domain-inputs.yaml` (or a copy of it) to provide the details for your domain.
-Please refer to the configuration parameters below to understand what information you must
+Please refer to the configuration parameters below to understand the information that you must
 provide in this file.
 
 #### Configuration parameters

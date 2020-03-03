@@ -1,11 +1,11 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.Before;
@@ -30,6 +30,10 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
     return new V1Service().metadata(new V1ObjectMeta().name(SERVICE_NAME).namespace(NS));
   }
 
+  /**
+   * Setup deletion test.
+   * @throws NoSuchFieldException if no such field
+   */
   @Before
   public void setUpDeletionTest() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());

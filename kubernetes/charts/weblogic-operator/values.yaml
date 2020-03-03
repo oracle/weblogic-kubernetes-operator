@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # serviceAccount specifies the name of the service account in the operator's namespace that the
@@ -7,8 +7,13 @@
 # If not specified, the the operator will use the operator's namespace's 'default' service account.
 serviceAccount: "default"
 
-# domainNamespaces specifies list of WebLogic Domain namespaces which the operator manages.
-# The customer is responsible for creating these namespaces.
+# dedicated specifies if this operator will manage WebLogic Domains only in the same namespace in
+# which the operator itself is deployed.  If set to 'true', then the 'domainNamespaces' value below
+# is ignored.
+dedicated: false
+
+# domainNamespaces specifies list of WebLogic Domain namespaces which the operator manages. This value
+# is ignored if 'dedicated' is set to 'true'. The customer is responsible for creating these namespaces.
 # If not specified, then the operator will manage WebLogic domains in the Kubernetes 'default' namespace.
 #
 # Example : In the configuration below, the helm installation will manage namespace1 and namespace2.
@@ -20,7 +25,7 @@ domainNamespaces:
   - "default"
 
 # image specifies the docker image containing the operator code.
-image: "oracle/weblogic-kubernetes-operator:2.4.0"
+image: "oracle/weblogic-kubernetes-operator:2.5.0"
 
 # imagePullPolicy specifies the image pull policy for the operator docker image.
 imagePullPolicy: "IfNotPresent"

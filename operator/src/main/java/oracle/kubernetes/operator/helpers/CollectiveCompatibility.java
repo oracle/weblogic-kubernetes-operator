@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.List;
 
 abstract class CollectiveCompatibility implements CompatibilityCheck {
-  protected List<CompatibilityCheck> checks = new ArrayList<>();
+  protected final List<CompatibilityCheck> checks = new ArrayList<>();
 
   void add(CompatibilityCheck check) {
     checks.add(check);
@@ -24,7 +24,11 @@ abstract class CollectiveCompatibility implements CompatibilityCheck {
 
   @Override
   public boolean isCompatible() {
-    for (CompatibilityCheck check : checks) if (!check.isCompatible()) return false;
+    for (CompatibilityCheck check : checks) {
+      if (!check.isCompatible()) {
+        return false;
+      }
+    }
 
     return true;
   }
@@ -32,8 +36,11 @@ abstract class CollectiveCompatibility implements CompatibilityCheck {
   @Override
   public String getIncompatibility() {
     final List<String> reasons = new ArrayList<>();
-    for (CompatibilityCheck check : checks)
-      if (!check.isCompatible()) reasons.add(getIndent() + check.getIncompatibility());
+    for (CompatibilityCheck check : checks) {
+      if (!check.isCompatible()) {
+        reasons.add(getIndent() + check.getIncompatibility());
+      }
+    }
     return reasons.isEmpty() ? null : getHeader() + String.join("\n", reasons);
   }
 

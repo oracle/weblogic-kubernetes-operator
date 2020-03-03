@@ -1,5 +1,5 @@
 #!/bin/bash -x
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates. 
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 function setup_shared_cluster {
@@ -25,8 +25,7 @@ function setup_shared_cluster {
   echo "Completed setup_shared_cluster"
 }
 
-function clean_shared_cluster {
-	echo "Clean shared cluster"
+function cleanup {
 	${PROJECT_ROOT}/src/integration-tests/bash/cleanup.sh
 }
 
@@ -34,11 +33,9 @@ function create_image_pull_secret_wl {
 
   set +x 
   if [ -z "$OCR_USERNAME" ] || [ -z "$OCR_PASSWORD" ]; then
-	if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
-		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables OCR_USERNAME and OCR_PASSWORD to pull the image."
-	  	exit 1
+		echo "Provide Docker login details using env variables OCR_USERNAME and OCR_PASSWORD to pull the WebLogic image."
+	  exit 1
 	fi
-  fi
   
   if [ -n "$OCR_USERNAME" ] && [ -n "$OCR_PASSWORD" ]; then  
 	  echo "Creating Docker Secret"
@@ -46,6 +43,7 @@ function create_image_pull_secret_wl {
 	    --docker-server=${OCR_SERVER}/ \
 	    --docker-username=$OCR_USERNAME \
 	    --docker-password=$OCR_PASSWORD \
+	    --docker-email=$OCR_USERNAME@oracle.com \
             --dry-run -o yaml | kubectl apply -f -
 	  
 	  echo "Checking Secret"
@@ -58,6 +56,7 @@ function create_image_pull_secret_wl {
 	  # below docker pull is needed to for domain home in image tests the base image should be in local repo
 	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}
 	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
+	  
   fi
   set -x
 }
@@ -98,6 +97,7 @@ export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
 export BRANCH_NAME="${BRANCH_NAME:-$SHARED_CLUSTER_GIT_BRANCH}"
 export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
+export SKIP_BUILD_OPERATOR="${SKIP_BUILD_OPERATOR:-false}"
 export OPENSHIFT=${OPENSHIFT:-false}
 
 if [ "$JRF_ENABLED" = true ] ; then
@@ -134,12 +134,18 @@ export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "
 echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPERATOR JAR_VERSION $JAR_VERSION
 
 #docker_login
+
+if [ "$JRF_ENABLED" = true ] ; then
+  pull_tag_images_jrf	
+else
+  create_image_pull_secret_wl
+fi
   
 if [ "$SHARED_CLUSTER" = "true" ]; then
   
   echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
-  
-  clean_shared_cluster
+  echo "Clean shared cluster"
+  cleanup
     
   
   export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
@@ -171,8 +177,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	  	echo "When running in shared cluster option, provide DNS name or IP of a Kubernetes worker node using K8S_NODEPORT_HOST env variable"
 	  	exit 1
 	fi
-    create_image_pull_secret_wl
-	
+    	
   #fi
   setup_shared_cluster
   docker images
@@ -182,33 +187,27 @@ elif [ "$JENKINS" = "true" ]; then
   echo "Test Suite is running on Jenkins and k8s is running locally on the same node."
   docker images
 
-  if [ "$JRF_ENABLED" = true ] ; then
-	pull_tag_images_jrf	
-  else
-  	create_image_pull_secret_wl
+  if [ "$SKIP_BUILD_OPERATOR" = false ] ; then
+    export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
+    # create a docker image for the operator code being tested
+    docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
   fi
-
-  export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
-  # create a docker image for the operator code being tested
-  docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
   docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
   
   docker images
 
 else
-  if [ "$JRF_ENABLED" = true ] ; then
-	pull_tag_images_jrf	
-  else
-  	create_image_pull_secret_wl
-  fi
-    
+  cleanup
+  
   #docker rmi -f $(docker images -q -f dangling=true)
   docker images --quiet --filter=dangling=true | xargs --no-run-if-empty docker rmi  -f
   
   docker images	
-	
-  export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
-  docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
+
+  if [ "$SKIP_BUILD_OPERATOR" = false ] ; then	
+    export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
+    docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
+  fi  
   docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
  
 fi
