@@ -195,7 +195,7 @@ public class ItOperator extends BaseTest {
       domain = TestUtils.createDomain(domainMap);
       //domain.verifyDomainCreated();
 
-      TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      //TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       try {
 
         TestUtils.verifyAfterDeletion(domain);
