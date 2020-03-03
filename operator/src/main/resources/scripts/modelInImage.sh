@@ -497,15 +497,17 @@ function createPrimordialDomain() {
 
     local security_info_updated="false"
     security_info_updated=$(contain_returncode ${diff_rc} ${SECURITY_INFO_UPDATED})
-    local rcu_credentials_changed="false"
-    rcu_credentials_changed=$(contain_returncode ${diff_rc} ${RCU_PASSWORD_CHANGED})
     # recreate the domain if there is an unsafe security update such as admin password update
     if [ ${security_info_updated} == "true" ]; then
       recreate_domain=1
     fi
-    if [ ${rcu_credentials_changed} == "true" ]; then
-      UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
-    fi
+    # Always use the schema password in RCUDbInfo.  Since once the password is updated by the DBA.  The
+    # RCU cache table SCHEMA_COMPONENT_INFO stored password will never be correct,  and subsequenetly any
+    # other updates such as admin credenitals or security roles that caused the re-create of the primordial
+    # domain will fail since without this flag set, defaults is to use the RCU cached info. (aka. wlst
+    # getDatabaseDefaults).
+    #
+    UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
   fi
 
   # If there is no primordial domain or needs to recreate one due to password changes
