@@ -485,15 +485,24 @@ function createPrimordialDomain() {
     # Call WDT validateModel.sh to generate the new merged mdoel
     trace "Checking if security info has been changed"
 
+    local tmpgz="/tmp/domain.tar.gz"
+    local strippedpath=$(echo ${DOMAIN_HOME} | sed -e 's/^\///')
+    local tmpdomain="/tmp/temp_domain"
+    mkdir -p ${tmpdomain}
+    cd ${tmpdomain} && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${tmpgz} && tar -xzf ${tmpgz} \
+      ${strippedpath}/security/SerializedSystemIni.dat
+    decrypt_model ${tmpdomain}/${DOMAIN_HOME} ${INTROSPECTCM_MERGED_MODEL} /tmp/previous_merged_model.json
+    # Cannot do that in the middle, somehow messed up with the file system
+    #rm -fr ${tmpdomain}
+    #rm ${tmpgz}
     generateMergedModel
-
-    diff_model ${NEW_MERGED_MODEL} ${INTROSPECTCM_MERGED_MODEL}
+    diff_model ${NEW_MERGED_MODEL} /tmp/previous_merged_model.json
 
     diff_rc=$(cat /tmp/model_diff_rc)
 
     trace "createPrimordialDomain: model diff returns "${diff_rc}
 
-    cat /tmp/diffed_model.json
+    #cat /tmp/diffed_model.json
 
     local security_info_updated="false"
     security_info_updated=$(contain_returncode ${diff_rc} ${SECURITY_INFO_UPDATED})
@@ -651,6 +660,28 @@ function contain_returncode() {
   fi
 }
 
+function decrypt_model() {
+  trace "Entering decrypt_model"
+
+  #
+  local ORACLE_SERVER_DIR=${MW_HOME}/wlserver
+  local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS}"
+  local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar
+  ${JAVA_HOME}/bin/java -cp ${CP} \
+    ${JAVA_PROPS} \
+    org.python.util.jython \
+    ${SCRIPTPATH}/WLSTEncryptionUtil.py "decrypt" $1 $2 $3
+  rc=$?
+  #  WLST version
+  #  ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py $1 $2
+  #  rc=$?
+  #
+  trace "Exiting decrypt_model"
+  return ${rc}
+
+}
 #
 # Generic error handler
 #

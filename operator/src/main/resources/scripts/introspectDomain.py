@@ -95,6 +95,7 @@ tmp_scriptdir=os.path.dirname(tmp_info[0])
 sys.path.append(tmp_scriptdir)
 
 from utils import *
+from WLSTEncryptionUtil import encrypt_model
 
 class OfflineWlstEnv(object):
 
@@ -1429,14 +1430,21 @@ class DomainIntrospector(SecretManager):
       SitConfigGenerator(self.env).generate()
       BootPropertiesGenerator(self.env).generate()
       UserConfigAndKeyGenerator(self.env).generate()
-      if os.path.exists('/u01/wdt/models'):
+      DOMAIN_SOURCE_TYPE      = self.env.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
+
+      if DOMAIN_SOURCE_TYPE == "FromModel":
         trace("cfgmap write primordial_domain")
         MII_PrimordialDomainGenerator(self.env).generate()
         trace("cfgmap write domain zip")
         MII_DomainConfigGenerator(self.env).generate()
         trace("cfgmap write merged model")
+        # encrypt the merged model first
+        encrypt_model(self.env.DOMAIN_HOME,  self.env.DOMAIN_HOME +"/wlsdeploy/domain_model.json",
+                "/tmp/domain_model.json")
+        # MII_IntrospectCMFileGenerator(self.env, self.env.MERGED_MODEL_FILE,
+        #                               self.env.DOMAIN_HOME +"/wlsdeploy/domain_model.json").generate()
         MII_IntrospectCMFileGenerator(self.env, self.env.MERGED_MODEL_FILE,
-                                      self.env.DOMAIN_HOME +"/wlsdeploy/domain_model.json").generate()
+                                      "/tmp/domain_model.json").generate()
         trace("cfgmap write md5 image")
         MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
         trace("cfgmap write md5 cm")
