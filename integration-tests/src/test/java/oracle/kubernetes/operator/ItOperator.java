@@ -7,7 +7,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
+/*
+import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.K8sTestUtils;
+import oracle.kubernetes.operator.utils.LoggerHelper;
+import oracle.kubernetes.operator.utils.Operator;
+import oracle.kubernetes.operator.utils.Operator.RestCertType;
+import oracle.kubernetes.operator.utils.TestUtils;
+ */
 
+import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
@@ -188,31 +197,74 @@ public class ItOperator extends BaseTest {
       operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
       namespaceList.append(" ").append((String)operatorMap.get("namespace"));
 
+      try {
+        LoggerHelper.getLocal().log(Level.INFO, " PATH value " + System.getenv("PATH"));
+        LoggerHelper.getLocal().log(Level.INFO, " KUBECONFIG value " + System.getenv("KUBECONFIG"));
+        K8sTestUtils k8sTestUtils = new K8sTestUtils();
+        LoggerHelper.getLocal().log(Level.INFO,
+                "verifyAfterOperator creation  verifyDomainCrd before");
+        k8sTestUtils.verifyDomainCrd();
+        LoggerHelper.getLocal().log(Level.INFO,
+                "verifyAfterOperator creation verifyDomainCrd  after");
+
+
+        //TestUtils.verifyAfterDeletion(domain);
+      } catch (Throwable ex) {
+        ex.printStackTrace();
+        LoggerHelper.getLocal().log(Level.INFO,
+                "verifyAfterOperator creation failed " + ((ApiException) ex).getResponseBody());
+
+        LoggerHelper.getLocal().log(Level.INFO,
+                "verifyAfterOperator creation failed " + ex);
+      }
+
       // create domain
       domainMap = createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("namespace", "test2");
       domainMap.put("createDomainFilesDir", "wdt");
       domainMap.put("domainUID", "domainonpvwdt");
-      //domain = TestUtils.createDomain(domainMap);
+      domain = TestUtils.createDomain(domainMap);
       //domain.verifyDomainCreated();
-
-      //TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       try {
+        LoggerHelper.getLocal().log(Level.INFO, " PATH value " + System.getenv("PATH"));
+        LoggerHelper.getLocal().log(Level.INFO, " KUBECONFIG value " + System.getenv("KUBECONFIG"));
         K8sTestUtils k8sTestUtils = new K8sTestUtils();
         LoggerHelper.getLocal().log(Level.INFO,
-                "vverifyDomainCrd  before");
+                "verifyDomainCrd after create WLS Domain before");
         k8sTestUtils.verifyDomainCrd();
         LoggerHelper.getLocal().log(Level.INFO,
-                "vverifyDomainCrd  after");
+                "verifyDomainCrd  after create WLS Domain after");
+
         //TestUtils.verifyAfterDeletion(domain);
       } catch (Throwable ex) {
         ex.printStackTrace();
+        LoggerHelper.getLocal().log(Level.INFO,
+                "verifyDomainCrd after domain created failed " + ((ApiException) ex).getResponseBody());
+
+        LoggerHelper.getLocal().log(Level.INFO,
+                "verifyDomainCrd after domain created failed " + ex);
+      }
+
+      TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      try {
+        LoggerHelper.getLocal().log(Level.INFO, " PATH value " + System.getenv("PATH"));
+        LoggerHelper.getLocal().log(Level.INFO, " KUBECONFIG value " + System.getenv("KUBECONFIG"));
+        K8sTestUtils k8sTestUtils = new K8sTestUtils();
+        LoggerHelper.getLocal().log(Level.INFO,
+                "verifyDomainCrd after delete WLS Domain Resources before");
+        k8sTestUtils.verifyDomainCrd();
+        LoggerHelper.getLocal().log(Level.INFO,
+                "verifyDomainCrd  after delete WLS Domain Resources after");
+
+
+        //TestUtils.verifyAfterDeletion(domain);
+      } catch (Throwable ex) {
+        ex.printStackTrace();
+        LoggerHelper.getLocal().log(Level.INFO,
+                "verifyAfterDeletion failed " + ((ApiException) ex).getResponseBody());
 
         LoggerHelper.getLocal().log(Level.INFO,
                 "verifyAfterDeletion failed " + ex);
-
-
-
 
       }
 
