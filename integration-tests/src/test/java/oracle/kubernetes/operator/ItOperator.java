@@ -193,10 +193,11 @@ public class ItOperator extends BaseTest {
       domainMap.put("createDomainFilesDir", "wdt");
       domainMap.put("domainUID", "domainonpvwdt");
       domain = TestUtils.createDomain(domainMap);
-      domain.verifyDomainCreated();
+      //domain.verifyDomainCreated();
 
       TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       try {
+
         TestUtils.verifyAfterDeletion(domain);
       } catch (Throwable ex) {
         ex.printStackTrace();

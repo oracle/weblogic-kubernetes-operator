@@ -1569,11 +1569,7 @@ public class TestUtils {
         String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
 
     LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: " + domainUid);
-    if (!BaseTest.OKE_CLUSTER) {
-      //FIXME in oke
-      k8sTestUtils.verifyDomainCrd();
-    }
-
+    k8sTestUtils.verifyDomainCrd();
     LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyDomainCrd ");
     k8sTestUtils.verifyDomain(domainNs, domainUid, false);
     LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyDomain ");

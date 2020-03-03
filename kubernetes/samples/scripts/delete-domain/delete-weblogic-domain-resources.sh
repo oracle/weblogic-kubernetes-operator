@@ -101,7 +101,8 @@ function getDomainResources {
 
   # now, get all non-namespaced types with -l $LABEL_SELECTOR
 
-  NOT_NAMESPACED_TYPES="pv,clusterroles,clusterrolebindings"
+  #NOT_NAMESPACED_TYPES="pv,clusterroles,clusterrolebindings"
+  NOT_NAMESPACED_TYPES="pv"
 
   kubectl get $NOT_NAMESPACED_TYPES \
           -l "$LABEL_SELECTOR" \
