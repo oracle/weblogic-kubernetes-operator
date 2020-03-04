@@ -49,7 +49,7 @@ while [ ! "$1" = "" ]; do
   shift
 done
 
-set -eux
+set -eu
 
 kubectl -n $NAMESPACE delete secret         $SECRET_NAME --ignore-not-found
 kubectl -n $NAMESPACE create secret generic $SECRET_NAME $LITERALS $FILENAMES

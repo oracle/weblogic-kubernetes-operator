@@ -3,11 +3,11 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
-# This is an example of how to create and deploy a model-in-image domain resource.
-# This scripts creates ./k8s-domain.yaml from a template, and deploys it.
+# This is an example of how to configure a model-in-image domain resource.
+# This scripts creates $WORKDIR/k8s-domain.yaml from a template.
 #
 # This script is called from run_domain.sh, which also sets up the resources
-# that the domain resource depends on.
+# that the domain resource depends on plus deploys the domain resource.
 #
 # Expects the following env vars to already be set:
 #
@@ -28,11 +28,14 @@ set -eu
 
 cd ${WORKDIR}
 
+SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+echo "@@ Info: Running '$(basename "$0")'."
+
 DOMAIN_UID=${DOMAIN_UID:-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-${DOMAIN_UID}-ns}
 MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
 MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
-DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-./k8s-domain.yaml.template}"
+DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-$SCRIPTDIR/k8s-domain.yaml.template}"
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 DOMAIN_RESOURCE_FILE="./k8s-domain.yaml"
 
@@ -61,11 +64,6 @@ if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
 fi
 
 # TBD this is temporary until we replace nginx with traefik
-cp k8s-nginx.yaml.template k8s-nginx.yaml
+cp $SCRIPTDIR/k8s-nginx.yaml.template k8s-nginx.yaml
 sed -i "s/@@DOMAIN_UID@@/${DOMAIN_UID}/" k8s-nginx.yaml
 sed -i "s/@@DOMAIN_NAMESPACE@@/${DOMAIN_NAMESPACE}/" k8s-nginx.yaml
-
-echo "@@ Info: Applying domain resource yaml '$DOMAIN_RESOURCE_FILE'"
-( set -x
-kubectl apply -f $DOMAIN_RESOURCE_FILE
-)

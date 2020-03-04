@@ -4,7 +4,7 @@
 
 #  This script uses the WebLogic Image Tool to build a docker image with model in image
 #  artifacts. By default, it uses the base image obtained earlier with build_image_base.sh,
-#  and it gets model files from the ./models directory that was setup by the build_model.sh script.
+#  and it gets model files from the WORKDIR/models directory that was setup by the build_model.sh script.
 #
 #  The model image is named MODEL_IMAGE_NAME:MODEL_IMAGE_TAG.  See build_init_image.sh for
 #  the defaults for these values.
@@ -23,29 +23,51 @@
 #
 #  Optional environment variables:
 #
-#    WDT_DOMAIN_TYPE, BASE_IMAGE_NAME, BASE_IMAGE_TAG, 
-#    MODEL_IMAGE_NAME, MODEL_IMAGE_TAG, MODEL_IMAGE_BUILD:
-#
-#      See build_image_init.sh for a description.
-#
 #    MODEL_DIR:
-#      
 #      Location of the model .zip, .properties, and .yaml files
 #      that will be copied in to the image.  Default is 'WORKDIR/models'
 #      which is populated by the ./build_model.sh script.
 #
 #    MODEL_YAML_FILES, MODEL_ARCHIVE_FILES, MODEL_VARIABLES_FILES:
-#     
 #      Optionally set one or more of these with comma-separated lists of file
 #      locations to override the corresponding .yaml, .zip, and .properties
 #      files normally obtained from MODEL_DIR.
 #
+#    WDT_DOMAIN_TYPE   - WLS (default), RestrictedJRF, or JRF
+#    BASE_IMAGE_NAME   - defaults to container-registry.oracle.com/middleware/weblogic for
+#                        the 'WLS' domain type, and otherwise defaults to
+#                        container-registry.oracle.com/middleware/fmw-infrastructure
+#    BASE_IMAGE_TAG    - defaults to 12.2.1.3
+#    BASE_IMAGE_BUILD  - 'when-missing' (default) or 'always'
+#    MODEL_IMAGE_NAME  - defaults to 'model-in-image'
+#    MODEL_IMAGE_TAG   - defaults to 'v1'
+#    MODEL_IMAGE_BUILD - 'when-missing' or 'always' (default)
+#
 
 set -eu
 
+SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+echo "@@ Info: Running '$(basename "$0")'."
+
 cd ${WORKDIR}
 
-source build_image_init.sh
+WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
+
+case "$WDT_DOMAIN_TYPE" in
+  WLS) 
+    BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-container-registry.oracle.com/middleware/weblogic}" ;;
+  JRF|RestrictedJRF)
+    BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-container-registry.oracle.com/middleware/fmw-infrastructure}" ;;
+  *) 
+    echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1 ;;
+esac
+
+BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.3}
+BASE_IMAGE_BUILD=${BASE_IMAGE_BUILD:-when-missing}
+
+MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
+MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
+MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-always}
 
 if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && \
    [ "`docker images $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG | awk '{ print $1 ":" $2 }' | grep -c $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG`" = "1" ]; then
@@ -61,10 +83,10 @@ if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && \
 fi
 
 echo @@
-echo @@ Obtaining model files
+echo @@ Info: Obtaining model files
 echo @@
 
-MODEL_DIR=${MODEL_DIR:-./models}
+MODEL_DIR=${MODEL_DIR:-$WORKDIR/models}
 MODEL_YAML_FILES="${MODEL_YAML_FILES:-$(ls $MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')}"
 MODEL_ARCHIVE_FILES="${MODEL_ARCHIVE_FILES:-$(ls $MODEL_DIR/*.zip | xargs | sed 's/ /,/g')}"
 MODEL_VARIABLE_FILES="${MODEL_VARIABLE_FILES:-$(ls $MODEL_DIR/*.properties | xargs | sed 's/ /,/g')}"
@@ -72,7 +94,6 @@ MODEL_VARIABLE_FILES="${MODEL_VARIABLE_FILES:-$(ls $MODEL_DIR/*.properties | xar
 echo @@ MODEL_YAML_FILES=${MODEL_YAML_FILES}
 echo @@ MODEL_ARCHIVE_FILES=${MODEL_ARCHIVE_FILES}
 echo @@ MODEL_VARIABLE_FILES=${MODEL_VARIABLE_FILES}
-
 
 echo @@
 echo @@ Info: Setting up imagetool and populating its caches

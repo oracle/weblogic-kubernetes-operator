@@ -149,13 +149,7 @@ It is helpful to understand the following high-level flow before running the sam
      export WORKDIR=$(pwd)
      ```
 
-3. Copy all the files in this sample to the `$WORKDIR` working directory. For example:
-
-   ```
-   cp -R ${SRCDIR?}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* ${WORKDIR?}
-   ```
-
-4. Deploy the Operator and setup the Operator to manage namespace `sample-domain1-ns`. 
+3. Deploy the Operator and setup the Operator to manage namespace `sample-domain1-ns`. 
 
    - For example, see [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) up through the `PREPARE FOR A DOMAIN` step. Note that you can skip the Quick Start steps for obtaining a WebLogic image and for configuring Traefik load balancer - as instead we we will generate our own image and setup an nginx load balancer instead.
    - After you've deployed the Operater, check if it is managing namespace `sample-domain1-ns` and use helm upgrade to add this namespace if needed.  For example:
@@ -179,13 +173,13 @@ It is helpful to understand the following high-level flow before running the sam
        kubernetes/charts/weblogic-operator
      ```
 
-5. Choose the type of domain you're going to create: `WLS`, `JRF`, or `RestrictedJRF`, and set environment variable WDT_DOMAIN_TYPE accordingly.
+4. Choose the type of domain you're going to create: `WLS`, `JRF`, or `RestrictedJRF`, and set environment variable WDT_DOMAIN_TYPE accordingly. Default is `WLS`.
 
    ```
    export WDT_DOMAIN_TYPE=<one of WLS, JRF, or RestrictedJRF>
    ```
 
-6. Setup access to the base WebLogic image at the [Oracle Container Registry](http://container-registry.oracle.com).
+5. Setup access to the base WebLogic image at the [Oracle Container Registry](http://container-registry.oracle.com).
 
    - Use a browser to access [Oracle Container Registry](http://container-registry.oracle.com)
    - Choose an image location
@@ -199,17 +193,17 @@ It is helpful to understand the following high-level flow before running the sam
 
    Alternatively, you can create you're own base image and override the sample's default base image name and tag by experting the BASE_IMAGE_NAME and BASE_IMAGE_TAG environment variables prior to running the sample scripts. If you want to create your own base image, see...
 
-7. If you are using a `JRF` domain type, then this requires an RCU infrastructure database. See [Setup Prerequisites for JRF Domains](#setup-prerequisites-for-jrf-domains) to set one up. You can do this step before or after you create your final image. 
+6. If you are using a `JRF` domain type, then this requires an RCU infrastructure database. See [Setup Prerequisites for JRF Domains](#setup-prerequisites-for-jrf-domains) to set one up. You can do this step before or after you create your final image. 
 
 ## Use the WebLogic Image Tool to create an image
 
-An image for Model in Image must contain a WebLogic install, a WebLogic Deploy Tool install, and your WDT model files. You can use the sample `./build.sh` script build this image, which will perform the following steps for you:
+An image for Model in Image must contain a WebLogic install, a WebLogic Deploy Tool install, and your WDT model files. You can use the sample `./build.sh` script to build this image, which will perform the following steps for you:
 
   - Uses 'docker pull' to obtain a base image (see [Prerequisites for all domain types](#prerequisites-for-all-domain-types) to setup access to the base image).
-  - Downloads the latest WebLogic Image Tool and WebLogic Deploy Tool.
+  - Downloads the latest WebLogic Image Tool and WebLogic Deploy Tool to WORKDIR.
   - Creates and populates staging directory `$WORKDIR/models`.
-    - Builds the simple servlet app in `$WORKDIR/sample_app` into a WDT model application archive `./models/archive1.zip`.
-    - Copies sample model files from `$WORKDIR/` to `$WORKDIR/models`. This uses a model file that is appropriate to the domain type (for example, the `JRF` domain model includes database access configuration).
+    - Builds the simple servlet app in `$SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/sample_app` into a WDT model application archive `$WORKDIR/models/archive1.zip`.
+    - Copies sample model files from `$SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/model-in-image` to `$WORKDIR/models`. This uses a model file that is appropriate to the domain type (for example, the `JRF` domain model includes database access configuration).
   - Creates a final image named `model-in-image:v1` that layers on the base image. Specifically, it runs the WebLogic Image Tool with its 'update' option, which:
     - Builds the final image as a layer on the base image.
     - Puts a WDT install in image location `/u01/wdt/weblogic-deploy`.
@@ -220,19 +214,18 @@ The script expects WDT_DOMAIN_TYPE and WORKDIR to already be initialized (see [P
 To run the script:
 
   ```
-  cd ${WORKDIR?}
-  ./build.sh
+  $SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build.sh
   ```
 
 ## Create and deploy your Kubernetes resources
 
-To deploy the sample Operator domain and its required kubernetes resources, you can use this sample `./run_domain.sh` script which will perform the following steps for you:
+To deploy the sample Operator domain and its required kubernetes resources, you can use this sample's `$SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/run_domain.sh` script which will perform the following steps for you:
 
   - Deletes the domain with `DomainUID` of `domain1` in namespace `sample-domain1-ns` if it already exists.
   - Creates a secret containing your WebLogic administrator username and password.
   - Creates secrets containing your RCU access URL, credentials, and prefix (these are unused unless the domain type is `JRF`).
-  - Creates a config map containing an additional WDT model properties file './model1.20.properties'.
-  - Generates a domain resource yaml file `k8s-domain.yaml` using `k8s-domain.yaml.template`.
+  - Creates a config map containing an additional WDT model properties file '$SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/model1.20.properties'.
+  - Generates a domain resource yaml file `$WORKDIR/k8s-domain.yaml` using `$SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/k8s-domain.yaml.template`.
   - Deploys `k8s-domain.yaml` 
   - Displays the status of the domain pods. 
 
@@ -243,8 +236,7 @@ The script uses `domain1`
 To run the script:
 
   ```
-  cd $WORKDIR
-  ./run_domain.sh
+  $SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/run_domain.sh
   ```
 
 At the end, you will see the message `Getting pod status - ctrl-c when all is running and ready to exit`.  Once all 
@@ -252,6 +244,8 @@ the pods are up, you can ctrl-c to exit the build script.
 
 
 ## Optionally, install nginx to test the sample application
+
+TBD Replace this sample with traefik
 
 1. Install the nginx ingress controller in your environment.  For example:
    ```
@@ -288,11 +282,13 @@ the pods are up, you can ctrl-c to exit the build script.
    ```
    This deletes the domain and any related resources that are labeled with Domain UID `sample-domain1`. It leaves the namespace intact and leaves the Operator running.
 2. If you setup nginx:
+   TBD update this to reference traefik cleanup instructions
    ```
    kubectl delete -f k8s-nginx.yaml
    helm delete acmecontroller
    ```
 3. If you setup a database:
+   TBD update this to reference DB sample cleanup instructions
    ```
    kubectl delete -f k8s-db-slim.yaml
    ```

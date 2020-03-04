@@ -14,23 +14,24 @@
 
 set -eu
 
-cd ${WORKDIR}
+SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+echo "@@ Info: Running '$(basename "$0")'."
 
 # This step downloads the latest WebLogic Deploy Tool and WebLogic Image Tool in the current directory
 # If this is run behind a proxy, then environment variables http_proxy and https_proxy must be set.
 
-./build_download.sh
+$SCRIPTDIR/build_download.sh
 
 # This step populates the model. It places a sample application and WDT files in the WORKDIR/models directory.
 
-./build_model.sh
+$SCRIPTDIR/build_model.sh
 
 # This step obtains a base image using a docker pull (WebLogic with patches).
 
-./build_image_base.sh
+$SCRIPTDIR/build_image_base.sh
 
 # This step builds a model image using the base image. It embeds the model files
 # in WORKDIR/models that was setup by ./build_model.sh and embeds the 
 # WebLogic Deploy Tool that was downloaded by build_download.sh.
 
-./build_image_model.sh
+$SCRIPTDIR/build_image_model.sh
