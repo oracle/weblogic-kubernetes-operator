@@ -41,6 +41,16 @@ kubectl -n sample-domain1-ns \
   label  configmap domain1-wdt-config-map \
   weblogic.domainUID=domain1
 
+kubectl -n sample-domain1-ns delete secret domain1-model-encryption-secret --ignore-not-found
+
+kubectl -n sample-domain1-ns \
+  create secret generic domain1-model-encryption-secret \
+  --from-literal=passphrase=weblogic
+
+kubectl -n sample-domain1-ns \
+  label secret domain1-model-encryption-secret \
+  weblogic.domainUID=domain1
+
 echo "@@ Info: Creating 'k8s-domain.yaml' from 'k8s-domain.yaml.template' and setting its Domain Type"
 
 if [ ! "${WDT_DOMAIN_TYPE}" == "WLS" ] \
