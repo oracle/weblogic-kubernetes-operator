@@ -113,6 +113,11 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtEncryptionSecret();
   }
 
+  String getModelInImageSecretName() {
+    return getDomain().getModelInImageSecret();
+  }
+
+
   // ----------------------- step methods ------------------------------
 
   abstract List<V1Volume> getAdditionalVolumes();
@@ -273,6 +278,11 @@ public abstract class JobStepContext extends BasePodStepContext {
       podSpec.addVolumesItem(new V1Volume().name(WDT_ENCRYPT_PASSPHRASE_VOLUME)
           .secret(getWdtEncryptPassPhraseVolume()));
     }
+    if (getModelInImagePassPhraseVolume() != null) {
+      podSpec.addVolumesItem(new V1Volume().name(MODEL_IN_IMAGE_PASSPHRASE_VOLUME)
+          .secret(getModelInImagePassPhraseVolume()));
+    }
+
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
@@ -324,6 +334,10 @@ public abstract class JobStepContext extends BasePodStepContext {
       container.addVolumeMountsItem(readOnlyVolumeMount(WDT_ENCRYPT_PASSPHRASE_VOLUME, WDT_ENCRYPT_KEY_MOUNT_PATH));
     }
 
+    if (getModelInImagePassPhraseVolume() != null) {
+      container.addVolumeMountsItem(readOnlyVolumeMount(MODEL_IN_IMAGE_PASSPHRASE_VOLUME,
+          MODEL_IN_IMAGE_KEY_MOUNT_PATH));
+    }
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       container.addVolumeMountsItem(additionalVolumeMount);
@@ -400,6 +414,17 @@ public abstract class JobStepContext extends BasePodStepContext {
     if (getWdtEncryptSecretName() != null) {
       V1SecretVolumeSource result = new V1SecretVolumeSource()
           .secretName(getWdtEncryptSecretName())
+          .defaultMode(420);
+      result.setOptional(true);
+      return result;
+    }
+    return null;
+  }
+
+  private V1SecretVolumeSource getModelInImagePassPhraseVolume() {
+    if (getModelInImageSecretName() != null) {
+      V1SecretVolumeSource result = new V1SecretVolumeSource()
+          .secretName(getModelInImageSecretName())
           .defaultMode(420);
       result.setOptional(true);
       return result;

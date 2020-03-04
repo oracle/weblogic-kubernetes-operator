@@ -26,6 +26,11 @@ public class Model {
   @Valid
   private String encryptionSecret;
 
+  @Description("Model encryption secret.")
+  @Valid
+  private String modelInImageSecret;
+
+
   @Nullable
   public String getDomainType() {
     return domainType;
@@ -67,12 +72,26 @@ public class Model {
     return this;
   }
 
+  public String getModelInImageSecret() {
+    return modelInImageSecret;
+  }
+
+  public void setModelInImageSecret(String modelInImageSecret) {
+    this.modelInImageSecret = modelInImageSecret;
+  }
+
+  public Model withModelInImageSecret(String modelInImageSecret) {
+    this.modelInImageSecret = modelInImageSecret;
+    return this;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .append("domainType", domainType)
             .append("configMap", configMap)
+            .append("modelInImageSecret", modelInImageSecret)
             .append("encryptionSecret", encryptionSecret);
 
     return builder.toString();
@@ -83,6 +102,7 @@ public class Model {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(domainType)
         .append(configMap)
+        .append(modelInImageSecret)
         .append(encryptionSecret);
 
     return builder.toHashCode();
@@ -102,6 +122,7 @@ public class Model {
         new EqualsBuilder()
             .append(domainType, rhs.domainType)
             .append(configMap,rhs.configMap)
+            .append(modelInImageSecret, rhs.modelInImageSecret)
             .append(encryptionSecret, rhs.encryptionSecret);
 
     return builder.isEquals();

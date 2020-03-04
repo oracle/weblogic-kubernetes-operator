@@ -373,6 +373,15 @@ public class Domain {
     return spec.getWdtEncryptionSecret();
   }
 
+  /**
+   * Reference to model in image secret.
+   *
+   * @return model in image secret
+   */
+  public String getModelInImageSecret() {
+    return spec.getModelInImageSecret();
+  }
+
 
 
   /**

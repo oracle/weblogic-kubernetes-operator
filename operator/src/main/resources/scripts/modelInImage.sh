@@ -26,6 +26,7 @@ NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 WDT_ENCRYPTION_PASSPHRASE="/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
+MODEL_IN_IMAGE_PASSPHRASE="/weblogic-operator/model-in-image-key-passphrase/passphrase"
 OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/passphrase"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/ewallet.p12"
 IMG_MODELS_HOME="/u01/wdt/models"
@@ -285,9 +286,9 @@ function buildWDTParams_MD5() {
 function createWLDomain() {
   start_trap
   trace "Entering createWLDomain"
-
-  if [ ! -f ${WDT_ENCRYPTION_PASSPHRASE} ] ; then
-    trace SEVERE "WDT encryption passphrase is required"
+  
+  if [ ! -f ${MODEL_IN_IMAGE_PASSPHRASE} ] ; then
+    trace SEVERE "modelInImageSecret passphrase is required"
     exit 1
   fi
   # Check if /u01/wdt/models and /u01/wdt/weblogic-deploy exists
@@ -673,8 +674,9 @@ function encrypt_model() {
   trace "Entering encrypt_wdtmodel"
   stop_trap
 
-  if [ ! -z ${WDT_PASSPHRASE} ]; then
-    ( echo ${WDT_PASSPHRASE} ; echo ${WDT_PASSPHRASE} ) | ${WDT_BINDIR}/encryptModel.sh -oracle_home ${MW_HOME}  \
+  local MII_PASSPHRASE=$(cat ${MODEL_IN_IMAGE_PASSPHRASE})
+  if [ ! -z ${MII_PASSPHRASE} ]; then
+    ( echo ${MII_PASSPHRASE} ; echo ${MII_PASSPHRASE} ) | ${WDT_BINDIR}/encryptModel.sh -oracle_home ${MW_HOME}  \
       -model_file $1 > ${WDT_OUTPUT}
     ret=${PIPESTATUS[1]}
   else

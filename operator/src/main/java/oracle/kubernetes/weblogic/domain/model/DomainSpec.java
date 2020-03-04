@@ -647,6 +647,13 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
+  String getModelInImageSecret() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getModel)
+        .map(Model::getModelInImageSecret)
+        .orElse(null);
+  }
+
   /**
    * Get WDT config map.
    * @return config map name

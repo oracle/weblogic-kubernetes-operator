@@ -59,6 +59,9 @@ spec:
                     configMap:
                       type: string
                       description: WDT config map name.
+                    modelInImageSecret:
+                      type: string
+                      description: Model encryption secret.
                 secrets:
                   type: array
                   description: A list of names of the secrets for WebLogic configuration
