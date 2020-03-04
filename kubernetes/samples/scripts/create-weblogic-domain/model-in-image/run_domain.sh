@@ -20,57 +20,69 @@
 #   DOMAIN_RESOURCE_TEMPLATE  - use this file for a domain resource template instead
 #                               of k8s-domain.yaml.template 
 #   WDT_DOMAIN_TYPE           - WLS (default), RestrictedJRF, or JRF
+#   RCUDB_NAMESPACE           - default (default)
 #
 
 set -eu
 
-cd ${WORKDIR}
+SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+echo "@@ Info: Running '$(basename "$0")'."
 
 DOMAIN_UID=${DOMAIN_UID:-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-${DOMAIN_UID}-ns}
-WDTCONFIGMAPDIR=${WDTCONFIGMAPDIR:-./wdtconfigmap}
+WDTCONFIGMAPDIR=${WDTCONFIGMAPDIR:-$WORKDIR/wdtconfigmap}
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
+RCUDB_NAMESPACE=${RCUDB_NAMESPACE:-default}
 
-if [ ! "${WDT_DOMAIN_TYPE}" == "WLS" ] \
-   && [ ! "${WDT_DOMAIN_TYPE}" == "RestrictedJRF" ] \
-   && [ ! "${WDT_DOMAIN_TYPE}" == "JRF" ]; then
-  echo "Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1
-fi
-
+case "${WDT_DOMAIN_TYPE}" in
+  WLS|JRF|RestrictedJRF) ;;
+  *) echo "Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1
+esac
 
 echo "@@ Info: Deleting weblogic domain '${DOMAIN_UID}' if it already exists"
 ( set -x
 kubectl -n ${DOMAIN_NAMESPACE} delete domain ${DOMAIN_UID} --ignore-not-found
 )
-
+while [ 1 -eq 1 ]; do
+  cur_pods=$(kubectl -n ${DOMAIN_NAMESPACE} get pods -l weblogic.domainUID=${DOMAIN_UID} -o=jsonpath='{.items[*].metadata.name}')
+  [ "$cur_pods" = "" ] && break
+  echo "@@ Info: Waiting for old domain's pods '$cur_pods' to exit, seconds=${SECONDS}."
+  sleep 5
+done
 
 echo "@@ Info: Creating weblogic domain secret"
-./create_secret.sh -s sample-${DOMAIN_UID}-weblogic-credentials \
+$SCRIPTDIR/create_secret.sh -s sample-${DOMAIN_UID}-weblogic-credentials \
   -l username=weblogic \
   -l password=welcome1
 
 
 echo "@@ Info: Creating rcu access secret (referenced by model yaml macros if domain type is JRF)"
-./create_secret.sh -s sample-${DOMAIN_UID}-rcu-access \
+$SCRIPTDIR/create_secret.sh -s sample-${DOMAIN_UID}-rcu-access \
   -l rcu_prefix=FMW1 \
   -l rcu_schema_password=Oradoc_db1 \
   -l rcu_admin_password=Oradoc_db1 \
-  -l rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+  -l rcu_db_conn_string=oracle-db.${RCUDB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
 
 
 echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
 # TBD remove passphrase literal once Johnny supports using walletPassword
-./create_secret.sh -s sample-${DOMAIN_UID}-opss-wallet-password-secret \
+$SCRIPTDIR/create_secret.sh -s sample-${DOMAIN_UID}-opss-wallet-password-secret \
   -l passphrase=welcome1 \
   -l walletPassword=welcome1
 
 
 echo "@@ Info: Creating sample wdt configmap (optional)"
-./create_configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${WDTCONFIGMAPDIR}
+$SCRIPTDIR/create_configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${WDTCONFIGMAPDIR}
 
 
-echo "@@ Info: Creating domain resource."
-./create_domain.sh
+echo "@@ Info: Creating domain resource yaml '$WORKDIR/k8s-domain.yaml'."
+$SCRIPTDIR/create_domain.sh
+
+
+echo "@@ Info: Applying domain resource yaml '$WORKDIR/k8s-domain.yaml'"
+( set -x
+kubectl apply -f $WORKDIR/k8s-domain.yaml
+)
 
 
 echo "@@ Info: Getting pod status - ctrl-c when all is running and ready to exit"
