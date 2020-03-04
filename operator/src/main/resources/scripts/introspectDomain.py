@@ -1438,13 +1438,8 @@ class DomainIntrospector(SecretManager):
         trace("cfgmap write domain zip")
         MII_DomainConfigGenerator(self.env).generate()
         trace("cfgmap write merged model")
-        # encrypt the merged model first
-        encrypt_model(self.env.DOMAIN_HOME,  self.env.DOMAIN_HOME +"/wlsdeploy/domain_model.json",
-                "/tmp/domain_model.json")
-        # MII_IntrospectCMFileGenerator(self.env, self.env.MERGED_MODEL_FILE,
-        #                               self.env.DOMAIN_HOME +"/wlsdeploy/domain_model.json").generate()
         MII_IntrospectCMFileGenerator(self.env, self.env.MERGED_MODEL_FILE,
-                                      "/tmp/domain_model.json").generate()
+                                      self.env.DOMAIN_HOME +"/wlsdeploy/domain_model.json").generate()
         trace("cfgmap write md5 image")
         MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
         trace("cfgmap write md5 cm")
