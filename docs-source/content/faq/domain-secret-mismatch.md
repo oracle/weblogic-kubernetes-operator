@@ -13,7 +13,7 @@ When you see these kinds of errors, it means that the WebLogic domain directory'
 the domain directory, which occurs during the "introspection" phase, and when the server instance attempted to start.
 
 To understand the "incompatible domain security configuration" type of failure, it's important to review the contents of the
-[WebLogic domain directory](https://docs.oracle.com/middleware/12213/wls/DOMCF/config_files.htm#DOMCF140). Each WebLogic
+[WebLogic domain directory](https://docs.oracle.com/middleware/12213/wls/DOMCF/config_files.htm#DOMCF133). Each WebLogic
 domain directory contains a "security" subdirectory that contains a file called "SerializedSystemIni.dat".  This file contains
 security data to bootstrap the WebLogic domain, including a domain-specific encryption key.
 
