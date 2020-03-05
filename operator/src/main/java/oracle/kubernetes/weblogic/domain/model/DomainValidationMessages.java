@@ -98,4 +98,8 @@ class DomainValidationMessages {
   static String illegalSitConfigForMII(String configOverrides) {
     return getMessage(MessageKeys.ILLEGAL_SIT_CONFIG_MII, configOverrides);
   }
+
+  static String noSuchModelConfigMap(String configMapName, String namespace) {
+    return getMessage(MessageKeys.MODEL_CONFIGMAP_NOT_FOUND, configMapName, namespace);
+  }
 }

@@ -563,6 +563,7 @@ public class Domain {
       addMissingSecrets(kubernetesResources);
       addIllegalSitConfigForMII();
       verifyNoAlternateSecretNamespaceSpecified();
+      addMissingModelConfigMap(kubernetesResources);
 
       return failures;
     }
@@ -724,6 +725,16 @@ public class Domain {
           .orElse(getNamespace());
     }
 
+    private void addMissingModelConfigMap(KubernetesResourceLookup resourceLookup) {
+      verifyModelConfigMapExists(resourceLookup, getWdtConfigMap());
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void verifyModelConfigMapExists(KubernetesResourceLookup resources, String modelConfigMapName) {
+      if (modelConfigMapName != null && !resources.isConfigMapExists(modelConfigMapName, getNamespace())) {
+        failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName, getNamespace()));
+      }
+    }
   }
 
 }
