@@ -2,7 +2,7 @@
 title: "Providing access to a Persistent Volume Claim"
 date: 2020-01-07T15:02:28-05:00
 draft: false
-weight: 10
+weight: 60
 ---
 > I need to provide an instance with access to a Persistent Volume Claim.
 

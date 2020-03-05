@@ -2,6 +2,7 @@
 title: "Using an OCI Load Balancer"
 date: 2019-09-25T12:41:38-04:00
 draft: false
+weight: 50
 ---
 
 If you are running your Kubernetes cluster on Oracle Container Engine
