@@ -771,6 +771,38 @@ public class CallBuilder {
         responseStep, new RequestParams("replaceCRD", null, name, body), replaceCrd);
   }
 
+  private Call listConfigMapsAsync(
+      ApiClient client, String namespace, String cont, ApiCallback<V1ConfigMapList> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .listNamespacedConfigMapAsync(
+            namespace,
+            pretty,
+            allowWatchBookmarks,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            resourceVersion,
+            timeoutSeconds,
+            watch,
+            callback);
+  }
+
+  /**
+   * Asynchronous step for listing configmaps in a namespace.
+   *
+   * @param namespace the namespace from which to list configmaps
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listConfigMapsAsync(String namespace, ResponseStep<V1ConfigMapList> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("listConfigMap", namespace, null, null),
+          listConfigMaps);
+  }
+
   private Call readConfigMapAsync(
       ApiClient client, String name, String namespace, ApiCallback<V1ConfigMap> callback)
       throws ApiException {
@@ -1626,38 +1658,6 @@ public class CallBuilder {
             tailLines,
             timestamps,
             callback);
-  }
-
-  private Call listConfigMapsAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<V1ConfigMapList> callback)
-      throws ApiException {
-    return new CoreV1Api(client)
-        .listNamespacedConfigMapAsync(
-            namespace,
-            pretty,
-            allowWatchBookmarks,
-            cont,
-            fieldSelector,
-            labelSelector,
-            limit,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            callback);
-  }
-
-  /**
-   * Asynchronous step for listing secrets in a namespace.
-   *
-   * @param namespace the namespace from which to list secrets
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step listConfigMapsAsync(String namespace, ResponseStep<V1ConfigMapList> responseStep) {
-    return createRequestAsync(
-        responseStep,
-        new RequestParams("listConfigMap", namespace, null, null),
-          listConfigMaps);
   }
 
   private <T> Step createRequestAsync(
