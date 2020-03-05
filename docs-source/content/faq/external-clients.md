@@ -2,7 +2,7 @@
 title: "External WebLogic Clients"
 date: 2019-11-21T21:23:03Z
 draft: false
-weight: 6
+weight: 80
 ---
 
 ### Approaches
