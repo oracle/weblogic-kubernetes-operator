@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Frequently asked questions on WebLogic Kubernetes Operator</title>
@@ -35,12 +35,11 @@ This FAQ describes some considerations to be aware of when you manage the namesp
     <item>
       <title>Boot Identity Not Valid</title>
       <link>/weblogic-kubernetes-operator/faq/boot-identity-not-valid/</link>
-      <pubDate>Mon, 02 Mar 2020 08:08:19 -0400</pubDate>
+      <pubDate>Mon, 02 Mar 2020 08:08:19 -0401</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/boot-identity-not-valid/</guid>
       <description>One or more WebLogic Server instances in my domain will not start and I see errors in the server log like this:
-   
- When you see these kinds of errors, it means that the user name and password provided in the weblogicCredentialsSecret are incorrect. Prior to operator version 2.5.0, this error could have also indicated that the WebLogic domain directory&amp;rsquo;s security configuration files have changed in an incompatible way between when the operator scanned the domain directory, which occurs during the &amp;ldquo;introspection&amp;rdquo; phase, and when the server instance attempted to start.</description>
+&amp;lt;Feb 6, 2020 12:05:35,550 AM GMT&amp;gt; &amp;lt;Authentication denied: Boot identity not valid. The user name or password or both from the boot identity file (boot.properties) is not valid. The boot identity may have been changed since the boot identity file was created. Please edit and update the boot identity file with the proper values of username and password.</description>
     </item>
     
     <item>
@@ -50,7 +49,7 @@ This FAQ describes some considerations to be aware of when you manage the namesp
       
       <guid>/weblogic-kubernetes-operator/faq/domain-secret-mismatch/</guid>
       <description>One or more WebLogic Server instances in my domain will not start and the domain resource status or the pod log report errors like this:
-Domain secret mismatch. The domain secret in &amp;lsquo;DOMAIN_HOME/security/SerializedSystemIni.dat&amp;rsquo; where DOMAIN_HOME=&amp;lsquo;$DOMAIN_HOME&amp;rsquo; does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic servers in the same domain share the same domain secret.
+Domain secret mismatch. The domain secret in &amp;lsquo;DOMAIN_HOME/security/SerializedSystemIni.dat&amp;rsquo; where DOMAIN_HOME=&#39;$DOMAIN_HOME&amp;rsquo; does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic servers in the same domain share the same domain secret.
  When you see these kinds of errors, it means that the WebLogic domain directory&amp;rsquo;s security configuration files have changed in an incompatible way between when the operator scanned the domain directory, which occurs during the &amp;ldquo;introspection&amp;rdquo; phase, and when the server instance attempted to start.</description>
     </item>
     

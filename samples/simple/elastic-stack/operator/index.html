@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="Sample for configuring the Elasticsearch and Kibana deployments and services for the operator&#39;s logs.">
 
 
@@ -12,18 +12,18 @@
     <title>Operator :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2613,7 +2613,7 @@
                 
                     <div class="progress">
     <div class="wrapper">
-
+<nav id="TableOfContents"></nav>
     </div>
 </div>
 
@@ -2640,35 +2640,24 @@
 
 	<p>When you install the WebLogic Kubernetes Operator Helm chart, you can set
 <code>elkIntegrationEnabled</code> to <code>true</code> in your <code>values.yaml</code> file to tell the operator to send the contents of the operator&rsquo;s logs to Elasticsearch.</p>
-
 <p>Typically, you would have already configured Elasticsearch and Kibana in the
 Kubernetes cluster, and also would have specified <code>elasticSearchHost</code> and <code>elasticSearchPort</code> in your <code>values.yaml</code> file to point to where Elasticsearch is already running.</p>
-
 <p>This sample configures the Elasticsearch and Kibana deployments and services.
 It&rsquo;s useful for trying out the operator in a Kubernetes cluster that doesn&rsquo;t already
 have them configured.</p>
-
 <p>It runs the Elastic Stack on the same host and port that the operator&rsquo;s Helm chart defaults
 to, therefore, you only need to set <code>elkIntegrationEnabled</code> to <code>true</code> in your
 <code>values.yaml</code> file.</p>
-
 <p>To control Elasticsearch memory parameters (Heap allocation and Enabling/Disabling swapping) please open the file <code>elasticsearch_and_kibana.yaml</code>, search for env variables of the elasticsearch container and change the values of the following.</p>
-
 <ul>
 <li><code>ES_JAVA_OPTS</code>: value may contain, for example, <code>-Xms512m</code> <code>-Xmx512m</code> to lower the default memory usage (please be aware that this value is only applicable for demo purpose and it is not the one recommended by Elasticsearch).</li>
 <li><code>bootstrap.memory_lock</code>: value may contain <code>true</code> (enables the usage of <code>mlockall</code> to try to lock the process address space into RAM, preventing any Elasticsearch memory from being swapped out) or <code>false</code> (disables the usage of <code>mlockall</code> to try to lock the process address space into RAM, preventing any Elasticsearch memory from being swapped out).</li>
 </ul>
-
 <p>To install Elasticsearch and Kibana, use:</p>
-
 <pre><code>$  kubectl apply -f kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml
-</code></pre>
-
-<p>To remove them, use:</p>
-
+</code></pre><p>To remove them, use:</p>
 <pre><code>$  kubectl delete -f kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml
 </code></pre>
-
 
 
 
@@ -4454,19 +4443,19 @@ to, therefore, you only need to set <code>elkIntegrationEnabled</code> to <code>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442681" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442681"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

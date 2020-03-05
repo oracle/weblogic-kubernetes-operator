@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Cannot Pull Image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442682"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2602,20 +2602,13 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#images-that-require-authentication">Images that require authentication</a></li>
-<li><a href="#manually-copying-the-image-to-your-worker-nodes">Manually copying the image to your worker nodes</a></li>
-<li><a href="#restart-pods-to-clear-the-error">Restart pods to clear the error</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2640,15 +2633,11 @@
 
 
 
-
-
 <blockquote>
 <p>My domain will not start and I see errors like <code>ImagePullBackoff</code> or <code>Cannot pull image</code></p>
 </blockquote>
-
 <p>When you see these kinds of errors, it means that Kubernetes cannot find your Docker image.
 The most common causes are:</p>
-
 <ul>
 <li>The <code>image</code> value in your domain resource is set incorrectly, meaning Kubernetes will be
 trying to pull the wrong image.</li>
@@ -2658,11 +2647,8 @@ configured Kubernetes with the necessary credentials, for example in an <code>im
 cannot see the image, meaning you need to copy the image to the worker nodes or put it in
 a Docker registry that is accessible the to all of the worker nodes.</li>
 </ul>
-
 <p>Let&rsquo;s review what happens when Kubernetes starts a pod.</p>
-
-<p><img src="/weblogic-kubernetes-operator/images/image-pull.png" alt="Pulling an image" /></p>
-
+<p><img src="/weblogic-kubernetes-operator/images/image-pull.png" alt="Pulling an image"></p>
 <p>The definition of the pod contains a list of container specifications.  Each container
 specification contains the name (and optionally, tag) of the image that should be used
 to run that container.  In the example above, there is a container called <code>c1</code> which is
@@ -2673,7 +2659,6 @@ and the tag is <code>1.0</code>.  Tags are a lot like version numbers, but they 
 to be numbers or to be in any particular sequence or format.  If you omit the tag, it
 is assumed to be <code>latest</code>.</p>
 
-
 <div class="notices note" ><p>The Docker tag <code>latest</code> is confusing - it does not actually mean the latest version of
 the image that was created or published in the registry; it just literally means
 whichever version the owner decided to call &ldquo;latest&rdquo;.  Docker and Kubernetes make
@@ -2681,58 +2666,45 @@ some assumptions about latest, and it is generally recommended to avoid using it
 specify the actual version/tag that you really want.</p>
 </div>
 
-
 <p>First, Kubernetes will check to see if the requested image is available in the local
 Docker image store on whichever worker node the pod was scheduled on.  If it is there,
 then it will use that image to start the container.  If it is not there, then Kubernetes
 will attempt to pull the image from a remote Docker registry.</p>
-
 
 <div class="notices note" ><p>There is another setting called <code>imagePullPolicy</code> that can be used to force Kubernetes
 to always pull the image, even if it is already present in the local Docker image
 store.</p>
 </div>
 
-
 <p>If the image is available in the remote registry and it is public, that is it does not
 require authentication, then Kubernetes will pull the image to the local Docker image
 store and start the container.</p>
-
 <h4 id="images-that-require-authentication">Images that require authentication</h4>
-
 <p>If the remote Docker registry requires authentication, then you will need to provide
 the authentication details in a Kubernetes <code>docker-registry</code> secret and tell Kubernetes
 to use that secret when pulling the image.</p>
-
 <p>To create a secret, you can use the following command:</p>
-
 <pre><code>kubectl create secret docker-registry secret1 \
         --docker-server=some.registry.com \
         --docker-username=bob \
         --docker-password=bigSecret \
         --docker-email=bob@some.com \
         --namespace=default
-</code></pre>
-
-<p>In this command, you would replace <code>secret1</code> with the name of the secret; the <code>docker-server</code>
+</code></pre><p>In this command, you would replace <code>secret1</code> with the name of the secret; the <code>docker-server</code>
 is set to the registry name, without the <code>https://</code> prefix; the <code>docker-username</code>, <code>docker-password</code>
 and <code>docker-email</code> are set to match the credentials you use to authenticate to the remote
 Docker registry; and the <code>namespace</code> must be set to the same namespace where you intend to
 use the image.</p>
 
-
 <div class="notices note" ><p>Some registries may need a suffix making the <code>docker-server</code> something like <code>some.registry.com/v2</code>
 for example.  You will need to check with your registry provider&rsquo;s documentation to see if this is needed.</p>
 </div>
 
-
 <p>After the secret is created, you need to tell Kubernetes to use it.  This is done by adding
 an <code>imagePullSecret</code> to your Kubernetes YAML file.  In the case of a WebLogic domain, you
 add the secret name to the <code>imagePullSecret</code> in the domain custom resource YAML file.</p>
-
 <p>Here is an example of part of a domain custom resource file with the <code>imagePullSecret</code> above
 specified:</p>
-
 <pre><code>apiVersion: &quot;weblogic.oracle/v2&quot;
 kind: Domain
 metadata:
@@ -2748,47 +2720,31 @@ spec:
   imagePullPolicy: &quot;IfNotPresent&quot;
   imagePullSecrets:
   - name: secret1
-</code></pre>
-
-<p>Alternatively, you can associate the secret with the service account that will be used to run
+</code></pre><p>Alternatively, you can associate the secret with the service account that will be used to run
 the pod.  If you do this, then you will not need to add the <code>imagePullSecret</code> to the domain
 resource.  This is useful if you are running multiple domains in the same namespace.</p>
-
 <p>To add the secret shown above to the <code>default</code> service account in the <code>weblogic</code> namespace, you
 would use a command like this:</p>
-
 <pre><code>kubectl patch serviceaccount default \
         -n weblogic \
         -p '{&quot;imagePullSecrets&quot;: [{&quot;name&quot;: &quot;secret1&quot;}]}'
 </code></pre>
-
-
 <div class="notices note" ><p>You can provide mutliple <code>imagePullSecrets</code> if you need to pull Docker images from multiple
 remote Docker registries or if your images require different authentication credentials.
-For more information, see <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/#weblogic-domain-in-docker-image-protection">Docker Image Protection</a>
+For more information, see <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/">Docker Image Protection</a>
 under <strong>Security</strong>.</p>
 </div>
 
-
 <h4 id="manually-copying-the-image-to-your-worker-nodes">Manually copying the image to your worker nodes</h4>
-
 <p>If you are not able to use a remote Docker registry, for example if your Kubernetes cluster is
 in a secure network with no external access, you can manually copy the Docker images to the
 cluster instead.</p>
-
 <p>On the machine where you created the image, export it into a tar file using this command:</p>
-
 <pre><code>docker save domain1:1.0 &gt; domain1.tar
-</code></pre>
-
-<p>Then copy that tar file to each worker node in your Kubernetes cluster and run this command
+</code></pre><p>Then copy that tar file to each worker node in your Kubernetes cluster and run this command
 on each node:</p>
-
 <pre><code>docker load &lt; domain1.tar
-</code></pre>
-
-<h4 id="restart-pods-to-clear-the-error">Restart pods to clear the error</h4>
-
+</code></pre><h4 id="restart-pods-to-clear-the-error">Restart pods to clear the error</h4>
 <p>After you have ensured that the images are accessible on all worker nodes, you may need to restart
 the pods so that Kubernetes will attempt to pull the images again.   You can do this by
 deleting the pods themselves, or deleting the domain resource and then recreating it.</p>
@@ -4574,19 +4530,19 @@ deleting the pods themselves, or deleting the domain resource and then recreatin
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442682" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442682"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

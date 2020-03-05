@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="WebLogic domain in Docker image protection">
 
 
@@ -12,18 +12,18 @@
     <title>Docker image protection :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2608,22 +2608,13 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#weblogic-domain-in-docker-image-protection">WebLogic domain in Docker image protection</a>
-<ul>
-<li><a href="#1-use-imagepullsecrets-with-the-domain-resource">1. Use <code>imagePullSecrets</code> with the <code>Domain</code> resource.</a></li>
-<li><a href="#2-set-up-the-kubernetes-serviceaccount-with-imagepullsecrets">2. Set up the Kubernetes <code>ServiceAccount</code> with <code>imagePullSecrets</code>.</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2648,10 +2639,7 @@
 
 
 
-
-
 <h4 id="weblogic-domain-in-docker-image-protection">WebLogic domain in Docker image protection</h4>
-
 
 <div class="notices warning" ><p>Oracle strongly recommends storing the Docker images that contain a
 WebLogic domain home as private in the Docker registry.
@@ -2660,75 +2648,58 @@ In addition to any local registry, public Docker registries include
 <a href="https://cloud.oracle.com/containers/registry">Oracle Cloud Infrastructure Registry</a> (OCIR).</p>
 </div>
 
-
 <p>The WebLogic domain home that is part of a Docker image contains sensitive
 information about the domain including keys and credentials that are used to
 access external resources (for example, data source password). In addition, the Docker image
 may be used to create a running server that further exposes the WebLogic domain
 outside of the Kubernetes cluster.</p>
-
 <p>There are two main options to pull images from a private registry:</p>
-
 <ol>
 <li>Specify the image pull secret on the WebLogic <code>Domain</code> resource.</li>
 <li>Set up the <code>ServiceAccount</code> in the domain namespace with an image pull secret.</li>
 </ol>
-
 <h5 id="1-use-imagepullsecrets-with-the-domain-resource">1. Use <code>imagePullSecrets</code> with the <code>Domain</code> resource.</h5>
-
 <p>In order to access a Docker image that is protected by a private registry, the
 <code>imagePullSecrets</code> should be specified on the Kubernetes <code>Domain</code> resource definition:</p>
-
-<pre><code class="language-yaml">apiVersion: &quot;weblogic.oracle/v2&quot;
-kind: Domain
-metadata:
-  name: domain1
-  namespace: domain1-ns
-  labels:
-    weblogic.resourceVersion: domain-v2
-    weblogic.domainUID: domain1
-spec:
-  domainHomeInImage: true
-  image: &quot;my-domain-home-in-image&quot;
-  imagePullPolicy: &quot;IfNotPresent&quot;
-  imagePullSecrets:
-  - name: &quot;my-registry-pull-secret&quot;
-  webLogicCredentialsSecret:
-    name: &quot;domain1-weblogic-credentials&quot;
-</code></pre>
-
-<p>To create the Kubernetes secret called <code>my-registry-pull-secret</code> in
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v2&#34;</span>
+<span style="color:#66d9ef">kind</span>: Domain
+<span style="color:#66d9ef">metadata</span>:
+  <span style="color:#66d9ef">name</span>: domain1
+  <span style="color:#66d9ef">namespace</span>: domain1-ns
+  <span style="color:#66d9ef">labels</span>:
+    <span style="color:#66d9ef">weblogic.resourceVersion</span>: domain-v2
+    <span style="color:#66d9ef">weblogic.domainUID</span>: domain1
+<span style="color:#66d9ef">spec</span>:
+  <span style="color:#66d9ef">domainHomeInImage</span>: <span style="color:#66d9ef">true</span>
+  <span style="color:#66d9ef">image</span>: <span style="color:#e6db74">&#34;my-domain-home-in-image&#34;</span>
+  <span style="color:#66d9ef">imagePullPolicy</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>
+  <span style="color:#66d9ef">imagePullSecrets</span>:
+  - <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;my-registry-pull-secret&#34;</span>
+  <span style="color:#66d9ef">webLogicCredentialsSecret</span>:
+    <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;domain1-weblogic-credentials&#34;</span>
+</code></pre></div><p>To create the Kubernetes secret called <code>my-registry-pull-secret</code> in
 the namespace where the domain will be running, <code>domain1-ns</code>, the following
 command can be used:</p>
-
-<pre><code class="language-bash">$ kubectl create secret docker-registry my-registry-pull-secret \
-  -n domain1-ns \
-  --docker-server=&lt;registry-server&gt; \
-  --docker-username=&lt;name&gt; \
-  --docker-password=&lt;password&gt; \
-  --docker-email=&lt;email&gt;
-</code></pre>
-
-<p>For more information about creating Kubernetes secrets for accessing
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl create secret docker-registry my-registry-pull-secret <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -n domain1-ns <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --docker-server<span style="color:#f92672">=</span>&lt;registry-server&gt; <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --docker-username<span style="color:#f92672">=</span>&lt;name&gt; <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --docker-password<span style="color:#f92672">=</span>&lt;password&gt; <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --docker-email<span style="color:#f92672">=</span>&lt;email&gt;
+</code></pre></div><p>For more information about creating Kubernetes secrets for accessing
 the registry, see the Kubernetes documentation about
 <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">pulling an image from a private registry</a>.</p>
-
 <h5 id="2-set-up-the-kubernetes-serviceaccount-with-imagepullsecrets">2. Set up the Kubernetes <code>ServiceAccount</code> with <code>imagePullSecrets</code>.</h5>
-
 <p>An additional option for accessing a Docker image protected by a private registry
 is to set up the Kubernetes <code>ServiceAccount</code> in the namespace running the
 WebLogic domain with a set of image pull secrets thus avoiding the need to
 set <code>imagePullSecrets</code> for each <code>Domain</code> resource being created (as each resource
 instance represents a WebLogic domain that the operator is managing).</p>
-
 <p>The Kubernetes secret would be created in the same manner as shown above and then the
 <code>ServiceAccount</code> would be updated to include this image pull secret:</p>
-
-<pre><code class="language-bash">$ kubectl patch serviceaccount default -n domain1-ns \
-  -p '{&quot;imagePullSecrets&quot;: [{&quot;name&quot;: &quot;my-registry-pull-secret&quot;}]}'
-</code></pre>
-
-<p>For more information about updating a Kubernetes <code>ServiceAccount</code>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl patch serviceaccount default -n domain1-ns <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -p <span style="color:#e6db74">&#39;{&#34;imagePullSecrets&#34;: [{&#34;name&#34;: &#34;my-registry-pull-secret&#34;}]}&#39;</span>
+</code></pre></div><p>For more information about updating a Kubernetes <code>ServiceAccount</code>
 for accessing the registry, see the Kubernetes documentation about
 <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-imagepullsecrets-to-a-service-account">configuring service accounts</a>.</p>
 
@@ -4514,19 +4485,19 @@ for accessing the registry, see the Kubernetes documentation about
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442681" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442681"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

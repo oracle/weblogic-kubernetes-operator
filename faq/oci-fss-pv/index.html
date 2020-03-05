@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Using OCI File Storage (FSS) for Persistent Volumes :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442682"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2602,19 +2602,13 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#failure-during-domain-creation-with-persistent-volume-sample">Failure during domain creation with persistent volume sample</a></li>
-<li><a href="#updating-the-domain-on-persistent-volume-sample">Updating the domain on persistent volume sample</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2639,15 +2633,12 @@
 
 
 
-
-
 <p>If you are running your Kubernetes cluster on Oracle Container Engine
 for Kubernetes (commonly known as OKE), and you use OCI File Storage (FSS)
 for persistent volumes to store the WebLogic domain home, then the file system
 handling demonstrated in the operator persistent volume sample will require
 an update to properly initialize the file ownership on the persistent volume
 when the domain is initially created.</p>
-
 
 <div class="notices note" ><p>File permission handling on persistent volumes can differ between
 cloud providers and even with the underlying storage handling on
@@ -2658,19 +2649,15 @@ For more information on persistent volume handling,
 see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/persistent-storage/">Persistent storage</a>.</p>
 </div>
 
-
 <h4 id="failure-during-domain-creation-with-persistent-volume-sample">Failure during domain creation with persistent volume sample</h4>
-
 <p>The existing sample for <a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv">creation of a domain home on persistent volume</a>
 uses a Kubernetes job to create the domain. The sample uses an
 <code>initContainers</code> section to change the file ownership which will
 fail for OCI FSS created volumes used with an OKE cluster.</p>
-
 <p>The OCI FSS volume contains some files that are not modifiable thus
 causing the Kubernetes job to fail. The failure is seen in the
 description of the Kubernetes job pod:</p>
-
-<pre><code class="language-bash">$ kubectl describe -n domain1-ns pod domain1-create-weblogic-sample-domain-job-wdkvs
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl describe -n domain1-ns pod domain1-create-weblogic-sample-domain-job-wdkvs
    :
    :
 Init Containers:
@@ -2686,21 +2673,17 @@ Init Containers:
       chown -R 1000:1000 /shared
     State:          Terminated
       Reason:       Error
-      Exit Code:    1
-      Started:      Wed, 12 Feb 2020 18:28:53 +0000
-      Finished:     Wed, 12 Feb 2020 18:28:53 +0000
+      Exit Code:    <span style="color:#ae81ff">1</span>
+      Started:      Wed, <span style="color:#ae81ff">12</span> Feb <span style="color:#ae81ff">2020</span> 18:28:53 +0000
+      Finished:     Wed, <span style="color:#ae81ff">12</span> Feb <span style="color:#ae81ff">2020</span> 18:28:53 +0000
     Ready:          False
-    Restart Count:  0
+    Restart Count:  <span style="color:#ae81ff">0</span>
     Environment:    &lt;none&gt;
 
    :
-</code></pre>
-
-<h4 id="updating-the-domain-on-persistent-volume-sample">Updating the domain on persistent volume sample</h4>
-
+</code></pre></div><h4 id="updating-the-domain-on-persistent-volume-sample">Updating the domain on persistent volume sample</h4>
 <p>In the following snippet of the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml">create-domain-job-template.yaml</a>,
 you can see the updated <code>command</code> for the init container:</p>
-
 <pre><code>apiVersion: batch/v1
 kind: Job
 metadata:
@@ -2728,9 +2711,7 @@ spec:
           image: %WEBLOGIC_IMAGE%
 
   :
-</code></pre>
-
-<p>Use this new <code>command</code> in your copy of this template file. This will result in
+</code></pre><p>Use this new <code>command</code> in your copy of this template file. This will result in
 the ownership being updated for the expected files only, before the WebLogic
 domain is created on the persistent volume.</p>
 
@@ -4515,19 +4496,19 @@ domain is created on the persistent volume.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442682" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442682"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

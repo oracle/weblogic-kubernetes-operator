@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="Learn why Docker image layering affects CI/CD processes.">
 
 
@@ -12,18 +12,18 @@
     <title>Why layering matters :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2608,19 +2608,13 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#how-does-layering-affect-our-ci-cd-process">How does layering affect our CI/CD process?</a></li>
-<li><a href="#mutating-the-domain-configuration-without-losing-the-encryption-keys">Mutating the domain configuration without losing the encryption keys</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2645,38 +2639,30 @@
 
 
 
-
-
-<h4 id="how-does-layering-affect-our-ci-cd-process">How does layering affect our CI/CD process?</h4>
-
+<h4 id="how-does-layering-affect-our-cicd-process">How does layering affect our CI/CD process?</h4>
 <p>Now that we know more about layering, let’s talk about why it is important to our
 CI/CD process.  Let&rsquo;s consider the kinds of updates we might want to make to our domain:</p>
-
-<p><img src="/weblogic-kubernetes-operator/images/updates.png" alt="Types of updates" /></p>
-
+<p><img src="/weblogic-kubernetes-operator/images/updates.png" alt="Types of updates"></p>
 <p>You might want to update the domain by:</p>
-
 <ul>
 <li>Installing a patch on the operating system or a library.</li>
 <li>Updating the version of the JDK you are using.</li>
 <li>Picking up a new version of WebLogic Server.</li>
 <li>Installing patches on WebLogic Server.</li>
 <li>Updating the domain configuration, for example:
-
 <ul>
 <li>Adding or changing a resource like a data source or queue.</li>
 <li>Installing or updating applications.</li>
 <li>Changing various settings in the domain configuration.</li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <p>If we just want to update the domain configuration itself, that is the top layer,
 then it is pretty easy.  We can make the necessary changes and save a new version
 of that layer, and then roll the domain.  We could also choose to just build another
 layer on top of the existing top layer that contains our delta.  If the change is
 small, then we will just end up with another small layer, and as we have seen,
 the small layers are no problem.</p>
-
 <p>But consider a more complicated scenario - let&rsquo;s take updating the JDK as an example
 to understand the impact of layers.  Say we want to update from JDK 8u201 to 8u202
 as shown in the example above.  If we took the &ldquo;your first domain&rdquo; image and updated
@@ -2684,14 +2670,12 @@ the JDK, then we would end up with a new layer on top containing JDK 8u202.  Tha
 other layer with JDK 8u201 is still there; even if we &ldquo;delete&rdquo; the directory, we
 don&rsquo;t get that space back.  So now our 1.5GB &ldquo;image&rdquo; has grown to 1.75GB.  This is
 not ideal, and the more often we try to change lower layers, the worse it gets.</p>
-
 <p>You might be asking, &ldquo;Can&rsquo;t we just swap out the JDK layer for a new one?&rdquo;  That is
 an excellent question, but the unfortunate reality today is that there is no reliable
 way to do that.  There are various attempts to create a &ldquo;rebasing&rdquo; capability for
 Docker that would enable such an action, but some research will show you that they
 are mostly abandoned due to limited documentation of how the layering works at the
 level of detail needed to implement something like this.</p>
-
 <p>Next you might think, &ldquo;Oh, that’s ok, we can just rebuild the layers above the JDK
 on top of this new layer.&rdquo;  That is very true, we can.  But there is a big caveat
 here.  When you create a WebLogic domain, a domain encryption key is created.  This
@@ -2699,45 +2683,35 @@ key is stored in the <code>security/SerializedSystemIni.dat</code> file in your 
 is used to encrypt several other things in your domain configuration, like passwords,
 for example.  Today (in WebLogic Server 12.2.1.3.0) there is no way to conveniently
 &ldquo;extract&rdquo; or &ldquo;reuse&rdquo; this encryption key.  So what does this mean in practice?</p>
-
 <blockquote>
 <p>If you recreate the domain in your CI/CD process, even though you may end up with
 a domain that is for all intents and purposes identical to the previous domain, it
 will have a different encryption key.</p>
 </blockquote>
-
 <p>This means that technically it is a &ldquo;different&rdquo; domain.  Does this matter?  Maybe,
 maybe not.  It depends.  If you want to do a rolling restart of your domain, then
 yes, it matters.  First of all, the &ldquo;new&rdquo; servers will fail to start because the
 operator will be trying to inject credentials to start the server which were
 encrypted with the &ldquo;old&rdquo; domain encryption key.</p>
-
-<p>But even if this did not prevent them from starting, there would still be a problem.<br />
+<p>But even if this did not prevent them from starting, there would still be a problem.<br>
 You cannot have members of a domain with different encryption keys.  If WebLogic
 saw a new member trying to join the domain with a different key, it would consider
 it to be an intruder and refuse to accept it into the domain.  Client HTTP sessions
 would not work across the two different sets of servers, so clients could see errors
 and need to retry.  Worse, if these two different sets of servers tried to access
 the same resources this could lead to data corruption.</p>
-
 <p>So what can we do?  Well, we could not roll the domain, but instead completely shut down the
 old version first, and then start up the new one.  This way we avoid any
 issues with incompatibilities, but we do introduce a brief outage.  This may be
 acceptable, or it may not.</p>
-
 <p>Another option is to find a way to keep the &ldquo;same&rdquo; domain, that is, the same domain
 encryption key, so that we can still roll the domain and there will be no conflicts.</p>
-
 <h4 id="mutating-the-domain-configuration-without-losing-the-encryption-keys">Mutating the domain configuration without losing the encryption keys</h4>
-
 <p>If we want to make a change in a lower layer without losing our domain encryption
 keys, then we need to find a way to &ldquo;save&rdquo; the domain and then put it back into a
 new layer, later, on top of the other new (lower) layers, as depicted in the image below:</p>
-
-<p><img src="/weblogic-kubernetes-operator/images/rebuild.png" alt="Rebuilding layers" /></p>
-
+<p><img src="/weblogic-kubernetes-operator/images/rebuild.png" alt="Rebuilding layers"></p>
 <p>The process looks like this:</p>
-
 <ul>
 <li>From our existing image (left), we extract the domain into some kind of archive.</li>
 <li>Then we start with the new JDK image which was built on top of the same base
@@ -4532,19 +4506,19 @@ top of this new JDK.</li>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442681" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442681"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Istio support :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2608,24 +2608,19 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#overview">Overview</a></li>
-<li><a href="#limitations">Limitations</a></li>
-<li><a href="#using-the-operator-with-experimental-istio-support">Using the operator with experimental Istio support</a></li>
-<li><a href="#creating-a-domain-with-experimental-istio-support">Creating a domain with experimental Istio support</a>
-<ul>
-<li><a href="#how-istio-enabled-domains-differ-from-regular-domains">How Istio-enabled domains differ from regular domains</a></li>
-</ul></li>
-<li><a href="#exposing-applications-in-istio-enabled-domains">Exposing applications in Istio-enabled domains</a></li>
-<li><a href="#traffic-management">Traffic management</a></li>
-<li><a href="#distributed-tracing">Distributed tracing</a></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#limitations">Limitations</a></li>
+        <li><a href="#using-the-operator-with-experimental-istio-support">Using the operator with experimental Istio support</a></li>
+        <li><a href="#creating-a-domain-with-experimental-istio-support">Creating a domain with experimental Istio support</a></li>
+        <li><a href="#exposing-applications-in-istio-enabled-domains">Exposing applications in Istio-enabled domains</a></li>
+        <li><a href="#traffic-management">Traffic management</a></li>
+        <li><a href="#distributed-tracing">Distributed tracing</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2650,10 +2645,7 @@
 
 
 
-
-
 <h3 id="overview">Overview</h3>
-
 <p>WebLogic Kubernetes Operator version 2.3 includes experimental support for Istio 1.2.2.
 This support allows you to run the operator itself, and WebLogic domains managed by
 the operator with Istio sidecar injection enabled.  It will allow you to use
@@ -2661,11 +2653,8 @@ Istio gateways and virtual services to access applications deployed in these dom
 If your applications have suitable tracing code in them, you will also be able to
 use distributed tracing, such as Jaeger, to trace requests across domains and to
 other components and services that have tracing enabled.</p>
-
 <h3 id="limitations">Limitations</h3>
-
 <p>The current experimental support for Istio has the current limitations:</p>
-
 <ul>
 <li>It is tested only with Istio 1.2.2, however it is tested with both single and
 multicluster installations of Istio.</li>
@@ -2676,49 +2665,33 @@ available.</li>
 <li>Support is provided only for domains with a single dynamic cluster.
 Multiple clusters and configured clusters are not currently supported.</li>
 </ul>
-
 <h3 id="using-the-operator-with-experimental-istio-support">Using the operator with experimental Istio support</h3>
-
 <p>You can deploy the operator into a namespace which has Istio automatic sidecar
 injection enabled.  Before installing the operator, create the namespace you
 wish to run the operator in, and label it for automatic injection.</p>
-
 <pre><code>$ kubectl create namespace weblogic-operator
 $ kubectl label namespace weblogic-operator istio-injection=enabled
-</code></pre>
-
-<p>After the namespace is labeled, you can install the operator using the normal
+</code></pre><p>After the namespace is labeled, you can install the operator using the normal
 method.  When the operator pod starts, you will notice that Istio automatically
 injects an <code>initContainer</code> called <code>istio-init</code> and the envoy container <code>istio-proxy</code>.</p>
-
 <p>You can check this using the following commands:</p>
-
 <pre><code>$ kubectl --namespace weblogic-operator get pods
 $ kubectl --namespace weblogic-operator get pod weblogic-operator-xxx-xxx -o yaml
-</code></pre>
-
-<p>In the second command, change <code>weblogic-operator-xxx-xxx</code> to the name of your pod.</p>
-
+</code></pre><p>In the second command, change <code>weblogic-operator-xxx-xxx</code> to the name of your pod.</p>
 <h3 id="creating-a-domain-with-experimental-istio-support">Creating a domain with experimental Istio support</h3>
-
 <p>You can configure your domains to run with Istio automatic sidecar injection enabled.
 Before creating your domain, create the namespace you wish to run the domain in,
 and label it for automatic injection.</p>
-
 <pre><code>$ kubectl create namespace domain1
 $ kubectl label namespace domain1 istio-injection=enabled
-</code></pre>
-
-<p>Currently, the experimental Istio support is provided only for domains stored on
+</code></pre><p>Currently, the experimental Istio support is provided only for domains stored on
 persistent volumes.  To enable the support for a domain, you need to add the
 <code>experimental</code> section to your domain custom resource YAML file as shown in the
 example below.</p>
-
 <p>This <em>must</em> be done in the inputs file before running the <code>create-domain.sh</code> script
 in the <a href="/weblogic-kubernetes-operator/samples/simple/domains/domain-home-on-pv/">sample directory</a>
 because the <code>create-domain.sh</code> script makes the necessary adjustments to the domain
 to make it work in an Istio environment.</p>
-
 <pre><code>apiVersion: &quot;weblogic.oracle/v6&quot;
 kind: Domain
 metadata:
@@ -2733,21 +2706,15 @@ spec:
     istio:
       enabled: true
       readinessPort: 8888
-</code></pre>
-
-<p>To enable the experimental Istio support, you must include the <code>istio</code> section
+</code></pre><p>To enable the experimental Istio support, you must include the <code>istio</code> section
 and you must set <code>enabled: true</code> as shown.  The <code>readniessPort</code> is optional
 and defaults to <code>8888</code> if not provided.</p>
-
 <h4 id="how-istio-enabled-domains-differ-from-regular-domains">How Istio-enabled domains differ from regular domains</h4>
-
 <p>Istio enforces a number of requirements on pods.  When you enable Istio support, the
 domain on persistent volume sample scripts will make the following adjustments
 to your domain in order to satisy Istio&rsquo;s requirements:</p>
-
 <ul>
 <li>On the Admin server:
-
 <ul>
 <li>Create a channel called <code>istio-probe</code> with listen address <code>127.0.0.1:8888</code> (or
 the port you specified in the <code>readinessPort</code> setting).</li>
@@ -2757,9 +2724,9 @@ you specified as the admin port.</li>
 you specified as the admin port, with only the LDAP protocol enabled.</li>
 <li>Create a channel called <code>istio-T3Channel</code> with listen
 address <code>127.0.0.1</code> and the port you specified as the T3 port.</li>
-</ul></li>
+</ul>
+</li>
 <li>In the server template that is used to create managed servers in clusters:
-
 <ul>
 <li>Create a channel called <code>istio-probe</code> with listen address <code>127.0.0.1:8888</code> (or
 the port you specified in the <code>readinessPort</code> setting) and the public address
@@ -2773,29 +2740,24 @@ and the public address set to the Kubernetes service for the managed server.</li
 <li>Create a channel called <code>istio-http</code> with listen address <code>127.0.0.1:31111</code> and the
 public address set to the Kubernetes service for the managed server. Note that <code>31111</code>
 is the Istio proxy (envoy) port.</li>
-</ul></li>
+</ul>
+</li>
 <li>The create domain job will be configured to disable injection of the Istio sidecar.</li>
 </ul>
-
 <p>Additionally, the operator will adjust its behavior as follows when the experimental
 Istio support is enabled for a domain:</p>
-
 <ul>
 <li>The operator will ensure that the Istio sidecar is not injected into the introspector
 job&rsquo;s pods.</li>
 </ul>
-
 <h3 id="exposing-applications-in-istio-enabled-domains">Exposing applications in Istio-enabled domains</h3>
-
 <p>When a domain is running with the experimental Istio support, you should use the Istio
 gateway to provide external access to applications, instead of using an Ingress
 controller like Traefik.  Using the Istio gateway will enable you to view the
 traffic in Kiali and to use distributed tracing all the way from the entry point to
 the cluster, i.e. the Istio gateway.</p>
-
 <p>To configure external access to your domain, you need to create an Istio <code>gateway</code> and
 <code>virtualservice</code> as shown in the example below:</p>
-
 <pre><code>---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
@@ -2833,25 +2795,19 @@ spec:
             host: domain1-cluster-cluster-1.domain1.svc.cluster.local
             port:
               number: 8001
-</code></pre>
-
-<p>This example creates a gateway that will accept requests with any host name
+</code></pre><p>This example creates a gateway that will accept requests with any host name
 using HTTP on port 80, and a virtual service that will route all of
 those requests to the cluster service for <code>cluster-1</code> in <code>domain1</code> in
 the namespace <code>domain1</code>.</p>
-
 <p>Please refer to the <a href="https://istio.io/docs/tasks/traffic-management/ingress/">Istio documentation</a>
 for more information about providing ingress using Istio.</p>
-
 <h3 id="traffic-management">Traffic management</h3>
-
 <p>Istio provides traffic management capabilities, including the ability to
 visualize traffic in Kiali.  You do not need to change your applications to use
 this feature.  The Istio proxy (envoy) sidecar that is injected into your pods
 provides this visibility. The experimental Istio support does enable
 traffic management.  The image below shows an example with traffic
 flowing:</p>
-
 <ul>
 <li>In from the Istio gateway on the left.</li>
 <li>To a domain called &ldquo;bobbys-front-end&rdquo;.</li>
@@ -2859,17 +2815,12 @@ flowing:</p>
 called &ldquo;bobbys-helidon-stock-application&rdquo;.</li>
 <li>To a second domain called &ldquo;bobs-bookstore&rdquo;.</li>
 </ul>
-
 <p>In this example you can see how the traffic flows to the cluster services and
 then to the individual managed servers.</p>
-
-<p><img src="/weblogic-kubernetes-operator/images/kiali.png" alt="Traffic visualization with Kiali" /></p>
-
+<p><img src="/weblogic-kubernetes-operator/images/kiali.png" alt="Traffic visualization with Kiali"></p>
 <p>You can learn more about <a href="https://istio.io/docs/concepts/traffic-management/">Istio traffic management</a>
 in their documentation.</p>
-
 <h3 id="distributed-tracing">Distributed tracing</h3>
-
 <p>Istio provides distributed tracing capabilities, including the ability to view
 traces in Jaeger.  In order to use distributed tracing though, you will need to
 instrument your WebLogic application first, for example, using the
@@ -2877,9 +2828,7 @@ instrument your WebLogic application first, for example, using the
 The image below shows an example of a distributed trace
 that shows a transaction following the same path through the system
 as shown in the image above.</p>
-
-<p><img src="/weblogic-kubernetes-operator/images/jaeger.png" alt="Distributed tracing with Jaeger" /></p>
-
+<p><img src="/weblogic-kubernetes-operator/images/jaeger.png" alt="Distributed tracing with Jaeger"></p>
 <p>You can learn more about <a href="https://istio.io/docs/tasks/telemetry/distributed-tracing/">distrubting tracing in Istio</a>
 in their documentation.</p>
 
@@ -4665,19 +4614,19 @@ in their documentation.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442681" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442681"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

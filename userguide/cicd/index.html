@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="Learn about managing domain images with continuous integration and continuous delivery (CI/CD).">
 
 
@@ -12,18 +12,18 @@
     <title>CI/CD considerations :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2602,16 +2602,14 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#overview">Overview</a></li>
-<li><a href="#review-of-the-problem-space">Review of the problem space</a></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#review-of-the-problem-space">Review of the problem space</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2637,10 +2635,7 @@
 
 
 
-	
-
-<h3 id="overview">Overview</h3>
-
+	<h3 id="overview">Overview</h3>
 <p>In this section, we will discuss the recommended techniques for managing the evolution
 and mutation of Docker images to run WebLogic in Kubernetes.  There are several
 approaches and techniques available, and the choice of which to use depends very
@@ -2648,23 +2643,19 @@ much on your particular requirements.  We will start with a review of the &ldquo
 space,&rdquo; and then talk about the considerations that would lead us to choose various
 approaches.  We will provide details about several approaches to implementing
 CI/CD and links to examples.</p>
-
 <h3 id="review-of-the-problem-space">Review of the problem space</h3>
-
 <p>Kubernetes makes a fundamental assumption that Docker images are immutable,
 that they contain no state, and that updating them is as simple as throwing
 away a pod/container and replacing it with a new one that uses a newer version
 of the Docker image.  These assumptions work very well for microservices
 applications, but for more traditional workloads, we need to do some extra
 thinking and some extra work to get the behavior we want.</p>
-
 <p>CI/CD is an area where the standard assumptions aren&rsquo;t always suitable.  In the
 microservices architecture, you typically minimize dependencies and build
 images from scratch with all of the dependencies in them.  You also typically
 keep all of the configuration outside of the image, for example, in Kubernetes config
 maps or secrets, and all of the state outside of the image too.  This makes
 it very easy to update running pods with a new image.</p>
-
 <p>Let&rsquo;s consider how a WebLogic image is different.  There will, of course, be a
 base layer with the operating system; let&rsquo;s assume it is
 <a href="https://hub.docker.com/_/oraclelinux/">Oracle Linux &ldquo;slim&rdquo;</a>.  Then you need
@@ -2674,27 +2665,22 @@ the officially supported JDK images from the Docker Store, like the
 top of this, you need the WebLogic Server binaries (the &ldquo;Oracle Home&rdquo;).  On top
 of that, you may wish to have some patches or updates installed.  And then
 you need your domain, that is the configuration.</p>
-
 <p>There is also other information associated with a domain that needs to live
 somewhere, for example leasing tables, message and transaction stores, and so
 on.  We recommend that these be kept in a database to take advantage of built-in
 database server HA, and the fact that disaster recovery of sites across all
 but the shortest distances almost always requires using a single database
 server to consolidate and replicated data (DataGuard).</p>
-
 <p>There are two common approaches on how to structure these components.  The first,
 which we call &ldquo;domain on persistent volume,&rdquo; places the JDK and WebLogic binaries
 in the Docker image, but the domain is kept on a separate persistent storage
 outside of the image.  The second approach puts the JDK, WebLogic binaries
 and the domain all in the Docker image.  Both of these approaches are perfectly
 valid (and fully supported) and they have various advantages and disadvantages.</p>
-
 <p>We have listed the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">relative advantages of these two approaches here</a>.</p>
-
 <p>One of the key differences between these approaches is how many Docker images
 you have, and therefore, how you build and maintain them - your image CI/CD
 process.  Let&rsquo;s take a short detour and talk about Docker image layering.</p>
-
 
 
 
@@ -4631,19 +4617,19 @@ process.  Let&rsquo;s take a short detour and talk about Docker image layering.<
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442681" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442681"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

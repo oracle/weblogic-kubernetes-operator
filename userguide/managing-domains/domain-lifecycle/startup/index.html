@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="There are properties on the domain resource that specify which servers should be running and which servers should be restarted. To start, stop, or restart servers, modify these properties on the domain resource.">
 
 
@@ -12,18 +12,18 @@
     <title>Startup and shutdown :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2614,57 +2614,20 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#contents">Contents</a></li>
-</ul></li>
-<li><a href="#starting-and-stopping-servers">Starting and stopping servers</a>
-<ul>
-<li><a href="#serverstartpolicy-rules"><code>serverStartPolicy</code> rules</a></li>
-<li><a href="#available-serverstartpolicy-values">Available <code>serverStartPolicy</code> values</a></li>
-<li><a href="#administration-server-start-and-stop-rules">Administration Server start and stop rules</a></li>
-<li><a href="#standalone-managed-server-start-and-stop-rules">Standalone Managed Server start and stop rules</a></li>
-<li><a href="#clustered-managed-server-start-and-stop-rules">Clustered Managed Server start and stop rules</a></li>
-</ul></li>
-<li><a href="#server-start-state">Server start state</a></li>
-<li><a href="#common-starting-and-stopping-scenarios">Common starting and stopping scenarios</a>
-<ul>
-<li><a href="#normal-running-state">Normal running state</a></li>
-<li><a href="#shut-down-all-the-servers">Shut down all the servers</a></li>
-<li><a href="#only-start-the-administration-server">Only start the Administration Server</a></li>
-<li><a href="#shut-down-a-cluster">Shut down a cluster</a></li>
-<li><a href="#shut-down-a-specific-standalone-server">Shut down a specific standalone server</a></li>
-<li><a href="#force-a-specific-clustered-managed-server-to-start">Force a specific clustered Managed Server to start</a></li>
-</ul></li>
-<li><a href="#shutdown-options">Shutdown options</a>
-<ul>
-<li><a href="#shutdown-environment-variables">Shutdown environment variables</a></li>
-<li><a href="#shutdown-rules"><code>shutdown</code> rules</a></li>
-</ul></li>
-<li><a href="#restarting-servers">Restarting servers</a>
-<ul>
-<li><a href="#properties-that-cause-servers-to-be-restarted">Properties that cause servers to be restarted</a></li>
-</ul></li>
-<li><a href="#rolling-restarts">Rolling restarts</a>
-<ul>
-<li><a href="#using-restartversion-to-force-the-operator-to-restart-servers">Using <code>restartVersion</code> to force the operator to restart servers</a></li>
-</ul></li>
-<li><a href="#common-restarting-scenarios">Common restarting scenarios</a>
-<ul>
-<li><a href="#restart-all-the-servers-in-the-domain">Restart all the servers in the domain</a></li>
-<li><a href="#restart-all-the-servers-in-the-cluster">Restart all the servers in the cluster</a></li>
-<li><a href="#restart-the-administration-server">Restart the Administration Server</a></li>
-<li><a href="#restart-a-standalone-or-clustered-managed-server">Restart a standalone or clustered Managed Server</a></li>
-<li><a href="#full-domain-restarts">Full domain restarts</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+        <li><a href="#starting-and-stopping-servers">Starting and stopping servers</a></li>
+        <li><a href="#server-start-state">Server start state</a></li>
+        <li><a href="#common-starting-and-stopping-scenarios">Common starting and stopping scenarios</a></li>
+        <li><a href="#shutdown-options">Shutdown options</a></li>
+        <li><a href="#restarting-servers">Restarting servers</a></li>
+        <li><a href="#rolling-restarts">Rolling restarts</a></li>
+        <li><a href="#common-restarting-scenarios">Common restarting scenarios</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2689,47 +2652,36 @@
 
 
 
-
-
 <h4 id="contents">Contents</h4>
-
 <ul>
 <li><a href="#starting-and-stopping-servers">Starting and stopping servers</a>
-
 <ul>
 <li><a href="#common-starting-and-stopping-scenarios">Common starting and stopping scenarios</a></li>
-</ul></li>
+</ul>
+</li>
 <li><a href="#shutdown-options">Shutdown options</a></li>
 <li><a href="#restarting-servers">Restarting servers</a>
-
 <ul>
 <li><a href="#rolling-restarts">Rolling restarts</a></li>
 <li><a href="#common-restarting-scenarios">Common restarting scenarios</a></li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <p>There are properties on the domain resource that specify which servers should be running,
 which servers should be restarted and the desired initial state. To start, stop, or restart servers, modify these properties on the domain resource
 (for example, by using <code>kubectl</code> or the Kubernetes REST API).  The operator will notice the changes and apply them.  Beginning,
 with operator version 2.2, there are now properties to control server shutdown handling, such as whether the shutdown
 will be graceful, the timeout, and if in-flight sessions are given the opportunity to complete.</p>
-
 <h3 id="starting-and-stopping-servers">Starting and stopping servers</h3>
-
 <p>The <code>serverStartPolicy</code> property on the domain resource controls which servers should be running.
 The operator runtime monitors this property and creates or deletes the corresponding server pods.</p>
-
 
 <div class="notices note" ><p>Do not use the WebLogic Server Administration Console to start or stop servers.</p>
 </div>
 
-
 <h4 id="serverstartpolicy-rules"><code>serverStartPolicy</code> rules</h4>
-
 <p>You can specify the <code>serverStartPolicy</code> property at the domain, cluster, and server levels. Each level supports a different set of values.</p>
-
 <h4 id="available-serverstartpolicy-values">Available <code>serverStartPolicy</code> values</h4>
-
 <table>
 <thead>
 <tr>
@@ -2738,20 +2690,17 @@ The operator runtime monitors this property and creates or deletes the correspon
 <th>Supported Values</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
 <td>Domain</td>
 <td><code>IF_NEEDED</code></td>
 <td><code>IF_NEEDED</code>, <code>ADMIN_ONLY</code>, <code>NEVER</code></td>
 </tr>
-
 <tr>
 <td>Cluster</td>
 <td><code>IF_NEEDED</code></td>
 <td><code>IF_NEEDED</code>, <code>NEVER</code></td>
 </tr>
-
 <tr>
 <td>Server</td>
 <td><code>IF_NEEDED</code></td>
@@ -2759,9 +2708,7 @@ The operator runtime monitors this property and creates or deletes the correspon
 </tr>
 </tbody>
 </table>
-
 <h4 id="administration-server-start-and-stop-rules">Administration Server start and stop rules</h4>
-
 <table>
 <thead>
 <tr>
@@ -2770,20 +2717,17 @@ The operator runtime monitors this property and creates or deletes the correspon
 <th>Started / Stopped</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
 <td><code>NEVER</code></td>
 <td>any value</td>
 <td>Stopped</td>
 </tr>
-
 <tr>
 <td><code>ADMIN_ONLY</code>, <code>IF_NEEDED</code></td>
 <td><code>NEVER</code></td>
 <td>Stopped</td>
 </tr>
-
 <tr>
 <td><code>ADMIN_ONLY</code>, <code>IF_NEEDED</code></td>
 <td><code>IF_NEEDED</code>, <code>ALWAYS</code></td>
@@ -2791,9 +2735,7 @@ The operator runtime monitors this property and creates or deletes the correspon
 </tr>
 </tbody>
 </table>
-
 <h4 id="standalone-managed-server-start-and-stop-rules">Standalone Managed Server start and stop rules</h4>
-
 <table>
 <thead>
 <tr>
@@ -2802,20 +2744,17 @@ The operator runtime monitors this property and creates or deletes the correspon
 <th>Started / Stopped</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
 <td><code>ADMIN_ONLY</code>, <code>NEVER</code></td>
 <td>any value</td>
 <td>Stopped</td>
 </tr>
-
 <tr>
 <td><code>IF_NEEDED</code></td>
 <td><code>NEVER</code></td>
 <td>Stopped</td>
 </tr>
-
 <tr>
 <td><code>IF_NEEDED</code></td>
 <td><code>IF_NEEDED</code>, <code>ALWAYS</code></td>
@@ -2823,9 +2762,7 @@ The operator runtime monitors this property and creates or deletes the correspon
 </tr>
 </tbody>
 </table>
-
 <h4 id="clustered-managed-server-start-and-stop-rules">Clustered Managed Server start and stop rules</h4>
-
 <table>
 <thead>
 <tr>
@@ -2835,7 +2772,6 @@ The operator runtime monitors this property and creates or deletes the correspon
 <th>Started / Stopped</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
 <td><code>ADMIN_ONLY</code>, <code>NEVER</code></td>
@@ -2843,28 +2779,24 @@ The operator runtime monitors this property and creates or deletes the correspon
 <td>any value</td>
 <td>Stopped</td>
 </tr>
-
 <tr>
 <td><code>IF_NEEDED</code></td>
 <td><code>NEVER</code></td>
 <td>any value</td>
 <td>Stopped</td>
 </tr>
-
 <tr>
 <td><code>IF_NEEDED</code></td>
 <td><code>IF_NEEDED</code></td>
 <td><code>NEVER</code></td>
 <td>Stopped</td>
 </tr>
-
 <tr>
 <td><code>IF_NEEDED</code></td>
 <td><code>IF_NEEDED</code></td>
 <td><code>ALWAYS</code></td>
 <td>Started</td>
 </tr>
-
 <tr>
 <td><code>IF_NEEDED</code></td>
 <td><code>IF_NEEDED</code></td>
@@ -2874,71 +2806,49 @@ The operator runtime monitors this property and creates or deletes the correspon
 </tbody>
 </table>
 
-
 <div class="notices note" ><p>Servers configured as <code>ALWAYS</code> count toward the cluster&rsquo;s <code>replicas</code> count.</p>
 </div>
-
 
 
 <div class="notices note" ><p>If more servers are configured as <code>ALWAYS</code> than the cluster&rsquo;s <code>replicas</code> count, they will all be started and the <code>replicas</code> count will be ignored.</p>
 </div>
 
-
 <h3 id="server-start-state">Server start state</h3>
-
 <p>For some use cases, such as an externally managed zero downtime patching (ZDP), it may be necessary to start WebLogic Server
 so that at the end of its startup process, the server is in an administrative state.  This can be achieved using the <code>serverStartState</code>
 property, which is available at domain, cluster, and server levels.  When <code>serverStartState</code> is set to <code>ADMIN</code>, then servers will
 progress only to the administrative state.  You could then use the WebLogic console, REST API, or a WLST script to make any necessary
 updates before advancing the server to the running state.</p>
-
 <p>Changes to the <code>serverStartState</code> property do not affect already started servers.</p>
-
 <h3 id="common-starting-and-stopping-scenarios">Common starting and stopping scenarios</h3>
-
 <h4 id="normal-running-state">Normal running state</h4>
-
 <p>Normally, the Administration Server, all of the standalone Managed Servers, and enough Managed Servers in each cluster to satisfy its <code>replicas</code> count, should be started.
 In this case, the domain resource does not need to specify <code>serverStartPolicy</code>, or list any <code>clusters</code> or <code>servers</code>, but it does need to specify a <code>replicas</code> count.</p>
-
 <p>For example:</p>
-
 <pre><code>  kind: Domain
   metadata:
     name: domain1
   spec:
     image: ...
     replicas: 10
-</code></pre>
-
-<h4 id="shut-down-all-the-servers">Shut down all the servers</h4>
-
+</code></pre><h4 id="shut-down-all-the-servers">Shut down all the servers</h4>
 <p>Sometimes you need to completely shut down the domain (for example, take it out of service).</p>
-
 <pre><code>  kind: Domain
   metadata:
     name: domain1
   spec:
     serverStartPolicy: &quot;NEVER&quot;
     ...
-</code></pre>
-
-<h4 id="only-start-the-administration-server">Only start the Administration Server</h4>
-
+</code></pre><h4 id="only-start-the-administration-server">Only start the Administration Server</h4>
 <p>Sometimes you want to start the Administration Server only, that is, take the domain out of service but leave the Administration Server running so that you can administer the domain.</p>
-
 <pre><code>  kind: Domain
   metadata:
     name: domain1
   spec:
     serverStartPolicy: &quot;ADMIN_ONLY&quot;
     ...
-</code></pre>
-
-<h4 id="shut-down-a-cluster">Shut down a cluster</h4>
-
+</code></pre><h4 id="shut-down-a-cluster">Shut down a cluster</h4>
 <p>To shut down a cluster (for example, take it out of service), add it to the domain resource and set its <code>serverStartPolicy</code> to <code>NEVER</code>.</p>
-
 <pre><code>  kind: Domain
   metadata:
     name: domain1
@@ -2947,12 +2857,8 @@ In this case, the domain resource does not need to specify <code>serverStartPoli
     - clusterName: &quot;cluster1&quot;
       serverStartPolicy: &quot;NEVER&quot;
     ...
-</code></pre>
-
-<h4 id="shut-down-a-specific-standalone-server">Shut down a specific standalone server</h4>
-
+</code></pre><h4 id="shut-down-a-specific-standalone-server">Shut down a specific standalone server</h4>
 <p>To shut down a specific standalone server, add it to the domain resource and set its <code>serverStartPolicy</code> to <code>NEVER</code>.</p>
-
 <pre><code>  kind: Domain
   metadata:
     name: domain1
@@ -2961,15 +2867,10 @@ In this case, the domain resource does not need to specify <code>serverStartPoli
     - serverName: &quot;server1&quot;
       serverStartPolicy: &quot;NEVER&quot;
     ...
-</code></pre>
-
-<h4 id="force-a-specific-clustered-managed-server-to-start">Force a specific clustered Managed Server to start</h4>
-
+</code></pre><h4 id="force-a-specific-clustered-managed-server-to-start">Force a specific clustered Managed Server to start</h4>
 <p>Normally, all of the Managed Servers in a cluster are identical and it doesn&rsquo;t matter which ones are running as long as the operator starts enough of them to get to the cluster&rsquo;s <code>replicas</code> count.
 However, sometimes some of the Managed Servers are different (for example, support some extra services that the other servers in the cluster use) and need to always be started.</p>
-
 <p>This is done by adding the server to the domain resource and setting its <code>serverStartPolicy</code> to <code>ALWAYS</code>.</p>
-
 <pre><code>  kind: Domain
   metadata:
     name: domain1
@@ -2979,17 +2880,12 @@ However, sometimes some of the Managed Servers are different (for example, suppo
       serverStartPolicy: &quot;ALWAYS&quot;
     ...
 </code></pre>
-
-
 <div class="notices note" ><p>The server will count toward the cluster&rsquo;s <code>replicas</code> count.  Also, if you configure more than the <code>replicas</code> servers count to <code>ALWAYS</code>, they will all be started, even though the <code>replicas</code> count will be exceeded.</p>
 </div>
 
-
 <h3 id="shutdown-options">Shutdown options</h3>
-
 <p>The domain resource includes the element <code>serverPod</code> that is available under <code>spec</code>, <code>adminServer</code> and each entry of
 <code>clusters</code> and <code>managedServers</code>. The <code>serverPod</code> element controls many details of how pods are created for server instances.</p>
-
 <p>The <code>shutdown</code> element of <code>serverPod</code> controls how servers will be shutdown.  This element has three properties:
 <code>shutdownType</code>, <code>timeoutSeconds</code>, and <code>ignoreSessions</code>.  The <code>shutdownType</code> property can be set to either <code>Graceful</code>, the default,
 or <code>Forced</code> specifying the type of shutdown.  The <code>timeoutSeconds</code> property configures how long the server is given to
@@ -2998,13 +2894,10 @@ the default, allows the shutdown process to take longer to give time for any act
 The operator runtime monitors this property but will not restart any server pods solely to adjust the shutdown options.
 Instead, server pods created or restarted because of another property change will be configured to shutdown, at the appropriate
 time, using the shutdown options set when the server pod is created.</p>
-
 <h4 id="shutdown-environment-variables">Shutdown environment variables</h4>
-
 <p>The operator runtime configures shutdown behavior with the use of the following environment variables. Users may
 instead simply configure these environment variables directly.  When a user-configured environment variable is present,
 the operator will not override the environment variable based on the shutdown configuration.</p>
-
 <table>
 <thead>
 <tr>
@@ -3013,20 +2906,17 @@ the operator will not override the environment variable based on the shutdown co
 <th>Supported Values</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
 <td><code>SHUTDOWN_TYPE</code></td>
 <td><code>Graceful</code></td>
 <td><code>Graceful</code> or <code>Forced</code></td>
 </tr>
-
 <tr>
 <td><code>SHUTDOWN_TIMEOUT</code></td>
 <td>30</td>
 <td>Whole number in seconds where 0 means no timeout</td>
 </tr>
-
 <tr>
 <td><code>SHUTDOWN_IGNORE_SESSIONS</code></td>
 <td><code>false</code></td>
@@ -3034,16 +2924,12 @@ the operator will not override the environment variable based on the shutdown co
 </tr>
 </tbody>
 </table>
-
 <h4 id="shutdown-rules"><code>shutdown</code> rules</h4>
-
 <p>You can specify the <code>serverPod</code> element, including the <code>shutdown</code> element, at the domain, cluster, and server levels. If
 <code>shutdown</code> is specified at multiple levels, such as for a cluster and for a member server that is part of that cluster,
 then the shutdown configuration for a specific server is the combination of all of the relevant values with each field
 having the value from the <code>shutdown</code> element at the most specific scope.</p>
-
 <p>For instance, given the following domain resource:</p>
-
 <pre><code>  kind: Domain
   metadata:
     name: domain1
@@ -3064,23 +2950,15 @@ having the value from the <code>shutdown</code> element at the most specific sco
           timeoutSeconds: 60
           ignoreSessions: false
     ...
-</code></pre>
-
-<p>Graceful shutdown is used for all servers in the domain because this is specified at the domain level and is not overridden at
+</code></pre><p>Graceful shutdown is used for all servers in the domain because this is specified at the domain level and is not overridden at
 any cluster or server level.  The &ldquo;cluster1&rdquo; cluster defaults to ignoring sessions; however, the &ldquo;cluster1_server1&rdquo; server
 instance will not ignore sessions and will have a longer timeout.</p>
-
 <h3 id="restarting-servers">Restarting servers</h3>
-
 <p>The operator runtime automatically recreates (restarts) server pods when properties on the domain resource that affect server pods change (such as <code>image</code>, <code>volumes</code>, and <code>env</code>).
 The <code>restartVersion</code> property on the domain resource lets you force the operator to restart a set of server pods.</p>
-
 <p>The operator runtime does rolling restarts of clustered servers so that service is maintained.</p>
-
 <h4 id="properties-that-cause-servers-to-be-restarted">Properties that cause servers to be restarted</h4>
-
 <p>The operator will restart servers when any of the follow properties on the domain resource that affect the server are changed:</p>
-
 <ul>
 <li><code>containerSecurityContext</code></li>
 <li><code>domainHome</code></li>
@@ -3102,7 +2980,6 @@ The <code>restartVersion</code> property on the domain resource lets you force t
 <li><code>volumeMounts</code></li>
 </ul>
 
-
 <div class="notices note" ><p>If the only change detected is the addition or modification of a domain-specified label or annotation,
 the operator will <em>patch</em> the server&rsquo;s pod rather than restarting it. Removing a label or annotation from
 the domain resource will cause neither a restart nor a patch. It is possible to force a restart to remove
@@ -3110,60 +2987,40 @@ such a label or annotation by modifying the <code>restartVersion</code>.</p>
 </div>
 
 
-
 <div class="notices note" ><p>Prior to version 2.2, the operator incorrectly restarted servers when the <code>serverStartState</code> property was changed.  Now,
 this property has no affect on already running servers.</p>
 </div>
 
-
 <h3 id="rolling-restarts">Rolling restarts</h3>
-
 <p>Clustered servers that need to be restarted are gradually restarted (for example, <code>rolling restarted</code>) so that the cluster is not taken out of service and in-flight work can be migrated to other servers in the cluster.</p>
-
 <p>The <code>maxUnavailable</code> property on the domain resource determines how many of the cluster&rsquo;s servers may be taken out of service at a time when doing a rolling restart.
 It can be specified at the domain and cluster levels and defaults to 1 (that is, by default, clustered servers are restarted one at a time).</p>
-
 <p>When using in-memory session replication, Oracle WebLogic Server employs a primary-secondary session replication model to provide high availability of application session state (that is, HTTP and EJB sessions).
 The primary server creates a primary session state on the server to which the client first connects, and a secondary replica on another WebLogic Server instance in the cluster.
 Specifying a <code>maxUnavailable</code> property value of <code>1</code> protects against inadvertent session state loss which could occur if both the primary and secondary
 servers are shut down at the same time during the rolling restart process.</p>
-
 <h4 id="using-restartversion-to-force-the-operator-to-restart-servers">Using <code>restartVersion</code> to force the operator to restart servers</h4>
-
 <p>The <code>restartVersion</code> property lets you force the operator to restart servers.</p>
-
 <p>It&rsquo;s basically a user-specified string that gets added to new server pods (as a label) so that the operator can tell which servers need to be restarted.
 If the value is different, then the server pod is old and needs to be restarted.  If the value matches, then the server pod has already been restarted.</p>
-
 <p>Each time you want to restart some servers, you need to set <code>restartVersion</code> to a different string (the particular value doesn&rsquo;t matter).</p>
-
 <p>The operator will notice the new value and restart the affected servers (using the same mechanisms as when other properties that affect the server pods are changed, including doing rolling restarts of clustered servers).</p>
-
 <p>The <code>restartVersion</code> property can be specified at the domain, cluster, and server levels.  A server will be restarted if any of these three values change.</p>
-
 
 <div class="notices note" ><p>The servers will also be restarted if <code>restartVersion</code> is removed from the domain resource (for example, if you had previously specified a value to cause a restart, then you remove that value after the previous restart has completed).</p>
 </div>
 
-
 <h3 id="common-restarting-scenarios">Common restarting scenarios</h3>
-
 <h4 id="restart-all-the-servers-in-the-domain">Restart all the servers in the domain</h4>
-
 <p>Set <code>restartVersion</code> at the domain level to a new value.</p>
-
 <pre><code>  kind: Domain
   metadata:
     name: domain1
   spec:
     restartVersion: &quot;domainV1&quot;
     ...
-</code></pre>
-
-<h4 id="restart-all-the-servers-in-the-cluster">Restart all the servers in the cluster</h4>
-
+</code></pre><h4 id="restart-all-the-servers-in-the-cluster">Restart all the servers in the cluster</h4>
 <p>Set <code>restartVersion</code> at the cluster level to a new value.</p>
-
 <pre><code>  kind: Domain
   metadata:
     name: domain1
@@ -3173,12 +3030,8 @@ If the value is different, then the server pod is old and needs to be restarted.
       restartVersion: &quot;cluster1V1&quot;
       maxUnavailable: 2
     ...
-</code></pre>
-
-<h4 id="restart-the-administration-server">Restart the Administration Server</h4>
-
+</code></pre><h4 id="restart-the-administration-server">Restart the Administration Server</h4>
 <p>Set <code>restartVersion</code> at the <code>adminServer</code> level to a new value.</p>
-
 <pre><code>  kind: Domain
   metadata:
     name: domain1
@@ -3186,12 +3039,8 @@ If the value is different, then the server pod is old and needs to be restarted.
     adminServer:
       restartVersion: &quot;adminV1&quot;
     ...
-</code></pre>
-
-<h4 id="restart-a-standalone-or-clustered-managed-server">Restart a standalone or clustered Managed Server</h4>
-
+</code></pre><h4 id="restart-a-standalone-or-clustered-managed-server">Restart a standalone or clustered Managed Server</h4>
 <p>Set <code>restartVersion</code> at the <code>managedServer</code> level to a new value.</p>
-
 <pre><code>  kind: Domain
   metadata:
     name: domain1
@@ -3202,41 +3051,35 @@ If the value is different, then the server pod is old and needs to be restarted.
     - serverName: &quot;cluster1_server1&quot;
       restartVersion: &quot;v1&quot;
     ...
-</code></pre>
-
-<h4 id="full-domain-restarts">Full domain restarts</h4>
-
+</code></pre><h4 id="full-domain-restarts">Full domain restarts</h4>
 <p>To do a full domain restart, first shut down all of the domain&rsquo;s servers (Administration and Managed Servers), taking the domain out of service,
 then restart them.  Unlike rolling restarts, the operator cannot detect and initiate a full domain restart; you must always manually initiate it.</p>
-
 <p>To manually initiate a full domain restart:</p>
-
 <ol>
-<li><p>Change the domain level <code>serverStartPolicy</code> on the domain resource to <code>NEVER</code>.</p>
-
-<pre><code>kind: Domain
-metadata:
-name: domain1
-spec:
-serverStartPolicy: &quot;NEVER&quot;
-...
-</code></pre></li>
-
-<li><p>Wait for the operator to stop ALL the servers for that domain.</p></li>
-
-<li><p>To restart the domain, set the domain level <code>serverStartPolicy</code> back to <code>IF_NEEDED</code>. Alternatively, you do not
-have to specify the <code>serverStartPolicy</code> as the default value is <code>IF_NEEDED</code>.</p></li>
+<li>Change the domain level <code>serverStartPolicy</code> on the domain resource to <code>NEVER</code>.</li>
 </ol>
-
+<pre><code>  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    serverStartPolicy: &quot;NEVER&quot;
+    ...
+</code></pre><ol start="2">
+<li>
+<p>Wait for the operator to stop ALL the servers for that domain.</p>
+</li>
+<li>
+<p>To restart the domain, set the domain level <code>serverStartPolicy</code> back to <code>IF_NEEDED</code>. Alternatively, you do not
+have to specify the <code>serverStartPolicy</code> as the default value is <code>IF_NEEDED</code>.</p>
+</li>
+</ol>
 <pre><code>  kind: Domain
   metadata:
     name: domain1
   spec:
     serverStartPolicy: &quot;IF_NEEDED&quot;
     ...
-</code></pre>
-
-<ol>
+</code></pre><ol start="4">
 <li>The operator will restart all the servers in the domain.</li>
 </ol>
 
@@ -5026,19 +4869,19 @@ have to specify the <code>serverStartPolicy</code> as the default value is <code
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442681" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442681"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

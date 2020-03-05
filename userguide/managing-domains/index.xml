@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Manage WebLogic domains on WebLogic Kubernetes Operator</title>
@@ -18,9 +18,9 @@
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/prepare/</guid>
       <description>Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
- Create the domain namespace(s). One or more domains can share a namespace. A single instance of the operator can manage multiple namespaces.
-$ kubectl create namespace domain-namespace-1  Replace domain-namespace-1 with name you want to use. The name must follow standard Kubernetes naming conventions, that is, lower case, numbers, and hyphens.
- Create a Kubernetes secret containing the Administration Server boot credentials.</description>
+  Create the domain namespace(s). One or more domains can share a namespace. A single instance of the operator can manage multiple namespaces.
+$ kubectl create namespace domain-namespace-1 Replace domain-namespace-1 with name you want to use. The name must follow standard Kubernetes naming conventions, that is, lower case, numbers, and hyphens.
+  Create a Kubernetes secret containing the Administration Server boot credentials.</description>
     </item>
     
     <item>

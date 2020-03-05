@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="Helm is used to create and deploy necessary operator resources and to run the operator in a Kubernetes cluster. Use the operator&#39;s Helm chart to install and manage the operator.">
 
 
@@ -12,18 +12,18 @@
     <title>Manage operators :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2602,29 +2602,14 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#overview">Overview</a>
-<ul>
-<li><a href="#install-helm-and-tiller">Install Helm and Tiller</a></li>
-</ul></li>
-<li><a href="#operator-s-helm-chart-configuration">Operator&rsquo;s Helm Chart Configuration</a>
-<ul>
-<li><a href="#optional-configure-the-operator-s-external-rest-https-interface">Optional: Configure the operator&rsquo;s external REST HTTPS interface</a>
-<ul>
-<li><a href="#sample-ssl-certificate-and-private-key-for-the-rest-interface">Sample SSL certificate and private key for the REST interface</a></li>
-</ul></li>
-<li><a href="#optional-elastic-stack-elasticsearch-logstash-and-kibana-integration">Optional: Elastic Stack (Elasticsearch, Logstash, and Kibana) integration</a>
-<ul>
-<li><a href="#elastic-stack-per-operator-configuration">Elastic Stack per-operator configuration</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#operators-helm-chart-configuration">Operator&rsquo;s Helm Chart Configuration</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2650,12 +2635,8 @@
 
 
 
-	
-
-<h3 id="overview">Overview</h3>
-
+	<h3 id="overview">Overview</h3>
 <p>Helm is a framework that helps you manage Kubernetes applications, and Helm charts help you define and install Helm applications into a Kubernetes cluster. The operator&rsquo;s Helm chart is located in the <code>kubernetes/charts/weblogic-operator</code> directory.</p>
-
 <p><strong>Important note for users of operator releases before 2.0</strong>
 
 <div class="expand">
@@ -2669,28 +2650,15 @@
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <div class="notices warning" ><p>If you have an older version of the operator installed on your cluster, for example, a 1.x version or one of the 2.0 release
-candidates, then you must remove it before installing this version. This includes the 2.0-rc1 version; it must be completely removed. You should remove the deployment (for example, <code>kubectl delete deploy weblogic-operator -n your-namespace</code>) and the custom
-resource definition (for example, <code>kubectl delete crd domain</code>).  If you do not remove
-the custom resource definition, then you might see errors like this:</p>
-
-<pre><code>Error from server (BadRequest): error when creating &quot;/scratch/output/uidomain/weblogic-domains/uidomain/domain.yaml&quot;:
-the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1
-</code></pre>
-</div>
-      
+        <!-- raw HTML omitted -->
 
     </div>
 </div></p>
-
 <h4 id="install-helm-and-tiller">Install Helm and Tiller</h4>
-
 <p>Helm has two parts: a client (Helm) and a server (Tiller). Tiller runs inside of your Kubernetes cluster, and manages releases (installations) of your charts. For detailed instructions on installing Helm and Tiller, see <a href="https://github.com/helm/helm">https://github.com/helm/helm</a>.</p>
-
 <p>In order to use Helm to install and manage the operator, you need to ensure that the service account that Tiller uses
 has the <code>cluster-admin</code> role.  The default would be <code>default</code> in namespace <code>kube-system</code>.  You can give that service
 account the necessary permissions with this command:</p>
-
 <pre><code>cat &lt;&lt; EOF | kubectl apply -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -2706,84 +2674,57 @@ subjects:
   namespace: kube-system
 EOF
 </code></pre>
-
-
 <div class="notices note" ><p>Oracle strongly recommends that you create a new service account to be used exclusively by Tiller and grant
 <code>cluster-admin</code> to that service account, rather than using the <code>default</code> one.</p>
 </div>
 
-
-<h3 id="operator-s-helm-chart-configuration">Operator&rsquo;s Helm Chart Configuration</h3>
-
+<h3 id="operators-helm-chart-configuration">Operator&rsquo;s Helm Chart Configuration</h3>
 <p>The operator Helm chart is pre-configured with default values for the configuration of the operator.</p>
-
 <p>You can override these values by doing one of the following:</p>
-
 <ul>
 <li>Creating a custom YAML file with only the values to be overridden, and specifying the <code>--value</code> option on the Helm command line.</li>
 <li>Overriding individual values directly on the Helm command line, using the <code>--set</code> option.</li>
 </ul>
-
 <p>You can find out the configuration values that the Helm chart supports, as well as the default values, using this command:</p>
-
 <pre><code>$ helm inspect values kubernetes/charts/weblogic-operator
-</code></pre>
-
-<p>The available configuration values are explained by category in
-<a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/#operator-helm-configuration-values">Operator Helm configuration values</a>.</p>
-
+</code></pre><p>The available configuration values are explained by category in
+<a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/">Operator Helm configuration values</a>.</p>
 <p>Helm commands are explained in more detail in
-<a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/#useful-helm-operations">Useful Helm operations</a>.</p>
-
-<h4 id="optional-configure-the-operator-s-external-rest-https-interface">Optional: Configure the operator&rsquo;s external REST HTTPS interface</h4>
-
+<a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/">Useful Helm operations</a>.</p>
+<h4 id="optional-configure-the-operators-external-rest-https-interface">Optional: Configure the operator&rsquo;s external REST HTTPS interface</h4>
 <p>The operator can expose an external REST HTTPS interface which can be accessed from outside the Kubernetes cluster. As with the operator&rsquo;s internal REST interface, the external REST interface requires an SSL/TLS certificate and private key that the operator will use as the identity of the external REST interface (see below).</p>
-
 <p>To enable the external REST interface, configure these values in a custom configuration file, or on the Helm command line:</p>
-
 <ul>
 <li>Set <code>externalRestEnabled</code> to <code>true</code>.</li>
 <li>Set <code>externalRestIdentitySecret</code> to the name of the kubernetes <code>tls secret</code> that contains the certificate(s) and private key.</li>
 <li>Optionally, set <code>externalRestHttpsPort</code> to the external port number for the operator REST interface (defaults to <code>31001</code>).</li>
 </ul>
-
-<p>For more detailed information, see the <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/#rest-interface-configuration">REST interface configuration</a> values.</p>
-
+<p>For more detailed information, see the <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/">REST interface configuration</a> values.</p>
 <h5 id="sample-ssl-certificate-and-private-key-for-the-rest-interface">Sample SSL certificate and private key for the REST interface</h5>
-
 <p>For testing purposes, the WebLogic Kubernetes Operator project provides a sample script
 that generates a self-signed certificate and private key for the operator external REST interface.
 The generated certificate and key is stored in a Kubernetes <code>tls secret</code> and the sample
 script outputs the corresponding configuration values in YAML format. These values can be added to your custom YAML configuration file, for use when the operator&rsquo;s Helm chart is installed.</p>
 
-
-<div class="notices warning" ><p>The sample script should <strong><em>not</em></strong> be used in a production environment because
+<div class="notices warning" ><p>The sample script should <em><strong>not</strong></em> be used in a production environment because
 typically a self-signed certificate for external communucation is not considered safe.
 A certficate signed by a commercial certificate authority is more widely accepted and
 should contain valid host names, expiration dates and key constraints.</p>
 </div>
 
-
 <p>For more detailed information about the sample script and how to run it, see
-the <a href="/weblogic-kubernetes-operator/samples/simple/rest/#sample-to-create-certificate-and-key">REST APIs</a> in the <strong><em>Samples</em></strong> section.</p>
-
+the <a href="/weblogic-kubernetes-operator/samples/simple/rest/#sample-to-create-certificate-and-key">REST APIs</a> in the <em><strong>Samples</strong></em> section.</p>
 <h4 id="optional-elastic-stack-elasticsearch-logstash-and-kibana-integration">Optional: Elastic Stack (Elasticsearch, Logstash, and Kibana) integration</h4>
-
 <p>The operator Helm chart includes the option of installing the necessary Kubernetes resources for Elastic Stack integration.</p>
-
 <p>You are responsible for configuring Kibana and Elasticsearch, then configuring the operator Helm chart to send events to Elasticsearch. In turn, the operator Helm chart configures Logstash in the operator deployment to send the operator&rsquo;s log contents to that Elasticsearch location.</p>
-
 <h5 id="elastic-stack-per-operator-configuration">Elastic Stack per-operator configuration</h5>
-
 <p>As part of the Elastic Stack integration, Logstash configuration occurs for each deployed operator instance.  You can use the following configuration values to configure the integration:</p>
-
 <ul>
 <li>Set <code>elkIntegrationEnabled</code> is <code>true</code> to enable the integration.</li>
 <li>Set <code>logStashImage</code> to override the default version of Logstash to be used (<code>logstash:6.2</code>).</li>
 <li>Set <code>elasticSearchHost</code> and <code>elasticSearchPort</code> to override the default location where Elasticsearch is running (<code>elasticsearch2.default.svc.cluster.local:9201</code>). This will configure Logstash to send the operator&rsquo;s log contents there.</li>
 </ul>
-
-<p>For more detailed information, see the <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/#operator-helm-configuration-values">Operator Helm configuration values</a>.</p>
+<p>For more detailed information, see the <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/">Operator Helm configuration values</a>.</p>
 
 
 
@@ -4568,19 +4509,19 @@ the <a href="/weblogic-kubernetes-operator/samples/simple/rest/#sample-to-create
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442681" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442681"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

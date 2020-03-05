@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="Tools that are available to build CI/CD pipelines.">
 
 
@@ -12,18 +12,18 @@
     <title>Tools :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2608,18 +2608,16 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#weblogic-deploy-tooling-wdt">WebLogic Deploy Tooling (WDT)</a></li>
-<li><a href="#wdt-create-domain-samples">WDT Create Domain Samples</a></li>
-<li><a href="#weblogic-scripting-tool-wlst">WebLogic Scripting Tool (WLST)</a></li>
-<li><a href="#weblogic-pack-and-unpack-tools">WebLogic pack and unpack tools</a></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#weblogic-deploy-tooling-wdt">WebLogic Deploy Tooling (WDT)</a></li>
+        <li><a href="#wdt-create-domain-samples">WDT Create Domain Samples</a></li>
+        <li><a href="#weblogic-scripting-tool-wlst">WebLogic Scripting Tool (WLST)</a></li>
+        <li><a href="#weblogic-pack-and-unpack-tools">WebLogic pack and unpack tools</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2644,10 +2642,7 @@
 
 
 
-
-
 <h3 id="weblogic-deploy-tooling-wdt">WebLogic Deploy Tooling (WDT)</h3>
-
 <p>You can use several of the <a href="https://github.com/oracle/weblogic-deploy-tooling">WDT tools</a>
 in a CI/CD pipeline. For example, the
 <code>createDomain</code> tool creates a new domain based on a simple model, and
@@ -2660,24 +2655,20 @@ attributes needed to create or update the domain. A model can be as sparse
 as providing only the WebLogic Server administrative password, although not very
 interesting.  A good way to get a jumpstart on a model is to use the
 <code>discoverDomain</code> tool in WDT which builds a model based on an existing domain.</p>
-
 <p>Other than the tools themselves, there are three components to the WDT tools:</p>
-
 <ul>
-<li><em>The Domain Model</em> - Metadata model describing the desired domain.<br />
+<li><em>The Domain Model</em> - Metadata model describing the desired domain.<br>
 The metadata domain model can be written in YAML or JSON and is documented <a href="https://github.com/oracle/weblogic-deploy-tooling#the-metadata-model">here</a>.</li>
-<li><em>The Archive ZIP</em> - Binaries to supplement the model.<br />
+<li><em>The Archive ZIP</em> - Binaries to supplement the model.<br>
 All binaries needed to supplement the model must be specified in an archive
 file, which is just a ZIP file with a specific directory structure. Optionally,
 the model can be stored inside the ZIP file, if desired. Any binaries not
 already on the target system must be in the ZIP file so that the tooling
 can extract them in the target domain.</li>
-<li><em>The Properties File</em> - A standard Java properties file.<br />
+<li><em>The Properties File</em> - A standard Java properties file.<br>
 A property file used to provide values to placeholders in the model.</li>
 </ul>
-
 <h3 id="wdt-create-domain-samples">WDT Create Domain Samples</h3>
-
 <ul>
 <li>(Docker) A sample for creating a domain in a Docker image with WDT can be found
 <a href="https://github.com/oracle/weblogic-deploy-tooling/tree/master/samples/docker-domain">here</a>.</li>
@@ -2685,23 +2676,18 @@ A property file used to provide values to placeholders in the model.</li>
 can be found in the WebLogic Kubernetes Operator project for creating a
 <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/domain-home-in-image/">domain-in-image with WDT</a>.</li>
 </ul>
-
 <h3 id="weblogic-scripting-tool-wlst">WebLogic Scripting Tool (WLST)</h3>
-
 <p>You can use WLST scripts to create and/or update domains in a CI/CD pipeline.
 We recommend that you use offline WLST for this purpose.  There may be some
 scenarios where it is necessary to use WLST online, but we recommend that
 you do that only as an exception, and when absolutely necessary.</p>
-
 <p>If you do not already have WLST scripts, we recommend that you consider
 using WebLogic Deploy Tooling (WDT) instead.  It provides a more declarative
 approach to domain creation, whereas WLST is more of an imperative scripting
 language.  WDT provides advantages like being able to use the same model with
 different versions of WebLogic, whereas you may need to update WLST scripts
 manually when migrating to a new version of WebLogic for example.</p>
-
 <h3 id="weblogic-pack-and-unpack-tools">WebLogic pack and unpack tools</h3>
-
 <p>WebLogic Server provides tools called &ldquo;pack&rdquo; and &ldquo;unpack&rdquo; that can be used to
 &ldquo;clone&rdquo; a domain.  These tools do not preserve the domain encryption key.
 You can use these tools to make copies of domains in scenarios when you do
@@ -4492,19 +4478,19 @@ not need the same domain encryption key.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442682" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442682"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

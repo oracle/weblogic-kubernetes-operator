@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="Sample for creating a WebLogic domain home inside a Docker image, and the domain resource YAML file for deploying the generated WebLogic domain.">
 
 
@@ -12,18 +12,18 @@
     <title>Domain home in image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2614,28 +2614,13 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#prerequisites">Prerequisites</a></li>
-<li><a href="#use-the-script-to-create-a-domain">Use the script to create a domain</a></li>
-<li><a href="#configuration-parameters">Configuration parameters</a></li>
-<li><a href="#verify-the-results">Verify the results</a>
-<ul>
-<li><a href="#generated-yaml-files-with-the-default-inputs">Generated YAML files with the default inputs</a></li>
-</ul></li>
-<li><a href="#verify-the-domain">Verify the domain</a></li>
-<li><a href="#verify-the-pods">Verify the pods</a></li>
-<li><a href="#verify-the-services">Verify the services</a></li>
-<li><a href="#delete-the-domain">Delete the domain</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2661,16 +2646,10 @@
 
 
 
-	
-
-<p>The sample scripts demonstrate the creation of a WebLogic domain home in a Docker image using one of the domain home in image samples in the <a href="https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples">WebLogic Server domain Docker image samples GitHub project</a>. The sample scripts have an option of putting the WebLogic domain log, server logs, server output files, and the Node Manager logs on an existing Kubernetes persistent volume (PV) and persistent volume claim (PVC). The scripts also generate the domain YAML file, which can then be used by the scripts or used manually to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.</p>
-
+	<p>The sample scripts demonstrate the creation of a WebLogic domain home in a Docker image using one of the domain home in image samples in the <a href="https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples">WebLogic Server domain Docker image samples GitHub project</a>. The sample scripts have an option of putting the WebLogic domain log, server logs, server output files, and the Node Manager logs on an existing Kubernetes persistent volume (PV) and persistent volume claim (PVC). The scripts also generate the domain YAML file, which can then be used by the scripts or used manually to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.</p>
 <h4 id="prerequisites">Prerequisites</h4>
-
 <p>Before you begin, read this document, <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
-
 <p>The following prerequisites must be handled prior to running the create domain script:</p>
-
 <ul>
 <li>The WDT sample requires that <code>JAVA_HOME</code> is set to a Java JDK version 1.8 or later.</li>
 <li>The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0. The existing WebLogic Docker image, <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code>, has all the necessary patches applied. Refer to <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/">WebLogic Docker images</a> for details on how to obtain or create the image.</li>
@@ -2678,7 +2657,6 @@
 <li>If <code>logHomeOnPV</code> is enabled, create the Kubernetes persistent volume where the log home will be hosted, and the Kubernetes persistent volume claim for the domain in the same Kubernates namespace. For samples to create a PV and PVC, see <a href="/weblogic-kubernetes-operator/samples/simple/storage/">Create sample PV and PVC</a>.</li>
 <li>Create a Kubernetes secret for the WebLogic administrator credentials that contains the fields <code>username</code> and <code>password</code>, and make sure that the secret name matches the value specified for <code>weblogicCredentialsSecretName</code> (see Configuration table below). For example:</li>
 </ul>
-
 <pre><code>$ cd ./kubernetes/samples/scripts/create-weblogic-domain-credentials
 $ create-weblogic-credentials.sh
    -u &lt;username&gt;
@@ -2686,35 +2664,23 @@ $ create-weblogic-credentials.sh
    -d domain1
    -n default
    -s domain1-weblogic-credentials
-</code></pre>
-
-<p><strong>NOTE</strong>: Then make sure to configure <code>weblogicCredentialsSecretName</code> to be <code>domain1-weblogic-credentials</code>.</p>
-
+</code></pre><p><strong>NOTE</strong>: Then make sure to configure <code>weblogicCredentialsSecretName</code> to be <code>domain1-weblogic-credentials</code>.</p>
 <h4 id="use-the-script-to-create-a-domain">Use the script to create a domain</h4>
-
 
 <div class="notices note" ><p>The <code>create-domain.sh</code> script generates a new Docker image on each run with a new domain home and a different internal <code>domain secret</code> in it.  To prevent having disparate images with different domain secrets in the same domain, we strongly recommend that a new domain uses a <code>domainUID</code> that is different from any of the active domains, or that you delete the existing domain resource using the following command and wait until all the server pods are terminated before you create a domain with the same <code>domainUID</code>:
 <code>$ kubectl delete domain [domainUID] -n [domainNamespace]</code></p>
 </div>
 
-
 <p>The sample for creating domains is in this directory:</p>
-
-<pre><code class="language-bash">$ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
-</code></pre>
-
-<p>Make a copy of the <code>create-domain-inputs.yaml</code> file, update it with the correct values,
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
+</code></pre></div><p>Make a copy of the <code>create-domain-inputs.yaml</code> file, update it with the correct values,
 and run the create script, pointing it at your inputs file and an output directory:</p>
-
 <pre><code>$ ./create-domain.sh \
   -u &lt;username&gt; \
   -p &lt;password&gt; \
   -i create-domain-inputs.yaml \
   -o /&lt;path to output-directory&gt;
-</code></pre>
-
-<p>The script will perform the following steps:</p>
-
+</code></pre><p>The script will perform the following steps:</p>
 <ul>
 <li>Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is <code>/&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;</code>. If the directory already exists, its contents will be removed.</li>
 <li>Create a properties file, <code>domain.properties</code>, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.</li>
@@ -2723,27 +2689,21 @@ and run the create script, pointing it at your inputs file and an output directo
 <li>Build a Docker image based on the Docker sample, <a href="https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image">Example Image with a WebLogic Server Domain using the Oracle WebLogic Scripting Tooling (WLST)</a> or <a href="https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image-wdt">Example Image with a WebLogic Server Domain using the Oracle WebLogic Deploy Tooling (WDT)</a>. It will create a sample WebLogic Server domain in the Docker image.
 
 <div class="notices warning" ><p>Oracle strongly recommends storing the image containing the domain home as private
-  in the registry (for example, Oracle Cloud Infrastructure Registry, Docker Hub, and such) as
-  this image contains sensitive information about the domain including keys and
-  credentials that are used to access external resources (for example, data source password).
-  For more information about
-  <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/#weblogic-domain-in-docker-image-protection">domain home in image protection</a>,
-  see the <strong><em>Security</em></strong> section.</p>
+in the registry (for example, Oracle Cloud Infrastructure Registry, Docker Hub, and such) as
+this image contains sensitive information about the domain including keys and
+credentials that are used to access external resources (for example, data source password).
+For more information about
+<a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/">domain home in image protection</a>,
+see the <em><strong>Security</strong></em> section.</p>
 </div>
 </li>
 <li>Create a tag that refers to the generated Docker image.</li>
-<li>Create a Kubernetes domain YAML file, <code>domain.yaml</code>, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the <code>kubectl create -f</code> or <code>kubectl apply -f</code> command.
-<code>
-$ kubectl apply -f /&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;/domain.yaml
-</code></li>
+<li>Create a Kubernetes domain YAML file, <code>domain.yaml</code>, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the <code>kubectl create -f</code> or <code>kubectl apply -f</code> command.</li>
 </ul>
-
-<p>As a convenience, using the <code>-e</code> option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services. This option should be used in a single node Kubernetes cluster only.</p>
-
+<pre><code>$ kubectl apply -f /&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;/domain.yaml
+</code></pre><p>As a convenience, using the <code>-e</code> option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services. This option should be used in a single node Kubernetes cluster only.</p>
 <p>For a multi-node Kubernetes cluster, make sure that the generated image is available on all nodes before creating the domain resource using the <code>kubectl apply -f</code> command.</p>
-
 <p>The usage of the create script is as follows:</p>
-
 <pre><code>$ sh create-domain.sh -h
 usage: create-domain.sh -o dir -i file -u username -p password [-k] [-e] [-h]
   -i Parameter inputs file, must be specified.
@@ -2756,12 +2716,8 @@ usage: create-domain.sh -o dir -i file -u username -p password [-k] [-e] [-h]
      If not specified, this script will always remove the existing project and clone again.
   -h Help
 
-</code></pre>
-
-<p>If you copy the sample scripts to a different location, make sure that you copy everything in the <code>&lt;weblogic-kubernetes-operator-project&gt;/kubernetes/samples/scripts</code> directory together into the target directory, maintaining the original directory hierarchy.</p>
-
+</code></pre><p>If you copy the sample scripts to a different location, make sure that you copy everything in the <code>&lt;weblogic-kubernetes-operator-project&gt;/kubernetes/samples/scripts</code> directory together into the target directory, maintaining the original directory hierarchy.</p>
 <p>The default domain created by the script has the following characteristics:</p>
-
 <ul>
 <li>An Administration Server named <code>admin-server</code> listening on port <code>7001</code>.</li>
 <li>A dynamic cluster named <code>cluster-1</code> of size 5.</li>
@@ -2769,32 +2725,24 @@ usage: create-domain.sh -o dir -i file -u username -p password [-k] [-e] [-h]
 <li>No applications deployed.</li>
 <li>A T3 channel.</li>
 </ul>
-
 <p>If you run the sample from a machine that is remote to the Kubernetes cluster, and you need to push the new image to a registry that is local to the cluster, you need to do the following (also see the <code>image</code> property in the Configuration parameters table in the next section):</p>
-
 <ul>
 <li>Set the <code>image</code> property in the inputs file to the target image name (including the registry hostname/port and the tag, if needed).</li>
 <li>If you want Kubernetes to pull the image from a private registry, create a Kubernetes secret to hold your credentials and set the <code>imagePullSecretName</code> property in the inputs file to the name of the secret.
 
 <div class="notices note" ><p>The Kubernetes secret must be in the same namespace where the domain will be running.
-For more information, see <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/#weblogic-domain-in-docker-image-protection">domain home in image protection</a>
-in the <strong><em>Security</em></strong> section.</p>
+For more information, see <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/">domain home in image protection</a>
+in the <em><strong>Security</strong></em> section.</p>
 </div>
 </li>
 <li>Run the <code>create-domain.sh</code> script without the <code>-e</code> option.</li>
 <li>Push the <code>image</code> to the target registry.</li>
 <li>Run the following command to create the domain:</li>
 </ul>
-
 <pre><code>$ kubectl apply -f /&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;/domain.yaml
-</code></pre>
-
-<p>The domain creation inputs can be customized by editing <code>create-domain-inputs.yaml</code>.</p>
-
+</code></pre><p>The domain creation inputs can be customized by editing <code>create-domain-inputs.yaml</code>.</p>
 <h4 id="configuration-parameters">Configuration parameters</h4>
-
 <p>The following parameters can be provided in the inputs file.</p>
-
 <table>
 <thead>
 <tr>
@@ -2803,176 +2751,147 @@ in the <strong><em>Security</em></strong> section.</p>
 <th>Default</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
 <td><code>adminPort</code></td>
 <td>Port number for the Administration Server inside the Kubernetes cluster.</td>
 <td><code>7001</code></td>
 </tr>
-
 <tr>
 <td><code>adminNodePort</code></td>
 <td>Port number of the Administration Server outside the Kubernetes cluster.</td>
 <td><code>30701</code></td>
 </tr>
-
 <tr>
 <td><code>adminServerName</code></td>
 <td>Name of the Administration Server.</td>
 <td><code>admin-server</code></td>
 </tr>
-
 <tr>
 <td><code>clusterName</code></td>
 <td>Name of the WebLogic cluster instance to generate for the domain.</td>
 <td><code>cluster-1</code></td>
 </tr>
-
 <tr>
 <td><code>configuredManagedServerCount</code></td>
 <td>Number of Managed Server instances to generate for the domain.</td>
 <td><code>5</code></td>
 </tr>
-
 <tr>
 <td><code>domainHomeImageBase</code></td>
 <td>Base WebLogic binary image used to build the WebLogic domain image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0. The existing WebLogic Docker image, <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code>, has all the necessary patches applied. Refer to <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/">WebLogic Docker images</a> for details on how to obtain or create the image.</td>
 <td><code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code></td>
 </tr>
-
 <tr>
 <td><code>domainHomeImageBuildPath</code></td>
 <td>Location of the WebLogic &ldquo;domain home in image&rdquo; Docker image in the <code>https://github.com/oracle/docker-images.git</code> project. If not specified, use &ldquo;./docker-images/OracleWebLogic/samples/12213-domain-home-in-image&rdquo;. Another possible value is &ldquo;./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt&rdquo; which uses WDT, instead of WLST, to generate the domain configuration.</td>
 <td><code>./docker-images/OracleWebLogic/samples/12213-domain-home-in-image</code></td>
 </tr>
-
 <tr>
 <td><code>domainPVMountPath</code></td>
 <td>Mount path of the domain persistent volume. This parameter is required if <code>logHomeOnPV</code> is true. Otherwise, it is ignored.</td>
 <td><code>/shared</code></td>
 </tr>
-
 <tr>
 <td><code>domainUID</code></td>
 <td>Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name.</td>
 <td><code>domain1</code></td>
 </tr>
-
 <tr>
 <td><code>exposeAdminNodePort</code></td>
 <td>Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster.</td>
 <td><code>false</code></td>
 </tr>
-
 <tr>
 <td><code>exposeAdminT3Channel</code></td>
 <td>Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster.</td>
 <td><code>false</code></td>
 </tr>
-
 <tr>
 <td><code>image</code></td>
 <td>WebLogic Server Docker image that the operator uses to start the domain. The create domain scripts generate a WebLogic Server Docker image with a domain home in it. By default, the scripts tag the generated WebLogic server Docker image as either <code>domain-home-in-image</code> or <code>domain-home-in-image-wdt</code> based on the <code>domainHomeImageBuildPath</code> property, and use it plus the tag that is obtained from the <code>domainHomeImageBase</code> to set the <code>image</code> element in the generated domain YAML file. If this property is set, the create domain scripts will use the value specified, instead of the default value, to tag the generated image and set the <code>image</code> in the domain YAML file. A unique value is required for each domain that is created using the scripts. If you are running the sample scripts from a machine that is remote to the Kubernetes cluster where the domain is going to be running, you need to set this property to the image name that is intended to be used in a registry local to that Kubernetes cluster. You also need to push the <code>image</code> to that registry before starting the domain using the <code>kubectl create -f</code> or <code>kubectl apply -f</code> command.</td>
 <td></td>
 </tr>
-
 <tr>
 <td><code>imagePullPolicy</code></td>
 <td>WebLogic Docker image pull policy. Legal values are <code>IfNotPresent</code>, <code>Always</code>, or <code>Never</code>.</td>
 <td><code>IfNotPresent</code></td>
 </tr>
-
 <tr>
 <td><code>imagePullSecretName</code></td>
 <td>Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified.</td>
 <td></td>
 </tr>
-
 <tr>
 <td><code>includeServerOutInPodLog</code></td>
 <td>Boolean indicating whether to include <code>server.out</code> to the pod&rsquo;s stdout.</td>
 <td><code>true</code></td>
 </tr>
-
 <tr>
 <td><code>initialManagedServerReplicas</code></td>
 <td>Number of Managed Servers to initially start for the domain.</td>
 <td><code>2</code></td>
 </tr>
-
 <tr>
 <td><code>javaOptions</code></td>
 <td>Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: <code>$(DOMAIN_NAME)</code>, <code>$(DOMAIN_HOME)</code>, <code>$(ADMIN_NAME)</code>, <code>$(ADMIN_PORT)</code>, and <code>$(SERVER_NAME)</code>.</td>
 <td><code>-Dweblogic.StdoutDebugEnabled=false</code></td>
 </tr>
-
 <tr>
 <td><code>logHomeOnPV</code></td>
 <td>Specifies whether the log home is stored on the persistent volume. If set to true, then you must specify the <code>logHome</code>, <code>persistentVolumeClaimName</code>, and <code>domainPVMountPath</code> parameters.</td>
 <td><code>false</code></td>
 </tr>
-
 <tr>
 <td><code>logHome</code></td>
 <td>The in-pod location for domain log, server logs, server out, and Node Manager log files. If not specified, the value is derived from the <code>domainUID</code> as <code>/shared/logs/&lt;domainUID&gt;</code>. This parameter is required if <code>logHomeOnPV</code> is true. Otherwise, it is ignored.</td>
 <td><code>/shared/logs/domain1</code></td>
 </tr>
-
 <tr>
 <td><code>managedServerNameBase</code></td>
 <td>Base string used to generate Managed Server names.</td>
 <td><code>managed-server</code></td>
 </tr>
-
 <tr>
 <td><code>managedServerPort</code></td>
 <td>Port number for each Managed Server.</td>
 <td><code>8001</code></td>
 </tr>
-
 <tr>
 <td><code>namespace</code></td>
 <td>Kubernetes namespace in which to create the domain.</td>
 <td><code>default</code></td>
 </tr>
-
 <tr>
 <td><code>persistentVolumeClaimName</code></td>
 <td>Name of the persistent volume claim. If not specified, the value is derived from the <code>domainUID</code> as <code>&lt;domainUID&gt;-weblogic-sample-pvc</code>. This parameter is required if <code>logHomeOnPV</code> is true. Otherwise, it is ignored.</td>
 <td><code>domain1-weblogic-sample-pvc</code></td>
 </tr>
-
 <tr>
 <td><code>productionModeEnabled</code></td>
 <td>Boolean indicating if production mode is enabled for the domain.</td>
 <td><code>true</code></td>
 </tr>
-
 <tr>
 <td><code>serverStartPolicy</code></td>
 <td>Determines which WebLogic Server instances will be started. Legal values are <code>NEVER</code>, <code>IF_NEEDED</code>, <code>ADMIN_ONLY</code>.</td>
 <td><code>IF_NEEDED</code></td>
 </tr>
-
 <tr>
 <td><code>t3ChannelPort</code></td>
 <td>Port for the T3 channel of the NetworkAccessPoint.</td>
 <td><code>30012</code></td>
 </tr>
-
 <tr>
 <td><code>t3PublicAddress</code></td>
-<td>Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would typically be a load balancer address. <p/>For development environments only: In a single server (all-in-one) Kubernetes deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes.</td>
+<td>Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would typically be a load balancer address. <!-- raw HTML omitted -->For development environments only: In a single server (all-in-one) Kubernetes deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes.</td>
 <td>If not provided, the script will attempt to set it to the IP address of the kubernetes cluster</td>
 </tr>
-
 <tr>
 <td><code>weblogicCredentialsSecretName</code></td>
 <td>Name of the Kubernetes secret for the Administration Server&rsquo;s user name and password.</td>
 <td><code>domain1-weblogic-credentials</code></td>
 </tr>
-
 <tr>
 <td><code>serverPodCpuRequest</code>, <code>serverPodMemoryRequest</code>, <code>serverPodCpuCLimit</code>, <code>serverPodMemoryLimit</code></td>
 <td>The maximum amount of compute resources allowed, and minimum amount of compute resources required, for each server pod. Please refer to the Kubernetes documentation on <code>Managing Compute Resources for Containers</code> for details.</td>
@@ -2980,21 +2899,13 @@ in the <strong><em>Security</em></strong> section.</p>
 </tr>
 </tbody>
 </table>
-
 <p>Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the <code>create-inputs.yaml</code> file. Those properties include the <code>adminServerName</code>, <code>clusterName</code>, and <code>managedServerNameBase</code>. If those values contain any characters that are invalid in a Kubernetes service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore <code>(&quot;_&quot;)</code> is converted to a hyphen <code>(&quot;-&quot;)</code>.</p>
-
 <p>The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that has only one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. Also, the generated domain YAML file can be modified to cover more use cases.</p>
-
 <h4 id="verify-the-results">Verify the results</h4>
-
 <p>The create script will verify that the domain was created, and will report failure if there was any error.  However, it may be desirable to manually verify the domain, even if just to gain familiarity with the various Kubernetes objects that were created by the script.</p>
-
 <p>Note that the example results below use the <code>default</code> Kubernetes namespace. If you are using a different namespace, you need to replace <code>NAMESPACE</code> in the example <code>kubectl</code> commands with the actual Kubernetes namespace.</p>
-
 <h5 id="generated-yaml-files-with-the-default-inputs">Generated YAML files with the default inputs</h5>
-
 <p>The content of the generated <code>domain.yaml</code>:</p>
-
 <pre><code># Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
@@ -3072,19 +2983,11 @@ spec:
     replicas: 2
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
-</code></pre>
-
-<h4 id="verify-the-domain">Verify the domain</h4>
-
+</code></pre><h4 id="verify-the-domain">Verify the domain</h4>
 <p>To confirm that the domain was created, use this command:</p>
-
 <pre><code>$ kubectl describe domain DOMAINUID -n NAMESPACE
-</code></pre>
-
-<p>Replace <code>DOMAINUID</code> with the <code>domainUID</code> and <code>NAMESPACE</code> with the actual namespace.</p>
-
+</code></pre><p>Replace <code>DOMAINUID</code> with the <code>domainUID</code> and <code>NAMESPACE</code> with the actual namespace.</p>
 <p>Here is an example of the output of this command:</p>
-
 <pre><code>$ kubectl describe domain domain1
 Name:         domain1
 Namespace:    default
@@ -3206,51 +3109,31 @@ Status:
     State:        RUNNING
   Start Time:     2019-01-10T14:29:37.455Z
 Events:           &lt;none&gt;
-</code></pre>
-
-<p>In the <code>Status</code> section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.</p>
-
+</code></pre><p>In the <code>Status</code> section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.</p>
 <h4 id="verify-the-pods">Verify the pods</h4>
-
 <p>Use the following command to see the pods running the servers:</p>
-
 <pre><code>$ kubectl get pods -n NAMESPACE
-</code></pre>
-
-<p>Here is an example of the output of this command:</p>
-
+</code></pre><p>Here is an example of the output of this command:</p>
 <pre><code>$ kubectl get pods
 NAME                                         READY     STATUS    RESTARTS   AGE
 domain1-admin-server                         1/1       Running   0          30m
 domain1-managed-server1                      1/1       Running   0          29m
 domain1-managed-server2                      1/1       Running   0          29m
-</code></pre>
-
-<h4 id="verify-the-services">Verify the services</h4>
-
+</code></pre><h4 id="verify-the-services">Verify the services</h4>
 <p>Use the following command to see the services for the domain:</p>
-
 <pre><code>$ kubectl get services -n NAMESPACE
-</code></pre>
-
-<p>Here is an example of the output of this command:</p>
-
+</code></pre><p>Here is an example of the output of this command:</p>
 <pre><code>$ kubectl get services
 NAME                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
 domain1-admin-server                        ClusterIP   None             &lt;none&gt;        7001/TCP          32m
 domain1-cluster-cluster-1                   ClusterIP   10.99.151.142    &lt;none&gt;        8001/TCP          31m
 domain1-managed-server1                     ClusterIP   None             &lt;none&gt;        8001/TCP          31m
 domain1-managed-server2                     ClusterIP   None             &lt;none&gt;        8001/TCP          22m
-</code></pre>
-
-<h4 id="delete-the-domain">Delete the domain</h4>
-
+</code></pre><h4 id="delete-the-domain">Delete the domain</h4>
 <p>The generated YAML file in the <code>/&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;</code> directory can be used to delete the Kubernetes resource. Use the following command to delete the domain:</p>
-
 <pre><code>$ kubectl delete -f domain.yaml
 
 </code></pre>
-
 
 
 
@@ -5039,19 +4922,19 @@ domain1-managed-server2                     ClusterIP   None             &lt;non
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442681" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442681"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

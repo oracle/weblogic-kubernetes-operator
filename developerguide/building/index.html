@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Building :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2602,21 +2602,13 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#building-javadoc">Building Javadoc</a></li>
-<li><a href="#building-the-operator-docker-image">Building the operator Docker image</a></li>
-<li><a href="#running-the-operator-from-an-ide">Running the operator from an IDE</a></li>
-<li><a href="#running-the-operator-in-a-kubernetes-cluster">Running the operator in a Kubernetes cluster</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2641,61 +2633,33 @@
 
 
 
-
-
 <p>The operator is built using <a href="http://maven.apache.org">Apache Maven</a>.  The build machine will also need to have Docker installed.</p>
-
 <p>To build the operator, issue the following command in the project directory:</p>
-
 <pre><code>$ mvn clean install
-</code></pre>
-
-<p>This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.</p>
-
+</code></pre><p>This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.</p>
 <p>Contributions must conform to <a href="/weblogic-kubernetes-operator/developerguide/coding-standards/">coding and formatting standards</a>.</p>
-
 <h4 id="building-javadoc">Building Javadoc</h4>
-
 <p>To build the Javadoc for the operator, issue the following command:</p>
-
 <pre><code>$ mvn javadoc:aggregate
-</code></pre>
-
-<p>The Javadoc is also available in the GitHub repository <a href="https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html">here</a>.</p>
-
+</code></pre><p>The Javadoc is also available in the GitHub repository <a href="https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html">here</a>.</p>
 <h4 id="building-the-operator-docker-image">Building the operator Docker image</h4>
-
 <p>Log in to the Docker Store so that you will be able to pull the base image and create the Docker image as follows.  These commands should be executed in the project root directory:</p>
-
 <pre><code>$ docker login
 $ docker build --build-arg VERSION=&lt;version&gt; -t weblogic-kubernetes-operator:some-tag --no-cache=true .
-</code></pre>
-
-<p>Replace <code>&lt;version&gt;</code> with the version of the project found in the <code>pom.xml</code> file in the project root directory.</p>
-
+</code></pre><p>Replace <code>&lt;version&gt;</code> with the version of the project found in the <code>pom.xml</code> file in the project root directory.</p>
 <p>We recommend that you use a tag other than <code>latest</code>, to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.</p>
-
 <h4 id="running-the-operator-from-an-ide">Running the operator from an IDE</h4>
-
 <p>The operator can be run from an IDE, which is useful for debugging.  In order to do so, the machine running the IDE must be configured with a Kubernetes configuration file in <code>~/.kube/config</code> or in a location pointed to by the <code>KUBECONFIG</code> environment variable.</p>
-
 <p>Configure the IDE to run the class <code>oracle.kubernetes.operator.Main</code>.</p>
-
 <p>You may need to create a directory called <code>/operator</code> on your machine.  Please be aware that the operator code is targeted to Linux, and although it will run fine on macOS, it will probably not run on other operating systems.  If you develop on another operating system, you should deploy the operator to a Kubernetes cluster and use remote debugging instead.</p>
-
 <h4 id="running-the-operator-in-a-kubernetes-cluster">Running the operator in a Kubernetes cluster</h4>
-
 <p>If you&rsquo;re not running Kubernetes on your development machine, you&rsquo;ll need to make the Docker image available to a registry visible to your Kubernetes cluster.  Either <code>docker push</code> the image to a private registry or upload your image to a machine running Docker and Kubernetes as follows:</p>
-
 <pre><code># on your build machine
 $ docker save weblogic-kubernetes-operator:some-tag &gt; operator.tar
 $ scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
 # on the Kubernetes server
 $ docker load &lt; /some/path/operator.tar
-</code></pre>
-
-<p>Use the Helm charts to <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/">install the operator</a>.</p>
-
+</code></pre><p>Use the Helm charts to <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/">install the operator</a>.</p>
 <p>If the operator&rsquo;s behavior or pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/#debugging-options">debugging options</a>.</p>
 
 
@@ -4479,19 +4443,19 @@ $ docker load &lt; /some/path/operator.tar
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442681" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442681"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

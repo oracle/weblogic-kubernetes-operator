@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Using an OCI Load Balancer :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442682"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2602,18 +2602,13 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#requesting-an-oci-load-balancer">Requesting an OCI Load Balancer</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2638,21 +2633,17 @@
 
 
 
-
-
 <p>If you are running your Kubernetes cluster on Oracle Container Engine
 for Kubernetes (commonly known as OKE), you can have OCI automatically
 provision load balancers for you by creating a <code>Service</code> of type
 <code>LoadBalancer</code> instead of (or in addition to) installing an
 ingress controller like Traefik or Voyager.</p>
-
 <p>OKE Kubernetes worker nodes normally do not have public IP addresses.
 This means that the <code>NodePort</code> services created by the operator are
 not usable, because they would expose ports on the worker node&rsquo;s private
-IP addresses only, which are not reachable from outside the cluster.<br />
+IP addresses only, which are not reachable from outside the cluster.<br>
 Instead, you can use an OCI Load Balancer to provide access
 to services running in OKE.</p>
-
 
 <div class="notices note" ><p>It is also possible, if desirable, to have an OCI Load Balancer route
 traffic to an ingress controller running inside the Kubernetes cluster
@@ -2660,27 +2651,21 @@ and have that ingress controller in turn route traffic to services in the
 cluster.</p>
 </div>
 
-
 <h4 id="requesting-an-oci-load-balancer">Requesting an OCI Load Balancer</h4>
-
 <p>When your domain is created by the operator, a number of Kubernetes
 services are created by the operator, including one for the WebLogic
 Administration Server and one for each managed server and cluster.</p>
-
 <p>In the example below, there is a domain called <code>bobs-bookstore</code> in the
 <code>bob</code> namespace.  This domain has a cluster called <code>cluster-1</code> which
 exposes traffic on port <code>31111</code>.</p>
-
 <p>The Kubernetes YAML file below defines a new <code>Service</code> in the same
 namespace.  The <code>selector</code> targets all of the pods in this namespace
 which are part of the cluster <code>cluster-1</code>, using the annotations that
 are placed on those pods by the operator.  It also defines the port and
 protocol.</p>
-
 <p>You can include the optional <code>oci-load-balancer-shape</code> annotation (as
 shown) if you want to specify the shape of the load balancer.  Otherwise
 the default shape (100Mbps) will be used.</p>
-
 <pre><code>apiVersion: v1
 kind: Service
 metadata:
@@ -2699,11 +2684,8 @@ spec:
     weblogic.domainUID: bobs-bookstore
   sessionAffinity: None
   type: LoadBalancer
-</code></pre>
-
-<p>When you apply this YAML file to your cluster, you will see the new service is created
+</code></pre><p>When you apply this YAML file to your cluster, you will see the new service is created
 but initially the external IP is shown as <code>&lt;pending&gt;</code>.</p>
-
 <pre><code>$ kubectl -n bob get svc
 NAME                                   TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                       AGE
 bobs-bookstore-admin-server            ClusterIP      None            &lt;none&gt;        8888/TCP,7001/TCP,30101/TCP   9d
@@ -2712,11 +2694,8 @@ bobs-bookstore-cluster-cluster-1       ClusterIP      10.96.86.113    &lt;none&g
 bobs-bookstore-managed-server1         ClusterIP      None            &lt;none&gt;        8888/TCP,8001/TCP,31111/TCP   9d
 bobs-bookstore-managed-server2         ClusterIP      None            &lt;none&gt;        8888/TCP,8001/TCP,31111/TCP   9d
 bobs-bookstore-oci-lb-service          LoadBalancer   10.96.121.216   &lt;pending&gt;     31111:31671/TCP               9s
-</code></pre>
-
-<p>After a short time (typically less than a minute) the OCI Load Balancer will be provisioned and the
+</code></pre><p>After a short time (typically less than a minute) the OCI Load Balancer will be provisioned and the
 external IP address will be displayed:</p>
-
 <pre><code>$ kubectl -n bob get svc
 NAME                                   TYPE           CLUSTER-IP      EXTERNAL-IP       PORT(S)                       AGE
 bobs-bookstore-admin-server            ClusterIP      None            &lt;none&gt;            8888/TCP,7001/TCP,30101/TCP   9d
@@ -2725,9 +2704,7 @@ bobs-bookstore-cluster-cluster-1       ClusterIP      10.96.86.113    &lt;none&g
 bobs-bookstore-managed-server1         ClusterIP      None            &lt;none&gt;            8888/TCP,8001/TCP,31111/TCP   9d
 bobs-bookstore-managed-server2         ClusterIP      None            &lt;none&gt;            8888/TCP,8001/TCP,31111/TCP   9d
 bobs-bookstore-oci-lb-service          LoadBalancer   10.96.121.216   132.145.235.215   31111:31671/TCP               55s
-</code></pre>
-
-<p>You can now use the external IP address and port to access your pods.  There are several
+</code></pre><p>You can now use the external IP address and port to access your pods.  There are several
 options that can be used to configure more advanced load balancing behavior.  Please
 refer to the <a href="https://docs.cloud.oracle.com/iaas/Content/ContEng/Tasks/contengcreatingloadbalancer.htm">OCI documentation</a>
 for more information, including how to configure SSL support, supporting internal and external subnets, and so on.</p>
@@ -4513,19 +4490,19 @@ for more information, including how to configure SSL support, supporting interna
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442682" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442682"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

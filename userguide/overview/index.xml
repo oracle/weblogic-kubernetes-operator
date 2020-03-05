@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Overview on WebLogic Kubernetes Operator</title>
@@ -19,7 +19,7 @@
       <guid>/weblogic-kubernetes-operator/userguide/overview/prepare/</guid>
       <description>Set up your Kubernetes cluster If you need help setting up a Kubernetes environment, check our cheat sheet.
 After creating Kubernetes clusters, you can optionally:
- Create load balancers to direct traffic to backend domains. Configure Kibana and Elasticsearch for your operator logs.  Load balance with an Ingress controller or a web server You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster.</description>
+ Create load balancers to direct traffic to backend domains. Configure Kibana and Elasticsearch for your operator logs.  Load balance with an Ingress controller or a web server You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to the WebLogic Kubernetes Operator Load Balancer Samples for information about the current capabilities and setup instructions for each of the supported load balancers.</description>
     </item>
     
     <item>

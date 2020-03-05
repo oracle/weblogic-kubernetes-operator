@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title> :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442682"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2576,12 +2576,8 @@
 </span>
 
  
-
-
 <h3 id="oracle-weblogic-server-kubernetes-operator">Oracle WebLogic Server Kubernetes Operator</h3>
-
 <p>Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. In addition, we&rsquo;ve provided an open source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:</p>
-
 <ul>
 <li>Create WebLogic domains in a Kubernetes persistent volume. This persistent volume can reside in an NFS file system or other Kubernetes volume types.</li>
 <li>Create a WebLogic domain in a Docker image.</li>
@@ -2595,53 +2591,38 @@
 <li>Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.</li>
 <li>Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.</li>
 </ul>
-
 <p>The fastest way to experience the operator is to follow the <a href="/weblogic-kubernetes-operator/quickstart/">Quick Start guide</a>, or you can peruse our <a href="/weblogic-kubernetes-operator/userguide/">documentation</a>, read our <a href="https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes">blogs</a>, or try out the <a href="/weblogic-kubernetes-operator/samples/">samples</a>.</p>
-
-<hr />
-
+<hr>
 <p>The <a href="https://github.com/oracle/weblogic-kubernetes-operator/releases">current release of the operator</a> is 2.5.0.
 This release was published on February 26, 2020.</p>
-
-<hr />
-
+<hr>
 
 <div class="notices note" ><p>Please review the prerequisites and supported environments <a href="/weblogic-kubernetes-operator/userguide/introduction/introduction/">here</a>.</p>
 </div>
 
-
 <h4 id="operator-earlier-versions">Operator earlier versions</h4>
-
 <p>Documentation for prior releases of the operator is available <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/site/README.md">here</a>.</p>
-
 <h4 id="backward-compatibility-guidelines">Backward compatibility guidelines</h4>
-
 <p>Starting from the 2.0.1 release, operator releases are backward compatible with respect to the domain
 resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created
 by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We intend to
 maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be
 maintained for one release after a replacement is available.</p>
-
 <h3 id="about-this-documentation">About this documentation</h3>
-
 <p>This documentation includes sections targeted to different audiences.  To help you find what you are looking for more easily,
 please consult this table of contents:</p>
-
 <ul>
 <li>The <a href="/weblogic-kubernetes-operator/quickstart/">Quick Start guide</a> explains how to quickly get the operator running, using the defaults, nothing special.</li>
 <li>The <a href="/weblogic-kubernetes-operator/userguide/">User guide</a> contains detailed usage information, including how to install and configure the operator,
-and how to use it to create and manage WebLogic domains.<br /></li>
+and how to use it to create and manage WebLogic domains.</li>
 <li>The <a href="/weblogic-kubernetes-operator/samples/">Samples</a> provide detailed example code and instructions that show you how to perform
 various tasks related to the operator.</li>
 <li>The <a href="/weblogic-kubernetes-operator/developerguide/">Developer guide</a> provides details for people who want to understand how the operator is built, tested, and so on. Those who wish to contribute to the operator code will find useful information here.  This section also includes
 API documentation (Javadoc) and Swagger/OpenAPI documentation for the REST APIs.</li>
 <li>The <a href="#contributing-to-the-operator">Contributing</a> section provides information about contribution requirements.</li>
 </ul>
-
 <h3 id="user-guide">User guide</h3>
-
 <p>The <a href="/weblogic-kubernetes-operator/userguide/">User guide</a> provides detailed information about all aspects of using the operator including:</p>
-
 <ul>
 <li>Installing and configuring the operator.</li>
 <li>Using the operator to create and manage WebLogic domains.</li>
@@ -2653,66 +2634,43 @@ API documentation (Javadoc) and Swagger/OpenAPI documentation for the REST APIs.
 <li>Removing/deleting domains.</li>
 <li>And much more!</li>
 </ul>
-
 <h3 id="samples">Samples</h3>
-
 <p>Please refer to our <a href="/weblogic-kubernetes-operator/samples/">samples</a> for information about the available sample code.</p>
-
 <h3 id="need-more-help-have-a-suggestion-come-and-say-hello">Need more help? Have a suggestion? Come and say, &ldquo;Hello!&rdquo;</h3>
-
 <p>We have a <strong>public Slack channel</strong> where you can get in touch with us to ask questions about using the operator or give us feedback
 or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel,
 please <a href="https://weblogic-slack-inviter.herokuapp.com/">visit this site to get an invitation</a>.  The invitation email will include
 details of how to access our Slack workspace.  After you are logged in, please come to <code>#operator</code> and say, &ldquo;hello!&rdquo;</p>
-
 <h3 id="recent-changes-and-known-issues">Recent changes and known issues</h3>
-
 <p>See the <a href="/weblogic-kubernetes-operator/release-notes/">Release Notes</a>  for recent changes to the operator and known issues.</p>
-
 <h3 id="developer-guide">Developer guide</h3>
-
 <p>Developers interested in this project are encouraged to read the <a href="/weblogic-kubernetes-operator/developerguide/">Developer guide</a> to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kubernetes API.</p>
-
 <p>Please take a look at our <a href="https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list">wish list</a> to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something to which you would like to contribute!</p>
-
 <h3 id="api-documentation">API documentation</h3>
-
 <p>Documentation for APIs:</p>
-
 <ul>
-<li><p>The operator provides a REST API that you can use to obtain configuration information and to initiate scaling actions. For details about how to use the REST APIs, see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/the-rest-api/#use-the-operator-s-rest-services">Use the operator&rsquo;s REST services</a>.</p></li>
-
-<li><p>See the <a href="https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html">Swagger</a> documentation for the operator&rsquo;s REST interface.</p></li>
-
-<li><p>See the <a href="https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html">Javadoc</a> for the operator.</p></li>
+<li>
+<p>The operator provides a REST API that you can use to obtain configuration information and to initiate scaling actions. For details about how to use the REST APIs, see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/the-rest-api/">Use the operator&rsquo;s REST services</a>.</p>
+</li>
+<li>
+<p>See the <a href="https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html">Swagger</a> documentation for the operator&rsquo;s REST interface.</p>
+</li>
+<li>
+<p>See the <a href="https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html">Javadoc</a> for the operator.</p>
+</li>
 </ul>
-
 <h3 id="contributing-to-the-operator">Contributing to the operator</h3>
-
 <p>Oracle welcomes contributions to this project from anyone.  Contributions may be reporting an issue with the operator or submitting a pull request.  Before embarking on significant development that may result in a large pull request, it is recommended that you create an issue and discuss the proposed changes with the existing developers first.</p>
-
 <p>If you want to submit a pull request to fix a bug or enhance an existing feature, please first open an issue and link to that issue when you submit your pull request.</p>
-
 <p>If you have any questions about a possible submission, feel free to open an issue too.</p>
-
 <h4 id="contributing-to-the-oracle-weblogic-server-kubernetes-operator-repository">Contributing to the Oracle WebLogic Server Kubernetes Operator repository</h4>
-
 <p>Pull requests can be made under The Oracle Contributor Agreement (OCA), which is available at <a href="https://www.oracle.com/technetwork/community/oca-486395.html">https://www.oracle.com/technetwork/community/oca-486395.html</a>.</p>
-
 <p>For pull requests to be accepted, the bottom of the commit message must have the following line, using the contributor’s name and e-mail address as it appears in the OCA Signatories list.</p>
-
 <pre><code>Signed-off-by: Your Name &lt;you@example.org&gt;
-</code></pre>
-
-<p>This can be automatically added to pull requests by committing with:</p>
-
+</code></pre><p>This can be automatically added to pull requests by committing with:</p>
 <pre><code>git commit --signoff
-</code></pre>
-
-<p>Only pull requests from committers that can be verified as having signed the OCA can be accepted.</p>
-
+</code></pre><p>Only pull requests from committers that can be verified as having signed the OCA can be accepted.</p>
 <h4 id="pull-request-process">Pull request process</h4>
-
 <ul>
 <li>Fork the repository.</li>
 <li>Create a branch in your fork to implement the changes. We recommend using the issue number as part of your branch name, for example, <code>1234-fixes</code>.</li>
@@ -2720,9 +2678,7 @@ details of how to access our Slack workspace.  After you are logged in, please c
 <li>Ensure that any samples are updated if the base image has been changed.</li>
 <li>Submit the pull request. Do not leave the pull request blank. Explain exactly what your changes are meant to do and provide simple steps on how to validate your changes. Ensure that you reference the issue you created as well. We will assign the pull request to 2-3 people for review before it is merged.</li>
 </ul>
-
 <h4 id="introducing-a-new-dependency">Introducing a new dependency</h4>
-
 <p>Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic Server, will most likely be rejected.</p>
 	
   
@@ -4491,19 +4447,19 @@ details of how to access our Slack workspace.  After you are logged in, please c
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442682" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442682"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

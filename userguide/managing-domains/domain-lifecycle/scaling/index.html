@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="The operator provides several ways to initiate scaling of WebLogic clusters.">
 
 
@@ -12,18 +12,18 @@
     <title>Scaling :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2614,31 +2614,17 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#on-demand-updating-the-domain-resource-directly">On-demand, updating the domain resource directly</a></li>
-<li><a href="#calling-the-operator-s-rest-scale-api">Calling the operator&rsquo;s REST scale API</a>
-<ul>
-<li><a href="#operator-rest-endpoints">Operator REST endpoints</a></li>
-<li><a href="#what-does-the-operator-do-in-response-to-a-scaling-request">What does the operator do in response to a scaling request?</a></li>
-</ul></li>
-<li><a href="#using-a-wldf-policy-rule-and-script-action-to-call-the-operator-s-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</a>
-<ul>
-<li><a href="#configure-automatic-scaling-of-weblogic-clusters-in-kubernetes-with-wldf">Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF</a></li>
-<li><a href="#create-cluster-role-bindings-to-allow-a-namespace-user-to-query-wls-kubernetes-cluster-information">Create cluster role bindings to allow a namespace user to query WLS Kubernetes cluster information</a></li>
-</ul></li>
-<li><a href="#using-a-prometheus-alert-action-to-call-the-operator-s-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</a></li>
-<li><a href="#helpful-tips">Helpful Tips</a>
-<ul>
-<li><a href="#debugging-scalingaction-sh">Debugging scalingAction.sh</a></li>
-<li><a href="#example-on-accessing-the-external-rest-endpoint">Example on accessing the external REST endpoint</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#on-demand-updating-the-domain-resource-directly">On-demand, updating the domain resource directly</a></li>
+        <li><a href="#calling-the-operators-rest-scale-api">Calling the operator&rsquo;s REST scale API</a></li>
+        <li><a href="#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</a></li>
+        <li><a href="#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</a></li>
+        <li><a href="#helpful-tips">Helpful Tips</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2663,99 +2649,61 @@
 
 
 
-
-
 <p>WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by manually configuring each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to manually configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see <a href="https://docs.oracle.com/middleware/12213/wls/CLUST/dynamic_clusters.htm#CLUST678">Dynamic Clusters</a>.</p>
-
 <p>The following blogs provide more in-depth information on support for scaling WebLogic clusters in Kubernetes:</p>
-
 <ul>
 <li><a href="https://blogs.oracle.com/weblogicserver/automatic-scaling-of-weblogic-clusters-on-kubernetes-v2">Automatic Scaling of WebLogic Clusters on Kubernetes</a></li>
 <li><a href="https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes">WebLogic Dynamic Clusters on Kubernetes</a></li>
 </ul>
-
 <p>The operator provides several ways to initiate scaling of WebLogic clusters, including:</p>
-
 <ul>
 <li><a href="#on-demand-updating-the-domain-resource-directly">On-demand, updating the domain resource directly (using <code>kubectl</code>)</a>.</li>
 <li><a href="#calling-the-operator-s-rest-scale-api">Calling the operator&rsquo;s REST scale API, for example, from <code>curl</code></a>.</li>
 <li><a href="#using-a-wldf-policy-rule-and-script-action-to-call-the-operator-s-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</a>.</li>
 <li><a href="#using-a-prometheus-alert-action-to-call-the-operator-s-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</a>.</li>
 </ul>
-
 <h3 id="on-demand-updating-the-domain-resource-directly">On-demand, updating the domain resource directly</h3>
-
 <p>The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the <code>replicas</code> property within a domain resource.  This can be done by using the <code>kubectl</code> command-line interface for running commands against Kubernetes clusters.  More specifically, you can modify the domain resource directly by using the <code>kubectl edit</code> command.  For example:</p>
-
 <pre><code>$ kubectl edit domain domain1 -n [namespace]
-</code></pre>
-
-<p>Here we are editing a domain resource named <code>domain1</code>.  The <code>kubectl edit</code> command will open the domain resource definition in an editor and allow you to modify the <code>replicas</code> value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding dynamic cluster by reconciling the number of running pods/Managed Server instances with the <code>replicas</code> value specification.</p>
-
+</code></pre><p>Here we are editing a domain resource named <code>domain1</code>.  The <code>kubectl edit</code> command will open the domain resource definition in an editor and allow you to modify the <code>replicas</code> value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding dynamic cluster by reconciling the number of running pods/Managed Server instances with the <code>replicas</code> value specification.</p>
 <pre><code>spec:
   ...
   clusters:
     - clusterName: cluster-1
       replicas: 1
   ...
-</code></pre>
-
-<p>Alternatively, you can specify a default <code>replicas</code> value for all the clusters.  If you do this, then you don&rsquo;t need to list the cluster in the domain resource (unless you want to customize another property of the cluster).</p>
-
+</code></pre><p>Alternatively, you can specify a default <code>replicas</code> value for all the clusters.  If you do this, then you don&rsquo;t need to list the cluster in the domain resource (unless you want to customize another property of the cluster).</p>
 <pre><code>spec:
   ...
   replicas: 1
   ...
-</code></pre>
-
-<h3 id="calling-the-operator-s-rest-scale-api">Calling the operator&rsquo;s REST scale API</h3>
-
+</code></pre><h3 id="calling-the-operators-rest-scale-api">Calling the operator&rsquo;s REST scale API</h3>
 <p>Scaling up or scaling down a WebLogic cluster provides increased reliability of customer applications as well as optimization of resource usage. In Kubernetes cloud environments, scaling WebLogic clusters involves scaling the corresponding pods in which WebLogic Managed Server instances are running.  Because the operator manages the life cycle of a WebLogic domain, the operator exposes a REST API that allows an authorized actor to request scaling of a WebLogic cluster.</p>
-
 <p>The following URL format is used for describing the resources for scaling (up and down) a WebLogic cluster:</p>
-
 <pre><code>http(s)://${OPERATOR_ENDPOINT}/operator/&lt;version&gt;/domains/&lt;domainUID&gt;/clusters/&lt;clusterName&gt;/scale
-</code></pre>
-
-<p>For example:</p>
-
+</code></pre><p>For example:</p>
 <pre><code>http(s)://${OPERATOR_ENDPOINT}/operator/v1/domains/domain1/clusters/cluster-1/scale
-</code></pre>
-
-<p>In this URL format:</p>
-
+</code></pre><p>In this URL format:</p>
 <ul>
 <li><code>OPERATOR_ENDPOINT</code> is the host and port of the operator REST endpoint (internal or external).</li>
 <li><code>&lt;version&gt;</code> denotes the version of the REST resource.</li>
 <li><code>&lt;domainUID&gt;</code> is the unique identifier of the WebLogic domain.</li>
 <li><code>&lt;clusterName&gt;</code> is the name of the WebLogic cluster to be scaled.</li>
 </ul>
-
 <p>The <code>/scale</code> REST endpoint accepts an HTTP POST request and the request body supports the JSON <code>&quot;application/json&quot;</code> media type.  The request body will be a simple name-value item named <code>managedServerCount</code>; for example:</p>
-
 <pre><code>{
     &quot;managedServerCount&quot;: 3
 }
-</code></pre>
-
-<p>The <code>managedServerCount</code> value designates the number of WebLogic Server instances to scale to.  Note that the scale resource is implemented using the JAX-RS framework, and so a successful scaling request will return an HTTP response code of <code>204 (“No Content”)</code> because the resource method’s return type is void and does not return a message body.</p>
-
+</code></pre><p>The <code>managedServerCount</code> value designates the number of WebLogic Server instances to scale to.  Note that the scale resource is implemented using the JAX-RS framework, and so a successful scaling request will return an HTTP response code of <code>204 (“No Content”)</code> because the resource method’s return type is void and does not return a message body.</p>
 <p>When you POST to the <code>/scale</code> REST endpoint, you must send the following headers:</p>
-
 <ul>
-<li><code>X-Requested-By</code> request value.  The value is an arbitrary name such as <code>MyClient</code>.<br /></li>
+<li><code>X-Requested-By</code> request value.  The value is an arbitrary name such as <code>MyClient</code>.</li>
 <li><code>Authorization: Bearer</code> request value. The value of the <code>Bearer</code> token is the WebLogic domain service account token.</li>
 </ul>
-
 <p>For example, when using <code>curl</code>:</p>
-
 <pre><code>curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H &quot;Authorization:Bearer ...&quot; -d '{ &quot;managedServerCount&quot;: 3 }' https://.../scaling
-</code></pre>
-
-<p>If you omit the header, you&rsquo;ll get a <code>400 (bad request)</code> response without any details explaining why the request was bad.  If you omit the Bearer Authentication header, then you&rsquo;ll get a <code>401 (Unauthorized)</code> response.</p>
-
+</code></pre><p>If you omit the header, you&rsquo;ll get a <code>400 (bad request)</code> response without any details explaining why the request was bad.  If you omit the Bearer Authentication header, then you&rsquo;ll get a <code>401 (Unauthorized)</code> response.</p>
 <h4 id="operator-rest-endpoints">Operator REST endpoints</h4>
-
 <p>The WebLogic Kubernetes Operator can expose both an internal and external REST HTTPS endpoint.
 The internal REST endpoint is only accessible from within the Kubernetes cluster. The external REST endpoint
 is accessible from outside the Kubernetes cluster.
@@ -2763,60 +2711,47 @@ The internal REST endpoint is enabled by default and thus always available, wher
 is disabled by default and only exposed if explicitly configured.
 Detailed instructions for configuring the external REST endpoint are available <a href="/weblogic-kubernetes-operator/userguide/managing-operators/#optional-configure-the-operator-s-external-rest-https-interface">here</a>.</p>
 
-
 <div class="notices note" ><p>Regardless of which endpoint is being invoked, the URL format for scaling is the same.</p>
 </div>
 
-
 <h4 id="what-does-the-operator-do-in-response-to-a-scaling-request">What does the operator do in response to a scaling request?</h4>
-
 <p>When the operator receives a scaling request, it will:</p>
-
 <ul>
 <li>Perform an authentication and authorization check to verify that the specified user is allowed to perform the specified operation on the specified resource.</li>
 <li>Validate that the specified domain, identified by <code>domainUID</code>, exists.</li>
 <li>Validate that the WebLogic cluster, identified by <code>clusterName</code>, exists.</li>
 <li>Verify that the specified WebLogic cluster has a sufficient number of configured servers to satisfy the scaling request.</li>
 <li>Initiate scaling by setting the <code>replicas</code> property within the corresponding domain resource, which can be done in either:
-
 <ul>
 <li>A <code>cluster</code> entry, if defined within its cluster list.</li>
 <li>At the domain level, if not defined in a <code>cluster</code> entry.</li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <p>In response to a change to either <code>replicas</code> property, in the domain resource, the operator will increase or decrease the number of pods (Managed Servers) to match the desired replica count.</p>
-
-<h3 id="using-a-wldf-policy-rule-and-script-action-to-call-the-operator-s-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</h3>
-
+<h3 id="using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</h3>
 <p>The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
 To support automatic scaling of WebLogic clusters in Kubernetes, WLDF provides the Policies and Actions component, which lets you write policy expressions for automatically executing scaling
 operations on a cluster. These policies monitor one or more types of WebLogic Server metrics, such as memory, idle threads, and CPU load.  When the configured threshold
 in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Kubernetes Operator project provides a shell script, <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a>,
 for use as a Script Action, which illustrates how to issue a request to the operator’s REST endpoint.</p>
-
 <h4 id="configure-automatic-scaling-of-weblogic-clusters-in-kubernetes-with-wldf">Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF</h4>
-
 <p>The following steps are provided as a guideline on how to configure a WLDF Policy and Script Action component for issuing scaling requests to the operator&rsquo;s REST endpoint:</p>
-
 <ol>
-<li><p>Copy the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script to a directory (such as <code>$DOMAIN_HOME/bin/scripts</code>) so that it&rsquo;s accessible within the Administration Server pod.</p></li>
-
-<li><p>Configure a WLDF policy and action as part of a diagnostic module targeted to the Administration Server. For information about configuring the WLDF Policies and Actions component,
+<li>
+<p>Copy the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script to a directory (such as <code>$DOMAIN_HOME/bin/scripts</code>) so that it&rsquo;s accessible within the Administration Server pod.</p>
+</li>
+<li>
+<p>Configure a WLDF policy and action as part of a diagnostic module targeted to the Administration Server. For information about configuring the WLDF Policies and Actions component,
 see <a href="https://docs.oracle.com/middleware/12213/wls/WLDFC/config_watch_notif.htm#WLDFC188">Configuring Policies and Actions</a> in <em>Configuring and Using the Diagnostics Framework for Oracle WebLogic Server</em>.</p>
-
 <p>a. Configure a WLDF policy with a rule expression for monitoring WebLogic Server metrics, such as memory, idle threads, and CPU load for example.</p>
-
-<p>b. Configure a WLDF script action and associate the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script.</p></li>
+<p>b. Configure a WLDF script action and associate the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script.</p>
+</li>
 </ol>
-
 <p>Important notes about the configuration properties for the Script Action:</p>
-
-<p>The <code>scalingAction.sh</code> script requires access to the SSL certificate of the operator’s endpoint and this is provided through the environment variable <code>INTERNAL_OPERATOR_CERT</code>.<br />
+<p>The <code>scalingAction.sh</code> script requires access to the SSL certificate of the operator’s endpoint and this is provided through the environment variable <code>INTERNAL_OPERATOR_CERT</code>.<br>
 The operator’s SSL certificate can be found in the <code>internalOperatorCert</code> entry of the operator’s ConfigMap <code>weblogic-operator-cm</code>:</p>
-
 <p>For example:</p>
-
 <pre><code>#&gt; kubectl describe configmap weblogic-operator-cm -n weblogic-operator
 ...
 Data
@@ -2825,64 +2760,63 @@ internalOperatorCert:
 ----
 LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR3akNDQXFxZ0F3SUJBZ0lFRzhYT1N6QU...
 ...
-</code></pre>
-
-<p>The scalingAction.sh script accepts a number of customizable parameters:</p>
-
+</code></pre><p>The scalingAction.sh script accepts a number of customizable parameters:</p>
 <ul>
-<li><p><code>action</code> - scaleUp or scaleDown (Required)</p></li>
-
-<li><p><code>domain_uid</code> - WebLogic domain unique identifier (Required)</p></li>
-
-<li><p><code>cluster_name</code> - WebLogic cluster name (Required)</p></li>
-
-<li><p><code>kubernetes_master</code> - Kubernetes master URL, default=<a href="https://kubernetes">https://kubernetes</a></p></li>
+<li>
+<p><code>action</code> - scaleUp or scaleDown (Required)</p>
+</li>
+<li>
+<p><code>domain_uid</code> - WebLogic domain unique identifier (Required)</p>
+</li>
+<li>
+<p><code>cluster_name</code> - WebLogic cluster name (Required)</p>
+</li>
+<li>
+<p><code>kubernetes_master</code> - Kubernetes master URL, default=https://kubernetes</p>
+</li>
 </ul>
-
 
 <div class="notices note" ><p>Set this to https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT} when invoking <code>scalingAction.sh</code> from the Administration Server pod.</p>
 </div>
 
-
 <ul>
-<li><p><code>access_token</code> - Service Account Bearer token for authentication and authorization for access to REST Resources</p></li>
-
-<li><p><code>wls_domain_namespace</code> - Kubernetes namespace in which the WebLogic domain is defined, default=<code>default</code></p></li>
-
-<li><p><code>operator_service_name</code> - WebLogic Kubernetes Operator Service name of the REST endpoint, default=<code>internal-weblogic-operator-service</code></p></li>
-
-<li><p><code>operator_service_account</code> - Kubernetes Service Account name for the operator, default=<code>weblogic-operator</code></p></li>
-
-<li><p><code>operator_namespace</code> – Namespace in which the operator is deployed, default=<code>weblogic-operator</code></p></li>
-
-<li><p><code>scaling_size</code> – Incremental number of WebLogic Server instances by which to scale up or down, default=<code>1</code></p></li>
+<li>
+<p><code>access_token</code> - Service Account Bearer token for authentication and authorization for access to REST Resources</p>
+</li>
+<li>
+<p><code>wls_domain_namespace</code> - Kubernetes namespace in which the WebLogic domain is defined, default=<code>default</code></p>
+</li>
+<li>
+<p><code>operator_service_name</code> - WebLogic Kubernetes Operator Service name of the REST endpoint, default=<code>internal-weblogic-operator-service</code></p>
+</li>
+<li>
+<p><code>operator_service_account</code> - Kubernetes Service Account name for the operator, default=<code>weblogic-operator</code></p>
+</li>
+<li>
+<p><code>operator_namespace</code> – Namespace in which the operator is deployed, default=<code>weblogic-operator</code></p>
+</li>
+<li>
+<p><code>scaling_size</code> – Incremental number of WebLogic Server instances by which to scale up or down, default=<code>1</code></p>
+</li>
 </ul>
-
 <p>You can use any of the following tools to configure policies for diagnostic system modules:</p>
-
 <ul>
 <li>WebLogic Server Administration Console</li>
 <li>WLST</li>
 <li>REST</li>
-<li>JMX application<br /></li>
+<li>JMX application</li>
 </ul>
-
 <p>A more in-depth description and example on using WLDF&rsquo;s Policies and Actions component for initiating scaling requests through the operator&rsquo;s REST endpoint can be found in the blogs:</p>
-
 <ul>
 <li><a href="https://blogs.oracle.com/weblogicserver/automatic-scaling-of-weblogic-clusters-on-kubernetes-v2">Automatic Scaling of WebLogic Clusters on Kubernetes</a></li>
 <li><a href="https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes">WebLogic Dynamic Clusters on Kubernetes</a></li>
 </ul>
-
 <h4 id="create-cluster-role-bindings-to-allow-a-namespace-user-to-query-wls-kubernetes-cluster-information">Create cluster role bindings to allow a namespace user to query WLS Kubernetes cluster information</h4>
-
 <p>The script <code>scalingAction.sh</code>, specified in the WLDF script action above, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) in order to query the Kubernetes API server for both configuration and runtime information of the domain resource.
 The following is an example YAML file for creating the appropriate Kubernetes cluster role bindings:</p>
 
-
 <div class="notices note" ><p>In the example cluster role binding definition below, the WebLogic domain is deployed to a namespace <code>weblogic-domain</code>.  Replace the namespace value with the name of the namespace in which the WebLogic domain is deployed in your Kubernetes environment.</p>
 </div>
-
 
 <pre><code>kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -2932,68 +2866,50 @@ roleRef:
   apiGroup: &quot;rbac.authorization.k8s.io&quot;
 ---
 
-</code></pre>
-
-<h3 id="using-a-prometheus-alert-action-to-call-the-operator-s-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</h3>
-
+</code></pre><h3 id="using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</h3>
 <p>In addition to using the WebLogic Diagnostic Framework for automatic scaling of a dynamic cluster,
 you can use a third-party monitoring application like Prometheus.  Please read the following blog for
 details about <a href="https://blogs.oracle.com/weblogicserver/using-prometheus-to-automatically-scale-weblogic-clusters-on-kubernetes-v5">Using Prometheus to Automatically Scale WebLogic Clusters on Kubernetes</a>.</p>
-
 <h3 id="helpful-tips">Helpful Tips</h3>
-
-<h4 id="debugging-scalingaction-sh">Debugging scalingAction.sh</h4>
-
+<h4 id="debugging-scalingactionsh">Debugging scalingAction.sh</h4>
 <p>The <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script was designed to be executed within the
 Administration Server pod because the associated diagnostic module is targed to the Administration Server.</p>
-
 <p>The easiest way to verify and debug the <code>scalingAction.sh</code> script is to open a shell on the running Administration Server pod and execute the script on the command line.</p>
-
 <p>The following example illustrates how to open a bash shell on a running Administration Server pod named <code>domain1-admin-server</code> and execute the <code>scriptAction.sh</code> script.  It assumes that:</p>
-
 <ul>
 <li>The domain home is in <code>/u01/oracle/user-projects/domains/domain1</code> (that is, the domain home is inside a Docker image).</li>
 <li>The Dockerfile copied <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> to <code>/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh</code>.</li>
 </ul>
-
 <pre><code>&gt; kubectl exec -it domain1-admin-server /bin/bash
 # bash&gt; cd /u01/oracle/user-projects/domains/domain1/bin/scripts
 # bash&gt; ./scalingAction.sh
-</code></pre>
-
-<p>A log, <code>scalingAction.log</code>, will be generated in the same directory in which the script was executed and can be examined for errors.</p>
-
+</code></pre><p>A log, <code>scalingAction.log</code>, will be generated in the same directory in which the script was executed and can be examined for errors.</p>
 <h4 id="example-on-accessing-the-external-rest-endpoint">Example on accessing the external REST endpoint</h4>
-
 <p>The easiest way to test scaling using the external REST endpoint is to use a command-line tool like <code>curl</code>. Using <code>curl</code> to issue
 an HTTPS scale request requires these mandatory header properties:</p>
-
 <ul>
 <li>Bearer Authorization token</li>
 <li>SSL certificate for the operator&rsquo;s external REST endpoint</li>
 <li><code>X-Requested-By</code> header value</li>
 </ul>
-
 <p>The following shell script is an example of how to issue a scaling request, with the necessary HTTP request header values, using <code>curl</code>.
 This example assumes the operator and domain resource are configured with the following properties in Kubernetes:</p>
-
 <ul>
 <li>Operator properties:
-
 <ul>
 <li>externalRestEnabled: <code>true</code></li>
 <li>externalRestHttpsPort: <code>31001</code></li>
 <li>operator&rsquo;s namespace: <code>weblogic-operator</code></li>
 <li>operator&rsquo;s hostname is the same as the host shell script is executed on.</li>
-</ul></li>
-<li>Domain resource properties:<br />
-
+</ul>
+</li>
+<li>Domain resource properties:
 <ul>
 <li>WebLogic cluster name: <code>DockerCluster</code></li>
 <li>Domain UID: <code>domain1</code></li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <pre><code>#!/bin/sh
 
 # Setup properties  
@@ -3037,7 +2953,6 @@ curl --noproxy '*' -v --cacert operator.cert.pem \
 --stderr operator.rest.stderr
 
 </code></pre>
-
 
 <footer class=" footline" >
 	
@@ -4827,19 +4742,19 @@ curl --noproxy '*' -v --cacert operator.cert.pem \
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442681" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442681"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

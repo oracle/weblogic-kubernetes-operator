@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="This document describes when to restart servers in the Oracle WebLogic Server in Kubernetes environment.">
 
 
@@ -12,18 +12,18 @@
     <title>Restarting :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2614,31 +2614,14 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#overview">Overview</a></li>
-<li><a href="#common-restart-scenarios">Common restart scenarios</a></li>
-</ul></li>
-<li><a href="#use-cases">Use cases</a>
-<ul>
-<li><a href="#modifying-the-weblogic-configuration">Modifying the WebLogic configuration</a></li>
-<li><a href="#changing-the-custom-domain-configuration-overrides">Changing the custom domain configuration overrides</a></li>
-<li><a href="#changing-the-weblogic-server-credentials">Changing the WebLogic Server credentials</a></li>
-<li><a href="#changing-properties-on-the-domain-resource-that-affect-server-pods">Changing properties on the domain resource that affect server pods</a></li>
-<li><a href="#applying-weblogic-server-patches">Applying WebLogic Server patches</a></li>
-<li><a href="#updating-deployed-applications-for-domain-home-in-image">Updating deployed applications for domain home in image</a></li>
-<li><a href="#rolling-out-an-updated-domain-home-in-image">Rolling out an updated domain home in image</a></li>
-<li><a href="#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource">Avoiding a rolling restart when changing <code>image</code> property on a domain resource</a></li>
-<li><a href="#other-considerations-for-restarting-a-domain">Other considerations for restarting a domain</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+        <li><a href="#use-cases">Use cases</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2663,39 +2646,33 @@
 
 
 
-
-
 <p>This document describes <em>when</em> to restart servers in the Oracle WebLogic Server in Kubernetes environment.</p>
-
 <h4 id="overview">Overview</h4>
-
 <p>There are many situations where changes to the Oracle WebLogic Server in Kubernetes environment require that all the servers in
 a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.</p>
-
 <p>One of the operator&rsquo;s most important jobs is to start and stop WebLogic Servers by creating and deleting their corresponding Kubernetes pods. Sometimes, you need to make changes that make the pods obsolete, therefore the pods need to be deleted and recreated. Depending on the change, sometimes the pods can be gradually recreated, without taking the entire domain out of service
 (for example, <code>rolling restarts</code>) and sometimes all the pods need to be deleted then recreated, taking the entire domain out of
 service for a while (for example, <code>full restarts</code>).</p>
-
 <p>The following types of server restarts are supported in Oracle WebLogic Server in Kubernetes:</p>
-
 <ul>
-<li><p>Rolling restarts - a coordinated and controlled shut down of all of the servers in a domain or cluster while ensuring that service to the end user is not interrupted.</p>
-
+<li>
+<p>Rolling restarts - a coordinated and controlled shut down of all of the servers in a domain or cluster while ensuring that service to the end user is not interrupted.</p>
 <ul>
-<li><p>Operator initiated - where the WebLogic Kubernetes Operator can detect some types of changes and will automatically initiate rolling restarts of server pods in a WebLogic domain.</p></li>
-
-<li><p>Manually initiated - required when certain changes in the Oracle WebLogic Server in Kubernetes environment cannot be detected by the operator, so a rolling restart must be manually initiated.</p></li>
-</ul></li>
-
-<li><p>Full domain restarts - the Administration Server and all the Managed Servers in a domain are shutdown, impacting service availability to the end user, and then restarted.  Unlike a rolling restart, the operator cannot detect and initiate a full domain restart; it must always be manually initiated.</p></li>
+<li>
+<p>Operator initiated - where the WebLogic Kubernetes Operator can detect some types of changes and will automatically initiate rolling restarts of server pods in a WebLogic domain.</p>
+</li>
+<li>
+<p>Manually initiated - required when certain changes in the Oracle WebLogic Server in Kubernetes environment cannot be detected by the operator, so a rolling restart must be manually initiated.</p>
+</li>
 </ul>
-
+</li>
+<li>
+<p>Full domain restarts - the Administration Server and all the Managed Servers in a domain are shutdown, impacting service availability to the end user, and then restarted.  Unlike a rolling restart, the operator cannot detect and initiate a full domain restart; it must always be manually initiated.</p>
+</li>
+</ul>
 <p>For detailed information on how to restart servers in a Oracle WebLogic Server in Kubernetes environment, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/">Starting, stopping, and restarting servers</a>.</p>
-
 <h4 id="common-restart-scenarios">Common restart scenarios</h4>
-
 <p>This document describes what actions you need to take to properly restart your servers for a number of common scenarios:</p>
-
 <ul>
 <li>Modifying the WebLogic configuration</li>
 <li>Changing the custom domain configuration overrides (also called situational configuration)</li>
@@ -2704,196 +2681,157 @@ service for a while (for example, <code>full restarts</code>).</p>
 <li>Applying WebLogic Server patches</li>
 <li>Updating deployed applications for domain home in image</li>
 </ul>
-
 <h3 id="use-cases">Use cases</h3>
-
 <h4 id="modifying-the-weblogic-configuration">Modifying the WebLogic configuration</h4>
-
 <p>Changes to the Oracle WebLogic Server configuration may require either a rolling or full domain restart depending on the domain home location and the type of configuration change.</p>
-
 <ul>
-<li><p><strong>Domain home in image:</strong>
+<li>
+<p><strong>Domain home in image:</strong>
 For domain home in image, any changes (dynamic or non-dynamic) to the WebLogic configuration requires a full domain restart.</p>
-
 <ul>
 <li>If you create a new image with a new name, then you must avoid a rolling restart, which can cause unexpected behavior for the running domain due to configuration inconsistencies as seen by the various servers, by following the steps in <a href="#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource">Avoiding a rolling restart when changing image property on a domain resource</a>.</li>
 <li>If you create a new image with the same name, then you must manually initiate a full domain restart. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a> in Starting, stopping, and restarting servers.</li>
-</ul></li>
-
-<li><p><strong>Domain home on PV:</strong>
+</ul>
+</li>
+<li>
+<p><strong>Domain home on PV:</strong>
 For domain home on PV, the type of restart needed to apply the changes, depends on the nature of the WebLogic configuration change:</p>
-
 <ul>
 <li>Changes to parts of the WebLogic configuration that the operator introspects, require a full restart, even if the changes are dynamic.
 The following are the types of changes to the WebLogic Server configuration that the operator introspects:
-
 <ul>
 <li>Adding or removing a cluster, server, dynamic server, or network access point</li>
 <li>Changing a cluster, server, dynamic server, or network access point name</li>
 <li>Enabling or disabling the listen port, SSL port, or admin port</li>
 <li>Changing any port numbers</li>
 <li>Changing a network access point&rsquo;s public address</li>
-</ul></li>
+</ul>
+</li>
 <li>Other dynamic WebLogic configuration changes do not require a restart.  For example, a change to a server&rsquo;s connection timeout property
 is dynamic and does not require a restart.</li>
 <li>Other non-dynamic WebLogic configuration changes require either a manually initiated rolling restart or a full domain restart, depending on the nature of the change.
 For example, a rolling restart is applicable when changing a WebLogic Server&rsquo;s <code>stuck thread timer interval</code> property. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restart-all-the-servers-in-the-domain">Restart all the servers in the domain</a> in Starting, stopping, and restarting servers.</li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <h4 id="changing-the-custom-domain-configuration-overrides">Changing the custom domain configuration overrides</h4>
-
 <p>Any change to domain configuration overrides requires a full domain restart.  This includes:</p>
-
 <ul>
 <li>Changing the domain resource&rsquo;s <code>configOverides</code> to point to a different configuration map</li>
 <li>Changing the domain resource&rsquo;s <code>configOverridesSecrets</code> to point to a different list of secrets</li>
 <li>Changing the contents of the configuration map referenced by <code>configOverrides</code></li>
 <li>Changing the contents to any of the secrets referenced by <code>configOverridesSecrets</code></li>
 </ul>
-
 <h4 id="changing-the-weblogic-server-credentials">Changing the WebLogic Server credentials</h4>
-
 <p>A change to the WebLogic Server credentials (the user name and password), contained in the Kubernetes secret for the domain, requires a
 <em>full domain restart</em>.  The Kubernetes secret can be updated directly or a new secret can be created and then referenced by the <code>webLogicCredentialsSecret</code>
 property in the domain resource.</p>
-
 <h4 id="changing-properties-on-the-domain-resource-that-affect-server-pods">Changing properties on the domain resource that affect server pods</h4>
-
 <p>The operator will initiate a rolling restart of the domain when you modify any of the domain resource properties that affect the server pods configuration,
 such as <code>image</code>, <code>volumes</code>, and <code>env</code>.  For a complete list, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted">Properties that cause servers to be restarted</a> in Starting, stopping, and restarting servers.</p>
-
 <p>You can modify these properties using the <code>kubectl</code> command-line tool&rsquo;s <code>edit</code> and <code>patch</code> commands or through the Kubernetes REST API.</p>
-
 <p>For example, to edit the domain resource directly using the <code>kubectl</code> command-line tool:</p>
-
 <pre><code>kubectl edit domain &lt;domain name&gt; -n &lt;domain namespace&gt;
-</code></pre>
-
-<p>The <code>edit</code> command opens a text editor which lets you edit the domain resource in place.</p>
-
+</code></pre><p>The <code>edit</code> command opens a text editor which lets you edit the domain resource in place.</p>
 
 <div class="notices note" ><p>Typically, it&rsquo;s better to edit the domain resource directly; otherwise, if you scaled the domain, and you edit only the original <code>domain.yaml</code> file and reapply it, you could go back to your old replicas count.</p>
 </div>
 
-
 <h4 id="applying-weblogic-server-patches">Applying WebLogic Server patches</h4>
-
 <p>Oracle provides different types of patches for WebLogic Server, such as Patch Set Updates, Security Patch Updates, and One-Off patches.
 Information on whether a patch is rolling compatible or requires a manual full domain restart usually can be found in the patch&rsquo;s documentation, such as the README file.</p>
-
 <p>WebLogic Server patches can be applied to either a domain home in image or a domain home on PV.</p>
-
 <p>With rolling compatible patches:</p>
-
 <ul>
 <li>If you update the <code>image</code> property with a new image name, then the operator will initiate a rolling restart.</li>
 <li>If you keep the same image name, then you must manually initiate a rolling restart. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restart-all-the-servers-in-the-domain">Restart all the servers in the domain</a> in Starting, stopping, and restarting servers.</li>
 </ul>
-
 <p>With patches that are not rolling compatible:</p>
-
 <ul>
 <li>If you keep the same image name, then you must manually initiate a full domain restart. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a> in Starting, stopping, and restarting servers.</li>
 <li>If you update the <code>image</code> property with a new image name, then you must avoid the rolling restart by following the steps in <a href="#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource">Avoiding a rolling restart when changing image property on a domain resource</a>.</li>
 </ul>
-
 <h4 id="updating-deployed-applications-for-domain-home-in-image">Updating deployed applications for domain home in image</h4>
-
 <p>Frequent updates of deployed applications using a continuous integration/continuous delivery (CI/CD) process is a very common use case.
 The process for applying an updated application is different for domain home in image than it is for domain home on PV.
 A rolling compatible application update is where some servers are running the old version and some are running the new version
 of the application during the rolling restart process. On the other hand, an application update that is not rolling compatible requires that all the servers
 in the domain be shutdown and restarted.</p>
-
 <p>If the application update is rolling compatible:</p>
-
 <ul>
 <li>If you update the <code>image</code> property with a new image name, then the operator will initiate a rolling restart.</li>
 <li>If you keep the same image name, then you must manually initiate a rolling restart. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restart-all-the-servers-in-the-domain">Restart all the servers in the domain</a> in Starting, stopping, and restarting servers.</li>
 </ul>
-
 <p>If the application update is not rolling compatible:</p>
-
 <ul>
 <li>If you keep the same image name, then you must manually initiate a full domain restart. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a> in Starting, stopping, and restarting servers.</li>
 <li>If you update the <code>image</code> property with a new image name, then you must avoid the rolling restart by following the steps in <a href="#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource">Avoiding a rolling restart when changing image property on a domain resource</a>.</li>
 </ul>
-
 <h4 id="rolling-out-an-updated-domain-home-in-image">Rolling out an updated domain home in image</h4>
-
 <p>Follow these steps to create new rolling compatible image if you only need to patch your WebLogic Server domain or update application deployment files:</p>
-
 <p>a. Select a different name for the new image.</p>
-
 <p>b. Using the same domain home-in-image Docker image as a base, create a new Docker image by copying (<code>COPY</code>
 command in a Dockerfile) the updated application deployment files or WebLogic Server patches into the Docker image during the Docker image build.</p>
 
-
 <div class="notices note" ><p>The key here is to make sure that you do not re-run WLST or WDT to create a new domain home even though it will
-    have the same configuration. Creating a new domain will change the domain secret and you won&rsquo;t be able to do a
-    rolling restart.</p>
+have the same configuration. Creating a new domain will change the domain secret and you won&rsquo;t be able to do a
+rolling restart.</p>
 </div>
 
-
 <p>c. Deploy the new Docker image to your Docker repository with the new name.</p>
-
 <p>d. Update the <code>image</code> property of the domain resource specifying the new image name.</p>
-
 <p>For example:</p>
-
 <pre><code> ```
  domain:
    spec:
      image: oracle/weblogic-updated:2.5.0
  ```
 </code></pre>
-
 <p>e. The operator will now initiate a rolling restart, which will apply the updated image, for all the server pods in the domain.</p>
-
 <h4 id="avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource">Avoiding a rolling restart when changing <code>image</code> property on a domain resource</h4>
-
 <p>If you&rsquo;ve created a new image that is not rolling compatible, and you&rsquo;ve changed the image name, then:</p>
-
 <ol>
-<li><p>Bring the domain down (stopping all the server pods) by setting the <code>serverStartPolicy</code> to <code>NEVER</code>. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#shut-down-all-the-servers">Shut down all the servers</a> in Starting, stopping, and restarting servers.</p></li>
-
-<li><p>Update the <code>image</code> property with a new image name.</p></li>
-
-<li><p>Start up the domain (starting all the server pods) by setting the <code>serverStartPolicy</code> to <code>IF_NEEDED</code>.</p></li>
+<li>
+<p>Bring the domain down (stopping all the server pods) by setting the <code>serverStartPolicy</code> to <code>NEVER</code>. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#shut-down-all-the-servers">Shut down all the servers</a> in Starting, stopping, and restarting servers.</p>
+</li>
+<li>
+<p>Update the <code>image</code> property with a new image name.</p>
+</li>
+<li>
+<p>Start up the domain (starting all the server pods) by setting the <code>serverStartPolicy</code> to <code>IF_NEEDED</code>.</p>
+</li>
 </ol>
-
 <h4 id="other-considerations-for-restarting-a-domain">Other considerations for restarting a domain</h4>
-
 <ul>
-<li><p><strong>Consider the order of changes</strong>:</p>
-
+<li>
+<p><strong>Consider the order of changes</strong>:</p>
 <p>If you need to make multiple changes to your domain at the same time, you&rsquo;ll want to be careful
 about the order in which you do your changes, so that servers aren&rsquo;t restarted prematurely or restarted needlessly.
 For example, if you want to change the readiness probe&rsquo;s tuning parameters and the Java options (both of which are rolling compatible), then you should update the domain resource once, changing both values,
 so that the operator rolling restarts the servers once.  Or, if you want to change the readiness probe&rsquo;s tuning parameters (which is rolling compatible)
 and change the domain customizations (which require a full restart), then you should do a full shutdown first,
 then make the changes, and then restart the servers.</p>
-
 <p>Alternatively, if you know that your set of changes are not rolling compatible, then you must avoiding a rolling restart by:</p>
-
 <ol>
-<li><p>Bringing the domain down (stopping all the server pods) by setting the <code>serverStartPolicy</code> to <code>NEVER</code>. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#shut-down-all-the-servers">Shut down all the servers</a> in Starting, stopping, and restarting servers.</p></li>
-
-<li><p>Make all your changes to the Oracle WebLogic Server in Kubernetes environment.</p></li>
-
-<li><p>Starting up the domain (starting all the server pods) by setting the <code>serverStartPolicy</code> to <code>IF_NEEDED</code>.</p></li>
-</ol></li>
-
-<li><p><strong>Changes that require domain knowledge</strong>.</p>
-
+<li>
+<p>Bringing the domain down (stopping all the server pods) by setting the <code>serverStartPolicy</code> to <code>NEVER</code>. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#shut-down-all-the-servers">Shut down all the servers</a> in Starting, stopping, and restarting servers.</p>
+</li>
+<li>
+<p>Make all your changes to the Oracle WebLogic Server in Kubernetes environment.</p>
+</li>
+<li>
+<p>Starting up the domain (starting all the server pods) by setting the <code>serverStartPolicy</code> to <code>IF_NEEDED</code>.</p>
+</li>
+</ol>
+</li>
+<li>
+<p><strong>Changes that require domain knowledge</strong>.</p>
 <p>Sometimes you need to make changes that require server restarts, yet the changes are not to the WebLogic configuration,
 the image, or the Kubernetes resources that register your domain with the operator.  For example, your servers are caching information from an external database and you&rsquo;ve modified the contents of the database.</p>
-
-<p>In these cases, you must manually initiate a restart.</p></li>
-
-<li><p><strong>Managed Coherence Servers safe shutdown</strong>.</p>
-
+<p>In these cases, you must manually initiate a restart.</p>
+</li>
+<li>
+<p><strong>Managed Coherence Servers safe shutdown</strong>.</p>
 <p>If the domain is configured to use a Coherence cluster, then you will need to increase the Kubernetes graceful timeout value.
 When a server is shut down, Coherence needs time to recover partitions and rebalance the cluster before it is safe to shut down a second server.
 Using the Kubernetes graceful termination feature, the operator will automatically wait until the Coherence HAStatus MBean attribute
@@ -2901,7 +2839,8 @@ indicates that it is safe to shut down the server.  However, after the graceful 
 Therefore, it is important to set the domain YAML <code>timeoutSeconds</code> to a large enough value to prevent the server from shutting down before
 Coherence is safe. Furthermore, if the operator is not able to access the Coherence MBean, then the server will not be shut down
 until the domain <code>timeoutSeconds</code> expires.  To minimize any possibility of cache data loss, you should increase the <code>timeoutSeconds</code>
-value to a large number, for example, 15 minutes.</p></li>
+value to a large number, for example, 15 minutes.</p>
+</li>
 </ul>
 
 
@@ -4693,19 +4632,19 @@ value to a large number, for example, 15 minutes.</p></li>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442681" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442681"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

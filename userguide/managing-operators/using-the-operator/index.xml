@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Use the operator on WebLogic Kubernetes Operator</title>
@@ -17,7 +17,7 @@
       <pubDate>Sat, 23 Feb 2019 17:08:43 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/</guid>
-      <description>Contents  Useful Helm operations Operator Helm configuration values  Overall operator information Creating the operator pod WebLogic domain management Elastic Stack integration REST interface configuration Debugging options  Common mistakes and solutions  Note that the operator Helm chart is available from the GitHub chart repository, see Alternatively, install the operator Helm chart from GitHub chart repository.
+      <description>Contents  Useful Helm operations Operator Helm configuration values  Overall operator information Creating the operator pod WebLogic domain management Elastic Stack integration REST interface configuration Debugging options   Common mistakes and solutions  Note that the operator Helm chart is available from the GitHub chart repository, see Alternatively, install the operator Helm chart from GitHub chart repository.
 Useful Helm operations Show the available operator configuration parameters and their default values:</description>
     </item>
     

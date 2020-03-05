@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Security on WebLogic Kubernetes Operator</title>
@@ -47,7 +47,7 @@ The operator will use this ServiceAccount when calling the Kubernetes API server
       <pubDate>Sat, 23 Feb 2019 17:15:36 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/rbac/</guid>
-      <description>Contents  Overview Operator RBAC definitions  Role and role binding naming convention Cluster role and cluster role binding naming convention  Role bindings Cluster role bindings  Overview The operator assumes that certain Kubernetes roles are created in the Kubernetes cluster. The operator Helm chart creates the required cluster roles, cluster role bindings, roles and role bindings for the ServiceAccount that is used by the operator. The operator will also attempt to verify that the RBAC settings are correct when the operator starts running.</description>
+      <description>Contents  Overview Operator RBAC definitions  Role and role binding naming convention Cluster role and cluster role binding naming convention   Role bindings Cluster role bindings  Overview The operator assumes that certain Kubernetes roles are created in the Kubernetes cluster. The operator Helm chart creates the required cluster roles, cluster role bindings, roles and role bindings for the ServiceAccount that is used by the operator. The operator will also attempt to verify that the RBAC settings are correct when the operator starts running.</description>
     </item>
     
     <item>

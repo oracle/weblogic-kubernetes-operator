@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="SOA domains include the deployment of various Oracle Service-Oriented Architecture (SOA) Suite components, such as SOA, Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS).">
 
 
@@ -12,18 +12,18 @@
     <title>Manage SOA domains :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2608,36 +2608,13 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#contents">Contents</a></li>
-<li><a href="#introduction">Introduction</a></li>
-<li><a href="#prerequisites-for-soa-suite-domains">Prerequisites for SOA Suite domains</a></li>
-<li><a href="#limitations">Limitations</a></li>
-<li><a href="#obtaining-the-soa-suite-docker-image">Obtaining the SOA Suite Docker Image</a></li>
-<li><a href="#creating-a-soa-suite-docker-image">Creating a SOA Suite Docker image</a></li>
-<li><a href="#configuring-access-to-your-database">Configuring access to your database</a>
-<ul>
-<li><a href="#running-the-database-inside-kubernetes">Running the database inside Kubernetes</a></li>
-</ul></li>
-<li><a href="#running-the-repository-creation-utility-to-set-up-your-database-schemas">Running the Repository Creation Utility to set up your database schemas</a>
-<ul>
-<li><a href="#creating-schemas">Creating schemas</a></li>
-<li><a href="#dropping-schemas">Dropping schemas</a></li>
-</ul></li>
-<li><a href="#create-a-kubernetes-secret-with-the-rcu-credentials">Create a Kubernetes secret with the RCU credentials</a></li>
-<li><a href="#creating-a-soa-domain">Creating a SOA domain</a></li>
-<li><a href="#configuring-a-load-balancer-for-soa-suite-domains">Configuring a load balancer for SOA Suite domains</a></li>
-<li><a href="#monitoring-a-soa-domain">Monitoring a SOA domain</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2664,16 +2641,12 @@
 
 
 	
-
-
 <div class="notices warning" ><p>Oracle SOA Suite is currently supported only for non-production use in Docker and Kubernetes.  The information provided
 in this document is a <em>preview</em> for early adopters who wish to experiment with Oracle SOA Suite in Kubernetes before
 it is supported for production use.</p>
 </div>
 
-
 <h4 id="contents">Contents</h4>
-
 <ul>
 <li><a href="#introduction">Introduction</a></li>
 <li><a href="#prerequisites-for-soa-suite-domains">Prerequisites for SOA Suite domains</a></li>
@@ -2687,11 +2660,8 @@ it is supported for production use.</p>
 <li><a href="#configuring-a-load-balancer-for-soa-suite-domains">Configuring a load balancer for SOA Suite domains</a></li>
 <li><a href="#monitoring-a-soa-domain">Monitoring a SOA domain</a></li>
 </ul>
-
 <h4 id="introduction">Introduction</h4>
-
 <p>The operator supports deployment of SOA Suite components such as Oracle Service-Oriented Architecture (SOA), Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS). Currently the operator supports these different domain types:</p>
-
 <ul>
 <li><code>soa</code>: Deploys a SOA domain</li>
 <li><code>osb</code>: Deploys an OSB (Oracle Service Bus) domain</li>
@@ -2699,35 +2669,28 @@ it is supported for production use.</p>
 <li><code>soaosb</code>: Deploys a domain with SOA and OSB</li>
 <li><code>soaessosb</code>: Deploys a domain with SOA, OSB, and ESS</li>
 </ul>
-
 <p>This document provides details about the special considerations for deploying and running SOA Suite domains with the operator.
 Other than those considerations listed here, SOA Suite domains work in the same way as FMW Infrastructure domains and WebLogic Server domains.</p>
-
 <p>In this release, SOA Suite domains are supported using the “domain on a persistent volume”
 <a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">model</a> only, where the domain home is located in a persistent volume (PV).</p>
-
 <h4 id="prerequisites-for-soa-suite-domains">Prerequisites for SOA Suite domains</h4>
-
 <ul>
 <li>Kubernetes 1.13.5+, 1.14.3+ and 1.15.2+ (check with <code>kubectl version</code>).</li>
 <li>Flannel networking v0.11.0-amd64 (check with <code>docker images | grep flannel</code>).</li>
 <li>Docker 18.9.1 (check with <code>docker version</code>)</li>
 <li>Helm 2.14.0+ (check with <code>helm version</code>).</li>
 <li>Oracle Fusion Middleware Infrastructure 12.2.1.3.0 image with patch 29135930.
-
 <ul>
 <li>The existing Fusion Middleware Infrastructure Docker image, <code>container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3</code>, has all the necessary patches applied.</li>
-<li>Check the Fusion Middleware Infrastructure patches with <code>docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3 sh -c '$ORACLE_HOME/OPatch/opatch lspatches'</code>.<br /></li>
-</ul></li>
+<li>Check the Fusion Middleware Infrastructure patches with <code>docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3 sh -c '$ORACLE_HOME/OPatch/opatch lspatches'</code>.</li>
+</ul>
+</li>
 <li>You must have the <code>cluster-admin</code> role to install the operator.</li>
 <li>We do not currently support running SOA in non-Linux containers.</li>
 </ul>
-
 <h4 id="limitations">Limitations</h4>
-
 <p>Compared to running a WebLogic Server domain in Kubernetes using the operator, the
 following limitations currently exist for SOA Suite domains:</p>
-
 <ul>
 <li>The &ldquo;domain in image&rdquo; model is not supported.</li>
 <li>Only configured clusters are supported.  Dynamic clusters are not supported for
@@ -2743,255 +2706,179 @@ currently supports the WebLogic MBean trees only.  Support for JRF MBeans has no
 been added yet.</li>
 </ul>
 
-
 <div class="notices note" ><p>For early access customers, with bundle patch access, we recommend that you build and use the Oracle SOA Suite Docker image with the latest bundle patch for Oracle SOA. The Oracle SOA Suite Docker image in <code>container-registry.oracle.com</code> does not have the bundle patch installed. However, if you do not have access to the bundle patch, you can obtain the Oracle SOA Suite Docker image without the bundle patch from <code>container-registry.oracle.com</code>, as described below.</p>
 </div>
 
-
 <h4 id="obtaining-the-soa-suite-docker-image">Obtaining the SOA Suite Docker Image</h4>
-
 <p>The pre-built Oracle SOA Suite image is available at, <code>container-registry.oracle.com/middleware/soasuite:12.2.1.3</code>.</p>
-
 <p>To pull an image from the Oracle Container Registry, in a web browser, navigate to <a href="https://container-registry.oracle.com">https://container-registry.oracle.com</a> and log in
 using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.</p>
-
 <p>Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
 Your acceptance of these terms are stored in a database that links the software images to your Oracle Single Sign-On login credentials.</p>
-
 <p>To obtain the image, log in to the Oracle Container Registry:</p>
-
 <pre><code>$ docker login container-registry.oracle.com
-</code></pre>
-
-<p>Then, you can pull the image with this command:</p>
-
+</code></pre><p>Then, you can pull the image with this command:</p>
 <pre><code>$ docker pull container-registry.oracle.com/middleware/soasuite:12.2.1.3
-</code></pre>
-
-<h4 id="creating-a-soa-suite-docker-image">Creating a SOA Suite Docker image</h4>
-
+</code></pre><h4 id="creating-a-soa-suite-docker-image">Creating a SOA Suite Docker image</h4>
 <p>You can also create a Docker image containing the Oracle SOA Suite binaries. This is the recommended approach if you have access to the Oracle SOA bundle patch.</p>
-
 <p>Please consult the <a href="https://github.com/oracle/docker-images/blob/master/OracleSOASuite/dockerfiles/README.md">README</a> file for important prerequisite steps,
 such as building or pulling the Server JRE Docker image, Oracle FMW Infrastructure Docker image, and downloading the Oracle SOA Suite installer and bundle patch binaries.</p>
-
 <p>For the Fusion Middleware Infrastructure image, you must install the <a href="/weblogic-kubernetes-operator/userguide/introduction/introduction/#prerequisites">required patch</a> to use this image with the Oracle WebLogic Kubernetes operator. A pre-built (and already patched) Fusion Middleware Infrastructure image, <code>container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109</code>, is available at <code>container-registry.oracle.com</code>. We recommend that you pull and rename this image to build the Oracle SOA Suite image.</p>
-
-<pre><code class="language-bash">    $ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109
-    $ docker tag container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109  oracle/fmw-infrastructure:12.2.1.3
-</code></pre>
-
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">  $ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109
+  $ docker tag container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109  oracle/fmw-infrastructure:12.2.1.3
+</code></pre></div>
 <div class="notices warning" ><p>If you are pulling the Fusion Middleware Infrastructure image from <code>container-registry.oracle.com</code>, you must use the image with the tag <code>12.2.1.3-200109</code>; no other tagged image will work for the Oracle SOA Suite image build.</p>
 </div>
 
-
 <p>You can also build the Fusion Middleware
 Infrastructure image with the required patch (29135930) applied. A <a href="https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s">sample</a> is provided that demonstrates how to create a Docker image with the necessary patch installed. Use this patched Fusion Middleware Infrastructure image for building the Oracle SOA Suite image.</p>
-
 <p>Follow these steps to build the necessary images - a patched Fusion Middleware Infrastructure image, and then the SOA Suite image as a layer on top of that:</p>
-
 <ul>
-<li><p>Make a local clone of the sample repository.</p>
-
-<pre><code class="language-bash">$ git clone https://github.com/oracle/docker-images
-</code></pre></li>
-
-<li><p>Build the <code>oracle/fmw-infrastructure:12.2.1.3</code> image as shown below:</p></li>
-</ul>
-
-<pre><code class="language-bash">    $ cd docker-images/OracleFMWInfrastructure/dockerfiles
-    $ sh buildDockerImage.sh -v 12.2.1.3 -s
-</code></pre>
-
-<ul>
-<li>Download the required patch (29135930) from My Oracle Support.</li>
-
-<li><p>Create a Docker image containing the Fusion Middleware Infrastructure binaries with the patch applied by running the provided script:</p>
-
-<pre><code class="language-bash">$ cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
+<li>
+<p>Make a local clone of the sample repository.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ git clone https://github.com/oracle/docker-images
+</code></pre></div></li>
+<li>
+<p>Build the <code>oracle/fmw-infrastructure:12.2.1.3</code> image as shown below:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">  $ cd docker-images/OracleFMWInfrastructure/dockerfiles
+  $ sh buildDockerImage.sh -v 12.2.1.3 -s
+</code></pre></div></li>
+<li>
+<p>Download the required patch (29135930) from My Oracle Support.</p>
+</li>
+<li>
+<p>Create a Docker image containing the Fusion Middleware Infrastructure binaries with the patch applied by running the provided script:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
 $ ./build.sh
-</code></pre>
-
-<p>This will produce an image named <code>oracle/fmw-infrastructure:12213-update-k8s</code>. You will need to rename this image, for example from <code>oracle/fmw-infrastructure:12213-update-k8s</code>
+</code></pre></div><p>This will produce an image named <code>oracle/fmw-infrastructure:12213-update-k8s</code>. You will need to rename this image, for example from <code>oracle/fmw-infrastructure:12213-update-k8s</code>
 to <code>oracle/fmw-infrastructure:12.2.1.3</code>, or update the samples to refer to the image you created.</p>
-
 <pre><code>$ docker tag oracle/fmw-infrastructure:12213-update-k8s oracle/fmw-infrastructure:12.2.1.3
 </code></pre></li>
-
-<li><p>Download the Oracle SOA Suite installer, latest Oracle SOA bundle patch (<code>30638100</code> or later) and the patch <code>27117282</code> from the Oracle Technology Network or e-delivery.</p></li>
-</ul>
-
+<li>
+<p>Download the Oracle SOA Suite installer, latest Oracle SOA bundle patch (<code>30638100</code> or later) and the patch <code>27117282</code> from the Oracle Technology Network or e-delivery.</p>
 <blockquote>
 <p><strong>NOTE</strong>: Copy the installer binaries to the same location as the Dockerfile and the patch ZIP files under the <code>docker-images/OracleSOASuite/dockerfiles/12.2.1.3/patches</code> folder.</p>
 </blockquote>
-
-<ul>
-<li><p>Create the Oracle SOA Suite image by running the provided script:</p>
-
-<pre><code class="language-bash">$ cd docker-images/OracleSOASuite/dockerfiles
+</li>
+<li>
+<p>Create the Oracle SOA Suite image by running the provided script:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cd docker-images/OracleSOASuite/dockerfiles
 $ ./buildDockerImage.sh -v 12.2.1.3 -s
-</code></pre>
-
-<p>The image produced will be named <code>oracle/soa:12.2.1.3</code>. The samples and
+</code></pre></div><p>The image produced will be named <code>oracle/soa:12.2.1.3</code>. The samples and
 instructions assume the Oracle SOA Suite image is named
 <code>container-registry.oracle.com/middleware/soasuite:12.2.1.3</code>.
 You will need to rename your image to match this name,
- or update the samples to refer to the image you created.</p>
-
-<pre><code class="language-bash">$ docker tag oracle/soa:12.2.1.3 container-registry.oracle.com/middleware/soasuite:12.2.1.3
-</code></pre>
-
-<p>You can use this image to run the Repository Creation Utility and to run your domain using the “domain on a persistent volume” model.</p></li>
+or update the samples to refer to the image you created.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker tag oracle/soa:12.2.1.3 container-registry.oracle.com/middleware/soasuite:12.2.1.3
+</code></pre></div><p>You can use this image to run the Repository Creation Utility and to run your domain using the “domain on a persistent volume” model.</p>
+</li>
 </ul>
-
 <p>Before creating a domain, you will need to set up the necessary schemas in your database.</p>
-
 <h4 id="configuring-access-to-your-database">Configuring access to your database</h4>
-
 <p>SOA Suite domains require a database with the necessary schemas installed in them.
 The Repository Creation Utility (RCU) allows you to create
 those schemas.  You must set up the database before you create your domain.
 There are no additional requirements added by running SOA in Kubernetes; the
 same existing requirements apply.</p>
-
 <p>For testing and development, you may choose to run your database inside Kubernetes or outside of Kubernetes.</p>
-
 
 <div class="notices warning" ><p>The Oracle Database Docker images are supported for non-production use only.
 For more details, see My Oracle Support note:
 Oracle Support for Database Running on Docker (Doc ID 2216342.1).</p>
 </div>
 
-
 <h5 id="running-the-database-inside-kubernetes">Running the database inside Kubernetes</h5>
-
 <p>Follow these instructions to perform a basic deployment of the Oracle
 database in Kubernetes. For more details about database setup and configuration, refer to this <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/#running-the-database-inside-kubernetes">page</a>.</p>
-
 <p>When running the Oracle database in Kubernetes, you have an option
 to attach persistent volumes (PV) so that the database storage will
 be persisted across database restarts.
 If you prefer not to persist the database storage, follow the instructions in this
 <a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-schema#create-the-rcu-schema-in-the-oracle-database">document</a>
 to set up a database in a container with no persistent volume (PV) attached.</p>
-
 <blockquote>
 <p><strong>NOTE</strong>: <code>start-db-service.sh</code> creates the database in the <code>default</code> namespace. If you
 want to create the database in a different namespace, you need to manually update
 the value for all the occurrences of the namespace field in the provided
 sample file <code>create-rcu-schema/common/oracle.db.yaml</code>.</p>
 </blockquote>
-
 <p>These instructions will set up the database in a container with the persistent volume (PV) attached.
 If you chose not to use persistent storage, please go to the <a href="#running-the-repository-creation-utility-to-set-up-your-database-schemas">RCU creation step</a>.</p>
-
 <ul>
 <li>Create the persistent volume and persistent volume claim for the database
 using the <a href="/weblogic-kubernetes-operator/samples/simple/storage/">create-pv-pvc.sh</a> sample.
 Refer to the instructions provided in that sample.</li>
 </ul>
 
-
 <div class="notices note" ><p>When creating the PV and PVC for the database, make sure that you use a different name
 and storage class for the PV and PVC for the domain.
 The name is set using the value of the <code>baseName</code> field in <code>create-pv-pvc-inputs.yaml</code>.</p>
 </div>
 
-
 <ul>
 <li>Start the database and database service using the following commands:</li>
 </ul>
-
 <blockquote>
 <p><strong>NOTE</strong>: Make sure you update the <code>kubernetes/samples/scripts/create-soa-domain/domain-home-on-pv/create-database/db-with-pv.yaml</code>
 file with the name of the PVC created in the previous step. Also, update the value for all the occurrences of the namespace field
 to the namespace where the database PVC was created.</p>
 </blockquote>
-
 <pre><code>```bash
 $ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-soa-domain/domain-home-on-pv/create-database
 $ kubectl create -f db-with-pv.yaml
 ```
 </code></pre>
-
 <p>The database will take several minutes to start the first time, while it
 performs setup operations.  You can watch the log to see its progress using
 this command:</p>
-
-<pre><code class="language-bash">$ kubectl logs -f oracle-db -n soans
-</code></pre>
-
-<p>A log message will indicate when the database is ready.  Also, you can
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl logs -f oracle-db -n soans
+</code></pre></div><p>A log message will indicate when the database is ready.  Also, you can
 verify the database service status using this command:</p>
-
-<pre><code class="language-bash">$ kubectl get pods,svc -n soans |grep oracle-db
-po/oracle-db   1/1       Running   0          6m
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get pods,svc -n soans |grep oracle-db
+po/oracle-db   1/1       Running   <span style="color:#ae81ff">0</span>          6m
 svc/oracle-db   ClusterIP   None         &lt;none&gt;        1521/TCP,5500/TCP   7m
-</code></pre>
-
-<h4 id="running-the-repository-creation-utility-to-set-up-your-database-schemas">Running the Repository Creation Utility to set up your database schemas</h4>
-
+</code></pre></div><h4 id="running-the-repository-creation-utility-to-set-up-your-database-schemas">Running the Repository Creation Utility to set up your database schemas</h4>
 <h5 id="creating-schemas">Creating schemas</h5>
-
 <p>To create the database schemas for Oracle SOA Suite, run the <code>create-rcu-schema.sh</code> script as described
 <a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-schema#create-the-rcu-schema-in-the-oracle-database">here</a>.</p>
-
 <p>The following example shows commands you might use to execute <code>create-rcu-schema.sh</code>:</p>
-
-<pre><code class="language-bash">$ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
-$ ./create-rcu-schema.sh \
-  -s SOA1 \
-  -t soaessosb \
-  -d oracle-db.soans.svc.cluster.local:1521/devpdb.k8s \
-  -i container-registry.oracle.com/middleware/soasuite:12.2.1.3
-</code></pre>
-
-<p>For SOA domains, the <code>create-rcu-schema.sh</code> script supports the following domain types <code>soa,osb,soaosb,soaess,soaessosb</code>.
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
+$ ./create-rcu-schema.sh <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -s SOA1 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -t soaessosb <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -d oracle-db.soans.svc.cluster.local:1521/devpdb.k8s <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -i container-registry.oracle.com/middleware/soasuite:12.2.1.3
+</code></pre></div><p>For SOA domains, the <code>create-rcu-schema.sh</code> script supports the following domain types <code>soa,osb,soaosb,soaess,soaessosb</code>.
 You must specify one of these using the <code>-t</code> flag.</p>
-
 <p>You need to make sure that you maintain the association between the database schemas and the
 matching domain just like you did in a non-Kubernetes environment.  There is no specific
 functionality provided to help with this.</p>
-
 <h5 id="dropping-schemas">Dropping schemas</h5>
-
 <p>If you want to drop the schema, you can use the <code>drop-rcu-schema.sh</code> script as described
 <a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-schema#drop-the-rcu-schema-from-the-oracle-database">here</a>.</p>
-
 <p>The following example shows commands you might use to execute <code>drop-rcu-schema.sh</code>:</p>
-
-<pre><code class="language-bash">$ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
-$ ./drop-rcu-schema.sh \
-  -s SOA1 \
-  -t soaessosb \
-  -d oracle-db.soans.svc.cluster.local:1521/devpdb.k8s
-</code></pre>
-
-<p>For SOA domains, the <code>drop-rcu-schema.sh</code> script supports the domain types <code>soa,osb,soaosb,soaess,soaessosb</code>.
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
+$ ./drop-rcu-schema.sh <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -s SOA1 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -t soaessosb <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -d oracle-db.soans.svc.cluster.local:1521/devpdb.k8s
+</code></pre></div><p>For SOA domains, the <code>drop-rcu-schema.sh</code> script supports the domain types <code>soa,osb,soaosb,soaess,soaessosb</code>.
 You must specify one of these using the <code>-t</code> flag.</p>
-
 <h4 id="create-a-kubernetes-secret-with-the-rcu-credentials">Create a Kubernetes secret with the RCU credentials</h4>
-
 <p>You also need to create a Kubernetes secret containing the credentials for the database schemas.
 When you create your domain using the sample provided below, it will obtain the RCU credentials
 from this secret.</p>
-
 <p>Use the provided sample script to create the secret as shown below:</p>
-
-<pre><code class="language-bash">$ cd kubernetes/samples/scripts/create-rcu-credentials
-$ ./create-rcu-credentials.sh \
-  -u SOA1_SOAINFRA \
-  -p Welcome1 \
-  -a sys \
-  -q Oradoc_db1 \
-  -d soainfra \
-  -n soans \
-  -s soainfra-rcu-credentials
-</code></pre>
-
-<p>The parameter values are as follows:</p>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cd kubernetes/samples/scripts/create-rcu-credentials
+$ ./create-rcu-credentials.sh <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -u SOA1_SOAINFRA <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -p Welcome1 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -a sys <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -q Oradoc_db1 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -d soainfra <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -n soans <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -s soainfra-rcu-credentials
+</code></pre></div><p>The parameter values are as follows:</p>
 <ul>
 <li>The schema owner user name (<code>-u</code>) must be the <code>schemaPrefix</code>
 value followed by an underscore and a component name, for example <code>SOA1_SOAINFRA</code>.</li>
@@ -3001,17 +2888,15 @@ value followed by an underscore and a component name, for example <code>SOA1_SOA
 <li>The namespace the domain is in (<code>-n</code>); if omitted, then <code>default</code> is assumed.</li>
 <li>The name of the secret (<code>-s</code>).</li>
 </ul>
-
 <p>You can confirm the secret was created as expected with the <code>kubectl get secret</code> command.
 An example is shown below, including the output:</p>
-
-<pre><code class="language-bash">$ kubectl get secret soainfra-rcu-credentials -o yaml -n soans
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get secret soainfra-rcu-credentials -o yaml -n soans
 apiVersion: v1
 data:
-  password: V2VsY29tZTE=
-  sys_password: T3JhZG9jX2RiMQ==
+  password: V2VsY29tZTE<span style="color:#f92672">=</span>
+  sys_password: T3JhZG9jX2RiMQ<span style="color:#f92672">==</span>
   sys_username: c3lz
-  username: U09BMQ==
+  username: U09BMQ<span style="color:#f92672">==</span>
 kind: Secret
 metadata:
   creationTimestamp: 2019-06-02T07:15:31Z
@@ -3020,113 +2905,94 @@ metadata:
     weblogic.domainUID: soainfra
   name: soainfra-rcu-credentials
   namespace: soans
-  resourceVersion: &quot;11562794&quot;
+  resourceVersion: <span style="color:#e6db74">&#34;11562794&#34;</span>
   selfLink: /api/v1/namespaces/soans/secrets/soainfra-rcu-credentials
   uid: 1230385e-6caa-11e9-8143-fa163efa261a
 type: Opaque
-</code></pre>
-
-<h4 id="creating-a-soa-domain">Creating a SOA domain</h4>
-
+</code></pre></div><h4 id="creating-a-soa-domain">Creating a SOA domain</h4>
 <p>Now that you have your Docker images and you have created your RCU schemas, you are ready
 to create your domain.  To continue, follow the instructions in the <a href="/weblogic-kubernetes-operator/samples/simple/domains/soa-domain/">SOA Domain sample</a>.</p>
-
 <h4 id="configuring-a-load-balancer-for-soa-suite-domains">Configuring a load balancer for SOA Suite domains</h4>
-
 <p>An Ingress based load balancer can be configured to access the Oracle SOA and Oracle Service Bus domain application URLs.
 Refer to the <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/ingress/">setup Ingress</a> document for details.</p>
-
 <p>As part of the <code>ingress-per-domain</code> setup for Oracle SOA and Oracle Service Bus domains, the <code>values.yaml</code> file (under the <code>ingress-per-domain</code> directory) needs to be updated with the appropriate values from your environment. A sample <code>values.yaml</code> file (for the Traefik load balancer) is shown below:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Default values for ingress-per-domain.</span>
+<span style="color:#75715e"># This is a YAML-formatted file.</span>
+<span style="color:#75715e"># Declare variables to be passed into your templates.</span>
 
-<pre><code class="language-bash"># Default values for ingress-per-domain.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
-# Load balancer type.  Supported values are: TRAEFIK, VOYAGER
+<span style="color:#75715e"># Load balancer type.  Supported values are: TRAEFIK, VOYAGER</span>
 type: TRAEFIK
 
-# WLS domain as backend to the load balancer
+<span style="color:#75715e"># WLS domain as backend to the load balancer</span>
 wlsDomain:
   domainUID: soainfra
   soaClusterName: soa_cluster
   osbClusterName: osb_cluster
-  soaManagedServerPort: 8001
-  osbManagedServerPort: 9001
+  soaManagedServerPort: <span style="color:#ae81ff">8001</span>
+  osbManagedServerPort: <span style="color:#ae81ff">9001</span>
   adminServerName: adminserver
-  adminServerPort: 7001
+  adminServerPort: <span style="color:#ae81ff">7001</span>
 
-# Traefik specific values
+<span style="color:#75715e"># Traefik specific values</span>
 traefik:
-  # hostname used by host-routing
+  <span style="color:#75715e"># hostname used by host-routing</span>
   hostname: testhost.domain.com
 
-# Voyager specific values
+<span style="color:#75715e"># Voyager specific values</span>
 voyager:
-  # web port
-  webPort: 30305
-  # stats port
-  statsPort: 30315
-</code></pre>
-
-<p>Below are the path-based, Ingress routing rules (<code>spec.rules</code> section) that need to be defined for Oracle SOA and Oracle Service Bus domains. You need to update the appropriate Ingress template YAML file based on the load balancer being used. For example, the template YAML file for the Traefik load balancer is located at <code>kubernetes/samples/charts/ingress-per-domain/templates/traefik-ingress.yaml</code>.</p>
-
-<pre><code class="language-bash">rules:
-  - host: '{{ .Values.traefik.hostname }}'
+  <span style="color:#75715e"># web port</span>
+  webPort: <span style="color:#ae81ff">30305</span>
+  <span style="color:#75715e"># stats port</span>
+  statsPort: <span style="color:#ae81ff">30315</span>
+</code></pre></div><p>Below are the path-based, Ingress routing rules (<code>spec.rules</code> section) that need to be defined for Oracle SOA and Oracle Service Bus domains. You need to update the appropriate Ingress template YAML file based on the load balancer being used. For example, the template YAML file for the Traefik load balancer is located at <code>kubernetes/samples/charts/ingress-per-domain/templates/traefik-ingress.yaml</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">rules:
+  - host: <span style="color:#e6db74">&#39;{{ .Values.traefik.hostname }}&#39;</span>
     http:
       paths:
       - path: /console
         backend:
-          serviceName: '{{ .Values.wlsDomain.domainUID }}-{{ .Values.wlsDomain.adminServerName | lower | replace &quot;_&quot; &quot;-&quot; }}'
-          servicePort: {{ .Values.wlsDomain.adminServerPort }}
+          serviceName: <span style="color:#e6db74">&#39;{{ .Values.wlsDomain.domainUID }}-{{ .Values.wlsDomain.adminServerName | lower | replace &#34;_&#34; &#34;-&#34; }}&#39;</span>
+          servicePort: <span style="color:#f92672">{{</span> .Values.wlsDomain.adminServerPort <span style="color:#f92672">}}</span>
       - path: /em
         backend:
-          serviceName: '{{ .Values.wlsDomain.domainUID }}-{{ .Values.wlsDomain.adminServerName | lower | replace &quot;_&quot; &quot;-&quot; }}'
-          servicePort: {{ .Values.wlsDomain.adminServerPort }}
+          serviceName: <span style="color:#e6db74">&#39;{{ .Values.wlsDomain.domainUID }}-{{ .Values.wlsDomain.adminServerName | lower | replace &#34;_&#34; &#34;-&#34; }}&#39;</span>
+          servicePort: <span style="color:#f92672">{{</span> .Values.wlsDomain.adminServerPort <span style="color:#f92672">}}</span>
       - path: /servicebus
         backend:
-          serviceName: '{{ .Values.wlsDomain.domainUID }}-{{ .Values.wlsDomain.adminServerName | lower | replace &quot;_&quot; &quot;-&quot; }}'
-          servicePort: {{ .Values.wlsDomain.adminServerPort }}
+          serviceName: <span style="color:#e6db74">&#39;{{ .Values.wlsDomain.domainUID }}-{{ .Values.wlsDomain.adminServerName | lower | replace &#34;_&#34; &#34;-&#34; }}&#39;</span>
+          servicePort: <span style="color:#f92672">{{</span> .Values.wlsDomain.adminServerPort <span style="color:#f92672">}}</span>
       - path: /lwpfconsole
         backend:
-          serviceName: '{{ .Values.wlsDomain.domainUID }}-{{ .Values.wlsDomain.adminServerName | lower | replace &quot;_&quot; &quot;-&quot; }}'
-          servicePort: {{ .Values.wlsDomain.adminServerPort }}
+          serviceName: <span style="color:#e6db74">&#39;{{ .Values.wlsDomain.domainUID }}-{{ .Values.wlsDomain.adminServerName | lower | replace &#34;_&#34; &#34;-&#34; }}&#39;</span>
+          servicePort: <span style="color:#f92672">{{</span> .Values.wlsDomain.adminServerPort <span style="color:#f92672">}}</span>
       - path:
         backend:
-          serviceName: '{{ .Values.wlsDomain.domainUID }}-cluster-{{ .Values.wlsDomain.soaClusterName | lower | replace &quot;_&quot; &quot;-&quot; }}'
-          servicePort: {{ .Values.wlsDomain.soaManagedServerPort }}
-</code></pre>
-
-<p>Now you can access the Oracle SOA Suite domain URLs, as listed below, based on the domain type you selected.</p>
-
+          serviceName: <span style="color:#e6db74">&#39;{{ .Values.wlsDomain.domainUID }}-cluster-{{ .Values.wlsDomain.soaClusterName | lower | replace &#34;_&#34; &#34;-&#34; }}&#39;</span>
+          servicePort: <span style="color:#f92672">{{</span> .Values.wlsDomain.soaManagedServerPort <span style="color:#f92672">}}</span>
+</code></pre></div><p>Now you can access the Oracle SOA Suite domain URLs, as listed below, based on the domain type you selected.</p>
 <ul>
-<li>Oracle SOA:</li>
+<li>
+<p>Oracle SOA:</p>
+<p>http://&lt;hostname&gt;:&lt;port&gt;/weblogic/ready<br>
+http://&lt;hostname&gt;:&lt;port&gt;/console<br>
+http://&lt;hostname&gt;:&lt;port&gt;/em
+http://&lt;hostname&gt;:&lt;port&gt;/soa-infra<br>
+http://&lt;hostname&gt;:&lt;port&gt;/soa/composer<br>
+http://&lt;hostname&gt;:&lt;port&gt;/integration/worklistapp</p>
+</li>
+<li>
+<p>Oracle Enterprise Scheduler Service (ESS):</p>
+<p>http://&lt;hostname&gt;:&lt;port&gt;/ess<br>
+http://&lt;hostname&gt;:&lt;port&gt;/EssHealthCheck</p>
+</li>
+<li>
+<p>Oracle Service Bus (OSB):</p>
+<p>http://&lt;hostname&gt;:&lt;port&gt;/servicebus<br>
+http://&lt;hostname&gt;:&lt;port&gt;/lwpfconsole</p>
+</li>
 </ul>
-
-<p>http://&lt;hostname&gt;:&lt;port&gt;/weblogic/ready<br />
-  http://&lt;hostname&gt;:&lt;port&gt;/console<br />
-  http://&lt;hostname&gt;:&lt;port&gt;/em
-  http://&lt;hostname&gt;:&lt;port&gt;/soa-infra<br />
-  http://&lt;hostname&gt;:&lt;port&gt;/soa/composer<br />
-  http://&lt;hostname&gt;:&lt;port&gt;/integration/worklistapp</p>
-
-<ul>
-<li>Oracle Enterprise Scheduler Service (ESS):</li>
-</ul>
-
-<p>http://&lt;hostname&gt;:&lt;port&gt;/ess<br />
-  http://&lt;hostname&gt;:&lt;port&gt;/EssHealthCheck</p>
-
-<ul>
-<li>Oracle Service Bus (OSB):</li>
-</ul>
-
-<p>http://&lt;hostname&gt;:&lt;port&gt;/servicebus<br />
-  http://&lt;hostname&gt;:&lt;port&gt;/lwpfconsole</p>
-
 <h4 id="monitoring-a-soa-domain">Monitoring a SOA domain</h4>
-
 <p>After the SOA domain is set up, you can:</p>
-
 <ul>
 <li>Monitor the SOA instance using Prometheus and Grafana. See <a href="https://github.com/oracle/weblogic-monitoring-exporter">Monitoring a domain</a>.</li>
 <li>Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
@@ -4920,19 +4786,19 @@ See <a href="https://github.com/oracle/weblogic-logging-exporter">Publish logs t
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445217"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445217"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445217"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445217"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445217"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445217"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442681"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445217"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445217"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445217"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442681" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442681"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445217" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445217"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

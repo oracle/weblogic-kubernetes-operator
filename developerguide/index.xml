@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Developer Guide on WebLogic Kubernetes Operator</title>
@@ -30,7 +30,7 @@ Because the target runtime environment for the operator is Oracle Linux, no part
       <guid>/weblogic-kubernetes-operator/developerguide/building/</guid>
       <description>The operator is built using Apache Maven. The build machine will also need to have Docker installed.
 To build the operator, issue the following command in the project directory:
-$ mvn clean install  This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.
+$ mvn clean install This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.
 Contributions must conform to coding and formatting standards.</description>
     </item>
     
@@ -62,7 +62,7 @@ Because we want to balance separating destabilizing work into feature branches a
       
       <guid>/weblogic-kubernetes-operator/developerguide/coding-standards/</guid>
       <description>This project has adopted the following coding standards:
- Code will be formated using Oracle / WebLogic standards, which are identical to the Google Java Style. Javadoc must be provided for all public packages, classes, and methods, and must include all parameters and returns. Javadoc is not required for methods that override or implement methods that are already documented. All non-trivial methods should include LOGGER.entering() and LOGGER.exiting() calls. The LOGGER.</description>
+ Code will be formated using Oracle / WebLogic standards, which are identical to the Google Java Style. Javadoc must be provided for all public packages, classes, and methods, and must include all parameters and returns. Javadoc is not required for methods that override or implement methods that are already documented. All non-trivial methods should include LOGGER.entering() and LOGGER.exiting() calls. The LOGGER.exiting() call should include the value that is going to be returned from the method, unless that value includes a credential or other sensitive information.</description>
     </item>
     
     <item>
@@ -101,9 +101,9 @@ After this, the operator starts watches for changes to Domain resources and any 
       
       <guid>/weblogic-kubernetes-operator/developerguide/documentation/</guid>
       <description>This documentation is produced using Hugo. To make an update to the documentation, follow this process:
- If you have not already done so, clone the repository.
-git clone https://github.com/oracle/weblogic-kubernetes-operator  Create a new branch from master.
-git checkout master git pull origin master git checkout -b your-branch  Make your documentation updates by editing the source files in docs-source/content. Make sure you check in the changes from the docs-source/content area only; do not build the site and check in the static files.</description>
+  If you have not already done so, clone the repository.
+git clone https://github.com/oracle/weblogic-kubernetes-operator   Create a new branch from master.
+git checkout master git pull origin master git checkout -b your-branch   Make your documentation updates by editing the source files in docs-source/content. Make sure you check in the changes from the docs-source/content area only; do not build the site and check in the static files.</description>
     </item>
     
     <item>

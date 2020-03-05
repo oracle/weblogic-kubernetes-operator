@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.66.0" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Domain Secret Mismatch :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442682" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583445216" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583445216" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583445216"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442682"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583445216"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583445216"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583445216"></script>
 
     
   </div>
@@ -2602,23 +2602,14 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#domain-in-a-docker-image">Domain in a Docker image</a>
-<ul>
-<li><a href="#1-rolling-to-an-image-containing-new-or-unrelated-domain-directory">1. Rolling to an image containing new or unrelated domain directory</a></li>
-<li><a href="#2-full-domain-shutdown-and-restart">2. Full domain shutdown and restart</a></li>
-</ul></li>
-<li><a href="#domain-on-a-persistent-volume">Domain on a persistent volume</a>
-<ul>
-<li><a href="#1-completely-replacing-the-domain-directory">1. Completely replacing the domain directory</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#domain-in-a-docker-image">Domain in a Docker image</a></li>
+        <li><a href="#domain-on-a-persistent-volume">Domain on a persistent volume</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -2643,67 +2634,45 @@
 
 
 
-
-
 <blockquote>
 <p>One or more WebLogic Server instances in my domain will not start and the domain resource <code>status</code> or the pod log report errors like this:</p>
-
-<p><strong><em>Domain secret mismatch. The domain secret in &lsquo;DOMAIN_HOME/security/SerializedSystemIni.dat&rsquo; where DOMAIN_HOME=&lsquo;$DOMAIN_HOME&rsquo; does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic servers in the same domain share the same domain secret.</em></strong></p>
+<p><em><strong>Domain secret mismatch. The domain secret in &lsquo;DOMAIN_HOME/security/SerializedSystemIni.dat&rsquo; where DOMAIN_HOME='$DOMAIN_HOME&rsquo; does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic servers in the same domain share the same domain secret.</strong></em></p>
 </blockquote>
-
 <p>When you see these kinds of errors, it means that the WebLogic domain directory&rsquo;s security configuration files have changed in an incompatible way between when the operator scanned
 the domain directory, which occurs during the &ldquo;introspection&rdquo; phase, and when the server instance attempted to start.</p>
-
 <p>To understand the &ldquo;incompatible domain security configuration&rdquo; type of failure, it&rsquo;s important to review the contents of the
 <a href="https://docs.oracle.com/middleware/12213/wls/DOMCF/config_files.htm#DOMCF140">WebLogic domain directory</a>. Each WebLogic
 domain directory contains a &ldquo;security&rdquo; subdirectory that contains a file called &ldquo;SerializedSystemIni.dat&rdquo;.  This file contains
 security data to bootstrap the WebLogic domain, including a domain-specific encryption key.</p>
-
 <p>During introspection, the operator generates a Kubernetes job that runs a pod in the domain&rsquo;s Kubernetes namespace and with the
 same Kubernetes service account that will be used later to run the Administration Server. This pod has access to the Kubernetes
 secret referenced by <code>weblogicCredentialsSecret</code> and encrypts these values with the domain-specific encryption key so that the
 secured value can be injected in to the &ldquo;boot.properties&rdquo; files when starting server instances.</p>
-
 <p>When the domain directory is changed such that the domain-specific encryption key is different, the &ldquo;boot.properties&rdquo; entries
 generated during introspection will now be invalid.</p>
-
 <p>This can happen in a variety of ways, depending on the <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">model selected</a>:</p>
-
 <h3 id="domain-in-a-docker-image">Domain in a Docker image</h3>
-
 <h4 id="1-rolling-to-an-image-containing-new-or-unrelated-domain-directory">1. Rolling to an image containing new or unrelated domain directory</h4>
-
 <p>The error occurs while rolling pods to have containers based on a new Docker image that contains an entirely new or unrelated domain directory.</p>
-
 <p>The problem is that WebLogic cannot support server instances being part of the same WebLogic domain if the server instances do
 not all share the same domain-specific encryption key. Additionally, operator introspection
 currently happens only when starting servers following a total shutdown. Therefore, the &ldquo;boot.properites&rdquo; files generated from
 introspecting the image containing the original domain directory will be invalid when used with a container started with
 the updated Docker image containing the new or unrelated domain directory.</p>
-
 <p>The solution is to follow either the recommended <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/cicd/">CI/CD guidelines</a> so that the original and new Docker images contain domain directories
 with consistent domain-specific encryption keys and bootstrapping security details, or to <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers">perform a total shutdown</a> of the domain so
 that introspection reoccurs as servers are restarted.</p>
-
 <h4 id="2-full-domain-shutdown-and-restart">2. Full domain shutdown and restart</h4>
-
 <p>The error occurs while starting servers after a full domain shutdown.</p>
-
 <p>If your development model generates new Docker images
 with new and unrelated domain directories and then tags those images with the same tag, then different Kubernetes worker nodes
 may have different images under the same tag in their individual, local Docker repositories.</p>
-
 <p>The simplest solution is to set <code>imagePullPolicy</code> to <code>Always</code>; however, the better solution would be to design your development
 pipeline to generate new Docker image tags on every build and to never reuse an existing tag.</p>
-
 <h3 id="domain-on-a-persistent-volume">Domain on a persistent volume</h3>
-
 <h4 id="1-completely-replacing-the-domain-directory">1. Completely replacing the domain directory</h4>
-
 <p>The error occurs while starting servers when the domain directory change was made while other servers were still running.</p>
-
 <p>If completely replacing the domain directory, then you must <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers">stop all running servers</a>.</p>
-
 <p>Because all servers will already be stopped, there is no requirement that the new contents of the domain directory be related to
 the previous contents of the domain directory.  When starting servers again, the operator will perform its introspection
 of the domain directory. However, you may want to preserve the domain directory security configuration including the domain-specific
@@ -4491,19 +4460,19 @@ in a Docker image model to preserve the original security-related domain directo
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1583445216"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1583442682"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583442682"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1583445216"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1583445216"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583442682" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583442682"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1583445216" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1583445216"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

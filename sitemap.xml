@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
@@ -489,7 +489,7 @@
   
   <url>
     <loc>/weblogic-kubernetes-operator/faq/boot-identity-not-valid/</loc>
-    <lastmod>2020-03-02T08:08:19-04:00</lastmod>
+    <lastmod>2020-03-02T08:08:19-04:01</lastmod>
   </url>
   
   <url>
@@ -533,23 +533,22 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/</loc>
+    <lastmod>2019-03-15T11:25:28-04:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/release-notes/</loc>
     <lastmod>2019-03-15T11:25:28-04:00</lastmod>
   </url>
   
   <url>
-    <loc>/weblogic-kubernetes-operator/</loc>
-    <lastmod>2019-09-19T10:41:32-05:00</lastmod>
-  </url>
-  
-  <url>
     <loc>/weblogic-kubernetes-operator/categories/</loc>
-    <priority>0</priority>
   </url>
   
   <url>
     <loc>/weblogic-kubernetes-operator/tags/</loc>
-    <priority>0</priority>
   </url>
   
 </urlset>
