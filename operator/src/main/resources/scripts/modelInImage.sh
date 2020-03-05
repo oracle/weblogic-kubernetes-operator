@@ -248,14 +248,14 @@ function buildWDTParams_MD5() {
 
   if [ -f "${WDT_ENCRYPTION_PASSPHRASE}" ] ; then
     #inventory_passphrase[wdtpassword]=$(md5sum $(wdt_encryption_passphrase) | cut -d' ' -f1)
-    md5sum $(wdt_encryption_passphrase) >> ${INTROSPECTJOB_PASSPHRASE_MD5}
-    WDT_PASSPHRASE=$(cat $(wdt_encryption_passphrase))
+    md5sum ${WDT_ENCRYPTION_PASSPHRASE} >> ${INTROSPECTJOB_PASSPHRASE_MD5}
+    WDT_PASSPHRASE=$(cat ${WDT_ENCRYPTION_PASSPHRASE})
   fi
 
 
   if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
     if [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
-      trace SEVERE "JRF domain requires k8s secrets opssKeyPassPhrase with key passphrase"
+      trace SEVERE "JRF domain requires k8s secrets walletPasswordSecret with key passphrase"
       exit 1
     else
       # Set it for introspectDomain.py to use
@@ -493,19 +493,21 @@ function createPrimordialDomain() {
 
     trace "createPrimordialDomain: model diff returns "${diff_rc}
 
-    cat /tmp/diffed_model.json
+    #cat /tmp/diffed_model.json
 
     local security_info_updated="false"
     security_info_updated=$(contain_returncode ${diff_rc} ${SECURITY_INFO_UPDATED})
-    local rcu_credentials_changed="false"
-    rcu_credentials_changed=$(contain_returncode ${diff_rc} ${RCU_PASSWORD_CHANGED})
     # recreate the domain if there is an unsafe security update such as admin password update
     if [ ${security_info_updated} == "true" ]; then
       recreate_domain=1
     fi
-    if [ ${rcu_credentials_changed} == "true" ]; then
-      UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
-    fi
+    # Always use the schema password in RCUDbInfo.  Since once the password is updated by the DBA.  The
+    # RCU cache table SCHEMA_COMPONENT_INFO stored password will never be correct,  and subsequenetly any
+    # other updates such as admin credenitals or security roles that caused the re-create of the primordial
+    # domain will fail since without this flag set, defaults is to use the RCU cached info. (aka. wlst
+    # getDatabaseDefaults).
+    #
+    UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
   fi
 
   # If there is no primordial domain or needs to recreate one due to password changes
@@ -544,13 +546,8 @@ function generateMergedModel() {
 
   export __WLSDEPLOY_STORE_MODEL__="${NEW_MERGED_MODEL}"
 
-  if [ ! -z ${WDT_PASSPHRASE} ]; then
-    yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/validateModel.sh -oracle_home ${MW_HOME}  ${model_list} \
-    ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} >  ${WDT_OUTPUT}
-  else
-    ${WDT_BINDIR}/validateModel.sh -oracle_home ${MW_HOME} ${model_list} \
+  ${WDT_BINDIR}/validateModel.sh -oracle_home ${MW_HOME} ${model_list} \
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
-  fi
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "Validate Model Failed "
@@ -580,17 +577,18 @@ function wdtCreatePrimordialDomain() {
   export __WLSDEPLOY_STORE_MODEL__=1
 
   if [ ! -z ${WDT_PASSPHRASE} ]; then
-    yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \
+    echo ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \
     ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
     ${OPSS_FLAGS} ${UPDATE_RCUPWD_FLAG} >  ${WDT_OUTPUT}
+    ret=${PIPESTATUS[1]}
   else
     ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}  ${UPDATE_RCUPWD_FLAG}  \
     > ${WDT_OUTPUT}
+    ret=$?
   fi
-  ret=$?
   if [ $ret -ne 0 ]; then
-    trace SEVERE "Create Domain Failed "
+    trace SEVERE "Create Domain Failed ${ret}"
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
     fi
@@ -620,14 +618,15 @@ function wdtUpdateModelDomain() {
   export __WLSDEPLOY_STORE_MODEL__=1
 
   if [ ! -z ${WDT_PASSPHRASE} ]; then
-    yes ${WDT_PASSPHRASE} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home \
+    echo ${WDT_PASSPHRASE} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home \
     ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
       ${UPDATE_RCUPWD_FLAG} > ${WDT_OUTPUT}
+    ret=${PIPESTATUS[1]}
   else
     ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT}
+    ret=$?
   fi
-  ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "Create Domain Failed "
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
