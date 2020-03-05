@@ -28,11 +28,6 @@
   </url>
   
   <url>
-    <loc>/weblogic-kubernetes-operator/faq/cannot-pull-image/</loc>
-    <lastmod>2019-03-23T08:08:19-04:00</lastmod>
-  </url>
-  
-  <url>
     <loc>/weblogic-kubernetes-operator/security/domain-security/image-protection/</loc>
     <lastmod>2019-03-08T19:00:49-05:00</lastmod>
   </url>
@@ -293,11 +288,6 @@
   </url>
   
   <url>
-    <loc>/weblogic-kubernetes-operator/faq/coherence-requirements/</loc>
-    <lastmod>2019-08-12T12:41:38-04:00</lastmod>
-  </url>
-  
-  <url>
     <loc>/weblogic-kubernetes-operator/userguide/cicd/mutate-the-domain-layer/</loc>
     <lastmod>2019-04-11T13:43:41-04:00</lastmod>
   </url>
@@ -363,11 +353,6 @@
   </url>
   
   <url>
-    <loc>/weblogic-kubernetes-operator/faq/fan/</loc>
-    <lastmod>2019-10-11T17:20:00-05:00</lastmod>
-  </url>
-  
-  <url>
     <loc>/weblogic-kubernetes-operator/userguide/cicd/how-to-copy-domains/</loc>
     <lastmod>2019-04-11T13:48:15-04:00</lastmod>
   </url>
@@ -405,16 +390,6 @@
   <url>
     <loc>/weblogic-kubernetes-operator/quickstart/prepare/</loc>
     <lastmod>2019-02-22T15:44:42-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/weblogic-kubernetes-operator/faq/oci-fss-pv/</loc>
-    <lastmod>2020-02-12T12:12:12-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/weblogic-kubernetes-operator/faq/external-clients/</loc>
-    <lastmod>2019-11-21T21:23:03+00:00</lastmod>
   </url>
   
   <url>
@@ -508,6 +483,36 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/faq/cannot-pull-image/</loc>
+    <lastmod>2019-03-23T08:08:19-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/faq/boot-identity-not-valid/</loc>
+    <lastmod>2020-03-02T08:08:19-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/faq/domain-secret-mismatch/</loc>
+    <lastmod>2020-03-02T08:08:19-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/faq/fan/</loc>
+    <lastmod>2019-10-11T17:20:00-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/faq/oci-fss-pv/</loc>
+    <lastmod>2020-02-12T12:12:12-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/faq/oci-lb/</loc>
+    <lastmod>2019-09-25T12:41:38-04:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/faq/volumes/</loc>
     <lastmod>2020-01-07T15:02:28-05:00</lastmod>
   </url>
@@ -518,8 +523,13 @@
   </url>
   
   <url>
-    <loc>/weblogic-kubernetes-operator/faq/oci-lb/</loc>
-    <lastmod>2019-09-25T12:41:38-04:00</lastmod>
+    <loc>/weblogic-kubernetes-operator/faq/external-clients/</loc>
+    <lastmod>2019-11-21T21:23:03+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/faq/coherence-requirements/</loc>
+    <lastmod>2019-08-12T12:41:38-04:00</lastmod>
   </url>
   
   <url>

@@ -33,14 +33,25 @@ This FAQ describes some considerations to be aware of when you manage the namesp
     </item>
     
     <item>
-      <title>Coherence Requirements</title>
-      <link>/weblogic-kubernetes-operator/faq/coherence-requirements/</link>
-      <pubDate>Mon, 12 Aug 2019 12:41:38 -0400</pubDate>
+      <title>Boot Identity Not Valid</title>
+      <link>/weblogic-kubernetes-operator/faq/boot-identity-not-valid/</link>
+      <pubDate>Mon, 02 Mar 2020 08:08:19 -0400</pubDate>
       
-      <guid>/weblogic-kubernetes-operator/faq/coherence-requirements/</guid>
-      <description>If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.
-Note that some Fusion Middleware products, like SOA Suite, use Coherence and so these requirements apply to them.
-Unicast and Well Known Address When the first Coherence process starts, it will form a cluster. The next Coherence process to start (i.e. in a different pod) will use UDP to try to contact the senior member.</description>
+      <guid>/weblogic-kubernetes-operator/faq/boot-identity-not-valid/</guid>
+      <description>One or more WebLogic Server instances in my domain will not start and I see errors in the server log like this:
+   
+ When you see these kinds of errors, it means that the user name and password provided in the weblogicCredentialsSecret are incorrect. Prior to operator version 2.5.0, this error could have also indicated that the WebLogic domain directory&amp;rsquo;s security configuration files have changed in an incompatible way between when the operator scanned the domain directory, which occurs during the &amp;ldquo;introspection&amp;rdquo; phase, and when the server instance attempted to start.</description>
+    </item>
+    
+    <item>
+      <title>Domain Secret Mismatch</title>
+      <link>/weblogic-kubernetes-operator/faq/domain-secret-mismatch/</link>
+      <pubDate>Mon, 02 Mar 2020 08:08:19 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/domain-secret-mismatch/</guid>
+      <description>One or more WebLogic Server instances in my domain will not start and the domain resource status or the pod log report errors like this:
+Domain secret mismatch. The domain secret in &amp;lsquo;DOMAIN_HOME/security/SerializedSystemIni.dat&amp;rsquo; where DOMAIN_HOME=&amp;lsquo;$DOMAIN_HOME&amp;rsquo; does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic servers in the same domain share the same domain secret.
+ When you see these kinds of errors, it means that the WebLogic domain directory&amp;rsquo;s security configuration files have changed in an incompatible way between when the operator scanned the domain directory, which occurs during the &amp;ldquo;introspection&amp;rdquo; phase, and when the server instance attempted to start.</description>
     </item>
     
     <item>
@@ -64,13 +75,13 @@ File permission handling on persistent volumes can differ between cloud provider
     </item>
     
     <item>
-      <title>External WebLogic Clients</title>
-      <link>/weblogic-kubernetes-operator/faq/external-clients/</link>
-      <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
+      <title>Using an OCI Load Balancer</title>
+      <link>/weblogic-kubernetes-operator/faq/oci-lb/</link>
+      <pubDate>Wed, 25 Sep 2019 12:41:38 -0400</pubDate>
       
-      <guid>/weblogic-kubernetes-operator/faq/external-clients/</guid>
-      <description>Approaches There are two supported approaches for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster: Load Balancer Tunneling and Kubernetes NodePorts.
-This FAQ is for remote EJB and JMS clients - not JTA clients. The operator does not currently support external WebLogic JTA access to a WebLogic cluster, as (A) external JTA access requires each server in the cluster to be individually addressable by the client, but this conflicts with (B) the current operator requirement that a network channel in a cluster have the same port across all servers in the cluster.</description>
+      <guid>/weblogic-kubernetes-operator/faq/oci-lb/</guid>
+      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), you can have OCI automatically provision load balancers for you by creating a Service of type LoadBalancer instead of (or in addition to) installing an ingress controller like Traefik or Voyager.
+OKE Kubernetes worker nodes normally do not have public IP addresses. This means that the NodePort services created by the operator are not usable, because they would expose ports on the worker node&amp;rsquo;s private IP addresses only, which are not reachable from outside the cluster.</description>
     </item>
     
     <item>
@@ -94,13 +105,24 @@ This FAQ is for remote EJB and JMS clients - not JTA clients. The operator does 
     </item>
     
     <item>
-      <title>Using an OCI Load Balancer</title>
-      <link>/weblogic-kubernetes-operator/faq/oci-lb/</link>
-      <pubDate>Wed, 25 Sep 2019 12:41:38 -0400</pubDate>
+      <title>External WebLogic Clients</title>
+      <link>/weblogic-kubernetes-operator/faq/external-clients/</link>
+      <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
       
-      <guid>/weblogic-kubernetes-operator/faq/oci-lb/</guid>
-      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), you can have OCI automatically provision load balancers for you by creating a Service of type LoadBalancer instead of (or in addition to) installing an ingress controller like Traefik or Voyager.
-OKE Kubernetes worker nodes normally do not have public IP addresses. This means that the NodePort services created by the operator are not usable, because they would expose ports on the worker node&amp;rsquo;s private IP addresses only, which are not reachable from outside the cluster.</description>
+      <guid>/weblogic-kubernetes-operator/faq/external-clients/</guid>
+      <description>Approaches There are two supported approaches for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster: Load Balancer Tunneling and Kubernetes NodePorts.
+This FAQ is for remote EJB and JMS clients - not JTA clients. The operator does not currently support external WebLogic JTA access to a WebLogic cluster, as (A) external JTA access requires each server in the cluster to be individually addressable by the client, but this conflicts with (B) the current operator requirement that a network channel in a cluster have the same port across all servers in the cluster.</description>
+    </item>
+    
+    <item>
+      <title>Coherence Requirements</title>
+      <link>/weblogic-kubernetes-operator/faq/coherence-requirements/</link>
+      <pubDate>Mon, 12 Aug 2019 12:41:38 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/coherence-requirements/</guid>
+      <description>If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.
+Note that some Fusion Middleware products, like SOA Suite, use Coherence and so these requirements apply to them.
+Unicast and Well Known Address When the first Coherence process starts, it will form a cluster. The next Coherence process to start (i.e. in a different pod) will use UDP to try to contact the senior member.</description>
     </item>
     
   </channel>

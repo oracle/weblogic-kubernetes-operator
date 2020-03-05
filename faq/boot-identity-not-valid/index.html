@@ -4,26 +4,26 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.54.0" />
-    <meta name="description" content="Kubernetes secrets for the WebLogic Kubernetes Operator">
+    <meta name="description" content="">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>Secrets :: WebLogic Kubernetes Operator</title>
+    <title>Boot Identity Not Valid :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442681" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442681" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1583442682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1583442682" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442681"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1583442682"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -33,7 +33,7 @@
     </style>
     
   </head>
-  <body class="" data-url="/weblogic-kubernetes-operator/security/secrets/">
+  <body class="" data-url="/weblogic-kubernetes-operator/faq/boot-identity-not-valid/">
     <nav id="sidebar" class="">
 
 
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442681"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1583442682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1583442682"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442681"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1583442682"></script>
 
     
   </div>
@@ -2081,7 +2081,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/security/" title="Security" class="dd-item 
-        parent
+        
         
         
         ">
@@ -2255,7 +2255,7 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/security/secrets/" title="Secrets" class="dd-item active">
+      <li data-nav-id="/weblogic-kubernetes-operator/security/secrets/" title="Secrets" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/security/secrets/">
         Secrets
         
@@ -2301,7 +2301,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/faq/" title="Frequently asked questions" class="dd-item 
-        
+        parent
         
         
         ">
@@ -2363,7 +2363,7 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/boot-identity-not-valid/" title="Boot Identity Not Valid" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/boot-identity-not-valid/" title="Boot Identity Not Valid" class="dd-item active">
         <a href="/weblogic-kubernetes-operator/faq/boot-identity-not-valid/">
         Boot Identity Not Valid
         
@@ -2588,7 +2588,7 @@
             
           
           
-            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/security/'>Security</a> > Secrets
+            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/faq/'>Frequently asked questions</a> > Boot Identity Not Valid
           
          
           
@@ -2601,26 +2601,7 @@
                 
                     <div class="progress">
     <div class="wrapper">
-<nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#contents">Contents</a></li>
-<li><a href="#weblogic-domain-credentials-secret">WebLogic domain credentials secret</a></li>
-<li><a href="#weblogic-domain-image-pull-secret">WebLogic domain image pull secret</a></li>
-<li><a href="#weblogic-kubernetes-operator-image-pull-secret">WebLogic Kubernetes Operator image pull secret</a></li>
-<li><a href="#weblogic-kubernetes-operator-configuration-override-secrets">WebLogic Kubernetes Operator configuration override secrets</a></li>
-<li><a href="#weblogic-kubernetes-operator-external-rest-interface-secret">WebLogic Kubernetes Operator external REST interface secret</a></li>
-<li><a href="#weblogic-kubernetes-operator-internal-rest-interface-secret">WebLogic Kubernetes Operator internal REST interface secret</a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
-</nav>
+
     </div>
 </div>
 
@@ -2636,7 +2617,7 @@
           
             <h1>
               
-              Secrets
+              Boot Identity Not Valid
             </h1>
           
 
@@ -2644,163 +2625,19 @@
 
 
 
+<blockquote>
+<p>One or more WebLogic Server instances in my domain will not start and I see errors in the server log like this:</p>
 
+<p><strong><em><Feb 6, 2020 12:05:35,550 AM GMT> <Critical> <Security> <BEA-090402> <Authentication denied: Boot identity not valid. The user name or password or both from the boot identity file (boot.properties) is not valid. The boot identity may have been changed since the boot identity file was created. Please edit and update the boot identity file with the proper values of username and password. The first time the updated boot identity file is used to start the server, these new values are encrypted.></em></strong></p>
+</blockquote>
 
-<h4 id="contents">Contents</h4>
+<p>When you see these kinds of errors, it means that the user name and password provided in the <code>weblogicCredentialsSecret</code> are incorrect. Prior to operator version 2.5.0, this error could
+have also indicated that the WebLogic domain directory&rsquo;s security configuration files have changed in an incompatible way between when the operator scanned
+the domain directory, which occurs during the &ldquo;introspection&rdquo; phase, and when the server instance attempted to start. There is now a separate validation for that condition described in the <a href="domain-secret-mismatch.md">domain secret mismatch FAQ entry</a>.</p>
 
-<ul>
-<li><a href="#weblogic-domain-credentials-secret">WebLogic domain credentials secret</a></li>
-<li><a href="#weblogic-domain-image-pull-secret">WebLogic domain image pull secret</a></li>
-<li><a href="#weblogic-kubernetes-operator-image-pull-secret">WebLogic Kubernetes Operator image pull secret</a></li>
-<li><a href="#weblogic-kubernetes-operator-configuration-override-secrets">WebLogic Kubernetes Operator configuration override secrets</a></li>
-<li><a href="#weblogic-kubernetes-operator-external-rest-interface-secret">WebLogic Kubernetes Operator external REST interface secret</a></li>
-<li><a href="#weblogic-kubernetes-operator-internal-rest-interface-secret">WebLogic Kubernetes Operator internal REST interface secret</a></li>
-</ul>
-
-<h4 id="weblogic-domain-credentials-secret">WebLogic domain credentials secret</h4>
-
-<p>The credentials for the WebLogic domain are kept in a Kubernetes <code>Secret</code> where the name of
-the secret is specified using <code>webLogicCredentialsSecret</code> in the WebLogic <code>Domain</code> resource.
-Also, the domain credentials secret must be created in the namespace where the <code>Domain</code> will be running.</p>
-
-
-<div class="notices note" ><p>For an example of a WebLogic domain resource using <code>webLogicCredentialsSecret</code>,
-see <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/#1-use-imagepullsecrets-with-the-domain-resource">Docker Image Protection</a>.</p>
-</div>
-
-
-<p>The samples supplied with the operator use a naming convention that follows
-the pattern <code>&lt;domainUID&gt;-weblogic-credentials</code>, where <code>&lt;domainUID&gt;</code> is
-the unique identifier of the domain, for example, <code>domain1-weblogic-credentials</code>.</p>
-
-<p>If the WebLogic domain will be started in <code>domain1-ns</code> and the <code>&lt;domainUID&gt;</code> is <code>domain1</code>,
-an example of creating a Kubernetes <code>generic secret</code> is as follows:</p>
-
-<pre><code class="language-bash">$ kubectl -n domain1-ns create secret generic domain1-weblogic-credentials \
-  --from-file=username --from-file=password
-
-$ kubectl -n domain1-ns label secret domain1-weblogic-credentials \
-  weblogic.domainUID=domain1 weblogic.domainName=domain1
-</code></pre>
-
-
-<div class="notices tip" ><p>Oracle recommends that you not include unencrypted passwords on command lines.
-Passwords and other sensitive data can be prompted for or looked up by shell scripts and/or
-tooling. For more information about creating Kubernetes secrets, see the Kubernetes
-<a href="https://kubernetes.io/docs/concepts/configuration/secret/#creating-your-own-secrets">Secrets</a>
-documentation.</p>
-</div>
-
-
-<p>The operator&rsquo;s introspector job will expect the secret key names to be:</p>
-
-<ul>
-<li><code>username</code></li>
-<li><code>password</code></li>
-</ul>
-
-<p>For example, here is what results when describing the Kubernetes <code>Secret</code>:</p>
-
-<pre><code class="language-bash">$ kubectl -n domain1-ns describe secret domain1-weblogic-credentials
-Name:         domain1-weblogic-credentials
-Namespace:    domain1-ns
-Labels:       weblogic.domainName=domain1
-              weblogic.domainUID=domain1
-Annotations:  &lt;none&gt;
-
-Type:  Opaque
-
-Data
-====
-password:  8 bytes
-username:  8 bytes
-</code></pre>
-
-<h4 id="weblogic-domain-image-pull-secret">WebLogic domain image pull secret</h4>
-
-<p>The WebLogic domain that the operator manages can have images that are protected
-in the registry. The <code>imagePullSecrets</code> setting on the <code>Domain</code> can be used to specify the
-Kubernetes <code>Secret</code> that holds the registry credentials.</p>
-
-
-<div class="notices info" ><p>For more information, see <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/#weblogic-domain-in-docker-image-protection">Docker Image Protection</a>
-under <strong>Domain security</strong>.</p>
-</div>
-
-
-<h4 id="weblogic-kubernetes-operator-image-pull-secret">WebLogic Kubernetes Operator image pull secret</h4>
-
-<p>The Helm chart for installing the operator has an option to specify the
-image pull secret used for the operator&rsquo;s image when using a private registry.
-The Kubernetes <code>Secret</code> of type <code>docker-registry</code> should be created in the namespace
-where the operator is deployed.</p>
-
-<p>Here is an example of using the <code>helm install</code> command to set the image name and image pull secret:</p>
-
-<p>For Helm 2.x:</p>
-
-<pre><code class="language-bash">$ helm install kubernetes/charts/weblogic-operator \
-  --set &quot;image=my.io/my-operator-image:1.0&quot; \
-  --set &quot;imagePullSecrets[0].name=my-operator-image-pull-secret&quot; \
-  --name my-weblogic-operator --namespace weblogic-operator-ns \
-  --wait
-</code></pre>
-
-<p>For Helm 3.x:</p>
-
-<pre><code class="language-bash">$ helm install my-weblogic-operator kubernetes/charts/weblogic-operator \
-  --set &quot;image=my.io/my-operator-image:1.0&quot; \
-  --set &quot;imagePullSecrets[0].name=my-operator-image-pull-secret&quot; \
-  --namespace weblogic-operator-ns \
-  --wait
-</code></pre>
-
-
-<div class="notices info" ><p>For more information, see
-<a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/#install-the-operator-helm-chart">Install the operator Helm chart</a>
-under <strong>User Guide</strong>.</p>
-</div>
-
-
-<h4 id="weblogic-kubernetes-operator-configuration-override-secrets">WebLogic Kubernetes Operator configuration override secrets</h4>
-
-<p>The operator supports embedding macros within configuration override templates
-that reference Kubernetes secrets. These Kubernetes secrets can be created with any name in the
-namespace where the <code>Domain</code> will be running. The Kubernetes secret names are
-specified using <code>configOverrideSecrets</code> in the WebLogic <code>Domain</code> resource.</p>
-
-
-<div class="notices info" ><p>For more information, see
-<a href="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/#how-do-you-specify-overrides">Configuration overrides</a>
-under <strong>User Guide</strong>.</p>
-</div>
-
-
-<h4 id="weblogic-kubernetes-operator-external-rest-interface-secret">WebLogic Kubernetes Operator external REST interface secret</h4>
-
-<p>The operator can expose an external REST HTTPS interface which can be
-accessed from outside the Kubernetes cluster. A Kubernetes <code>tls secret</code>
-is used to hold the certificate(s) and private key.</p>
-
-
-<div class="notices info" ><p>For more information, see <a href="/weblogic-kubernetes-operator/security/certificates/#reference">Certificates</a>
-under <strong>Securty</strong>.</p>
-</div>
-
-
-<h4 id="weblogic-kubernetes-operator-internal-rest-interface-secret">WebLogic Kubernetes Operator internal REST interface secret</h4>
-
-<p>The operator exposes an internal REST HTTPS interface with a self-signed certificate.
-The certificate is kept in a Kubernetes <code>ConfigMap</code> with the name <code>weblogic-operator-cm</code> using the key <code>internalOperatorCert</code>.
-The private key is kept in a Kubernetes <code>Secret</code> with the name <code>weblogic-operator-secrets</code> using the key <code>internalOperatorKey</code>.
-These Kubernetes objects are managed by the operator&rsquo;s Helm chart and are part of the
-namespace where the operator is installed.</p>
-
-<p>For example, to see all the operator&rsquo;s config maps and secrets when installed into
-the Kubernetes namespace <code>weblogic-operator-ns</code>, use:</p>
-
-<pre><code class="language-bash">$ kubectl -n weblogic-operator-ns get cm,secret
-</code></pre>
+<p>Check that the user name and password credentials stored in the Kubernetes secret referenced by <code>weblogicCredentialsSecret</code> contain the expected values for an account with administrative privilege for the WebLogic domain.
+Then <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers">stop all WebLogic server instances</a>
+in the domain before restarting so that the operator will repeat its introspection and generate the corrected &ldquo;boot.properites&rdquo; files.</p>
 
 
 <footer class=" footline" >
@@ -4204,7 +4041,6 @@ the Kubernetes namespace <code>weblogic-operator-ns</code>, use:</p>
             
                 
                     
-                    
                 
                 
 
@@ -4219,9 +4055,6 @@ the Kubernetes namespace <code>weblogic-operator-ns</code>, use:</p>
             
             
                 
-                    
-                        
-                        
                     
                 
                 
@@ -4335,7 +4168,6 @@ the Kubernetes namespace <code>weblogic-operator-ns</code>, use:</p>
             
                 
                     
-                    
                 
                 
 
@@ -4351,9 +4183,6 @@ the Kubernetes namespace <code>weblogic-operator-ns</code>, use:</p>
             
             
                 
-                    
-                        
-                        
                     
                 
                 
@@ -4374,6 +4203,7 @@ the Kubernetes namespace <code>weblogic-operator-ns</code>, use:</p>
             
                 
                     
+                    
                 
                 
 
@@ -4387,21 +4217,8 @@ the Kubernetes namespace <code>weblogic-operator-ns</code>, use:</p>
             
                 
                     
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
                         
-            
-            
-                
+                        
                     
                 
                 
@@ -4434,6 +4251,26 @@ the Kubernetes namespace <code>weblogic-operator-ns</code>, use:</p>
             
             
                 
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
                     
                 
                 
@@ -4570,10 +4407,10 @@ the Kubernetes namespace <code>weblogic-operator-ns</code>, use:</p>
 	 
 	 
 		
-			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/security/rbac/" title="RBAC"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/faq/cannot-pull-image/" title="Cannot Pull Image"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/weblogic-kubernetes-operator/security/openshift/" title="OpenShift" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/faq/domain-secret-mismatch/" title="Domain Secret Mismatch" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
