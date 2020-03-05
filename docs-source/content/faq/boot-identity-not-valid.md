@@ -11,7 +11,7 @@ weight: 20
 
 When you see these kinds of errors, it means that the user name and password provided in the `weblogicCredentialsSecret` are incorrect. Prior to operator version 2.5.0, this error could
 have also indicated that the WebLogic domain directory's security configuration files have changed in an incompatible way between when the operator scanned
-the domain directory, which occurs during the "introspection" phase, and when the server instance attempted to start. There is now a separate validation for that condition described in the [domain secret mismatch FAQ entry](../domain-secret-mismatch.md).
+the domain directory, which occurs during the "introspection" phase, and when the server instance attempted to start. There is now a separate validation for that condition described in the [domain secret mismatch FAQ entry](../domain-secret-mismatch/).
 
 Check that the user name and password credentials stored in the Kubernetes secret referenced by `weblogicCredentialsSecret` contain the expected values for an account with administrative privilege for the WebLogic domain. 
 Then [stop all WebLogic server instances](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers)
