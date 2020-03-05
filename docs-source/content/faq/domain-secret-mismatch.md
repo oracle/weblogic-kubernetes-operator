@@ -7,7 +7,7 @@ weight: 21
 
 > One or more WebLogic Server instances in my domain will not start and the domain resource `status` or the pod log report errors like this:
 >
-> `Domain secret mismatch. The domain secret in 'DOMAIN_HOME/security/SerializedSystemIni.dat' where DOMAIN_HOME='$DOMAIN_HOME' does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic servers in the same domain share the same domain secret.`
+> ***Domain secret mismatch. The domain secret in 'DOMAIN_HOME/security/SerializedSystemIni.dat' where DOMAIN_HOME='$DOMAIN_HOME' does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic servers in the same domain share the same domain secret.***
 
 When you see these kinds of errors, it means that the WebLogic domain directory's security configuration files have changed in an incompatible way between when the operator scanned
 the domain directory, which occurs during the "introspection" phase, and when the server instance attempted to start.

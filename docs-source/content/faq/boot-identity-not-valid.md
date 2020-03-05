@@ -7,7 +7,7 @@ weight: 20
 
 > One or more WebLogic Server instances in my domain will not start and I see errors in the server log like this:
 >
-> `<Feb 6, 2020 12:05:35,550 AM GMT> <Critical> <Security> <BEA-090402> <Authentication denied: Boot identity not valid. The user name or password or both from the boot identity file (boot.properties) is not valid. The boot identity may have been changed since the boot identity file was created. Please edit and update the boot identity file with the proper values of username and password. The first time the updatedboot identity file is used to start the server, these new values are encrypted.>`
+> ***<Feb 6, 2020 12:05:35,550 AM GMT> <Critical> <Security> <BEA-090402> <Authentication denied: Boot identity not valid. The user name or password or both from the boot identity file (boot.properties) is not valid. The boot identity may have been changed since the boot identity file was created. Please edit and update the boot identity file with the proper values of username and password. The first time the updated boot identity file is used to start the server, these new values are encrypted.>***
 
 When you see these kinds of errors, it means that the user name and password provided in the `weblogicCredentialsSecret` are incorrect. Prior to operator version 2.5.0, this error could
 have also indicated that the WebLogic domain directory's security configuration files have changed in an incompatible way between when the operator scanned
