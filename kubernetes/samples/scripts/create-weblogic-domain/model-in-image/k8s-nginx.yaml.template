@@ -8,7 +8,7 @@ apiVersion: extensions/v1beta1 # for versions before 1.14 use extensions/v1beta1
 kind: Ingress
 metadata:
   name: example-ingress
-  namespace: sample-domain1-ns
+  namespace: @@DOMAIN_NAMESPACE@@
   annotations:
     kukubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /$1
@@ -19,6 +19,6 @@ spec:
      paths:
      - path: /(.+)
        backend:
-         serviceName: sample-domain1-cluster-cluster-1
+         serviceName: sample-@@DOMAIN_UID@@-cluster-cluster-1
          servicePort: 8001
 

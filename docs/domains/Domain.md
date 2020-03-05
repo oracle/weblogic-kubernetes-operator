@@ -92,6 +92,7 @@ An element representing a cluster in the domain configuration.
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `introspectorJobActiveDeadlineSeconds` | number | The introspector job timeout value in seconds. If this field is specified it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Configuration for OPSS security. |
 | `overridesConfigMap` | string | The name of the config map for WebLogic configuration overrides. If this field is specified it overrides the value of spec.configOverrides. |

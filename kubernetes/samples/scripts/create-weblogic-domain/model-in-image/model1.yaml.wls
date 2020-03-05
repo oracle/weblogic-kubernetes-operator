@@ -21,6 +21,7 @@ topology:
         "cluster-1-template":
             Cluster: "cluster-1"
             ListenPort : '@@PROP:MANSVR_PORT@@'
+
 appDeployments:
     Application:
         myear:

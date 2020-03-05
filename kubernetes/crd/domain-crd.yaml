@@ -74,6 +74,11 @@ spec:
                   description: The name of the config map for WebLogic configuration
                     overrides. If this field is specified it overrides the value of
                     spec.configOverrides.
+                introspectorJobActiveDeadlineSeconds:
+                  type: number
+                  description: The introspector job timeout value in seconds. If this
+                    field is specified it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds
+                    value.
             configOverrideSecrets:
               type: array
               description: Deprecated. Use configuration.secrets instead. Ignored

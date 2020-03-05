@@ -31,6 +31,9 @@ set -o pipefail
 
 set -eu
 
+SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+echo "@@ Info: Running '$(basename "$0")'."
+
 cd ${WORKDIR}
 
 DOWNLOAD_WIT=${DOWNLOAD_WIT:-when-missing}

@@ -490,6 +490,16 @@ public class Domain {
         .map(Configuration::getOverridesConfigMap).orElse(spec.getConfigOverrides());
   }
 
+  /**
+   * Returns the value of the introspector job active deadline.
+   *
+   * @return value of the deadline in seconds.
+   */
+  public Long getIntrospectorJobActiveDeadlineSeconds() {
+    return Optional.ofNullable(spec.getConfiguration())
+        .map(Configuration::getIntrospectorJobActiveDeadlineSeconds).orElse(null);
+  }
+
   public String getWdtConfigMap() {
     return spec.getWdtConfigMap();
   }

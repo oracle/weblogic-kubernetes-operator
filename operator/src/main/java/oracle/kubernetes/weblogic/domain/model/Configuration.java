@@ -27,6 +27,10 @@ public class Configuration {
           + " it overrides the value of spec.configOverrides.")
   private String overridesConfigMap;
 
+  @Description("The introspector job timeout value in seconds. If this field is specified"
+          + " it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value.")
+  private Long introspectorJobActiveDeadlineSeconds;
+
   public Model getModel() {
     return model;
   }
@@ -76,6 +80,19 @@ public class Configuration {
 
   public Configuration withOverridesConfigMap(String overridesConfigMap) {
     this.overridesConfigMap = overridesConfigMap;
+    return this;
+  }
+
+  public Long getIntrospectorJobActiveDeadlineSeconds() {
+    return this.introspectorJobActiveDeadlineSeconds;
+  }
+
+  public void setIntrospectorJobActiveDeadlineSeconds(Long introspectorJobActiveDeadlineSeconds) {
+    this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
+  }
+
+  public Configuration withIntrospectorJobActiveDeadlineSeconds(Long introspectorJobActiveDeadlineSeconds) {
+    this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
     return this;
   }
 
