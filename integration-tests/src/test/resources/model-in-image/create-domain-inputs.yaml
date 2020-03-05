@@ -37,13 +37,9 @@ managedServerPort: 8001
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
 
-# WebLogic Server Docker image that the operator uses to start the domain.
-#
-# The create domain scripts generate a WebLogic Server Docker image with a domain home in it.
-# By default, the scripts tag the generated WebLogic server Docker image as either
-# `domain-home-in-image` or `domain-home-in-image-wdt` based on the `domainHomeImageBuildPath`
-# property, and use it to set the `image` element in the generated domain YAML file.
-#
+# Name of the image for the created model in image. With Model In Image, WDT models, WDT
+# archives and WDT install can be included in the image. Additional models and variable
+# files can be provided using kubernetes config map.
 # If this property is set, the create domain scripts will use the value specified, instead of the
 # default value, to tag the generated image and set the `image` in the domain YAML file.
 #
