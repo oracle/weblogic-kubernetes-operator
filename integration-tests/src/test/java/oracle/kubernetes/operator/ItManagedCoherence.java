@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
@@ -390,7 +391,7 @@ public class ItManagedCoherence extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO,
         TestUtils.exec("helm get values traefik-operator").stdout());
     LoggerHelper.getLocal().log(Level.INFO,
-        TestUtils.exec("kubectl describe ingress "
+        ExecCommand.exec("kubectl describe ingress "
             + domain.getDomainUid() + "-traefik -n " + domain.getDomainNs()).stdout());
   }
 }
