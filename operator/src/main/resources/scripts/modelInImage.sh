@@ -39,7 +39,7 @@ WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model_filters.json"
 WDT_CREATE_FILTER="/weblogic-operator/scripts/wdt_create_filter.py"
 UPDATE_RCUPWD_FLAG=""
-
+WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 ARCHIVE_ZIP_CHANGED=0
 WDT_ARTIFACTS_CHANGED=0
 ROLLBACK_ERROR=3
@@ -467,17 +467,17 @@ function diff_model() {
   local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
   local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
   local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
-  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS} -Djava.security.egd=file:/dev/./urandom"
   local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar
   ${JAVA_HOME}/bin/java -cp ${CP} \
     ${JAVA_PROPS} \
     org.python.util.jython \
-    ${SCRIPTPATH}/model_diff.py $1 $2
-  rc=$?
-  #  WLST version
-  #  ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/model_diff.py $1 $2
-  #  rc=$?
-  #
+    ${SCRIPTPATH}/model_diff.py $1 $2 > ${WDT_OUTPUT} 2>&1
+  if [ $? -ne 0 ] ; then
+    trace SEVERE "diff model failed"
+    trace SEVERE "$(cat ${WDT_OUTPUT})"
+    exit 1
+  fi
   trace "Exiting diff_model"
   return ${rc}
 }
@@ -580,8 +580,7 @@ function generateMergedModel() {
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_validateDomain.log
     fi
-    local WDT_ERROR=$(cat ${WDT_OUTPUT})
-    trace SEVERE ${WDT_ERROR}
+    trace SEVERE "$(cat ${WDT_OUTPUT})"
     exit 1
   fi
 
@@ -621,8 +620,7 @@ function wdtCreatePrimordialDomain() {
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
     fi
-    local WDT_ERROR=$(cat ${WDT_OUTPUT})
-    trace SEVERE ${WDT_ERROR}
+    trace SEVERE "$(cat ${WDT_OUTPUT})"
     exit 1
   fi
 
@@ -661,8 +659,7 @@ function wdtUpdateModelDomain() {
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_updateDomain.log
     fi
-    local WDT_ERROR=$(cat ${WDT_OUTPUT})
-    trace SEVERE ${WDT_ERROR}
+    trace SEVERE "$(cat ${WDT_OUTPUT})"
     exit 1
   fi
 
@@ -703,8 +700,7 @@ function encrypt_model() {
   fi
   if [ $ret -ne 0 ]; then
     trace SEVERE "Validate Model Failed "
-    local WDT_ERROR=$(cat ${WDT_OUTPUT})
-    trace SEVERE ${WDT_ERROR}
+    trace SEVERE "$(cat ${WDT_OUTPUT})"
     exit 1
   fi
 
@@ -727,15 +723,16 @@ function encrypt_decrypt_domain_secret() {
   local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
   local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
   local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
-  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS} -Djava.security.egd=file:/dev/./urandom"
   local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar:${WDT_BINDIR}/../lib/weblogic-deploy-core.jar
   ${JAVA_HOME}/bin/java -cp ${CP} \
     ${JAVA_PROPS} \
     org.python.util.jython \
-    ${SCRIPTPATH}/encryption_util.py $1 $2 "$(cat /tmp/secure.ini)" $3
+    ${SCRIPTPATH}/encryption_util.py $1 $2 "$(cat /tmp/secure.ini)" $3 > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
     trace SEVERE "Encrypt or Decrypt failure "
+    trace SEVERE "$(cat ${WDT_OUTPUT})"
     exit 1
   fi
 
