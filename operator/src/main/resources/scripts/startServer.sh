@@ -12,6 +12,8 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exitOrLoop
 
+traceTiming "POD '${SERVICE_NAME}' MAIN START"
+
 trace "Starting WebLogic Server '${SERVER_NAME}'."
 
 source ${SCRIPTPATH}/modelInImage.sh
@@ -46,17 +48,25 @@ function startWLS() {
   # Start NM
   #
 
+  traceTiming "POD '${SERVICE_NAME}' NM START"
+
   trace "Start node manager"
   # call script to start node manager in same shell
   # $SERVER_OUT_FILE, SERVER_PID_FILE, and SHUTDOWN_MARKER_FILE will be set in startNodeManager.sh
   . ${SCRIPTPATH}/startNodeManager.sh
   [ $? -ne 0 ] && trace SEVERE "failed to start node manager" && exitOrLoop
 
+  traceTiming "POD '${SERVICE_NAME}' NM RUNNING"
+
   #
   # Verify that the domain secret hasn't changed
   #
 
+  traceTiming "POD '${SERVICE_NAME}' MD5 BEGIN"
+
   checkDomainSecretMD5 || exitOrLoop
+
+  traceTiming "POD '${SERVICE_NAME}' MD5 END"
 
   #
   # Start WL Server
@@ -64,8 +74,12 @@ function startWLS() {
 
   # TBD We should probably || exitOrLoop if start-server.py itself fails, and dump NM log to stdout
 
+  traceTiming "POD '${SERVICE_NAME}' WLS STARTING"
+
   trace "Start WebLogic Server via the nodemanager"
   ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
+
+  traceTiming "POD '${SERVICE_NAME}' WLS STARTED"
 }
 
 function mockWLS() {
@@ -136,13 +150,26 @@ function copySitCfg() {
 traceEnv before
 traceDirs before
 
+# TBD Johnny: There's no error checking here.  What happens if 'jar' fails? Etc, etc. 
+#             Any failure whould cause an 'exitOrLoop'
+# TBD Johnny: Below is too verbose.  Most of the verbose output should be captured 
+#             to temporary files and only echoed if there's an error.  We should
+#             limit normal output to a succinct but useful summary of what happened.
+
+traceTiming "POD '${SERVICE_NAME}' MII UNZIP START"
+
 if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
+
+  trace "Model-in-Image: Creating domain home."
+
   # primordial domain contain the basic structures, security and other fmwconfig templated info
   # domainzip only contains the domain configuration (config.xml jdbc/ jms/)
   # Both are needed for the complete domain reconstruction
   cd / && base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
   cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
   chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
+
+  trace "Model-in-Image: Deploying libraries."
 
   mkdir -p ${DOMAIN_HOME}/lib
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
@@ -155,6 +182,8 @@ if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
     done
 
 fi
+
+traceTiming "POD '${SERVICE_NAME}' MII UNZIP COMPLETE"
 
 #
 # Configure startup mode
