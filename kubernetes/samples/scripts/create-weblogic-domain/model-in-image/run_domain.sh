@@ -66,6 +66,11 @@ $SCRIPTDIR/create_secret.sh -s sample-${DOMAIN_UID}-rcu-access \
 
 echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
 # TBD remove passphrase literal once Johnny supports using walletPassword
+# TODO: Tom
+#  It is supported but
+#  domain resource name configuration.opss.walletPasswordSecret  with literal key passphrase
+#                       configuration.opss.walletFileSecret with file name ewallet.p12
+
 $SCRIPTDIR/create_secret.sh -s sample-${DOMAIN_UID}-opss-wallet-password-secret \
   -l passphrase=welcome1 \
   -l walletPassword=welcome1
@@ -85,6 +90,7 @@ kubectl apply -f $WORKDIR/k8s-domain.yaml
 )
 
 # TODO: Tom
+# This is for the configuration.model.runtimeEncryptionSecret name literal is password
 
 kubectl -n sample-domain1-ns delete secret domain1-model-encryption-secret --ignore-not-found
 
