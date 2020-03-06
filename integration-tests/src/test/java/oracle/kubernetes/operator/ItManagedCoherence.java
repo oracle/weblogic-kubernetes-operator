@@ -254,12 +254,18 @@ public class ItManagedCoherence extends BaseTest {
     String[] firstNameList = {"Frodo", "Samwise", "Bilbo", "peregrin", "Meriadoc", "Gandalf"};
     String[] secondNameList = {"Baggins", "Gamgee", "Baggins", "Took", "Brandybuck", "TheGrey"};
     ExecResult result;
-
+    // for debugging
+    verifyServersIngressRunning();
     for (int i = 0; i < firstNameList.length; i++) {
       result = addDataToCache(firstNameList[i], secondNameList[i]);
       LoggerHelper.getLocal().log(Level.INFO, "addDataToCache returned" + result.stdout());
+      if (!result.stdout().contains(firstNameList[i])) {
+        // for debugging
+        verifyServersIngressRunning();
+      }
       assertTrue(result.stdout().contains(firstNameList[i]), "Did not add the expected record");
     }
+
     // check if cache size is 6
     result = getCacheSize();
     LoggerHelper.getLocal().log(Level.INFO, "number of records in cache = " + result.stdout());
@@ -284,6 +290,7 @@ public class ItManagedCoherence extends BaseTest {
   }
 
   private ExecResult addDataToCache(String firstName, String secondName) throws Exception {
+
     LoggerHelper.getLocal().log(Level.INFO, "Add initial data to cache");
 
     StringBuffer curlCmd = new StringBuffer("curl --silent ");
@@ -307,6 +314,7 @@ public class ItManagedCoherence extends BaseTest {
 
     LoggerHelper.getLocal().log(Level.INFO, "curlCmd is " + curlCmd.toString());
     ExecResult result = TestUtils.exec(curlCmd.toString(), true);
+
     return result;
   }
 
@@ -373,4 +381,16 @@ public class ItManagedCoherence extends BaseTest {
     return result;
   }
 
+  private void verifyServersIngressRunning() throws Exception {
+    LoggerHelper.getLocal().log(Level.INFO, "Verifying server status");
+    domain.verifyServersReady();
+    LoggerHelper.getLocal().log(Level.INFO, "Verifying traefik and ingress created for the domain");
+    LoggerHelper.getLocal().log(Level.INFO,
+        TestUtils.exec("helm status traefik-operator").stdout());
+    LoggerHelper.getLocal().log(Level.INFO,
+        TestUtils.exec("helm get values traefik-operator").stdout());
+    LoggerHelper.getLocal().log(Level.INFO,
+        TestUtils.exec("kubectl describe ingress "
+            + domain.getDomainUid() + "-traefik -n " + domain.getDomainNs()).stdout());
+  }
 }
