@@ -42,9 +42,9 @@ public class IntrospectorJobEnvVars {
   public static final String WDT_ENCRYPTION_PASSPHRASE_NAME = "WDT_ENCRYPTION_PASSPHRASE_NAME";
 
   /**
-   * The credentials used by the introspection job - model in image passphrase.
+   * The credentials used by the introspection job - runtime encryption secret name.
    */
-  public static final String MODEL_IN_IMAGE_PASSPHRASE_NAME = "MODEL_IN_IMAGE_PASSPHRASE_NAME";
+  public static final String RUNTIME_ENCRYPTION_SECRET_NAME = "RUNTIME_ENCRYPTION_SECRET_NAME";
 
 
   /**

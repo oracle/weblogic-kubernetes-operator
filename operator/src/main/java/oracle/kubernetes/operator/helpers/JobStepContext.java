@@ -114,8 +114,8 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtEncryptionSecret();
   }
 
-  String getModelInImageSecretName() {
-    return getDomain().getModelInImageSecret();
+  String getRuntimeEncryptionSecretName() {
+    return getDomain().getRuntimeEncryptionSecret();
   }
 
 
@@ -285,7 +285,7 @@ public abstract class JobStepContext extends BasePodStepContext {
           .secret(getWdtEncryptPassPhraseVolume()));
     }
     if (getModelInImagePassPhraseVolume() != null) {
-      podSpec.addVolumesItem(new V1Volume().name(MODEL_IN_IMAGE_PASSPHRASE_VOLUME)
+      podSpec.addVolumesItem(new V1Volume().name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
           .secret(getModelInImagePassPhraseVolume()));
     }
 
@@ -341,8 +341,8 @@ public abstract class JobStepContext extends BasePodStepContext {
     }
 
     if (getModelInImagePassPhraseVolume() != null) {
-      container.addVolumeMountsItem(readOnlyVolumeMount(MODEL_IN_IMAGE_PASSPHRASE_VOLUME,
-          MODEL_IN_IMAGE_KEY_MOUNT_PATH));
+      container.addVolumeMountsItem(readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
+          RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
     }
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
@@ -428,9 +428,9 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private V1SecretVolumeSource getModelInImagePassPhraseVolume() {
-    if (getModelInImageSecretName() != null) {
+    if (getRuntimeEncryptionSecretName() != null) {
       V1SecretVolumeSource result = new V1SecretVolumeSource()
-          .secretName(getModelInImageSecretName())
+          .secretName(getRuntimeEncryptionSecretName())
           .defaultMode(420);
       result.setOptional(true);
       return result;

@@ -26,7 +26,7 @@ NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 WDT_ENCRYPTION_PASSPHRASE="/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
-MODEL_IN_IMAGE_PASSPHRASE="/weblogic-operator/model-in-image-key-passphrase/passphrase"
+RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/model-in-image-runtime-secret/password"
 OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/passphrase"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/ewallet.p12"
 IMG_MODELS_HOME="/u01/wdt/models"
@@ -286,8 +286,8 @@ function buildWDTParams_MD5() {
 function createWLDomain() {
   start_trap
   trace "Entering createWLDomain"
-  
-  if [ ! -f ${MODEL_IN_IMAGE_PASSPHRASE} ] ; then
+
+  if [ ! -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
     trace SEVERE "modelInImageSecret passphrase is required"
     exit 1
   fi
@@ -441,12 +441,18 @@ function createModelDomain() {
   trace "Entering createModelDomain"
   createPrimordialDomain
 
+  # if there is a new primordial domain created then use newly created primordial domain otherwise
   # if the primordial domain already in the configmap, restore it
+  #
 
   if [ -f "${LOCAL_PRIM_DOMAIN_ZIP}" ] ; then
     trace "Using newly created domain"
   elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
     cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP} && tar -xzf ${LOCAL_PRIM_DOMAIN_ZIP}
+
+    # Since the SerializedSystem ini is encrypted, restore it first
+    local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+    encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
   fi
 
   wdtUpdateModelDomain
@@ -458,7 +464,7 @@ function diff_model() {
   trace "Entering diff_model"
 
   #
-  local ORACLE_SERVER_DIR=${MW_HOME}/wlserver
+  local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
   local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
   local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
   local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS}"
@@ -535,8 +541,20 @@ function createPrimordialDomain() {
       empath=$(grep "/em.ear" ${DOMAIN_HOME}/config/config.xml | grep -oPm1 "(?<=<source-path>)[^<]+")
     fi
 
+    # Before targz it, we encrypt the SerializedSystemIni.dat, first save the original
+
+    cp ${DOMAIN_HOME}/security/SerializedSystemIni.dat /tmp/sii.dat.saved
+
+    local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+    encrypt_decrypt_domain_secret "encrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
     tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/lib  ${empath} \
     ${DOMAIN_HOME}/*
+
+    # Put back the original one so that update can continue
+    # TODO: sometime rm and mv have problems in /tmp
+
+    mv  /tmp/sii.dat.saved ${DOMAIN_HOME}/security/SerializedSystemIni.dat
+
   fi
 
   trace "Exiting createPrimordialDomain"
@@ -554,7 +572,7 @@ function generateMergedModel() {
 
   export __WLSDEPLOY_STORE_MODEL__="${NEW_MERGED_MODEL}"
 
-  ${WDT_BINDIR}/validateModel.sh -oracle_home ${MW_HOME} ${model_list} \
+  ${WDT_BINDIR}/validateModel.sh -oracle_home ${ORACLE_HOME} ${model_list} \
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
   ret=$?
   if [ $ret -ne 0 ]; then
@@ -588,12 +606,12 @@ function wdtCreatePrimordialDomain() {
   export __WLSDEPLOY_STORE_MODEL__=1
 
   if [ ! -z ${WDT_PASSPHRASE} ]; then
-    echo ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home \
+    echo ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${ORACLE_HOME} -domain_home \
     ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
     ${OPSS_FLAGS} ${UPDATE_RCUPWD_FLAG} >  ${WDT_OUTPUT}
     ret=${PIPESTATUS[1]}
   else
-    ${WDT_BINDIR}/createDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
+    ${WDT_BINDIR}/createDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}  ${UPDATE_RCUPWD_FLAG}  \
     > ${WDT_OUTPUT}
     ret=$?
@@ -629,12 +647,12 @@ function wdtUpdateModelDomain() {
   export __WLSDEPLOY_STORE_MODEL__=1
 
   if [ ! -z ${WDT_PASSPHRASE} ]; then
-    echo ${WDT_PASSPHRASE} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home \
+    echo ${WDT_PASSPHRASE} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${ORACLE_HOME} -domain_home \
     ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
       ${UPDATE_RCUPWD_FLAG} > ${WDT_OUTPUT}
     ret=${PIPESTATUS[1]}
   else
-    ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} -domain_home ${DOMAIN_HOME} $model_list \
+    ${WDT_BINDIR}/updateDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT}
     ret=$?
   fi
@@ -674,9 +692,9 @@ function encrypt_model() {
   trace "Entering encrypt_wdtmodel"
   stop_trap
 
-  local MII_PASSPHRASE=$(cat ${MODEL_IN_IMAGE_PASSPHRASE})
+  local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
   if [ ! -z ${MII_PASSPHRASE} ]; then
-    ( echo ${MII_PASSPHRASE} ; echo ${MII_PASSPHRASE} ) | ${WDT_BINDIR}/encryptModel.sh -oracle_home ${MW_HOME}  \
+    ( echo ${MII_PASSPHRASE} ; echo ${MII_PASSPHRASE} ) | ${WDT_BINDIR}/encryptModel.sh -oracle_home ${ORACLE_HOME}  \
       -model_file $1 > ${WDT_OUTPUT}
     ret=${PIPESTATUS[1]}
   else
@@ -695,28 +713,40 @@ function encrypt_model() {
   trace "Exiting encrypt_wdtmodel"
 }
 
-# Only needed if we encrypt the sii.dat
-# For model we are comparing the sanitized version, not clear text
-#  TODO invoke wdt decrypt
 
-function decrypt_model() {
-  trace "Entering decrypt_model"
+function encrypt_decrypt_domain_secret() {
+  trace "Entering encrypt_decrypt_domain_secret"
 
-#  #
-#  local ORACLE_SERVER_DIR=${MW_HOME}/wlserver
-#  local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
-#  local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
-#  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS}"
-#  local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar
-#  ${JAVA_HOME}/bin/java -cp ${CP} \
-#    ${JAVA_PROPS} \
-#    org.python.util.jython \
-#    ${SCRIPTPATH}/WLSTEncryptionUtil.py "decrypt" $1 $2 $3
-#  rc=$?
-  trace "Exiting decrypt_model"
-  return ${rc}
+  if [ "$1" == "encrypt" ] ; then
+    base64 $2/security/SerializedSystemIni.dat > /tmp/secure.ini
+  else
+    cp $2/security/SerializedSystemIni.dat  /tmp/secure.ini
+  fi
 
+  #
+  local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
+  local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS}"
+  local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar:${WDT_BINDIR}/../lib/weblogic-deploy-core.jar
+  ${JAVA_HOME}/bin/java -cp ${CP} \
+    ${JAVA_PROPS} \
+    org.python.util.jython \
+    ${SCRIPTPATH}/encryption_util.py $1 $2 "$(cat /tmp/secure.ini)" $3
+  rc=$?
+  if [ $rc -ne 0 ]; then
+    trace SEVERE "Encrypt or Decrypt failure "
+    exit 1
+  fi
+
+  if [ "$1" == "decrypt" ] ; then
+    cp $2/security/SerializedSystemIni.dat  /tmp/secure.ini
+    base64 -d /tmp/secure.ini > $2/security/SerializedSystemIni.dat
+  fi
+
+  trace "Exiting encrypt_decrypt_domain_secret"
 }
+
 #
 # Generic error handler
 #

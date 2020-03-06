@@ -90,7 +90,7 @@ kubectl -n sample-domain1-ns delete secret domain1-model-encryption-secret --ign
 
 kubectl -n sample-domain1-ns \
   create secret generic domain1-model-encryption-secret \
-  --from-literal=passphrase=weblogic
+  --from-literal=password=weblogic
 
 kubectl -n sample-domain1-ns \
   label secret domain1-model-encryption-secret \

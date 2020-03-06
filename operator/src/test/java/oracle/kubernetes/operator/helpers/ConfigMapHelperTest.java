@@ -67,7 +67,8 @@ public class ConfigMapHelperTest {
     "model_diff.py",
     "modelInImage.sh",
     "wdt_create_filter.py",
-    "model_filters.json"
+    "model_filters.json",
+    "encryption_util.py"
   };
   private static final String DOMAIN_NS = "namespace";
   private static final String OPERATOR_NS = "operator";

@@ -44,10 +44,9 @@ spec:
                   type: object
                   description: Model in image model files and properties.
                   properties:
-                    encryptionSecret:
+                    runtimeEncryptionSecret:
                       type: string
-                      description: WDT encryption key passphrase secret. Required
-                        when WDT model files are encrypted.
+                      description: Model encryption secret.
                     domainType:
                       type: string
                       description: 'WDT domain type: Legal values: WLS, RestrictedJRF,
@@ -59,9 +58,10 @@ spec:
                     configMap:
                       type: string
                       description: WDT config map name.
-                    modelInImageSecret:
+                    wdtEncryptionSecret:
                       type: string
-                      description: Model encryption secret.
+                      description: WDT encryption key passphrase secret. Required
+                        when WDT model files are encrypted.
                 secrets:
                   type: array
                   description: A list of names of the secrets for WebLogic configuration

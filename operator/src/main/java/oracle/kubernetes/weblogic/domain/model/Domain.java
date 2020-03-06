@@ -378,8 +378,8 @@ public class Domain {
    *
    * @return model in image secret
    */
-  public String getModelInImageSecret() {
-    return spec.getModelInImageSecret();
+  public String getRuntimeEncryptionSecret() {
+    return spec.getRuntimeEncryptionSecret();
   }
 
 
