@@ -29,7 +29,7 @@ This can happen in a variety of ways, depending on the [model selected](https://
 
 #### Domain in a Docker image
 
-##### 1. Rolling to an image containing new or unrelated domain directory
+##### Rolling to an image containing new or unrelated domain directory
 
 The error occurs while rolling pods to have containers based on a new Docker image that contains an entirely new or unrelated domain directory.
 
@@ -43,7 +43,7 @@ The solution is to follow either the recommended [CI/CD guidelines](https://orac
 with consistent domain-specific encryption keys and bootstrapping security details, or to [perform a total shutdown](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers) of the domain so
 that introspection reoccurs as servers are restarted.
 
-##### 2. Full domain shutdown and restart
+##### Full domain shutdown and restart
 
 The error occurs while starting servers after a full domain shutdown.
 
@@ -56,7 +56,7 @@ pipeline to generate new Docker image tags on every build and to never reuse an 
 
 #### Domain on a persistent volume
 
-##### 1. Completely replacing the domain directory
+##### Completely replacing the domain directory
 
 The error occurs while starting servers when the domain directory change was made while other servers were still running.
 

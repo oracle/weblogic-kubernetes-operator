@@ -35,7 +35,7 @@ The Kubernetes NodePorts approach for giving external WebLogic EJB or JMS client
 
 Here are the steps:
 
-- Configure a custom channel for the T3 protocol in WebLogic that specifies an external address and port that are suitable for a remote client use.  See [Adding a WebLogic Custom Channel](#adding-a-weblogic-custom-channel).
+- Configure a custom channel for the T3 protocol in WebLogic that specifies an external address and port that are suitable for remote client use.  See [Adding a WebLogic Custom Channel](#adding-a-weblogic-custom-channel).
 
 - Deploy a Kubernetes NodePort to publicly expose the WebLogic ports. See [Setting up a NodePort](#setting-up-a-nodeport).
 
