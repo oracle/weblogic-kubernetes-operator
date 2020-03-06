@@ -19,12 +19,12 @@ artifacts of the corresponding domain.
 
 #### Prerequisites
 
-Before you begin, you need to perform the steps below:
+Before you begin, perform the following steps:
 
 * Review the [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}) documentation.
 * Review the [system requirements]({{< relref "/userguide/managing-fmw-domains/soa-suite#prerequisites-for-soa-suite-domains" >}}) for deploying Oracle SOA Suite domains on Kubernetes.
 * Make sure that Kubernetes is set up in the environment. For details, see the [Kubernetes setup guide]({{< relref "/userguide/overview/k8s-setup.md" >}}).
-* Make sure that the WebLogic operator is running. See [Manage operators]({{< relref "/userguide/managing-operators/_index.md" >}}) for operator infrastructure setup and [Install the operator]({{< relref "/userguide/managing-operators/installation/_index.md" >}}) for operator installation. Make sure you install the operator of version 2.4.0.
+* Make sure that the WebLogic Kubernetes operator is running. See [Manage operators]({{< relref "/userguide/managing-operators/_index.md" >}}) for operator infrastructure setup and [Install the operator]({{< relref "/userguide/managing-operators/installation/_index.md" >}}) for operator installation. Make sure you install the operator version 2.4.0.
 * Create a Kubernetes namespace (for example, `soans`) for the domain unless you intend to use the default namespace. Use the newly created namespace in all the other steps.
 For details, see [Prepare to run a domain]({{< relref "/userguide/managing-domains/prepare.md" >}}).
 
@@ -38,7 +38,7 @@ Follow the instructions for using the scripts to create a PV and PVC.
 
     * Change the values in the [create-pv-pvc-inputs.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml) file based on your requirements.
 
-    * Ensure that the path mentioned for the `weblogicDomainStoragePath` property does exists (if not, you need to create it), has read and write access permissions, and it must be a empty directory.
+    * Ensure that the path mentioned for the `weblogicDomainStoragePath` property does exists (if not, you need to create it), has read and write access permissions, and it must be an empty directory.
 
 * Create the Kubernetes secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain. For details, see this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/README.md).

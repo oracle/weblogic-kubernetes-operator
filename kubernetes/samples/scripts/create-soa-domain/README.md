@@ -25,7 +25,7 @@ Refer to the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/
 
 ### Getting started
 
-The fastest way to experience the operator is to follow the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/).
+For detailed information about deploying Oracle SOA Suite domains, see the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/).
 
 ### Additional Resources
 
