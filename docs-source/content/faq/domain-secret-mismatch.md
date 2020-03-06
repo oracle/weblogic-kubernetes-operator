@@ -1,5 +1,5 @@
 ---
-title: "Domain Secret Mismatch"
+title: "Domain secret mismatch"
 date: 2020-03-02T08:08:19-04:00
 draft: false
 weight: 21
@@ -7,7 +7,7 @@ weight: 21
 
 > One or more WebLogic Server instances in my domain will not start and the domain resource `status` or the pod log report errors like this:
 >
-> ***Domain secret mismatch. The domain secret in 'DOMAIN_HOME/security/SerializedSystemIni.dat' where DOMAIN_HOME='$DOMAIN_HOME' does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic servers in the same domain share the same domain secret.***
+> ***Domain secret mismatch. The domain secret in 'DOMAIN_HOME/security/SerializedSystemIni.dat' where DOMAIN_HOME='$DOMAIN_HOME' does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic Servers in the same domain share the same domain secret.***
 
 When you see these kinds of errors, it means that the WebLogic domain directory's security configuration files have changed in an incompatible way between when the operator scanned
 the domain directory, which occurs during the "introspection" phase, and when the server instance attempted to start.
@@ -27,13 +27,13 @@ generated during introspection will now be invalid.
 
 This can happen in a variety of ways, depending on the [model selected](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/):
 
-### Domain in a Docker image
+#### Domain in a Docker image
 
-#### 1. Rolling to an image containing new or unrelated domain directory
+##### 1. Rolling to an image containing new or unrelated domain directory
 
 The error occurs while rolling pods to have containers based on a new Docker image that contains an entirely new or unrelated domain directory.
 
-The problem is that WebLogic cannot support server instances being part of the same WebLogic domain if the server instances do 
+The problem is that WebLogic cannot support server instances being part of the same WebLogic domain if the server instances do
 not all share the same domain-specific encryption key. Additionally, operator introspection
 currently happens only when starting servers following a total shutdown. Therefore, the "boot.properites" files generated from
 introspecting the image containing the original domain directory will be invalid when used with a container started with
@@ -43,9 +43,9 @@ The solution is to follow either the recommended [CI/CD guidelines](https://orac
 with consistent domain-specific encryption keys and bootstrapping security details, or to [perform a total shutdown](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers) of the domain so
 that introspection reoccurs as servers are restarted.
 
-#### 2. Full domain shutdown and restart
+##### 2. Full domain shutdown and restart
 
-The error occurs while starting servers after a full domain shutdown. 
+The error occurs while starting servers after a full domain shutdown.
 
 If your development model generates new Docker images
 with new and unrelated domain directories and then tags those images with the same tag, then different Kubernetes worker nodes
@@ -54,9 +54,9 @@ may have different images under the same tag in their individual, local Docker r
 The simplest solution is to set `imagePullPolicy` to `Always`; however, the better solution would be to design your development
 pipeline to generate new Docker image tags on every build and to never reuse an existing tag.
 
-### Domain on a persistent volume
+#### Domain on a persistent volume
 
-#### 1. Completely replacing the domain directory
+##### 1. Completely replacing the domain directory
 
 The error occurs while starting servers when the domain directory change was made while other servers were still running.
 
@@ -67,4 +67,3 @@ the previous contents of the domain directory.  When starting servers again, the
 of the domain directory. However, you may want to preserve the domain directory security configuration including the domain-specific
 encryption key and, in that case, you should follow a similar pattern as is described in the [CI/CD guidelines](https://oracle.github.io/weblogic-kubernetes-operator/userguide/cicd/) for the domain
 in a Docker image model to preserve the original security-related domain directory files.
-
