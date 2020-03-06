@@ -431,8 +431,8 @@ TBD These instructions are temporary while we come up with a better way to incre
 To allow model-in-image to access the RCU database and OPSS wallet, it's necessary to setup an RCU access secret and an OPSS secret before deploying your domain. It's also necessary to define an `RCUDbInfo` stanza in your model. The sample already sets up all of these for you.  See:
 
 | Sample file | Description |
-| `create_opss_key_secret.sh` | Defines secret `sample-domain1-opss-key-passphrase-secret` with `passphrase=welcome1` |
-| `create_rcu_access_secret.sh` | Defines secret `sample-domain1-rcu-access` with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` |
+| `run_domain.sh` | Defines secret `sample-domain1-opss-key-passphrase-secret` with `passphrase=welcome1` |
+| `run_domain.sh` | Defines secret `sample-domain1-rcu-access` with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` |
 | `model1.yaml.jrf` | Populates the `domainInfo -> RCUDbInfo` stanza `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` attributes by referencing their locations in the `sample-domain1-rcu-access` secret. |
 | `k8s-domain.yaml.template` | Ensures the domain mounts the OPSS key secret by setting the domain resource `configuration.opss.walletSecret` attribute to `sample-domain1-rcu-access`, and ensures the domain mounts the RCU access secret `sample-domain1-rcu-access` for reference by WDT model macros by setting the domain resource `configuration.secrets` attribute. |
 

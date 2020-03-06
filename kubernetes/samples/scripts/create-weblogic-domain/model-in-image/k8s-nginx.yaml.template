@@ -19,6 +19,6 @@ spec:
      paths:
      - path: /(.+)
        backend:
-         serviceName: sample-@@DOMAIN_UID@@-cluster-cluster-1
+         serviceName: @@DOMAIN_UID@@-cluster-cluster-1
          servicePort: 8001
 

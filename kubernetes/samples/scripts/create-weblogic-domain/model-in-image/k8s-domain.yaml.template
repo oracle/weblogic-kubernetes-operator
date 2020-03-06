@@ -30,7 +30,7 @@ spec:
   
   # Identify which Secret contains the WebLogic Admin credentials 
   webLogicCredentialsSecret: 
-    name: sample-@@DOMAIN_UID@@-weblogic-credentials
+    name: @@DOMAIN_UID@@-weblogic-credentials
 
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: true
@@ -89,7 +89,7 @@ spec:
   configuration:
 
     # secrets that are referenced by model yaml macros
-    secrets: [ sample-@@DOMAIN_UID@@-rcu-access ]
+    secrets: [ @@DOMAIN_UID@@-rcu-access ]
 
     model:
       # Optional configmap for additional models and variable files
@@ -104,8 +104,8 @@ spec:
       
       # Name of secret with walletPassword for extracting the wallet
       # TBD: key name might still be outdated passphrase - check with Johnny
-      #walletPasswordSecret: sample-@@DOMAIN_UID@@-opss-wallet-password-secret
+      #walletPasswordSecret: @@DOMAIN_UID@@-opss-wallet-password-secret
       
       # Name of secret with walletFile containing base64 encoded opss wallet
       # TBD: key name might still be outdated ewallet.p12 instead of walletFile - check with Johnny
-      #walletFileSecret: sample-@@DOMAIN_UID@@-opss-walletfile-secret
+      #walletFileSecret: @@DOMAIN_UID@@-opss-walletfile-secret
