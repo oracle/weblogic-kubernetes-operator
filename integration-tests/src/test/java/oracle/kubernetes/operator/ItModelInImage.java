@@ -118,11 +118,10 @@ public class ItModelInImage extends BaseTest {
       domainMap.put("wdtModelFile", "./model.wls.yaml");
       domainMap.put("wdtModelPropertiesFile", "./model.properties");
 
-      // domain = TestUtils.createDomain(domainMap);
-      domain = new Domain(domainMap, true, false);
+      domain = TestUtils.createDomain(domainMap);
+      // domain = new Domain(domainMap, true, false);
       domain.verifyDomainCreated();
 
-      //ToDo: access MS using port given in model props
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
@@ -163,8 +162,8 @@ public class ItModelInImage extends BaseTest {
       domainMap.put("miiConfigMap", cmName);
       domainMap.put("miiConfigMapFileOrDir", cmFile);
 
-      // domain = TestUtils.createDomain(domainMap);
-      domain = new Domain(domainMap, true, false);
+      domain = TestUtils.createDomain(domainMap);
+      //domain = new Domain(domainMap, true, false);
       domain.verifyDomainCreated();
 
       //ToDo: access MS using port given in configmap props
@@ -209,8 +208,8 @@ public class ItModelInImage extends BaseTest {
       domainMap.put("miiConfigMap", cmName);
       domainMap.put("miiConfigMapFileOrDir", cmFile);
 
-      // domain = TestUtils.createDomain(domainMap);
-      domain = new Domain(domainMap, true, false);
+      domain = TestUtils.createDomain(domainMap);
+      // domain = new Domain(domainMap, true, false);
       domain.verifyDomainCreated();
       //ToDo: access MS using port given in the configmap props
 
