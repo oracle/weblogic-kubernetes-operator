@@ -20,6 +20,8 @@ if [ $? -ne 0 ]; then
       trace SEVERE "Error sourcing modelInImage.sh" && exit 1
 fi
 
+exportInstallHomes
+
 #
 # Define helper fn to copy a file only if src & tgt differ
 #
