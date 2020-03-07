@@ -387,11 +387,14 @@ public class ItManagedCoherence extends BaseTest {
     domain.verifyServersReady();
     LoggerHelper.getLocal().log(Level.INFO, "Verifying traefik and ingress created for the domain");
     LoggerHelper.getLocal().log(Level.INFO,
-        TestUtils.exec("helm status traefik-operator").stdout());
+        TestUtils.exec("helm status traefik-operator").stdout(), true);
     LoggerHelper.getLocal().log(Level.INFO,
-        TestUtils.exec("helm get values traefik-operator").stdout());
-    LoggerHelper.getLocal().log(Level.INFO,
-        ExecCommand.exec("kubectl describe ingress "
-            + domain.getDomainUid() + "-traefik -n " + domain.getDomainNs()).stdout());
+        TestUtils.exec("helm get values traefik-operator").stdout(), true);
+    LoggerHelper.getLocal().log(Level.INFO, "kubectl describe ingress "
+        + domain.getDomainUid() + "-traefik -n " + domain.getDomainNs());
+    ExecResult result  = ExecCommand.exec("kubectl describe ingress "
+            + domain.getDomainUid() + "-traefik -n " + domain.getDomainNs());
+    LoggerHelper.getLocal().log(Level.INFO, "stdout = " + result.stdout()
+            + "\n stderr = " + result.stderr());
   }
 }
