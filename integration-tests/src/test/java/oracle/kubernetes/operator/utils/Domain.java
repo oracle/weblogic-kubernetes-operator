@@ -147,12 +147,14 @@ public class Domain {
     }
 
     // using nodePort for now to access console, will be changed to t3channelport
-    String cmd = "curl --silent --noproxy '*' "
-        + " http://" + getNodeHost() + ":" + getNodePort()
-        + "/console/login/LoginForm.jsp --user "
-        + BaseTest.getUsername() + ":" + BaseTest.getPassword()
-        + " --write-out %{http_code} -o /dev/null";
-    callWebAppAndWaitTillReady(cmd);
+    if (exposeAdminNodePort) {
+      String cmd = "curl --silent --noproxy '*' "
+          + " http://" + getNodeHost() + ":" + getNodePort()
+          + "/console/login/LoginForm.jsp --user "
+          + BaseTest.getUsername() + ":" + BaseTest.getPassword()
+          + " --write-out %{http_code} -o /dev/null";
+      callWebAppAndWaitTillReady(cmd);
+    }
 
   }
 

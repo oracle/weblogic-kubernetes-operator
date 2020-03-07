@@ -121,7 +121,6 @@ public class ItModelInImage extends BaseTest {
       domain = TestUtils.createDomain(domainMap);
       // domain = new Domain(domainMap, true, false);
       domain.verifyDomainCreated();
-
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
@@ -162,8 +161,8 @@ public class ItModelInImage extends BaseTest {
       domainMap.put("miiConfigMap", cmName);
       domainMap.put("miiConfigMapFileOrDir", cmFile);
 
-      domain = TestUtils.createDomain(domainMap);
-      //domain = new Domain(domainMap, true, false);
+      // domain = TestUtils.createDomain(domainMap);
+      domain = new Domain(domainMap, true, false);
       domain.verifyDomainCreated();
 
       //ToDo: access MS using port given in configmap props
