@@ -160,6 +160,10 @@ if [ ${created_domain} -ne 0 ]; then
     trace "Running introspector WLST script ${SCRIPTPATH}/introspectDomain.py"
     ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
 fi
+
+if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
+  cleanup_mii
+fi
 trace "Domain introspection complete"
 
 exit 0

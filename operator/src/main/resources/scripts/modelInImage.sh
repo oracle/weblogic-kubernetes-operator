@@ -23,7 +23,6 @@ INTROSPECTJOB_PASSPHRASE_MD5="/tmp/inventory_passphrase.md5"
 LOCAL_PRIM_DOMAIN_ZIP="/tmp/prim_domain.tar.gz"
 
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
-DECRYPTED_MERGED_MODEL="/tmp/decrypted_merged_model.json"
 
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 WDT_ENCRYPTION_PASSPHRASE="/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
@@ -454,8 +453,7 @@ function createModelDomain() {
 
     # Since the SerializedSystem ini is encrypted, restore it first
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
-    encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE} /tmp/decrypted_sii.dat
-    rm /tmp/decrypted_sii.dat
+    encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
   fi
 
   wdtUpdateModelDomain
@@ -502,7 +500,7 @@ function createPrimordialDomain() {
     generateMergedModel
 
     # decrypt the merged model from introspect cm
-
+    local DECRYPTED_MERGED_MODEL="/tmp/decrypted_merged_model.json"
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
     encrypt_decrypt_model "decrypt" ${INTROSPECTCM_MERGED_MODEL}  ${MII_PASSPHRASE} \
       ${DECRYPTED_MERGED_MODEL}
@@ -510,7 +508,7 @@ function createPrimordialDomain() {
     diff_model ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
 
     diff_rc=$(cat /tmp/model_diff_rc)
-
+    rm ${DECRYPTED_MERGED_MODEL}
     trace "createPrimordialDomain: model diff returns "${diff_rc}
 
     #cat /tmp/diffed_model.json
@@ -552,14 +550,12 @@ function createPrimordialDomain() {
     cp ${DOMAIN_HOME}/security/SerializedSystemIni.dat /tmp/sii.dat.saved
 
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
-    encrypt_decrypt_domain_secret "encrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE} /tmp/encrypted_sii.dat
-    rm /tmp/encrypted_sii.dat
+    encrypt_decrypt_domain_secret "encrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
+
     tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/lib  ${empath} \
     ${DOMAIN_HOME}/*
 
     # Put back the original one so that update can continue
-    # TODO: sometime rm and mv have problems in /tmp
-
     mv  /tmp/sii.dat.saved ${DOMAIN_HOME}/security/SerializedSystemIni.dat
 
   fi
@@ -590,8 +586,6 @@ function generateMergedModel() {
     trace SEVERE "$(cat ${WDT_OUTPUT})"
     exit 1
   fi
-
-  #encrypt_wdtmodel ${NEW_MERGED_MODEL}
 
   # restore trap
   start_trap
@@ -732,7 +726,7 @@ function encrypt_decrypt_model() {
 
 function encrypt_decrypt_domain_secret() {
   trace "Entering encrypt_decrypt_domain_secret"
-
+  local tmp_output="/tmp/tmp_encrypt_decrypt_output.file"
   if [ "$1" == "encrypt" ] ; then
     base64 $2/security/SerializedSystemIni.dat > /tmp/secure.ini
   else
@@ -748,7 +742,7 @@ function encrypt_decrypt_domain_secret() {
   ${JAVA_HOME}/bin/java -cp ${CP} \
     ${JAVA_PROPS} \
     org.python.util.jython \
-    ${SCRIPTPATH}/encryption_util.py $1 "$(cat /tmp/secure.ini)" $3 $4 > ${WDT_OUTPUT} 2>&1
+    ${SCRIPTPATH}/encryption_util.py $1 "$(cat /tmp/secure.ini)" $3 ${tmp_output} > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
     trace SEVERE "Encrypt or Decrypt failure "
@@ -757,11 +751,11 @@ function encrypt_decrypt_domain_secret() {
   fi
 
   if [ "$1" == "decrypt" ] ; then
-    base64 -d $4 > $2/security/SerializedSystemIni.dat
+    base64 -d ${tmp_output} > $2/security/SerializedSystemIni.dat
   else
-    cp $4 $2/security/SerializedSystemIni.dat
+    cp ${tmp_output} $2/security/SerializedSystemIni.dat
   fi
-
+  rm ${tmp_output}
   trace "Exiting encrypt_decrypt_domain_secret"
 }
 
@@ -784,4 +778,8 @@ function start_trap() {
 function stop_trap() {
     trap -  ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
     set +eE
+}
+
+function cleanup_mii() {
+  rm -f /tmp/*.md5 /tmp/*.gz /tmp/*.ini /tmp/*.json
 }

@@ -143,28 +143,40 @@ if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
   # domainzip only contains the domain configuration (config.xml jdbc/ jms/)
   # Both are needed for the complete domain reconstruction
   cd / && base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz && \
-   tar -xzvf /tmp/domain.tar.gz
+   tar -xzf /tmp/domain.tar.gz
 
   # decrypt the SerializedSystemIni first
   if [ -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
     MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
   else
-    # TODO: remove when ready
+    # TODO: remove when ready, probably replace by error and exit
     MII_PASSPHRASE=weblogic
   fi
-  encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE} /tmp/encrypted_sii.dat
-  rm /tmp/encrypted_sii.dat
-  cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
+  encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
+
+  # restore the config zip
+  #
+  cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz && \
+    tar -xzf /tmp/domain.tar.gz
   chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
 
+  # restore the archive apps and libraries
+  #
   mkdir -p ${DOMAIN_HOME}/lib
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
+        # expand the archive domain libraries to the domain lib
         cd ${DOMAIN_HOME}/lib
-        jar xvf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
+        jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
+
+        # expand the archive apps and shared lib to the wlsdeploy/* directories
+        # the config.xml is referencing them from that path
+
         cd ${DOMAIN_HOME}
-        jar xvf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
-        rm -fr wlsdeploy/domainLibraries
+        jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
+
+        # no need we are not expanding to it
+        #rm -fr wlsdeploy/domainLibraries
     done
 
 fi
