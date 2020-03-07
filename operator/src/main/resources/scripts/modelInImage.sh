@@ -23,6 +23,7 @@ INTROSPECTJOB_PASSPHRASE_MD5="/tmp/inventory_passphrase.md5"
 LOCAL_PRIM_DOMAIN_ZIP="/tmp/prim_domain.tar.gz"
 
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
+DECRYPTED_MERGED_MODEL="/tmp/decrypted_merged_model.json"
 
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 WDT_ENCRYPTION_PASSPHRASE="/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
@@ -448,11 +449,13 @@ function createModelDomain() {
   if [ -f "${LOCAL_PRIM_DOMAIN_ZIP}" ] ; then
     trace "Using newly created domain"
   elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
+    trace "Using existing primordial domain"
     cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP} && tar -xzf ${LOCAL_PRIM_DOMAIN_ZIP}
 
     # Since the SerializedSystem ini is encrypted, restore it first
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
-    encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
+    encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE} /tmp/decrypted_sii.dat
+    rm /tmp/decrypted_sii.dat
   fi
 
   wdtUpdateModelDomain
@@ -498,10 +501,13 @@ function createPrimordialDomain() {
 
     generateMergedModel
 
-    # encrypt the newly merged model, use it to compare with the on in CM
-    encrypt_model  ${NEW_MERGED_MODEL}
+    # decrypt the merged model from introspect cm
 
-    diff_model ${NEW_MERGED_MODEL} ${INTROSPECTCM_MERGED_MODEL}
+    local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+    encrypt_decrypt_model "decrypt" ${INTROSPECTCM_MERGED_MODEL}  ${MII_PASSPHRASE} \
+      ${DECRYPTED_MERGED_MODEL}
+
+    diff_model ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
 
     diff_rc=$(cat /tmp/model_diff_rc)
 
@@ -546,7 +552,8 @@ function createPrimordialDomain() {
     cp ${DOMAIN_HOME}/security/SerializedSystemIni.dat /tmp/sii.dat.saved
 
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
-    encrypt_decrypt_domain_secret "encrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
+    encrypt_decrypt_domain_secret "encrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE} /tmp/encrypted_sii.dat
+    rm /tmp/encrypted_sii.dat
     tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/lib  ${empath} \
     ${DOMAIN_HOME}/*
 
@@ -666,7 +673,10 @@ function wdtUpdateModelDomain() {
   # This is the complete model and used for life-cycle comparision, encrypt this before storing in
   # config map by the operator
   #
-  encrypt_model ${DOMAIN_HOME}/wlsdeploy/domain_model.json
+  local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+
+  encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json ${MII_PASSPHRASE} \
+    ${DOMAIN_HOME}/wlsdeploy/domain_model.json
 
   # restore trap
   start_trap
@@ -683,32 +693,42 @@ function contain_returncode() {
 }
 
 #
-# Encrypt WDT model
+# Encrypt WDT model (Full encryption)
 #
-function encrypt_model() {
+# parameter:
+#   1 -  action (encrypt| decrypt)
+#   2 -  input file
+#   3 -  password
+#   4 -  output file
+#
+function encrypt_decrypt_model() {
   trace "Entering encrypt_wdtmodel"
-  stop_trap
 
-  local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
-  if [ ! -z ${MII_PASSPHRASE} ]; then
-    ( echo ${MII_PASSPHRASE} ; echo ${MII_PASSPHRASE} ) | ${WDT_BINDIR}/encryptModel.sh -oracle_home ${ORACLE_HOME}  \
-      -model_file $1 > ${WDT_OUTPUT}
-    ret=${PIPESTATUS[1]}
-  else
-    trace SEVERE "No WDT encryption passphrase present"
-    exit 1
-  fi
-  if [ $ret -ne 0 ]; then
-    trace SEVERE "Validate Model Failed "
+  local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
+  local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS} -Djava.security.egd=file:/dev/./urandom"
+  local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar:${WDT_BINDIR}/../lib/weblogic-deploy-core.jar
+  ${JAVA_HOME}/bin/java -cp ${CP} \
+    ${JAVA_PROPS} \
+    org.python.util.jython \
+    ${SCRIPTPATH}/encryption_util.py $1 "$(cat $2)" $3 $4 > ${WDT_OUTPUT} 2>&1
+  rc=$?
+  if [ $rc -ne 0 ]; then
+    trace SEVERE "Encrypt or Decrypt failure "
     trace SEVERE "$(cat ${WDT_OUTPUT})"
     exit 1
   fi
 
-  # restore trap
-  start_trap
   trace "Exiting encrypt_wdtmodel"
 }
 
+# encrypt_decrypt_domain_secret
+# parameter:
+#   1 - action (encrypt|decrypt)
+#   2 -  domain home
+#   3 -  password
+#   4 -  output file
 
 function encrypt_decrypt_domain_secret() {
   trace "Entering encrypt_decrypt_domain_secret"
@@ -728,7 +748,7 @@ function encrypt_decrypt_domain_secret() {
   ${JAVA_HOME}/bin/java -cp ${CP} \
     ${JAVA_PROPS} \
     org.python.util.jython \
-    ${SCRIPTPATH}/encryption_util.py $1 $2 "$(cat /tmp/secure.ini)" $3 > ${WDT_OUTPUT} 2>&1
+    ${SCRIPTPATH}/encryption_util.py $1 "$(cat /tmp/secure.ini)" $3 $4 > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
     trace SEVERE "Encrypt or Decrypt failure "
@@ -737,8 +757,9 @@ function encrypt_decrypt_domain_secret() {
   fi
 
   if [ "$1" == "decrypt" ] ; then
-    cp $2/security/SerializedSystemIni.dat  /tmp/secure.ini
-    base64 -d /tmp/secure.ini > $2/security/SerializedSystemIni.dat
+    base64 -d $4 > $2/security/SerializedSystemIni.dat
+  else
+    cp $4 $2/security/SerializedSystemIni.dat
   fi
 
   trace "Exiting encrypt_decrypt_domain_secret"

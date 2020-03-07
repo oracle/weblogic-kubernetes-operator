@@ -152,8 +152,8 @@ if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
     # TODO: remove when ready
     MII_PASSPHRASE=weblogic
   fi
-  encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
-
+  encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE} /tmp/encrypted_sii.dat
+  rm /tmp/encrypted_sii.dat
   cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
   chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
 
