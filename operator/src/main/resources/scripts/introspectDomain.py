@@ -865,7 +865,7 @@ class MII_DomainConfigGenerator(Generator):
               "%s/config/security %s" % (
               self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home,
               self.domain_home, self.domain_home, self.domain_home, self.domain_home, empath)
-    rc = os.system(packcmd)
+    os.system(packcmd)
     domain_data = self.env.readBinaryFile("/tmp/domain.tar.gz")
     b64 = ""
     for s in base64.encodestring(domain_data).splitlines():
