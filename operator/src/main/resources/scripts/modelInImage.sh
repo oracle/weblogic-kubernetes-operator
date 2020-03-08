@@ -709,7 +709,7 @@ function encrypt_decrypt_model() {
     ${SCRIPTPATH}/encryption_util.py $1 "$(cat $2)" $3 $4 > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
-    trace SEVERE "Encrypt or Decrypt failure "
+    trace SEVERE "encrypt_decrypt_model failure "
     trace SEVERE "$(cat ${WDT_OUTPUT})"
     exit 1
   fi
@@ -726,6 +726,8 @@ function encrypt_decrypt_model() {
 
 function encrypt_decrypt_domain_secret() {
   trace "Entering encrypt_decrypt_domain_secret"
+  # Do not use trap for this startServer.sh fail for some not zero function call
+
   local tmp_output="/tmp/tmp_encrypt_decrypt_output.file"
   if [ "$1" == "encrypt" ] ; then
     base64 $2/security/SerializedSystemIni.dat > /tmp/secure.ini
@@ -745,7 +747,7 @@ function encrypt_decrypt_domain_secret() {
     ${SCRIPTPATH}/encryption_util.py $1 "$(cat /tmp/secure.ini)" $3 ${tmp_output} > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
-    trace SEVERE "Encrypt or Decrypt failure "
+    trace SEVERE "encrypt_decrypt_domain_secret failure "
     trace SEVERE "$(cat ${WDT_OUTPUT})"
     exit 1
   fi
