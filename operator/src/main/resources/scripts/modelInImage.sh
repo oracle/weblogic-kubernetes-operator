@@ -8,15 +8,15 @@
 source ${SCRIPTPATH}/utils.sh
 
 
-INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormd5/inventory_image.md5"
-INTROSPECTCM_CM_MD5="/weblogic-operator/introspectormd5/inventory_cm.md5"
-INTROSPECTCM_PASSPHRASE_MD5="/weblogic-operator/introspectormd5/inventory_passphrase.md5"
-INTROSPECTCM_MERGED_MODEL="/weblogic-operator/introspectormd5/merged_model.json"
-INTROSPECTCM_WLS_VERSION="/weblogic-operator/introspectormd5/wls.version"
-INTROSPECTCM_JDK_PATH="/weblogic-operator/introspectormd5/jdk.path"
-INTROSPECTCM_SECRETS_MD5="/weblogic-operator/introspectormd5/secrets.md5"
-DOMAIN_ZIPPED="/weblogic-operator/introspectormd5/domainzip.secure"
-PRIMORDIAL_DOMAIN_ZIPPED="/weblogic-operator/introspectormd5/primordial_domainzip.secure"
+INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspector/inventory_image.md5"
+INTROSPECTCM_CM_MD5="/weblogic-operator/introspector/inventory_cm.md5"
+INTROSPECTCM_PASSPHRASE_MD5="/weblogic-operator/introspector/inventory_passphrase.md5"
+INTROSPECTCM_MERGED_MODEL="/weblogic-operator/introspector/merged_model.json"
+INTROSPECTCM_WLS_VERSION="/weblogic-operator/introspector/wls.version"
+INTROSPECTCM_JDK_PATH="/weblogic-operator/introspector/jdk.path"
+INTROSPECTCM_SECRETS_MD5="/weblogic-operator/introspector/secrets.md5"
+DOMAIN_ZIPPED="/weblogic-operator/introspector/domainzip.secure"
+PRIMORDIAL_DOMAIN_ZIPPED="/weblogic-operator/introspector/primordial_domainzip.secure"
 INTROSPECTJOB_IMAGE_MD5="/tmp/inventory_image.md5"
 INTROSPECTJOB_CM_MD5="/tmp/inventory_cm.md5"
 INTROSPECTJOB_PASSPHRASE_MD5="/tmp/inventory_passphrase.md5"
@@ -168,7 +168,7 @@ function get_opss_key_wallet() {
   if [ -f ${OPSS_KEY_B64EWALLET} ]; then
     echo ${OPSS_KEY_B64EWALLET}
   else
-    echo "/weblogic-operator/introspectormd5/ewallet.p12"
+    echo "/weblogic-operator/introspector/ewallet.p12"
   fi
 }
 

@@ -858,15 +858,14 @@ class MII_DomainConfigGenerator(Generator):
     empath = ''
     if em_ear_path is not None and os.path.exists(em_ear_path):
       empath = em_ear_path
-    #packcmd = "tar -pczf /tmp/domain.tar.gz --exclude %s/wlsdeploy --exclude %s/lib %s %s/*" % (self.domain_home,
-    # self.domain_home, empath, self.domain_home)
+    # Note: only config type is needed fmwconfig, security is excluded because it's in the primordial and contain
+    # all the many policies files
     packcmd = "tar -pczf /tmp/domain.tar.gz %s/config/config.xml %s/config/jdbc/ %s/config/jms %s/config/coherence " \
-              "%s/config/diagnostics %s/config/startup %s/config/configCache %s/config/nodemanager %s" % (
+              "%s/config/diagnostics %s/config/startup %s/config/configCache %s/config/nodemanager " \
+              "%s/config/security %s" % (
               self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home,
-              self.domain_home, self.domain_home, self.domain_home, empath)
-    trace(packcmd)
+              self.domain_home, self.domain_home, self.domain_home, self.domain_home, empath)
     rc = os.system(packcmd)
-    trace("targz " + str(rc))
     domain_data = self.env.readBinaryFile("/tmp/domain.tar.gz")
     b64 = ""
     for s in base64.encodestring(domain_data).splitlines():
