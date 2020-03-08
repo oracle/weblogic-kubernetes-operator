@@ -525,7 +525,9 @@ function createPrimordialDomain() {
     # domain will fail since without this flag set, defaults is to use the RCU cached info. (aka. wlst
     # getDatabaseDefaults).
     #
-    UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
+    if [ ${WDT_DOMAIN_TYPE} == "JRF" ] ; then
+      UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
+    fi
   fi
 
   # If there is no primordial domain or needs to recreate one due to password changes
