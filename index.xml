@@ -12,12 +12,12 @@
     
     
     <item>
-      <title>Managing Domain Namespaces</title>
+      <title>Managing domain namespaces</title>
       <link>/weblogic-kubernetes-operator/faq/namespace-management/</link>
       <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/namespace-management/</guid>
-      <description>Each WebLogic operator deployment manages a number of Kubernetes namespaces (for information about setting domain namespaces, see Operator Helm configuration values). A number of Kubernetes resources must be present in a namespace before any WebLogic domain custom resources can be successfully deployed into it. Those Kubernetes resources are created either as part of the installation of the operator&amp;rsquo;s Helm chart, or created by the operator at runtime.
+      <description>Each WebLogic operator deployment manages a number of Kubernetes namespaces. For information about setting domain namespaces, see Operator Helm configuration values. A number of Kubernetes resources must be present in a namespace before any WebLogic domain custom resources can be successfully deployed into it. Those Kubernetes resources are created either as part of the installation of the operator&amp;rsquo;s Helm chart, or created by the operator at runtime.
 This FAQ describes some considerations to be aware of when you manage the namespaces while the WebLogic operator is running.</description>
     </item>
     
@@ -555,7 +555,7 @@ git checkout master git pull origin master git checkout -b your-branch   Make yo
     </item>
     
     <item>
-      <title>Cannot Pull Image</title>
+      <title>Cannot pull image</title>
       <link>/weblogic-kubernetes-operator/faq/cannot-pull-image/</link>
       <pubDate>Sat, 23 Mar 2019 08:08:19 -0400</pubDate>
       
@@ -566,7 +566,7 @@ git checkout master git pull origin master git checkout -b your-branch   Make yo
     </item>
     
     <item>
-      <title>Boot Identity Not Valid</title>
+      <title>Boot identity not valid</title>
       <link>/weblogic-kubernetes-operator/faq/boot-identity-not-valid/</link>
       <pubDate>Mon, 02 Mar 2020 08:08:19 -0401</pubDate>
       
@@ -576,13 +576,13 @@ git checkout master git pull origin master git checkout -b your-branch   Make yo
     </item>
     
     <item>
-      <title>Domain Secret Mismatch</title>
+      <title>Domain secret mismatch</title>
       <link>/weblogic-kubernetes-operator/faq/domain-secret-mismatch/</link>
       <pubDate>Mon, 02 Mar 2020 08:08:19 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/domain-secret-mismatch/</guid>
       <description>One or more WebLogic Server instances in my domain will not start and the domain resource status or the pod log report errors like this:
-Domain secret mismatch. The domain secret in &amp;lsquo;DOMAIN_HOME/security/SerializedSystemIni.dat&amp;rsquo; where DOMAIN_HOME=&#39;$DOMAIN_HOME&amp;rsquo; does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic servers in the same domain share the same domain secret.
+Domain secret mismatch. The domain secret in &amp;lsquo;DOMAIN_HOME/security/SerializedSystemIni.dat&amp;rsquo; where DOMAIN_HOME=&#39;$DOMAIN_HOME&amp;rsquo; does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic Servers in the same domain share the same domain secret.
  When you see these kinds of errors, it means that the WebLogic domain directory&amp;rsquo;s security configuration files have changed in an incompatible way between when the operator scanned the domain directory, which occurs during the &amp;ldquo;introspection&amp;rdquo; phase, and when the server instance attempted to start.</description>
     </item>
     
@@ -597,7 +597,7 @@ When connecting to a database that does not have GRID, the only type of WebLogic
     </item>
     
     <item>
-      <title>Using OCI File Storage (FSS) for Persistent Volumes</title>
+      <title>Using OCI File Storage (FSS) for persistent volumes</title>
       <link>/weblogic-kubernetes-operator/faq/oci-fss-pv/</link>
       <pubDate>Wed, 12 Feb 2020 12:12:12 -0500</pubDate>
       
@@ -607,7 +607,7 @@ File permission handling on persistent volumes can differ between cloud provider
     </item>
     
     <item>
-      <title>Using an OCI Load Balancer</title>
+      <title>Using an OCI load balancer</title>
       <link>/weblogic-kubernetes-operator/faq/oci-lb/</link>
       <pubDate>Wed, 25 Sep 2019 12:41:38 -0400</pubDate>
       
@@ -637,12 +637,12 @@ OKE Kubernetes worker nodes normally do not have public IP addresses. This means
     </item>
     
     <item>
-      <title>External WebLogic Clients</title>
+      <title>External WebLogic clients</title>
       <link>/weblogic-kubernetes-operator/faq/external-clients/</link>
       <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/external-clients/</guid>
-      <description>Approaches There are two supported approaches for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster: Load Balancer Tunneling and Kubernetes NodePorts.
+      <description>Approaches There are two supported approaches for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster: Load balancer tunneling and Kubernetes NodePorts.
 This FAQ is for remote EJB and JMS clients - not JTA clients. The operator does not currently support external WebLogic JTA access to a WebLogic cluster, as (A) external JTA access requires each server in the cluster to be individually addressable by the client, but this conflicts with (B) the current operator requirement that a network channel in a cluster have the same port across all servers in the cluster.</description>
     </item>
     
