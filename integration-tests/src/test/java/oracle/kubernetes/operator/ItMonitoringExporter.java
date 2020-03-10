@@ -382,6 +382,10 @@ public class ItMonitoringExporter extends BaseTest {
         .append("traefik.hostname=")
         .append("\"")
         .append(" traefik-ingress-" + domainNS1 + " " + chartDir);
+    if (BaseTest.HELM_VERSION.equalsIgnoreCase("V3")) {
+      cmd.append(" -n " + domainNS1);
+    }
+
 
     LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
     TestUtils.exec(cmd.toString());
