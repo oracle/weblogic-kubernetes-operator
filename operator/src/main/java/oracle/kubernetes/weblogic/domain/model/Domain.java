@@ -731,7 +731,8 @@ public class Domain {
 
     @SuppressWarnings("SameParameterValue")
     private void verifyModelConfigMapExists(KubernetesResourceLookup resources, String modelConfigMapName) {
-      if (modelConfigMapName != null && !resources.isConfigMapExists(modelConfigMapName, getNamespace())) {
+      if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())
+          && modelConfigMapName != null && !resources.isConfigMapExists(modelConfigMapName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName, getNamespace()));
       }
     }

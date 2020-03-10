@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -300,7 +301,8 @@ public abstract class JobStepContext extends BasePodStepContext {
                   .configMap(getOverridesVolumeSource(getConfigOverrides())));
     }
     // For WDT
-    if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+    if (DomainSourceType.FromModel.toString().equals(getDomainSourceType())
+        && getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
       podSpec.addVolumesItem(
           new V1Volume()
               .name(getWdtConfigMap() + "-volume")
@@ -347,7 +349,8 @@ public abstract class JobStepContext extends BasePodStepContext {
                   secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
 
-    if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+    if (DomainSourceType.FromModel.toString().equals(getDomainSourceType())
+        && getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
       container.addVolumeMountsItem(
           readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
     }

@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.Before;
 import org.junit.Test;
@@ -295,6 +296,13 @@ public class DomainValidationTest {
             "not found", NS)));
   }
 
+  @Test
+  public void whenWdtConfigMapSpecifiedButDoesNotExist_DomeHomeSourceTypeImage_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString());
+    configureDomain(domain).withConfigurationModelConfigMap("wdt-configmap");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
 
   private DomainConfigurator configureDomain(Domain domain) {
     return new DomainCommonConfigurator(domain);
