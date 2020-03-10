@@ -1,57 +1,57 @@
 ---
-title: "External WebLogic Clients"
+title: "External WebLogic clients"
 date: 2019-11-21T21:23:03Z
 draft: false
 weight: 80
 ---
 
-### Approaches
+#### Approaches
 
-There are two supported approaches for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster: [Load Balancer Tunneling](#load-balancer-tunneling) and [Kubernetes NodePorts](#kubernetes-nodeports).
+There are two supported approaches for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster: [Load balancer tunneling](#load-balancer-tunneling) and [Kubernetes NodePorts](#kubernetes-nodeports).
 
 {{% notice note %}}
 This FAQ is for remote EJB and JMS clients - not JTA clients. The operator does not currently support external WebLogic JTA access to a WebLogic cluster, as (A) external JTA access requires each server in the cluster to be individually addressable by the client, but this conflicts with (B) the current operator requirement that a network channel in a cluster have the same port across all servers in the cluster.
 {{% /notice %}}
 
-#### Load Balancer Tunneling
+##### Load balancer tunneling
 
-The Load Balancer Tunneling approach for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster involves configuring a network channel on the desired WebLogic cluster that accepts T3 protocol traffic that's tunnelled over HTTP, deploying a load balancer that redirects external HTTP network traffic to the desired WebLogic network channel, and ensuring that EJB and JMS clients specify a URL that resolves the load balancer's network address.  
+The load balancer tunneling approach for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster involves configuring a network channel on the desired WebLogic cluster that accepts T3 protocol traffic that's tunneled over HTTP, deploying a load balancer that redirects external HTTP network traffic to the desired WebLogic network channel, and ensuring that EJB and JMS clients specify a URL that resolves the load balancer's network address.  
 
-Here are the specific steps:
+Here are the steps:
 
-- Configure a custom channel for the T3 protocol in WebLogic that (A) enables HTTP Tunneling, and (B) specifies an external address and port that correspond to the address and port remote clients will use to access the load balancer.  See  [Adding a WebLogic Custom Channel](#adding-a-weblogic-custom-channel) for samples and details.
+- Configure a custom channel for the T3 protocol in WebLogic that (A) enables HTTP tunneling, and (B) specifies an external address and port that correspond to the address and port remote clients will use to access the load balancer.  See  [Adding a WebLogic custom channel](#adding-a-weblogic-custom-channel) for samples and details.
 
-- Set up a load balancer that redirects HTTP traffic to the custom channel. For a discussion of load balancers, see [Ingress]({{<relref "/userguide/managing-domains/ingress/_index.md">}}). If you're also using OKE/OCI to host your Kubernetes cluster, also see [Using an OCI Load Balancer]({{<relref "/faq/oci-lb">}}).
+- Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see [Ingress]({{<relref "/userguide/managing-domains/ingress/_index.md">}}). If you're also using OKE/OCI to host your Kubernetes cluster, also see [Using an OCI Load Balancer]({{<relref "/faq/oci-lb">}}).
 
 - __Important__: Ensure that the load balancer configures the HTTP flow to be 'sticky' - for example, a Traefik load balancer has a `sticky sessions` option. This ensures that all of the packets of a tunneling client connection flow to the same pod, otherwise the connection will stall when its packets are load balanced to a different pod.
 
 - Remote clients can then access the custom channel using an `http://` URL instead of a `t3://` URL.
 
-- Review the [Security Notes](#security-notes) below.
+- Review the [Security notes](#security-notes).
 
-#### Kubernetes NodePorts
+##### Kubernetes NodePorts
 
-The Kubernetes NodePorts approach for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster involves configuring a network channel on the desired WebLogic cluster that accepts T3 protocol traffic, and deploying Kubernetes NodePort that redirects external network traffic on the Kubernetes nodes to the network channel.
+The Kubernetes NodePorts approach for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster involves configuring a network channel on the desired WebLogic cluster that accepts T3 protocol traffic, and deploying a Kubernetes NodePort that redirects external network traffic on the Kubernetes nodes to the network channel.
 
-Here are the specific steps:
+Here are the steps:
 
 - Configure a custom channel for the T3 protocol in WebLogic that specifies an external address and port that are suitable for remote client use.  See [Adding a WebLogic Custom Channel](#adding-a-weblogic-custom-channel).
 
 - Deploy a Kubernetes NodePort to publicly expose the WebLogic ports. See [Setting up a NodePort](#setting-up-a-nodeport).
 
-- Review the [Security Notes](#security-notes) below.
+- Review the [Security notes](#security-notes).
 
-### Adding a WebLogic Custom Channel
+#### Adding a WebLogic custom channel
 
-#### When is a WebLogic Custom Channel Needed?
+##### When is a WebLogic custom channel needed?
 
-WebLogic implicitly creates a multi-protocol default channel that spans the `Listen Address` and `Port` fields specified on each server in the cluster, but this channel is usually unsuitable for external network traffic from EJB and JMS clients. Instead, you may need to configure an additional dedicated WebLogic custom channel to handle remote EJB or JMS client network traffic. 
+WebLogic implicitly creates a multi-protocol default channel that spans the `Listen Address` and `Port` fields specified on each server in the cluster, but this channel is usually unsuitable for external network traffic from EJB and JMS clients. Instead, you may need to configure an additional dedicated WebLogic custom channel to handle remote EJB or JMS client network traffic.
 
 A custom channel provides a way to configure an external listen address and port for use by external clients, unlike a default channel. External listen address and/or port configuration is needed when a channel's configured listen address and/or port would not work if used to form a URL in the remote client. This is because remote EJB and JMS clients internally use their client's channel's configured network information to reconnect to WebLogic when needed. (The EJB and JMS clients do not always use the initial URL specified in the client's JNDI context.)
 
-A custom channel can be locked down using two-way SSL as a way to prevent access by unauthorizzed external JMS and EJB clients, only accepts protocols that are explicitly enabled for the channel, and can be configured to be the only channel that accepts EJB/JMS clients that tunnel over HTTP. A default channel may often be deliberately unencrypted for convenient internal use, or, if used externally, is only used for web traffic (not tunneling traffic). In addition, a default channel supports several protocols but it's a best practice to limit the protocols that can be accessed by external clients. Finally, external clients may require access using HTTP tunneling in order to make connections, but it's often inadvisable to enable tunneling for an unsecured default channel that's already servicing external HTTP traffic. This is because enabling HTTP tunneling would potentially allow unauthorized external JMS and EJB clients unsecured access to the WebLogic cluster through the same HTTP path.
+A custom channel can be locked down using two-way SSL as a way to prevent access by unauthorized external JMS and EJB clients, only accepts protocols that are explicitly enabled for the channel, and can be configured to be the only channel that accepts EJB/JMS clients that tunnel over HTTP. A default channel may often be deliberately unencrypted for convenient internal use, or, if used externally, is only used for web traffic (not tunneling traffic). In addition, a default channel supports several protocols but it's a best practice to limit the protocols that can be accessed by external clients. Finally, external clients may require access using HTTP tunneling in order to make connections, but it's often inadvisable to enable tunneling for an unsecured default channel that's already servicing external HTTP traffic. This is because enabling HTTP tunneling would potentially allow unauthorized external JMS and EJB clients unsecured access to the WebLogic cluster through the same HTTP path.
 
-#### Configuring a WebLogic Custom Channel
+##### Configuring a WebLogic custom channel
 
 The basic requirements for configuring a custom channel for remote EJB and JMS access are:
 
@@ -101,7 +101,7 @@ For example, here is a snippet of a WebLogic domain's `config.xml` for channel `
 </cluster>
 ```
 
-And here is a snippet of offline WLST code that corresponds to the above config.xml snippet:
+And here is a snippet of offline WLST code that corresponds to the above `config.xml` snippet:
 
 ```
   templateName = "cluster-1-template"
@@ -130,25 +130,25 @@ In this example:
 
 - External clients would be expected to access the cluster using the custom channel using URLs like `t3://some.public.address.com:30999` or, if using tunneling, `http://some.public.address.com:30999`.
 
-#### WebLogic Custom Channel Notes 
+##### WebLogic custom channel notes
 
 - Channel configuration for a configured cluster requires configuring the same network-access-point on each server. The operator currently doesn't test or support network channels that have a different configuration on each server in the cluster.
 
 - Additional steps are required for external clients beyond configuring the custom channel - see [Approaches](#approaches).
 
-### Setting up a NodePort
+#### Setting up a NodePort
 
-#### Getting Started
+##### Getting started
 
 A Kubernetes NodePort exposes a port on each machine that hosts the Kubernetes cluster where the port is accessible from outside of a Kubernetes cluster. This port redirects network traffic to pods within the Kubernetes cluster. Setting up a Kubernetes NodePort is one approach for giving external WebLogic clients access to JMS or EJBs.
 
 If an EJB or JMS service is running on an Administration Server, then you can skip the rest of this section and use the `spec.adminServer.adminService.channels` domain resource attribute to have the operator create a NodePort for you. See [Reference - Domain resource]({{<relref "/reference/domain-resource/_index.md">}}). Otherwise, if the EJB or JMS service is running in a WebLogic cluster or standalone WebLogic Managed Server, and you desire to provide access to the service using a NodePort, then the NodePort must be deployed 'manually' - see the following sample and table.
 
 {{% notice note %}}
-Setting up a NodePort usually also requires setting up a custom network channel. See [Adding a WebLogic Custom Channel](#adding-a-weblogic-custom-channel) above.
+Setting up a NodePort usually also requires setting up a custom network channel. See [Adding a WebLogic Custom Channel](#adding-a-weblogic-custom-channel).
 {{% /notice %}}
 
-#### Sample NodePort Resource
+##### Sample NodePort resource
 
 The following NodePort YAML deploys an external node port of `30999` and internal port `7999` for a domain UID of `DOMAIN_UID`, a domain name of `DOMAIN_NAME`, and a cluster name of `CLUSTER_NAME`. It assumes that `7999` corresponds to a T3 protocol port of a channel that's configured on your WebLogic cluster.
 
@@ -175,7 +175,7 @@ spec:
     targetPort: 7999
 ```
 
-#### Table of NodePort Attributes
+##### Table of NodePort attributes
 
 |Attribute|Description|
 |---------|-----------|
@@ -183,23 +183,23 @@ spec:
 |`metadata.namespace`|Must match the namespace of your WebLogic cluster.|
 |`metadata.labels`|Optional. It's helpful to set a `weblogic.domainUid` label so that cleanup scripts can locate all Kubernetes resources associated with a particular domain UID.|
 |`spec.type`|Must be `NodePort`.|
-|`spec.externalTrafficPolicy`|Set to `Cluster` for most use cases. This may lower performance, but ensures that a client that attaches to a node without any pods that match the `spec.selector` will be rerouted to a node with pods that do match. If set to `Local`, then connections to a particular Node will only route to that Node's pods and will fail if the Node doesn't host any pods with the given `spec.selector`. It's recommended for clients of a `spec.externalTrafficPolicy: Local` NodePort to use a URL that resolves to a list of all nodes such as `t3://mynode1,mynode2:30999` so that a client connect attempt will implicitly try `mynode2` if `mynode1` fails (alternatively, use a round-robin DNS address in place of `mynode1,mynode2`).|
+|`spec.externalTrafficPolicy`|Set to `Cluster` for most use cases. This may lower performance, but ensures that a client that attaches to a node without any pods that match the `spec.selector` will be rerouted to a node with pods that do match. If set to `Local`, then connections to a particular node will route only to that node's pods and will fail if the node doesn't host any pods with the given `spec.selector`. It's recommended for clients of a `spec.externalTrafficPolicy: Local` NodePort to use a URL that resolves to a list of all nodes such as `t3://mynode1,mynode2:30999` so that a client connect attempt will implicitly try `mynode2` if `mynode1` fails (alternatively, use a round-robin DNS address in place of `mynode1,mynode2`).|
 |`spec.sessionAffinity`|Set to `ClientIP` to ensure an HTTP tunneling connection always routes to the same pod, otherwise the connection may hang and fail.|
 |`spec.selector`|Specifies a `weblogic.domainUID` and `weblogic.clusterName` to associate the NodePort resource with your cluster's pods. The operator automatically sets these labels on the WebLogic cluster pods that it deploys for you.|
 |`spec.ports.name`|This name is arbitrary.|
 |`spec.ports.nodePort`|The external port that clients will use. This must match the external port that's configured on the WebLogic configured channels/network-access-points. By default, Kubernetes requires that this value range from `30000` to `32767`.|
 |`spec.ports.port` and `spec.targetPort`|These must match the port that's configured on the WebLogic configured channel/network-access-point(s).|
 
-### Security Notes
+#### Security notes
 
-- With some cloud providers, a load balancer or NodePort may implicitly expose a port to the public Internet. 
+- With some cloud providers, a load balancer or NodePort may implicitly expose a port to the public Internet.
 
 - If such a port supports a protocol suitable for WebLogic clients, note that WebLogic allows access to JNDI entries, EJB/RMI applications, and JMS by anonymous users by default.
 
-- You can configure a custom channel with a secure protocol and two-way SSL to help prevent external access by unwanted clients. See [When is a WebLogic Custom Channel needed?](#when-is-a-weblogic-custom-channel-needed?).
+- You can configure a custom channel with a secure protocol and two-way SSL to help prevent external access by unwanted clients. See [When is a WebLogic custom channel needed?](#when-is-a-weblogic-custom-channel-needed?).
 
 
-### Optional Reading
+#### Optional Reading
 
 - See [Run Standalone WebLogic JMS Clients on Kubernetes](https://blogs.oracle.com/weblogicserver/run-standalone-weblogic-jms-clients-on-kubernetes) for sample JMS client code and JMS configuration.
 
