@@ -2012,4 +2012,15 @@ public class TestUtils {
     return exec(cmd, true);
   }
 
+  /**
+   * create configmap in given ns
+   */
+  public static void createConfigMap(String cmName, String fileOrDirPath,
+                                     String namespace) throws Exception {
+    String str = "kubectl -n " + namespace
+        + " create configmap " + cmName
+        + " --from-file=" + fileOrDirPath;
+    TestUtils.exec(str, true);
+  }
+
 }

@@ -128,6 +128,7 @@ public class MessageKeys {
   public static final String RESERVED_ENVIRONMENT_VARIABLES = "WLSDO-0005";
   public static final String ILLEGAL_SECRET_NAMESPACE = "WLSDO-0006";
   public static final String ILLEGAL_SIT_CONFIG_MII = "WLSDO-0007";
+  public static final String MODEL_CONFIGMAP_NOT_FOUND = "WLSDO-0008";
 
   private MessageKeys() {
   }

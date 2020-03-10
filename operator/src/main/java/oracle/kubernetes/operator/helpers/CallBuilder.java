@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.VersionApi;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -235,6 +236,9 @@ public class CallBuilder {
   private final CallFactory<V1NamespaceList> listNamespace =
       (requestParams, usage, cont, callback) ->
           wrap(listNamespaceAsync(usage, cont, callback));
+  private final CallFactory<V1ConfigMapList> listConfigMaps =
+      (requestParams, usage, cont, callback) ->
+          wrap(listConfigMapsAsync(usage, requestParams.namespace, cont, callback));
   private final Boolean exact = Boolean.FALSE;
   private final Boolean export = Boolean.FALSE;
   private final CallFactory<Domain> readDomain =
@@ -765,6 +769,38 @@ public class CallBuilder {
       ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("replaceCRD", null, name, body), replaceCrd);
+  }
+
+  private Call listConfigMapsAsync(
+      ApiClient client, String namespace, String cont, ApiCallback<V1ConfigMapList> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .listNamespacedConfigMapAsync(
+            namespace,
+            pretty,
+            allowWatchBookmarks,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            resourceVersion,
+            timeoutSeconds,
+            watch,
+            callback);
+  }
+
+  /**
+   * Asynchronous step for listing configmaps in a namespace.
+   *
+   * @param namespace the namespace from which to list configmaps
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listConfigMapsAsync(String namespace, ResponseStep<V1ConfigMapList> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("listConfigMap", namespace, null, null),
+          listConfigMaps);
   }
 
   private Call readConfigMapAsync(

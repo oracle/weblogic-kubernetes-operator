@@ -4,12 +4,17 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,9 +41,9 @@ public class DomainValidationTest {
    */
   @Before
   public void setUp() throws Exception {
-    resourceLookup.defineResource(SECRET_NAME, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, NS);
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
     configureDomain(domain)
         .withWebLogicCredentialsSecret(SECRET_NAME, null);
   }
@@ -206,7 +211,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenWebLogicCredentialsSecretNameNotFound_reportError() {
-    resourceLookup.undefineResource(SECRET_NAME, NS);
+    resourceLookup.undefineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("WebLogicCredentials", SECRET_NAME, "not found", NS)));
@@ -214,7 +219,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenBadWebLogicCredentialsSecretNamespaceSpecified_reportError() {
-    resourceLookup.defineResource(SECRET_NAME, "badNamespace");
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, "badNamespace");
     configureDomain(domain)
         .withWebLogicCredentialsSecret(SECRET_NAME, "badNamespace");
 
@@ -233,7 +238,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenImagePullSecretExists_dontReportError() {
-    resourceLookup.defineResource("a-secret", NS);
+    resourceLookup.defineResource("a-secret", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withDefaultImagePullSecret(new V1LocalObjectReference().name("a-secret"));
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -250,7 +255,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenConfigOverrideSecretExists_dontReportError() {
-    resourceLookup.defineResource("override-secret", NS);
+    resourceLookup.defineResource("override-secret", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withConfigOverrideSecrets("override-secret");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -258,7 +263,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenConfigOverrideCMExistsTypeImage_dontReportError() {
-    resourceLookup.defineResource("overrides-cm-image", NS);
+    resourceLookup.defineResource("overrides-cm-image", KubernetesResourceType.ConfigMap, NS);
     configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeSourceType("Image");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -266,7 +271,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenConfigOverrideCMExistsTypeFromModel_reportError() {
-    resourceLookup.defineResource("overrides-cm-model", NS);
+    resourceLookup.defineResource("overrides-cm-model", KubernetesResourceType.ConfigMap, NS);
     configureDomain(domain).withConfigOverrides("overrides-cm-model").withDomainHomeSourceType("FromModel");
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -274,33 +279,76 @@ public class DomainValidationTest {
             "overrides-cm", "not supported", "FromModel")));
   }
 
+  @Test
+  public void whenWdtConfigMapExists_dontReportError() {
+    resourceLookup.defineResource("wdt-cm", KubernetesResourceType.ConfigMap, NS);
+    configureDomain(domain).withConfigurationModelConfigMap("wdt-cm");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenWdtConfigMapSpecifiedButDoesNotExist_reportError() {
+    configureDomain(domain).withConfigurationModelConfigMap("wdt-configmap");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("ConfigMap", "wdt-configmap", "spec.configuration.model.configMap", 
+            "not found", NS)));
+  }
+
+  @Test
+  public void whenWdtConfigMapSpecifiedButDoesNotExist_DomeHomeSourceTypeImage_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString());
+    configureDomain(domain).withConfigurationModelConfigMap("wdt-configmap");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
   private DomainConfigurator configureDomain(Domain domain) {
     return new DomainCommonConfigurator(domain);
   }
 
+  /**
+   *  Types of Kubernetes resources which can be looked up on a domain.
+   *   
+   */
+  public enum KubernetesResourceType {
+    Secret, ConfigMap
+  }
+
   @SuppressWarnings("SameParameterValue")
   private class KubernetesResourceLookupStub implements KubernetesResourceLookup {
-    private List<V1ObjectMeta> definedResources = new ArrayList<>();
+    private Map<KubernetesResourceType, List<V1ObjectMeta>> definedResources = new ConcurrentHashMap<>();
 
-    void undefineResource(String name, String namespace) {
-      for (Iterator<V1ObjectMeta> each = definedResources.iterator(); each.hasNext();) {
+    private List<V1ObjectMeta> getResourceList(KubernetesResourceType type) {
+      return definedResources.computeIfAbsent(type, (key) -> new ArrayList<>());
+    }
+
+    void undefineResource(String name, KubernetesResourceType type, String namespace) {
+      for (Iterator<V1ObjectMeta> each = getResourceList(type).iterator(); each.hasNext();) {
         if (hasSpecification(each.next(), name, namespace)) {
           each.remove();
         }
       }
     }
 
-    void defineResource(String name, String namespace) {
-      definedResources.add(new V1ObjectMeta().name(name).namespace(namespace));
+    void defineResource(String name, KubernetesResourceType type, String namespace) {
+      Optional.ofNullable(getResourceList(type)).orElse(Collections.emptyList())
+          .add(new V1ObjectMeta().name(name).namespace(namespace));
     }
 
     @Override
     public boolean isSecretExists(String name, String namespace) {
-      return isResourceExists(name, namespace);
+      return isResourceExists(name, KubernetesResourceType.Secret, namespace);
     }
 
-    public boolean isResourceExists(String name, String namespace) {
-      return definedResources.stream().anyMatch(m -> hasSpecification(m, name, namespace));
+    @Override
+    public boolean isConfigMapExists(String name, String namespace) {
+      return isResourceExists(name, KubernetesResourceType.ConfigMap, namespace);
+    }
+
+    private boolean isResourceExists(String name, KubernetesResourceType type, String namespace) {
+      return getResourceList(type).stream().anyMatch(m -> hasSpecification(m, name, namespace));
     }
 
     boolean hasSpecification(V1ObjectMeta m, String name, String namespace) {

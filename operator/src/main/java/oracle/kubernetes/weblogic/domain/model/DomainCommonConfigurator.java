@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Arrays;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -296,11 +297,20 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withConfigurationModelConfigMap(String configmap) {
+    getOrCreateModel().withConfigMap(configmap);
+    return this;
+  }
+
   private Configuration getOrCreateConfiguration() {
-    if (getDomainSpec().getConfiguration() == null) {
-      getDomainSpec().setConfiguration(new Configuration());
-    }
-    return getDomainSpec().getConfiguration();
+    return Optional.ofNullable(getDomainSpec().getConfiguration())
+        .orElse(getDomainSpec().withConfiguration(new Configuration()).getConfiguration());
+  }
+
+  private Model getOrCreateModel() {
+    return Optional.ofNullable(getOrCreateConfiguration().getModel())
+        .orElse(getDomainSpec().getConfiguration().withModel(new Model()).getModel());
   }
 
   @Override

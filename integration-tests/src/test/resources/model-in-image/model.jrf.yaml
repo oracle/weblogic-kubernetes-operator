@@ -1,0 +1,34 @@
+domainInfo:
+    AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
+    AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
+    ServerStartMode: 'prod'
+    RCUDbInfo:
+        rcu_prefix: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_prefix@@'
+        rcu_schema_password: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_schema_password@@'
+        rcu_admin_password: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_admin_password@@'
+        rcu_db_conn_string: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_db_conn_string@@'
+
+topology:
+    Name: domain1
+    AdminServerName: "admin-server"
+    Cluster:
+        "cluster-1":
+            DynamicServers:
+                ServerTemplate:  "cluster-1-template"
+                ServerNamePrefix: "managed-server"
+                DynamicClusterSize: 5
+                MaxDynamicClusterSize: 5
+                CalculatedListenPorts: false
+    Server:
+        "admin-server":
+            ListenPort: 7001
+    ServerTemplate:
+        "cluster-1-template":
+            Cluster: "cluster-1"
+            ListenPort : '@@PROP:MANSVR_PORT@@'
+appDeployments:
+    Application:
+        myear:
+            SourcePath: wlsdeploy/applications/sample_app.ear
+            ModuleType: ear
+            Target: 'cluster-1'
