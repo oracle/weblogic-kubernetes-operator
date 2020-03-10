@@ -877,7 +877,23 @@ public class TestUtils {
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't call rest command " + result.stderr());
     }
-
+    LoggerHelper.getLocal().log(Level.INFO, "response code from " + restUrl + " : " + result.stdout() +  " : "
+            + result.stderr());
+    command = " kubectl exec curl -- cat curl.err";
+    result = ExecCommand.exec(command, true);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException("Couldn't call rest command " + result.stderr());
+    }
+    LoggerHelper.getLocal().log(Level.INFO, "response code is cat curl.err " + result.stdout() +  " : "
+        + result.stderr());
+    command = " kubectl exec curl -- cat curl.out";
+    result = ExecCommand.exec(command, true);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException("Couldn't call rest command " + result.stderr());
+    }
+    LoggerHelper.getLocal().log(Level.INFO, "response code is cat curl.out " + result.stdout() +  " : "
+            + result.stderr());
+    Thread.sleep(600 * 1000);
   }
 
   /**
