@@ -2178,6 +2178,7 @@ public class Domain {
             + ", stderr='"
             + result.stderr()
             + "'";
+    LoggerHelper.getLocal().log(Level.INFO, "App deploy result " + resultStr);
     if (!resultStr.contains("Unable to use a TTY") && result.exitValue() != 0) {
       throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
     }
