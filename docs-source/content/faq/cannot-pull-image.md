@@ -1,5 +1,5 @@
 ---
-title: "Cannot Pull Image"
+title: "Cannot pull image"
 date: 2019-03-23T08:08:19-04:00
 draft: false
 weight: 10
