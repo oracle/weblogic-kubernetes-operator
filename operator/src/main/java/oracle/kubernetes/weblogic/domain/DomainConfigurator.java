@@ -424,4 +424,12 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withIntrospectorJobActiveDeadlineSeconds(long deadline);
+
+  /**
+   * Add WDT model config map for the domain resource.
+   *
+   * @param configmap the configmap for WDT model
+   * @return this object
+   */
+  public abstract DomainConfigurator withConfigurationModelConfigMap(String configmap);
 }
