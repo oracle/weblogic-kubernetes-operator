@@ -42,7 +42,7 @@ public class BaseTest {
   public static boolean QUICKTEST = true;
   public static boolean FULLTEST;
   public static boolean JENKINS;
-  public static boolean SHARED_CLUSTER;
+  public static boolean SHARED_CLUSTER = true;
   public static boolean OKE_CLUSTER = true;
 
   public static boolean OPENSHIFT;
@@ -660,7 +660,11 @@ public class BaseTest {
 
     LoggerHelper.getLocal().log(Level.INFO,
         "Scale domain " + domain.getDomainUid() + " Up to " + replicas + " managed servers");
-    operator.scale(domainUid, domainMap.get("clusterName").toString(), replicas);
+    if (BaseTest.OKE_CLUSTER) {
+      operator.scaleOke(domainUid, domainMap.get("clusterName").toString(), replicas);
+    } else {
+      operator.scale(domainUid, domainMap.get("clusterName").toString(), replicas);
+    }
 
     LoggerHelper.getLocal().log(Level.INFO, "Checking if managed pod(" + podName + ") is Running");
     TestUtils.checkPodCreated(podName, domainNS);

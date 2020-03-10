@@ -857,6 +857,60 @@ public class TestUtils {
   }
 
   /**
+   * generate url for rest invoke inside the pod.
+   * @param operator operator
+   * @param restUrl restUrl
+   * @throws Exception on failure
+   */
+  public static void makeOperatorRestCallOke(Operator operator, String restUrl) throws Exception {
+    String operatorCert = getExternalOperatorCertificate(operator);
+    String resourceDir = BaseTest.getProjectRoot()
+            + "/integration-tests/src/test/resources/oke";
+    String command = "kubectl apply -f " + resourceDir + "/curl.yaml";
+    ExecResult result = ExecCommand.exec(command, true);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException("Couldn't create pod " + result.stderr());
+    }
+    kubectlcp(operatorCert, "operator.cert.pem", "curl", "default");
+    command = " kubectl exec curl -- " + restUrl;
+    result = ExecCommand.exec(command, true);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException("Couldn't call rest command " + result.stderr());
+    }
+
+  }
+
+  /**
+   * generate url for rest invoke inside the pod.
+   * @param operator operator
+   * @param restUrl restUrl
+   * @param jsonObject jsonObject
+   * @return curlUrl
+   * @throws Exception on failure.
+   */
+  public static String createRestCallCurl(Operator operator, String restUrl, String jsonObject) throws Exception {
+    StringBuffer call = new StringBuffer();
+    String command = "GET";
+    if (jsonObject != null) {
+      command = "POST";
+    }
+
+    String token = getAccessToken(operator);
+    call.append("curl -v -k  --cacert  operator.cert.pem -X ");
+    call.append(command + " -H \"Content-Type: application/json\" ");
+    call.append("-H \"X-Requested-By: MyClient\" -H \"Authorization: Bearer ");
+    call.append(token + "\" -H \"Accept: application/json\" ");
+    if (jsonObject != null) {
+      call.append("-d \"" + jsonObject + "\" ");
+    }
+    call.append("https://external-weblogic-operator-svc.");
+    call.append(operator.getOperatorNamespace() + ".svc.cluster.local:8081/");
+    call.append(restUrl);
+    call.append(" -o curl.out --stderr curl.err -w \"%{http_code}\"");
+    return call.toString();
+  }
+
+  /**
    * Read external operator certificate.
    * @param operator operator
    * @return cert value

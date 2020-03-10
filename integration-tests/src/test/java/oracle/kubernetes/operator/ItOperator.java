@@ -18,6 +18,8 @@ import oracle.kubernetes.operator.utils.TestUtils;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
@@ -134,8 +136,7 @@ public class ItOperator extends BaseTest {
       domain.verifyDomainCreated();
       testBasicUseCases(domain, true);
       TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-      //FIXME
-      //testAdvancedUseCasesForADomain(operator1, domain);
+      testAdvancedUseCasesForADomain(operator1, domain);
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
@@ -186,6 +187,7 @@ public class ItOperator extends BaseTest {
     Operator operator = null;
     boolean testCompletedSuccessfully = false;
     Map<String, Object> domainMap = null;
+    K8sTestUtils k8sTestUtils = new K8sTestUtils();
     try {
       //create operator just for this test to match the namespaces with wldf-policy.yaml
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
@@ -200,7 +202,7 @@ public class ItOperator extends BaseTest {
       try {
         LoggerHelper.getLocal().log(Level.INFO, " PATH value " + System.getenv("PATH"));
         LoggerHelper.getLocal().log(Level.INFO, " KUBECONFIG value " + System.getenv("KUBECONFIG"));
-        K8sTestUtils k8sTestUtils = new K8sTestUtils();
+
         LoggerHelper.getLocal().log(Level.INFO,
                 "verifyAfterOperator creation  verifyDomainCrd before");
         k8sTestUtils.verifyDomainCrd();
@@ -216,6 +218,18 @@ public class ItOperator extends BaseTest {
 
         LoggerHelper.getLocal().log(Level.INFO,
                 "verifyAfterOperator creation failed " + ex);
+        ExecResult result =
+                ExecCommand.exec(
+                        "kubectl get crd ");
+
+        LoggerHelper.getLocal().log(Level.INFO,
+                "kubectl get crd" + result.stdout());
+        if (result.exitValue() != 0) {
+          throw new RuntimeException(
+                  "FAILURE: kubectl get crd failed  "
+                          + result.stdout()
+                          + ". \n ");
+        }
       }
 
       // create domain
@@ -224,50 +238,11 @@ public class ItOperator extends BaseTest {
       domainMap.put("createDomainFilesDir", "wdt");
       domainMap.put("domainUID", "domainonpvwdt");
       domain = TestUtils.createDomain(domainMap);
-      //domain.verifyDomainCreated();
-      try {
-        LoggerHelper.getLocal().log(Level.INFO, " PATH value " + System.getenv("PATH"));
-        LoggerHelper.getLocal().log(Level.INFO, " KUBECONFIG value " + System.getenv("KUBECONFIG"));
-        K8sTestUtils k8sTestUtils = new K8sTestUtils();
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyDomainCrd after create WLS Domain before");
-        k8sTestUtils.verifyDomainCrd();
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyDomainCrd  after create WLS Domain after");
-
-        //TestUtils.verifyAfterDeletion(domain);
-      } catch (Throwable ex) {
-        ex.printStackTrace();
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyDomainCrd after domain created failed " + ((ApiException) ex).getResponseBody());
-
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyDomainCrd after domain created failed " + ex);
-      }
+      domain.verifyDomainCreated();
 
       TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-      try {
-        LoggerHelper.getLocal().log(Level.INFO, " PATH value " + System.getenv("PATH"));
-        LoggerHelper.getLocal().log(Level.INFO, " KUBECONFIG value " + System.getenv("KUBECONFIG"));
-        K8sTestUtils k8sTestUtils = new K8sTestUtils();
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyDomainCrd after delete WLS Domain Resources before");
-        k8sTestUtils.verifyDomainCrd();
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyDomainCrd  after delete WLS Domain Resources after");
 
-
-        //TestUtils.verifyAfterDeletion(domain);
-      } catch (Throwable ex) {
-        ex.printStackTrace();
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyAfterDeletion failed " + ((ApiException) ex).getResponseBody());
-
-        LoggerHelper.getLocal().log(Level.INFO,
-                "verifyAfterDeletion failed " + ex);
-
-      }
-
+      //TestUtils.verifyAfterDeletion(domain);
 
       testCompletedSuccessfully = true;
     } finally {

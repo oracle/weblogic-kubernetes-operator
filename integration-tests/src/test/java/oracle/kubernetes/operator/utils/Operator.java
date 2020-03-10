@@ -259,6 +259,34 @@ public class Operator {
   }
 
   /**
+   * scale the given cluster in a domain to the given number of servers using Operator REST API.
+   *
+   * @param domainUid   uid
+   * @param clusterName cluster
+   * @param numOfMS     num
+   * @throws Exception exception
+   */
+
+  public void scaleOke(String domainUid, String clusterName, int numOfMS) throws Exception {
+    String myJsonObjStr = "{\"managedServerCount\": " + numOfMS + "}";
+
+    // Operator REST external API URL to scale
+    StringBuffer myOpRestApiUrl =
+            new StringBuffer()
+                    .append("/operator/v1/domains/")
+                    .append(domainUid)
+                    .append("/clusters/")
+                    .append(clusterName)
+                    .append("/scale");
+    String scaleCurl = TestUtils.createRestCallCurl(this, myOpRestApiUrl.toString(), myJsonObjStr);
+    LoggerHelper.getLocal().log(Level.INFO, "command called inside the pod " + scaleCurl);
+    TestUtils.makeOperatorRestCallOke(this, scaleCurl);
+    // give sometime to complete
+    LoggerHelper.getLocal().log(Level.INFO, "Wait 30 sec for scaling to complete...");
+    Thread.sleep(30 * 1000);
+  }
+
+  /**
    * Verify the domain exists using Operator REST Api.
    *
    * @param domainUid uid
@@ -283,13 +311,22 @@ public class Operator {
    */
   public void verifyOperatorExternalRestEndpoint() throws Exception {
     // Operator REST external API URL to scale
-    StringBuffer myOpRestApiUrl =
-        new StringBuffer("https://")
-            .append(TestUtils.getHostName())
-            .append(":")
-            .append(externalRestHttpsPort)
-            .append("/operator/");
-    TestUtils.makeOperatorGetRestCall(this, myOpRestApiUrl.toString());
+    if (BaseTest.OKE_CLUSTER) {
+      StringBuffer myOpRestApiUrl =
+              new StringBuffer()
+                      .append("/operator/");
+      String restCurl = TestUtils.createRestCallCurl(this, myOpRestApiUrl.toString(), null);
+      LoggerHelper.getLocal().log(Level.INFO, "command called inside the pod " + restCurl);
+      TestUtils.makeOperatorRestCallOke(this, restCurl);
+    } else {
+      StringBuffer myOpRestApiUrl =
+              new StringBuffer("https://")
+                      .append(TestUtils.getHostName())
+                      .append(":")
+                      .append(externalRestHttpsPort)
+                      .append("/operator/");
+      TestUtils.makeOperatorGetRestCall(this, myOpRestApiUrl.toString());
+    }
   }
 
   public Map<String, Object> getOperatorMap() {
