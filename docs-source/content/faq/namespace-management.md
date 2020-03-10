@@ -1,11 +1,11 @@
 ---
-title: "Managing Domain Namespaces"
+title: "Managing domain namespaces"
 date: 2019-09-19T10:41:32-05:00
 draft: false
 weight: 1
 ---
 
-Each WebLogic operator deployment manages a number of Kubernetes namespaces (for information about setting domain namespaces, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values">}})). A number of Kubernetes resources
+Each WebLogic operator deployment manages a number of Kubernetes namespaces. For information about setting domain namespaces, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm/#operator-helm-configuration-values" >}}). A number of Kubernetes resources
 must be present in a namespace before any WebLogic domain custom resources can be successfully
 deployed into it.
 Those Kubernetes resources are created either as part of the installation
@@ -13,14 +13,14 @@ of the operator's Helm chart, or created by the operator at runtime.
 
 This FAQ describes some considerations to be aware of when you manage the namespaces while the WebLogic operator is running. For example:
 
-* [Check the namespaces that an operator manages](#checking-the-namespaces-that-an-operator-manages)
-* [Add a namespace for an operator to manage](#adding-a-kubernetes-namespace-to-an-operator)
-* [Delete a namespace from an operator's domain namespace list](#deleting-a-kubernetes-namespace-from-an-operator)
-* [Delete and recreate a Kubernetes namespace that an operator manages](#recreating-a-previously-deleted-kubernetes-namespace)
+* [Check the namespaces that an operator manages](#check-the-namespaces-that-an-operator-manages)
+* [Add a namespace for an operator to manage](#add-a-kubernetes-namespace-to-an-operator)
+* [Delete a namespace from an operator's domain namespace list](#delete-a-kubernetes-namespace-from-an-operator)
+* [Delete and recreate a Kubernetes namespace that an operator manages](#recreate-a-previously-deleted-kubernetes-namespace)
 
-For others, see [Common Mistakes and Solutions]({{<relref "/userguide/managing-operators/using-the-operator/using-helm.md#common-mistakes-and-solutions">}}).
+For others, see [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/using-the-operator/using-helm/#common-mistakes-and-solutions" >}}).
 
-#### Checking the namespaces that an operator manages
+#### Check the namespaces that an operator manages
 You can find the list of the namespaces that an operator manages using the `helm get values` command.
 For example, the following command shows all the values of the operator release `weblogic-operator`; the `domainNamespaces` list contains `default` and `ns1`.
 
@@ -53,7 +53,7 @@ If you don't know the release name of the operator, you can use `helm ls` to lis
 $ helm ls
 ```
 
-#### Adding a Kubernetes namespace to an operator
+#### Add a Kubernetes namespace to an operator
 If you want a WebLogic operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be pre-created, for example, using the `kubectl create` command.
 
 Adding a namespace to the `domainNamespaces` list tells the operator deployment or runtime
@@ -93,7 +93,7 @@ NAME                 DATA      AGE
 weblogic-domain-cm   14        12m
 ```
 
-####  Deleting a Kubernetes namespace from an operator
+####  Delete a Kubernetes namespace from an operator
 When you no longer want a namespace to be managed by an operator, you need to remove it from
 the operator's `domainNamespaces` list, so that the corresponding Kubernetes resources that are
 associated with the namespace can be cleaned up.
@@ -113,7 +113,7 @@ $ helm upgrade \
 
 ```
 
-#### Recreating a previously deleted Kubernetes namespace
+#### Recreate a previously deleted Kubernetes namespace
 
 If you need to delete a namespace (and the resources in it) and then recreate it,
 remember to remove the namespace from the operator's `domainNamespaces` list
