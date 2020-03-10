@@ -5,7 +5,7 @@ draft: false
 weight: 1
 ---
 
-Each WebLogic operator deployment manages a number of Kubernetes namespaces. For information about setting domain namespaces, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm/#operator-helm-configuration-values" >}}). A number of Kubernetes resources
+Each WebLogic operator deployment manages a number of Kubernetes namespaces. For information about setting domain namespaces, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}). A number of Kubernetes resources
 must be present in a namespace before any WebLogic domain custom resources can be successfully
 deployed into it.
 Those Kubernetes resources are created either as part of the installation
@@ -18,7 +18,7 @@ This FAQ describes some considerations to be aware of when you manage the namesp
 * [Delete a namespace from an operator's domain namespace list](#delete-a-kubernetes-namespace-from-an-operator)
 * [Delete and recreate a Kubernetes namespace that an operator manages](#recreate-a-previously-deleted-kubernetes-namespace)
 
-For others, see [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/using-the-operator/using-helm/#common-mistakes-and-solutions" >}}).
+For others, see [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#common-mistakes-and-solutions" >}}).
 
 #### Check the namespaces that an operator manages
 You can find the list of the namespaces that an operator manages using the `helm get values` command.
