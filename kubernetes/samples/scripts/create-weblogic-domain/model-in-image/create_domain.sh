@@ -60,8 +60,3 @@ if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
   sed -i -e "s/\#\(opss\):/\1:/" $DOMAIN_RESOURCE_FILE
   sed -i -e "s/\#\(walletPasswordSecret\):/\1:/" $DOMAIN_RESOURCE_FILE
 fi
-
-# TBD this is temporary until we replace nginx with traefik
-cp $SCRIPTDIR/k8s-nginx.yaml.template ${WORKDIR}/k8s-nginx.yaml
-sed -i -e "s/@@DOMAIN_UID@@/${DOMAIN_UID}/" ${WORKDIR}/k8s-nginx.yaml
-sed -i -e "s/@@DOMAIN_NAMESPACE@@/${DOMAIN_NAMESPACE}/" ${WORKDIR}/k8s-nginx.yaml
