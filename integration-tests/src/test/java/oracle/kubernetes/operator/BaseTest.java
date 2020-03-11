@@ -727,7 +727,11 @@ public class BaseTest {
     replicas = 2;
     podName = domainUid + "-" + managedServerNameBase + (replicas + 1);
     LoggerHelper.getLocal().log(Level.INFO, "Scale down to " + replicas + " managed servers");
-    operator.scale(domainUid, clusterName, replicas);
+    if (BaseTest.OKE_CLUSTER) {
+      operator.scaleOke(domainUid, clusterName, replicas);
+    } else {
+      operator.scale(domainUid, clusterName, replicas);
+    }
 
     LoggerHelper.getLocal().log(Level.INFO, "Checking if managed pod(" + podName + ") is deleted");
     TestUtils.checkPodDeleted(podName, domainNS);
