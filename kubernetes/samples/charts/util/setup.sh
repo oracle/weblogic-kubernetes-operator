@@ -21,7 +21,8 @@ if [[ "$HELM_VERSION" =~ "v2" ]]; then
    t_helm_delete="helm delete --purge"
    v_helm_install="helm install appscode/voyager --name $VNAME  "
    t_helm_install="helm install stable/traefik --name $TNAME "
-   helm_search="helm search repo | grep appscode/voyager"
+   helm_search_voyager="helm search repo | grep appscode/voyager"
+   helm_search_traefik="helm search repo | grep stable/traefik"
 elif [[ "$HELM_VERSION" =~ "v3" ]]; then
    echo "Detected Helm Version [${HELM_VERSION}]"
    v_list_args="--namespace $VSPACE "
@@ -30,7 +31,8 @@ elif [[ "$HELM_VERSION" =~ "v3" ]]; then
    t_helm_delete="helm uninstall --keep-history --namespace $TSPACE "
    v_helm_install="helm install $VNAME appscode/voyager  "
    t_helm_install="helm install $TNAME stable/traefik "
-   helm_search="helm search appscode/voyager"
+   helm_search_voyager="helm search appscode/voyager"
+   helm_search_traefik="helm search stable/traefik"
 else
     echo "Detected Unsuppoted Helm Version [${HELM_VERSION}]"
     exit 1
@@ -50,7 +52,7 @@ function createVoyager() {
   echo "Creating Voyager operator on namespace 'voyager'."
   echo
 
-  if [ "$(${helm_search} | grep voyager |  wc -l)" = 0 ]; then
+  if [ "$(${helm_search_voyager} | grep voyager |  wc -l)" = 0 ]; then
     echo "Add Appscode Chart Repository"
     helm repo add appscode https://charts.appscode.com/stable/
     helm repo update
@@ -94,8 +96,17 @@ function createTraefik() {
   echo "Creating Traefik operator on namespace 'traefik'." 
   echo
 
+  if [ "$(${helm_search_traefik} | grep traefik |  wc -l)" = 0 ]; then
+    echo "Add K8SGoogle Chart Repository"
+    helm repo add stable https://kubernetes-charts.storage.googleapis.com
+    helm repo update
+  else
+    echo "K8SGoogle Chart Repository is already added."
+  fi
+
+
   if [ "$(helm list ${t_list_args} | grep $TNAME |  wc -l)" = 0 ]; then
-    echo "Installing Traefik Operator."
+    echo "Installing Traefik Operator. ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml"
     ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml
   else
     echo "Traefik Operator is already installed."
