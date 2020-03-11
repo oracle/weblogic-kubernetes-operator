@@ -911,7 +911,7 @@ public class TestUtils {
     }
 
     String token = getAccessToken(operator);
-    call.append("curl -v -k  --cacert  operator.cert.pem -X ");
+    call.append("curl -v  --cacert  operator.cert.pem -X ");
     call.append(command + " -H \"Content-Type: application/json\" ");
     call.append("-H \"X-Requested-By: MyClient\" -H \"Authorization: Bearer ");
     call.append(token + "\" -H \"Accept: application/json\" ");
