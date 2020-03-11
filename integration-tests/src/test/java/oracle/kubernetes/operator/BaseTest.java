@@ -304,6 +304,9 @@ public class BaseTest {
         + System.getenv("IMAGE_TAG_WEBLOGIC"));
 
     LoggerHelper.getLocal().log(Level.INFO, "Env var BRANCH_NAME " + System.getenv("BRANCH_NAME"));
+    if (BaseTest.OKE_CLUSTER) {
+      TestUtils.deleteDomainHomeDirOke();
+    }
   }
 
   /**
