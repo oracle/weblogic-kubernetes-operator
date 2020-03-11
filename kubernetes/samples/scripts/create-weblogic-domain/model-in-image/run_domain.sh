@@ -12,8 +12,8 @@
 #
 # Optional:
 #
-#   DOMAIN_UID                - defaults to 'domain1'
-#   DOMAIN_NAMESPACE          - defaults to 'sample-${DOMAIN_UID}-ns'
+#   DOMAIN_UID                - defaults to 'sample-domain1'
+#   DOMAIN_NAMESPACE          - defaults to '${DOMAIN_UID}-ns'
 #   WDTCONFIGMAPDIR           - defaults to './wdtconfigmap' (a directory populated by build_model.sh)
 #   MODEL_IMAGE_NAME          - defaults to 'model-in-image'
 #   MODEL_IMAGE_TAG           - defaults to 'v1'
@@ -28,8 +28,8 @@ set -eu
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 echo "@@ Info: Running '$(basename "$0")'."
 
-DOMAIN_UID=${DOMAIN_UID:-domain1}
-DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-${DOMAIN_UID}-ns}
+DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
+DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 WDTCONFIGMAPDIR=${WDTCONFIGMAPDIR:-$WORKDIR/wdtconfigmap}
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 RCUDB_NAMESPACE=${RCUDB_NAMESPACE:-default}
@@ -51,13 +51,13 @@ while [ 1 -eq 1 ]; do
 done
 
 echo "@@ Info: Creating weblogic domain secret"
-$SCRIPTDIR/create_secret.sh -s sample-${DOMAIN_UID}-weblogic-credentials \
+$SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-weblogic-credentials \
   -l username=weblogic \
   -l password=welcome1
 
 
 echo "@@ Info: Creating rcu access secret (referenced by model yaml macros if domain type is JRF)"
-$SCRIPTDIR/create_secret.sh -s sample-${DOMAIN_UID}-rcu-access \
+$SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-rcu-access \
   -l rcu_prefix=FMW1 \
   -l rcu_schema_password=Oradoc_db1 \
   -l rcu_admin_password=Oradoc_db1 \
@@ -81,7 +81,7 @@ $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-model-encryption-secret \
 
 echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
 
-$SCRIPTDIR/create_secret.sh -s sample-${DOMAIN_UID}-opss-wallet-password-secret \
+$SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-opss-wallet-password-secret \
   -l walletPassword=welcome1
 
 

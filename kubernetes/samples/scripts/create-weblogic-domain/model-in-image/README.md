@@ -149,29 +149,11 @@ It is helpful to understand the following high-level flow before running the sam
      export WORKDIR=$(pwd)
      ```
 
-3. Deploy the Operator and setup the Operator to manage namespace `sample-domain1-ns`. 
+3. Deploy the WebLogic Operator and setup the Operator to manage namespace `sample-domain1-ns`. Optionally deploy the Traefik load balancer as well.
 
-   - For example, see [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) up through the `PREPARE FOR A DOMAIN` step. Note that you can skip the Quick Start steps for obtaining a WebLogic image and for configuring Traefik load balancer - as instead we we will generate our own image and setup an nginx load balancer instead.
-   - After you've deployed the Operater, check if it is managing namespace `sample-domain1-ns` and use helm upgrade to add this namespace if needed.  For example:
-     ```
-     # get the helm release name for the running operator, and use
-     # this release name in place of 'my-operator-release' below
-     helm ls
-  
-     # check if operator manages 'sample-domain1-ns'
-     helm get values my-operator-release  # shows current managed namespaces
-  
-     # Use helm upgrade to add 'sample-domain1-ns' if needed. Note that the
-     # 'set' below should include all of the namespaces the operator is
-     # expected to manage.  Do not include any white-space in the namespace list.
-     cd ${SRCDIR?}
-     helm upgrade \
-       --reuse-values \
-       --set "domainNamespaces={default,my-other-ns,sample-domain1-ns}" \
-       --wait \
-       my-operator-release \
-       kubernetes/charts/weblogic-operator
-     ```
+   - Follow the same steps as [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) up through the `PREPARE FOR A DOMAIN` step. Note that you can skip the Quick Start steps for obtaining a WebLogic image.
+   - Deploying the Traefik load balancer is optional, but is a prerequisite for testing the web-app that's deployed to WebLogic as part of this sample.
+
 
 4. Choose the type of domain you're going to create: `WLS`, `JRF`, or `RestrictedJRF`, and set environment variable WDT_DOMAIN_TYPE accordingly. Default is `WLS`.
 
@@ -243,54 +225,110 @@ At the end, you will see the message `Getting pod status - ctrl-c when all is ru
 the pods are up, you can ctrl-c to exit the build script.
 
 
-## Optionally, install nginx to test the sample application
+## Optionally test the sample application
 
-TBD Replace this sample with traefik
+1. Ensure Traefik has been installed and is servicing external port 30305 as per [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
 
-1. Install the nginx ingress controller in your environment.  For example:
+2. Create an ingress for the domain in the domain's namespace by using the sample Helm chart:
+
+   For Helm 2.x:
+
    ```
-   helm install --name acmecontroller stable/nginx-ingress \
-   --namespace sample-domain1-ns \
-   --set controller.name=acme \
-   --set defaultBackend.enabled=true \
-   --set defaultBackend.name=acmedefaultbackend \
-   --set rbac.create=true
+   cd $SRCDIR
+   $ helm install kubernetes/samples/charts/ingress-per-domain \
+     --name sample-domain1-ingress \
+     --namespace sample-domain1-ns \
+     --set wlsDomain.domainUID=sample-domain1 \
+     --set traefik.hostname=sample-domain1.org
    ```
-2. Install the ingress rule for the sample application:
+
+   For Helm 3.x:
+
    ```
-   kubectl apply -f k8s-nginx.yaml
+   cd $SRCDIR
+   helm install sample-domain1-ingress kubernetes/samples/charts/ingress-per-domain \
+    --namespace sample-domain1-ns \
+    --set wlsDomain.domainUID=sample-domain1 \
+    --set traefik.hostname=sample-domain1.org
    ```
-3. Verify ingress is running and note the `EXTERNAL-IP` that it is using:
+
+   This creates an ingress that maps from Traefik to the WebLogic domain's 'cluster-1' cluster's 8001 port.
+
+
+3. Send a web application request to the load balancer:
+
    ```
-   kubectl --namespace sample-domain1-ns get services -o wide -w acmecontroller-nginx-ingress-acme
+   curl -H 'host: sample-domain1.org' http://$(hostname).$(dnsdomainname):30305/sample_war/index.jsp
    ```
-4. Send a request to the `EXTERNAL-IP`:
-   ```
-   curl -kL http://EXTERNAL-IP/sample_war/index.jsp
-   ```
+
    You should see something like:
+
    ```
    Hello World, you have reached server managed-server1
    ```
 
+   Note: If you're running on a remote k8s cluster, then substitute `$(hostname).$(dnsdomainname)` with an external address suitable for contacting the cluster.
+
+4. Send a ready app request to the load balancer (the 'ready app' is a built-in WebLogic application):
+
+   ```
+   curl -v -H 'host: sample-domain1.org' http://$(hostname).$(dnsdomainname):30305/weblogic/ready
+   ```
+
+   You should see something like:
+
+
+   ```
+   * About to connect() to myhost.my.dns.domain.name port 30305 (#0)
+   *   Trying 100.111.142.32...
+   * Connected to myhost.my.dns.domain.name (100.111.142.32) port 30305 (#0)
+   > GET /weblogic/ready HTTP/1.1
+   > User-Agent: curl/7.29.0
+   > Accept: */*
+   > host: sample-domain1.org
+   > 
+   < HTTP/1.1 200 OK
+   < Content-Length: 0
+   < Date: Mon, 09 Mar 2020 20:40:37 GMT
+   < Vary: Accept-Encoding
+   < 
+   * Connection #0 to host myhost.my.dns.domain.name left intact
+   ```
+
+   Note: If you're running on a remote k8s cluster, then substitute `$(hostname).$(dnsdomainname)` with an external address suitable for contacting the cluster.
 
 ## Cleanup 
 
-1. From the WebLogic Kubernetes Operator cloned root directory:
+1. Delete the domain resource. 
    ```
-   kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
+   cd $SRCDIR
+   ./kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
    ```
-   This deletes the domain and any related resources that are labeled with Domain UID `sample-domain1`. It leaves the namespace intact and leaves the Operator running.
-2. If you setup nginx:
-   TBD update this to reference traefik cleanup instructions
+   This deletes the domain and any related resources that are labeled with Domain UID `sample-domain1`. It leaves the namespace intact, leaves the Operator running, leaves the load balancer running (if installed), and leaves the database running (if installed).
+
+2. If you set up the Traefik load balancer:
+
    ```
-   kubectl delete -f k8s-nginx.yaml
-   helm delete acmecontroller
+   helm delete --purge sample-domain1-ingress
+   helm delete --purge traefik-operator
+   kubectl delete namespace traefik
    ```
+
 3. If you setup a database:
    TBD update this to reference DB sample cleanup instructions
    ```
    kubectl delete -f k8s-db-slim.yaml
+   ```
+
+4. Delete the WebLogic operator and its namespace:
+   ```
+   helm delete --purge sample-weblogic-operator
+   kubectl delete namespace sample-weblogic-operator-ns
+   ```
+
+5. Delete the domain's namespace:
+   ```
+   kubectl delete namepsace sample-domain1-ns
    ```
 
 # Model File Naming and Loading Order
@@ -403,7 +441,7 @@ TBD Move mosgt of the following directions to the create-oracle-db-service sampl
    
      > __NOTE__: This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
 
-2. Use the sample script in `WORDIR/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with schema prefix `FMW1`.
+2. Use the sample script in `SRCDIR/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with schema prefix `FMW1`.
 
    Note that this script assumes `Oradoc_db1` is the dba password, `Oradoc_db1` is the schema password, and that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
 
@@ -431,9 +469,9 @@ TBD These instructions are temporary while we come up with a better way to incre
 To allow model-in-image to access the RCU database and OPSS wallet, it's necessary to setup an RCU access secret and an OPSS secret before deploying your domain. It's also necessary to define an `RCUDbInfo` stanza in your model. The sample already sets up all of these for you.  See:
 
 | Sample file | Description |
-| `create_opss_key_secret.sh` | Defines secret `sample-domain1-opss-key-passphrase-secret` with `passphrase=welcome1` |
-| `create_rcu_access_secret.sh` | Defines secret `sample-domain1-rcu-access` with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` |
-| `model1.yaml.jrf` | Populates the `domainInfo -> RCUDbInfo` stanza `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` attributes by referencing their locations in the `sample-domain1-rcu-access` secret. |
+| `run_domain.sh` | Defines secret `sample-domain1-opss-key-passphrase-secret` with `passphrase=welcome1` |
+| `run_domain.sh` | Defines secret `sample-domain1-rcu-access` with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` |
+| `model1.yaml.jrf` | Populates the `domainInfo -> RCUDbInfo` stanza `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` attributes by referencing their locations in the `sample-domain1-rcu-access` secret. The `build.sh` script uses this model instead of `model.yaml.wls` when the source domain type is `JRF`. |
 | `k8s-domain.yaml.template` | Ensures the domain mounts the OPSS key secret by setting the domain resource `configuration.opss.walletSecret` attribute to `sample-domain1-rcu-access`, and ensures the domain mounts the RCU access secret `sample-domain1-rcu-access` for reference by WDT model macros by setting the domain resource `configuration.secrets` attribute. |
 
 > __NOTE__: This step is for information purposes only. Do not run the above sample files directly. The sample's main build and run scripts will run them for you.
