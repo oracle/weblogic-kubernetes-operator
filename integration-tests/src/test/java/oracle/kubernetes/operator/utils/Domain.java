@@ -2358,4 +2358,30 @@ public class Domain {
         appName, scriptName, username, password, infoDirName, archiveExt);
   }
 
+
+  /**
+   * write server pod logs
+   *
+   * @throws Exception exception
+   */
+  public void logServerPods() throws Exception {
+    // check admin pod
+    String adminPodName = domainUid + "-" + adminServerName;
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Writing admin pod(" + adminPodName + ") log");
+    TestUtils.exec("kubectl log " + adminPodName + " -n "
+        + domainNS + " > " + resultsDir + "pod-" + adminPodName + ".log", true);
+
+    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
+      // check managed server pods
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        String msPodName = domainUid + "-" + managedServerNameBase + i;
+        LoggerHelper.getLocal().log(Level.INFO,
+            "Writing managed pod(" + msPodName + ") log");
+        TestUtils.exec("kubectl log " + msPodName
+            + " -n " + domainNS + " > " + resultsDir + "pod-" + msPodName + ".log", true);
+      }
+    }
+  }
+
 }

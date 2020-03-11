@@ -172,6 +172,9 @@ public class ItManagedCoherence extends BaseTest {
 
       testCompletedSuccessfully = true;
     } finally {
+      if (domain != null) {
+        domain.logServerPods();
+      }
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
