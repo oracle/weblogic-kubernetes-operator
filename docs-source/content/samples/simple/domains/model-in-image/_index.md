@@ -5,20 +5,44 @@ weight: 4
 description: "Sample for supplying a WebLogic Deploy Tool (WDT) model that the operator automatically expands into a full domain home during runtime."
 ---
 
+#### Contents
+
+  - [Introduction](#introduction)
+  - [References](#references)
+  - [Prerequisites for all domain types](#prerequisites-for-all-domain-types)
+  - [Prerequisites for JRF domains](#prerequisites-for-jrf-domains)
+    - [Set Up and Initialize an RCU Database](#set-up-and-initialize-an-rcu-database)
+    - [Increase introspection job timeout](#increase-introspection-job-timeout)
+    - [Set up RCU model attributes, domain resource attributes, and secrets](#set-up-rcu-model-attributes,-domain-resource-attributes,-and-secrets)
+    - [Reusing or sharing RCU tables](#reusing-or-sharing-rcu-tables)
+  - [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image)
+  - [Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)
+  - [Optionally test the sample application](#optionally-test-the-sample-application)
+  - [Cleanup](#cleanup)
+
+#### Introduction
+
 This sample demonstrates:
 
   - Using the WebLogic Image Tool to create a Docker image that contains a WebLogic install, a WebLogic Deploy Tool (WDT) install, a Java EE servlet application contained within a WDT archive, and a WebLogic domain that's defined using a WDT model file.
-  - Modifying the WDT model within the Docker image using a WDT model file that's supplied using a Kubernetes config map.
-  - Deploying the model image, model config map, domain resource, and corresponding secrets that define user names, passwords, and URL values for the model and its domain resource.
+  - Modifying the WDT model that's embedded within the Docker image using a WDT model file that's supplied using a Kubernetes config map.
+  - Defining a `domainHomeSourceType: FromModel` domain resource that references the WDT model image and the WDT config map.
+  - Deploying the model image, domain resource, model config map, and associated secrets that define user names, passwords, and URL values for the model and its domain resource.
   - Deploying and accessing a Traefik load balancer that redirects HTTP protocol calls to its Java EE servlet application.
 
-To reference the relevant user documentation, see [TBD Model-in-image documentation], [Oracle WebLogic Server Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling), and [Oracle WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool).
-
-#### Supported domain types
+Supported domain types:
 
 There are three types of domains supported by Model in Image: a standard `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, or a `RestrictedJRF` domain.
 
 The `JRF` domain path through the sample includes additional steps for deploying an infrastructure database and initializing the database using the Repository Creation Utility (RCU) tool. `JRF` domains may be  used by Oracle products that layer on top of WebLogic Server such as SOA, OSB, and FA. Similarly, `RestrictedJRF` domains may be used by Oracle layered products such as Oracle Communications products.
+
+#### References
+
+To reference the relevant user documentation, see:
+ - [TBD Model-in-image documentation]
+ - [Oracle WebLogic Server Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
+ - [Oracle WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool).
+
 
 
 #### Prerequisites for all domain types
@@ -62,25 +86,143 @@ The `JRF` domain path through the sample includes additional steps for deploying
    export WDT_DOMAIN_TYPE=<one of WLS, JRF, or RestrictedJRF>
    ```
 
-7. Set up access to this sample's base WebLogic image at the [Oracle Container Registry](http://container-registry.oracle.com).
+7. Setup access to a base image for this sample that will be used as the base image for creating the final image. Do one of the following:
 
-   a. Use a browser to access [Oracle Container Registry](http://container-registry.oracle.com).
+   - __Option 1 of 2, download an existing WebLogic image.__
 
-   b. Choose an image location:
-     - For `JRF` and `RestrictedJRF` domains, select `Middleware`, then `fmw-infrastructure`.
-     - For `WLS` domains, select `Middleware`, then `weblogic`.
+     Set up access to this sample's base WebLogic image at the [Oracle Container Registry](http://container-registry.oracle.com):
 
-   c. Select Sign In and accept the license agreement.
+     a. Use a browser to access [Oracle Container Registry](http://container-registry.oracle.com).
 
-   d. Use your terminal to locally log in to Docker `docker login container-registry.oracle.com`.
+     b. Choose an image location:
+       - For `JRF` and `RestrictedJRF` domains, select `Middleware`, then `fmw-infrastructure`.
+       - For `WLS` domains, select `Middleware`, then `weblogic`.
+  
+     c. Select Sign In and accept the license agreement.
 
-   e. Later, when you run the sample, it will call `docker pull` for your base image based on the domain type:
-     - For `JRF` and `RestrictedJRF`, it will pull `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`.
-     - For `WLS`, it will pull `container-registry.oracle.com/middleware/weblogic:12.2.1.3`.
+     d. Use your terminal to locally log in to Docker `docker login container-registry.oracle.com`.
 
-   Alternatively, you can create your own base image and override the sample's default base image name and tag by exporting the `BASE_IMAGE_NAME` and `BASE_IMAGE_TAG` environment variables prior to running the sample scripts. If you want to create your own base image, see TBD.
+     e. Later, when you run the sample, it will call `docker pull` for your base image based on the domain type:
+       - For `JRF` and `RestrictedJRF`, it will pull `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`.
+       - For `WLS`, it will pull `container-registry.oracle.com/middleware/weblogic:12.2.1.3`.
 
-8. If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains). You can do this step before or after you create your final image.
+   - __Option 2 of 2, create your own WebLogic base image.__
+
+     Alternatively, you can create your own base image and override the sample's default base image name and tag by exporting the `BASE_IMAGE_NAME` and `BASE_IMAGE_TAG` environment variables prior to running the sample scripts. If you want to create your own base image, see [Preparing a Base Image](({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}})).
+
+8. If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See the next section [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains). You can do this step before or after you create your final image. If your not using a `JRF` domain type, proceed directly to the [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) section.
+
+#### Prerequisites for JRF domains
+
+> __IMPORTANT__: This section is only required for demonstrating a `JRF` domain type. Skip this section and proceed directly to the [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) section if your domain type is `WLS` or `RestrictedJRF`.
+
+A JRF domain requires an infrastructure database called an RCU database, requires initializing this database, and requires configuring your domain to access this database. All of these steps must occur before you first deploy your domain.
+
+Furthermore, if you want to have a restarted JRF domain access updates to the infrastructure database that the domain made at an earlier time, the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain.
+
+The following steps demonstrate how to set up an infrastructure database that will work with this sample:
+
+  1. [Set up and initialize an RCU database](#set-up-and-initialize-an-rcu-database).
+  2. [Increase introspection job timeout](#increase-introspection-job-timeout).
+  3. [Set up RCU model attributes, domain resource attributes, and secrets](#set-up-rcu-model-attributes-domain-resource-attributes-and-secrets).
+  4. [Reusing or sharing RCU tables](#reusing-or-sharing-rcu-tables).
+
+
+
+##### Set Up and Initialize an RCU Database
+
+A JRF domain requires an infrastructure database and also requires initializing this database with a schema and a set of tables. The following example shows how to set up a sample RCU database and use the RCU tool to create the infrastructure schema for a JRF domain. The RCU database is set up with the following attributes:
+
+| Attribute | Value |
+| --------- | ----- |
+| database Kubernetes namespace | `default` |
+| database Kubernetes pod | `oracle-db` |
+| database image | `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` |
+| database password | `Oradoc_db1` |
+| infrastructure schema prefix | `FMW1` |
+| infrastructure schema password | `Oradoc_db1` |
+| database URL | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
+
+TBD Move most of the following directions to the create-oracle-db-service sample README
+
+1. Ensure you have access to the database image, and then deploy it:
+
+   - Use a browser to log in to `https://container-registry.oracle.com`, select `database->enterprise` and accept the license agreement.
+
+   - Get the database image:
+     - In the local shell, `docker login container-registry.oracle.com`.
+     - In the local shell, `docker pull container-registry.oracle.com/database/enterprise:12.2.0.1-slim`.
+
+     > __NOTE__: If a local Docker login and manual pull of `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` is not sufficient (for example, if you are using a remote Kubernetes cluster), then uncomment the `imagePullSecrets` stanza in '$WORKDIR/k8s-db-slim.yaml' and create the image pull secret:
+       ```
+       kubectl create secret docker-registry regsecret \
+         --docker-server=container-registry.oracle.com \
+         --docker-username=your.email@some.com \
+         --docker-password=your-password \
+         --docker-email=your.email@some.com
+       ```
+
+   - Use the sample script in `$SRCDIR/kubernetes/samples/scripts/create-oracle-db-service` to create an Oracle database running in the pod, 'oracle-db'.
+
+     > __NOTE__: If your database image access requires the `regsecret` image pull secret that you optionally created above, then pass `-s regsecret` to the `start-db-service.sh` command line.
+
+     ```
+     cd $SRCDIR/kubernetes/samples/scripts/create-oracle-db-service
+     start-db-service.sh
+     ```
+
+     This script will deploy a database with the URL, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password, `Oradoc_db1`.
+
+     > __WARNING__: The Oracle database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1)
+     >            : All the data is gone when the database is restarted.
+
+     > __NOTE__: This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
+
+2. Use the sample script in `SRCDIR/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with schema prefix `FMW1`.
+
+   Note that this script assumes `Oradoc_db1` is the DBA password, `Oradoc_db1` is the schema password, and that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
+
+   ```
+   cd $SRCDIR/kubernetes/samples/scripts/create-rcu-schema
+   ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
+   ```
+
+   __NOTE__:  If you need to drop the repository, use this command:
+
+   ```
+   drop-rcu-schema.sh -s FMW1
+   ```
+
+
+##### Increase introspection job timeout
+
+Because JRF domain home creation takes a considerable amount of time the first time it's created, and because Model in Image creates your domain home for you using the introspection job, you should increase the timeout for the introspection job. Use the command `kubectl -n sample-weblogic-operator-ns edit configmap weblogic-operator-cm` to open up an editor for the operator settings, and then use this editor to add the parameter, `introspectorJobActiveDeadlineSeconds`, with a value of at least 300 seconds (default is 120 seconds).  
+
+TBD Replace these instructions with instructions for using the new domain resource attribute.
+
+
+##### Set up RCU model attributes, domain resource attributes, and secrets
+
+To allow Model in Image to access the RCU database and OPSS wallet, it's necessary to set up an RCU access secret and an OPSS secret before deploying your domain. It's also necessary to define an `RCUDbInfo` stanza in your model. The sample already sets up all of these for you.  See:
+
+| Sample file | Description |
+| --------- | ----- |
+| `run_domain.sh` | Defines secret, `sample-domain1-opss-wallet-password-secret`, with `password=welcome1`. |
+| `run_domain.sh` | Defines secret, `sample-domain1-rcu-access`, with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string`. |
+| `model1.yaml.jrf` | Populates the `domainInfo -> RCUDbInfo` stanza `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` attributes by referencing their locations in the `sample-domain1-rcu-access` secret. The `build.sh` script uses this model instead of `model.yaml.wls` when the source domain type is `JRF`. |
+| `k8s-domain.yaml.template` | Ensures that the domain mounts the OPSS key secret by setting the domain resource `configuration.opss.walletPasswordSecret` attribute to `sample-domain1-opss-wallet-password-secret`, and ensures the domain mounts the RCU access secret, `sample-domain1-rcu-access`, for reference by WDT model macros by setting the domain resource `configuration.secrets` attribute. |
+
+> __NOTE__: This step is for information purposes only. Do not run the above sample files directly. The sample's main build and run scripts will run them for you.
+
+##### Reusing or sharing RCU tables
+
+Note that when you succesfully deploy your JRF domain resource for the first time, the introspector job will initialize the RCU tables for the domain using the `domainInfo -> RCUDbInfo` stanza in the WDT model plus the `configuration.opss.walletPasswordSecret` specified in the domain resource. The job will also create a new domain home. Finally, the operator will also capture an OPSS wallet file from the new domain's local directory and place this file in a new Kubernetes config map.
+
+To recover a domain's RCU tables between domain restarts or to share an RCU schema between different domains, it is necessary to extract this wallet file from the config map and save the OPSS wallet password secret that was used for the original domain. The wallet password and wallet file are needed again when you recreate the domain or share the database with other domains.
+
+TBD add instructions for modifying the domain resource in the sample to specify a wallet file, and the commands for extracting the wallet plus deploying the wallet as a secret, (also decide whether to keep the 'save ewallet' script or updated it.)
+
+See TBD [Reusing an RCU Database between Domain Deployments](#reusing-an-rcu-database-between-domain-deployments) for instructions.
 
 #### Use the WebLogic Image Tool to create an image
 
@@ -234,114 +376,3 @@ At the end, you will see the message `Getting pod status - ctrl-c when all is ru
    kubectl delete namepsace sample-domain1-ns
    ```
 
-#### Prerequisites for JRF domains
-
-> __IMPORTANT__: This section is only required for demonstrating a `JRF` domain type. Skip this section if your domain type is `WLS` or `RestrictedJRF`.
-
-A JRF domain requires an infrastructure database called an RCU database, requires initializing this database, and requires configuring your domain to access this database. All of these steps must occur before you first deploy your domain.
-
-Furthermore, if you want to have a restarted JRF domain access updates to the infrastructure database that the domain made at an earlier time, the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain.
-
-The following steps demonstrate how to set up an infrastructure database that will work with this sample:
-
-  1. [Set up and initialize an RCU database](#set-up-and-initialize-an-rcu-database).
-  2. [Increase introspection job timeout](#increase-introspection-job-timeout).
-  3. [Set up RCU model attributes, domain resource attributes, and secrets](#set-up-rcu-model-attributes-domain-resource-attributes-and-secrets).
-  4. [Reusing or sharing RCU tables](#reusing-or-sharing-RCU-tables).
-
-
-
-##### Set Up and Initialize an RCU Database
-
-A JRF domain requires an infrastructure database and also requires initializing this database with a schema and a set of tables. The following example shows how to set up a sample RCU database and use the RCU tool to create the infrastructure schema for a JRF domain. The RCU database is set up with the following attributes:
-
-| Attribute | Value |
-| --------- | ----- |
-| database Kubernetes namespace | `default` |
-| database Kubernetes pod | `oracle-db` |
-| database image | `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` |
-| database password | `Oradoc_db1` |
-| infrastructure schema prefix | `FMW1` |
-| infrastructure schema password | `Oradoc_db1` |
-| database URL | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
-
-TBD Move most of the following directions to the create-oracle-db-service sample README
-
-1. Ensure you have access to the database image, and then deploy it:
-
-   - Use a browser to log in to `https://container-registry.oracle.com`, select `database->enterprise` and accept the license agreement.
-
-   - Get the database image:
-     - In the local shell, `docker login container-registry.oracle.com`.
-     - In the local shell, `docker pull container-registry.oracle.com/database/enterprise:12.2.0.1-slim`.
-
-     > __NOTE__: If a local Docker login and manual pull of `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` is not sufficient (for example, if you are using a remote Kubernetes cluster), then uncomment the `imagePullSecrets` stanza in '$WORKDIR/k8s-db-slim.yaml' and create the image pull secret:
-       ```
-       kubectl create secret docker-registry regsecret \
-         --docker-server=container-registry.oracle.com \
-         --docker-username=your.email@some.com \
-         --docker-password=your-password \
-         --docker-email=your.email@some.com
-       ```
-
-   - Use the sample script in `$SRCDIR/kubernetes/samples/scripts/create-oracle-db-service` to create an Oracle database running in the pod, 'oracle-db'.
-
-     > __NOTE__: If your database image access requires the `regsecret` image pull secret that you optionally created above, then pass `-s regsecret` to the `start-db-service.sh` command line.
-
-     ```
-     cd $SRCDIR/kubernetes/samples/scripts/create-oracle-db-service
-     start-db-service.sh
-     ```
-
-     This script will deploy a database with the URL, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password, `Oradoc_db1`.
-
-     > __WARNING__: The Oracle database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1)
-     >            : All the data is gone when the database is restarted.
-
-     > __NOTE__: This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
-
-2. Use the sample script in `SRCDIR/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with schema prefix `FMW1`.
-
-   Note that this script assumes `Oradoc_db1` is the DBA password, `Oradoc_db1` is the schema password, and that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
-
-   ```
-   cd $SRCDIR/kubernetes/samples/scripts/create-rcu-schema
-   ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
-   ```
-
-   __NOTE__:  If you need to drop the repository, use this command:
-
-   ```
-   drop-rcu-schema.sh -s FMW1
-   ```
-
-
-#### Increase introspection job timeout
-
-Because JRF domain home creation takes a considerable amount of time the first time it's created, and because Model in Image creates your domain home for you using the introspection job, you should increase the timeout for the introspection job. Use the command `kubectl -n sample-weblogic-operator-ns edit configmap weblogic-operator-cm` to open up an editor for the operator settings, and then use this editor to add the parameter, `introspectorJobActiveDeadlineSeconds`, with a value of at least 300 seconds (default is 120 seconds).  
-
-TBD Replace these instructions with instructions for using the new domain resource attribute.
-
-
-#### Set up RCU model attributes, domain resource attributes, and secrets
-
-To allow Model in Image to access the RCU database and OPSS wallet, it's necessary to set up an RCU access secret and an OPSS secret before deploying your domain. It's also necessary to define an `RCUDbInfo` stanza in your model. The sample already sets up all of these for you.  See:
-
-| Sample file | Description |
-| --------- | ----- |
-| `run_domain.sh` | Defines secret, `sample-domain1-opss-wallet-password-secret`, with `password=welcome1`. |
-| `run_domain.sh` | Defines secret, `sample-domain1-rcu-access`, with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string`. |
-| `model1.yaml.jrf` | Populates the `domainInfo -> RCUDbInfo` stanza `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` attributes by referencing their locations in the `sample-domain1-rcu-access` secret. The `build.sh` script uses this model instead of `model.yaml.wls` when the source domain type is `JRF`. |
-| `k8s-domain.yaml.template` | Ensures that the domain mounts the OPSS key secret by setting the domain resource `configuration.opss.walletPasswordSecret` attribute to `sample-domain1-opss-wallet-password-secret`, and ensures the domain mounts the RCU access secret, `sample-domain1-rcu-access`, for reference by WDT model macros by setting the domain resource `configuration.secrets` attribute. |
-
-> __NOTE__: This step is for information purposes only. Do not run the above sample files directly. The sample's main build and run scripts will run them for you.
-
-#### Reusing or sharing RCU tables
-
-Note that when you succesfully deploy your JRF domain resource for the first time, the introspector job will initialize the RCU tables for the domain using the `domainInfo -> RCUDbInfo` stanza in the WDT model plus the `configuration.opss.walletPasswordSecret` specified in the domain resource. The job will also create a new domain home. Finally, the operator will also capture an OPSS wallet file from the new domain's local directory and place this file in a new Kubernetes config map.
-
-To recover a domain's RCU tables between domain restarts or to share an RCU schema between different domains, it is necessary to extract this wallet file from the config map and save the OPSS wallet password secret that was used for the original domain. The wallet password and wallet file are needed again when you recreate the domain or share the database with other domains.
-
-TBD add instructions for modifying the domain resource in the sample to specify a wallet file, and the commands for extracting the wallet plus deploying the wallet as a secret, (also decide whether to keep the 'save ewallet' script or updated it.)
-
-See TBD [Reusing an RCU Database between Domain Deployments](#reusing-an-rcu-database-between-domain-deployments) for instructions.
