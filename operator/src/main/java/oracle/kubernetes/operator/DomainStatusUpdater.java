@@ -327,6 +327,7 @@ public class DomainStatusUpdater {
           status.setServers(new ArrayList<>(getServerStatuses().values()));
           status.setClusters(new ArrayList<>(getClusterStatuses().values()));
           status.setReplicas(getReplicaSetting());
+          status.setMessage(getInfo().getValidationWarningsAsString());
         }
 
         if (isHasFailedPod()) {
@@ -386,16 +387,22 @@ public class DomainStatusUpdater {
       }
 
       private ServerStatus createServerStatus(String serverName) {
+        String clusterName = getClusterName(serverName);
         return new ServerStatus()
             .withServerName(serverName)
             .withState(getRunningState(serverName))
+            .withDesiredState(getDesiredState(serverName, clusterName))
             .withHealth(serverHealth.get(serverName))
-            .withClusterName(getClusterName(serverName))
+            .withClusterName(clusterName)
             .withNodeName(getNodeName(serverName));
       }
 
       private String getRunningState(String serverName) {
         return serverState.getOrDefault(serverName, SHUTDOWN_STATE);
+      }
+
+      private String getDesiredState(String serverName, String clusterName) {
+        return getDomain().getServer(serverName, clusterName).getDesiredState();
       }
 
       Integer getReplicaSetting() {
@@ -434,7 +441,8 @@ public class DomainStatusUpdater {
             .withReplicas(Optional.ofNullable(getClusterCounts().get(clusterName)).map(Long::intValue).orElse(null))
             .withReadyReplicas(
                 Optional.ofNullable(getClusterCounts(true).get(clusterName)).map(Long::intValue).orElse(null))
-            .withMaximumReplicas(getClusterMaximumSize(clusterName));
+            .withMaximumReplicas(getClusterMaximumSize(clusterName))
+            .withReplicasGoal(getClusterSizeGoal(clusterName));
       }
 
 
@@ -482,6 +490,10 @@ public class DomainStatusUpdater {
       private Integer getClusterMaximumSize(String clusterName) {
         return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
             .map(cluster -> cluster.map(WlsClusterConfig::getMaxClusterSize).orElse(0)).get();
+      }
+
+      private Integer getClusterSizeGoal(String clusterName) {
+        return getDomain().getReplicaCount(clusterName);
       }
     }
   }

@@ -594,6 +594,7 @@ public class ConfigMapHelper {
                 info.getDomainUid(),
                 new Scan(wlsDomainConfig, new DateTime()));
             packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
+            return doNext(DomainValidationSteps.createValidateDomainTopologyStep(getNext()), packet);
           }
         }
       }

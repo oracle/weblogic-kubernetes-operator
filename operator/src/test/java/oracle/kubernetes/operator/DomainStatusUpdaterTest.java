@@ -42,6 +42,7 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.SERVERS_READY_REASO
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STANDBY_STATE;
@@ -127,6 +128,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(RUNNING_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("clusterA")
                 .withNodeName("node1")
                 .withServerName("server1")
@@ -136,6 +138,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(SHUTDOWN_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("clusterB")
                 .withNodeName("node2")
                 .withServerName("server2")
@@ -167,6 +170,7 @@ public class DomainStatusUpdaterTest {
 
   @Test
   public void statusStep_usesServerFromWlsConfig() {
+    configureServer("server4").withDesiredState(ADMIN_STATE);
     testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server3", RUNNING_STATE));
     testSupport.addToPacket(
         SERVER_HEALTH_MAP,
@@ -183,6 +187,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(RUNNING_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("clusterC")
                 .withServerName("server3")
                 .withHealth(overallHealth("health3"))));
@@ -191,6 +196,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(SHUTDOWN_STATE)
+                .withDesiredState(ADMIN_STATE)
                 .withClusterName("clusterC")
                 .withServerName("server4")
                 .withHealth(overallHealth("health4"))));
@@ -214,6 +220,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(STANDBY_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("wlsCluster")
                 .withNodeName("node2")
                 .withServerName("server2")
@@ -240,6 +247,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(RUNNING_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("clusterA")
                 .withNodeName("node1")
                 .withServerName("server1")

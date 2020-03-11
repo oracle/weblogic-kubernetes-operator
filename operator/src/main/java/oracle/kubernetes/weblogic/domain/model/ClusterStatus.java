@@ -38,6 +38,11 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   @Range(minimum = 0)
   private Integer maximumReplicas;
 
+  /** The requested number of cluster members. Required. */
+  @Description("The requested number of cluster members. Required.")
+  @Range(minimum = 0)
+  private Integer replicasGoal;
+
   public ClusterStatus() {
   }
 
@@ -46,6 +51,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     this.replicas = other.replicas;
     this.readyReplicas = other.readyReplicas;
     this.maximumReplicas = other.maximumReplicas;
+    this.replicasGoal = other.replicasGoal;
   }
 
   /**
@@ -108,6 +114,15 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return this;
   }
 
+  Integer getReplicasGoal() {
+    return replicasGoal;
+  }
+
+  public ClusterStatus withReplicasGoal(Integer replicasGoal) {
+    this.replicasGoal = replicasGoal;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -115,6 +130,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .append("replicas", replicas)
         .append("readyReplicas", readyReplicas)
         .append("maximumReplicas", maximumReplicas)
+        .append("replicasGoal", replicasGoal)
         .toString();
   }
 
@@ -125,6 +141,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .append(replicas)
         .append(readyReplicas)
         .append(maximumReplicas)
+        .append(replicasGoal)
         .toHashCode();
   }
 
@@ -142,6 +159,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .append(replicas, rhs.replicas)
         .append(readyReplicas, rhs.readyReplicas)
         .append(maximumReplicas, rhs.maximumReplicas)
+        .append(replicasGoal, rhs.replicasGoal)
         .isEquals();
   }
 
@@ -159,7 +177,8 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .withStringField("clusterName", ClusterStatus::getClusterName)
         .withIntegerField("maximumReplicas", ClusterStatus::getMaximumReplicas)
         .withIntegerField("readyReplicas", ClusterStatus::getReadyReplicas)
-        .withIntegerField("replicas", ClusterStatus::getReplicas);
+        .withIntegerField("replicas", ClusterStatus::getReplicas)
+        .withIntegerField("replicasGoal", ClusterStatus::getReplicasGoal);
 
   static ObjectPatch<ClusterStatus> getObjectPatch() {
     return clusterPatch;

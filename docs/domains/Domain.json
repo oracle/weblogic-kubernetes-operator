@@ -155,6 +155,11 @@
           "description": "The number of ready cluster members. Required.",
           "type": "number",
           "minimum": 0
+        },
+        "replicasGoal": {
+          "description": "The requested number of cluster members. Required.",
+          "type": "number",
+          "minimum": 0
         }
       }
     },
@@ -625,6 +630,10 @@
       "properties": {
         "nodeName": {
           "description": "Name of node that is hosting the Pod containing this WebLogic Server.",
+          "type": "string"
+        },
+        "desiredState": {
+          "description": "Desired state of this WebLogic Server. Required.",
           "type": "string"
         },
         "clusterName": {

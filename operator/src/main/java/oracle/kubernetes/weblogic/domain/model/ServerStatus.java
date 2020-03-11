@@ -29,6 +29,11 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @NotNull
   private String state;
 
+  @Description("Desired state of this WebLogic Server. Required.")
+  @Expose
+  @NotNull
+  private String desiredState;
+
   @Description("WebLogic cluster name, if the server is part of a cluster.")
   @Expose
   private String clusterName;
@@ -116,6 +121,35 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   }
 
   /**
+   * Desired state of this WebLogic Server. Required.
+   *
+   * @return requested state
+   */
+  public String getDesiredState() {
+    return desiredState;
+  }
+
+  /**
+   * Desired state of this WebLogic Server. Required.
+   *
+   * @param desiredState Requested state
+   */
+  public void setDesiredState(String desiredState) {
+    this.desiredState = desiredState;
+  }
+
+  /**
+   * Desired state of this WebLogic Server. Required.
+   *
+   * @param stateGoal stateGoal
+   * @return this
+   */
+  public ServerStatus withDesiredState(String stateGoal) {
+    this.desiredState = stateGoal;
+    return this;
+  }
+
+  /**
    * WebLogic cluster name, if the server is part of a cluster.
    *
    * @return cluster name
@@ -189,6 +223,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     return new ToStringBuilder(this)
         .append("serverName", serverName)
         .append("state", state)
+        .append("desiredState", desiredState)
         .append("clusterName", clusterName)
         .append("nodeName", nodeName)
         .append("health", health)
@@ -202,6 +237,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(serverName)
         .append(health)
         .append(state)
+        .append(desiredState)
         .append(clusterName)
         .toHashCode();
   }
@@ -220,6 +256,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(serverName, rhs.serverName)
         .append(health, rhs.health)
         .append(state, rhs.state)
+        .append(desiredState, rhs.desiredState)
         .append(clusterName, rhs.clusterName)
         .isEquals();
   }
@@ -238,6 +275,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .withStringField("serverName", ServerStatus::getServerName)
         .withStringField("clusterName", ServerStatus::getClusterName)
         .withStringField("state", ServerStatus::getState)
+        .withStringField("desiredState", ServerStatus::getDesiredState)
         .withStringField("nodeName", ServerStatus::getNodeName)
         .withObjectField("health", ServerStatus::getHealth, ServerHealth.getObjectPatch());
 

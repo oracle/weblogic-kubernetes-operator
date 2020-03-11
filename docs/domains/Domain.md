@@ -148,6 +148,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | `maximumReplicas` | number | The maximum number of cluster members. Required. |
 | `readyReplicas` | number | The number of ready cluster members. Required. |
 | `replicas` | number | The number of intended cluster members. Required. |
+| `replicasGoal` | number | The requested number of cluster members. Required. |
 
 ### Domain Condition
 
@@ -165,6 +166,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | Name | Type | Description |
 | --- | --- | --- |
 | `clusterName` | string | WebLogic cluster name, if the server is part of a cluster. |
+| `desiredState` | string | Desired state of this WebLogic Server. Required. |
 | `health` | [Server Health](#server-health) | Current status and health of a specific WebLogic Server. |
 | `nodeName` | string | Name of node that is hosting the Pod containing this WebLogic Server. |
 | `serverName` | string | WebLogic Server name. Required. |
