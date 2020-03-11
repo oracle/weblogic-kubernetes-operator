@@ -275,7 +275,7 @@ public class Operator {
    */
 
   public void scaleOke(String domainUid, String clusterName, int numOfMS) throws Exception {
-    String myJsonObjStr = "{\"managedServerCount\": " + numOfMS + "}";
+    String myJsonObjStr = "{\\\"managedServerCount\\\": " + numOfMS + "}";
 
     // Operator REST external API URL to scale
     StringBuffer myOpRestApiUrl =

@@ -893,7 +893,6 @@ public class TestUtils {
     }
     LoggerHelper.getLocal().log(Level.INFO, "response code is cat curl.out " + result.stdout() +  " : "
             + result.stderr());
-    Thread.sleep(600 * 1000);
   }
 
   /**
@@ -920,7 +919,7 @@ public class TestUtils {
       call.append("-d \"" + jsonObject + "\" ");
     }
     call.append("https://external-weblogic-operator-svc.");
-    call.append(operator.getOperatorNamespace() + ".svc.cluster.local:8081/");
+    call.append(operator.getOperatorNamespace() + ".svc.cluster.local:8081");
     call.append(restUrl);
     call.append(" -o curl.out --stderr curl.err -w \"%{http_code}\"");
     return call.toString();

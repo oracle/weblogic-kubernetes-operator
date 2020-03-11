@@ -20,7 +20,7 @@ if [[ "$HELM_VERSION" =~ "v2" ]]; then
    v_helm_delete="helm delete --purge"
    t_helm_delete="helm delete --purge"
    v_helm_install="helm install appscode/voyager --name $VNAME  "
-   t_helm_install="helm install stable/traefik --name $TNAME "
+   t_helm_install="helm install stable/traefik --name $TNAME --set serviceType=LoadBalancer"
    helm_search_voyager="helm search repo | grep appscode/voyager"
    helm_search_traefik="helm search repo | grep stable/traefik"
 elif [[ "$HELM_VERSION" =~ "v3" ]]; then
@@ -30,7 +30,7 @@ elif [[ "$HELM_VERSION" =~ "v3" ]]; then
    v_helm_delete="helm uninstall --keep-history --namespace $VSPACE "
    t_helm_delete="helm uninstall --keep-history --namespace $TSPACE "
    v_helm_install="helm install $VNAME appscode/voyager  "
-   t_helm_install="helm install $TNAME stable/traefik "
+   t_helm_install="helm install $TNAME stable/traefik --set serviceType=LoadBalancer"
    helm_search_voyager="helm search appscode/voyager"
    helm_search_traefik="helm search stable/traefik"
 else

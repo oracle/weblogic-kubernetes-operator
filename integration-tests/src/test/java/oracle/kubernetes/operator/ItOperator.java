@@ -172,7 +172,7 @@ public class ItOperator extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
+  //@Test
   public void testMarina() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -333,7 +333,7 @@ public class ItOperator extends BaseTest {
         LoggerHelper.getLocal().log(Level.INFO, "About to delete domain: " + domain.getDomainUid());
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
 
-        //FIXME in oke all k8s objects constructors return null obj
+        //FIXME in oke
         if (!BaseTest.OKE_CLUSTER) {
           TestUtils.verifyAfterDeletion(domain);
         }
@@ -404,7 +404,7 @@ public class ItOperator extends BaseTest {
    *
    * @throws Exception exception
    */
-  //@Test
+  @Test
   public void testCreateDomainPvReclaimPolicyRecycle() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -469,7 +469,7 @@ public class ItOperator extends BaseTest {
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       testBasicUseCases(domain, false);
-      // testAdvancedUseCasesForADomain(operator1, domain10);
+      //testAdvancedUseCasesForADomain(operator1, domain10);
       testCompletedSuccessfully = true;
     } finally {
       /*
@@ -499,7 +499,7 @@ public class ItOperator extends BaseTest {
    *
    * @throws Exception exception
    */
-  //@Test
+  @Test
   public void testOperatorRestIdentityBackwardCompatibility() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -523,7 +523,7 @@ public class ItOperator extends BaseTest {
    *
    * @throws Exception exception
    */
-  //@Test
+  @Test
   public void testOperatorRestUsingCertificateChain() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
 
