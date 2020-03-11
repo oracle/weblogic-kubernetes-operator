@@ -2369,7 +2369,7 @@ public class Domain {
     String adminPodName = domainUid + "-" + adminServerName;
     LoggerHelper.getLocal().log(Level.INFO,
         "Writing admin pod(" + adminPodName + ") log");
-    TestUtils.exec("kubectl log " + adminPodName + " -n "
+    TestUtils.exec("kubectl logs " + adminPodName + " -n "
         + domainNS + " > " + resultsDir + "/pod-" + adminPodName + ".log", true);
 
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
@@ -2378,7 +2378,7 @@ public class Domain {
         String msPodName = domainUid + "-" + managedServerNameBase + i;
         LoggerHelper.getLocal().log(Level.INFO,
             "Writing managed pod(" + msPodName + ") log");
-        TestUtils.exec("kubectl log " + msPodName
+        TestUtils.exec("kubectl logs " + msPodName
             + " -n " + domainNS + " > " + resultsDir + "/pod-" + msPodName + ".log", true);
       }
     }
