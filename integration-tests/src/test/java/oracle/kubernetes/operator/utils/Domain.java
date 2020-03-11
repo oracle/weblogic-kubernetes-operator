@@ -2370,7 +2370,7 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO,
         "Writing admin pod(" + adminPodName + ") log");
     TestUtils.exec("kubectl log " + adminPodName + " -n "
-        + domainNS + " > " + resultsDir + "pod-" + adminPodName + ".log", true);
+        + domainNS + " > " + resultsDir + "/pod-" + adminPodName + ".log", true);
 
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server pods
@@ -2379,7 +2379,7 @@ public class Domain {
         LoggerHelper.getLocal().log(Level.INFO,
             "Writing managed pod(" + msPodName + ") log");
         TestUtils.exec("kubectl log " + msPodName
-            + " -n " + domainNS + " > " + resultsDir + "pod-" + msPodName + ".log", true);
+            + " -n " + domainNS + " > " + resultsDir + "/pod-" + msPodName + ".log", true);
       }
     }
   }
