@@ -36,7 +36,7 @@ kubectl -n ${namespace} describe configmap ${domainuid}-weblogic-domain-introspe
 kubectl -n ${namespace} delete secret ${secret} --ignore-not-found
 kubectl -n ${namespace} \
   create secret generic ${secret} \
-  --from-file=ewallet.p12 
+  --from-file=walletFile=ewallet.p12
 #
 # TBD replace above with the new secret helper method
 #

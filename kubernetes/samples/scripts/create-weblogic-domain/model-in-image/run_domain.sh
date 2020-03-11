@@ -63,16 +63,25 @@ $SCRIPTDIR/create_secret.sh -s sample-${DOMAIN_UID}-rcu-access \
   -l rcu_admin_password=Oradoc_db1 \
   -l rcu_db_conn_string=oracle-db.${RCUDB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
 
+# TODO: Tom
+# This is for the configuration.model.runtimeEncryptionSecret name literal is password
+
+$SCRIPTDIR/create_secret.sh -s sample-${DOMAIN_UID}-model-encryption-secret \
+  -l password=weblogic
+
+#kubectl -n sample-domain1-ns delete secret domain1-model-encryption-secret --ignore-not-found
+#
+#kubectl -n sample-domain1-ns \
+#  create secret generic domain1-model-encryption-secret \
+#  --from-literal=password=weblogic
+#
+#kubectl -n sample-domain1-ns \
+#  label secret domain1-model-encryption-secret \
+#  weblogic.domainUID=domain1
 
 echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
-# TBD remove passphrase literal once Johnny supports using walletPassword
-# TODO: Tom
-#  It is supported but
-#  domain resource name configuration.opss.walletPasswordSecret  with literal key passphrase
-#                       configuration.opss.walletFileSecret with file name ewallet.p12
 
 $SCRIPTDIR/create_secret.sh -s sample-${DOMAIN_UID}-opss-wallet-password-secret \
-  -l passphrase=welcome1 \
   -l walletPassword=welcome1
 
 
@@ -89,18 +98,6 @@ echo "@@ Info: Applying domain resource yaml '$WORKDIR/k8s-domain.yaml'"
 kubectl apply -f $WORKDIR/k8s-domain.yaml
 )
 
-# TODO: Tom
-# This is for the configuration.model.runtimeEncryptionSecret name literal is password
-
-kubectl -n sample-domain1-ns delete secret domain1-model-encryption-secret --ignore-not-found
-
-kubectl -n sample-domain1-ns \
-  create secret generic domain1-model-encryption-secret \
-  --from-literal=password=weblogic
-
-kubectl -n sample-domain1-ns \
-  label secret domain1-model-encryption-secret \
-  weblogic.domainUID=domain1
 
 echo "@@ Info: Getting pod status - ctrl-c when all is running and ready to exit"
 ( set -x
