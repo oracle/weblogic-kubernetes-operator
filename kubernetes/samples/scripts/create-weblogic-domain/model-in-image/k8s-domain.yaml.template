@@ -97,7 +97,7 @@ spec:
       # wdt domain type for model in image case
       # Valid WDT_DOMAIN_TYPE_VALUES are 'WLS', 'JRF', and 'RestrictedJRF'
       #
-      domainType: "@@DOMTYPE@@"
+      domainType: "@@WDT_DOMAIN_TYPE@@"
       runtimeEncryptionSecret: domain1-model-encryption-secret
 
     #opss:
