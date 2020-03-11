@@ -142,6 +142,15 @@ public class BaseTest {
     if (System.getenv("INGRESSPERDOMAIN") != null) {
       INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
     }
+    projectRoot = System.getProperty("user.dir") + "/..";
+    if (OKE_CLUSTER) {
+      try {
+        TestUtils.deleteDomainHomeDirOke();
+      } catch (Exception ex) {
+      throw new RuntimeException(
+              "FAILURE: command to clean fss pv directory failed");
+      }
+    }
   }
 
   /**
@@ -230,7 +239,6 @@ public class BaseTest {
       leaseId = System.getenv("LEASE_ID");
     }
 
-    projectRoot = System.getProperty("user.dir") + "/..";
 
     // BRANCH_NAME var is used in Jenkins job
     if (System.getenv("BRANCH_NAME") != null) {
@@ -239,9 +247,6 @@ public class BaseTest {
       branchName = TestUtils.getGitBranchName();
     }
     appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
-    if (BaseTest.OKE_CLUSTER) {
-      TestUtils.deleteDomainHomeDirOke();
-    }
   }
 
   protected void createResultAndPvDirs(String testClassName) throws Exception {
