@@ -428,10 +428,10 @@ public class Operator {
         .append("\" --reuse-values ");
 
     if (BaseTest.HELM_VERSION.equals("V2")) { 
-      cmd.append(" --wait --timeout 180");
+      cmd.append(" --cleanup-on-fail --force --wait --timeout 180");
     }
     if (BaseTest.HELM_VERSION.equals("V3")) { 
-      cmd.append(" --wait --timeout 3m0s");
+      cmd.append(" --cleanup-on-fail --force --wait --timeout 3m0s");
     }
 
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);

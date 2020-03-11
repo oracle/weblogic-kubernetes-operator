@@ -239,7 +239,9 @@ public class BaseTest {
       branchName = TestUtils.getGitBranchName();
     }
     appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
-
+    if (BaseTest.OKE_CLUSTER) {
+      TestUtils.deleteDomainHomeDirOke();
+    }
   }
 
   protected void createResultAndPvDirs(String testClassName) throws Exception {
@@ -304,9 +306,7 @@ public class BaseTest {
         + System.getenv("IMAGE_TAG_WEBLOGIC"));
 
     LoggerHelper.getLocal().log(Level.INFO, "Env var BRANCH_NAME " + System.getenv("BRANCH_NAME"));
-    if (BaseTest.OKE_CLUSTER) {
-      TestUtils.deleteDomainHomeDirOke();
-    }
+
   }
 
   /**
