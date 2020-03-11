@@ -16,7 +16,7 @@ spec:
   sessionAffinity: None
   type: LoadBalancer
 ---
-apiVersion: apps/v1
+apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: oracle-db
