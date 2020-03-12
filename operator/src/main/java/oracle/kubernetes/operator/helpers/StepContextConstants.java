@@ -18,6 +18,7 @@ public interface StepContextConstants {
   static final String SECRETS_MOUNT_PATH = "/weblogic-operator/secrets";
   static final String OPSS_KEY_MOUNT_PATH = "/weblogic-operator/opss-walletkey-secret";
   static final String WDT_ENCRYPT_KEY_MOUNT_PATH = "/weblogic-operator/wdt-encrypt-key-passphrase";
+  static final String RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH = "/weblogic-operator/model-runtime-secret";
   static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
   static final String OVERRIDE_SECRETS_MOUNT_PATH = "/weblogic-operator/config-overrides-secrets";
   static final String OVERRIDES_CM_MOUNT_PATH = "/weblogic-operator/config-overrides";
@@ -25,7 +26,6 @@ public interface StepContextConstants {
   static final String OPSS_WALLETFILE_MOUNT_PATH = "/weblogic-operator/opss-walletfile-secret";
   static final String DEBUG_CM_MOUNTS_PATH = "/weblogic-operator/debug";
   static final String NODEMGR_HOME = "/u01/nodemanager";
-  static final String RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH = "/weblogic-operator/model-runtime-secret";
   static final int FAILURE_THRESHOLD = 1;
 
   @SuppressWarnings("OctalInteger")

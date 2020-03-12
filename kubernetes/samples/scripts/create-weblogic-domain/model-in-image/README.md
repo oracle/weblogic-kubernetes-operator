@@ -441,7 +441,7 @@ TBD Move mosgt of the following directions to the create-oracle-db-service sampl
    
      > __NOTE__: This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
 
-2. Use the sample script in `WORDIR/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with schema prefix `FMW1`.
+2. Use the sample script in `SRCDIR/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with schema prefix `FMW1`.
 
    Note that this script assumes `Oradoc_db1` is the dba password, `Oradoc_db1` is the schema password, and that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
 
@@ -471,7 +471,7 @@ To allow model-in-image to access the RCU database and OPSS wallet, it's necessa
 | Sample file | Description |
 | `run_domain.sh` | Defines secret `sample-domain1-opss-key-passphrase-secret` with `passphrase=welcome1` |
 | `run_domain.sh` | Defines secret `sample-domain1-rcu-access` with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` |
-| `model1.yaml.jrf` | Populates the `domainInfo -> RCUDbInfo` stanza `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` attributes by referencing their locations in the `sample-domain1-rcu-access` secret. |
+| `model1.yaml.jrf` | Populates the `domainInfo -> RCUDbInfo` stanza `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` attributes by referencing their locations in the `sample-domain1-rcu-access` secret. The `build.sh` script uses this model instead of `model.yaml.wls` when the source domain type is `JRF`. |
 | `k8s-domain.yaml.template` | Ensures the domain mounts the OPSS key secret by setting the domain resource `configuration.opss.walletSecret` attribute to `sample-domain1-rcu-access`, and ensures the domain mounts the RCU access secret `sample-domain1-rcu-access` for reference by WDT model macros by setting the domain resource `configuration.secrets` attribute. |
 
 > __NOTE__: This step is for information purposes only. Do not run the above sample files directly. The sample's main build and run scripts will run them for you.

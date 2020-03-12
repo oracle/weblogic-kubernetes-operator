@@ -27,6 +27,7 @@ public class Model {
   @Nullable
   private String wdtEncryptionSecret;
 
+  @Valid
   @Description("Runtime encryption key passphrase secret. Required.")
   private String runtimeEncryptionSecret;
 

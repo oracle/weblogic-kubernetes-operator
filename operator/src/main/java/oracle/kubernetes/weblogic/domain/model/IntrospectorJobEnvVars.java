@@ -42,6 +42,12 @@ public class IntrospectorJobEnvVars {
   public static final String WDT_ENCRYPTION_PASSPHRASE_NAME = "WDT_ENCRYPTION_PASSPHRASE_NAME";
 
   /**
+   * The credentials used by the introspection job - runtime encryption secret name.
+   */
+  public static final String RUNTIME_ENCRYPTION_SECRET_NAME = "RUNTIME_ENCRYPTION_SECRET_NAME";
+
+
+  /**
    * The domain source type.
    */
   public static final String DOMAIN_SOURCE_TYPE = "DOMAIN_SOURCE_TYPE";

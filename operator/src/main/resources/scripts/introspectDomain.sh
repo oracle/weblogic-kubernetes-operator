@@ -180,6 +180,10 @@ if [ ${created_domain} -ne 0 ]; then
 
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT END"
 fi
+
+if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
+  cleanup_mii
+fi
 trace "Domain introspection complete"
 
 exit 0

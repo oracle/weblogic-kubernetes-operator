@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
-# This is an example of how to setup a WebLogic Kubernetes Cluster for model-in-image. This 
+# This is an example of how to setup a WebLogic Kubernetes Cluster for model-in-image. This
 # script can to be called once an model-in-image image is prepared via "./build.sh".
 #
 # Expects the following env vars to already be set:
@@ -18,7 +18,7 @@
 #   MODEL_IMAGE_NAME          - defaults to 'model-in-image'
 #   MODEL_IMAGE_TAG           - defaults to 'v1'
 #   DOMAIN_RESOURCE_TEMPLATE  - use this file for a domain resource template instead
-#                               of k8s-domain.yaml.template 
+#                               of k8s-domain.yaml.template
 #   WDT_DOMAIN_TYPE           - WLS (default), RestrictedJRF, or JRF
 #   RCUDB_NAMESPACE           - default (default)
 #
@@ -63,11 +63,25 @@ $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-rcu-access \
   -l rcu_admin_password=Oradoc_db1 \
   -l rcu_db_conn_string=oracle-db.${RCUDB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
 
+# TODO: Tom
+# This is for the configuration.model.runtimeEncryptionSecret name literal is password
+
+$SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-model-encryption-secret \
+  -l password=weblogic
+
+#kubectl -n sample-domain1-ns delete secret domain1-model-encryption-secret --ignore-not-found
+#
+#kubectl -n sample-domain1-ns \
+#  create secret generic domain1-model-encryption-secret \
+#  --from-literal=password=weblogic
+#
+#kubectl -n sample-domain1-ns \
+#  label secret domain1-model-encryption-secret \
+#  weblogic.domainUID=domain1
 
 echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
-# TBD remove passphrase literal once Johnny supports using walletPassword
+
 $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-opss-wallet-password-secret \
-  -l passphrase=welcome1 \
   -l walletPassword=welcome1
 
 echo "@@ Info: Creating weblogic domain secret"

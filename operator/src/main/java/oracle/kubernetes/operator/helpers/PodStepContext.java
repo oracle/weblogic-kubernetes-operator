@@ -59,6 +59,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_VOLUME_SUFFIX;
 
 public abstract class PodStepContext extends BasePodStepContext {
@@ -70,8 +71,6 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
 
   private static final String READINESS_PATH = "/weblogic/ready";
-  static final String RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH =
-      "/weblogic-operator/model-runtime-secret";
 
   final WlsServerConfig scan;
   private final DomainPresenceInfo info;
@@ -568,7 +567,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
       volumes.add(createRuntimeEncryptionSecretVolume());
     }
-        + " volumes = " + volumes);
 
     return volumes;
   }
