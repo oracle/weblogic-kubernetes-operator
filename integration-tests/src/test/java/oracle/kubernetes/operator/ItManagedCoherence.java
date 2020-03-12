@@ -131,6 +131,8 @@ public class ItManagedCoherence extends BaseTest {
     String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     String namespace = domain.getDomainNs();
     for (String pod : pods) {
+      //BR: output the pod name    
+      LoggerHelper.getLocal().log(Level.INFO, "BR: Checking if pod " + pod + " is running");
       assertTrue(
           testUtil.isPodRunning(namespace, domain1LabelSelector, pod), pod + " Pod not running");
       //pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
