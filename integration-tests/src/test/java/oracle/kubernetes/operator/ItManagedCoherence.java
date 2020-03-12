@@ -234,6 +234,9 @@ public class ItManagedCoherence extends BaseTest {
     domain = null;
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
+ 
+    TestUtils.checkPodCreated(domainUid + "-new-managed-server1" + , domainNS1);
+    TestUtils.checkPodCreated(domainUid + "-new-managed-server2" + , domainNS1);
 
     String[] pods = {
       domainUid + "-" + domain.getAdminServerName(),
