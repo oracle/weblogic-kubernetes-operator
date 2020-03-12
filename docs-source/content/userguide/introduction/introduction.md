@@ -80,7 +80,7 @@ Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, w
 Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.
 
 When using the operator in OpenShift, a security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain file system.
-This could be either the `anyuid` SCC or a custom one that you define for user/group 1000. For more information, see [OpenShift]({{<relref "/security/openshift.md">}}) in the Security section.
+This could be either the `anyuid` SCC or a custom one that you define for user/group `1000`. For more information, see [OpenShift]({{<relref "/security/openshift.md">}}) in the Security section.
 
 ### Important note about development-focused Kubernetes distributions
 
