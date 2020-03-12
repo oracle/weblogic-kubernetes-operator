@@ -223,6 +223,8 @@ The tests accepts optional env var overrides:
 | K8S_NODEPORT_HOST | DNS name of a Kubernetes worker node. Default is the local host's hostname. |
 | BRANCH_NAME  | Git branch name.   Default is determined by calling 'git branch'. |
 | LEASE_ID   |   Set to a unique value to (A) periodically renew a lease on the k8s cluster that indicates that no other test run should attempt to use the cluster, and (B) delete this lease when the test completes. |
+| MAX_ITERATIONS   | Maximum number of iterations to wait for a pod/application to come up or deploy.  |
+| WAIT_TIME_SECONDS   | Seconds to wait between the iterations.  |
 
 The following additional overrides are currently only used when
 SHARED_CLUSTER=true:
