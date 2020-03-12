@@ -27,8 +27,8 @@ NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 WDT_ENCRYPTION_PASSPHRASE="/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
 RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/model-in-image-runtime-secret/password"
-OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/passphrase"
-OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/ewallet.p12"
+OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
+OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
 IMG_MODELS_HOME="/u01/wdt/models"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
@@ -54,7 +54,6 @@ RCU_PASSWORD_CHANGED=5
 
 SCRIPT_ERROR=255
 
-operator_md5=${DOMAIN_HOME}/operatormd5
 # sort_files  sort the files according to the names and naming conventions and write the result to stdout
 #    $1  directory
 #    $2  extension
@@ -256,7 +255,9 @@ function buildWDTParams_MD5() {
 
   if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
     if [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
-      trace SEVERE "JRF domain requires k8s secrets walletPasswordSecret with key passphrase"
+      trace SEVERE "Domain Source Type is 'FromModel' and domain type JRF which requires specifying a " \
+         "walletPasswordSecret in your domain resource and deploying this secret with a 'walletPassword' key, " \
+         " but the secret does not have this key."
       exit 1
     else
       # Set it for introspectDomain.py to use
@@ -288,7 +289,8 @@ function createWLDomain() {
   trace "Entering createWLDomain"
 
   if [ ! -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
-    trace SEVERE "modelInImageSecret passphrase is required"
+    trace SEVERE "Domain Source Type is 'FromModel' which requires specifying a runtimeEncryptionSecret " \
+    "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
     exit 1
   fi
   # Check if /u01/wdt/models and /u01/wdt/weblogic-deploy exists

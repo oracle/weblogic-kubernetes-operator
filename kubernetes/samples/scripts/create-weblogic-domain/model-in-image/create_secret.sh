@@ -9,18 +9,20 @@
 #
 # ./create_secret.sh [-n mynamespace] [-d mydomainuid] -s mysecretname [-l key1=val1] [-l key2=val2] ...
 # 
-# -d <domain_uid>     : Defaults to $DOMAIN_UID if DOMAIN_UID is set, 'domain1' otherwise.
-# -n <namespace>      : Defaults to $DOMAIN_NAMESPACE if DOMAIN_NAMESPACE is set, 'sample-${DOMAIN_UID}-ns' otherwise.
+# -d <domain_uid>     : Defaults to $DOMAIN_UID if DOMAIN_UID is set, 'sample-domain1' otherwise.
+# -n <namespace>      : Defaults to $DOMAIN_NAMESPACE if DOMAIN_NAMESPACE is set, 'DOMAIN_UID-ns' otherwise.
 # -s <secret-name>    : Name of secret. Required.
 # -l <key-value-pair> : Secret 'literal' key/value pair. Can be specified more than once. 
 #                       This script doesn't support spaces in the key value pair.
 # -f <filename>       : Secret 'file-name' key/value pair. Can be specified more than once. 
 #                       Key will be the file-name, value will be file contents.
+# -fk <keyname> <filename>       : Secret 'file-name' key/value pair. Can be specified more than once.
+#                       Key will be the key-name, value will be file contents.
 
 set -e
 
-DOMAIN_UID="${DOMAIN_UID:-domain1}"
-NAMESPACE="${DOMAIN_NAMESPACE:-sample-${DOMAIN_UID}-ns}"
+DOMAIN_UID="${DOMAIN_UID:-sample-domain1}"
+NAMESPACE="${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}"
 SECRET_NAME=""
 LITERALS=""
 FILENAMES=""
@@ -40,6 +42,9 @@ while [ ! "$1" = "" ]; do
     -l) LITERALS="${LITERALS} --from-literal=${2}"
         ;;
     -f) FILENAMES="${FILENAMES} --from-file=${2}"
+        ;;
+    -fk) FILENAMES="${FILENAMES} --from-file=${2}=${3}"
+        shift
         ;;
     *)  echo Syntax Error
         exit 1

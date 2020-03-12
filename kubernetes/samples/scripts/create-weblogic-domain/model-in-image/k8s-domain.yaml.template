@@ -6,29 +6,31 @@
 apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
-  name: domain1
-  namespace: sample-domain1-ns
+  name: @@DOMAIN_UID@@
+  namespace: @@DOMAIN_NAMESPACE@@
   labels:
     weblogic.resourceVersion: domain-v2
-    weblogic.domainUID: domain1
+    weblogic.domainUID: @@DOMAIN_UID@@
 
 spec:
   # The WebLogic Domain Home
-  domainHome: /u01/domains/domain1
+  domainHome: /u01/domains/@@DOMAIN_UID@@
 
   domainHomeSourceType: FromModel
 
   # The WebLogic Server Docker image that the Operator uses to start the domain
-  image: "model-in-image:v1"
+  image: "@@MODEL_IMAGE_NAME@@:@@MODEL_IMAGE_TAG@@"
+
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
+
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
   #- name: regsecret
   
   # Identify which Secret contains the WebLogic Admin credentials 
   webLogicCredentialsSecret: 
-    name: sample-domain1-weblogic-credentials
+    name: @@DOMAIN_UID@@-weblogic-credentials
 
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: true
@@ -36,7 +38,7 @@ spec:
   # Whether to enable overrding the home directory of your log files
   # logHomeEnabled: false
   # The in-pod location for domain log, server logs, server out, and Node Manager log files
-  # logHome: /shared/logs/domain1
+  # logHome: /shared/logs/@@DOMAIN_UID@@
   
   # Set which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "NEVER" will not start any server in the domain
@@ -53,10 +55,12 @@ spec:
       value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
     - name: ALLOW_DYNAMIC_CLUSTER_IN_FMW
       value: "true"
+    - name: TRACE_TIMING
+      value: "true"
     # volumes:
     # - name: weblogic-domain-storage-volume
     #   persistentVolumeClaim:
-    #     claimName: domain1-weblogic-sample-pvc
+    #     claimName: @@DOMAIN_UID@@-weblogic-sample-pvc
     # volumeMounts:
     # - mountPath: /shared
     #   name: weblogic-domain-storage-volume
@@ -85,29 +89,25 @@ spec:
   # replicas: 1
 
   configuration:
-    secrets: [ sample-domain1-rcu-access ]
+
+    # secrets that are referenced by model yaml macros
+    secrets: [ @@DOMAIN_UID@@-rcu-access ]
 
     model:
-      #
       # Optional configmap for additional models and variable files
-      #
-      configMap: domain1-wdt-config-map
+      configMap: @@DOMAIN_UID@@-wdt-config-map
 
-      #
       # wdt domain type for model in image case
       # Valid WDT_DOMAIN_TYPE_VALUES are 'WLS', 'JRF', and 'RestrictedJRF'
-      #
-      domainType: "@@DOMTYPE@@"
-      runtimeEncryptionSecret: domain1-model-encryption-secret
+      domainType: "@@WDT_DOMAIN_TYPE@@"
+      runtimeEncryptionSecret: @@DOMAIN_UID@@-model-encryption-secret
 
     #opss:
-      #
-      # k8 secret for the opss extract wallet.  It contains the key passphrase used to extract the wallet
-      #
-      #walletPasswordSecret: sample-domain1-opss-key-passphrase-secret
-      #
-      # opss wallet file secret containing key ewallet.p12 containing the base64 encoded opss wallet
-      #walletFileSecret: sample-domain1-opss-walletfile-secret
-      #
-      #
 
+      # Name of secret with walletPassword for extracting the wallet
+      # TBD: key name might still be outdated passphrase - check with Johnny
+      #walletPasswordSecret: @@DOMAIN_UID@@-opss-wallet-password-secret
+
+      # Name of secret with walletFile containing base64 encoded opss wallet
+      # TBD: key name might still be outdated ewallet.p12 instead of walletFile - check with Johnny
+      #walletFileSecret: @@DOMAIN_UID@@-opss-walletfile-secret
