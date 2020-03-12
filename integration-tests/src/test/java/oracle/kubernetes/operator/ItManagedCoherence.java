@@ -242,6 +242,8 @@ public class ItManagedCoherence extends BaseTest {
       domainUid + "-new-managed-server2",
     };
     verifyServersStatus(domain, pods, domainUid);
+    Thread.sleep(60 * 1000);
+
     // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
     TestUtils.buildDeployCoherenceAppInPod(
         domain,
