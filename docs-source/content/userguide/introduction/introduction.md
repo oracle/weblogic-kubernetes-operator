@@ -53,7 +53,7 @@ Container Services for use with Kubernetes* on OCI Compute, and on "authorized c
 ### Microsoft Azure Kubernetes Service
 
 [Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/) is a hosted Kubernetes environment.  The WebLogic Kubernetes
-operator, Oracle WebLogic Sever 12c and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
+Operator, Oracle WebLogic Sever 12c and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
 referenced above). 
 
 AKE support and limitations: 
@@ -63,7 +63,7 @@ AKE support and limitations:
   a persistent volume claim - see [here](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume).
 * Azure Load Balancers are supported when provisioned using a Kubernetes service of `type=LoadBalancer`.
 * Oracle databases running in Oracle Cloud Infrastructure are supported for Fusion Middleware 
-  Infrastructure MDS data stores only when the accessed through an OCI FastConnect.
+  Infrastructure MDS data stores only when accessed through an OCI FastConnect.
 * Windows Server containers are not currently supported, only Linux containers.
 
 ### Oracle Linux Cloud Native Environment
@@ -79,7 +79,7 @@ Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, w
 
 Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.
 
-When using the operator in OpenShift, a security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain filesystem.
+When using the operator in OpenShift, a security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain file system.
 This could be either the `anyuid` SCC or a custom one that you define for user/group 1000. For more information, see [OpenShift]({{<relref "/security/openshift.md">}}) in the Security section.
 
 ### Important note about development-focused Kubernetes distributions
