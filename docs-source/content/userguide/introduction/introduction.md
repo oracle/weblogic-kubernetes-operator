@@ -16,16 +16,18 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Operator prerequisites
 
-* Kubernetes 1.13.5+, 1.14.8+, and 1.15.7+  (check with `kubectl version`).
-* Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`) *or* OpenShift SDN on OpenShift 4.3 systems.
-* Docker 18.9.1 (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
+* Kubernetes 1.13.5+, 1.14.8+, and 1.15.7+  (check with `kubectl version`).  Not 1.16 or 1.17, see note below.
+  See note below for OpenShift.
+* Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`) *or* OpenShift SDN on OpenShift 4.3 systems.
+* Docker 18.9.1 or 19.03.1 (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
 * Helm 2.14.3+, 3.0.3+ (check with `helm version --client --short`).
 * Either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930, or Oracle WebLogic Server 12.2.1.4.0.
    * The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3 `,
    has all the necessary patches applied.
    * Check the WLS version with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`.
    * Check the WLS patches with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`.
-* You must have the `cluster-admin` role to install the operator.
+* You must have the `cluster-admin` role to install the operator.  Note that the operator does 
+  not need `cluster-admin` at runtime, just for the installation.
 * We do not currently support running WebLogic in non-Linux containers.
 
 ### Important note about Kubernetes 1.16.0+
@@ -57,10 +59,12 @@ WebLogic Server and the WebLogic Kubernetes operator are certified and supported
 
 ### OpenShift
 
-Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.  OpenShift 4 certification is currently in progress.
+Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.  
 
-When using the operator in OpenShift, the `anyuid` security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain filesystem.
-For more information, see [OpenShift]({{<relref "/security/openshift.md">}}) in the Security section.
+Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.
+
+When using the operator in OpenShift, a security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain filesystem.
+This could be either the `anyuid` SCC or a custom one that you define for user/group 1000. For more information, see [OpenShift]({{<relref "/security/openshift.md">}}) in the Security section.
 
 ### Important note about development-focused Kubernetes distributions
 
