@@ -1,12 +1,9 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  creationTimestamp: "2020-02-26T21:06:59Z"
-  generation: 1
   name: domains.weblogic.oracle
-  resourceVersion: "1821438"
-  selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/domains.weblogic.oracle
-  uid: aeb634e6-a8c4-4896-b204-c78353b120fc
 spec:
   conversion:
     strategy: None
@@ -338,13 +335,6 @@ spec:
                             user:
                               type: string
                           type: object
-                        windowsOptions:
-                          properties:
-                            gmsaCredentialSpec:
-                              type: string
-                            gmsaCredentialSpecName:
-                              type: string
-                          type: object
                       type: object
                     containers:
                       description: Additional containers to be included in the server
@@ -389,16 +379,7 @@ spec:
                                         containerName:
                                           type: string
                                         divisor:
-                                          properties:
-                                            format:
-                                              enum:
-                                              - DECIMAL_EXPONENT
-                                              - DECIMAL_SI
-                                              - BINARY_SI
-                                              type: string
-                                            number:
-                                              type: number
-                                          type: object
+                                          type: string
                                         resource:
                                           type: string
                                       type: object
@@ -742,13 +723,6 @@ spec:
                                   type:
                                     type: string
                                   user:
-                                    type: string
-                                type: object
-                              windowsOptions:
-                                properties:
-                                  gmsaCredentialSpec:
-                                    type: string
-                                  gmsaCredentialSpecName:
                                     type: string
                                 type: object
                             type: object
@@ -823,16 +797,7 @@ spec:
                                   containerName:
                                     type: string
                                   divisor:
-                                    properties:
-                                      format:
-                                        enum:
-                                        - DECIMAL_EXPONENT
-                                        - DECIMAL_SI
-                                        - BINARY_SI
-                                        type: string
-                                      number:
-                                        type: number
-                                    type: object
+                                    type: string
                                   resource:
                                     type: string
                                 type: object
@@ -891,16 +856,7 @@ spec:
                                         containerName:
                                           type: string
                                         divisor:
-                                          properties:
-                                            format:
-                                              enum:
-                                              - DECIMAL_EXPONENT
-                                              - DECIMAL_SI
-                                              - BINARY_SI
-                                              type: string
-                                            number:
-                                              type: number
-                                          type: object
+                                          type: string
                                         resource:
                                           type: string
                                       type: object
@@ -1244,13 +1200,6 @@ spec:
                                   type:
                                     type: string
                                   user:
-                                    type: string
-                                type: object
-                              windowsOptions:
-                                properties:
-                                  gmsaCredentialSpec:
-                                    type: string
-                                  gmsaCredentialSpecName:
                                     type: string
                                 type: object
                             type: object
@@ -1359,13 +1308,6 @@ spec:
                                 type: string
                             type: object
                           type: array
-                        windowsOptions:
-                          properties:
-                            gmsaCredentialSpec:
-                              type: string
-                            gmsaCredentialSpecName:
-                              type: string
-                          type: object
                       type: object
                     priorityClassName:
                       description: If specified, indicates the pod's priority. "system-node-critical"
@@ -1624,16 +1566,7 @@ spec:
                                         containerName:
                                           type: string
                                         divisor:
-                                          properties:
-                                            format:
-                                              enum:
-                                              - DECIMAL_EXPONENT
-                                              - DECIMAL_SI
-                                              - BINARY_SI
-                                              type: string
-                                            number:
-                                              type: number
-                                          type: object
+                                          type: string
                                         resource:
                                           type: string
                                       type: object
@@ -1645,16 +1578,7 @@ spec:
                               medium:
                                 type: string
                               sizeLimit:
-                                properties:
-                                  format:
-                                    enum:
-                                    - DECIMAL_EXPONENT
-                                    - DECIMAL_SI
-                                    - BINARY_SI
-                                    type: string
-                                  number:
-                                    type: number
-                                type: object
+                                type: string
                             type: object
                           fc:
                             properties:
@@ -1842,16 +1766,7 @@ spec:
                                                   containerName:
                                                     type: string
                                                   divisor:
-                                                    properties:
-                                                      format:
-                                                        enum:
-                                                        - DECIMAL_EXPONENT
-                                                        - DECIMAL_SI
-                                                        - BINARY_SI
-                                                        type: string
-                                                      number:
-                                                        type: number
-                                                    type: object
+                                                    type: string
                                                   resource:
                                                     type: string
                                                 type: object
@@ -2323,13 +2238,6 @@ spec:
                               user:
                                 type: string
                             type: object
-                          windowsOptions:
-                            properties:
-                              gmsaCredentialSpec:
-                                type: string
-                              gmsaCredentialSpecName:
-                                type: string
-                            type: object
                         type: object
                       containers:
                         description: Additional containers to be included in the server
@@ -2374,16 +2282,7 @@ spec:
                                           containerName:
                                             type: string
                                           divisor:
-                                            properties:
-                                              format:
-                                                enum:
-                                                - DECIMAL_EXPONENT
-                                                - DECIMAL_SI
-                                                - BINARY_SI
-                                                type: string
-                                              number:
-                                                type: number
-                                            type: object
+                                            type: string
                                           resource:
                                             type: string
                                         type: object
@@ -2727,13 +2626,6 @@ spec:
                                     type:
                                       type: string
                                     user:
-                                      type: string
-                                  type: object
-                                windowsOptions:
-                                  properties:
-                                    gmsaCredentialSpec:
-                                      type: string
-                                    gmsaCredentialSpecName:
                                       type: string
                                   type: object
                               type: object
@@ -2808,16 +2700,7 @@ spec:
                                     containerName:
                                       type: string
                                     divisor:
-                                      properties:
-                                        format:
-                                          enum:
-                                          - DECIMAL_EXPONENT
-                                          - DECIMAL_SI
-                                          - BINARY_SI
-                                          type: string
-                                        number:
-                                          type: number
-                                      type: object
+                                      type: string
                                     resource:
                                       type: string
                                   type: object
@@ -2876,16 +2759,7 @@ spec:
                                           containerName:
                                             type: string
                                           divisor:
-                                            properties:
-                                              format:
-                                                enum:
-                                                - DECIMAL_EXPONENT
-                                                - DECIMAL_SI
-                                                - BINARY_SI
-                                                type: string
-                                              number:
-                                                type: number
-                                            type: object
+                                            type: string
                                           resource:
                                             type: string
                                         type: object
@@ -3229,13 +3103,6 @@ spec:
                                     type:
                                       type: string
                                     user:
-                                      type: string
-                                  type: object
-                                windowsOptions:
-                                  properties:
-                                    gmsaCredentialSpec:
-                                      type: string
-                                    gmsaCredentialSpecName:
                                       type: string
                                   type: object
                               type: object
@@ -3344,13 +3211,6 @@ spec:
                                   type: string
                               type: object
                             type: array
-                          windowsOptions:
-                            properties:
-                              gmsaCredentialSpec:
-                                type: string
-                              gmsaCredentialSpecName:
-                                type: string
-                            type: object
                         type: object
                       priorityClassName:
                         description: If specified, indicates the pod's priority. "system-node-critical"
@@ -3612,16 +3472,7 @@ spec:
                                           containerName:
                                             type: string
                                           divisor:
-                                            properties:
-                                              format:
-                                                enum:
-                                                - DECIMAL_EXPONENT
-                                                - DECIMAL_SI
-                                                - BINARY_SI
-                                                type: string
-                                              number:
-                                                type: number
-                                            type: object
+                                            type: string
                                           resource:
                                             type: string
                                         type: object
@@ -3633,16 +3484,7 @@ spec:
                                 medium:
                                   type: string
                                 sizeLimit:
-                                  properties:
-                                    format:
-                                      enum:
-                                      - DECIMAL_EXPONENT
-                                      - DECIMAL_SI
-                                      - BINARY_SI
-                                      type: string
-                                    number:
-                                      type: number
-                                  type: object
+                                  type: string
                               type: object
                             fc:
                               properties:
@@ -3830,16 +3672,7 @@ spec:
                                                     containerName:
                                                       type: string
                                                     divisor:
-                                                      properties:
-                                                        format:
-                                                          enum:
-                                                          - DECIMAL_EXPONENT
-                                                          - DECIMAL_SI
-                                                          - BINARY_SI
-                                                          type: string
-                                                        number:
-                                                          type: number
-                                                      type: object
+                                                      type: string
                                                     resource:
                                                       type: string
                                                   type: object
@@ -4376,13 +4209,6 @@ spec:
                               user:
                                 type: string
                             type: object
-                          windowsOptions:
-                            properties:
-                              gmsaCredentialSpec:
-                                type: string
-                              gmsaCredentialSpecName:
-                                type: string
-                            type: object
                         type: object
                       containers:
                         description: Additional containers to be included in the server
@@ -4427,16 +4253,7 @@ spec:
                                           containerName:
                                             type: string
                                           divisor:
-                                            properties:
-                                              format:
-                                                enum:
-                                                - DECIMAL_EXPONENT
-                                                - DECIMAL_SI
-                                                - BINARY_SI
-                                                type: string
-                                              number:
-                                                type: number
-                                            type: object
+                                            type: string
                                           resource:
                                             type: string
                                         type: object
@@ -4780,13 +4597,6 @@ spec:
                                     type:
                                       type: string
                                     user:
-                                      type: string
-                                  type: object
-                                windowsOptions:
-                                  properties:
-                                    gmsaCredentialSpec:
-                                      type: string
-                                    gmsaCredentialSpecName:
                                       type: string
                                   type: object
                               type: object
@@ -4861,16 +4671,7 @@ spec:
                                     containerName:
                                       type: string
                                     divisor:
-                                      properties:
-                                        format:
-                                          enum:
-                                          - DECIMAL_EXPONENT
-                                          - DECIMAL_SI
-                                          - BINARY_SI
-                                          type: string
-                                        number:
-                                          type: number
-                                      type: object
+                                      type: string
                                     resource:
                                       type: string
                                   type: object
@@ -4929,16 +4730,7 @@ spec:
                                           containerName:
                                             type: string
                                           divisor:
-                                            properties:
-                                              format:
-                                                enum:
-                                                - DECIMAL_EXPONENT
-                                                - DECIMAL_SI
-                                                - BINARY_SI
-                                                type: string
-                                              number:
-                                                type: number
-                                            type: object
+                                            type: string
                                           resource:
                                             type: string
                                         type: object
@@ -5282,13 +5074,6 @@ spec:
                                     type:
                                       type: string
                                     user:
-                                      type: string
-                                  type: object
-                                windowsOptions:
-                                  properties:
-                                    gmsaCredentialSpec:
-                                      type: string
-                                    gmsaCredentialSpecName:
                                       type: string
                                   type: object
                               type: object
@@ -5397,13 +5182,6 @@ spec:
                                   type: string
                               type: object
                             type: array
-                          windowsOptions:
-                            properties:
-                              gmsaCredentialSpec:
-                                type: string
-                              gmsaCredentialSpecName:
-                                type: string
-                            type: object
                         type: object
                       priorityClassName:
                         description: If specified, indicates the pod's priority. "system-node-critical"
@@ -5665,16 +5443,7 @@ spec:
                                           containerName:
                                             type: string
                                           divisor:
-                                            properties:
-                                              format:
-                                                enum:
-                                                - DECIMAL_EXPONENT
-                                                - DECIMAL_SI
-                                                - BINARY_SI
-                                                type: string
-                                              number:
-                                                type: number
-                                            type: object
+                                            type: string
                                           resource:
                                             type: string
                                         type: object
@@ -5686,16 +5455,7 @@ spec:
                                 medium:
                                   type: string
                                 sizeLimit:
-                                  properties:
-                                    format:
-                                      enum:
-                                      - DECIMAL_EXPONENT
-                                      - DECIMAL_SI
-                                      - BINARY_SI
-                                      type: string
-                                    number:
-                                      type: number
-                                  type: object
+                                  type: string
                               type: object
                             fc:
                               properties:
@@ -5883,16 +5643,7 @@ spec:
                                                     containerName:
                                                       type: string
                                                     divisor:
-                                                      properties:
-                                                        format:
-                                                          enum:
-                                                          - DECIMAL_EXPONENT
-                                                          - DECIMAL_SI
-                                                          - BINARY_SI
-                                                          type: string
-                                                        number:
-                                                          type: number
-                                                      type: object
+                                                      type: string
                                                     resource:
                                                       type: string
                                                   type: object
@@ -6344,13 +6095,6 @@ spec:
                         user:
                           type: string
                       type: object
-                    windowsOptions:
-                      properties:
-                        gmsaCredentialSpec:
-                          type: string
-                        gmsaCredentialSpecName:
-                          type: string
-                      type: object
                   type: object
                 containers:
                   description: Additional containers to be included in the server
@@ -6395,16 +6139,7 @@ spec:
                                     containerName:
                                       type: string
                                     divisor:
-                                      properties:
-                                        format:
-                                          enum:
-                                          - DECIMAL_EXPONENT
-                                          - DECIMAL_SI
-                                          - BINARY_SI
-                                          type: string
-                                        number:
-                                          type: number
-                                      type: object
+                                      type: string
                                     resource:
                                       type: string
                                   type: object
@@ -6748,13 +6483,6 @@ spec:
                               type:
                                 type: string
                               user:
-                                type: string
-                            type: object
-                          windowsOptions:
-                            properties:
-                              gmsaCredentialSpec:
-                                type: string
-                              gmsaCredentialSpecName:
                                 type: string
                             type: object
                         type: object
@@ -6829,16 +6557,7 @@ spec:
                               containerName:
                                 type: string
                               divisor:
-                                properties:
-                                  format:
-                                    enum:
-                                    - DECIMAL_EXPONENT
-                                    - DECIMAL_SI
-                                    - BINARY_SI
-                                    type: string
-                                  number:
-                                    type: number
-                                type: object
+                                type: string
                               resource:
                                 type: string
                             type: object
@@ -6897,16 +6616,7 @@ spec:
                                     containerName:
                                       type: string
                                     divisor:
-                                      properties:
-                                        format:
-                                          enum:
-                                          - DECIMAL_EXPONENT
-                                          - DECIMAL_SI
-                                          - BINARY_SI
-                                          type: string
-                                        number:
-                                          type: number
-                                      type: object
+                                      type: string
                                     resource:
                                       type: string
                                   type: object
@@ -7250,13 +6960,6 @@ spec:
                               type:
                                 type: string
                               user:
-                                type: string
-                            type: object
-                          windowsOptions:
-                            properties:
-                              gmsaCredentialSpec:
-                                type: string
-                              gmsaCredentialSpecName:
                                 type: string
                             type: object
                         type: object
@@ -7363,13 +7066,6 @@ spec:
                             type: string
                         type: object
                       type: array
-                    windowsOptions:
-                      properties:
-                        gmsaCredentialSpec:
-                          type: string
-                        gmsaCredentialSpecName:
-                          type: string
-                      type: object
                   type: object
                 priorityClassName:
                   description: If specified, indicates the pod's priority. "system-node-critical"
@@ -7627,16 +7323,7 @@ spec:
                                     containerName:
                                       type: string
                                     divisor:
-                                      properties:
-                                        format:
-                                          enum:
-                                          - DECIMAL_EXPONENT
-                                          - DECIMAL_SI
-                                          - BINARY_SI
-                                          type: string
-                                        number:
-                                          type: number
-                                      type: object
+                                      type: string
                                     resource:
                                       type: string
                                   type: object
@@ -7648,16 +7335,7 @@ spec:
                           medium:
                             type: string
                           sizeLimit:
-                            properties:
-                              format:
-                                enum:
-                                - DECIMAL_EXPONENT
-                                - DECIMAL_SI
-                                - BINARY_SI
-                                type: string
-                              number:
-                                type: number
-                            type: object
+                            type: string
                         type: object
                       fc:
                         properties:
@@ -7845,16 +7523,7 @@ spec:
                                               containerName:
                                                 type: string
                                               divisor:
-                                                properties:
-                                                  format:
-                                                    enum:
-                                                    - DECIMAL_EXPONENT
-                                                    - DECIMAL_SI
-                                                    - BINARY_SI
-                                                    type: string
-                                                  number:
-                                                    type: number
-                                                type: object
+                                                type: string
                                               resource:
                                                 type: string
                                             type: object
@@ -8190,36 +7859,15 @@ spec:
   - name: v6
     served: true
     storage: true
-  - name: v2
-    served: true
-    storage: false
-  - name: v3
+  - name: v5
     served: true
     storage: false
   - name: v4
     served: true
     storage: false
-  - name: v5
+  - name: v3
     served: true
     storage: false
-status:
-  acceptedNames:
-    kind: Domain
-    listKind: DomainList
-    plural: domains
-    shortNames:
-    - dom
-    singular: domain
-  conditions:
-  - lastTransitionTime: "2020-02-26T21:06:59Z"
-    message: no conflicts found
-    reason: NoConflicts
-    status: "True"
-    type: NamesAccepted
-  - lastTransitionTime: null
-    message: the initial names have been accepted
-    reason: InitialNamesAccepted
-    status: "True"
-    type: Established
-  storedVersions:
-  - v6
+  - name: v2
+    served: true
+    storage: false

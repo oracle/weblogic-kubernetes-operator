@@ -1,14 +1,9 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  creationTimestamp: "2020-02-26T20:47:38Z"
-  generation: 1
-  labels:
-    weblogic.resourceVersion: operator-v2
   name: domains.weblogic.oracle
-  resourceVersion: "1817939"
-  selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/domains.weblogic.oracle
-  uid: 52393e02-9201-4851-9de4-4b314d0f4088
 spec:
   conversion:
     strategy: None
@@ -3068,35 +3063,9 @@ spec:
               format: date-time
               type: string
           type: object
+      type: object
   version: v2
   versions:
   - name: v2
     served: true
     storage: true
-status:
-  acceptedNames:
-    kind: Domain
-    listKind: DomainList
-    plural: domains
-    shortNames:
-    - dom
-    singular: domain
-  conditions:
-  - lastTransitionTime: "2020-02-26T20:47:38Z"
-    message: no conflicts found
-    reason: NoConflicts
-    status: "True"
-    type: NamesAccepted
-  - lastTransitionTime: null
-    message: the initial names have been accepted
-    reason: InitialNamesAccepted
-    status: "True"
-    type: Established
-  - lastTransitionTime: "2020-02-26T20:47:38Z"
-    message: 'spec.validation.openAPIV3Schema.type: Required value: must not be empty
-      at the root'
-    reason: Violations
-    status: "True"
-    type: NonStructuralSchema
-  storedVersions:
-  - v2

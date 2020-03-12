@@ -1,12 +1,9 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  creationTimestamp: "2020-02-26T21:04:49Z"
-  generation: 1
   name: domains.weblogic.oracle
-  resourceVersion: "1821009"
-  selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/domains.weblogic.oracle
-  uid: 3fc29b02-f29a-4043-8595-1d023f48d4e8
 spec:
   conversion:
     strategy: None
@@ -31,39 +28,37 @@ spec:
           description: DomainSpec is a description of a domain.
           properties:
             adminServer:
-              description: Configuration for the Administration Server.
+              description: Configuration for the admin server.
               properties:
                 adminService:
-                  description: Configures which of the Administration Server's WebLogic
-                    admin channels should be exposed outside the Kubernetes cluster
-                    via a node port service.
+                  description: Configures which of the admin server's WebLogic admin
+                    channels should be exposed outside the Kubernetes cluster via
+                    a node port service.
                   properties:
                     annotations:
                       description: Annotations to associate with the external channel
-                        service.
+                        service
                       type: object
                     channels:
-                      description: Specifies which of the Administration Server's
-                        WebLogic channels should be exposed outside the Kubernetes
-                        cluster via a node port service, along with the node port
-                        for each channel. If not specified, the Administration Server's
-                        node port service will not be created.
+                      description: Specifies which of the admin server's WebLogic
+                        channels should be exposed outside the Kubernetes cluster
+                        via a node port service, along with the node port for each
+                        channel. If not specified, the admin server's node port service
+                        will not be created.
                       items:
-                        description: Describes a single channel used by the Administration
-                          Server.
+                        description: Describes a single channel used by the admin
+                          server.
                         properties:
                           channelName:
                             description: "Name of channel.\n'default' refers to the
-                              Administration Server's default channel (configured
-                              via the ServerMBean's ListenPort) \n'default-secure'
-                              refers to the Administration Server's default secure
-                              channel (configured via the ServerMBean's SSLMBean's
-                              ListenPort) \n'default-admin' refers to the Administration
-                              Server's default administrative channel (configured
+                              admin server's default channel (configured via the ServerMBean's
+                              ListenPort) \n'default-secure' refers to the admin server's
+                              default secure channel (configured via the ServerMBean's
+                              SSLMBean's ListenPort) \n'default-admin' refers to the
+                              admin server's default administrative channel (configured
                               via the DomainMBean's AdministrationPort) \nOtherwise,
-                              the name is the name of one of the Administration Server's
-                              network access points (configured via the ServerMBean's
-                              NetworkAccessMBeans)."
+                              the name is the name of one of the admin server's network
+                              access points (configured via the ServerMBean's NetworkAccessMBeans)."
                             type: string
                           nodePort:
                             description: Specifies the port number used to access
@@ -76,7 +71,7 @@ spec:
                         type: object
                       type: array
                     labels:
-                      description: Labels to associate with the external channel service.
+                      description: Labels to associate with the external channel service
                       type: object
                   type: object
                 restartVersion:
@@ -84,217 +79,8 @@ spec:
                     will restart the required servers.
                   type: string
                 serverPod:
-                  description: Configuration affecting server pods.
+                  description: Configuration affecting server pods
                   properties:
-                    affinity:
-                      description: If specified, the pod's scheduling constraints
-                      properties:
-                        nodeAffinity:
-                          properties:
-                            preferredDuringSchedulingIgnoredDuringExecution:
-                              items:
-                                properties:
-                                  preference:
-                                    properties:
-                                      matchExpressions:
-                                        items:
-                                          properties:
-                                            key:
-                                              type: string
-                                            operator:
-                                              type: string
-                                            values:
-                                              items:
-                                                type: string
-                                              type: array
-                                          type: object
-                                        type: array
-                                      matchFields:
-                                        items:
-                                          properties:
-                                            key:
-                                              type: string
-                                            operator:
-                                              type: string
-                                            values:
-                                              items:
-                                                type: string
-                                              type: array
-                                          type: object
-                                        type: array
-                                    type: object
-                                  weight:
-                                    type: number
-                                type: object
-                              type: array
-                            requiredDuringSchedulingIgnoredDuringExecution:
-                              properties:
-                                nodeSelectorTerms:
-                                  items:
-                                    properties:
-                                      matchExpressions:
-                                        items:
-                                          properties:
-                                            key:
-                                              type: string
-                                            operator:
-                                              type: string
-                                            values:
-                                              items:
-                                                type: string
-                                              type: array
-                                          type: object
-                                        type: array
-                                      matchFields:
-                                        items:
-                                          properties:
-                                            key:
-                                              type: string
-                                            operator:
-                                              type: string
-                                            values:
-                                              items:
-                                                type: string
-                                              type: array
-                                          type: object
-                                        type: array
-                                    type: object
-                                  type: array
-                              type: object
-                          type: object
-                        podAffinity:
-                          properties:
-                            preferredDuringSchedulingIgnoredDuringExecution:
-                              items:
-                                properties:
-                                  podAffinityTerm:
-                                    properties:
-                                      labelSelector:
-                                        properties:
-                                          matchExpressions:
-                                            items:
-                                              properties:
-                                                key:
-                                                  type: string
-                                                operator:
-                                                  type: string
-                                                values:
-                                                  items:
-                                                    type: string
-                                                  type: array
-                                              type: object
-                                            type: array
-                                          matchLabels:
-                                            type: object
-                                        type: object
-                                      namespaces:
-                                        items:
-                                          type: string
-                                        type: array
-                                      topologyKey:
-                                        type: string
-                                    type: object
-                                  weight:
-                                    type: number
-                                type: object
-                              type: array
-                            requiredDuringSchedulingIgnoredDuringExecution:
-                              items:
-                                properties:
-                                  labelSelector:
-                                    properties:
-                                      matchExpressions:
-                                        items:
-                                          properties:
-                                            key:
-                                              type: string
-                                            operator:
-                                              type: string
-                                            values:
-                                              items:
-                                                type: string
-                                              type: array
-                                          type: object
-                                        type: array
-                                      matchLabels:
-                                        type: object
-                                    type: object
-                                  namespaces:
-                                    items:
-                                      type: string
-                                    type: array
-                                  topologyKey:
-                                    type: string
-                                type: object
-                              type: array
-                          type: object
-                        podAntiAffinity:
-                          properties:
-                            preferredDuringSchedulingIgnoredDuringExecution:
-                              items:
-                                properties:
-                                  podAffinityTerm:
-                                    properties:
-                                      labelSelector:
-                                        properties:
-                                          matchExpressions:
-                                            items:
-                                              properties:
-                                                key:
-                                                  type: string
-                                                operator:
-                                                  type: string
-                                                values:
-                                                  items:
-                                                    type: string
-                                                  type: array
-                                              type: object
-                                            type: array
-                                          matchLabels:
-                                            type: object
-                                        type: object
-                                      namespaces:
-                                        items:
-                                          type: string
-                                        type: array
-                                      topologyKey:
-                                        type: string
-                                    type: object
-                                  weight:
-                                    type: number
-                                type: object
-                              type: array
-                            requiredDuringSchedulingIgnoredDuringExecution:
-                              items:
-                                properties:
-                                  labelSelector:
-                                    properties:
-                                      matchExpressions:
-                                        items:
-                                          properties:
-                                            key:
-                                              type: string
-                                            operator:
-                                              type: string
-                                            values:
-                                              items:
-                                                type: string
-                                              type: array
-                                          type: object
-                                        type: array
-                                      matchLabels:
-                                        type: object
-                                    type: object
-                                  namespaces:
-                                    items:
-                                      type: string
-                                    type: array
-                                  topologyKey:
-                                    type: string
-                                type: object
-                              type: array
-                          type: object
-                      type: object
                     annotations:
                       description: The annotations to be attached to generated resources.
                       type: object
@@ -761,8 +547,6 @@ spec:
                                   type: boolean
                                 subPath:
                                   type: string
-                                subPathExpr:
-                                  type: string
                               type: object
                             type: array
                           workingDir:
@@ -770,7 +554,7 @@ spec:
                         type: object
                       type: array
                     env:
-                      description: A list of environment variables to add to a server.
+                      description: A list of environment variables to add to a server
                       items:
                         properties:
                           name:
@@ -817,8 +601,7 @@ spec:
                         type: object
                       type: array
                     initContainers:
-                      description: Initialization containers to be included in the
-                        server pod.
+                      description: Initialization containers
                       items:
                         properties:
                           args:
@@ -1238,8 +1021,6 @@ spec:
                                   type: boolean
                                 subPath:
                                   type: string
-                                subPathExpr:
-                                  type: string
                               type: object
                             type: array
                           workingDir:
@@ -1256,22 +1037,16 @@ spec:
                       properties:
                         initialDelaySeconds:
                           description: The number of seconds before the first check
-                            is performed.
+                            is performed
                           type: number
                         periodSeconds:
-                          description: The number of seconds between checks.
+                          description: The number of seconds between checks
                           type: number
                         timeoutSeconds:
                           description: The number of seconds with no response that
-                            indicates a failure.
+                            indicates a failure
                           type: number
                       type: object
-                    nodeName:
-                      description: NodeName is a request to schedule this pod onto
-                        a specific node. If it is non-empty, the scheduler simply
-                        schedules this pod onto that node, assuming that it fits resource
-                        requirements.
-                      type: string
                     nodeSelector:
                       description: Selector which must match a node's labels for the
                         pod to be scheduled on that node.
@@ -1312,43 +1087,24 @@ spec:
                             type: object
                           type: array
                       type: object
-                    priorityClassName:
-                      description: If specified, indicates the pod's priority. "system-node-critical"
-                        and "system-cluster-critical" are two special keywords which
-                        indicate the highest priorities with the former being the
-                        highest priority. Any other name must be defined by creating
-                        a PriorityClass object with that name. If not specified, the
-                        pod priority will be default or zero if there is no default.
-                      type: string
-                    readinessGates:
-                      description: 'If specified, all readiness gates will be evaluated
-                        for pod readiness. A pod is ready when all its containers
-                        are ready AND all conditions specified in the readiness gates
-                        have status equal to "True" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
-                      items:
-                        properties:
-                          conditionType:
-                            type: string
-                        type: object
-                      type: array
                     readinessProbe:
                       description: Settings for the readiness probe associated with
                         a server.
                       properties:
                         initialDelaySeconds:
                           description: The number of seconds before the first check
-                            is performed.
+                            is performed
                           type: number
                         periodSeconds:
-                          description: The number of seconds between checks.
+                          description: The number of seconds between checks
                           type: number
                         timeoutSeconds:
                           description: The number of seconds with no response that
-                            indicates a failure.
+                            indicates a failure
                           type: number
                       type: object
                     resources:
-                      description: Memory and CPU minimum requirements and limits
+                      description: Memory and cpu minimum requirements and limits
                         for the server.
                       properties:
                         limits:
@@ -1356,30 +1112,6 @@ spec:
                         requests:
                           type: object
                       type: object
-                    restartPolicy:
-                      description: 'Restart policy for all containers within the pod.
-                        One of Always, OnFailure, Never. Default to Always. More info:
-                        https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
-                      type: string
-                    runtimeClassName:
-                      description: 'RuntimeClassName refers to a RuntimeClass object
-                        in the node.k8s.io group, which should be used to run this
-                        pod.  If no RuntimeClass resource matches the named class,
-                        the pod will not be run. If unset or empty, the "legacy" RuntimeClass
-                        will be used, which is an implicit class with an empty definition
-                        that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-                        This is an alpha feature and may change in the future.'
-                      type: string
-                    schedulerName:
-                      description: If specified, the pod will be dispatched by specified
-                        scheduler. If not specified, the pod will be dispatched by
-                        default scheduler.
-                      type: string
-                    serviceAccountName:
-                      description: Name of the ServiceAccount to be used to run this
-                        pod. If it is not set, default ServiceAccount will be used.
-                        The ServiceAccount has to exist at the time the pod is created.
-                      type: string
                     shutdown:
                       description: Configures how the operator should shutdown the
                         server instance.
@@ -1402,22 +1134,6 @@ spec:
                             the server. Not required. Defaults to 30 seconds.
                           type: number
                       type: object
-                    tolerations:
-                      description: If specified, the pod's tolerations.
-                      items:
-                        properties:
-                          effect:
-                            type: string
-                          key:
-                            type: string
-                          operator:
-                            type: string
-                          tolerationSeconds:
-                            type: number
-                          value:
-                            type: string
-                        type: object
-                      type: array
                     volumeMounts:
                       description: Additional volume mounts for the server pod.
                       items:
@@ -1431,8 +1147,6 @@ spec:
                           readOnly:
                             type: boolean
                           subPath:
-                            type: string
-                          subPathExpr:
                             type: string
                         type: object
                       type: array
@@ -1529,22 +1243,6 @@ spec:
                                 type: string
                               optional:
                                 type: boolean
-                            type: object
-                          csi:
-                            properties:
-                              driver:
-                                type: string
-                              fsType:
-                                type: string
-                              nodePublishSecretRef:
-                                properties:
-                                  name:
-                                    type: string
-                                type: object
-                              readOnly:
-                                type: boolean
-                              volumeAttributes:
-                                type: object
                             type: object
                           downwardAPI:
                             properties:
@@ -1814,8 +1512,6 @@ spec:
                                 type: boolean
                               registry:
                                 type: string
-                              tenant:
-                                type: string
                               user:
                                 type: string
                               volume:
@@ -1923,7 +1619,7 @@ spec:
                   type: object
                 serverService:
                   description: Customization affecting ClusterIP Kubernetes services
-                    for WebLogic Server instances.
+                    for WebLogic server instances.
                   properties:
                     annotations:
                       description: The annotations to be attached to generated resources.
@@ -1963,7 +1659,7 @@ spec:
                     type: string
                   clusterService:
                     description: Customization affecting ClusterIP Kubernetes services
-                      for the WebLogic cluster.
+                      for WebLogic cluster.
                     properties:
                       annotations:
                         description: The annotations to be attached to generated resources.
@@ -1979,7 +1675,7 @@ spec:
                     minimum: 1
                     type: number
                   replicas:
-                    description: The number of cluster members to run.
+                    description: The number of managed servers to run in this cluster.
                     minimum: 0
                     type: number
                   restartVersion:
@@ -1987,217 +1683,8 @@ spec:
                       operator will restart the required servers.
                     type: string
                   serverPod:
-                    description: Configuration affecting server pods.
+                    description: Configuration affecting server pods
                     properties:
-                      affinity:
-                        description: If specified, the pod's scheduling constraints
-                        properties:
-                          nodeAffinity:
-                            properties:
-                              preferredDuringSchedulingIgnoredDuringExecution:
-                                items:
-                                  properties:
-                                    preference:
-                                      properties:
-                                        matchExpressions:
-                                          items:
-                                            properties:
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                              values:
-                                                items:
-                                                  type: string
-                                                type: array
-                                            type: object
-                                          type: array
-                                        matchFields:
-                                          items:
-                                            properties:
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                              values:
-                                                items:
-                                                  type: string
-                                                type: array
-                                            type: object
-                                          type: array
-                                      type: object
-                                    weight:
-                                      type: number
-                                  type: object
-                                type: array
-                              requiredDuringSchedulingIgnoredDuringExecution:
-                                properties:
-                                  nodeSelectorTerms:
-                                    items:
-                                      properties:
-                                        matchExpressions:
-                                          items:
-                                            properties:
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                              values:
-                                                items:
-                                                  type: string
-                                                type: array
-                                            type: object
-                                          type: array
-                                        matchFields:
-                                          items:
-                                            properties:
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                              values:
-                                                items:
-                                                  type: string
-                                                type: array
-                                            type: object
-                                          type: array
-                                      type: object
-                                    type: array
-                                type: object
-                            type: object
-                          podAffinity:
-                            properties:
-                              preferredDuringSchedulingIgnoredDuringExecution:
-                                items:
-                                  properties:
-                                    podAffinityTerm:
-                                      properties:
-                                        labelSelector:
-                                          properties:
-                                            matchExpressions:
-                                              items:
-                                                properties:
-                                                  key:
-                                                    type: string
-                                                  operator:
-                                                    type: string
-                                                  values:
-                                                    items:
-                                                      type: string
-                                                    type: array
-                                                type: object
-                                              type: array
-                                            matchLabels:
-                                              type: object
-                                          type: object
-                                        namespaces:
-                                          items:
-                                            type: string
-                                          type: array
-                                        topologyKey:
-                                          type: string
-                                      type: object
-                                    weight:
-                                      type: number
-                                  type: object
-                                type: array
-                              requiredDuringSchedulingIgnoredDuringExecution:
-                                items:
-                                  properties:
-                                    labelSelector:
-                                      properties:
-                                        matchExpressions:
-                                          items:
-                                            properties:
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                              values:
-                                                items:
-                                                  type: string
-                                                type: array
-                                            type: object
-                                          type: array
-                                        matchLabels:
-                                          type: object
-                                      type: object
-                                    namespaces:
-                                      items:
-                                        type: string
-                                      type: array
-                                    topologyKey:
-                                      type: string
-                                  type: object
-                                type: array
-                            type: object
-                          podAntiAffinity:
-                            properties:
-                              preferredDuringSchedulingIgnoredDuringExecution:
-                                items:
-                                  properties:
-                                    podAffinityTerm:
-                                      properties:
-                                        labelSelector:
-                                          properties:
-                                            matchExpressions:
-                                              items:
-                                                properties:
-                                                  key:
-                                                    type: string
-                                                  operator:
-                                                    type: string
-                                                  values:
-                                                    items:
-                                                      type: string
-                                                    type: array
-                                                type: object
-                                              type: array
-                                            matchLabels:
-                                              type: object
-                                          type: object
-                                        namespaces:
-                                          items:
-                                            type: string
-                                          type: array
-                                        topologyKey:
-                                          type: string
-                                      type: object
-                                    weight:
-                                      type: number
-                                  type: object
-                                type: array
-                              requiredDuringSchedulingIgnoredDuringExecution:
-                                items:
-                                  properties:
-                                    labelSelector:
-                                      properties:
-                                        matchExpressions:
-                                          items:
-                                            properties:
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                              values:
-                                                items:
-                                                  type: string
-                                                type: array
-                                            type: object
-                                          type: array
-                                        matchLabels:
-                                          type: object
-                                      type: object
-                                    namespaces:
-                                      items:
-                                        type: string
-                                      type: array
-                                    topologyKey:
-                                      type: string
-                                  type: object
-                                type: array
-                            type: object
-                        type: object
                       annotations:
                         description: The annotations to be attached to generated resources.
                         type: object
@@ -2664,8 +2151,6 @@ spec:
                                     type: boolean
                                   subPath:
                                     type: string
-                                  subPathExpr:
-                                    type: string
                                 type: object
                               type: array
                             workingDir:
@@ -2673,7 +2158,7 @@ spec:
                           type: object
                         type: array
                       env:
-                        description: A list of environment variables to add to a server.
+                        description: A list of environment variables to add to a server
                         items:
                           properties:
                             name:
@@ -2720,8 +2205,7 @@ spec:
                           type: object
                         type: array
                       initContainers:
-                        description: Initialization containers to be included in the
-                          server pod.
+                        description: Initialization containers
                         items:
                           properties:
                             args:
@@ -3141,8 +2625,6 @@ spec:
                                     type: boolean
                                   subPath:
                                     type: string
-                                  subPathExpr:
-                                    type: string
                                 type: object
                               type: array
                             workingDir:
@@ -3159,22 +2641,16 @@ spec:
                         properties:
                           initialDelaySeconds:
                             description: The number of seconds before the first check
-                              is performed.
+                              is performed
                             type: number
                           periodSeconds:
-                            description: The number of seconds between checks.
+                            description: The number of seconds between checks
                             type: number
                           timeoutSeconds:
                             description: The number of seconds with no response that
-                              indicates a failure.
+                              indicates a failure
                             type: number
                         type: object
-                      nodeName:
-                        description: NodeName is a request to schedule this pod onto
-                          a specific node. If it is non-empty, the scheduler simply
-                          schedules this pod onto that node, assuming that it fits
-                          resource requirements.
-                        type: string
                       nodeSelector:
                         description: Selector which must match a node's labels for
                           the pod to be scheduled on that node.
@@ -3215,44 +2691,24 @@ spec:
                               type: object
                             type: array
                         type: object
-                      priorityClassName:
-                        description: If specified, indicates the pod's priority. "system-node-critical"
-                          and "system-cluster-critical" are two special keywords which
-                          indicate the highest priorities with the former being the
-                          highest priority. Any other name must be defined by creating
-                          a PriorityClass object with that name. If not specified,
-                          the pod priority will be default or zero if there is no
-                          default.
-                        type: string
-                      readinessGates:
-                        description: 'If specified, all readiness gates will be evaluated
-                          for pod readiness. A pod is ready when all its containers
-                          are ready AND all conditions specified in the readiness
-                          gates have status equal to "True" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
-                        items:
-                          properties:
-                            conditionType:
-                              type: string
-                          type: object
-                        type: array
                       readinessProbe:
                         description: Settings for the readiness probe associated with
                           a server.
                         properties:
                           initialDelaySeconds:
                             description: The number of seconds before the first check
-                              is performed.
+                              is performed
                             type: number
                           periodSeconds:
-                            description: The number of seconds between checks.
+                            description: The number of seconds between checks
                             type: number
                           timeoutSeconds:
                             description: The number of seconds with no response that
-                              indicates a failure.
+                              indicates a failure
                             type: number
                         type: object
                       resources:
-                        description: Memory and CPU minimum requirements and limits
+                        description: Memory and cpu minimum requirements and limits
                           for the server.
                         properties:
                           limits:
@@ -3260,32 +2716,6 @@ spec:
                           requests:
                             type: object
                         type: object
-                      restartPolicy:
-                        description: 'Restart policy for all containers within the
-                          pod. One of Always, OnFailure, Never. Default to Always.
-                          More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
-                        type: string
-                      runtimeClassName:
-                        description: 'RuntimeClassName refers to a RuntimeClass object
-                          in the node.k8s.io group, which should be used to run this
-                          pod.  If no RuntimeClass resource matches the named class,
-                          the pod will not be run. If unset or empty, the "legacy"
-                          RuntimeClass will be used, which is an implicit class with
-                          an empty definition that uses the default runtime handler.
-                          More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-                          This is an alpha feature and may change in the future.'
-                        type: string
-                      schedulerName:
-                        description: If specified, the pod will be dispatched by specified
-                          scheduler. If not specified, the pod will be dispatched
-                          by default scheduler.
-                        type: string
-                      serviceAccountName:
-                        description: Name of the ServiceAccount to be used to run
-                          this pod. If it is not set, default ServiceAccount will
-                          be used. The ServiceAccount has to exist at the time the
-                          pod is created.
-                        type: string
                       shutdown:
                         description: Configures how the operator should shutdown the
                           server instance.
@@ -3308,22 +2738,6 @@ spec:
                               down the server. Not required. Defaults to 30 seconds.
                             type: number
                         type: object
-                      tolerations:
-                        description: If specified, the pod's tolerations.
-                        items:
-                          properties:
-                            effect:
-                              type: string
-                            key:
-                              type: string
-                            operator:
-                              type: string
-                            tolerationSeconds:
-                              type: number
-                            value:
-                              type: string
-                          type: object
-                        type: array
                       volumeMounts:
                         description: Additional volume mounts for the server pod.
                         items:
@@ -3337,8 +2751,6 @@ spec:
                             readOnly:
                               type: boolean
                             subPath:
-                              type: string
-                            subPathExpr:
                               type: string
                           type: object
                         type: array
@@ -3435,22 +2847,6 @@ spec:
                                   type: string
                                 optional:
                                   type: boolean
-                              type: object
-                            csi:
-                              properties:
-                                driver:
-                                  type: string
-                                fsType:
-                                  type: string
-                                nodePublishSecretRef:
-                                  properties:
-                                    name:
-                                      type: string
-                                  type: object
-                                readOnly:
-                                  type: boolean
-                                volumeAttributes:
-                                  type: object
                               type: object
                             downwardAPI:
                               properties:
@@ -3720,8 +3116,6 @@ spec:
                                   type: boolean
                                 registry:
                                   type: string
-                                tenant:
-                                  type: string
                                 user:
                                   type: string
                                 volume:
@@ -3829,7 +3223,7 @@ spec:
                     type: object
                   serverService:
                     description: Customization affecting ClusterIP Kubernetes services
-                      for WebLogic Server instances.
+                      for WebLogic server instances.
                     properties:
                       annotations:
                         description: The annotations to be attached to generated resources.
@@ -3872,44 +3266,21 @@ spec:
               description: The name of the config map for optional WebLogic configuration
                 overrides.
               type: string
-            dataHome:
-              description: 'An optional, in-pod location for data storage of default
-                and custom file stores. If dataHome is not specified or its value
-                is either not set or empty (e.g. dataHome: "") then the data storage
-                directories are determined from the WebLogic domain home configuration.'
-              type: string
             domainHome:
               description: The folder for the WebLogic Domain. Not required. Defaults
-                to /shared/domains/domains/domainUID if domainHomeInImage is false.
+                to /shared/domains/domains/domainUID if domainHomeInImage is false
                 Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage
-                is true.
+                is true
               type: string
             domainHomeInImage:
-              description: True if this domain's home is defined in the Docker image
+              description: True if this domain's home is defined in the docker image
                 for the domain. Defaults to true.
               type: boolean
             domainUID:
               description: Domain unique identifier. Must be unique across the Kubernetes
-                cluster. Not required. Defaults to the value of metadata.name.
-              pattern: ^[a-z0-9-.]{1,253}$
+                cluster. Not required. Defaults to the value of metadata.name
+              pattern: ^[a-z0-9_.]{1,253}$
               type: string
-            experimental:
-              description: Experimental feature configurations.
-              properties:
-                istio:
-                  description: Istio service mesh integration configuration.
-                  properties:
-                    enabled:
-                      description: True, if this domain is deployed under an Istio
-                        service mesh. Defaults to true when the 'istio' element is
-                        included. Not required.
-                      type: boolean
-                    readinessPort:
-                      description: The WebLogic readiness port for Istio. Defaults
-                        to 8888. Not required.
-                      type: number
-                  type: object
-              type: object
             image:
               description: The WebLogic Docker image; required when domainHomeInImage
                 is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.
@@ -3945,230 +3316,21 @@ spec:
                 to false if domainHomeInImage is true. '
               type: boolean
             managedServers:
-              description: Configuration for individual Managed Servers.
+              description: Configuration for the managed servers.
               items:
                 description: ManagedServer represents the operator configuration for
-                  a single Managed Server.
+                  a single managed server.
                 properties:
                   restartVersion:
                     description: If present, every time this value is updated the
                       operator will restart the required servers.
                     type: string
                   serverName:
-                    description: The name of the Managed Server. Required.
+                    description: The name of the server. Required
                     type: string
                   serverPod:
-                    description: Configuration affecting server pods.
+                    description: Configuration affecting server pods
                     properties:
-                      affinity:
-                        description: If specified, the pod's scheduling constraints
-                        properties:
-                          nodeAffinity:
-                            properties:
-                              preferredDuringSchedulingIgnoredDuringExecution:
-                                items:
-                                  properties:
-                                    preference:
-                                      properties:
-                                        matchExpressions:
-                                          items:
-                                            properties:
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                              values:
-                                                items:
-                                                  type: string
-                                                type: array
-                                            type: object
-                                          type: array
-                                        matchFields:
-                                          items:
-                                            properties:
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                              values:
-                                                items:
-                                                  type: string
-                                                type: array
-                                            type: object
-                                          type: array
-                                      type: object
-                                    weight:
-                                      type: number
-                                  type: object
-                                type: array
-                              requiredDuringSchedulingIgnoredDuringExecution:
-                                properties:
-                                  nodeSelectorTerms:
-                                    items:
-                                      properties:
-                                        matchExpressions:
-                                          items:
-                                            properties:
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                              values:
-                                                items:
-                                                  type: string
-                                                type: array
-                                            type: object
-                                          type: array
-                                        matchFields:
-                                          items:
-                                            properties:
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                              values:
-                                                items:
-                                                  type: string
-                                                type: array
-                                            type: object
-                                          type: array
-                                      type: object
-                                    type: array
-                                type: object
-                            type: object
-                          podAffinity:
-                            properties:
-                              preferredDuringSchedulingIgnoredDuringExecution:
-                                items:
-                                  properties:
-                                    podAffinityTerm:
-                                      properties:
-                                        labelSelector:
-                                          properties:
-                                            matchExpressions:
-                                              items:
-                                                properties:
-                                                  key:
-                                                    type: string
-                                                  operator:
-                                                    type: string
-                                                  values:
-                                                    items:
-                                                      type: string
-                                                    type: array
-                                                type: object
-                                              type: array
-                                            matchLabels:
-                                              type: object
-                                          type: object
-                                        namespaces:
-                                          items:
-                                            type: string
-                                          type: array
-                                        topologyKey:
-                                          type: string
-                                      type: object
-                                    weight:
-                                      type: number
-                                  type: object
-                                type: array
-                              requiredDuringSchedulingIgnoredDuringExecution:
-                                items:
-                                  properties:
-                                    labelSelector:
-                                      properties:
-                                        matchExpressions:
-                                          items:
-                                            properties:
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                              values:
-                                                items:
-                                                  type: string
-                                                type: array
-                                            type: object
-                                          type: array
-                                        matchLabels:
-                                          type: object
-                                      type: object
-                                    namespaces:
-                                      items:
-                                        type: string
-                                      type: array
-                                    topologyKey:
-                                      type: string
-                                  type: object
-                                type: array
-                            type: object
-                          podAntiAffinity:
-                            properties:
-                              preferredDuringSchedulingIgnoredDuringExecution:
-                                items:
-                                  properties:
-                                    podAffinityTerm:
-                                      properties:
-                                        labelSelector:
-                                          properties:
-                                            matchExpressions:
-                                              items:
-                                                properties:
-                                                  key:
-                                                    type: string
-                                                  operator:
-                                                    type: string
-                                                  values:
-                                                    items:
-                                                      type: string
-                                                    type: array
-                                                type: object
-                                              type: array
-                                            matchLabels:
-                                              type: object
-                                          type: object
-                                        namespaces:
-                                          items:
-                                            type: string
-                                          type: array
-                                        topologyKey:
-                                          type: string
-                                      type: object
-                                    weight:
-                                      type: number
-                                  type: object
-                                type: array
-                              requiredDuringSchedulingIgnoredDuringExecution:
-                                items:
-                                  properties:
-                                    labelSelector:
-                                      properties:
-                                        matchExpressions:
-                                          items:
-                                            properties:
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                              values:
-                                                items:
-                                                  type: string
-                                                type: array
-                                            type: object
-                                          type: array
-                                        matchLabels:
-                                          type: object
-                                      type: object
-                                    namespaces:
-                                      items:
-                                        type: string
-                                      type: array
-                                    topologyKey:
-                                      type: string
-                                  type: object
-                                type: array
-                            type: object
-                        type: object
                       annotations:
                         description: The annotations to be attached to generated resources.
                         type: object
@@ -4635,8 +3797,6 @@ spec:
                                     type: boolean
                                   subPath:
                                     type: string
-                                  subPathExpr:
-                                    type: string
                                 type: object
                               type: array
                             workingDir:
@@ -4644,7 +3804,7 @@ spec:
                           type: object
                         type: array
                       env:
-                        description: A list of environment variables to add to a server.
+                        description: A list of environment variables to add to a server
                         items:
                           properties:
                             name:
@@ -4691,8 +3851,7 @@ spec:
                           type: object
                         type: array
                       initContainers:
-                        description: Initialization containers to be included in the
-                          server pod.
+                        description: Initialization containers
                         items:
                           properties:
                             args:
@@ -5112,8 +4271,6 @@ spec:
                                     type: boolean
                                   subPath:
                                     type: string
-                                  subPathExpr:
-                                    type: string
                                 type: object
                               type: array
                             workingDir:
@@ -5130,22 +4287,16 @@ spec:
                         properties:
                           initialDelaySeconds:
                             description: The number of seconds before the first check
-                              is performed.
+                              is performed
                             type: number
                           periodSeconds:
-                            description: The number of seconds between checks.
+                            description: The number of seconds between checks
                             type: number
                           timeoutSeconds:
                             description: The number of seconds with no response that
-                              indicates a failure.
+                              indicates a failure
                             type: number
                         type: object
-                      nodeName:
-                        description: NodeName is a request to schedule this pod onto
-                          a specific node. If it is non-empty, the scheduler simply
-                          schedules this pod onto that node, assuming that it fits
-                          resource requirements.
-                        type: string
                       nodeSelector:
                         description: Selector which must match a node's labels for
                           the pod to be scheduled on that node.
@@ -5186,44 +4337,24 @@ spec:
                               type: object
                             type: array
                         type: object
-                      priorityClassName:
-                        description: If specified, indicates the pod's priority. "system-node-critical"
-                          and "system-cluster-critical" are two special keywords which
-                          indicate the highest priorities with the former being the
-                          highest priority. Any other name must be defined by creating
-                          a PriorityClass object with that name. If not specified,
-                          the pod priority will be default or zero if there is no
-                          default.
-                        type: string
-                      readinessGates:
-                        description: 'If specified, all readiness gates will be evaluated
-                          for pod readiness. A pod is ready when all its containers
-                          are ready AND all conditions specified in the readiness
-                          gates have status equal to "True" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
-                        items:
-                          properties:
-                            conditionType:
-                              type: string
-                          type: object
-                        type: array
                       readinessProbe:
                         description: Settings for the readiness probe associated with
                           a server.
                         properties:
                           initialDelaySeconds:
                             description: The number of seconds before the first check
-                              is performed.
+                              is performed
                             type: number
                           periodSeconds:
-                            description: The number of seconds between checks.
+                            description: The number of seconds between checks
                             type: number
                           timeoutSeconds:
                             description: The number of seconds with no response that
-                              indicates a failure.
+                              indicates a failure
                             type: number
                         type: object
                       resources:
-                        description: Memory and CPU minimum requirements and limits
+                        description: Memory and cpu minimum requirements and limits
                           for the server.
                         properties:
                           limits:
@@ -5231,32 +4362,6 @@ spec:
                           requests:
                             type: object
                         type: object
-                      restartPolicy:
-                        description: 'Restart policy for all containers within the
-                          pod. One of Always, OnFailure, Never. Default to Always.
-                          More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
-                        type: string
-                      runtimeClassName:
-                        description: 'RuntimeClassName refers to a RuntimeClass object
-                          in the node.k8s.io group, which should be used to run this
-                          pod.  If no RuntimeClass resource matches the named class,
-                          the pod will not be run. If unset or empty, the "legacy"
-                          RuntimeClass will be used, which is an implicit class with
-                          an empty definition that uses the default runtime handler.
-                          More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-                          This is an alpha feature and may change in the future.'
-                        type: string
-                      schedulerName:
-                        description: If specified, the pod will be dispatched by specified
-                          scheduler. If not specified, the pod will be dispatched
-                          by default scheduler.
-                        type: string
-                      serviceAccountName:
-                        description: Name of the ServiceAccount to be used to run
-                          this pod. If it is not set, default ServiceAccount will
-                          be used. The ServiceAccount has to exist at the time the
-                          pod is created.
-                        type: string
                       shutdown:
                         description: Configures how the operator should shutdown the
                           server instance.
@@ -5279,22 +4384,6 @@ spec:
                               down the server. Not required. Defaults to 30 seconds.
                             type: number
                         type: object
-                      tolerations:
-                        description: If specified, the pod's tolerations.
-                        items:
-                          properties:
-                            effect:
-                              type: string
-                            key:
-                              type: string
-                            operator:
-                              type: string
-                            tolerationSeconds:
-                              type: number
-                            value:
-                              type: string
-                          type: object
-                        type: array
                       volumeMounts:
                         description: Additional volume mounts for the server pod.
                         items:
@@ -5308,8 +4397,6 @@ spec:
                             readOnly:
                               type: boolean
                             subPath:
-                              type: string
-                            subPathExpr:
                               type: string
                           type: object
                         type: array
@@ -5406,22 +4493,6 @@ spec:
                                   type: string
                                 optional:
                                   type: boolean
-                              type: object
-                            csi:
-                              properties:
-                                driver:
-                                  type: string
-                                fsType:
-                                  type: string
-                                nodePublishSecretRef:
-                                  properties:
-                                    name:
-                                      type: string
-                                  type: object
-                                readOnly:
-                                  type: boolean
-                                volumeAttributes:
-                                  type: object
                               type: object
                             downwardAPI:
                               properties:
@@ -5691,8 +4762,6 @@ spec:
                                   type: boolean
                                 registry:
                                   type: string
-                                tenant:
-                                  type: string
                                 user:
                                   type: string
                                 volume:
@@ -5800,7 +4869,7 @@ spec:
                     type: object
                   serverService:
                     description: Customization affecting ClusterIP Kubernetes services
-                      for WebLogic Server instances.
+                      for WebLogic server instances.
                     properties:
                       annotations:
                         description: The annotations to be attached to generated resources.
@@ -5844,217 +4913,8 @@ spec:
                 will restart the required servers.
               type: string
             serverPod:
-              description: Configuration affecting server pods.
+              description: Configuration affecting server pods
               properties:
-                affinity:
-                  description: If specified, the pod's scheduling constraints
-                  properties:
-                    nodeAffinity:
-                      properties:
-                        preferredDuringSchedulingIgnoredDuringExecution:
-                          items:
-                            properties:
-                              preference:
-                                properties:
-                                  matchExpressions:
-                                    items:
-                                      properties:
-                                        key:
-                                          type: string
-                                        operator:
-                                          type: string
-                                        values:
-                                          items:
-                                            type: string
-                                          type: array
-                                      type: object
-                                    type: array
-                                  matchFields:
-                                    items:
-                                      properties:
-                                        key:
-                                          type: string
-                                        operator:
-                                          type: string
-                                        values:
-                                          items:
-                                            type: string
-                                          type: array
-                                      type: object
-                                    type: array
-                                type: object
-                              weight:
-                                type: number
-                            type: object
-                          type: array
-                        requiredDuringSchedulingIgnoredDuringExecution:
-                          properties:
-                            nodeSelectorTerms:
-                              items:
-                                properties:
-                                  matchExpressions:
-                                    items:
-                                      properties:
-                                        key:
-                                          type: string
-                                        operator:
-                                          type: string
-                                        values:
-                                          items:
-                                            type: string
-                                          type: array
-                                      type: object
-                                    type: array
-                                  matchFields:
-                                    items:
-                                      properties:
-                                        key:
-                                          type: string
-                                        operator:
-                                          type: string
-                                        values:
-                                          items:
-                                            type: string
-                                          type: array
-                                      type: object
-                                    type: array
-                                type: object
-                              type: array
-                          type: object
-                      type: object
-                    podAffinity:
-                      properties:
-                        preferredDuringSchedulingIgnoredDuringExecution:
-                          items:
-                            properties:
-                              podAffinityTerm:
-                                properties:
-                                  labelSelector:
-                                    properties:
-                                      matchExpressions:
-                                        items:
-                                          properties:
-                                            key:
-                                              type: string
-                                            operator:
-                                              type: string
-                                            values:
-                                              items:
-                                                type: string
-                                              type: array
-                                          type: object
-                                        type: array
-                                      matchLabels:
-                                        type: object
-                                    type: object
-                                  namespaces:
-                                    items:
-                                      type: string
-                                    type: array
-                                  topologyKey:
-                                    type: string
-                                type: object
-                              weight:
-                                type: number
-                            type: object
-                          type: array
-                        requiredDuringSchedulingIgnoredDuringExecution:
-                          items:
-                            properties:
-                              labelSelector:
-                                properties:
-                                  matchExpressions:
-                                    items:
-                                      properties:
-                                        key:
-                                          type: string
-                                        operator:
-                                          type: string
-                                        values:
-                                          items:
-                                            type: string
-                                          type: array
-                                      type: object
-                                    type: array
-                                  matchLabels:
-                                    type: object
-                                type: object
-                              namespaces:
-                                items:
-                                  type: string
-                                type: array
-                              topologyKey:
-                                type: string
-                            type: object
-                          type: array
-                      type: object
-                    podAntiAffinity:
-                      properties:
-                        preferredDuringSchedulingIgnoredDuringExecution:
-                          items:
-                            properties:
-                              podAffinityTerm:
-                                properties:
-                                  labelSelector:
-                                    properties:
-                                      matchExpressions:
-                                        items:
-                                          properties:
-                                            key:
-                                              type: string
-                                            operator:
-                                              type: string
-                                            values:
-                                              items:
-                                                type: string
-                                              type: array
-                                          type: object
-                                        type: array
-                                      matchLabels:
-                                        type: object
-                                    type: object
-                                  namespaces:
-                                    items:
-                                      type: string
-                                    type: array
-                                  topologyKey:
-                                    type: string
-                                type: object
-                              weight:
-                                type: number
-                            type: object
-                          type: array
-                        requiredDuringSchedulingIgnoredDuringExecution:
-                          items:
-                            properties:
-                              labelSelector:
-                                properties:
-                                  matchExpressions:
-                                    items:
-                                      properties:
-                                        key:
-                                          type: string
-                                        operator:
-                                          type: string
-                                        values:
-                                          items:
-                                            type: string
-                                          type: array
-                                      type: object
-                                    type: array
-                                  matchLabels:
-                                    type: object
-                                type: object
-                              namespaces:
-                                items:
-                                  type: string
-                                type: array
-                              topologyKey:
-                                type: string
-                            type: object
-                          type: array
-                      type: object
-                  type: object
                 annotations:
                   description: The annotations to be attached to generated resources.
                   type: object
@@ -6521,8 +5381,6 @@ spec:
                               type: boolean
                             subPath:
                               type: string
-                            subPathExpr:
-                              type: string
                           type: object
                         type: array
                       workingDir:
@@ -6530,7 +5388,7 @@ spec:
                     type: object
                   type: array
                 env:
-                  description: A list of environment variables to add to a server.
+                  description: A list of environment variables to add to a server
                   items:
                     properties:
                       name:
@@ -6577,8 +5435,7 @@ spec:
                     type: object
                   type: array
                 initContainers:
-                  description: Initialization containers to be included in the server
-                    pod.
+                  description: Initialization containers
                   items:
                     properties:
                       args:
@@ -6998,8 +5855,6 @@ spec:
                               type: boolean
                             subPath:
                               type: string
-                            subPathExpr:
-                              type: string
                           type: object
                         type: array
                       workingDir:
@@ -7015,21 +5870,16 @@ spec:
                   properties:
                     initialDelaySeconds:
                       description: The number of seconds before the first check is
-                        performed.
+                        performed
                       type: number
                     periodSeconds:
-                      description: The number of seconds between checks.
+                      description: The number of seconds between checks
                       type: number
                     timeoutSeconds:
                       description: The number of seconds with no response that indicates
-                        a failure.
+                        a failure
                       type: number
                   type: object
-                nodeName:
-                  description: NodeName is a request to schedule this pod onto a specific
-                    node. If it is non-empty, the scheduler simply schedules this
-                    pod onto that node, assuming that it fits resource requirements.
-                  type: string
                 nodeSelector:
                   description: Selector which must match a node's labels for the pod
                     to be scheduled on that node.
@@ -7070,43 +5920,24 @@ spec:
                         type: object
                       type: array
                   type: object
-                priorityClassName:
-                  description: If specified, indicates the pod's priority. "system-node-critical"
-                    and "system-cluster-critical" are two special keywords which indicate
-                    the highest priorities with the former being the highest priority.
-                    Any other name must be defined by creating a PriorityClass object
-                    with that name. If not specified, the pod priority will be default
-                    or zero if there is no default.
-                  type: string
-                readinessGates:
-                  description: 'If specified, all readiness gates will be evaluated
-                    for pod readiness. A pod is ready when all its containers are
-                    ready AND all conditions specified in the readiness gates have
-                    status equal to "True" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
-                  items:
-                    properties:
-                      conditionType:
-                        type: string
-                    type: object
-                  type: array
                 readinessProbe:
                   description: Settings for the readiness probe associated with a
                     server.
                   properties:
                     initialDelaySeconds:
                       description: The number of seconds before the first check is
-                        performed.
+                        performed
                       type: number
                     periodSeconds:
-                      description: The number of seconds between checks.
+                      description: The number of seconds between checks
                       type: number
                     timeoutSeconds:
                       description: The number of seconds with no response that indicates
-                        a failure.
+                        a failure
                       type: number
                   type: object
                 resources:
-                  description: Memory and CPU minimum requirements and limits for
+                  description: Memory and cpu minimum requirements and limits for
                     the server.
                   properties:
                     limits:
@@ -7114,30 +5945,6 @@ spec:
                     requests:
                       type: object
                   type: object
-                restartPolicy:
-                  description: 'Restart policy for all containers within the pod.
-                    One of Always, OnFailure, Never. Default to Always. More info:
-                    https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
-                  type: string
-                runtimeClassName:
-                  description: 'RuntimeClassName refers to a RuntimeClass object in
-                    the node.k8s.io group, which should be used to run this pod.  If
-                    no RuntimeClass resource matches the named class, the pod will
-                    not be run. If unset or empty, the "legacy" RuntimeClass will
-                    be used, which is an implicit class with an empty definition that
-                    uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-                    This is an alpha feature and may change in the future.'
-                  type: string
-                schedulerName:
-                  description: If specified, the pod will be dispatched by specified
-                    scheduler. If not specified, the pod will be dispatched by default
-                    scheduler.
-                  type: string
-                serviceAccountName:
-                  description: Name of the ServiceAccount to be used to run this pod.
-                    If it is not set, default ServiceAccount will be used. The ServiceAccount
-                    has to exist at the time the pod is created.
-                  type: string
                 shutdown:
                   description: Configures how the operator should shutdown the server
                     instance.
@@ -7160,22 +5967,6 @@ spec:
                         server. Not required. Defaults to 30 seconds.
                       type: number
                   type: object
-                tolerations:
-                  description: If specified, the pod's tolerations.
-                  items:
-                    properties:
-                      effect:
-                        type: string
-                      key:
-                        type: string
-                      operator:
-                        type: string
-                      tolerationSeconds:
-                        type: number
-                      value:
-                        type: string
-                    type: object
-                  type: array
                 volumeMounts:
                   description: Additional volume mounts for the server pod.
                   items:
@@ -7189,8 +5980,6 @@ spec:
                       readOnly:
                         type: boolean
                       subPath:
-                        type: string
-                      subPathExpr:
                         type: string
                     type: object
                   type: array
@@ -7286,22 +6075,6 @@ spec:
                             type: string
                           optional:
                             type: boolean
-                        type: object
-                      csi:
-                        properties:
-                          driver:
-                            type: string
-                          fsType:
-                            type: string
-                          nodePublishSecretRef:
-                            properties:
-                              name:
-                                type: string
-                            type: object
-                          readOnly:
-                            type: boolean
-                          volumeAttributes:
-                            type: object
                         type: object
                       downwardAPI:
                         properties:
@@ -7571,8 +6344,6 @@ spec:
                             type: boolean
                           registry:
                             type: string
-                          tenant:
-                            type: string
                           user:
                             type: string
                           volume:
@@ -7680,7 +6451,7 @@ spec:
               type: object
             serverService:
               description: Customization affecting ClusterIP Kubernetes services for
-                WebLogic Server instances.
+                WebLogic server instances.
               properties:
                 annotations:
                   description: The annotations to be attached to generated resources.
@@ -7711,7 +6482,7 @@ spec:
               type: string
             webLogicCredentialsSecret:
               description: The name of a pre-created Kubernetes secret, in the domain's
-                namespace, that holds the username and password needed to boot WebLogic
+                namepace, that holds the username and password needed to boot WebLogic
                 Server under the 'username' and 'password' fields.
               properties:
                 name:
@@ -7724,27 +6495,6 @@ spec:
           description: DomainStatus represents information about the status of a domain.
             Status may trail the actual state of a system.
           properties:
-            clusters:
-              description: Status of WebLogic clusters in this domain.
-              items:
-                properties:
-                  clusterName:
-                    description: WebLogic cluster name. Required.
-                    type: string
-                  maximumReplicas:
-                    description: The maximum number of cluster members. Required.
-                    minimum: 0
-                    type: number
-                  readyReplicas:
-                    description: The number of ready cluster members. Required.
-                    minimum: 0
-                    type: number
-                  replicas:
-                    description: The number of intended cluster members. Required.
-                    minimum: 0
-                    type: number
-                type: object
-              type: array
             conditions:
               description: Current service state of domain.
               items:
@@ -7768,11 +6518,11 @@ spec:
                     type: string
                   status:
                     description: Status is the status of the condition. Can be True,
-                      False, Unknown. Required.
+                      False, Unknown. Required
                     type: string
                   type:
                     description: The type of the condition. Valid types are Progressing,
-                      Available, and Failed. Required.
+                      Available, and Failed. Required
                     enum:
                     - Progressing
                     - Available
@@ -7789,13 +6539,13 @@ spec:
                 the domain is in this state.
               type: string
             replicas:
-              description: The number of running Managed Servers in the WebLogic cluster
+              description: The number of running managed servers in the WebLogic cluster
                 if there is only one cluster in the domain and where the cluster does
                 not explicitly configure its replicas in a cluster specification.
               minimum: 0
               type: number
             servers:
-              description: Status of WebLogic Servers in this domain.
+              description: Status of WebLogic servers in this domain.
               items:
                 properties:
                   clusterName:
@@ -7804,30 +6554,30 @@ spec:
                     type: string
                   health:
                     description: Current status and health of a specific WebLogic
-                      Server.
+                      server.
                     properties:
                       activationTime:
                         description: RFC 3339 date and time at which the server started.
                         format: date-time
                         type: string
                       overallHealth:
-                        description: Server health of this WebLogic Server. If the
+                        description: Server health of this WebLogic server. If the
                           value is "Not available", the operator has failed to read
                           the health. If the value is "Not available (possibly overloaded)",
                           the operator has failed to read the health of the server
-                          possibly due to the server is in overloaded state.
+                          possibly due to the server is in overloaded state
                         type: string
                       subsystems:
                         description: Status of unhealthy subsystems, if any.
                         items:
                           properties:
                             health:
-                              description: Server health of this WebLogic Server.
-                                Required.
+                              description: Server health of this WebLogic server.
+                                Required
                               type: string
                             subsystemName:
                               description: Name of subsystem providing symptom information.
-                                Required.
+                                Required
                               type: string
                             symptoms:
                               description: Symptoms provided by the reporting subsystem.
@@ -7839,13 +6589,13 @@ spec:
                     type: object
                   nodeName:
                     description: Name of node that is hosting the Pod containing this
-                      WebLogic Server.
+                      WebLogic server.
                     type: string
                   serverName:
-                    description: WebLogic Server name. Required.
+                    description: WebLogic server name. Required
                     type: string
                   state:
-                    description: Current state of this WebLogic Server. Required.
+                    description: Current state of this WebLogic server. Required
                     type: string
                 type: object
               type: array
@@ -7856,47 +6606,15 @@ spec:
               format: date-time
               type: string
           type: object
-  version: v6
+      type: object
+  version: v4
   versions:
-  - name: v6
+  - name: v4
     served: true
     storage: true
-  - name: v2
-    served: true
-    storage: false
   - name: v3
     served: true
     storage: false
-  - name: v4
+  - name: v2
     served: true
     storage: false
-  - name: v5
-    served: true
-    storage: false
-status:
-  acceptedNames:
-    kind: Domain
-    listKind: DomainList
-    plural: domains
-    shortNames:
-    - dom
-    singular: domain
-  conditions:
-  - lastTransitionTime: "2020-02-26T21:04:49Z"
-    message: no conflicts found
-    reason: NoConflicts
-    status: "True"
-    type: NamesAccepted
-  - lastTransitionTime: null
-    message: the initial names have been accepted
-    reason: InitialNamesAccepted
-    status: "True"
-    type: Established
-  - lastTransitionTime: "2020-02-26T21:04:49Z"
-    message: 'spec.validation.openAPIV3Schema.type: Required value: must not be empty
-      at the root'
-    reason: Violations
-    status: "True"
-    type: NonStructuralSchema
-  storedVersions:
-  - v6
