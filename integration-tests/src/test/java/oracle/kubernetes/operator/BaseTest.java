@@ -207,13 +207,13 @@ public class BaseTest {
     maxIterationsPod =
         Integer.parseInt(System.getenv("MAX_ITERATIONS") != null
             ? System.getenv("MAX_ITERATIONS")
-            : appProps.getProperty("maxIterationsPod", ""+maxIterationsPod));
+            : appProps.getProperty("maxIterationsPod", "" + maxIterationsPod));
 
     waitTimePod =
         Integer.parseInt(System.getenv("WAIT_TIME_SECONDS") != null
             ? System.getenv("WAIT_TIME_SECONDS")
-            : appProps.getProperty("waitTimePod", ""+waitTimePod));
-    
+            : appProps.getProperty("waitTimePod", "" + waitTimePod));
+
     if (System.getenv("RESULT_ROOT") != null) {
       resultRootCommon = System.getenv("RESULT_ROOT");
     } else {
