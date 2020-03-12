@@ -13,7 +13,7 @@ description: "Sample for supplying a WebLogic Deploy Tool (WDT) model that the o
   - [Prerequisites for JRF domains](#prerequisites-for-jrf-domains)
     - [Set Up and Initialize an RCU Database](#set-up-and-initialize-an-rcu-database)
     - [Increase introspection job timeout](#increase-introspection-job-timeout)
-    - [Set up RCU model attributes, domain resource attributes, and secrets](#set-up-rcu-model-attributes,-domain-resource-attributes,-and-secrets)
+    - [Set up RCU model attributes, domain resource attributes, and secrets](#set-up-rcu-model-attributes-domain-resource-attributes-and-secrets)
     - [Reusing or sharing RCU tables](#reusing-or-sharing-rcu-tables)
   - [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image)
   - [Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)
@@ -73,22 +73,22 @@ To reference the relevant user documentation, see:
    export WORKDIR=$(pwd)
    ```
 
-5. Deploy the operator and set up the operator to manage the namespace, `sample-domain1-ns`. Optionally, deploy a Traefik load balancer that manages the same namespace. For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), up through the [Prepare for a domain](({{< relref "/quickstart/prepare.md" >}})) step.
+5. Deploy the operator and set up the operator to manage the namespace, `sample-domain1-ns`. Optionally, deploy a Traefik load balancer that manages the same namespace. For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
    Note that:
    - Deploying the Traefik load balancer is optional, but is a prerequisite for testing the web application that's deployed to WebLogic as part of this sample.
    - You can skip the Quick Start steps for obtaining a WebLogic image because you will be creating your own Docker image.
 
 
-6. Choose the type of domain you're going to create: `WLS`, `JRF`, or `RestrictedJRF`, and set the environment variable `WDT_DOMAIN_TYPE` accordingly. The default is `WLS`.
+6. Choose the type of domain you're going to create: `WLS`, `JRF`, or `RestrictedJRF`, and set the environment variable, `WDT_DOMAIN_TYPE`, accordingly. The default is `WLS`.
 
    ```
    export WDT_DOMAIN_TYPE=<one of WLS, JRF, or RestrictedJRF>
    ```
 
-7. Setup access to a base image for this sample that will be used as the base image for creating the final image. Do one of the following:
+7. Set up access to a base image for this sample that will be used as the base image for creating the final image. Do one of the following:
 
-   - __Option 1 of 2, download an existing WebLogic image.__
+   - __Option 1, download an existing WebLogic image.__
 
      Set up access to this sample's base WebLogic image at the [Oracle Container Registry](http://container-registry.oracle.com):
 
@@ -97,24 +97,24 @@ To reference the relevant user documentation, see:
      b. Choose an image location:
        - For `JRF` and `RestrictedJRF` domains, select `Middleware`, then `fmw-infrastructure`.
        - For `WLS` domains, select `Middleware`, then `weblogic`.
-  
+
      c. Select Sign In and accept the license agreement.
 
-     d. Use your terminal to locally log in to Docker `docker login container-registry.oracle.com`.
+     d. Use your terminal to locally log in to Docker: `docker login container-registry.oracle.com`.
 
-     e. Later, when you run the sample, it will call `docker pull` for your base image based on the domain type:
+     e. Later, when you run the sample, it will call `docker pull` for your base image based on the domain type.
        - For `JRF` and `RestrictedJRF`, it will pull `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`.
        - For `WLS`, it will pull `container-registry.oracle.com/middleware/weblogic:12.2.1.3`.
 
-   - __Option 2 of 2, create your own WebLogic base image.__
+   - __Option 2, create your own WebLogic base image.__
 
-     Alternatively, you can create your own base image and override the sample's default base image name and tag by exporting the `BASE_IMAGE_NAME` and `BASE_IMAGE_TAG` environment variables prior to running the sample scripts. If you want to create your own base image, see [Preparing a Base Image](({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}})).
+     Alternatively, you can create your own base image and override the sample's default base image name and tag by exporting the `BASE_IMAGE_NAME` and `BASE_IMAGE_TAG` environment variables prior to running the sample scripts. If you want to create your own base image, see [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
 
-8. If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See the next section [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains). You can do this step before or after you create your final image. If your not using a `JRF` domain type, proceed directly to the [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) section.
+8. If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains). You can do this step before or after you create your final image. If you're not using a `JRF` domain type, proceed to [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image).
 
 #### Prerequisites for JRF domains
 
-> __IMPORTANT__: This section is only required for demonstrating a `JRF` domain type. Skip this section and proceed directly to the [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) section if your domain type is `WLS` or `RestrictedJRF`.
+> __IMPORTANT__: This section is only required for demonstrating a `JRF` domain type. Skip this section and proceed to [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) if your domain type is `WLS` or `RestrictedJRF`.
 
 A JRF domain requires an infrastructure database called an RCU database, requires initializing this database, and requires configuring your domain to access this database. All of these steps must occur before you first deploy your domain.
 
@@ -129,7 +129,7 @@ The following steps demonstrate how to set up an infrastructure database that wi
 
 
 
-##### Set Up and Initialize an RCU Database
+##### Set up and initialize an RCU database
 
 A JRF domain requires an infrastructure database and also requires initializing this database with a schema and a set of tables. The following example shows how to set up a sample RCU database and use the RCU tool to create the infrastructure schema for a JRF domain. The RCU database is set up with the following attributes:
 
@@ -153,7 +153,7 @@ TBD Move most of the following directions to the create-oracle-db-service sample
      - In the local shell, `docker login container-registry.oracle.com`.
      - In the local shell, `docker pull container-registry.oracle.com/database/enterprise:12.2.0.1-slim`.
 
-     > __NOTE__: If a local Docker login and manual pull of `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` is not sufficient (for example, if you are using a remote Kubernetes cluster), then uncomment the `imagePullSecrets` stanza in '$WORKDIR/k8s-db-slim.yaml' and create the image pull secret:
+     > __NOTE__: If a local Docker login and manual pull of `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` is not sufficient (for example, if you are using a remote Kubernetes cluster), then uncomment the `imagePullSecrets` stanza in `$WORKDIR/k8s-db-slim.yaml` and create the image pull secret:
        ```
        kubectl create secret docker-registry regsecret \
          --docker-server=container-registry.oracle.com \
@@ -162,7 +162,7 @@ TBD Move most of the following directions to the create-oracle-db-service sample
          --docker-email=your.email@some.com
        ```
 
-   - Use the sample script in `$SRCDIR/kubernetes/samples/scripts/create-oracle-db-service` to create an Oracle database running in the pod, 'oracle-db'.
+   - Use the sample script in `$SRCDIR/kubernetes/samples/scripts/create-oracle-db-service` to create an Oracle database running in the pod, `oracle-db`.
 
      > __NOTE__: If your database image access requires the `regsecret` image pull secret that you optionally created above, then pass `-s regsecret` to the `start-db-service.sh` command line.
 
@@ -178,7 +178,7 @@ TBD Move most of the following directions to the create-oracle-db-service sample
 
      > __NOTE__: This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
 
-2. Use the sample script in `SRCDIR/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with schema prefix `FMW1`.
+2. Use the sample script in `SRCDIR/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with the schema prefix `FMW1`.
 
    Note that this script assumes `Oradoc_db1` is the DBA password, `Oradoc_db1` is the schema password, and that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
 
@@ -252,7 +252,7 @@ TBD Add note about remote k8s clusters.  Make sure there's support for a secret 
 
 To deploy the sample operator domain and its required Kubernetes resources, use the sample script, `$SAMPLEDIR/run_domain.sh`, which will perform the following steps for you:
 
-  - Deletes the domain with a `DomainUID` of `domain1` in namespace `sample-domain1-ns`, if it already exists.
+  - Deletes the domain with a `DomainUID` of `domain1` in the namespace, `sample-domain1-ns`, if it already exists.
   - Creates a secret containing your WebLogic administrator user name and password.
   - Creates a secret containing your Model in Image encryption password.
   - Creates secrets containing your RCU access URL, credentials, and prefix (these are unused unless the domain type is `JRF`).
@@ -269,12 +269,12 @@ Run the script:
   $SAMPLEDIR/run_domain.sh
   ```
 
-At the end, you will see the message `Getting pod status - ctrl-c when all is running and ready to exit`. Then you should see a WebLogic administration Server and two Managed Server pods start. After all the pods are up, you can use `ctrl-c` to exit the build script.
+At the end, you will see the message `Getting pod status - ctrl-c when all is running and ready to exit`. Then you should see a WebLogic Administration Server and two Managed Server pods start. After all the pods are up, you can use `ctrl-c` to exit the build script.
 
 
 #### Optionally test the sample application
 
-1. Ensure Traefik has been installed and is servicing external port 30305 as per [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
+1. Ensure Traefik has been installed and is servicing external port 30305, as per [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
 
 2. Create a Kubernetes Ingress for the domain's WebLogic cluster in the domain's namespace by using the sample Helm chart:
 
@@ -299,7 +299,7 @@ At the end, you will see the message `Getting pod status - ctrl-c when all is ru
     --set traefik.hostname=sample-domain1.org
    ```
 
-   This creates an Kubernetes Ingress that helps route HTTP traffic from the Traefik load balancer's external port 30305 to the WebLogic domain's 'cluster-1' cluster's 8001 port. Note that the WDT config map in this sample changes the cluster's port from 9001 to 8001 (9001 is the original port configured using the WDT model defined within in the image).
+   This creates an Kubernetes Ingress that helps route HTTP traffic from the Traefik load balancer's external port 30305 to the WebLogic domain's `cluster-1` 8001 port. Note that the WDT config map in this sample changes the cluster's port from 9001 to 8001 (9001 is the original port configured using the WDT model defined within in the image).
 
 3. Send a web application request to the load balancer:
 
@@ -315,7 +315,7 @@ At the end, you will see the message `Getting pod status - ctrl-c when all is ru
 
    **Note**: If you're running on a remote Kubernetes cluster, then substitute `$(hostname).$(dnsdomainname)` with an external address suitable for contacting the cluster.
 
-4. Send a ReadyApp request to the load balancer (ReadyApp is a built-in WebLogic application):
+4. Send a ReadyApp request to the load balancer (ReadyApp is a built-in WebLogic Server application):
 
    ```
    curl -v -H 'host: sample-domain1.org' http://$(hostname).$(dnsdomainname):30305/weblogic/ready
@@ -349,7 +349,7 @@ At the end, you will see the message `Getting pod status - ctrl-c when all is ru
    ```
    $SRCDIR/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
    ```
-   This deletes the domain and any related resources that are labeled with the domain UID `sample-domain1`. It leaves the namespace intact, leaves the operator running, leaves the load balancer running (if installed), and leaves the database running (if installed).
+   This deletes the domain and any related resources that are labeled with the domain UID `sample-domain1`. It leaves the namespace intact, the operator running, the load balancer running (if installed), and the database running (if installed).
 
 2. If you set up the Traefik load balancer:
 
@@ -375,4 +375,3 @@ At the end, you will see the message `Getting pod status - ctrl-c when all is ru
    ```
    kubectl delete namepsace sample-domain1-ns
    ```
-
