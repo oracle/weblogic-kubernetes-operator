@@ -48,6 +48,9 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
 
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' MAIN START"
+
+
 # Local createFolder method which does an 'exit 1' instead of exitOrLoop for
 # immediate failure during introspection
 function createFolder {
@@ -102,6 +105,8 @@ if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
 fi
 
 
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN START"
+
 source ${SCRIPTPATH}/modelInImage.sh
 
 if [ $? -ne 0 ]; then
@@ -131,6 +136,8 @@ else
     created_domain=1
 fi
 
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN END" 
+
 
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
 
@@ -149,16 +156,29 @@ checkWebLogicVersion || exit 1
 # start node manager
 # run instrospector wlst script
 if [ ${created_domain} -ne 0 ]; then
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM START" 
+
     # start node manager -why ??
     trace "Starting node manager"
-    ${SCRIPTPATH}/startNodeManager.sh || exit 1
+    ${SCRIPTPATH}/startNodeManager.sh || exit 1A
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM END" 
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 START"
 
     # put domain secret's md5 cksum in file '/tmp/DomainSecret.md5'
     # the introspector wlst script and WL server pods will use this value
     generateDomainSecretMD5File '/tmp/DomainSecret.md5' || exit 1
 
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 END"
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT START"
+
     trace "Running introspector WLST script ${SCRIPTPATH}/introspectDomain.py"
     ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT END"
 fi
 
 if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then

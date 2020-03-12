@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -162,7 +163,7 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtDomainType();
   }
 
-  protected String getDomainSourceType() {
+  protected String getDomainHomeSourceType() {
     return getDomain().getDomainHomeSourceType();
   }
 
@@ -199,6 +200,14 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   String getWdtConfigMap() {
     return getDomain().getWdtConfigMap();
+  }
+
+  String getWdtEncryptionSecret() {
+    return getDomain().getWdtEncryptionSecret();
+  }
+
+  String getRuntimeEncryptionSecret() {
+    return getDomain().getRuntimeEncryptionSecret();
   }
 
 
@@ -281,11 +290,6 @@ public abstract class JobStepContext extends BasePodStepContext {
       podSpec.addVolumesItem(new V1Volume().name(WDT_ENCRYPT_PASSPHRASE_VOLUME)
           .secret(getWdtEncryptPassPhraseVolume()));
     }
-    if (getModelInImagePassPhraseVolume() != null) {
-      podSpec.addVolumesItem(new V1Volume().name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
-          .secret(getModelInImagePassPhraseVolume()));
-    }
-
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
@@ -307,13 +311,18 @@ public abstract class JobStepContext extends BasePodStepContext {
                   .configMap(getOverridesVolumeSource(getConfigOverrides())));
     }
     // For WDT
-    if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+      if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+        podSpec.addVolumesItem(
+            new V1Volume()
+                .name(getWdtConfigMap() + "-volume")
+                .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
+      }
       podSpec.addVolumesItem(
           new V1Volume()
-              .name(getWdtConfigMap() + "-volume")
-              .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
+              .name(getDomainUid() + RUNTIME_ENCRYPTION_SECRET_VOLUME_SUFFIX)
+              .secret(getRuntimeEncryptionSecretVolume()));
     }
-    
     return podSpec;
   }
 
@@ -328,15 +337,7 @@ public abstract class JobStepContext extends BasePodStepContext {
     if (getOpssWalletFileSecretVolume() != null) {
       container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_WALLETFILE_VOLUME, OPSS_WALLETFILE_MOUNT_PATH));
     }
-    if (getWdtEncryptPassPhraseVolume() != null) {
-      container.addVolumeMountsItem(readOnlyVolumeMount(WDT_ENCRYPT_PASSPHRASE_VOLUME, WDT_ENCRYPT_KEY_MOUNT_PATH));
-    }
-
-    if (getModelInImagePassPhraseVolume() != null) {
-      container.addVolumeMountsItem(readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
-          RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
-    }
-
+    
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       container.addVolumeMountsItem(additionalVolumeMount);
     }
@@ -353,11 +354,19 @@ public abstract class JobStepContext extends BasePodStepContext {
                   secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
 
-    if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+      if (getWdtEncryptPassPhraseVolume() != null) {
+        container.addVolumeMountsItem(readOnlyVolumeMount(WDT_ENCRYPT_PASSPHRASE_VOLUME, WDT_ENCRYPT_KEY_MOUNT_PATH));
+      }
+      if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+        container.addVolumeMountsItem(
+            readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
+      }
       container.addVolumeMountsItem(
-          readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
-    }
+          readOnlyVolumeMount(getDomainUid() + RUNTIME_ENCRYPTION_SECRET_VOLUME_SUFFIX, 
+              RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
 
+    }
 
     return container;
   }
@@ -383,6 +392,12 @@ public abstract class JobStepContext extends BasePodStepContext {
   private V1SecretVolumeSource getSecretsVolume() {
     return new V1SecretVolumeSource()
           .secretName(getWebLogicCredentialsSecretName())
+          .defaultMode(420);
+  }
+
+  private V1SecretVolumeSource getRuntimeEncryptionSecretVolume() {
+    return new V1SecretVolumeSource()
+          .secretName(getRuntimeEncryptionSecret())
           .defaultMode(420);
   }
 
@@ -412,17 +427,6 @@ public abstract class JobStepContext extends BasePodStepContext {
     if (getWdtEncryptSecretName() != null) {
       V1SecretVolumeSource result = new V1SecretVolumeSource()
           .secretName(getWdtEncryptSecretName())
-          .defaultMode(420);
-      result.setOptional(true);
-      return result;
-    }
-    return null;
-  }
-
-  private V1SecretVolumeSource getModelInImagePassPhraseVolume() {
-    if (getRuntimeEncryptionSecretName() != null) {
-      V1SecretVolumeSource result = new V1SecretVolumeSource()
-          .secretName(getRuntimeEncryptionSecretName())
           .defaultMode(420);
       result.setOptional(true);
       return result;

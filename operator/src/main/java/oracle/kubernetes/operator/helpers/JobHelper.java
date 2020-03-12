@@ -293,7 +293,7 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_ENCRYPTION_PASSPHRASE_NAME, getWdtEncryptSecretName());
       addEnvVar(vars, IntrospectorJobEnvVars.RUNTIME_ENCRYPTION_SECRET_NAME, getRuntimeEncryptionSecretName());
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType());
-      addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainSourceType());
+      addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType());
 
       String dataHome = getDataHome();
       if (dataHome != null && !dataHome.isEmpty()) {

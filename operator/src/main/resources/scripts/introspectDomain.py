@@ -95,7 +95,6 @@ tmp_scriptdir=os.path.dirname(tmp_info[0])
 sys.path.append(tmp_scriptdir)
 
 from utils import *
-from WLSTEncryptionUtil import encrypt_model
 
 class OfflineWlstEnv(object):
 
