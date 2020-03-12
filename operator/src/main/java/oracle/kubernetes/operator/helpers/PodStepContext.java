@@ -28,9 +28,11 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -57,6 +59,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_VOLUME_SUFFIX;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -67,6 +70,9 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
 
   private static final String READINESS_PATH = "/weblogic/ready";
+  static final String RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH =
+      "/weblogic-operator/model-runtime-secret";
+
   final WlsServerConfig scan;
   private final DomainPresenceInfo info;
   private final WlsDomainConfig domainTopology;
@@ -132,6 +138,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     return info.getDomain().getMetadata().getName();
   }
 
+  private String getDomainHomeSourceType() {
+    return getDomain().getDomainHomeSourceType();
+  }
+
   String getPodName() {
     return LegalNames.toPodName(getDomainUid(), getServerName());
   }
@@ -188,6 +198,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private String isIncludeServerOutInPodLog() {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
+  }
+
+  private String getRuntimeEncryptionSecret() {
+    return getDomain().getRuntimeEncryptionSecret();
   }
 
   private List<V1ContainerPort> getContainerPorts() {
@@ -538,7 +552,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
     }
-
     return podSpec;
   }
 
@@ -552,6 +565,11 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid);
     volumes.addAll(getServerSpec().getAdditionalVolumes());
+    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+      volumes.add(createRuntimeEncryptionSecretVolume());
+    }
+        + " volumes = " + volumes);
+
     return volumes;
   }
 
@@ -568,8 +586,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1VolumeMount additionalVolumeMount : getVolumeMounts()) {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
-
     return v1Container;
+  }
+
+  private V1VolumeMount createRuntimeEncryptionSecretVolumeMount() {
+    return new V1VolumeMount().name(getRuntimeEncryptionSecretVolumeName(getDomainUid()))
+        .mountPath(RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH).readOnly(true);
   }
 
   protected String getContainerName() {
@@ -587,7 +609,24 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid());
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
+    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+      mounts.add(createRuntimeEncryptionSecretVolumeMount());
+    }
     return mounts;
+  }
+
+  private V1Volume createRuntimeEncryptionSecretVolume() {
+    return new V1Volume()
+        .name(getRuntimeEncryptionSecretVolumeName(getDomainUid()))
+        .secret(getRuntimeEncryptionSecretVolumeSource(getRuntimeEncryptionSecret()));
+  }
+
+  private V1SecretVolumeSource getRuntimeEncryptionSecretVolumeSource(String name) {
+    return new V1SecretVolumeSource().secretName(name).defaultMode(420);
+  }
+
+  private static String getRuntimeEncryptionSecretVolumeName(String domainUid) {
+    return domainUid + RUNTIME_ENCRYPTION_SECRET_VOLUME_SUFFIX;
   }
 
   /**

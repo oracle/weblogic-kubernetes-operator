@@ -13,6 +13,7 @@ public interface StepContextConstants {
   static final String DEBUG_CM_VOLUME = "weblogic-domain-debug-cm-volume";
   static final String SIT_CONFIG_MAP_VOLUME_SUFFIX = "-weblogic-domain-introspect-cm-volume";
   static final String WDT_CONFIG_MAP_VOLUME_SUFFIX = "-weblogic-domain-introspect-wdt-cm-volume";
+  static final String RUNTIME_ENCRYPTION_SECRET_VOLUME_SUFFIX = "-weblogic-domain-runtime-encryption-volume";
   static final String STORAGE_VOLUME = "weblogic-domain-storage-volume";
   static final String SECRETS_MOUNT_PATH = "/weblogic-operator/secrets";
   static final String OPSS_KEY_MOUNT_PATH = "/weblogic-operator/opss-walletkey-secret";
@@ -24,6 +25,7 @@ public interface StepContextConstants {
   static final String OPSS_WALLETFILE_MOUNT_PATH = "/weblogic-operator/opss-walletfile-secret";
   static final String DEBUG_CM_MOUNTS_PATH = "/weblogic-operator/debug";
   static final String NODEMGR_HOME = "/u01/nodemanager";
+  static final String RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH = "/weblogic-operator/model-runtime-secret";
   static final int FAILURE_THRESHOLD = 1;
 
   @SuppressWarnings("OctalInteger")

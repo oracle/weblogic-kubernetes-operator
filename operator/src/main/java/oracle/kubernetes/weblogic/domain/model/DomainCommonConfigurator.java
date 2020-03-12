@@ -4,7 +4,6 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Arrays;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -298,19 +297,37 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withConfigurationModelConfigMap(String configmap) {
+  public DomainConfigurator withModelConfigMap(String configmap) {
     getOrCreateModel().withConfigMap(configmap);
     return this;
   }
 
+  @Override
+  public DomainConfigurator withWdtEncryptionSecret(String secret) {
+    getOrCreateModel().withWdtEncryptionSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withRuntimeEncryptionSecret(String secret) {
+    getOrCreateModel().withRuntimeEncryptionSecret(secret);
+    return this;
+  }
+
   private Configuration getOrCreateConfiguration() {
-    return Optional.ofNullable(getDomainSpec().getConfiguration())
-        .orElse(getDomainSpec().withConfiguration(new Configuration()).getConfiguration());
+    DomainSpec spec = getDomainSpec();
+    if (spec.getConfiguration() == null) {
+      spec.withConfiguration(new Configuration());
+    } 
+    return spec.getConfiguration();
   }
 
   private Model getOrCreateModel() {
-    return Optional.ofNullable(getOrCreateConfiguration().getModel())
-        .orElse(getDomainSpec().getConfiguration().withModel(new Model()).getModel());
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getModel() == null) {
+      configuration.withModel(new Model());
+    }
+    return configuration.getModel();   
   }
 
   @Override
