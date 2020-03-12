@@ -147,7 +147,7 @@ public class BaseTest {
       try {
         TestUtils.deleteDomainHomeDirOke();
       } catch (Exception ex) {
-      throw new RuntimeException(
+        throw new RuntimeException(
               "FAILURE: command to clean fss pv directory failed");
       }
     }
