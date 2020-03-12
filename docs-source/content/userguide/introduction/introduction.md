@@ -16,7 +16,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Operator prerequisites
 
-* Kubernetes 1.13.5+, 1.14.8+, and 1.15.7+  (check with `kubectl version`).  Not 1.16 or 1.17, see note below.
+* Kubernetes 1.13.5+, 1.14.8+, and 1.15.7+  (check with `kubectl version`).  Not supported on Kubernetes 1.16 or 1.17, see note below.
   See note below for OpenShift.
 * Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`) *or* OpenShift SDN on OpenShift 4.3 systems.
 * Docker 18.9.1 or 19.03.1 (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
@@ -26,8 +26,8 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
    has all the necessary patches applied.
    * Check the WLS version with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`.
    * Check the WLS patches with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`.
-* You must have the `cluster-admin` role to install the operator.  Note that the operator does 
-  not need `cluster-admin` at runtime, just for the installation.
+* You must have the `cluster-admin` role to install the operator.  The operator does 
+  not need the `cluster-admin` role at runtime.
 * We do not currently support running WebLogic in non-Linux containers.
 
 ### Important note about Kubernetes 1.16.0+
