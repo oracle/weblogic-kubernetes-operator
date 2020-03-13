@@ -174,8 +174,9 @@ if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
   if [ -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
     MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
   else
-    # TODO: remove when ready, probably replace by error and exit
-    MII_PASSPHRASE=weblogic
+    trace SEVERE "Domain Source Type is 'FromModel' which requires specifying a runtimeEncryptionSecret " \
+    "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
+    exit 1
   fi
   encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
 
