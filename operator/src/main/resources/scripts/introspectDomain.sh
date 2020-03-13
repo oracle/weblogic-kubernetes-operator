@@ -161,7 +161,7 @@ if [ ${created_domain} -ne 0 ]; then
 
     # start node manager -why ??
     trace "Starting node manager"
-    ${SCRIPTPATH}/startNodeManager.sh || exit 1A
+    ${SCRIPTPATH}/startNodeManager.sh || exit 1
 
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM END" 
 
