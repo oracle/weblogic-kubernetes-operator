@@ -2255,7 +2255,7 @@ public class Domain {
         .append(scriptName)
         .append(" ");
     if (BaseTest.OKE_CLUSTER) {
-      cmdKubectlSh.append(nodeHost);
+      cmdKubectlSh.append(BaseTest.LB_PUBLIC_IP);
     } else {
       cmdKubectlSh.append(nodeHost)
                .append(":")
