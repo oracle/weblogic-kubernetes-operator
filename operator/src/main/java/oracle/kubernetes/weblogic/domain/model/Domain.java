@@ -374,15 +374,13 @@ public class Domain {
   }
 
   /**
-   * Reference to model in image secret.
+   * Reference to secret runtime encryption key passphrase.
    *
-   * @return model in image secret
+   * @return runtime encryption secret
    */
   public String getRuntimeEncryptionSecret() {
     return spec.getRuntimeEncryptionSecret();
   }
-
-
 
   /**
    * Returns the domain unique identifier.
@@ -445,6 +443,10 @@ public class Domain {
 
   public int getIstioReadinessPort() {
     return spec.getIstioReadinessPort();
+  }
+
+  public boolean isDomainSourceFromModel(String type) {
+    return DomainSourceType.FromModel.toString().equals(type);
   }
 
   /**
@@ -572,6 +574,7 @@ public class Domain {
       addMissingSecrets(kubernetesResources);
       addIllegalSitConfigForMII();
       verifyNoAlternateSecretNamespaceSpecified();
+      addMissingModelConfigMap(kubernetesResources);
 
       return failures;
     }
@@ -650,7 +653,7 @@ public class Domain {
     }
 
     private void addIllegalSitConfigForMII() {
-      if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType()) 
+      if (isDomainSourceFromModel(getDomainHomeSourceType())
           && getConfigOverrides() != null) {
         failures.add(DomainValidationMessages.illegalSitConfigForMII(getConfigOverrides()));
       }
@@ -708,6 +711,14 @@ public class Domain {
       for (String secretName : getConfigOverrideSecrets()) {
         verifySecretExists(resourceLookup, secretName, SecretType.ConfigOverride);
       }
+      if (isDomainSourceFromModel(getDomainHomeSourceType())) {
+        verifySecretExists(resourceLookup, getWdtEncryptionSecret(), SecretType.WdtEncryption);
+        if (getRuntimeEncryptionSecret() == null) {
+          failures.add(DomainValidationMessages.missingRequiredSecret());
+        } else {
+          verifySecretExists(resourceLookup, getRuntimeEncryptionSecret(), SecretType.RuntimeEncryption);
+        }
+      }
     }
 
     private List<V1LocalObjectReference> getImagePullSecrets() {
@@ -716,7 +727,7 @@ public class Domain {
 
     @SuppressWarnings("SameParameterValue")
     private void verifySecretExists(KubernetesResourceLookup resources, String secretName, SecretType type) {
-      if (!resources.isSecretExists(secretName, getNamespace())) {
+      if (secretName != null && !resources.isSecretExists(secretName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchSecret(secretName, getNamespace(), type));
       }
     }
@@ -731,6 +742,18 @@ public class Domain {
       return Optional.ofNullable(spec.getWebLogicCredentialsSecret())
           .map(V1SecretReference::getNamespace)
           .orElse(getNamespace());
+    }
+
+    private void addMissingModelConfigMap(KubernetesResourceLookup resourceLookup) {
+      verifyModelConfigMapExists(resourceLookup, getWdtConfigMap());
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void verifyModelConfigMapExists(KubernetesResourceLookup resources, String modelConfigMapName) {
+      if (isDomainSourceFromModel(getDomainHomeSourceType())
+          && modelConfigMapName != null && !resources.isConfigMapExists(modelConfigMapName, getNamespace())) {
+        failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName, getNamespace()));
+      }
     }
 
   }

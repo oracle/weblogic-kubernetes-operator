@@ -46,7 +46,7 @@ spec:
                   properties:
                     runtimeEncryptionSecret:
                       type: string
-                      description: Model encryption secret.
+                      description: Runtime encryption key passphrase secret. Required.
                     domainType:
                       type: string
                       description: 'WDT domain type: Legal values: WLS, RestrictedJRF,

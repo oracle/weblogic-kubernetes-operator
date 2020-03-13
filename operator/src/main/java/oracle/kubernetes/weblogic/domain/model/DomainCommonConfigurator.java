@@ -296,11 +296,38 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withModelConfigMap(String configmap) {
+    getOrCreateModel().withConfigMap(configmap);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withWdtEncryptionSecret(String secret) {
+    getOrCreateModel().withWdtEncryptionSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withRuntimeEncryptionSecret(String secret) {
+    getOrCreateModel().withRuntimeEncryptionSecret(secret);
+    return this;
+  }
+
   private Configuration getOrCreateConfiguration() {
-    if (getDomainSpec().getConfiguration() == null) {
-      getDomainSpec().setConfiguration(new Configuration());
+    DomainSpec spec = getDomainSpec();
+    if (spec.getConfiguration() == null) {
+      spec.withConfiguration(new Configuration());
+    } 
+    return spec.getConfiguration();
+  }
+
+  private Model getOrCreateModel() {
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getModel() == null) {
+      configuration.withModel(new Model());
     }
-    return getDomainSpec().getConfiguration();
+    return configuration.getModel();   
   }
 
   @Override
