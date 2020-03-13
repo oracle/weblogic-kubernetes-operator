@@ -9,16 +9,26 @@ monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/en
 kubectl delete -f ${resourceExporterDir}/server.yaml --ignore-not-found
 kubectl delete ns webhook
 
-#delete grafana
-helm delete --purge grafana
+HELM_VERSION=$(helm version --short --client)
+echo "Detected Helm Version [${HELM_VERSION}]"
+#delete grafana, prometheus
+if [[ "$HELM_VERSION" =~ "v2" ]]; then
+   helm delete --purge grafana
+   helm delete --purge prometheus
+elif [[ "$HELM_VERSION" =~ "v3" ]]; then
+   helm uninstall grafana  --namespace monitoring
+   helm uninstall prometheus  --namespace monitoring
+else
+    echo "Detected Unsuppoted Helm Version [${HELM_VERSION}]"
+    exit 1
+fi
+
 kubectl -n monitoring delete secret grafana-secret --ignore-not-found
 kubectl delete -f ${monitoringExporterEndToEndDir}/grafana/persistence.yaml --ignore-not-found
 
 export appname=grafana
 for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
 
-#delete prometheus
-helm delete --purge prometheus
 kubectl delete -f ${monitoringExporterEndToEndDir}/prometheus/persistence.yaml --ignore-not-found
 kubectl delete -f ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.yaml --ignore-not-found
 

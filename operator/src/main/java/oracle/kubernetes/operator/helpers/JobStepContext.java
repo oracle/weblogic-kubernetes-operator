@@ -111,7 +111,7 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getOpssWalletFileSecret();
   }
 
-  String getWdtEncryptSecretName() {
+  String getWdtEncryptionSecretName() {
     return getDomain().getWdtEncryptionSecret();
   }
 
@@ -201,15 +201,6 @@ public abstract class JobStepContext extends BasePodStepContext {
   String getWdtConfigMap() {
     return getDomain().getWdtConfigMap();
   }
-
-  String getWdtEncryptionSecret() {
-    return getDomain().getWdtEncryptionSecret();
-  }
-
-  String getRuntimeEncryptionSecret() {
-    return getDomain().getRuntimeEncryptionSecret();
-  }
-
 
   private ResponseStep<V1Job> createResponse(Step next) {
     return new CreateResponseStep(next);
@@ -314,9 +305,9 @@ public abstract class JobStepContext extends BasePodStepContext {
                 .name(getWdtConfigMap() + "-volume")
                 .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
       }
-      if (getWdtEncryptPassPhraseVolume() != null) {
+      if (getWdtEncryptionPassPhraseVolume() != null) {
         podSpec.addVolumesItem(new V1Volume().name(WDT_ENCRYPT_PASSPHRASE_VOLUME)
-            .secret(getWdtEncryptPassPhraseVolume()));
+            .secret(getWdtEncryptionPassPhraseVolume()));
       }
       podSpec.addVolumesItem(
           new V1Volume()
@@ -355,7 +346,7 @@ public abstract class JobStepContext extends BasePodStepContext {
     }
 
     if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
-      if (getWdtEncryptPassPhraseVolume() != null) {
+      if (getWdtEncryptionPassPhraseVolume() != null) {
         container.addVolumeMountsItem(readOnlyVolumeMount(WDT_ENCRYPT_PASSPHRASE_VOLUME, WDT_ENCRYPT_KEY_MOUNT_PATH));
       }
       if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
@@ -397,7 +388,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   private V1SecretVolumeSource getRuntimeEncryptionSecretVolume() {
     return new V1SecretVolumeSource()
-          .secretName(getRuntimeEncryptionSecret())
+          .secretName(getRuntimeEncryptionSecretName())
           .defaultMode(420);
   }
 
@@ -423,10 +414,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     return null;
   }
 
-  private V1SecretVolumeSource getWdtEncryptPassPhraseVolume() {
-    if (getWdtEncryptSecretName() != null) {
+  private V1SecretVolumeSource getWdtEncryptionPassPhraseVolume() {
+    if (getWdtEncryptionSecretName() != null) {
       V1SecretVolumeSource result = new V1SecretVolumeSource()
-          .secretName(getWdtEncryptSecretName())
+          .secretName(getWdtEncryptionSecretName())
           .defaultMode(420);
       result.setOptional(true);
       return result;
@@ -439,7 +430,7 @@ public abstract class JobStepContext extends BasePodStepContext {
           .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
           .defaultMode(ALL_READ_AND_EXECUTE);
   }
-  
+
   private V1SecretVolumeSource getOverrideSecretVolumeSource(String name) {
     return new V1SecretVolumeSource().secretName(name).defaultMode(420);
   }

@@ -77,7 +77,6 @@ $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-rcu-access \
 #  weblogic.domainUID=domain1
 
 echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
-
 $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-opss-wallet-password-secret \
   -l walletPassword=welcome1
 

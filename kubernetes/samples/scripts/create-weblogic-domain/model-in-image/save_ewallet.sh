@@ -7,11 +7,6 @@
 #
 #
 
-# TBD 
-#   - refactor - and move wallet to a dedicated secret
-#   - advance script to have both save and restore options (allow specifying both)
-#   - for save option,
-
 set -e
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 echo "@@ Info: Running '$(basename "$0")'."

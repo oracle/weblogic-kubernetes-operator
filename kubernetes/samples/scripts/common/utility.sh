@@ -302,6 +302,18 @@ function createFiles {
     istioPrefix="${disabledPrefix}"
   fi
 
+  if [ "${domainHomeSourceType}" == "FromModel" ]; then
+    miiPrefix="${enabledPrefix}"
+  else
+    miiPrefix="${disabledPrefix}"
+  fi
+
+  if [ -z "${miiConfigMap}" ]; then
+    miiConfigMapPrefix="${disabledPrefix}"
+  else
+    miiConfigMapPrefix="${enabledPrefix}"
+  fi
+
   # For some parameters, use the default value if not defined.
   if [ -z "${domainPVMountPath}" ]; then
     domainPVMountPath="/shared"
@@ -351,6 +363,7 @@ function createFiles {
     sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
     sed -i -e "s:%EXPOSE_T3_CHANNEL%:${exposeAdminT3Channel}:g" ${domainPropertiesOutput}
     sed -i -e "s:%FMW_DOMAIN_TYPE%:${fmwDomainType}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${domainPropertiesOutput}
 
     if [ -z "${image}" ]; then
       # calculate the internal name to tag the generated image
@@ -439,7 +452,14 @@ function createFiles {
     sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${deleteJobOutput}
   fi
 
-  if [ "${domainHomeInImage}" == "true" ]; then
+  if [ "${domainHomeSourceType}" == "FromModel" ]; then
+    # leave domainHomeSourceType to FromModel
+    if [ "${logHomeOnPV}" == "true" ]; then
+      logHomeOnPVPrefix="${enabledPrefix}"
+    else
+      logHomeOnPVPrefix="${disabledPrefix}"
+    fi
+  elif [ "${domainHomeInImage}" == "true" ]; then
     domainHomeSourceType="Image"
     if [ "${logHomeOnPV}" == "true" ]; then
       logHomeOnPVPrefix="${enabledPrefix}"
@@ -482,6 +502,10 @@ function createFiles {
   sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
+  sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%MII_CONFIG_MAP%:${miiConfigMap}:g" ${dcrOutput}
+  sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${dcrOutput}
 
   buildServerPodResources
   if [ -z "${serverPodResources}" ]; then

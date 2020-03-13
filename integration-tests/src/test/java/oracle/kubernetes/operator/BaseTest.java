@@ -50,6 +50,8 @@ public class BaseTest {
   public static String GRAFANA_CHART_VERSION;
   public static String MONITORING_EXPORTER_VERSION;
   public static String MONITORING_EXPORTER_BRANCH;
+  public static String HELM_VERSION;
+  public static String VOYAGER_VERSION;
   public static boolean INGRESSPERDOMAIN = true;
   protected static String appLocationInPod = "/u01/oracle/apps";
   private static String resultRootCommon = "";
@@ -81,6 +83,39 @@ public class BaseTest {
   static {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
+
+    VOYAGER_VERSION = System.getenv("VOYAGER_VERSION");
+    if (VOYAGER_VERSION == null) {
+      VOYAGER_VERSION = "10.0.0";
+    }
+
+    String cmd = "helm version --short --client";
+    ExecResult result = null;
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmd);
+    try {
+      result = ExecCommand.exec(cmd);
+    } catch (Exception ex) {
+      throw new RuntimeException(
+            "FAILURE: command to get Helm Version "
+                + cmd
+                + " failed, returned "
+                + result.stdout()
+                + result.stderr());
+    }
+    LoggerHelper.getLocal().log(Level.INFO, result.stdout());
+    System.out.println("Detected Helm Client Version[" + result.stdout() + "]");
+    if (result.stdout().contains("v2")) {
+      HELM_VERSION = "V2";
+    } else if (result.stdout().contains("v3")) {
+      HELM_VERSION = "V3";
+    } else {
+      HELM_VERSION = "UNKNOWN";
+      throw new RuntimeException(
+            "FAILURE: Unsupported Helm Version ["
+                + result.stdout()
+                + "]");
+    }
+    System.out.println("HELM_VERSION set to [" + HELM_VERSION  + "]");
 
     // if QUICKTEST is false, run all the tests including QUICKTEST
     if (!QUICKTEST) {
@@ -949,4 +984,28 @@ public class BaseTest {
     return domainMap;
   }
 
+  /**
+   * Creates a map with customized domain input attributes using suffixCount and prefix
+   * to make the namespaces and ports unique for model in image
+   *
+   * @param suffixCount unique numeric value
+   * @param prefix      prefix for the artifact names
+   * @return map with domain input attributes
+   */
+  public Map<String, Object> createModelInImageMap(
+      int suffixCount, String prefix) {
+    Map<String, Object> domainMap = createDomainMap(suffixCount, prefix);
+    domainMap.put("domainHomeSourceType", "FromModel");
+    domainMap.put("domainHomeImageBase",
+        "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
+    domainMap.put("logHomeOnPV", "true");
+    //domainMap.put("wdtDomainType", "WLS");
+
+    if (prefix != null && !prefix.trim().equals("")) {
+      domainMap.put("image", prefix.toLowerCase() + "-modelinimage-" + suffixCount + ":latest");
+    } else {
+      domainMap.put("image", "modelinimage-" + suffixCount + ":latest");
+    }
+    return domainMap;
+  }
 }

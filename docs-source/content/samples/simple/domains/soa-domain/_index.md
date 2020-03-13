@@ -1,7 +1,7 @@
 ---
 title: "SOA domain"
 date: 2019-04-18T07:32:31-05:00
-weight: 3
+weight: 6
 description: "Sample for creating a SOA Suite domain home on an existing PV or
 PVC, and the domain resource YAML file for deploying the generated SOA domain."
 ---

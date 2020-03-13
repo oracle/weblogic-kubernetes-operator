@@ -161,7 +161,11 @@ if [ ${created_domain} -ne 0 ]; then
 
     # start node manager -why ??
     trace "Starting node manager"
-    ${SCRIPTPATH}/startNodeManager.sh || exit 1
+    ${SCRIPTPATH}/startNodeManager.sh || exit 1A
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM END" 
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 START"
 
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM END" 
 
@@ -179,10 +183,6 @@ if [ ${created_domain} -ne 0 ]; then
     ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
 
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT END"
-fi
-
-if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
-  cleanup_mii
 fi
 trace "Domain introspection complete"
 

@@ -1,7 +1,7 @@
 ---
 title: "Delete domain resources"
 date: 2019-02-23T17:32:31-05:00
-weight: 6
+weight: 7
 description: "Delete the domain resources created while executing the samples."
 ---
 

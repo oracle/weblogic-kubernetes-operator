@@ -755,7 +755,6 @@ public class Domain {
         failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName, getNamespace()));
       }
     }
-
   }
 
 }
