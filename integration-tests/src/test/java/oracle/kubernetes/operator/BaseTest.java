@@ -703,11 +703,9 @@ public class BaseTest {
 
     LoggerHelper.getLocal().log(Level.INFO,
         "Scale domain " + domain.getDomainUid() + " Up to " + replicas + " managed servers");
-    if (BaseTest.OKE_CLUSTER) {
-      operator.scaleOke(domainUid, domainMap.get("clusterName").toString(), replicas);
-    } else {
-      operator.scale(domainUid, domainMap.get("clusterName").toString(), replicas);
-    }
+
+    operator.scale(domainUid, domainMap.get("clusterName").toString(), replicas);
+
 
     LoggerHelper.getLocal().log(Level.INFO, "Checking if managed pod(" + podName + ") is Running");
     TestUtils.checkPodCreated(podName, domainNS);

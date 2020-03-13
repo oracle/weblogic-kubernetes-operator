@@ -245,24 +245,28 @@ public class Operator {
    * @throws Exception exception
    */
   public void scale(String domainUid, String clusterName, int numOfMS) throws Exception {
-    String myJsonObjStr = "{\"managedServerCount\": " + numOfMS + "}";
+    if (BaseTest.OKE_CLUSTER) {
+      scaleOke(domainUid, clusterName, numOfMS);
+    } else {
+      String myJsonObjStr = "{\"managedServerCount\": " + numOfMS + "}";
 
-    // Operator REST external API URL to scale
-    StringBuffer myOpRestApiUrl =
-        new StringBuffer("https://")
-            .append(TestUtils.getHostName())
-            .append(":")
-            .append(externalRestHttpsPort)
-            .append("/operator/v1/domains/")
-            .append(domainUid)
-            .append("/clusters/")
-            .append(clusterName)
-            .append("/scale");
+      // Operator REST external API URL to scale
+      StringBuffer myOpRestApiUrl =
+              new StringBuffer("https://")
+                      .append(TestUtils.getHostName())
+                      .append(":")
+                      .append(externalRestHttpsPort)
+                      .append("/operator/v1/domains/")
+                      .append(domainUid)
+                      .append("/clusters/")
+                      .append(clusterName)
+                      .append("/scale");
 
-    TestUtils.makeOperatorPostRestCall(this, myOpRestApiUrl.toString(), myJsonObjStr);
-    // give sometime to complete
-    LoggerHelper.getLocal().log(Level.INFO, "Wait 30 sec for scaling to complete...");
-    Thread.sleep(30 * 1000);
+      TestUtils.makeOperatorPostRestCall(this, myOpRestApiUrl.toString(), myJsonObjStr);
+      // give sometime to complete
+      LoggerHelper.getLocal().log(Level.INFO, "Wait 30 sec for scaling to complete...");
+      Thread.sleep(30 * 1000);
+    }
   }
 
   /**

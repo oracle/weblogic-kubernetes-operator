@@ -2253,11 +2253,15 @@ public class Domain {
         .append(appLocationInPod)
         .append("/")
         .append(scriptName)
-        .append(" ")
-        .append(nodeHost)
-        .append(" ")
-        .append(nodePort)
-        .append(" ")
+        .append(" ");
+     if (BaseTest.OKE_CLUSTER) {
+       cmdKubectlSh.append(nodeHost);
+     } else {
+       cmdKubectlSh.append(nodeHost)
+               .append(":")
+               .append(nodePort);
+     }
+    cmdKubectlSh.append(" ")
         .append(username)
         .append(" ")
         .append(password)
