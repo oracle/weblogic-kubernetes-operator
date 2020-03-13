@@ -314,6 +314,24 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withOpssWalletPasswordSecret(String secret) {
+    getOrCreateOpss().withWalletPasswordSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withOpssWalletFileSecret(String secret) {
+    getOrCreateOpss().withWalletFileSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withDomainType(String type) {
+    getOrCreateModel().withDomainType(type);
+    return this;
+  }
+
   private Configuration getOrCreateConfiguration() {
     DomainSpec spec = getDomainSpec();
     if (spec.getConfiguration() == null) {
@@ -328,6 +346,14 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       configuration.withModel(new Model());
     }
     return configuration.getModel();   
+  }
+
+  private Opss getOrCreateOpss() {
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getOpss() == null) {
+      configuration.withOpss(new Opss());
+    }
+    return configuration.getOpss();   
   }
 
   @Override

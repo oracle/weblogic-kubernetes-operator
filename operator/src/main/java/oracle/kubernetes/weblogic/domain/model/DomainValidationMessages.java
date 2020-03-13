@@ -91,8 +91,12 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.SECRET_NOT_FOUND, secretName, namespace, type);
   }
 
-  static String missingRequiredSecret() {
-    return getMessage(MessageKeys.SECRET_NOT_SPECIFIED);
+  static String missingRequiredSecret(String secret) {
+    return getMessage(MessageKeys.SECRET_NOT_SPECIFIED, secret);
+  }
+
+  static String missingRequiredOpssSecret(String secret) {
+    return getMessage(MessageKeys.OPSS_SECRET_NOT_SPECIFIED, secret);
   }
 
   static String illegalSecretNamespace(String namespace) {
