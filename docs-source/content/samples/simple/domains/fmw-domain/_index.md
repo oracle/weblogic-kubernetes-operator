@@ -1,7 +1,7 @@
 ---
 title: "FMW Infrastructure domain"
 date: 2019-04-18T07:32:31-05:00
-weight: 2
+weight: 5
 description: "Sample for creating an FMW Infrastructure domain home on an existing PV or
 PVC, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---

@@ -114,7 +114,7 @@ To reference the relevant user documentation, see:
 
 #### Prerequisites for JRF domains
 
-> __IMPORTANT__: This section is only required for demonstrating a `JRF` domain type. Skip this section and proceed to [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) if your domain type is `WLS` or `RestrictedJRF`.
+> __NOTE__: This section is only required for demonstrating a `JRF` domain type. Skip this section and proceed to [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) if your domain type is `WLS` or `RestrictedJRF`.
 
 A JRF domain requires an infrastructure database called an RCU database, requires initializing this database, and requires configuring your domain to access this database. All of these steps must occur before you first deploy your domain.
 
@@ -153,18 +153,22 @@ TBD Move most of the following directions to the create-oracle-db-service sample
      - In the local shell, `docker login container-registry.oracle.com`.
      - In the local shell, `docker pull container-registry.oracle.com/database/enterprise:12.2.0.1-slim`.
 
-     > __NOTE__: If a local Docker login and manual pull of `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` is not sufficient (for example, if you are using a remote Kubernetes cluster), then uncomment the `imagePullSecrets` stanza in `$WORKDIR/k8s-db-slim.yaml` and create the image pull secret:
-       ```
-       kubectl create secret docker-registry regsecret \
-         --docker-server=container-registry.oracle.com \
-         --docker-username=your.email@some.com \
-         --docker-password=your-password \
-         --docker-email=your.email@some.com
-       ```
+
+       {{% notice note %}} If a local Docker login and manual pull of `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` is not sufficient (for example, if you are using a remote Kubernetes cluster), then uncomment the `imagePullSecrets` stanza in `$WORKDIR/k8s-db-slim.yaml` and create the image pull secret as follows:
+
+              ```
+              kubectl create secret docker-registry regsecret \
+                --docker-server=container-registry.oracle.com \
+                --docker-username=your.email@some.com \
+                --docker-password=your-password \
+                --docker-email=your.email@some.com
+              ```
+       {{% /notice %}}
+
 
    - Use the sample script in `$SRCDIR/kubernetes/samples/scripts/create-oracle-db-service` to create an Oracle database running in the pod, `oracle-db`.
 
-     > __NOTE__: If your database image access requires the `regsecret` image pull secret that you optionally created above, then pass `-s regsecret` to the `start-db-service.sh` command line.
+      **NOTE**: If your database image access requires the `regsecret` image pull secret that you optionally created above, then pass `-s regsecret` to the `start-db-service.sh` command line.
 
      ```
      cd $SRCDIR/kubernetes/samples/scripts/create-oracle-db-service
@@ -173,10 +177,10 @@ TBD Move most of the following directions to the create-oracle-db-service sample
 
      This script will deploy a database with the URL, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password, `Oradoc_db1`.
 
-     > __WARNING__: The Oracle database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1)
-     >            : All the data is gone when the database is restarted.
+     {{% notice warning %}} The Oracle database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1) : All the data is gone when the database is restarted.
+     {{% /notice %}}
 
-     > __NOTE__: This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
+     **NOTE**: This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
 
 2. Use the sample script in `SRCDIR/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with the schema prefix `FMW1`.
 
@@ -212,7 +216,7 @@ To allow Model in Image to access the RCU database and OPSS wallet, it's necessa
 | `model1.yaml.jrf` | Populates the `domainInfo -> RCUDbInfo` stanza `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` attributes by referencing their locations in the `sample-domain1-rcu-access` secret. The `build.sh` script uses this model instead of `model.yaml.wls` when the source domain type is `JRF`. |
 | `k8s-domain.yaml.template` | Ensures that the domain mounts the OPSS key secret by setting the domain resource `configuration.opss.walletPasswordSecret` attribute to `sample-domain1-opss-wallet-password-secret`, and ensures the domain mounts the RCU access secret, `sample-domain1-rcu-access`, for reference by WDT model macros by setting the domain resource `configuration.secrets` attribute. |
 
-> __NOTE__: This step is for information purposes only. Do not run the above sample files directly. The sample's main build and run scripts will run them for you.
+ **NOTE**: This step is for information purposes only. Do not run the above sample files directly. The sample's main build and run scripts will run them for you.
 
 ##### Reusing or sharing RCU tables
 
