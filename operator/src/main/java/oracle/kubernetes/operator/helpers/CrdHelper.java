@@ -120,9 +120,24 @@ public class CrdHelper {
     return versions;
   }
 
+  private static List<ResourceVersion> getBetaVersions(V1beta1CustomResourceDefinition crd) {
+    List<ResourceVersion> versions = new ArrayList<>();
+    List<V1beta1CustomResourceDefinitionVersion> vs = crd.getSpec().getVersions();
+    if (vs != null) {
+      for (V1beta1CustomResourceDefinitionVersion vi : vs) {
+        versions.add(new ResourceVersion(vi.getName()));
+      }
+    }
+
+    return versions;
+  }
+
   interface CrdComparator {
     boolean isOutdatedCrd(
         V1CustomResourceDefinition actual, V1CustomResourceDefinition expected);
+
+    boolean isOutdatedBetaCrd(
+        V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected);
   }
 
   static class CrdStep extends Step {
@@ -334,6 +349,15 @@ public class CrdHelper {
       return new ReadResponseStep(next);
     }
 
+    Step verifyBetaCrd(Step next) {
+      return new CallBuilder().readBetaCustomResourceDefinitionAsync(
+          betaModel.getMetadata().getName(), createBetaReadResponseStep(next));
+    }
+
+    ResponseStep<V1beta1CustomResourceDefinition> createBetaReadResponseStep(Step next) {
+      return new ReadBetaResponseStep(next);
+    }
+
     Step createCrd(Step next) {
       return new CallBuilder().createCustomResourceDefinitionAsync(
               model, createCreateResponseStep(next));
@@ -341,6 +365,15 @@ public class CrdHelper {
 
     ResponseStep<V1CustomResourceDefinition> createCreateResponseStep(Step next) {
       return new CreateResponseStep(next);
+    }
+
+    Step createBetaCrd(Step next) {
+      return new CallBuilder().createBetaCustomResourceDefinitionAsync(
+          betaModel, createBetaCreateResponseStep(next));
+    }
+
+    ResponseStep<V1beta1CustomResourceDefinition> createBetaCreateResponseStep(Step next) {
+      return new CreateBetaResponseStep(next);
     }
 
     private boolean isOutdatedCrd(V1CustomResourceDefinition existingCrd) {
@@ -352,6 +385,25 @@ public class CrdHelper {
       boolean found = false;
       if (versions != null) {
         for (V1CustomResourceDefinitionVersion v : versions) {
+          if (KubernetesConstants.DOMAIN_VERSION.equals(v.getName())) {
+            found = true;
+            break;
+          }
+        }
+      }
+
+      return found;
+    }
+
+    private boolean isOutdatedBetaCrd(V1beta1CustomResourceDefinition existingCrd) {
+      return COMPARATOR.isOutdatedBetaCrd(existingCrd, this.betaModel);
+    }
+
+    private boolean existingBetaCrdContainsVersion(V1beta1CustomResourceDefinition existingCrd) {
+      List<V1beta1CustomResourceDefinitionVersion> versions = existingCrd.getSpec().getVersions();
+      boolean found = false;
+      if (versions != null) {
+        for (V1beta1CustomResourceDefinitionVersion v : versions) {
           if (KubernetesConstants.DOMAIN_VERSION.equals(v.getName())) {
             found = true;
             break;
@@ -376,11 +428,30 @@ public class CrdHelper {
               existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
     }
 
+    Step updateExistingBetaCrd(Step next, V1beta1CustomResourceDefinition existingCrd) {
+      existingCrd
+          .getSpec()
+          .addVersionsItem(
+              new V1beta1CustomResourceDefinitionVersion()
+                  .name(KubernetesConstants.DOMAIN_VERSION)
+                  .served(true));
+
+      return new CallBuilder().replaceBetaCustomResourceDefinitionAsync(
+          existingCrd.getMetadata().getName(), existingCrd, createBetaReplaceResponseStep(next));
+    }
+
     Step updateCrd(Step next, V1CustomResourceDefinition existingCrd) {
       model.getMetadata().setResourceVersion(existingCrd.getMetadata().getResourceVersion());
 
       return new CallBuilder().replaceCustomResourceDefinitionAsync(
           model.getMetadata().getName(), model, createReplaceResponseStep(next));
+    }
+
+    Step updateBetaCrd(Step next, V1beta1CustomResourceDefinition existingCrd) {
+      betaModel.getMetadata().setResourceVersion(existingCrd.getMetadata().getResourceVersion());
+
+      return new CallBuilder().replaceBetaCustomResourceDefinitionAsync(
+          betaModel.getMetadata().getName(), betaModel, createBetaReplaceResponseStep(next));
     }
 
     ResponseStep<V1CustomResourceDefinition> createReplaceResponseStep(Step next) {
@@ -414,6 +485,37 @@ public class CrdHelper {
       }
     }
 
+    ResponseStep<V1beta1CustomResourceDefinition> createBetaReplaceResponseStep(Step next) {
+      return new ReplaceBetaResponseStep(next);
+    }
+
+    class ReadBetaResponseStep extends DefaultResponseStep<V1beta1CustomResourceDefinition> {
+      ReadBetaResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onSuccess(
+          Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
+        V1beta1CustomResourceDefinition existingCrd = callResponse.getResult();
+        if (existingCrd == null) {
+          return doNext(createBetaCrd(getNext()), packet);
+        } else if (isOutdatedBetaCrd(existingCrd)) {
+          return doNext(updateBetaCrd(getNext(), existingCrd), packet);
+        } else if (!existingBetaCrdContainsVersion(existingCrd)) {
+          return doNext(updateExistingBetaCrd(getNext(), existingCrd), packet);
+        } else {
+          return doNext(packet);
+        }
+      }
+
+      @Override
+      protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
+        return isNotAuthorizedOrForbidden(callResponse)
+            ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
+      }
+    }
+
     private class CreateResponseStep extends ResponseStep<V1CustomResourceDefinition> {
       CreateResponseStep(Step next) {
         super(next);
@@ -428,6 +530,25 @@ public class CrdHelper {
       @Override
       public NextAction onSuccess(
           Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
+        LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
+        return doNext(packet);
+      }
+    }
+
+    private class CreateBetaResponseStep extends ResponseStep<V1beta1CustomResourceDefinition> {
+      CreateBetaResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onFailure(
+          Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
+        return super.onFailure(conflictStep, packet, callResponse);
+      }
+
+      @Override
+      public NextAction onSuccess(
+          Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
         LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
         return doNext(packet);
       }
@@ -451,6 +572,25 @@ public class CrdHelper {
         return doNext(packet);
       }
     }
+
+    private class ReplaceBetaResponseStep extends ResponseStep<V1beta1CustomResourceDefinition> {
+      ReplaceBetaResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onFailure(
+          Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
+        return super.onFailure(conflictStep, packet, callResponse);
+      }
+
+      @Override
+      public NextAction onSuccess(
+          Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
+        LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
+        return doNext(packet);
+      }
+    }
   }
 
   static class CrdComparatorImpl implements CrdComparator {
@@ -468,6 +608,22 @@ public class CrdHelper {
 
       return getSchemaValidation(actual) == null
           || !getSchemaValidation(expected).equals(getSchemaValidation(actual));
+    }
+
+    @Override
+    public boolean isOutdatedBetaCrd(
+        V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected) {
+      ResourceVersion current = new ResourceVersion(KubernetesConstants.DOMAIN_VERSION);
+      List<ResourceVersion> actualVersions = getBetaVersions(actual);
+
+      for (ResourceVersion v : actualVersions) {
+        if (!isLaterOrEqual(v, current)) {
+          return false;
+        }
+      }
+
+      return getBetaSchemaValidation(actual) == null
+          || !getBetaSchemaValidation(expected).equals(getBetaSchemaValidation(actual));
     }
 
     // true, if version is later than base
@@ -504,6 +660,16 @@ public class CrdHelper {
               return schema.getOpenAPIV3Schema();
             }
           }
+        }
+      }
+      return null;
+    }
+
+    private V1beta1JSONSchemaProps getBetaSchemaValidation(V1beta1CustomResourceDefinition crd) {
+      if (crd != null && crd.getSpec() != null) {
+        V1beta1CustomResourceValidation validation = crd.getSpec().getValidation();
+        if (validation != null) {
+          return validation.getOpenAPIV3Schema();
         }
       }
       return null;
