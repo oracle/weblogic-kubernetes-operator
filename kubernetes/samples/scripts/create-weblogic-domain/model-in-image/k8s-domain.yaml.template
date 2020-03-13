@@ -107,7 +107,10 @@ spec:
       # Name of secret with walletPassword for extracting the wallet
       # TBD: key name might still be outdated passphrase - check with Johnny
       #walletPasswordSecret: @@DOMAIN_UID@@-opss-wallet-password-secret
-
+      
       # Name of secret with walletFile containing base64 encoded opss wallet
       # TBD: key name might still be outdated ewallet.p12 instead of walletFile - check with Johnny
       #walletFileSecret: @@DOMAIN_UID@@-opss-walletfile-secret
+      
+      # Name of secret with runtimeEncryptionSecret 
+      runtimeEncryptionSecret: @@DOMAIN_UID@@-runtime-encryption-secret

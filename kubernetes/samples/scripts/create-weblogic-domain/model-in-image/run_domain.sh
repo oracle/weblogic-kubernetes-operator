@@ -84,6 +84,10 @@ echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type 
 $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-opss-wallet-password-secret \
   -l walletPassword=welcome1
 
+echo "@@ Info: Creating model runtime encryption secret"
+$SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-runtime-encryption-secret \
+  -l password=$(uuidgen).$SECONDS.$PPID.$RANDOM
+
 
 echo "@@ Info: Creating sample wdt configmap (optional)"
 $SCRIPTDIR/create_configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${WDTCONFIGMAPDIR}
