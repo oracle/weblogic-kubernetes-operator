@@ -511,7 +511,7 @@
       "type": "object",
       "properties": {
         "runtimeEncryptionSecret": {
-          "description": "Runtime encryption key passphrase secret. Required.",
+          "description": "Runtime encryption secret. Required.",
           "type": "string"
         },
         "domainType": {
