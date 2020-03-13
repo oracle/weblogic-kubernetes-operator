@@ -26,6 +26,14 @@ import io.kubernetes.client.openapi.models.V1CustomResourceSubresources;
 import io.kubernetes.client.openapi.models.V1CustomResourceValidation;
 import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionNames;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionSpec;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionVersion;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceSubresourceScale;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceSubresources;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceValidation;
+import io.kubernetes.client.openapi.models.V1beta1JSONSchemaProps;
 import io.kubernetes.client.util.Yaml;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -56,14 +64,14 @@ public class CrdHelper {
    * @param args Arguments that must be one value giving file name to create
    */
   public static void main(String[] args) {
-    if (args == null || args.length != 1) {
+    if (args == null || args.length != 2) {
       throw new IllegalArgumentException();
     }
 
-    String outputFileName = args[0];
-
-    Path outputFilePath = Paths.get(outputFileName);
     CrdContext context = new CrdContext(null, null);
+
+    String outputFileName = args[0];
+    Path outputFilePath = Paths.get(outputFileName);
 
     try (Writer writer = Files.newBufferedWriter(outputFilePath)) {
       writer.write(
@@ -71,6 +79,19 @@ public class CrdHelper {
               + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
       writer.write("\n");
       Yaml.dump(context.model, writer);
+    } catch (IOException io) {
+      throw new RuntimeException(io);
+    }
+
+    String betaOutputFileName = args[1];
+    Path betaOutputFilePath = Paths.get(betaOutputFileName);
+
+    try (Writer writer = Files.newBufferedWriter(betaOutputFilePath)) {
+      writer.write(
+          "# Copyright (c) 2020, Oracle Corporation and/or its affiliates.\n"
+              + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
+      writer.write("\n");
+      Yaml.dump(context.betaModel, writer);
     } catch (IOException io) {
       throw new RuntimeException(io);
     }
@@ -121,12 +142,14 @@ public class CrdHelper {
   static class CrdContext {
     private final Step conflictStep;
     private final V1CustomResourceDefinition model;
+    private final V1beta1CustomResourceDefinition betaModel;
     private final KubernetesVersion version;
 
     CrdContext(KubernetesVersion version, Step conflictStep) {
       this.version = version;
       this.conflictStep = conflictStep;
       this.model = createModel(version);
+      this.betaModel = createBetaModel(version);
     }
 
     static V1CustomResourceDefinition createModel(KubernetesVersion version) {
@@ -135,6 +158,14 @@ public class CrdHelper {
           .kind("CustomResourceDefinition")
           .metadata(createMetadata())
           .spec(createSpec(version));
+    }
+
+    static V1beta1CustomResourceDefinition createBetaModel(KubernetesVersion version) {
+      return new V1beta1CustomResourceDefinition()
+          .apiVersion("apiextensions.k8s.io/v1beta1")
+          .kind("CustomResourceDefinition")
+          .metadata(createMetadata())
+          .spec(createBetaSpec(version));
     }
 
     static V1ObjectMeta createMetadata() {
@@ -149,6 +180,18 @@ public class CrdHelper {
               .versions(getCrdVersions())
               .scope("Namespaced")
               .names(getCrdNames());
+      return spec;
+    }
+
+    static V1beta1CustomResourceDefinitionSpec createBetaSpec(KubernetesVersion version) {
+      V1beta1CustomResourceDefinitionSpec spec =
+          new V1beta1CustomResourceDefinitionSpec()
+              .group(KubernetesConstants.DOMAIN_GROUP)
+              .versions(getBetaCrdVersions())
+              .validation(createBetaSchemaValidation())
+              .subresources(createBetaSubresources())
+              .scope("Namespaced")
+              .names(getBetaCrdNames());
       return spec;
     }
 
@@ -167,6 +210,14 @@ public class CrdHelper {
       return new V1CustomResourceSubresources()
           .scale(
               new V1CustomResourceSubresourceScale()
+                  .specReplicasPath(".spec.replicas")
+                  .statusReplicasPath(".status.replicas"));
+    }
+
+    static V1beta1CustomResourceSubresources createBetaSubresources() {
+      return new V1beta1CustomResourceSubresources()
+          .scale(
+              new V1beta1CustomResourceSubresourceScale()
                   .specReplicasPath(".spec.replicas")
                   .statusReplicasPath(".status.replicas"));
     }
@@ -193,6 +244,24 @@ public class CrdHelper {
       return versions;
     }
 
+    static List<V1beta1CustomResourceDefinitionVersion> getBetaCrdVersions() {
+      Map<String, String> schemas = schemaReader.loadFilesFromClasspath();
+      List<V1beta1CustomResourceDefinitionVersion> versions = schemas.entrySet().stream()
+          .map(entry -> new V1beta1CustomResourceDefinitionVersion()
+              .name(getVersionFromCrdSchemaFileName(entry.getKey()))
+              .served(true)
+              .storage(false))
+          .collect(Collectors.toList());
+
+      versions.add(
+          0, // must be first
+          new V1beta1CustomResourceDefinitionVersion()
+              .name(KubernetesConstants.DOMAIN_VERSION)
+              .served(true)
+              .storage(true));
+      return versions;
+    }
+
     static V1CustomResourceDefinitionNames getCrdNames() {
       return new V1CustomResourceDefinitionNames()
           .plural(KubernetesConstants.DOMAIN_PLURAL)
@@ -201,8 +270,20 @@ public class CrdHelper {
           .shortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT));
     }
 
+    static V1beta1CustomResourceDefinitionNames getBetaCrdNames() {
+      return new V1beta1CustomResourceDefinitionNames()
+          .plural(KubernetesConstants.DOMAIN_PLURAL)
+          .singular(KubernetesConstants.DOMAIN_SINGULAR)
+          .kind(KubernetesConstants.DOMAIN)
+          .shortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT));
+    }
+
     static V1CustomResourceValidation createSchemaValidation() {
       return new V1CustomResourceValidation().openAPIV3Schema(createOpenApiV3Schema());
+    }
+
+    static V1beta1CustomResourceValidation createBetaSchemaValidation() {
+      return new V1beta1CustomResourceValidation().openAPIV3Schema(createBetaOpenApiV3Schema());
     }
 
     static V1JSONSchemaProps createOpenApiV3Schema() {
@@ -215,6 +296,21 @@ public class CrdHelper {
       V1JSONSchemaProps status =
           gson.fromJson(jsonElementStatus, V1JSONSchemaProps.class);
       return new V1JSONSchemaProps()
+          .type("object")
+          .putPropertiesItem("spec", spec)
+          .putPropertiesItem("status", status);
+    }
+
+    static V1beta1JSONSchemaProps createBetaOpenApiV3Schema() {
+      Gson gson = new Gson();
+      JsonElement jsonElementSpec =
+          gson.toJsonTree(createSchemaGenerator().generate(DomainSpec.class));
+      V1beta1JSONSchemaProps spec = gson.fromJson(jsonElementSpec, V1beta1JSONSchemaProps.class);
+      JsonElement jsonElementStatus =
+          gson.toJsonTree(createSchemaGenerator().generate(DomainStatus.class));
+      V1beta1JSONSchemaProps status =
+          gson.fromJson(jsonElementStatus, V1beta1JSONSchemaProps.class);
+      return new V1beta1JSONSchemaProps()
           .type("object")
           .putPropertiesItem("spec", spec)
           .putPropertiesItem("status", status);

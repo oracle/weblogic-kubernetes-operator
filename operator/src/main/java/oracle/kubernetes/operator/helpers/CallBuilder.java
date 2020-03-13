@@ -11,6 +11,7 @@ import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
+import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
 import io.kubernetes.client.openapi.apis.AuthenticationV1Api;
 import io.kubernetes.client.openapi.apis.AuthorizationV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
@@ -36,6 +37,7 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import okhttp3.Call;
 import oracle.kubernetes.operator.TuningParameters;
@@ -113,6 +115,11 @@ public class CallBuilder {
           wrap(
               createCustomResourceDefinitionAsync(
                   usage, (V1CustomResourceDefinition) requestParams.body, callback));
+  private final CallFactory<V1beta1CustomResourceDefinition> createBetaCrd =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createBetaCustomResourceDefinitionAsync(
+                  usage, (V1beta1CustomResourceDefinition) requestParams.body, callback));
   private final CallFactory<V1CustomResourceDefinition> replaceCrd =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -120,6 +127,14 @@ public class CallBuilder {
                   usage,
                   requestParams.name,
                   (V1CustomResourceDefinition) requestParams.body,
+                  callback));
+  private final CallFactory<V1beta1CustomResourceDefinition> replaceBetaCrd =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceBetaCustomResourceDefinitionAsync(
+                  usage,
+                  requestParams.name,
+                  (V1beta1CustomResourceDefinition) requestParams.body,
                   callback));
   private final CallFactory<V1ConfigMap> createConfigmap =
       (requestParams, usage, cont, callback) ->
@@ -243,6 +258,9 @@ public class CallBuilder {
   private final CallFactory<V1CustomResourceDefinition> readCrd =
       (requestParams, usage, cont, callback) ->
           wrap(readCustomResourceDefinitionAsync(usage, requestParams.name, callback));
+  private final CallFactory<V1beta1CustomResourceDefinition> readBetaCrd =
+      (requestParams, usage, cont, callback) ->
+          wrap(readBetaCustomResourceDefinitionAsync(usage, requestParams.name, callback));
   private final CallFactory<V1ConfigMap> readConfigmap =
       (requestParams, usage, cont, callback) ->
           wrap(readConfigMapAsync(usage, requestParams.name, requestParams.namespace, callback));
@@ -696,6 +714,8 @@ public class CallBuilder {
         replaceDomainStatus);
   }
 
+  /* CRD's */
+
   private Call readCustomResourceDefinitionAsync(
       ApiClient client, String name, ApiCallback<V1CustomResourceDefinition> callback)
       throws ApiException {
@@ -715,8 +735,6 @@ public class CallBuilder {
     return createRequestAsync(
         responseStep, new RequestParams("readCRD", null, name, null), readCrd);
   }
-
-  /* Services */
 
   private Call createCustomResourceDefinitionAsync(
       ApiClient client,
@@ -765,6 +783,75 @@ public class CallBuilder {
       ResponseStep<V1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("replaceCRD", null, name, body), replaceCrd);
+  }
+
+  private Call readBetaCustomResourceDefinitionAsync(
+      ApiClient client, String name, ApiCallback<V1beta1CustomResourceDefinition> callback)
+      throws ApiException {
+    return new ApiextensionsV1beta1Api(client)
+        .readCustomResourceDefinitionAsync(name, pretty, exact, export, callback);
+  }
+
+  /**
+   * Asynchronous step for reading CRD.
+   *
+   * @param name Name
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readBetaCustomResourceDefinitionAsync(
+      String name, ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readCRD", null, name, null), readBetaCrd);
+  }
+
+  private Call createBetaCustomResourceDefinitionAsync(
+      ApiClient client,
+      V1beta1CustomResourceDefinition body,
+      ApiCallback<V1beta1CustomResourceDefinition> callback)
+      throws ApiException {
+    return new ApiextensionsV1beta1Api(client)
+        .createCustomResourceDefinitionAsync(body, pretty, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for creating CRD.
+   *
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createBetaCustomResourceDefinitionAsync(
+      V1beta1CustomResourceDefinition body,
+      ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("createCRD", null, null, body), createBetaCrd);
+  }
+
+  private Call replaceBetaCustomResourceDefinitionAsync(
+      ApiClient client,
+      String name,
+      V1beta1CustomResourceDefinition body,
+      ApiCallback<V1beta1CustomResourceDefinition> callback)
+      throws ApiException {
+    return new ApiextensionsV1beta1Api(client)
+        .replaceCustomResourceDefinitionAsync(name, body, pretty, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for replacing CRD.
+   *
+   * @param name Name
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceBetaCustomResourceDefinitionAsync(
+      String name,
+      V1beta1CustomResourceDefinition body,
+      ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("replaceCRD", null, name, body), replaceBetaCrd);
   }
 
   private Call readConfigMapAsync(
