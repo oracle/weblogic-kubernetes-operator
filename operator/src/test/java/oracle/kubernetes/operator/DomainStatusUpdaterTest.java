@@ -23,6 +23,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
@@ -49,6 +50,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.STANDBY_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -252,6 +254,17 @@ public class DomainStatusUpdaterTest {
                 .withNodeName("node1")
                 .withServerName("server1")
                 .withHealth(overallHealth("health1"))));
+  }
+
+  @Test
+  public void statusStep_containsValidationWarnings_from_info() {
+    final String warning = "validation warning";
+    info.addValidationWarning(warning);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+
+    assertThat(getRecordedDomain().getStatus().getMessage(), containsString(warning));
   }
 
   @Test
@@ -563,6 +576,10 @@ public class DomainStatusUpdaterTest {
 
   private ServerConfigurator configureServer(String serverName) {
     return configureDomain().configureServer(serverName);
+  }
+
+  private ClusterConfigurator configureCluster(String clusterName) {
+    return configureDomain().configureCluster(clusterName);
   }
 
   private void generateStartupInfos(String... serverNames) {
