@@ -150,7 +150,11 @@ public class CrdHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      return doNext(context.verifyCrd(getNext()), packet);
+      if (context.version.isCrdV1Supported()) {
+        return doNext(context.verifyCrd(getNext()), packet);
+      } else {
+        return doNext(context.verifyBetaCrd(getNext()), packet);
+      }
     }
   }
 
@@ -447,6 +451,13 @@ public class CrdHelper {
           model.getMetadata().getName(), model, createReplaceResponseStep(next));
     }
 
+    Step updateCrd(Step next, V1beta1CustomResourceDefinition existingCrd) {
+      model.getMetadata().setResourceVersion(existingCrd.getMetadata().getResourceVersion());
+
+      return new CallBuilder().replaceCustomResourceDefinitionAsync(
+          model.getMetadata().getName(), model, createReplaceResponseStep(next));
+    }
+
     Step updateBetaCrd(Step next, V1beta1CustomResourceDefinition existingCrd) {
       betaModel.getMetadata().setResourceVersion(existingCrd.getMetadata().getResourceVersion());
 
@@ -498,15 +509,22 @@ public class CrdHelper {
       public NextAction onSuccess(
           Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
         V1beta1CustomResourceDefinition existingCrd = callResponse.getResult();
-        if (existingCrd == null) {
-          return doNext(createBetaCrd(getNext()), packet);
-        } else if (isOutdatedBetaCrd(existingCrd)) {
-          return doNext(updateBetaCrd(getNext(), existingCrd), packet);
-        } else if (!existingBetaCrdContainsVersion(existingCrd)) {
-          return doNext(updateExistingBetaCrd(getNext(), existingCrd), packet);
+        if (version.isCrdV1Supported()) {
+          if (existingCrd == null) {
+            return doNext(createCrd(getNext()), packet);
+          } else {
+            return doNext(updateCrd(getNext(), existingCrd), packet);
+          }
         } else {
-          return doNext(packet);
+          if (existingCrd == null) {
+            return doNext(createBetaCrd(getNext()), packet);
+          } else if (isOutdatedBetaCrd(existingCrd)) {
+            return doNext(updateBetaCrd(getNext(), existingCrd), packet);
+          } else if (!existingBetaCrdContainsVersion(existingCrd)) {
+            return doNext(updateExistingBetaCrd(getNext(), existingCrd), packet);
+          }
         }
+        return doNext(packet);
       }
 
       @Override

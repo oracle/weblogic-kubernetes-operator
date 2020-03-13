@@ -527,6 +527,16 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-ext-jdk15on</artifactId>
+        <version>1.64</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk15on</artifactId>
+        <version>1.64</version>
+      </dependency>
+      <dependency>
         <groupId>io.kubernetes</groupId>
         <artifactId>client-java</artifactId>
         <version>8.0.0</version>
