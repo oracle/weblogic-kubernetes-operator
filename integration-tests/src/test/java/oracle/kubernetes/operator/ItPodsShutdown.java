@@ -188,26 +188,32 @@ public class ItPodsShutdown extends BaseTest {
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
       domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
     }
+    if (!domain.getLoadBalancerName().equalsIgnoreCase("NONE")) {
+      // url
+      StringBuffer testAppUrl = new StringBuffer("http://");
+      if (BaseTest.OKE_CLUSTER) {
+        testAppUrl.append(BaseTest.LB_PUBLIC_IP).append("/");
+      } else {
+        testAppUrl.append(domain.getHostNameForCurl()).append(":").append(domain.getLoadBalancerWebPort()).append("/");
+      }
+      if (domain.getLoadBalancerName().equals("APACHE")) {
+        testAppUrl.append("weblogic/");
+      }
+      testAppUrl.append(testAppPath).append("/");
+      // curl cmd to call webapp
 
-    String nodePortHost = domain.getHostNameForCurl();
-    int nodePort = domain.getLoadBalancerWebPort();
+      StringBuffer webServiceUrl = new StringBuffer("curl --silent --noproxy '*' ");
+      webServiceUrl
+              .append(" -H 'host: ")
+              .append(domainUid)
+              .append(".org' ")
+              .append(testAppUrl.toString());
 
-    StringBuffer webServiceUrl = new StringBuffer("curl --silent --noproxy '*' ");
-    webServiceUrl
-        .append(" -H 'host: ")
-        .append(domainUid)
-        .append(".org' ")
-        .append(" http://")
-        .append(nodePortHost)
-        .append(":")
-        .append(nodePort)
-        .append("/")
-        .append(testAppPath);
-
-    // Send a HTTP request to keep open session
-    String curlCmd = webServiceUrl.toString();
-    // LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
-    TestUtils.checkAnyCmdInLoop(curlCmd, "Ending to sleep");
+      // Send a HTTP request to keep open session
+      String curlCmd = webServiceUrl.toString();
+      // LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
+      TestUtils.checkAnyCmdInLoop(curlCmd, "Ending to sleep");
+    }
   }
 
   /**

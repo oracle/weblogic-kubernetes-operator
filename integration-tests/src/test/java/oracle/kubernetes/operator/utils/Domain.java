@@ -720,6 +720,8 @@ public class Domain {
       StringBuffer testAppUrl = new StringBuffer("http://");
       if (BaseTest.OKE_CLUSTER) {
         testAppUrl.append(BaseTest.LB_PUBLIC_IP).append("/");
+      } else {
+        testAppUrl.append(getHostNameForCurl()).append(":").append(loadBalancerWebPort).append("/");
       }
       if (loadBalancer.equals("APACHE")) {
         testAppUrl.append("weblogic/");
