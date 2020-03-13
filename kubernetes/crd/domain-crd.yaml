@@ -247,6 +247,8 @@ spec:
                           properties:
                             gmsaCredentialSpec:
                               type: string
+                            runAsUserName:
+                              type: string
                             gmsaCredentialSpecName:
                               type: string
                         supplementalGroups:
@@ -1068,6 +1070,8 @@ spec:
                                 properties:
                                   gmsaCredentialSpec:
                                     type: string
+                                  runAsUserName:
+                                    type: string
                                   gmsaCredentialSpecName:
                                     type: string
                               procMount:
@@ -1080,6 +1084,71 @@ spec:
                                 type: boolean
                               readOnlyRootFilesystem:
                                 type: boolean
+                          startupProbe:
+                            type: object
+                            properties:
+                              failureThreshold:
+                                type: number
+                              periodSeconds:
+                                type: number
+                              timeoutSeconds:
+                                type: number
+                              tcpSocket:
+                                type: object
+                                properties:
+                                  port:
+                                    type: object
+                                    properties:
+                                      intValue:
+                                        type: number
+                                      isInt:
+                                        type: boolean
+                                      strValue:
+                                        type: string
+                                    required:
+                                    - isInt
+                                  host:
+                                    type: string
+                              successThreshold:
+                                type: number
+                              initialDelaySeconds:
+                                type: number
+                              exec:
+                                type: object
+                                properties:
+                                  command:
+                                    type: array
+                                    items:
+                                      type: string
+                              httpGet:
+                                type: object
+                                properties:
+                                  path:
+                                    type: string
+                                  scheme:
+                                    type: string
+                                  port:
+                                    type: object
+                                    properties:
+                                      intValue:
+                                        type: number
+                                      isInt:
+                                        type: boolean
+                                      strValue:
+                                        type: string
+                                    required:
+                                    - isInt
+                                  host:
+                                    type: string
+                                  httpHeaders:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        name:
+                                          type: string
+                                        value:
+                                          type: string
                           ports:
                             type: array
                             items:
@@ -1416,6 +1485,8 @@ spec:
                           properties:
                             gmsaCredentialSpec:
                               type: string
+                            runAsUserName:
+                              type: string
                             gmsaCredentialSpecName:
                               type: string
                         procMount:
@@ -1569,6 +1640,8 @@ spec:
                                 properties:
                                   gmsaCredentialSpec:
                                     type: string
+                                  runAsUserName:
+                                    type: string
                                   gmsaCredentialSpecName:
                                     type: string
                               procMount:
@@ -1581,6 +1654,71 @@ spec:
                                 type: boolean
                               readOnlyRootFilesystem:
                                 type: boolean
+                          startupProbe:
+                            type: object
+                            properties:
+                              failureThreshold:
+                                type: number
+                              periodSeconds:
+                                type: number
+                              timeoutSeconds:
+                                type: number
+                              tcpSocket:
+                                type: object
+                                properties:
+                                  port:
+                                    type: object
+                                    properties:
+                                      intValue:
+                                        type: number
+                                      isInt:
+                                        type: boolean
+                                      strValue:
+                                        type: string
+                                    required:
+                                    - isInt
+                                  host:
+                                    type: string
+                              successThreshold:
+                                type: number
+                              initialDelaySeconds:
+                                type: number
+                              exec:
+                                type: object
+                                properties:
+                                  command:
+                                    type: array
+                                    items:
+                                      type: string
+                              httpGet:
+                                type: object
+                                properties:
+                                  path:
+                                    type: string
+                                  scheme:
+                                    type: string
+                                  port:
+                                    type: object
+                                    properties:
+                                      intValue:
+                                        type: number
+                                      isInt:
+                                        type: boolean
+                                      strValue:
+                                        type: string
+                                    required:
+                                    - isInt
+                                  host:
+                                    type: string
+                                  httpHeaders:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        name:
+                                          type: string
+                                        value:
+                                          type: string
                           ports:
                             type: array
                             items:
@@ -2239,6 +2377,8 @@ spec:
                       type: object
                       properties:
                         gmsaCredentialSpec:
+                          type: string
+                        runAsUserName:
                           type: string
                         gmsaCredentialSpecName:
                           type: string
@@ -3060,6 +3200,8 @@ spec:
                             properties:
                               gmsaCredentialSpec:
                                 type: string
+                              runAsUserName:
+                                type: string
                               gmsaCredentialSpecName:
                                 type: string
                           procMount:
@@ -3072,6 +3214,71 @@ spec:
                             type: boolean
                           readOnlyRootFilesystem:
                             type: boolean
+                      startupProbe:
+                        type: object
+                        properties:
+                          failureThreshold:
+                            type: number
+                          periodSeconds:
+                            type: number
+                          timeoutSeconds:
+                            type: number
+                          tcpSocket:
+                            type: object
+                            properties:
+                              port:
+                                type: object
+                                properties:
+                                  intValue:
+                                    type: number
+                                  isInt:
+                                    type: boolean
+                                  strValue:
+                                    type: string
+                                required:
+                                - isInt
+                              host:
+                                type: string
+                          successThreshold:
+                            type: number
+                          initialDelaySeconds:
+                            type: number
+                          exec:
+                            type: object
+                            properties:
+                              command:
+                                type: array
+                                items:
+                                  type: string
+                          httpGet:
+                            type: object
+                            properties:
+                              path:
+                                type: string
+                              scheme:
+                                type: string
+                              port:
+                                type: object
+                                properties:
+                                  intValue:
+                                    type: number
+                                  isInt:
+                                    type: boolean
+                                  strValue:
+                                    type: string
+                                required:
+                                - isInt
+                              host:
+                                type: string
+                              httpHeaders:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
                       ports:
                         type: array
                         items:
@@ -3408,6 +3615,8 @@ spec:
                       properties:
                         gmsaCredentialSpec:
                           type: string
+                        runAsUserName:
+                          type: string
                         gmsaCredentialSpecName:
                           type: string
                     procMount:
@@ -3561,6 +3770,8 @@ spec:
                             properties:
                               gmsaCredentialSpec:
                                 type: string
+                              runAsUserName:
+                                type: string
                               gmsaCredentialSpecName:
                                 type: string
                           procMount:
@@ -3573,6 +3784,71 @@ spec:
                             type: boolean
                           readOnlyRootFilesystem:
                             type: boolean
+                      startupProbe:
+                        type: object
+                        properties:
+                          failureThreshold:
+                            type: number
+                          periodSeconds:
+                            type: number
+                          timeoutSeconds:
+                            type: number
+                          tcpSocket:
+                            type: object
+                            properties:
+                              port:
+                                type: object
+                                properties:
+                                  intValue:
+                                    type: number
+                                  isInt:
+                                    type: boolean
+                                  strValue:
+                                    type: string
+                                required:
+                                - isInt
+                              host:
+                                type: string
+                          successThreshold:
+                            type: number
+                          initialDelaySeconds:
+                            type: number
+                          exec:
+                            type: object
+                            properties:
+                              command:
+                                type: array
+                                items:
+                                  type: string
+                          httpGet:
+                            type: object
+                            properties:
+                              path:
+                                type: string
+                              scheme:
+                                type: string
+                              port:
+                                type: object
+                                properties:
+                                  intValue:
+                                    type: number
+                                  isInt:
+                                    type: boolean
+                                  strValue:
+                                    type: string
+                                required:
+                                - isInt
+                              host:
+                                type: string
+                              httpHeaders:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
                       ports:
                         type: array
                         items:
@@ -4219,6 +4495,8 @@ spec:
                             type: object
                             properties:
                               gmsaCredentialSpec:
+                                type: string
+                              runAsUserName:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
@@ -5043,6 +5321,8 @@ spec:
                                   properties:
                                     gmsaCredentialSpec:
                                       type: string
+                                    runAsUserName:
+                                      type: string
                                     gmsaCredentialSpecName:
                                       type: string
                                 procMount:
@@ -5055,6 +5335,71 @@ spec:
                                   type: boolean
                                 readOnlyRootFilesystem:
                                   type: boolean
+                            startupProbe:
+                              type: object
+                              properties:
+                                failureThreshold:
+                                  type: number
+                                periodSeconds:
+                                  type: number
+                                timeoutSeconds:
+                                  type: number
+                                tcpSocket:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                successThreshold:
+                                  type: number
+                                initialDelaySeconds:
+                                  type: number
+                                exec:
+                                  type: object
+                                  properties:
+                                    command:
+                                      type: array
+                                      items:
+                                        type: string
+                                httpGet:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    scheme:
+                                      type: string
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                    httpHeaders:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          value:
+                                            type: string
                             ports:
                               type: array
                               items:
@@ -5391,6 +5736,8 @@ spec:
                             properties:
                               gmsaCredentialSpec:
                                 type: string
+                              runAsUserName:
+                                type: string
                               gmsaCredentialSpecName:
                                 type: string
                           procMount:
@@ -5544,6 +5891,8 @@ spec:
                                   properties:
                                     gmsaCredentialSpec:
                                       type: string
+                                    runAsUserName:
+                                      type: string
                                     gmsaCredentialSpecName:
                                       type: string
                                 procMount:
@@ -5556,6 +5905,71 @@ spec:
                                   type: boolean
                                 readOnlyRootFilesystem:
                                   type: boolean
+                            startupProbe:
+                              type: object
+                              properties:
+                                failureThreshold:
+                                  type: number
+                                periodSeconds:
+                                  type: number
+                                timeoutSeconds:
+                                  type: number
+                                tcpSocket:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                successThreshold:
+                                  type: number
+                                initialDelaySeconds:
+                                  type: number
+                                exec:
+                                  type: object
+                                  properties:
+                                    command:
+                                      type: array
+                                      items:
+                                        type: string
+                                httpGet:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    scheme:
+                                      type: string
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                    httpHeaders:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          value:
+                                            type: string
                             ports:
                               type: array
                               items:
@@ -6217,6 +6631,8 @@ spec:
                             properties:
                               gmsaCredentialSpec:
                                 type: string
+                              runAsUserName:
+                                type: string
                               gmsaCredentialSpecName:
                                 type: string
                           supplementalGroups:
@@ -7040,6 +7456,8 @@ spec:
                                   properties:
                                     gmsaCredentialSpec:
                                       type: string
+                                    runAsUserName:
+                                      type: string
                                     gmsaCredentialSpecName:
                                       type: string
                                 procMount:
@@ -7052,6 +7470,71 @@ spec:
                                   type: boolean
                                 readOnlyRootFilesystem:
                                   type: boolean
+                            startupProbe:
+                              type: object
+                              properties:
+                                failureThreshold:
+                                  type: number
+                                periodSeconds:
+                                  type: number
+                                timeoutSeconds:
+                                  type: number
+                                tcpSocket:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                successThreshold:
+                                  type: number
+                                initialDelaySeconds:
+                                  type: number
+                                exec:
+                                  type: object
+                                  properties:
+                                    command:
+                                      type: array
+                                      items:
+                                        type: string
+                                httpGet:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    scheme:
+                                      type: string
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                    httpHeaders:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          value:
+                                            type: string
                             ports:
                               type: array
                               items:
@@ -7388,6 +7871,8 @@ spec:
                             properties:
                               gmsaCredentialSpec:
                                 type: string
+                              runAsUserName:
+                                type: string
                               gmsaCredentialSpecName:
                                 type: string
                           procMount:
@@ -7541,6 +8026,8 @@ spec:
                                   properties:
                                     gmsaCredentialSpec:
                                       type: string
+                                    runAsUserName:
+                                      type: string
                                     gmsaCredentialSpecName:
                                       type: string
                                 procMount:
@@ -7553,6 +8040,71 @@ spec:
                                   type: boolean
                                 readOnlyRootFilesystem:
                                   type: boolean
+                            startupProbe:
+                              type: object
+                              properties:
+                                failureThreshold:
+                                  type: number
+                                periodSeconds:
+                                  type: number
+                                timeoutSeconds:
+                                  type: number
+                                tcpSocket:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                successThreshold:
+                                  type: number
+                                initialDelaySeconds:
+                                  type: number
+                                exec:
+                                  type: object
+                                  properties:
+                                    command:
+                                      type: array
+                                      items:
+                                        type: string
+                                httpGet:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    scheme:
+                                      type: string
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                    httpHeaders:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          value:
+                                            type: string
                             ports:
                               type: array
                               items:
