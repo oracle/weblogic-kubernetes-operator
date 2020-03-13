@@ -286,10 +286,6 @@ public abstract class JobStepContext extends BasePodStepContext {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_WALLETFILE_VOLUME).secret(
               getOpssWalletFileSecretVolume()));
     }
-    if (getWdtEncryptPassPhraseVolume() != null) {
-      podSpec.addVolumesItem(new V1Volume().name(WDT_ENCRYPT_PASSPHRASE_VOLUME)
-          .secret(getWdtEncryptPassPhraseVolume()));
-    }
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
@@ -317,6 +313,10 @@ public abstract class JobStepContext extends BasePodStepContext {
             new V1Volume()
                 .name(getWdtConfigMap() + "-volume")
                 .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
+      }
+      if (getWdtEncryptPassPhraseVolume() != null) {
+        podSpec.addVolumesItem(new V1Volume().name(WDT_ENCRYPT_PASSPHRASE_VOLUME)
+            .secret(getWdtEncryptPassPhraseVolume()));
       }
       podSpec.addVolumesItem(
           new V1Volume()
