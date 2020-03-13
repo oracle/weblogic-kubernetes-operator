@@ -2254,13 +2254,13 @@ public class Domain {
         .append("/")
         .append(scriptName)
         .append(" ");
-     if (BaseTest.OKE_CLUSTER) {
-       cmdKubectlSh.append(nodeHost);
-     } else {
-       cmdKubectlSh.append(nodeHost)
+    if (BaseTest.OKE_CLUSTER) {
+      cmdKubectlSh.append(nodeHost);
+    } else {
+      cmdKubectlSh.append(nodeHost)
                .append(":")
                .append(nodePort);
-     }
+    }
     cmdKubectlSh.append(" ")
         .append(username)
         .append(" ")
