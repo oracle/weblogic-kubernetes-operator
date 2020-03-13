@@ -2169,7 +2169,7 @@ public class TestUtils {
     LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmd);
     cmd =
             BaseTest.getProjectRoot()
-                    + "/src/integration-tests/bash/krun.sh -m "
+                    + "/src/integration-tests/bash/krun.sh -t 180 -m "
                     + "cleanupoke-weblogic-sample-pvc:/shared/"
                     + " -n cleanupoke -c \"rm -rf /shared/wdt/* /shared/domains/*\"";
 
