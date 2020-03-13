@@ -24,7 +24,12 @@ public class Model {
 
   @Description("WDT encryption key passphrase secret. Required when WDT model files are encrypted.")
   @Valid
-  private String encryptionSecret;
+  private String wdtEncryptionSecret;
+
+  @Description("Model encryption secret.")
+  @Valid
+  private String runtimeEncryptionSecret;
+
 
   @Nullable
   public String getDomainType() {
@@ -54,16 +59,29 @@ public class Model {
     return this;
   }
 
-  public String getEncryptionSecret() {
-    return encryptionSecret;
+  public String getWdtEncryptionSecret() {
+    return wdtEncryptionSecret;
   }
 
-  public void setEncryptionSecret(String encryptionSecret) {
-    this.encryptionSecret = encryptionSecret;
+  public void setWdtEncryptionSecret(String wdtEncryptionSecret) {
+    this.wdtEncryptionSecret = wdtEncryptionSecret;
   }
 
-  public Model withEncryptionSecret(String encryptionSecret) {
-    this.encryptionSecret = encryptionSecret;
+  public Model withWdtEncryptionSecret(String wdtEncryptionSecret) {
+    this.wdtEncryptionSecret = wdtEncryptionSecret;
+    return this;
+  }
+
+  public String getRuntimeEncryptionSecret() {
+    return runtimeEncryptionSecret;
+  }
+
+  public void setRuntimeEncryptionSecret(String runtimeEncryptionSecret) {
+    this.runtimeEncryptionSecret = runtimeEncryptionSecret;
+  }
+
+  public Model withRuntimeEncryptionSecret(String runtimeEncryptionSecret) {
+    this.runtimeEncryptionSecret = runtimeEncryptionSecret;
     return this;
   }
 
@@ -73,7 +91,8 @@ public class Model {
         new ToStringBuilder(this)
             .append("domainType", domainType)
             .append("configMap", configMap)
-            .append("encryptionSecret", encryptionSecret);
+            .append("modelInImageSecret", runtimeEncryptionSecret)
+            .append("wdtEncryptionSecret", wdtEncryptionSecret);
 
     return builder.toString();
   }
@@ -83,7 +102,8 @@ public class Model {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(domainType)
         .append(configMap)
-        .append(encryptionSecret);
+        .append(runtimeEncryptionSecret)
+        .append(wdtEncryptionSecret);
 
     return builder.toHashCode();
   }
@@ -102,7 +122,8 @@ public class Model {
         new EqualsBuilder()
             .append(domainType, rhs.domainType)
             .append(configMap,rhs.configMap)
-            .append(encryptionSecret, rhs.encryptionSecret);
+            .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret)
+            .append(wdtEncryptionSecret, rhs.wdtEncryptionSecret);
 
     return builder.isEquals();
   }

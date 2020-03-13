@@ -22,6 +22,8 @@ if [ $? -ne 0 ]; then
       trace SEVERE "Error sourcing modelInImage.sh" && exit 1
 fi
 
+exportInstallHomes
+
 #
 # Define helper fn to copy a file only if src & tgt differ
 #
@@ -165,8 +167,23 @@ if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
   # primordial domain contain the basic structures, security and other fmwconfig templated info
   # domainzip only contains the domain configuration (config.xml jdbc/ jms/)
   # Both are needed for the complete domain reconstruction
-  cd / && base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
-  cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz && tar -xzvf /tmp/domain.tar.gz
+  cd / && base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz && \
+   tar -xzf /tmp/domain.tar.gz
+
+  # decrypt the SerializedSystemIni first
+  if [ -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
+    MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+  else
+    trace SEVERE "Domain Source Type is 'FromModel' which requires specifying a runtimeEncryptionSecret " \
+    "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
+    exit 1
+  fi
+  encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
+
+  # restore the config zip
+  #
+  cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz && \
+    tar -xzf /tmp/domain.tar.gz
   chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
 
   trace "Model-in-Image: Deploying libraries."
@@ -174,11 +191,18 @@ if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
   mkdir -p ${DOMAIN_HOME}/lib
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
+        # expand the archive domain libraries to the domain lib
         cd ${DOMAIN_HOME}/lib
-        jar xvf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
+        jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
+
+        # expand the archive apps and shared lib to the wlsdeploy/* directories
+        # the config.xml is referencing them from that path
+
         cd ${DOMAIN_HOME}
-        jar xvf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
-        rm -fr wlsdeploy/domainLibraries
+        jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
+
+        # no need we are not expanding to it
+        #rm -fr wlsdeploy/domainLibraries
     done
 
 fi

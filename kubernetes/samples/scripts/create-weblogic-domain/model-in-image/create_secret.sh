@@ -16,6 +16,8 @@
 #                       This script doesn't support spaces in the key value pair.
 # -f <filename>       : Secret 'file-name' key/value pair. Can be specified more than once. 
 #                       Key will be the file-name, value will be file contents.
+# -fk <keyname> <filename>       : Secret 'file-name' key/value pair. Can be specified more than once.
+#                       Key will be the key-name, value will be file contents.
 
 set -e
 
@@ -40,6 +42,9 @@ while [ ! "$1" = "" ]; do
     -l) LITERALS="${LITERALS} --from-literal=${2}"
         ;;
     -f) FILENAMES="${FILENAMES} --from-file=${2}"
+        ;;
+    -fk) FILENAMES="${FILENAMES} --from-file=${2}=${3}"
+        shift
         ;;
     *)  echo Syntax Error
         exit 1

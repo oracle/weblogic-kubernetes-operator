@@ -8,6 +8,7 @@ public interface StepContextConstants {
   static final String OPSS_KEYPASSPHRASE_VOLUME = "opss-keypass-volume";
   static final String OPSS_WALLETFILE_VOLUME = "opss-walletfile-volume";
   static final String WDT_ENCRYPT_PASSPHRASE_VOLUME = "wdt-encrypt-keypass-volume";
+  static final String RUNTIME_ENCRYPTION_SECRET_VOLUME = "model-in-image-keypass-volume";
   static final String SECRETS_VOLUME = "weblogic-credentials-volume";
   static final String SCRIPTS_VOLUME = "weblogic-domain-cm-volume";
   static final String DEBUG_CM_VOLUME = "weblogic-domain-debug-cm-volume";
@@ -17,6 +18,7 @@ public interface StepContextConstants {
   static final String SECRETS_MOUNT_PATH = "/weblogic-operator/secrets";
   static final String OPSS_KEY_MOUNT_PATH = "/weblogic-operator/opss-walletkey-secret";
   static final String WDT_ENCRYPT_KEY_MOUNT_PATH = "/weblogic-operator/wdt-encrypt-key-passphrase";
+  static final String RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH = "/weblogic-operator/model-in-image-runtime-secret";
   static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
   static final String OVERRIDE_SECRETS_MOUNT_PATH = "/weblogic-operator/config-overrides-secrets";
   static final String OVERRIDES_CM_MOUNT_PATH = "/weblogic-operator/config-overrides";
