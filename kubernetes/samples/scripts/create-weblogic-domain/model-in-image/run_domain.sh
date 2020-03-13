@@ -66,9 +66,6 @@ $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-rcu-access \
 # TODO: Tom
 # This is for the configuration.model.runtimeEncryptionSecret name literal is password
 
-$SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-model-encryption-secret \
-  -l password=weblogic
-
 #kubectl -n sample-domain1-ns delete secret domain1-model-encryption-secret --ignore-not-found
 #
 #kubectl -n sample-domain1-ns \
