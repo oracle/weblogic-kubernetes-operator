@@ -1,3 +1,16 @@
+# Copyright (c) 2020, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#
+# ------------
+# Description:
+# ------------
+#
+#   This code compares python dictionaries.  It is used to compare the new vs the old version.
+#   output is written as csv file /tmp/model_diff_rc  containing the return codes that represent the differences.
+#   also the actual difference in model as yaml and json /tmp/diffed_model.json /tmp/diffed_model.yaml
+#
+#   This script is invoked by jython.  See modelInImage.sh diff_model
+#
 import re
 import sets
 import sys, os, traceback
