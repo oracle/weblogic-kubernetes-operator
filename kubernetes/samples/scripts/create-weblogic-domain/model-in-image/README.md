@@ -1,3 +1,12 @@
+## DO NOT MODIFY THIS FILE!  IT IS OUT OF DATE.
+
+## TBD Remove this file once other work is complete.
+
+## SAMPLE DOC IS NOW LOCATED IN ./docs-source/content/samples/simple/domains/model-in-image/_index.md
+
+## MAIN DOC WILL BE LOCATED IN ./docs-source/content/userguide/managing-domains/model-in-image/_index.md
+
+
 # Model in Image Sample
 
 This sample demonstrates the WebLogic Kubernetes Operator "Model in Image" feature. Model in Image allows you to supply a Weblogic Deploy Tool (WDT) model that the operator automatically expands into a full domain home during runtime. This eliminates the need to pre-create a WebLogic domain home prior to deploying your domain resource.
