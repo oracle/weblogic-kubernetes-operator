@@ -248,6 +248,7 @@
     <dependency>
       <groupId>com.kjetland</groupId>
       <artifactId>mbknor-jackson-jsonschema_2.12</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <!-- HTTP client: jersey-client -->
