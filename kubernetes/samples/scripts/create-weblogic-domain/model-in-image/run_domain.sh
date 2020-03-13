@@ -63,24 +63,11 @@ $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-rcu-access \
   -l rcu_admin_password=Oradoc_db1 \
   -l rcu_db_conn_string=oracle-db.${RCUDB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
 
-# TODO: Tom
-# This is for the configuration.model.runtimeEncryptionSecret name literal is password
-
+echo "@@ Info: Creating model in image run time encryption secret."
 $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-model-encryption-secret \
   -l password=weblogic
 
-#kubectl -n sample-domain1-ns delete secret domain1-model-encryption-secret --ignore-not-found
-#
-#kubectl -n sample-domain1-ns \
-#  create secret generic domain1-model-encryption-secret \
-#  --from-literal=password=weblogic
-#
-#kubectl -n sample-domain1-ns \
-#  label secret domain1-model-encryption-secret \
-#  weblogic.domainUID=domain1
-
 echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
-
 $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-opss-wallet-password-secret \
   -l walletPassword=welcome1
 
