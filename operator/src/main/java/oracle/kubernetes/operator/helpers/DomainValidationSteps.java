@@ -88,7 +88,7 @@ public class DomainValidationSteps {
       super(next);
     }
 
-    private void processWarning(DomainPresenceInfo info, String messageKey, Object... params) {
+    private void logAndAddWarning(DomainPresenceInfo info, String messageKey, Object... params) {
       LOGGER.warning(messageKey, params);
       info.addValidationWarning(LOGGER.getFormattedMessage(messageKey, params));
     }
@@ -102,14 +102,14 @@ public class DomainValidationSteps {
       // in the WebLogic domain
       for (Cluster cluster : domain.getSpec().getClusters()) {
         if (!wlsDomainConfig.containsCluster(cluster.getClusterName())) {
-          processWarning(info, MessageKeys.NO_CLUSTER_IN_DOMAIN, cluster.getClusterName());
+          logAndAddWarning(info, MessageKeys.NO_CLUSTER_IN_DOMAIN, cluster.getClusterName());
         }
       }
       // log warnings for managed servers that are specified in domain resource but not configured
       // in the WebLogic domain
       for (ManagedServer server : domain.getSpec().getManagedServers()) {
         if (!wlsDomainConfig.containsServer(server.getServerName())) {
-          processWarning(info, MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN, server.getServerName());
+          logAndAddWarning(info, MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN, server.getServerName());
         }
       }
       return doNext(packet);

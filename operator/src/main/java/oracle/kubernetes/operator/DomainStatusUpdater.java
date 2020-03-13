@@ -322,12 +322,14 @@ public class DomainStatusUpdater {
         if (getDomain() == null) {
           return;
         }
-        
+
+        String validationWarnings = null;
+
         if (getDomainConfig().isPresent()) {
           status.setServers(new ArrayList<>(getServerStatuses().values()));
           status.setClusters(new ArrayList<>(getClusterStatuses().values()));
           status.setReplicas(getReplicaSetting());
-          status.setMessage(getInfo().getValidationWarningsAsString());
+          validationWarnings = getInfo().getValidationWarningsAsString();
         }
 
         if (isHasFailedPod()) {
@@ -337,6 +339,10 @@ public class DomainStatusUpdater {
         } else if (!status.hasConditionWith(c -> c.hasType(Progressing))) {
           status.addCondition(new DomainCondition(Progressing).withStatus(TRUE)
                 .withReason(MANAGED_SERVERS_STARTING_PROGRESS_REASON));
+        }
+
+        if (validationWarnings != null && status.getMessage() == null) {
+          status.setMessage(validationWarnings);
         }
       }
 
