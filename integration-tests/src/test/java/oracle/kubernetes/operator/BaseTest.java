@@ -5,7 +5,10 @@ package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -983,10 +986,17 @@ public class BaseTest {
         "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
     domainMap.put("logHomeOnPV", "true");
     domainMap.put("clusterType", "CONFIGURED");
+
+    // To get unique image name
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    Date date = new Date();
+    String currentDateTime = dateFormat.format(date) + "-" + System.currentTimeMillis();
+
     if (prefix != null && !prefix.trim().equals("")) {
-      domainMap.put("image", prefix.toLowerCase() + "-dominimage-" + suffixCount + ":latest");
+      domainMap.put("image", prefix.toLowerCase() + "-dominimage-"
+          + suffixCount + ":" + currentDateTime);
     } else {
-      domainMap.put("image", "dominimage-" + suffixCount + ":latest");
+      domainMap.put("image", "dominimage-" + suffixCount + ":" + currentDateTime);
     }
     return domainMap;
   }
