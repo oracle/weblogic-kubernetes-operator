@@ -15,8 +15,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -449,7 +449,7 @@ public class SchemaGenerator {
   }
 
   private Collection<Field> getPropertyFields(Class<?> type) {
-    Set<Field> result = new HashSet<>();
+    Set<Field> result = new LinkedHashSet<>();
     for (Class<?> cl = type; cl != null && !cl.equals(Object.class); cl = cl.getSuperclass()) {
       result.addAll(Arrays.asList(cl.getDeclaredFields()));
     }

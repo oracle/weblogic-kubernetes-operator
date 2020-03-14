@@ -349,8 +349,8 @@ spec:
                                 description: Value of a property to set
                                 type: string
                             required:
-                            - value
                             - name
+                            - value
                     priorityClassName:
                       type: string
                       description: If specified, indicates the pod's priority. "system-node-critical"
@@ -404,8 +404,8 @@ spec:
                                   is no group
                                 type: string
                             required:
-                            - volume
                             - registry
+                            - volume
                           azureFile:
                             description: AzureFile represents an Azure File Service
                               mount on the host and bind mount to the pod.
@@ -423,8 +423,8 @@ spec:
                                 description: Share Name
                                 type: string
                             required:
-                            - shareName
                             - secretName
+                            - shareName
                           flexVolume:
                             description: FlexVolume represents a generic volume resource
                               that is provisioned/attached using an exec based plugin.
@@ -952,8 +952,8 @@ spec:
                                 description: The host address of the ScaleIO API Gateway.
                                 type: string
                             required:
-                            - secretRef
                             - gateway
+                            - secretRef
                             - system
                           emptyDir:
                             description: Represents an empty directory for a pod.
@@ -1044,8 +1044,8 @@ spec:
                                   Defaults to false. More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod'
                                 type: boolean
                             required:
-                            - path
                             - endpoints
+                            - path
                           gcePersistentDisk:
                             description: Represents a Persistent Disk resource in
                               Google Compute Engine.  A GCE PD must exist before mounting
@@ -1132,8 +1132,8 @@ spec:
                                   "ext4" if unspecified.
                                 type: string
                             required:
-                            - diskURI
                             - diskName
+                            - diskURI
                           cinder:
                             description: Represents a cinder volume resource in Openstack.
                               A Cinder volume must exist before mounting to a container.
@@ -1423,9 +1423,9 @@ spec:
                                   default (typically TCP ports 860 and 3260).
                                 type: string
                             required:
-                            - targetPortal
                             - iqn
                             - lun
+                            - targetPortal
                           rbd:
                             description: Represents a Rados Block Device mount that
                               lasts the lifetime of a pod. RBD volumes support ownership
@@ -1454,6 +1454,13 @@ spec:
                                   setting in VolumeMounts. Defaults to false. More
                                   info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
                                 type: boolean
+                              fsType:
+                                description: 'Filesystem type of the volume that you
+                                  want to mount. Tip: Ensure that the filesystem type
+                                  is supported by the host operating system. Examples:
+                                  "ext4", "xfs", "ntfs". Implicitly inferred to be
+                                  "ext4" if unspecified. More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd'
+                                type: string
                               keyring:
                                 description: 'Keyring is the path to key ring for
                                   RBDUser. Default is /etc/ceph/keyring. More info:
@@ -1463,13 +1470,6 @@ spec:
                                 description: 'The rados user name. Default is admin.
                                   More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
                                 type: string
-                              fsType:
-                                description: 'Filesystem type of the volume that you
-                                  want to mount. Tip: Ensure that the filesystem type
-                                  is supported by the host operating system. Examples:
-                                  "ext4", "xfs", "ntfs". Implicitly inferred to be
-                                  "ext4" if unspecified. More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd'
-                                type: string
                               monitors:
                                 description: 'A collection of Ceph monitors. More
                                   info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
@@ -1477,8 +1477,8 @@ spec:
                                 items:
                                   type: string
                             required:
-                            - monitors
                             - image
+                            - monitors
                           configMap:
                             description: Adapts a ConfigMap into a volume.  The contents
                               of the target ConfigMap's Data field will be presented
@@ -1582,10 +1582,6 @@ spec:
                                   "ext4", "xfs", "ntfs". Implicitly inferred to be
                                   "ext4" if unspecified.
                                 type: string
-                          name:
-                            description: 'Volume''s name. Must be a DNS_LABEL and
-                              unique within the pod. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                            type: string
                           csi:
                             description: Represents a source location of a volume
                               to mount, managed by an external CSI driver
@@ -1624,6 +1620,10 @@ spec:
                                 properties: {}
                             required:
                             - driver
+                          name:
+                            description: 'Volume''s name. Must be a DNS_LABEL and
+                              unique within the pod. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
                           nfs:
                             description: Represents an NFS mount that lasts the lifetime
                               of a pod. NFS volumes do not support ownership management
@@ -2011,8 +2011,8 @@ spec:
                               exclusive. This field is beta in 1.15.
                             type: string
                         required:
-                        - name
                         - mountPath
+                        - name
                     labels:
                       type: object
                       description: The labels to be attached to generated resources.
@@ -2111,8 +2111,8 @@ spec:
                                     in the pod
                                   type: string
                               required:
-                              - name
                               - devicePath
+                              - name
                           image:
                             description: 'Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images
                               This field is optional to allow higher level config
@@ -2139,11 +2139,6 @@ spec:
                               periodSeconds:
                                 description: How often (in seconds) to perform the
                                   probe. Default to 10 seconds. Minimum value is 1.
-                                type: number
-                              timeoutSeconds:
-                                description: 'Number of seconds after which the probe
-                                  times out. Defaults to 1 second. Minimum value is
-                                  1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                                 type: number
                               tcpSocket:
                                 description: TCPSocketAction describes an action based
@@ -2173,6 +2168,11 @@ spec:
                                     type: string
                                 required:
                                 - port
+                              timeoutSeconds:
+                                description: 'Number of seconds after which the probe
+                                  times out. Defaults to 1 second. Minimum value is
+                                  1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                type: number
                               successThreshold:
                                 description: Minimum consecutive successes for the
                                   probe to be considered successful after having failed.
@@ -2444,11 +2444,6 @@ spec:
                                 description: How often (in seconds) to perform the
                                   probe. Default to 10 seconds. Minimum value is 1.
                                 type: number
-                              timeoutSeconds:
-                                description: 'Number of seconds after which the probe
-                                  times out. Defaults to 1 second. Minimum value is
-                                  1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
-                                type: number
                               tcpSocket:
                                 description: TCPSocketAction describes an action based
                                   on opening a socket
@@ -2477,6 +2472,11 @@ spec:
                                     type: string
                                 required:
                                 - port
+                              timeoutSeconds:
+                                description: 'Number of seconds after which the probe
+                                  times out. Defaults to 1 second. Minimum value is
+                                  1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                type: number
                               successThreshold:
                                 description: Minimum consecutive successes for the
                                   probe to be considered successful after having failed.
@@ -2560,49 +2560,6 @@ spec:
                                       - value
                                 required:
                                 - port
-                          ports:
-                            description: List of ports to expose from the container.
-                              Exposing a port here gives the system additional information
-                              about the network connections a container uses, but
-                              is primarily informational. Not specifying a port here
-                              DOES NOT prevent that port from being exposed. Any port
-                              which is listening on the default "0.0.0.0" address
-                              inside a container will be accessible from the network.
-                              Cannot be updated.
-                            type: array
-                            items:
-                              description: ContainerPort represents a network port
-                                in a single container.
-                              type: object
-                              properties:
-                                protocol:
-                                  description: Protocol for port. Must be UDP, TCP,
-                                    or SCTP. Defaults to "TCP".
-                                  type: string
-                                hostIP:
-                                  description: What host IP to bind the external port
-                                    to.
-                                  type: string
-                                name:
-                                  description: If specified, this must be an IANA_SVC_NAME
-                                    and unique within the pod. Each named port in
-                                    a pod must have a unique name. Name for the port
-                                    that can be referred to by services.
-                                  type: string
-                                containerPort:
-                                  description: Number of port to expose on the pod's
-                                    IP address. This must be a valid port number,
-                                    0 < x < 65536.
-                                  type: number
-                                hostPort:
-                                  description: Number of port to expose on the host.
-                                    If specified, this must be a valid port number,
-                                    0 < x < 65536. If HostNetwork is specified, this
-                                    must match ContainerPort. Most containers do not
-                                    need this.
-                                  type: number
-                              required:
-                              - containerPort
                           env:
                             description: List of environment variables to set in the
                               container. Cannot be updated.
@@ -2768,6 +2725,49 @@ spec:
                                       - fieldPath
                               required:
                               - name
+                          ports:
+                            description: List of ports to expose from the container.
+                              Exposing a port here gives the system additional information
+                              about the network connections a container uses, but
+                              is primarily informational. Not specifying a port here
+                              DOES NOT prevent that port from being exposed. Any port
+                              which is listening on the default "0.0.0.0" address
+                              inside a container will be accessible from the network.
+                              Cannot be updated.
+                            type: array
+                            items:
+                              description: ContainerPort represents a network port
+                                in a single container.
+                              type: object
+                              properties:
+                                protocol:
+                                  description: Protocol for port. Must be UDP, TCP,
+                                    or SCTP. Defaults to "TCP".
+                                  type: string
+                                hostIP:
+                                  description: What host IP to bind the external port
+                                    to.
+                                  type: string
+                                name:
+                                  description: If specified, this must be an IANA_SVC_NAME
+                                    and unique within the pod. Each named port in
+                                    a pod must have a unique name. Name for the port
+                                    that can be referred to by services.
+                                  type: string
+                                containerPort:
+                                  description: Number of port to expose on the pod's
+                                    IP address. This must be a valid port number,
+                                    0 < x < 65536.
+                                  type: number
+                                hostPort:
+                                  description: Number of port to expose on the host.
+                                    If specified, this must be a valid port number,
+                                    0 < x < 65536. If HostNetwork is specified, this
+                                    must match ContainerPort. Most containers do not
+                                    need this.
+                                  type: number
+                              required:
+                              - containerPort
                           command:
                             description: 'Entrypoint array. Not executed within a
                               shell. The docker image''s ENTRYPOINT is used if this
@@ -2824,8 +2824,21 @@ spec:
                                     This field is beta in 1.15.
                                   type: string
                               required:
-                              - name
                               - mountPath
+                              - name
+                          args:
+                            description: 'Arguments to the entrypoint. The docker
+                              image''s CMD is used if this is not provided. Variable
+                              references $(VAR_NAME) are expanded using the container''s
+                              environment. If a variable cannot be resolved, the reference
+                              in the input string will be unchanged. The $(VAR_NAME)
+                              syntax can be escaped with a double $$, ie: $$(VAR_NAME).
+                              Escaped references will never be expanded, regardless
+                              of whether the variable exists or not. Cannot be updated.
+                              More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
+                            type: array
+                            items:
+                              type: string
                           lifecycle:
                             description: Lifecycle describes actions that the management
                               system should take in response to container lifecycle
@@ -3047,19 +3060,6 @@ spec:
                                           - value
                                     required:
                                     - port
-                          args:
-                            description: 'Arguments to the entrypoint. The docker
-                              image''s CMD is used if this is not provided. Variable
-                              references $(VAR_NAME) are expanded using the container''s
-                              environment. If a variable cannot be resolved, the reference
-                              in the input string will be unchanged. The $(VAR_NAME)
-                              syntax can be escaped with a double $$, ie: $$(VAR_NAME).
-                              Escaped references will never be expanded, regardless
-                              of whether the variable exists or not. Cannot be updated.
-                              More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
-                            type: array
-                            items:
-                              type: string
                           name:
                             description: Name of the container specified as a DNS_LABEL.
                               Each container in a pod must have a unique name (DNS_LABEL).
@@ -3084,11 +3084,6 @@ spec:
                               periodSeconds:
                                 description: How often (in seconds) to perform the
                                   probe. Default to 10 seconds. Minimum value is 1.
-                                type: number
-                              timeoutSeconds:
-                                description: 'Number of seconds after which the probe
-                                  times out. Defaults to 1 second. Minimum value is
-                                  1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                                 type: number
                               tcpSocket:
                                 description: TCPSocketAction describes an action based
@@ -3118,6 +3113,11 @@ spec:
                                     type: string
                                 required:
                                 - port
+                              timeoutSeconds:
+                                description: 'Number of seconds after which the probe
+                                  times out. Defaults to 1 second. Minimum value is
+                                  1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                type: number
                               successThreshold:
                                 description: Minimum consecutive successes for the
                                   probe to be considered successful after having failed.
@@ -3416,8 +3416,8 @@ spec:
                                     in the pod
                                   type: string
                               required:
-                              - name
                               - devicePath
+                              - name
                           image:
                             description: 'Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images
                               This field is optional to allow higher level config
@@ -3444,11 +3444,6 @@ spec:
                               periodSeconds:
                                 description: How often (in seconds) to perform the
                                   probe. Default to 10 seconds. Minimum value is 1.
-                                type: number
-                              timeoutSeconds:
-                                description: 'Number of seconds after which the probe
-                                  times out. Defaults to 1 second. Minimum value is
-                                  1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                                 type: number
                               tcpSocket:
                                 description: TCPSocketAction describes an action based
@@ -3478,6 +3473,11 @@ spec:
                                     type: string
                                 required:
                                 - port
+                              timeoutSeconds:
+                                description: 'Number of seconds after which the probe
+                                  times out. Defaults to 1 second. Minimum value is
+                                  1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                type: number
                               successThreshold:
                                 description: Minimum consecutive successes for the
                                   probe to be considered successful after having failed.
@@ -3749,11 +3749,6 @@ spec:
                                 description: How often (in seconds) to perform the
                                   probe. Default to 10 seconds. Minimum value is 1.
                                 type: number
-                              timeoutSeconds:
-                                description: 'Number of seconds after which the probe
-                                  times out. Defaults to 1 second. Minimum value is
-                                  1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
-                                type: number
                               tcpSocket:
                                 description: TCPSocketAction describes an action based
                                   on opening a socket
@@ -3782,6 +3777,11 @@ spec:
                                     type: string
                                 required:
                                 - port
+                              timeoutSeconds:
+                                description: 'Number of seconds after which the probe
+                                  times out. Defaults to 1 second. Minimum value is
+                                  1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                type: number
                               successThreshold:
                                 description: Minimum consecutive successes for the
                                   probe to be considered successful after having failed.
@@ -3865,49 +3865,6 @@ spec:
                                       - value
                                 required:
                                 - port
-                          ports:
-                            description: List of ports to expose from the container.
-                              Exposing a port here gives the system additional information
-                              about the network connections a container uses, but
-                              is primarily informational. Not specifying a port here
-                              DOES NOT prevent that port from being exposed. Any port
-                              which is listening on the default "0.0.0.0" address
-                              inside a container will be accessible from the network.
-                              Cannot be updated.
-                            type: array
-                            items:
-                              description: ContainerPort represents a network port
-                                in a single container.
-                              type: object
-                              properties:
-                                protocol:
-                                  description: Protocol for port. Must be UDP, TCP,
-                                    or SCTP. Defaults to "TCP".
-                                  type: string
-                                hostIP:
-                                  description: What host IP to bind the external port
-                                    to.
-                                  type: string
-                                name:
-                                  description: If specified, this must be an IANA_SVC_NAME
-                                    and unique within the pod. Each named port in
-                                    a pod must have a unique name. Name for the port
-                                    that can be referred to by services.
-                                  type: string
-                                containerPort:
-                                  description: Number of port to expose on the pod's
-                                    IP address. This must be a valid port number,
-                                    0 < x < 65536.
-                                  type: number
-                                hostPort:
-                                  description: Number of port to expose on the host.
-                                    If specified, this must be a valid port number,
-                                    0 < x < 65536. If HostNetwork is specified, this
-                                    must match ContainerPort. Most containers do not
-                                    need this.
-                                  type: number
-                              required:
-                              - containerPort
                           env:
                             description: List of environment variables to set in the
                               container. Cannot be updated.
@@ -4073,6 +4030,49 @@ spec:
                                       - fieldPath
                               required:
                               - name
+                          ports:
+                            description: List of ports to expose from the container.
+                              Exposing a port here gives the system additional information
+                              about the network connections a container uses, but
+                              is primarily informational. Not specifying a port here
+                              DOES NOT prevent that port from being exposed. Any port
+                              which is listening on the default "0.0.0.0" address
+                              inside a container will be accessible from the network.
+                              Cannot be updated.
+                            type: array
+                            items:
+                              description: ContainerPort represents a network port
+                                in a single container.
+                              type: object
+                              properties:
+                                protocol:
+                                  description: Protocol for port. Must be UDP, TCP,
+                                    or SCTP. Defaults to "TCP".
+                                  type: string
+                                hostIP:
+                                  description: What host IP to bind the external port
+                                    to.
+                                  type: string
+                                name:
+                                  description: If specified, this must be an IANA_SVC_NAME
+                                    and unique within the pod. Each named port in
+                                    a pod must have a unique name. Name for the port
+                                    that can be referred to by services.
+                                  type: string
+                                containerPort:
+                                  description: Number of port to expose on the pod's
+                                    IP address. This must be a valid port number,
+                                    0 < x < 65536.
+                                  type: number
+                                hostPort:
+                                  description: Number of port to expose on the host.
+                                    If specified, this must be a valid port number,
+                                    0 < x < 65536. If HostNetwork is specified, this
+                                    must match ContainerPort. Most containers do not
+                                    need this.
+                                  type: number
+                              required:
+                              - containerPort
                           command:
                             description: 'Entrypoint array. Not executed within a
                               shell. The docker image''s ENTRYPOINT is used if this
@@ -4129,8 +4129,21 @@ spec:
                                     This field is beta in 1.15.
                                   type: string
                               required:
-                              - name
                               - mountPath
+                              - name
+                          args:
+                            description: 'Arguments to the entrypoint. The docker
+                              image''s CMD is used if this is not provided. Variable
+                              references $(VAR_NAME) are expanded using the container''s
+                              environment. If a variable cannot be resolved, the reference
+                              in the input string will be unchanged. The $(VAR_NAME)
+                              syntax can be escaped with a double $$, ie: $$(VAR_NAME).
+                              Escaped references will never be expanded, regardless
+                              of whether the variable exists or not. Cannot be updated.
+                              More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
+                            type: array
+                            items:
+                              type: string
                           lifecycle:
                             description: Lifecycle describes actions that the management
                               system should take in response to container lifecycle
@@ -4352,19 +4365,6 @@ spec:
                                           - value
                                     required:
                                     - port
-                          args:
-                            description: 'Arguments to the entrypoint. The docker
-                              image''s CMD is used if this is not provided. Variable
-                              references $(VAR_NAME) are expanded using the container''s
-                              environment. If a variable cannot be resolved, the reference
-                              in the input string will be unchanged. The $(VAR_NAME)
-                              syntax can be escaped with a double $$, ie: $$(VAR_NAME).
-                              Escaped references will never be expanded, regardless
-                              of whether the variable exists or not. Cannot be updated.
-                              More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
-                            type: array
-                            items:
-                              type: string
                           name:
                             description: Name of the container specified as a DNS_LABEL.
                               Each container in a pod must have a unique name (DNS_LABEL).
@@ -4389,11 +4389,6 @@ spec:
                               periodSeconds:
                                 description: How often (in seconds) to perform the
                                   probe. Default to 10 seconds. Minimum value is 1.
-                                type: number
-                              timeoutSeconds:
-                                description: 'Number of seconds after which the probe
-                                  times out. Defaults to 1 second. Minimum value is
-                                  1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                                 type: number
                               tcpSocket:
                                 description: TCPSocketAction describes an action based
@@ -4423,6 +4418,11 @@ spec:
                                     type: string
                                 required:
                                 - port
+                              timeoutSeconds:
+                                description: 'Number of seconds after which the probe
+                                  times out. Defaults to 1 second. Minimum value is
+                                  1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                type: number
                               successThreshold:
                                 description: Minimum consecutive successes for the
                                   probe to be considered successful after having failed.
@@ -4807,8 +4807,8 @@ spec:
                                       1-100.
                                     type: number
                                 required:
-                                - weight
                                 - preference
+                                - weight
                         podAffinity:
                           type: object
                           description: Pod affinity is a group of inter pod affinity
@@ -5448,8 +5448,8 @@ spec:
                             description: Value of a property to set
                             type: string
                         required:
-                        - value
                         - name
+                        - value
                 priorityClassName:
                   type: string
                   description: If specified, indicates the pod's priority. "system-node-critical"
@@ -5501,8 +5501,8 @@ spec:
                               no group
                             type: string
                         required:
-                        - volume
                         - registry
+                        - volume
                       azureFile:
                         description: AzureFile represents an Azure File Service mount
                           on the host and bind mount to the pod.
@@ -5520,8 +5520,8 @@ spec:
                             description: Share Name
                             type: string
                         required:
-                        - shareName
                         - secretName
+                        - shareName
                       flexVolume:
                         description: FlexVolume represents a generic volume resource
                           that is provisioned/attached using an exec based plugin.
@@ -6027,8 +6027,8 @@ spec:
                             description: The host address of the ScaleIO API Gateway.
                             type: string
                         required:
-                        - secretRef
                         - gateway
+                        - secretRef
                         - system
                       emptyDir:
                         description: Represents an empty directory for a pod. Empty
@@ -6116,8 +6116,8 @@ spec:
                               false. More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod'
                             type: boolean
                         required:
-                        - path
                         - endpoints
+                        - path
                       gcePersistentDisk:
                         description: Represents a Persistent Disk resource in Google
                           Compute Engine.  A GCE PD must exist before mounting to
@@ -6199,8 +6199,8 @@ spec:
                               "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             type: string
                         required:
-                        - diskURI
                         - diskName
+                        - diskURI
                       cinder:
                         description: Represents a cinder volume resource in Openstack.
                           A Cinder volume must exist before mounting to a container.
@@ -6478,9 +6478,9 @@ spec:
                               (typically TCP ports 860 and 3260).
                             type: string
                         required:
-                        - targetPortal
                         - iqn
                         - lun
+                        - targetPortal
                       rbd:
                         description: Represents a Rados Block Device mount that lasts
                           the lifetime of a pod. RBD volumes support ownership management
@@ -6507,6 +6507,13 @@ spec:
                             description: 'ReadOnly here will force the ReadOnly setting
                               in VolumeMounts. Defaults to false. More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
                             type: boolean
+                          fsType:
+                            description: 'Filesystem type of the volume that you want
+                              to mount. Tip: Ensure that the filesystem type is supported
+                              by the host operating system. Examples: "ext4", "xfs",
+                              "ntfs". Implicitly inferred to be "ext4" if unspecified.
+                              More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd'
+                            type: string
                           keyring:
                             description: 'Keyring is the path to key ring for RBDUser.
                               Default is /etc/ceph/keyring. More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
@@ -6515,13 +6522,6 @@ spec:
                             description: 'The rados user name. Default is admin. More
                               info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
                             type: string
-                          fsType:
-                            description: 'Filesystem type of the volume that you want
-                              to mount. Tip: Ensure that the filesystem type is supported
-                              by the host operating system. Examples: "ext4", "xfs",
-                              "ntfs". Implicitly inferred to be "ext4" if unspecified.
-                              More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd'
-                            type: string
                           monitors:
                             description: 'A collection of Ceph monitors. More info:
                               https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
@@ -6529,8 +6529,8 @@ spec:
                             items:
                               type: string
                         required:
-                        - monitors
                         - image
+                        - monitors
                       configMap:
                         description: Adapts a ConfigMap into a volume.  The contents
                           of the target ConfigMap's Data field will be presented in
@@ -6627,10 +6627,6 @@ spec:
                               type supported by the host operating system. Ex. "ext4",
                               "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             type: string
-                      name:
-                        description: 'Volume''s name. Must be a DNS_LABEL and unique
-                          within the pod. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                        type: string
                       csi:
                         description: Represents a source location of a volume to mount,
                           managed by an external CSI driver
@@ -6668,6 +6664,10 @@ spec:
                             properties: {}
                         required:
                         - driver
+                      name:
+                        description: 'Volume''s name. Must be a DNS_LABEL and unique
+                          within the pod. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        type: string
                       nfs:
                         description: Represents an NFS mount that lasts the lifetime
                           of a pod. NFS volumes do not support ownership management
@@ -7041,8 +7041,8 @@ spec:
                           exclusive. This field is beta in 1.15.
                         type: string
                     required:
-                    - name
                     - mountPath
+                    - name
                 labels:
                   type: object
                   description: The labels to be attached to generated resources. The
@@ -7139,8 +7139,8 @@ spec:
                                 in the pod
                               type: string
                           required:
-                          - name
                           - devicePath
+                          - name
                       image:
                         description: 'Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images
                           This field is optional to allow higher level config management
@@ -7166,11 +7166,6 @@ spec:
                           periodSeconds:
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
-                            type: number
-                          timeoutSeconds:
-                            description: 'Number of seconds after which the probe
-                              times out. Defaults to 1 second. Minimum value is 1.
-                              More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                             type: number
                           tcpSocket:
                             description: TCPSocketAction describes an action based
@@ -7199,6 +7194,11 @@ spec:
                                 type: string
                             required:
                             - port
+                          timeoutSeconds:
+                            description: 'Number of seconds after which the probe
+                              times out. Defaults to 1 second. Minimum value is 1.
+                              More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                            type: number
                           successThreshold:
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
@@ -7463,11 +7463,6 @@ spec:
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
                             type: number
-                          timeoutSeconds:
-                            description: 'Number of seconds after which the probe
-                              times out. Defaults to 1 second. Minimum value is 1.
-                              More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
-                            type: number
                           tcpSocket:
                             description: TCPSocketAction describes an action based
                               on opening a socket
@@ -7495,6 +7490,11 @@ spec:
                                 type: string
                             required:
                             - port
+                          timeoutSeconds:
+                            description: 'Number of seconds after which the probe
+                              times out. Defaults to 1 second. Minimum value is 1.
+                              More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                            type: number
                           successThreshold:
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
@@ -7576,47 +7576,6 @@ spec:
                                   - value
                             required:
                             - port
-                      ports:
-                        description: List of ports to expose from the container. Exposing
-                          a port here gives the system additional information about
-                          the network connections a container uses, but is primarily
-                          informational. Not specifying a port here DOES NOT prevent
-                          that port from being exposed. Any port which is listening
-                          on the default "0.0.0.0" address inside a container will
-                          be accessible from the network. Cannot be updated.
-                        type: array
-                        items:
-                          description: ContainerPort represents a network port in
-                            a single container.
-                          type: object
-                          properties:
-                            protocol:
-                              description: Protocol for port. Must be UDP, TCP, or
-                                SCTP. Defaults to "TCP".
-                              type: string
-                            hostIP:
-                              description: What host IP to bind the external port
-                                to.
-                              type: string
-                            name:
-                              description: If specified, this must be an IANA_SVC_NAME
-                                and unique within the pod. Each named port in a pod
-                                must have a unique name. Name for the port that can
-                                be referred to by services.
-                              type: string
-                            containerPort:
-                              description: Number of port to expose on the pod's IP
-                                address. This must be a valid port number, 0 < x <
-                                65536.
-                              type: number
-                            hostPort:
-                              description: Number of port to expose on the host. If
-                                specified, this must be a valid port number, 0 < x
-                                < 65536. If HostNetwork is specified, this must match
-                                ContainerPort. Most containers do not need this.
-                              type: number
-                          required:
-                          - containerPort
                       env:
                         description: List of environment variables to set in the container.
                           Cannot be updated.
@@ -7777,6 +7736,47 @@ spec:
                                   - fieldPath
                           required:
                           - name
+                      ports:
+                        description: List of ports to expose from the container. Exposing
+                          a port here gives the system additional information about
+                          the network connections a container uses, but is primarily
+                          informational. Not specifying a port here DOES NOT prevent
+                          that port from being exposed. Any port which is listening
+                          on the default "0.0.0.0" address inside a container will
+                          be accessible from the network. Cannot be updated.
+                        type: array
+                        items:
+                          description: ContainerPort represents a network port in
+                            a single container.
+                          type: object
+                          properties:
+                            protocol:
+                              description: Protocol for port. Must be UDP, TCP, or
+                                SCTP. Defaults to "TCP".
+                              type: string
+                            hostIP:
+                              description: What host IP to bind the external port
+                                to.
+                              type: string
+                            name:
+                              description: If specified, this must be an IANA_SVC_NAME
+                                and unique within the pod. Each named port in a pod
+                                must have a unique name. Name for the port that can
+                                be referred to by services.
+                              type: string
+                            containerPort:
+                              description: Number of port to expose on the pod's IP
+                                address. This must be a valid port number, 0 < x <
+                                65536.
+                              type: number
+                            hostPort:
+                              description: Number of port to expose on the host. If
+                                specified, this must be a valid port number, 0 < x
+                                < 65536. If HostNetwork is specified, this must match
+                                ContainerPort. Most containers do not need this.
+                              type: number
+                          required:
+                          - containerPort
                       command:
                         description: 'Entrypoint array. Not executed within a shell.
                           The docker image''s ENTRYPOINT is used if this is not provided.
@@ -7830,8 +7830,20 @@ spec:
                                 are mutually exclusive. This field is beta in 1.15.
                               type: string
                           required:
-                          - name
                           - mountPath
+                          - name
+                      args:
+                        description: 'Arguments to the entrypoint. The docker image''s
+                          CMD is used if this is not provided. Variable references
+                          $(VAR_NAME) are expanded using the container''s environment.
+                          If a variable cannot be resolved, the reference in the input
+                          string will be unchanged. The $(VAR_NAME) syntax can be
+                          escaped with a double $$, ie: $$(VAR_NAME). Escaped references
+                          will never be expanded, regardless of whether the variable
+                          exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
+                        type: array
+                        items:
+                          type: string
                       lifecycle:
                         description: Lifecycle describes actions that the management
                           system should take in response to container lifecycle events.
@@ -8051,18 +8063,6 @@ spec:
                                       - value
                                 required:
                                 - port
-                      args:
-                        description: 'Arguments to the entrypoint. The docker image''s
-                          CMD is used if this is not provided. Variable references
-                          $(VAR_NAME) are expanded using the container''s environment.
-                          If a variable cannot be resolved, the reference in the input
-                          string will be unchanged. The $(VAR_NAME) syntax can be
-                          escaped with a double $$, ie: $$(VAR_NAME). Escaped references
-                          will never be expanded, regardless of whether the variable
-                          exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
-                        type: array
-                        items:
-                          type: string
                       name:
                         description: Name of the container specified as a DNS_LABEL.
                           Each container in a pod must have a unique name (DNS_LABEL).
@@ -8087,11 +8087,6 @@ spec:
                           periodSeconds:
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
-                            type: number
-                          timeoutSeconds:
-                            description: 'Number of seconds after which the probe
-                              times out. Defaults to 1 second. Minimum value is 1.
-                              More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                             type: number
                           tcpSocket:
                             description: TCPSocketAction describes an action based
@@ -8120,6 +8115,11 @@ spec:
                                 type: string
                             required:
                             - port
+                          timeoutSeconds:
+                            description: 'Number of seconds after which the probe
+                              times out. Defaults to 1 second. Minimum value is 1.
+                              More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                            type: number
                           successThreshold:
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
@@ -8407,8 +8407,8 @@ spec:
                                 in the pod
                               type: string
                           required:
-                          - name
                           - devicePath
+                          - name
                       image:
                         description: 'Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images
                           This field is optional to allow higher level config management
@@ -8434,11 +8434,6 @@ spec:
                           periodSeconds:
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
-                            type: number
-                          timeoutSeconds:
-                            description: 'Number of seconds after which the probe
-                              times out. Defaults to 1 second. Minimum value is 1.
-                              More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                             type: number
                           tcpSocket:
                             description: TCPSocketAction describes an action based
@@ -8467,6 +8462,11 @@ spec:
                                 type: string
                             required:
                             - port
+                          timeoutSeconds:
+                            description: 'Number of seconds after which the probe
+                              times out. Defaults to 1 second. Minimum value is 1.
+                              More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                            type: number
                           successThreshold:
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
@@ -8731,11 +8731,6 @@ spec:
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
                             type: number
-                          timeoutSeconds:
-                            description: 'Number of seconds after which the probe
-                              times out. Defaults to 1 second. Minimum value is 1.
-                              More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
-                            type: number
                           tcpSocket:
                             description: TCPSocketAction describes an action based
                               on opening a socket
@@ -8763,6 +8758,11 @@ spec:
                                 type: string
                             required:
                             - port
+                          timeoutSeconds:
+                            description: 'Number of seconds after which the probe
+                              times out. Defaults to 1 second. Minimum value is 1.
+                              More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                            type: number
                           successThreshold:
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
@@ -8844,47 +8844,6 @@ spec:
                                   - value
                             required:
                             - port
-                      ports:
-                        description: List of ports to expose from the container. Exposing
-                          a port here gives the system additional information about
-                          the network connections a container uses, but is primarily
-                          informational. Not specifying a port here DOES NOT prevent
-                          that port from being exposed. Any port which is listening
-                          on the default "0.0.0.0" address inside a container will
-                          be accessible from the network. Cannot be updated.
-                        type: array
-                        items:
-                          description: ContainerPort represents a network port in
-                            a single container.
-                          type: object
-                          properties:
-                            protocol:
-                              description: Protocol for port. Must be UDP, TCP, or
-                                SCTP. Defaults to "TCP".
-                              type: string
-                            hostIP:
-                              description: What host IP to bind the external port
-                                to.
-                              type: string
-                            name:
-                              description: If specified, this must be an IANA_SVC_NAME
-                                and unique within the pod. Each named port in a pod
-                                must have a unique name. Name for the port that can
-                                be referred to by services.
-                              type: string
-                            containerPort:
-                              description: Number of port to expose on the pod's IP
-                                address. This must be a valid port number, 0 < x <
-                                65536.
-                              type: number
-                            hostPort:
-                              description: Number of port to expose on the host. If
-                                specified, this must be a valid port number, 0 < x
-                                < 65536. If HostNetwork is specified, this must match
-                                ContainerPort. Most containers do not need this.
-                              type: number
-                          required:
-                          - containerPort
                       env:
                         description: List of environment variables to set in the container.
                           Cannot be updated.
@@ -9045,6 +9004,47 @@ spec:
                                   - fieldPath
                           required:
                           - name
+                      ports:
+                        description: List of ports to expose from the container. Exposing
+                          a port here gives the system additional information about
+                          the network connections a container uses, but is primarily
+                          informational. Not specifying a port here DOES NOT prevent
+                          that port from being exposed. Any port which is listening
+                          on the default "0.0.0.0" address inside a container will
+                          be accessible from the network. Cannot be updated.
+                        type: array
+                        items:
+                          description: ContainerPort represents a network port in
+                            a single container.
+                          type: object
+                          properties:
+                            protocol:
+                              description: Protocol for port. Must be UDP, TCP, or
+                                SCTP. Defaults to "TCP".
+                              type: string
+                            hostIP:
+                              description: What host IP to bind the external port
+                                to.
+                              type: string
+                            name:
+                              description: If specified, this must be an IANA_SVC_NAME
+                                and unique within the pod. Each named port in a pod
+                                must have a unique name. Name for the port that can
+                                be referred to by services.
+                              type: string
+                            containerPort:
+                              description: Number of port to expose on the pod's IP
+                                address. This must be a valid port number, 0 < x <
+                                65536.
+                              type: number
+                            hostPort:
+                              description: Number of port to expose on the host. If
+                                specified, this must be a valid port number, 0 < x
+                                < 65536. If HostNetwork is specified, this must match
+                                ContainerPort. Most containers do not need this.
+                              type: number
+                          required:
+                          - containerPort
                       command:
                         description: 'Entrypoint array. Not executed within a shell.
                           The docker image''s ENTRYPOINT is used if this is not provided.
@@ -9098,8 +9098,20 @@ spec:
                                 are mutually exclusive. This field is beta in 1.15.
                               type: string
                           required:
-                          - name
                           - mountPath
+                          - name
+                      args:
+                        description: 'Arguments to the entrypoint. The docker image''s
+                          CMD is used if this is not provided. Variable references
+                          $(VAR_NAME) are expanded using the container''s environment.
+                          If a variable cannot be resolved, the reference in the input
+                          string will be unchanged. The $(VAR_NAME) syntax can be
+                          escaped with a double $$, ie: $$(VAR_NAME). Escaped references
+                          will never be expanded, regardless of whether the variable
+                          exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
+                        type: array
+                        items:
+                          type: string
                       lifecycle:
                         description: Lifecycle describes actions that the management
                           system should take in response to container lifecycle events.
@@ -9319,18 +9331,6 @@ spec:
                                       - value
                                 required:
                                 - port
-                      args:
-                        description: 'Arguments to the entrypoint. The docker image''s
-                          CMD is used if this is not provided. Variable references
-                          $(VAR_NAME) are expanded using the container''s environment.
-                          If a variable cannot be resolved, the reference in the input
-                          string will be unchanged. The $(VAR_NAME) syntax can be
-                          escaped with a double $$, ie: $$(VAR_NAME). Escaped references
-                          will never be expanded, regardless of whether the variable
-                          exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
-                        type: array
-                        items:
-                          type: string
                       name:
                         description: Name of the container specified as a DNS_LABEL.
                           Each container in a pod must have a unique name (DNS_LABEL).
@@ -9355,11 +9355,6 @@ spec:
                           periodSeconds:
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
-                            type: number
-                          timeoutSeconds:
-                            description: 'Number of seconds after which the probe
-                              times out. Defaults to 1 second. Minimum value is 1.
-                              More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                             type: number
                           tcpSocket:
                             description: TCPSocketAction describes an action based
@@ -9388,6 +9383,11 @@ spec:
                                 type: string
                             required:
                             - port
+                          timeoutSeconds:
+                            description: 'Number of seconds after which the probe
+                              times out. Defaults to 1 second. Minimum value is 1.
+                              More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                            type: number
                           successThreshold:
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
@@ -9756,8 +9756,8 @@ spec:
                                   nodeSelectorTerm, in the range 1-100.
                                 type: number
                             required:
-                            - weight
                             - preference
+                            - weight
                     podAffinity:
                       type: object
                       description: Pod affinity is a group of inter pod affinity scheduling
@@ -10372,8 +10372,8 @@ spec:
                                   description: Value of a property to set
                                   type: string
                               required:
-                              - value
                               - name
+                              - value
                       priorityClassName:
                         description: If specified, indicates the pod's priority. "system-node-critical"
                           and "system-cluster-critical" are two special keywords which
@@ -10428,8 +10428,8 @@ spec:
                                     is no group
                                   type: string
                               required:
-                              - volume
                               - registry
+                              - volume
                             azureFile:
                               description: AzureFile represents an Azure File Service
                                 mount on the host and bind mount to the pod.
@@ -10447,8 +10447,8 @@ spec:
                                   description: Share Name
                                   type: string
                               required:
-                              - shareName
                               - secretName
+                              - shareName
                             flexVolume:
                               description: FlexVolume represents a generic volume
                                 resource that is provisioned/attached using an exec
@@ -11003,8 +11003,8 @@ spec:
                                     Gateway.
                                   type: string
                               required:
-                              - secretRef
                               - gateway
+                              - secretRef
                               - system
                             emptyDir:
                               description: Represents an empty directory for a pod.
@@ -11097,8 +11097,8 @@ spec:
                                     Defaults to false. More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod'
                                   type: boolean
                               required:
-                              - path
                               - endpoints
+                              - path
                             gcePersistentDisk:
                               description: Represents a Persistent Disk resource in
                                 Google Compute Engine.  A GCE PD must exist before
@@ -11187,8 +11187,8 @@ spec:
                                     inferred to be "ext4" if unspecified.
                                   type: string
                               required:
-                              - diskURI
                               - diskName
+                              - diskURI
                             cinder:
                               description: Represents a cinder volume resource in
                                 Openstack. A Cinder volume must exist before mounting
@@ -11485,9 +11485,9 @@ spec:
                                     than default (typically TCP ports 860 and 3260).
                                   type: string
                               required:
-                              - targetPortal
                               - iqn
                               - lun
+                              - targetPortal
                             rbd:
                               description: Represents a Rados Block Device mount that
                                 lasts the lifetime of a pod. RBD volumes support ownership
@@ -11516,6 +11516,13 @@ spec:
                                     setting in VolumeMounts. Defaults to false. More
                                     info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
                                   type: boolean
+                                fsType:
+                                  description: 'Filesystem type of the volume that
+                                    you want to mount. Tip: Ensure that the filesystem
+                                    type is supported by the host operating system.
+                                    Examples: "ext4", "xfs", "ntfs". Implicitly inferred
+                                    to be "ext4" if unspecified. More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd'
+                                  type: string
                                 keyring:
                                   description: 'Keyring is the path to key ring for
                                     RBDUser. Default is /etc/ceph/keyring. More info:
@@ -11525,13 +11532,6 @@ spec:
                                   description: 'The rados user name. Default is admin.
                                     More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
                                   type: string
-                                fsType:
-                                  description: 'Filesystem type of the volume that
-                                    you want to mount. Tip: Ensure that the filesystem
-                                    type is supported by the host operating system.
-                                    Examples: "ext4", "xfs", "ntfs". Implicitly inferred
-                                    to be "ext4" if unspecified. More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd'
-                                  type: string
                                 monitors:
                                   description: 'A collection of Ceph monitors. More
                                     info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
@@ -11539,8 +11539,8 @@ spec:
                                   items:
                                     type: string
                               required:
-                              - monitors
                               - image
+                              - monitors
                             configMap:
                               description: Adapts a ConfigMap into a volume.  The
                                 contents of the target ConfigMap's Data field will
@@ -11647,10 +11647,6 @@ spec:
                                     system. Ex. "ext4", "xfs", "ntfs". Implicitly
                                     inferred to be "ext4" if unspecified.
                                   type: string
-                            name:
-                              description: 'Volume''s name. Must be a DNS_LABEL and
-                                unique within the pod. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                              type: string
                             csi:
                               description: Represents a source location of a volume
                                 to mount, managed by an external CSI driver
@@ -11690,6 +11686,10 @@ spec:
                                   properties: {}
                               required:
                               - driver
+                            name:
+                              description: 'Volume''s name. Must be a DNS_LABEL and
+                                unique within the pod. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                              type: string
                             nfs:
                               description: Represents an NFS mount that lasts the
                                 lifetime of a pod. NFS volumes do not support ownership
@@ -12087,8 +12087,8 @@ spec:
                                 are mutually exclusive. This field is beta in 1.15.
                               type: string
                           required:
-                          - name
                           - mountPath
+                          - name
                       labels:
                         description: The labels to be attached to generated resources.
                           The label names must not start with 'weblogic.'.
@@ -12189,8 +12189,8 @@ spec:
                                       in the pod
                                     type: string
                                 required:
-                                - name
                                 - devicePath
+                                - name
                             image:
                               description: 'Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images
                                 This field is optional to allow higher level config
@@ -12218,11 +12218,6 @@ spec:
                                   description: How often (in seconds) to perform the
                                     probe. Default to 10 seconds. Minimum value is
                                     1.
-                                  type: number
-                                timeoutSeconds:
-                                  description: 'Number of seconds after which the
-                                    probe times out. Defaults to 1 second. Minimum
-                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                                   type: number
                                 tcpSocket:
                                   description: TCPSocketAction describes an action
@@ -12252,6 +12247,11 @@ spec:
                                       type: string
                                   required:
                                   - port
+                                timeoutSeconds:
+                                  description: 'Number of seconds after which the
+                                    probe times out. Defaults to 1 second. Minimum
+                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                  type: number
                                 successThreshold:
                                   description: Minimum consecutive successes for the
                                     probe to be considered successful after having
@@ -12529,11 +12529,6 @@ spec:
                                     probe. Default to 10 seconds. Minimum value is
                                     1.
                                   type: number
-                                timeoutSeconds:
-                                  description: 'Number of seconds after which the
-                                    probe times out. Defaults to 1 second. Minimum
-                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
-                                  type: number
                                 tcpSocket:
                                   description: TCPSocketAction describes an action
                                     based on opening a socket
@@ -12562,6 +12557,11 @@ spec:
                                       type: string
                                   required:
                                   - port
+                                timeoutSeconds:
+                                  description: 'Number of seconds after which the
+                                    probe times out. Defaults to 1 second. Minimum
+                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                  type: number
                                 successThreshold:
                                   description: Minimum consecutive successes for the
                                     probe to be considered successful after having
@@ -12645,49 +12645,6 @@ spec:
                                         - value
                                   required:
                                   - port
-                            ports:
-                              description: List of ports to expose from the container.
-                                Exposing a port here gives the system additional information
-                                about the network connections a container uses, but
-                                is primarily informational. Not specifying a port
-                                here DOES NOT prevent that port from being exposed.
-                                Any port which is listening on the default "0.0.0.0"
-                                address inside a container will be accessible from
-                                the network. Cannot be updated.
-                              type: array
-                              items:
-                                description: ContainerPort represents a network port
-                                  in a single container.
-                                type: object
-                                properties:
-                                  protocol:
-                                    description: Protocol for port. Must be UDP, TCP,
-                                      or SCTP. Defaults to "TCP".
-                                    type: string
-                                  hostIP:
-                                    description: What host IP to bind the external
-                                      port to.
-                                    type: string
-                                  name:
-                                    description: If specified, this must be an IANA_SVC_NAME
-                                      and unique within the pod. Each named port in
-                                      a pod must have a unique name. Name for the
-                                      port that can be referred to by services.
-                                    type: string
-                                  containerPort:
-                                    description: Number of port to expose on the pod's
-                                      IP address. This must be a valid port number,
-                                      0 < x < 65536.
-                                    type: number
-                                  hostPort:
-                                    description: Number of port to expose on the host.
-                                      If specified, this must be a valid port number,
-                                      0 < x < 65536. If HostNetwork is specified,
-                                      this must match ContainerPort. Most containers
-                                      do not need this.
-                                    type: number
-                                required:
-                                - containerPort
                             env:
                               description: List of environment variables to set in
                                 the container. Cannot be updated.
@@ -12857,6 +12814,49 @@ spec:
                                         - fieldPath
                                 required:
                                 - name
+                            ports:
+                              description: List of ports to expose from the container.
+                                Exposing a port here gives the system additional information
+                                about the network connections a container uses, but
+                                is primarily informational. Not specifying a port
+                                here DOES NOT prevent that port from being exposed.
+                                Any port which is listening on the default "0.0.0.0"
+                                address inside a container will be accessible from
+                                the network. Cannot be updated.
+                              type: array
+                              items:
+                                description: ContainerPort represents a network port
+                                  in a single container.
+                                type: object
+                                properties:
+                                  protocol:
+                                    description: Protocol for port. Must be UDP, TCP,
+                                      or SCTP. Defaults to "TCP".
+                                    type: string
+                                  hostIP:
+                                    description: What host IP to bind the external
+                                      port to.
+                                    type: string
+                                  name:
+                                    description: If specified, this must be an IANA_SVC_NAME
+                                      and unique within the pod. Each named port in
+                                      a pod must have a unique name. Name for the
+                                      port that can be referred to by services.
+                                    type: string
+                                  containerPort:
+                                    description: Number of port to expose on the pod's
+                                      IP address. This must be a valid port number,
+                                      0 < x < 65536.
+                                    type: number
+                                  hostPort:
+                                    description: Number of port to expose on the host.
+                                      If specified, this must be a valid port number,
+                                      0 < x < 65536. If HostNetwork is specified,
+                                      this must match ContainerPort. Most containers
+                                      do not need this.
+                                    type: number
+                                required:
+                                - containerPort
                             command:
                               description: 'Entrypoint array. Not executed within
                                 a shell. The docker image''s ENTRYPOINT is used if
@@ -12915,8 +12915,21 @@ spec:
                                       1.15.
                                     type: string
                                 required:
-                                - name
                                 - mountPath
+                                - name
+                            args:
+                              description: 'Arguments to the entrypoint. The docker
+                                image''s CMD is used if this is not provided. Variable
+                                references $(VAR_NAME) are expanded using the container''s
+                                environment. If a variable cannot be resolved, the
+                                reference in the input string will be unchanged. The
+                                $(VAR_NAME) syntax can be escaped with a double $$,
+                                ie: $$(VAR_NAME). Escaped references will never be
+                                expanded, regardless of whether the variable exists
+                                or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
+                              type: array
+                              items:
+                                type: string
                             lifecycle:
                               description: Lifecycle describes actions that the management
                                 system should take in response to container lifecycle
@@ -13140,19 +13153,6 @@ spec:
                                             - value
                                       required:
                                       - port
-                            args:
-                              description: 'Arguments to the entrypoint. The docker
-                                image''s CMD is used if this is not provided. Variable
-                                references $(VAR_NAME) are expanded using the container''s
-                                environment. If a variable cannot be resolved, the
-                                reference in the input string will be unchanged. The
-                                $(VAR_NAME) syntax can be escaped with a double $$,
-                                ie: $$(VAR_NAME). Escaped references will never be
-                                expanded, regardless of whether the variable exists
-                                or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
-                              type: array
-                              items:
-                                type: string
                             name:
                               description: Name of the container specified as a DNS_LABEL.
                                 Each container in a pod must have a unique name (DNS_LABEL).
@@ -13178,11 +13178,6 @@ spec:
                                   description: How often (in seconds) to perform the
                                     probe. Default to 10 seconds. Minimum value is
                                     1.
-                                  type: number
-                                timeoutSeconds:
-                                  description: 'Number of seconds after which the
-                                    probe times out. Defaults to 1 second. Minimum
-                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                                   type: number
                                 tcpSocket:
                                   description: TCPSocketAction describes an action
@@ -13212,6 +13207,11 @@ spec:
                                       type: string
                                   required:
                                   - port
+                                timeoutSeconds:
+                                  description: 'Number of seconds after which the
+                                    probe times out. Defaults to 1 second. Minimum
+                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                  type: number
                                 successThreshold:
                                   description: Minimum consecutive successes for the
                                     probe to be considered successful after having
@@ -13512,8 +13512,8 @@ spec:
                                       in the pod
                                     type: string
                                 required:
-                                - name
                                 - devicePath
+                                - name
                             image:
                               description: 'Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images
                                 This field is optional to allow higher level config
@@ -13541,11 +13541,6 @@ spec:
                                   description: How often (in seconds) to perform the
                                     probe. Default to 10 seconds. Minimum value is
                                     1.
-                                  type: number
-                                timeoutSeconds:
-                                  description: 'Number of seconds after which the
-                                    probe times out. Defaults to 1 second. Minimum
-                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                                   type: number
                                 tcpSocket:
                                   description: TCPSocketAction describes an action
@@ -13575,6 +13570,11 @@ spec:
                                       type: string
                                   required:
                                   - port
+                                timeoutSeconds:
+                                  description: 'Number of seconds after which the
+                                    probe times out. Defaults to 1 second. Minimum
+                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                  type: number
                                 successThreshold:
                                   description: Minimum consecutive successes for the
                                     probe to be considered successful after having
@@ -13852,11 +13852,6 @@ spec:
                                     probe. Default to 10 seconds. Minimum value is
                                     1.
                                   type: number
-                                timeoutSeconds:
-                                  description: 'Number of seconds after which the
-                                    probe times out. Defaults to 1 second. Minimum
-                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
-                                  type: number
                                 tcpSocket:
                                   description: TCPSocketAction describes an action
                                     based on opening a socket
@@ -13885,6 +13880,11 @@ spec:
                                       type: string
                                   required:
                                   - port
+                                timeoutSeconds:
+                                  description: 'Number of seconds after which the
+                                    probe times out. Defaults to 1 second. Minimum
+                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                  type: number
                                 successThreshold:
                                   description: Minimum consecutive successes for the
                                     probe to be considered successful after having
@@ -13968,49 +13968,6 @@ spec:
                                         - value
                                   required:
                                   - port
-                            ports:
-                              description: List of ports to expose from the container.
-                                Exposing a port here gives the system additional information
-                                about the network connections a container uses, but
-                                is primarily informational. Not specifying a port
-                                here DOES NOT prevent that port from being exposed.
-                                Any port which is listening on the default "0.0.0.0"
-                                address inside a container will be accessible from
-                                the network. Cannot be updated.
-                              type: array
-                              items:
-                                description: ContainerPort represents a network port
-                                  in a single container.
-                                type: object
-                                properties:
-                                  protocol:
-                                    description: Protocol for port. Must be UDP, TCP,
-                                      or SCTP. Defaults to "TCP".
-                                    type: string
-                                  hostIP:
-                                    description: What host IP to bind the external
-                                      port to.
-                                    type: string
-                                  name:
-                                    description: If specified, this must be an IANA_SVC_NAME
-                                      and unique within the pod. Each named port in
-                                      a pod must have a unique name. Name for the
-                                      port that can be referred to by services.
-                                    type: string
-                                  containerPort:
-                                    description: Number of port to expose on the pod's
-                                      IP address. This must be a valid port number,
-                                      0 < x < 65536.
-                                    type: number
-                                  hostPort:
-                                    description: Number of port to expose on the host.
-                                      If specified, this must be a valid port number,
-                                      0 < x < 65536. If HostNetwork is specified,
-                                      this must match ContainerPort. Most containers
-                                      do not need this.
-                                    type: number
-                                required:
-                                - containerPort
                             env:
                               description: List of environment variables to set in
                                 the container. Cannot be updated.
@@ -14180,6 +14137,49 @@ spec:
                                         - fieldPath
                                 required:
                                 - name
+                            ports:
+                              description: List of ports to expose from the container.
+                                Exposing a port here gives the system additional information
+                                about the network connections a container uses, but
+                                is primarily informational. Not specifying a port
+                                here DOES NOT prevent that port from being exposed.
+                                Any port which is listening on the default "0.0.0.0"
+                                address inside a container will be accessible from
+                                the network. Cannot be updated.
+                              type: array
+                              items:
+                                description: ContainerPort represents a network port
+                                  in a single container.
+                                type: object
+                                properties:
+                                  protocol:
+                                    description: Protocol for port. Must be UDP, TCP,
+                                      or SCTP. Defaults to "TCP".
+                                    type: string
+                                  hostIP:
+                                    description: What host IP to bind the external
+                                      port to.
+                                    type: string
+                                  name:
+                                    description: If specified, this must be an IANA_SVC_NAME
+                                      and unique within the pod. Each named port in
+                                      a pod must have a unique name. Name for the
+                                      port that can be referred to by services.
+                                    type: string
+                                  containerPort:
+                                    description: Number of port to expose on the pod's
+                                      IP address. This must be a valid port number,
+                                      0 < x < 65536.
+                                    type: number
+                                  hostPort:
+                                    description: Number of port to expose on the host.
+                                      If specified, this must be a valid port number,
+                                      0 < x < 65536. If HostNetwork is specified,
+                                      this must match ContainerPort. Most containers
+                                      do not need this.
+                                    type: number
+                                required:
+                                - containerPort
                             command:
                               description: 'Entrypoint array. Not executed within
                                 a shell. The docker image''s ENTRYPOINT is used if
@@ -14238,8 +14238,21 @@ spec:
                                       1.15.
                                     type: string
                                 required:
-                                - name
                                 - mountPath
+                                - name
+                            args:
+                              description: 'Arguments to the entrypoint. The docker
+                                image''s CMD is used if this is not provided. Variable
+                                references $(VAR_NAME) are expanded using the container''s
+                                environment. If a variable cannot be resolved, the
+                                reference in the input string will be unchanged. The
+                                $(VAR_NAME) syntax can be escaped with a double $$,
+                                ie: $$(VAR_NAME). Escaped references will never be
+                                expanded, regardless of whether the variable exists
+                                or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
+                              type: array
+                              items:
+                                type: string
                             lifecycle:
                               description: Lifecycle describes actions that the management
                                 system should take in response to container lifecycle
@@ -14463,19 +14476,6 @@ spec:
                                             - value
                                       required:
                                       - port
-                            args:
-                              description: 'Arguments to the entrypoint. The docker
-                                image''s CMD is used if this is not provided. Variable
-                                references $(VAR_NAME) are expanded using the container''s
-                                environment. If a variable cannot be resolved, the
-                                reference in the input string will be unchanged. The
-                                $(VAR_NAME) syntax can be escaped with a double $$,
-                                ie: $$(VAR_NAME). Escaped references will never be
-                                expanded, regardless of whether the variable exists
-                                or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
-                              type: array
-                              items:
-                                type: string
                             name:
                               description: Name of the container specified as a DNS_LABEL.
                                 Each container in a pod must have a unique name (DNS_LABEL).
@@ -14501,11 +14501,6 @@ spec:
                                   description: How often (in seconds) to perform the
                                     probe. Default to 10 seconds. Minimum value is
                                     1.
-                                  type: number
-                                timeoutSeconds:
-                                  description: 'Number of seconds after which the
-                                    probe times out. Defaults to 1 second. Minimum
-                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                                   type: number
                                 tcpSocket:
                                   description: TCPSocketAction describes an action
@@ -14535,6 +14530,11 @@ spec:
                                       type: string
                                   required:
                                   - port
+                                timeoutSeconds:
+                                  description: 'Number of seconds after which the
+                                    probe times out. Defaults to 1 second. Minimum
+                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                  type: number
                                 successThreshold:
                                   description: Minimum consecutive successes for the
                                     probe to be considered successful after having
@@ -14921,8 +14921,8 @@ spec:
                                         range 1-100.
                                       type: number
                                   required:
-                                  - weight
                                   - preference
+                                  - weight
                           podAffinity:
                             description: Pod affinity is a group of inter pod affinity
                               scheduling rules.
@@ -15586,8 +15586,8 @@ spec:
                                   description: Value of a property to set
                                   type: string
                               required:
-                              - value
                               - name
+                              - value
                       priorityClassName:
                         description: If specified, indicates the pod's priority. "system-node-critical"
                           and "system-cluster-critical" are two special keywords which
@@ -15642,8 +15642,8 @@ spec:
                                     is no group
                                   type: string
                               required:
-                              - volume
                               - registry
+                              - volume
                             azureFile:
                               description: AzureFile represents an Azure File Service
                                 mount on the host and bind mount to the pod.
@@ -15661,8 +15661,8 @@ spec:
                                   description: Share Name
                                   type: string
                               required:
-                              - shareName
                               - secretName
+                              - shareName
                             flexVolume:
                               description: FlexVolume represents a generic volume
                                 resource that is provisioned/attached using an exec
@@ -16217,8 +16217,8 @@ spec:
                                     Gateway.
                                   type: string
                               required:
-                              - secretRef
                               - gateway
+                              - secretRef
                               - system
                             emptyDir:
                               description: Represents an empty directory for a pod.
@@ -16311,8 +16311,8 @@ spec:
                                     Defaults to false. More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod'
                                   type: boolean
                               required:
-                              - path
                               - endpoints
+                              - path
                             gcePersistentDisk:
                               description: Represents a Persistent Disk resource in
                                 Google Compute Engine.  A GCE PD must exist before
@@ -16401,8 +16401,8 @@ spec:
                                     inferred to be "ext4" if unspecified.
                                   type: string
                               required:
-                              - diskURI
                               - diskName
+                              - diskURI
                             cinder:
                               description: Represents a cinder volume resource in
                                 Openstack. A Cinder volume must exist before mounting
@@ -16699,9 +16699,9 @@ spec:
                                     than default (typically TCP ports 860 and 3260).
                                   type: string
                               required:
-                              - targetPortal
                               - iqn
                               - lun
+                              - targetPortal
                             rbd:
                               description: Represents a Rados Block Device mount that
                                 lasts the lifetime of a pod. RBD volumes support ownership
@@ -16730,6 +16730,13 @@ spec:
                                     setting in VolumeMounts. Defaults to false. More
                                     info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
                                   type: boolean
+                                fsType:
+                                  description: 'Filesystem type of the volume that
+                                    you want to mount. Tip: Ensure that the filesystem
+                                    type is supported by the host operating system.
+                                    Examples: "ext4", "xfs", "ntfs". Implicitly inferred
+                                    to be "ext4" if unspecified. More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd'
+                                  type: string
                                 keyring:
                                   description: 'Keyring is the path to key ring for
                                     RBDUser. Default is /etc/ceph/keyring. More info:
@@ -16739,13 +16746,6 @@ spec:
                                   description: 'The rados user name. Default is admin.
                                     More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
                                   type: string
-                                fsType:
-                                  description: 'Filesystem type of the volume that
-                                    you want to mount. Tip: Ensure that the filesystem
-                                    type is supported by the host operating system.
-                                    Examples: "ext4", "xfs", "ntfs". Implicitly inferred
-                                    to be "ext4" if unspecified. More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd'
-                                  type: string
                                 monitors:
                                   description: 'A collection of Ceph monitors. More
                                     info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
@@ -16753,8 +16753,8 @@ spec:
                                   items:
                                     type: string
                               required:
-                              - monitors
                               - image
+                              - monitors
                             configMap:
                               description: Adapts a ConfigMap into a volume.  The
                                 contents of the target ConfigMap's Data field will
@@ -16861,10 +16861,6 @@ spec:
                                     system. Ex. "ext4", "xfs", "ntfs". Implicitly
                                     inferred to be "ext4" if unspecified.
                                   type: string
-                            name:
-                              description: 'Volume''s name. Must be a DNS_LABEL and
-                                unique within the pod. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                              type: string
                             csi:
                               description: Represents a source location of a volume
                                 to mount, managed by an external CSI driver
@@ -16904,6 +16900,10 @@ spec:
                                   properties: {}
                               required:
                               - driver
+                            name:
+                              description: 'Volume''s name. Must be a DNS_LABEL and
+                                unique within the pod. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                              type: string
                             nfs:
                               description: Represents an NFS mount that lasts the
                                 lifetime of a pod. NFS volumes do not support ownership
@@ -17301,8 +17301,8 @@ spec:
                                 are mutually exclusive. This field is beta in 1.15.
                               type: string
                           required:
-                          - name
                           - mountPath
+                          - name
                       labels:
                         description: The labels to be attached to generated resources.
                           The label names must not start with 'weblogic.'.
@@ -17403,8 +17403,8 @@ spec:
                                       in the pod
                                     type: string
                                 required:
-                                - name
                                 - devicePath
+                                - name
                             image:
                               description: 'Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images
                                 This field is optional to allow higher level config
@@ -17432,11 +17432,6 @@ spec:
                                   description: How often (in seconds) to perform the
                                     probe. Default to 10 seconds. Minimum value is
                                     1.
-                                  type: number
-                                timeoutSeconds:
-                                  description: 'Number of seconds after which the
-                                    probe times out. Defaults to 1 second. Minimum
-                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                                   type: number
                                 tcpSocket:
                                   description: TCPSocketAction describes an action
@@ -17466,6 +17461,11 @@ spec:
                                       type: string
                                   required:
                                   - port
+                                timeoutSeconds:
+                                  description: 'Number of seconds after which the
+                                    probe times out. Defaults to 1 second. Minimum
+                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                  type: number
                                 successThreshold:
                                   description: Minimum consecutive successes for the
                                     probe to be considered successful after having
@@ -17743,11 +17743,6 @@ spec:
                                     probe. Default to 10 seconds. Minimum value is
                                     1.
                                   type: number
-                                timeoutSeconds:
-                                  description: 'Number of seconds after which the
-                                    probe times out. Defaults to 1 second. Minimum
-                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
-                                  type: number
                                 tcpSocket:
                                   description: TCPSocketAction describes an action
                                     based on opening a socket
@@ -17776,6 +17771,11 @@ spec:
                                       type: string
                                   required:
                                   - port
+                                timeoutSeconds:
+                                  description: 'Number of seconds after which the
+                                    probe times out. Defaults to 1 second. Minimum
+                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                  type: number
                                 successThreshold:
                                   description: Minimum consecutive successes for the
                                     probe to be considered successful after having
@@ -17859,49 +17859,6 @@ spec:
                                         - value
                                   required:
                                   - port
-                            ports:
-                              description: List of ports to expose from the container.
-                                Exposing a port here gives the system additional information
-                                about the network connections a container uses, but
-                                is primarily informational. Not specifying a port
-                                here DOES NOT prevent that port from being exposed.
-                                Any port which is listening on the default "0.0.0.0"
-                                address inside a container will be accessible from
-                                the network. Cannot be updated.
-                              type: array
-                              items:
-                                description: ContainerPort represents a network port
-                                  in a single container.
-                                type: object
-                                properties:
-                                  protocol:
-                                    description: Protocol for port. Must be UDP, TCP,
-                                      or SCTP. Defaults to "TCP".
-                                    type: string
-                                  hostIP:
-                                    description: What host IP to bind the external
-                                      port to.
-                                    type: string
-                                  name:
-                                    description: If specified, this must be an IANA_SVC_NAME
-                                      and unique within the pod. Each named port in
-                                      a pod must have a unique name. Name for the
-                                      port that can be referred to by services.
-                                    type: string
-                                  containerPort:
-                                    description: Number of port to expose on the pod's
-                                      IP address. This must be a valid port number,
-                                      0 < x < 65536.
-                                    type: number
-                                  hostPort:
-                                    description: Number of port to expose on the host.
-                                      If specified, this must be a valid port number,
-                                      0 < x < 65536. If HostNetwork is specified,
-                                      this must match ContainerPort. Most containers
-                                      do not need this.
-                                    type: number
-                                required:
-                                - containerPort
                             env:
                               description: List of environment variables to set in
                                 the container. Cannot be updated.
@@ -18071,6 +18028,49 @@ spec:
                                         - fieldPath
                                 required:
                                 - name
+                            ports:
+                              description: List of ports to expose from the container.
+                                Exposing a port here gives the system additional information
+                                about the network connections a container uses, but
+                                is primarily informational. Not specifying a port
+                                here DOES NOT prevent that port from being exposed.
+                                Any port which is listening on the default "0.0.0.0"
+                                address inside a container will be accessible from
+                                the network. Cannot be updated.
+                              type: array
+                              items:
+                                description: ContainerPort represents a network port
+                                  in a single container.
+                                type: object
+                                properties:
+                                  protocol:
+                                    description: Protocol for port. Must be UDP, TCP,
+                                      or SCTP. Defaults to "TCP".
+                                    type: string
+                                  hostIP:
+                                    description: What host IP to bind the external
+                                      port to.
+                                    type: string
+                                  name:
+                                    description: If specified, this must be an IANA_SVC_NAME
+                                      and unique within the pod. Each named port in
+                                      a pod must have a unique name. Name for the
+                                      port that can be referred to by services.
+                                    type: string
+                                  containerPort:
+                                    description: Number of port to expose on the pod's
+                                      IP address. This must be a valid port number,
+                                      0 < x < 65536.
+                                    type: number
+                                  hostPort:
+                                    description: Number of port to expose on the host.
+                                      If specified, this must be a valid port number,
+                                      0 < x < 65536. If HostNetwork is specified,
+                                      this must match ContainerPort. Most containers
+                                      do not need this.
+                                    type: number
+                                required:
+                                - containerPort
                             command:
                               description: 'Entrypoint array. Not executed within
                                 a shell. The docker image''s ENTRYPOINT is used if
@@ -18129,8 +18129,21 @@ spec:
                                       1.15.
                                     type: string
                                 required:
-                                - name
                                 - mountPath
+                                - name
+                            args:
+                              description: 'Arguments to the entrypoint. The docker
+                                image''s CMD is used if this is not provided. Variable
+                                references $(VAR_NAME) are expanded using the container''s
+                                environment. If a variable cannot be resolved, the
+                                reference in the input string will be unchanged. The
+                                $(VAR_NAME) syntax can be escaped with a double $$,
+                                ie: $$(VAR_NAME). Escaped references will never be
+                                expanded, regardless of whether the variable exists
+                                or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
+                              type: array
+                              items:
+                                type: string
                             lifecycle:
                               description: Lifecycle describes actions that the management
                                 system should take in response to container lifecycle
@@ -18354,19 +18367,6 @@ spec:
                                             - value
                                       required:
                                       - port
-                            args:
-                              description: 'Arguments to the entrypoint. The docker
-                                image''s CMD is used if this is not provided. Variable
-                                references $(VAR_NAME) are expanded using the container''s
-                                environment. If a variable cannot be resolved, the
-                                reference in the input string will be unchanged. The
-                                $(VAR_NAME) syntax can be escaped with a double $$,
-                                ie: $$(VAR_NAME). Escaped references will never be
-                                expanded, regardless of whether the variable exists
-                                or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
-                              type: array
-                              items:
-                                type: string
                             name:
                               description: Name of the container specified as a DNS_LABEL.
                                 Each container in a pod must have a unique name (DNS_LABEL).
@@ -18392,11 +18392,6 @@ spec:
                                   description: How often (in seconds) to perform the
                                     probe. Default to 10 seconds. Minimum value is
                                     1.
-                                  type: number
-                                timeoutSeconds:
-                                  description: 'Number of seconds after which the
-                                    probe times out. Defaults to 1 second. Minimum
-                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                                   type: number
                                 tcpSocket:
                                   description: TCPSocketAction describes an action
@@ -18426,6 +18421,11 @@ spec:
                                       type: string
                                   required:
                                   - port
+                                timeoutSeconds:
+                                  description: 'Number of seconds after which the
+                                    probe times out. Defaults to 1 second. Minimum
+                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                  type: number
                                 successThreshold:
                                   description: Minimum consecutive successes for the
                                     probe to be considered successful after having
@@ -18726,8 +18726,8 @@ spec:
                                       in the pod
                                     type: string
                                 required:
-                                - name
                                 - devicePath
+                                - name
                             image:
                               description: 'Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images
                                 This field is optional to allow higher level config
@@ -18755,11 +18755,6 @@ spec:
                                   description: How often (in seconds) to perform the
                                     probe. Default to 10 seconds. Minimum value is
                                     1.
-                                  type: number
-                                timeoutSeconds:
-                                  description: 'Number of seconds after which the
-                                    probe times out. Defaults to 1 second. Minimum
-                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                                   type: number
                                 tcpSocket:
                                   description: TCPSocketAction describes an action
@@ -18789,6 +18784,11 @@ spec:
                                       type: string
                                   required:
                                   - port
+                                timeoutSeconds:
+                                  description: 'Number of seconds after which the
+                                    probe times out. Defaults to 1 second. Minimum
+                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                  type: number
                                 successThreshold:
                                   description: Minimum consecutive successes for the
                                     probe to be considered successful after having
@@ -19066,11 +19066,6 @@ spec:
                                     probe. Default to 10 seconds. Minimum value is
                                     1.
                                   type: number
-                                timeoutSeconds:
-                                  description: 'Number of seconds after which the
-                                    probe times out. Defaults to 1 second. Minimum
-                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
-                                  type: number
                                 tcpSocket:
                                   description: TCPSocketAction describes an action
                                     based on opening a socket
@@ -19099,6 +19094,11 @@ spec:
                                       type: string
                                   required:
                                   - port
+                                timeoutSeconds:
+                                  description: 'Number of seconds after which the
+                                    probe times out. Defaults to 1 second. Minimum
+                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                  type: number
                                 successThreshold:
                                   description: Minimum consecutive successes for the
                                     probe to be considered successful after having
@@ -19182,49 +19182,6 @@ spec:
                                         - value
                                   required:
                                   - port
-                            ports:
-                              description: List of ports to expose from the container.
-                                Exposing a port here gives the system additional information
-                                about the network connections a container uses, but
-                                is primarily informational. Not specifying a port
-                                here DOES NOT prevent that port from being exposed.
-                                Any port which is listening on the default "0.0.0.0"
-                                address inside a container will be accessible from
-                                the network. Cannot be updated.
-                              type: array
-                              items:
-                                description: ContainerPort represents a network port
-                                  in a single container.
-                                type: object
-                                properties:
-                                  protocol:
-                                    description: Protocol for port. Must be UDP, TCP,
-                                      or SCTP. Defaults to "TCP".
-                                    type: string
-                                  hostIP:
-                                    description: What host IP to bind the external
-                                      port to.
-                                    type: string
-                                  name:
-                                    description: If specified, this must be an IANA_SVC_NAME
-                                      and unique within the pod. Each named port in
-                                      a pod must have a unique name. Name for the
-                                      port that can be referred to by services.
-                                    type: string
-                                  containerPort:
-                                    description: Number of port to expose on the pod's
-                                      IP address. This must be a valid port number,
-                                      0 < x < 65536.
-                                    type: number
-                                  hostPort:
-                                    description: Number of port to expose on the host.
-                                      If specified, this must be a valid port number,
-                                      0 < x < 65536. If HostNetwork is specified,
-                                      this must match ContainerPort. Most containers
-                                      do not need this.
-                                    type: number
-                                required:
-                                - containerPort
                             env:
                               description: List of environment variables to set in
                                 the container. Cannot be updated.
@@ -19394,6 +19351,49 @@ spec:
                                         - fieldPath
                                 required:
                                 - name
+                            ports:
+                              description: List of ports to expose from the container.
+                                Exposing a port here gives the system additional information
+                                about the network connections a container uses, but
+                                is primarily informational. Not specifying a port
+                                here DOES NOT prevent that port from being exposed.
+                                Any port which is listening on the default "0.0.0.0"
+                                address inside a container will be accessible from
+                                the network. Cannot be updated.
+                              type: array
+                              items:
+                                description: ContainerPort represents a network port
+                                  in a single container.
+                                type: object
+                                properties:
+                                  protocol:
+                                    description: Protocol for port. Must be UDP, TCP,
+                                      or SCTP. Defaults to "TCP".
+                                    type: string
+                                  hostIP:
+                                    description: What host IP to bind the external
+                                      port to.
+                                    type: string
+                                  name:
+                                    description: If specified, this must be an IANA_SVC_NAME
+                                      and unique within the pod. Each named port in
+                                      a pod must have a unique name. Name for the
+                                      port that can be referred to by services.
+                                    type: string
+                                  containerPort:
+                                    description: Number of port to expose on the pod's
+                                      IP address. This must be a valid port number,
+                                      0 < x < 65536.
+                                    type: number
+                                  hostPort:
+                                    description: Number of port to expose on the host.
+                                      If specified, this must be a valid port number,
+                                      0 < x < 65536. If HostNetwork is specified,
+                                      this must match ContainerPort. Most containers
+                                      do not need this.
+                                    type: number
+                                required:
+                                - containerPort
                             command:
                               description: 'Entrypoint array. Not executed within
                                 a shell. The docker image''s ENTRYPOINT is used if
@@ -19452,8 +19452,21 @@ spec:
                                       1.15.
                                     type: string
                                 required:
-                                - name
                                 - mountPath
+                                - name
+                            args:
+                              description: 'Arguments to the entrypoint. The docker
+                                image''s CMD is used if this is not provided. Variable
+                                references $(VAR_NAME) are expanded using the container''s
+                                environment. If a variable cannot be resolved, the
+                                reference in the input string will be unchanged. The
+                                $(VAR_NAME) syntax can be escaped with a double $$,
+                                ie: $$(VAR_NAME). Escaped references will never be
+                                expanded, regardless of whether the variable exists
+                                or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
+                              type: array
+                              items:
+                                type: string
                             lifecycle:
                               description: Lifecycle describes actions that the management
                                 system should take in response to container lifecycle
@@ -19677,19 +19690,6 @@ spec:
                                             - value
                                       required:
                                       - port
-                            args:
-                              description: 'Arguments to the entrypoint. The docker
-                                image''s CMD is used if this is not provided. Variable
-                                references $(VAR_NAME) are expanded using the container''s
-                                environment. If a variable cannot be resolved, the
-                                reference in the input string will be unchanged. The
-                                $(VAR_NAME) syntax can be escaped with a double $$,
-                                ie: $$(VAR_NAME). Escaped references will never be
-                                expanded, regardless of whether the variable exists
-                                or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
-                              type: array
-                              items:
-                                type: string
                             name:
                               description: Name of the container specified as a DNS_LABEL.
                                 Each container in a pod must have a unique name (DNS_LABEL).
@@ -19715,11 +19715,6 @@ spec:
                                   description: How often (in seconds) to perform the
                                     probe. Default to 10 seconds. Minimum value is
                                     1.
-                                  type: number
-                                timeoutSeconds:
-                                  description: 'Number of seconds after which the
-                                    probe times out. Defaults to 1 second. Minimum
-                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                                   type: number
                                 tcpSocket:
                                   description: TCPSocketAction describes an action
@@ -19749,6 +19744,11 @@ spec:
                                       type: string
                                   required:
                                   - port
+                                timeoutSeconds:
+                                  description: 'Number of seconds after which the
+                                    probe times out. Defaults to 1 second. Minimum
+                                    value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                                  type: number
                                 successThreshold:
                                   description: Minimum consecutive successes for the
                                     probe to be considered successful after having
@@ -20135,8 +20135,8 @@ spec:
                                         range 1-100.
                                       type: number
                                   required:
-                                  - weight
                                   - preference
+                                  - weight
                           podAffinity:
                             description: Pod affinity is a group of inter pod affinity
                               scheduling rules.
@@ -20744,18 +20744,18 @@ spec:
   - name: v7
     served: true
     storage: true
-  - name: v4
+  - name: v2
     served: true
     storage: false
   - name: v3
+    served: true
+    storage: false
+  - name: v4
     served: true
     storage: false
   - name: v5
     served: true
     storage: false
   - name: v6
-    served: true
-    storage: false
-  - name: v2
     served: true
     storage: false

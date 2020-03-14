@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -244,6 +245,7 @@ public class CrdHelper {
     static List<V1CustomResourceDefinitionVersion> getCrdVersions() {
       Map<String, String> schemas = schemaReader.loadFilesFromClasspath();
       List<V1CustomResourceDefinitionVersion> versions = schemas.entrySet().stream()
+          .sorted(Comparator.comparing(Map.Entry::getKey))
           .map(entry -> new V1CustomResourceDefinitionVersion()
               .name(getVersionFromCrdSchemaFileName(entry.getKey()))
               .schema(getValidationFromCrdSchemaFile(entry.getValue()))
@@ -266,6 +268,7 @@ public class CrdHelper {
     static List<V1beta1CustomResourceDefinitionVersion> getBetaCrdVersions() {
       Map<String, String> schemas = schemaReader.loadFilesFromClasspath();
       List<V1beta1CustomResourceDefinitionVersion> versions = schemas.entrySet().stream()
+          .sorted(Comparator.comparing(Map.Entry::getKey))
           .map(entry -> new V1beta1CustomResourceDefinitionVersion()
               .name(getVersionFromCrdSchemaFileName(entry.getKey()))
               .served(true)
