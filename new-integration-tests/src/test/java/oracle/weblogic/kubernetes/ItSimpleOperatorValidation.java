@@ -2,6 +2,8 @@ package oracle.weblogic.kubernetes;
 
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
+import oracle.weblogic.kubernetes.extensions.tags.MustNotRunInParallel;
+import oracle.weblogic.kubernetes.extensions.tags.Slow;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -37,7 +39,8 @@ class ItSimpleOperatorValidation implements LoggedTest {
     @Order(1)
     @DisplayName("Install the operator")
     // tags are used to filter which tests to run, we can define whatever tags we need
-    @Tag("cannot-parallelize")
+    @Slow
+    @MustNotRunInParallel
     public void testInstallingOperator() {
         // this first example is an operation that we wait for.
         // installOperator() is one of our custom, reusable actions.
