@@ -11,7 +11,7 @@ public class Operator {
         // this uses a rand, to simulate that this operation can take
         // variable amounts of time to complete
         return () -> {
-            int outcome = new Random().nextInt(3);
+            int outcome = new Random(System.currentTimeMillis()).nextInt(3);
             if (outcome == 1) {
                 logger.info("Operator pod is in 'Running' state");
                 return true;
