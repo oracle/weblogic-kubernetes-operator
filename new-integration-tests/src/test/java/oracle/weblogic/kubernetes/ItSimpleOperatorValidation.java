@@ -36,6 +36,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
     @Test
     @Order(1)
     @DisplayName("Install the operator")
+    // tags are used to filter which tests to run, we can define whatever tags we need
     @Tag("cannot-parallelize")
     public void testInstallingOperator() {
         // this first example is an operation that we wait for.
