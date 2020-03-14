@@ -479,7 +479,8 @@ public class CrdHelper {
           Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
         V1CustomResourceDefinition existingCrd = callResponse.getResult();
         if (existingCrd == null) {
-          return doNext(createCrd(getNext()), packet);
+          // Check to see if there is a v1beta1 CRD
+          return doNext(verifyBetaCrd(getNext()), packet);
         } else if (isOutdatedCrd(existingCrd)) {
           return doNext(updateCrd(getNext(), existingCrd), packet);
         } else if (!existingCrdContainsVersion(existingCrd)) {
