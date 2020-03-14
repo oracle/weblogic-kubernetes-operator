@@ -88,8 +88,7 @@
                         <configuration>
                             <skipTests>${skipITs}</skipTests>
                             <systemPropertyVariables>
-                                <java.util.logging.SimpleFormatter.format>%1$tm-%1$td-%1$tY %1$tH:%1$tM:%1$tS %4$-6s
-                                    %2$s %5$s%6$s%n
+                                <java.util.logging.SimpleFormatter.format>&lt;%1$tm-%1$td-%1$tY %1$tH:%1$tM:%1$tS&gt; &lt;%4$s&gt; &lt;%2$s&gt; &lt;%5$s%6$s&gt;%n
                                 </java.util.logging.SimpleFormatter.format>
                             </systemPropertyVariables>
                             <trimStackTrace>false</trimStackTrace>
