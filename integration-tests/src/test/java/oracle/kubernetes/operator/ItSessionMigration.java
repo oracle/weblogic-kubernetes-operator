@@ -296,10 +296,12 @@ public class ItSessionMigration extends BaseTest {
         .append(domain.getDomainUid())
         .append(".org' ")
         .append(" http://")
-        .append(nodePortHost)
-        .append(":")
-        .append(nodePort)
-        .append("/")
+        .append(nodePortHost);
+    if (!BaseTest.OKE_CLUSTER) {
+      webServiceUrl.append(":")
+              .append(nodePort);
+    }
+    webServiceUrl.append("/")
         .append(curlUrlPath)
         .append(paramToAppend);
 

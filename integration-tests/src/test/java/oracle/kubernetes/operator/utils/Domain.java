@@ -2253,12 +2253,10 @@ public class Domain {
         .append(appLocationInPod)
         .append("/")
         .append(scriptName)
-        .append(" ");
-    if (BaseTest.OKE_CLUSTER) {
-      cmdKubectlSh.append(BaseTest.LB_PUBLIC_IP);
-    } else {
-      cmdKubectlSh.append(nodeHost)
-               .append(":")
+        .append(" ")
+        .append(nodeHost);
+    if (!BaseTest.OKE_CLUSTER) {
+      cmdKubectlSh.append(":")
                .append(nodePort);
     }
     cmdKubectlSh.append(" ")
@@ -2292,6 +2290,7 @@ public class Domain {
             + ", stderr='"
             + result.stderr()
             + "'";
+    LoggerHelper.getLocal().log(Level.INFO, "Result for deploy app: " + resultStr);
     if (!resultStr.contains("Unable to use a TTY") && result.exitValue() != 0) {
       throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
     }
