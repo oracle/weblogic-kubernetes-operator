@@ -58,6 +58,9 @@ echo "Deploy ${APP_NAME} using cmd:"
 echo -e "curl --noproxy '*' --silent  --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:multipart/form-data -F "model={ name: '${APP_NAME}', targets: [ { identity: [ clusters, '${DEPLOY_TARGET}' ] } ] }" -F "sourcePath=@${APP_DIR_INPOD}/${ARCHIVE_FILE_NAME}" -H "Prefer:respond-async" -X POST http://${URL}/management/weblogic/latest/edit/appDeployments\n"
 curl --noproxy '*' --silent  --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:multipart/form-data -F "model={ name: '${APP_NAME}', targets: [ { identity: [ clusters, '${DEPLOY_TARGET}' ] } ] }" -F "sourcePath=@${APP_DIR_INPOD}/${ARCHIVE_FILE_NAME}" -H "Prefer:respond-async" -X POST http://${USER}:${PASSWORD}@${URL}/management/weblogic/latest/edit/appDeployments
 
+echo "Try different"
+AUTH=$(echo -ne "${USER}:${PASSWORD}" | base64 --wrap 0)
+curl --noproxy '*' --silent  --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:multipart/form-data -H "Authorization: Basic ${AUTH}" -F "model={ name: '${APP_NAME}', targets: [ { identity: [ clusters, '${DEPLOY_TARGET}' ] } ] }" -F "sourcePath=@${APP_DIR_INPOD}/${ARCHIVE_FILE_NAME}" -H "Prefer:respond-async" -X POST http://${URL}/management/weblogic/latest/edit/appDeployments
 rm -rf stagedir
 
 exit 0
