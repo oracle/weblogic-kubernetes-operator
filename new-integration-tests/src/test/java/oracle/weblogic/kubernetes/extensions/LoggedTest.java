@@ -13,19 +13,20 @@ public interface LoggedTest {
 
     @BeforeEach
     default void beforeEachTest(TestInfo testInfo) {
-        String[] tempMethodName = testInfo.getTestMethod().get().toString().split(" ");
-        String methodName = tempMethodName[tempMethodName.length - 1];
-        logger.info(() -> String.format("About to execute [%s] [%s]",
+        logger.info(() -> String.format("About to execute [%s] in %s",
                 testInfo.getDisplayName(),
-                methodName));
+                getMethodName(testInfo)));
     }
 
     @AfterEach
     default void afterEachTest(TestInfo testInfo) {
-        String[] tempMethodName = testInfo.getTestMethod().get().toString().split(" ");
-        String methodName = tempMethodName[tempMethodName.length - 1];
-        logger.info(() -> String.format("Finished executing [%s] [%s]",
+        logger.info(() -> String.format("Finished executing [%s] in %s",
                 testInfo.getDisplayName(),
-                methodName));
+                getMethodName(testInfo)));
+    }
+
+    private String getMethodName(TestInfo testInfo) {
+        String[] tempMethodName = testInfo.getTestMethod().get().toString().split(" ");
+        return tempMethodName[tempMethodName.length - 1];
     }
 }
