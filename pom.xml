@@ -526,6 +526,7 @@
 
   <dependencyManagement>
     <dependencies>
+      <!-- Add direct bouncycastle dependency to override version from kubernetes/client-java until they update -->
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-ext-jdk15on</artifactId>
