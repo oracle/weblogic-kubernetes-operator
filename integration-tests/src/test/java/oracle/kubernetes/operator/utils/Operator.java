@@ -304,15 +304,24 @@ public class Operator {
    * @throws Exception exception
    */
   public void verifyDomainExists(String domainUid) throws Exception {
-    // Operator REST external API URL to scale
-    StringBuffer myOpRestApiUrl =
-        new StringBuffer("https://")
-            .append(TestUtils.getHostName())
-            .append(":")
-            .append(externalRestHttpsPort)
-            .append("/operator/latest/domains/")
-            .append(domainUid);
-    TestUtils.makeOperatorGetRestCall(this, myOpRestApiUrl.toString());
+    if (BaseTest.OKE_CLUSTER) {
+      StringBuffer myOpRestApiUrl =
+              new StringBuffer()
+                      .append("/operator/latest/domains/")
+                      .append(domainUid);
+      String restCurl = TestUtils.createRestCallCurl(this, myOpRestApiUrl.toString(), null);
+      LoggerHelper.getLocal().log(Level.INFO, "command called inside the pod " + restCurl);
+      TestUtils.makeOperatorRestCallOke(this, restCurl);
+    } else {
+      StringBuffer myOpRestApiUrl =
+              new StringBuffer("https://")
+                      .append(TestUtils.getHostName())
+                      .append(":")
+                      .append(externalRestHttpsPort)
+                      .append("/operator/latest/domains/")
+                      .append(domainUid);
+      TestUtils.makeOperatorGetRestCall(this, myOpRestApiUrl.toString());
+    }
   }
 
   /**
