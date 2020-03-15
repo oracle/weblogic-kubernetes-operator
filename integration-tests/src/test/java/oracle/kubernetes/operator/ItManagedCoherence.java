@@ -3,15 +3,20 @@
 
 package oracle.kubernetes.operator;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.DomainCrd;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
@@ -249,6 +254,8 @@ public class ItManagedCoherence extends BaseTest {
     verifyServersStatus(domain, pods, domainUid);
     Thread.sleep(60 * 1000);
 
+    restartCluster(domainUid);
+
     // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
     TestUtils.buildDeployCoherenceAppInPod(
         domain,
@@ -390,6 +397,43 @@ public class ItManagedCoherence extends BaseTest {
         .append(appToDeploy);
     ExecResult result = TestUtils.exec(curlCmd.toString(), true);
     return result;
+  }
+
+  private void restartCluster(String domainUid) throws Exception {
+    String podName = domainUid + "-new-managed-server1";
+
+    String restartTmpDir = getResultDir() + "/restarttemp";
+    Files.createDirectories(Paths.get(restartTmpDir));
+
+    String originalYaml =
+            getUserProjectsDir()
+                + "/weblogic-domains/"
+                + domain.getDomainUid()
+                + "/domain.yaml";
+    
+    // Modify the original domain yaml to include restartVersion in admin server node
+    DomainCrd crd = new DomainCrd(originalYaml);
+    Map<String, Object> cluster = new HashMap();
+    cluster.put("restartVersion", "v1.1");
+    crd.addObjectNodeToCluster("data-cluster", cluster);
+    String modYaml = crd.getYamlTree();
+    LoggerHelper.getLocal().log(Level.INFO, modYaml);
+
+    // Write the modified yaml to a new file
+    Path path = Paths.get(restartTmpDir, "restart.cluster.yaml");
+    LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+    Charset charset = StandardCharsets.UTF_8;
+    Files.write(path, modYaml.getBytes(charset));
+
+    // Apply the new yaml to update the domain crd
+    LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
+    ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+    LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "Verifying if the cluster is restarted");
+
+    TestUtils.checkPodReady(domainUid + "-new-managed-server1", domainNS1);
+    TestUtils.checkPodReady(domainUid + "-new-managed-server2", domainNS1);
+
   }
 
   private void verifyServersIngressRunning() throws Exception {
