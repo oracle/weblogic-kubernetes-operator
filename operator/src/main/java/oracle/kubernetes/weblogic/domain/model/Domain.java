@@ -374,7 +374,7 @@ public class Domain {
   }
 
   /**
-   * Reference to secret runtime encryption key passphrase.
+   * Reference to runtime encryption secret.
    *
    * @return runtime encryption secret
    */
