@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 // this is an example of a test suite (class) where the tests need to be run in a certain
 // order. this is controlled with the TestMethodOrder annotation
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Simple validaton of basic operator functions")
+@DisplayName("Simple validation of basic operator functions")
 // this is an exmaple of registering an extension that will time how long each test takes.
 @ExtendWith(Timing.class)
 // by implementing the LoggedTest, we will automatically get a logger injected and it
