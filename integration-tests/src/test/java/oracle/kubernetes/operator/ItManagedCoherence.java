@@ -252,8 +252,18 @@ public class ItManagedCoherence extends BaseTest {
     };
     verifyServersStatus(domain, pods, domainUid);
     Thread.sleep(60 * 1000);
+    
+    LoggerHelper.getLocal().log(Level.INFO, " Printing the pods in the doamin");
+    ExecResult result  = ExecCommand.exec("kubectl get pods -n " + domain.getDomainNs() + " -o wide");
+    LoggerHelper.getLocal().log(Level.INFO, "stdout = " + result.stdout()
+            + "\n stderr = " + result.stderr());
 
     restartCluster(domainUid);
+
+    LoggerHelper.getLocal().log(Level.INFO, " Printing the pods in the doamin after restarting the cluster");
+    result  = ExecCommand.exec("kubectl get pods -n " + domain.getDomainNs() + " -o wide");
+    LoggerHelper.getLocal().log(Level.INFO, "stdout = " + result.stdout()
+            + "\n stderr = " + result.stderr());
 
     // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
     TestUtils.buildDeployCoherenceAppInPod(
