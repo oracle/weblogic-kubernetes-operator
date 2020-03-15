@@ -136,8 +136,7 @@ public class ItManagedCoherence extends BaseTest {
     String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     String namespace = domain.getDomainNs();
     for (String pod : pods) {
-      //BR: output the pod name    
-      LoggerHelper.getLocal().log(Level.INFO, "BR: Checking if pod " + pod + " is running");
+      LoggerHelper.getLocal().log(Level.INFO, "Checking if pod " + pod + " is running");
       assertTrue(
           testUtil.isPodRunning(namespace, domain1LabelSelector, pod), pod + " Pod not running");
       //pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
@@ -404,6 +403,8 @@ public class ItManagedCoherence extends BaseTest {
 
     String restartTmpDir = getResultDir() + "/restarttemp";
     Files.createDirectories(Paths.get(restartTmpDir));
+    
+    LoggerHelper.getLocal().log(Level.INFO, "created restart temp dir");
 
     String originalYaml =
             getUserProjectsDir()
@@ -415,7 +416,7 @@ public class ItManagedCoherence extends BaseTest {
     DomainCrd crd = new DomainCrd(originalYaml);
     Map<String, Object> cluster = new HashMap();
     cluster.put("restartVersion", "v1.1");
-    crd.addObjectNodeToCluster("data-cluster", cluster);
+    crd.addObjectNodeToCluster("dataCluster", cluster);
     String modYaml = crd.getYamlTree();
     LoggerHelper.getLocal().log(Level.INFO, modYaml);
 
