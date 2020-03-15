@@ -1,3 +1,6 @@
+// Copyright 2020, Oracle Corporation and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 package oracle.weblogic.kubernetes;
 
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -62,9 +65,9 @@ class ItSimpleOperatorValidation implements LoggedTest {
         // will not.
         // in this example, we first wait 30 seconds, since it is unlikely this operation
         // will complete in less than 30 seconds, then we check if the operator is running.
-        // we check again every 10 seconds.
-        with().pollInterval(10, SECONDS)
-                .and().with().pollDelay(30, SECONDS)
+        with().pollDelay(30, SECONDS)
+                // we check again every 10 seconds.
+                .and().with().pollInterval(10, SECONDS)
                 // this listener lets us report some status with each poll
                 .conditionEvaluationListener(
                         condition -> logger.info(() -> String.format("Waiting for operator to be running (elapsed time %dms, remaining time %dms)",

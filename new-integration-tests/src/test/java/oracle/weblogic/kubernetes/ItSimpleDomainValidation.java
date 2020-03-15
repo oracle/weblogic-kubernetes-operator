@@ -1,3 +1,6 @@
+// Copyright 2020, Oracle Corporation and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 package oracle.weblogic.kubernetes;
 
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -36,8 +39,8 @@ class ItSimpleDomainValidation implements LoggedTest {
         assertEquals(true, success);
 
         // wait for the domain to exist
-        with().pollInterval(10, SECONDS)
-                .and().with().pollDelay(30, SECONDS)
+        with().pollDelay(30, SECONDS)
+                .and().with().pollInterval(10, SECONDS)
                 .conditionEvaluationListener(
                         condition -> logger.info(() -> String.format("Waiting for domain to be running (elapsed time %dms, remaining time %dms)",
                                 condition.getElapsedTimeInMS(),

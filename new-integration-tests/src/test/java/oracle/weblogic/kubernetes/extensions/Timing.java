@@ -1,13 +1,15 @@
-package oracle.weblogic.kubernetes.extensions;
+// Copyright 2020, Oracle Corporation and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-import java.lang.reflect.Method;
-import java.util.logging.Logger;
+package oracle.weblogic.kubernetes.extensions;
 
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
+
+import java.lang.reflect.Method;
+import java.util.logging.Logger;
 
 public class Timing implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
 
