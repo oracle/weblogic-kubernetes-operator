@@ -443,41 +443,32 @@ public class Domain {
   public void deployWebAppViaRest(
       String webappName, String webappLocation, String username, String password) throws Exception {
     StringBuffer cmd = new StringBuffer();
+    cmd.append("curl  --silent --noproxy '*' --user ")
+              .append(username)
+              .append(":")
+              .append(password)
+              .append(" -H X-Requested-By:MyClient -H Accept:application/json")
+              .append(" -H Content-Type:multipart/form-data -F \"model={ name: '")
+              .append(webappName)
+              .append("', targets: [ { identity: [ clusters, '")
+              .append(clusterName)
+              .append("' ] } ] }\" -F \"sourcePath=@")
+              .append(webappLocation)
+              .append("\" -H \"Prefer:respond-async\" -X POST http://");
     if (BaseTest.OKE_CLUSTER) {
-      cmd.append("curl  --silent --noproxy '*' --user ")
-              .append(username)
+      cmd.append(domainUid)
+              .append("-admin-server-external.")
+              .append(domainNS)
+              .append(".svc.cluster.local")
               .append(":")
-              .append(password)
-              .append(" -H X-Requested-By:MyClient -H Accept:application/json")
-              .append(" -H Content-Type:multipart/form-data -F \"model={ name: '")
-              .append(webappName)
-              .append("', targets: [ { identity: [ clusters, '")
-              .append(clusterName)
-              .append("' ] } ] }\" -F \"sourcePath=@")
-              .append(webappLocation)
-              .append("\" -H \"Prefer:respond-async\" -X POST http://")
-              .append(BaseTest.LB_PUBLIC_IP)
-              .append("/management/weblogic/latest/edit/appDeployments")
-              .append(" --write-out %{http_code} ");
+              .append(t3ChannelPort);
     } else {
-      cmd.append("curl --noproxy '*' --silent  --user ")
-              .append(username)
+      cmd.append(getNodeHost())
               .append(":")
-              .append(password)
-              .append(" -H X-Requested-By:MyClient -H Accept:application/json")
-              .append(" -H Content-Type:multipart/form-data -F \"model={ name: '")
-              .append(webappName)
-              .append("', targets: [ { identity: [ clusters, '")
-              .append(clusterName)
-              .append("' ] } ] }\" -F \"sourcePath=@")
-              .append(webappLocation)
-              .append("\" -H \"Prefer:respond-async\" -X POST http://")
-              .append(getNodeHost())
-              .append(":")
-              .append(getNodePort())
-              .append("/management/weblogic/latest/edit/appDeployments")
-              .append(" --write-out %{http_code} ");
+              .append(getNodePort());
     }
+    cmd.append("/management/weblogic/latest/edit/appDeployments")
+              .append(" --write-out %{http_code} ");
     LoggerHelper.getLocal().log(Level.INFO, "Command to deploy webapp " + cmd);
     ExecResult result = TestUtils.exec(cmd.toString());
     String output = result.stdout().trim();
@@ -495,34 +486,29 @@ public class Domain {
   public void undeployWebAppViaRest(
       String webappName, String webappLocation, String username, String password) throws Exception {
     StringBuffer cmd = new StringBuffer();
+    cmd.append("curl --noproxy '*' --silent  --user ")
+              .append(username)
+              .append(":")
+              .append(password)
+              .append(" -H X-Requested-By:MyClient -H Accept:application/json")
+              .append(" -H Content-Type:application/json -d \"{}\" ")
+              .append(" -X DELETE http://");
     if (BaseTest.OKE_CLUSTER) {
-      cmd.append("curl --noproxy '*' --silent  --user ")
-              .append(username)
-              .append(":")
-              .append(password)
-              .append(" -H X-Requested-By:MyClient -H Accept:application/json")
-              .append(" -H Content-Type:application/json -d \"{}\" ")
-              .append(" -X DELETE http://")
-              .append(BaseTest.LB_PUBLIC_IP)
-              .append(":80")
-              .append("/management/weblogic/latest/edit/appDeployments/")
-              .append(webappName)
-              .append(" --write-out %{http_code} -o /dev/null");
+      cmd.append(domainUid)
+          .append("-admin-server-external.")
+          .append(domainNS)
+          .append(".svc.cluster.local")
+          .append(":")
+          .append(t3ChannelPort);
     } else {
-      cmd.append("curl --noproxy '*' --silent  --user ")
-              .append(username)
+      cmd.append(getNodeHost())
               .append(":")
-              .append(password)
-              .append(" -H X-Requested-By:MyClient -H Accept:application/json")
-              .append(" -H Content-Type:application/json -d \"{}\" ")
-              .append(" -X DELETE http://")
-              .append(getNodeHost())
-              .append(":")
-              .append(getNodePort())
-              .append("/management/weblogic/latest/edit/appDeployments/")
-              .append(webappName)
-              .append(" --write-out %{http_code} -o /dev/null");
+              .append(getNodePort());
     }
+    cmd.append("/management/weblogic/latest/edit/appDeployments/")
+          .append(webappName)
+          .append(" --write-out %{http_code} -o /dev/null");
+
     LoggerHelper.getLocal().fine("Command to undeploy webapp " + cmd);
     ExecResult result = TestUtils.exec(cmd.toString());
     String output = result.stdout().trim();
@@ -2253,11 +2239,18 @@ public class Domain {
         .append(appLocationInPod)
         .append("/")
         .append(scriptName)
-        .append(" ")
-        .append(nodeHost);
+        .append(" ");
     if (!BaseTest.OKE_CLUSTER) {
-      cmdKubectlSh.append(":")
-               .append(nodePort);
+      cmdKubectlSh.append(nodeHost)
+          .append(":")
+          .append(nodePort);
+    } else {
+      cmdKubectlSh.append(domainUid)
+          .append("-admin-server-external.")
+          .append(domainNS)
+          .append(".svc.cluster.local")
+          .append(":")
+          .append(t3ChannelPort);
     }
     cmdKubectlSh.append(" ")
         .append(username)
