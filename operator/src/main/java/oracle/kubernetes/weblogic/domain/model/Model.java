@@ -28,7 +28,7 @@ public class Model {
   private String wdtEncryptionSecret;
 
   @Valid
-  @Description("Runtime encryption secret. Required.")
+  @Description("Runtime encryption secret. Required when domainHomeSourceType is set to FromModel.")
   private String runtimeEncryptionSecret;
 
   @Nullable
