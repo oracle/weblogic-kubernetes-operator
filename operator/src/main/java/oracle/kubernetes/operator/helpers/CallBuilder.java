@@ -802,7 +802,7 @@ public class CallBuilder {
   public Step readBetaCustomResourceDefinitionAsync(
       String name, ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readCRD", null, name, null), readBetaCrd);
+        responseStep, new RequestParams("readBetaCRD", null, name, null), readBetaCrd);
   }
 
   private Call createBetaCustomResourceDefinitionAsync(
@@ -825,7 +825,7 @@ public class CallBuilder {
       V1beta1CustomResourceDefinition body,
       ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("createCRD", null, null, body), createBetaCrd);
+        responseStep, new RequestParams("createBetaCRD", null, null, body), createBetaCrd);
   }
 
   private Call replaceBetaCustomResourceDefinitionAsync(
@@ -851,7 +851,7 @@ public class CallBuilder {
       V1beta1CustomResourceDefinition body,
       ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("replaceCRD", null, name, body), replaceBetaCrd);
+        responseStep, new RequestParams("replaceBetaCRD", null, name, body), replaceBetaCrd);
   }
 
   private Call readConfigMapAsync(
