@@ -494,20 +494,11 @@ If it is important to reuse or share the same database and data between deployme
 When a domain is first deployed, the WebLogic Kubernetes Operator will copy its OPSS wallet from the domain home and store it in the domain's introspect domain configmap. For a domain that has been created using model-in-image, here has how to export a wallet for reuse:
 
     ```
-    kubectl -n MY_DOMAIN_NAMESPACE \
-      get configmap MY_DOMAIN_UID-weblogic-domain-introspect-cm \
-      -o jsonpath='{.data.ewallet\.p12}' \
-      > ewallet.p12
+    save_wallet.sh -r [<name of the wallet file. Default ewallet.p12>]
     ```
 
 To reuse the wallet, create a secret that contains the OPSS key you specified in the original domain and make sure that your domain resource `configuration.opss.walletSecret` attribute names this secret. Here's sample code for deploying the secret that assumes the wallet is in local file 'ewallet.p12' and that the secret passphrase is `welcome1`:
 
     ```
-    kubectl -n sample-domain1-ns \
-      create secret generic sample-domain1-opss-key-passphrase-secret \
-      --from-literal=passhrase=welcome1 
-      --from-file=ewallet.p12
-    kubectl -n sample-domain1-ns \
-      label secret sample-domain1-opss-key-passphrase-secret \
-      weblogic.domainUID=sample-domain1
+    save_wallet.sh -s [<name of the wallet file. Default ewallet.p12>]
     ```
