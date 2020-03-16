@@ -1147,15 +1147,15 @@ public class Domain {
     }
     pvMap.put("namespace", domainNS);
     if (BaseTest.OKE_CLUSTER) {
-      pvMap.put("weblogicDomainStorageNFSServer", "10.0.10.6");
+      pvMap.put("weblogicDomainStorageNFSServer", BaseTest.NFS_SERVER);
       // set pv path
       domainMap.put(
           "weblogicDomainStoragePath",
-           "/ci-oke-2");
+           BaseTest.FSS_DIR);
 
       pvMap.put(
           "weblogicDomainStoragePath",
-          "/ci-oke-2");
+              BaseTest.FSS_DIR);
     } else {
       pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
       // set pv path

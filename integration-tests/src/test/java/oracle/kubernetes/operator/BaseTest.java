@@ -42,9 +42,10 @@ public class BaseTest {
   public static boolean QUICKTEST = true;
   public static boolean FULLTEST;
   public static boolean JENKINS;
-  public static boolean SHARED_CLUSTER = true;
-  public static boolean OKE_CLUSTER = true;
-
+  public static boolean SHARED_CLUSTER;
+  public static boolean OKE_CLUSTER;
+  public static String  NFS_SERVER;
+  public static String  FSS_DIR;
   public static boolean OPENSHIFT;
   public static String WDT_VERSION;
   //currently certified chart versions of Prometheus and Grafana
@@ -135,6 +136,12 @@ public class BaseTest {
     }
     if (System.getenv("OKE_CLUSTER") != null) {
       OKE_CLUSTER = new Boolean(System.getenv("OKE_CLUSTER")).booleanValue();
+    }
+    if (System.getenv("NFS_SERVER") != null) {
+      NFS_SERVER = System.getenv("NFS_SERVER");
+    }
+    if (System.getenv("FSS_DIR") != null) {
+      FSS_DIR = System.getenv("FSS_DIR");
     }
     if (System.getenv("OPENSHIFT") != null) {
       OPENSHIFT = new Boolean(System.getenv("OPENSHIFT")).booleanValue();
