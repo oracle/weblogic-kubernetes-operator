@@ -94,18 +94,6 @@ spec:
                     let you locate the referenced object inside the same namespace.
                   type: object
                   properties:
-                    runtimeEncryptionSecret:
-                      type: string
-                      description: Runtime encryption key passphrase secret. Required.
-                    domainType:
-                      type: string
-                      description: 'WDT domain type: Legal values: WLS, RestrictedJRF,
-                        JRF. Defaults to WLS.'
-                      enum:
-                      - WLS
-                      - RestrictedJRF
-                      - JRF
-                    configMap:
                     name:
                       description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                       type: string
