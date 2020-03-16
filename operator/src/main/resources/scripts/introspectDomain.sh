@@ -167,6 +167,10 @@ if [ ${created_domain} -ne 0 ]; then
 
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 START"
 
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM END" 
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 START"
+
     # put domain secret's md5 cksum in file '/tmp/DomainSecret.md5'
     # the introspector wlst script and WL server pods will use this value
     generateDomainSecretMD5File '/tmp/DomainSecret.md5' || exit 1
@@ -179,10 +183,6 @@ if [ ${created_domain} -ne 0 ]; then
     ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
 
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT END"
-fi
-
-if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
-  cleanup_mii
 fi
 trace "Domain introspection complete"
 

@@ -1,3 +1,12 @@
+## DO NOT MODIFY THIS FILE!  IT IS OUT OF DATE.
+
+## TBD Remove this file once other work is complete.
+
+## SAMPLE DOC IS NOW LOCATED IN ./docs-source/content/samples/simple/domains/model-in-image/_index.md
+
+## MAIN DOC WILL BE LOCATED IN ./docs-source/content/userguide/managing-domains/model-in-image/_index.md
+
+
 # Model in Image Sample
 
 This sample demonstrates the WebLogic Kubernetes Operator "Model in Image" feature. Model in Image allows you to supply a Weblogic Deploy Tool (WDT) model that the operator automatically expands into a full domain home during runtime. This eliminates the need to pre-create a WebLogic domain home prior to deploying your domain resource.
@@ -485,20 +494,12 @@ If it is important to reuse or share the same database and data between deployme
 When a domain is first deployed, the WebLogic Kubernetes Operator will copy its OPSS wallet from the domain home and store it in the domain's introspect domain configmap. For a domain that has been created using model-in-image, here has how to export a wallet for reuse:
 
     ```
-    kubectl -n MY_DOMAIN_NAMESPACE \
-      get configmap MY_DOMAIN_UID-weblogic-domain-introspect-cm \
-      -o jsonpath='{.data.ewallet\.p12}' \
-      > ewallet.p12
+    opss_wallet_util.sh -s [-wf <name of the wallet file. Default ./ewallet.p12>] 
     ```
 
 To reuse the wallet, create a secret that contains the OPSS key you specified in the original domain and make sure that your domain resource `configuration.opss.walletSecret` attribute names this secret. Here's sample code for deploying the secret that assumes the wallet is in local file 'ewallet.p12' and that the secret passphrase is `welcome1`:
 
     ```
-    kubectl -n sample-domain1-ns \
-      create secret generic sample-domain1-opss-key-passphrase-secret \
-      --from-literal=passhrase=welcome1 
-      --from-file=ewallet.p12
-    kubectl -n sample-domain1-ns \
-      label secret sample-domain1-opss-key-passphrase-secret \
-      weblogic.domainUID=sample-domain1
+    opss_wallet_util.sh -r [-wf <name of the wallet file. Default ewallet.p12>] [-ws <name of the secret. Default DOMAIN_UID-opss-walletfile-secret> ] 
     ```
+

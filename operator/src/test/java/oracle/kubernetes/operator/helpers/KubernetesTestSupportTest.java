@@ -14,6 +14,7 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -27,7 +28,6 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
-import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
@@ -89,9 +89,9 @@ public class KubernetesTestSupportTest {
 
   @Test
   public void afterCreateCrd_crdExists() {
-    V1beta1CustomResourceDefinition crd = createCrd("mycrd");
+    V1CustomResourceDefinition crd = createCrd("mycrd");
 
-    TestResponseStep<V1beta1CustomResourceDefinition> responseStep = new TestResponseStep<>();
+    TestResponseStep<V1CustomResourceDefinition> responseStep = new TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().createCustomResourceDefinitionAsync(crd, responseStep));
 
     assertThat(testSupport.getResources(CUSTOM_RESOURCE_DEFINITION), contains(crd));
@@ -99,24 +99,24 @@ public class KubernetesTestSupportTest {
 
   @Test
   public void afterCreateCrd_incrementNumCalls() {
-    V1beta1CustomResourceDefinition crd = createCrd("mycrd");
+    V1CustomResourceDefinition crd = createCrd("mycrd");
 
-    TestResponseStep<V1beta1CustomResourceDefinition> responseStep = new TestResponseStep<>();
+    TestResponseStep<V1CustomResourceDefinition> responseStep = new TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().createCustomResourceDefinitionAsync(crd, responseStep));
 
     assertThat(testSupport.getNumCalls(), equalTo(1));
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1beta1CustomResourceDefinition createCrd(String name) {
-    return new V1beta1CustomResourceDefinition().metadata(new V1ObjectMeta().name(name));
+  private V1CustomResourceDefinition createCrd(String name) {
+    return new V1CustomResourceDefinition().metadata(new V1ObjectMeta().name(name));
   }
 
   @Test
   public void afterCreateCrd_crdReturnedInCallResponse() {
-    V1beta1CustomResourceDefinition crd = createCrd("mycrd");
+    V1CustomResourceDefinition crd = createCrd("mycrd");
 
-    TestResponseStep<V1beta1CustomResourceDefinition> responseStep = new TestResponseStep<>();
+    TestResponseStep<V1CustomResourceDefinition> responseStep = new TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().createCustomResourceDefinitionAsync(crd, responseStep));
 
     assertThat(responseStep.callResponse.getResult(), equalTo(crd));
@@ -126,7 +126,7 @@ public class KubernetesTestSupportTest {
   public void whenCrdWithSameNameExists_createFails() {
     testSupport.defineResources(createCrd("mycrd"));
 
-    TestResponseStep<V1beta1CustomResourceDefinition> responseStep = new TestResponseStep<>();
+    TestResponseStep<V1CustomResourceDefinition> responseStep = new TestResponseStep<>();
     Step steps =
           new CallBuilder().createCustomResourceDefinitionAsync(createCrd("mycrd"), responseStep);
     testSupport.runSteps(steps);
@@ -136,13 +136,13 @@ public class KubernetesTestSupportTest {
 
   @Test
   public void afterReplaceExistingCrd_crdExists() {
-    V1beta1CustomResourceDefinition oldCrd = createCrd("mycrd");
+    V1CustomResourceDefinition oldCrd = createCrd("mycrd");
     testSupport.defineResources(oldCrd);
 
-    V1beta1CustomResourceDefinition crd = createCrd("");
+    V1CustomResourceDefinition crd = createCrd("");
     crd.getMetadata().putLabelsItem("be", "different");
 
-    TestResponseStep<V1beta1CustomResourceDefinition> responseStep = new TestResponseStep<>();
+    TestResponseStep<V1CustomResourceDefinition> responseStep = new TestResponseStep<>();
     Step steps = new CallBuilder().replaceCustomResourceDefinitionAsync("mycrd", crd, responseStep);
     testSupport.runSteps(steps);
 
