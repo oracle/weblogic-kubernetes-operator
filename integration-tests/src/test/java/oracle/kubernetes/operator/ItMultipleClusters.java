@@ -264,13 +264,17 @@ public class ItMultipleClusters extends BaseTest {
    * @param domain Domain
    * @param pods   array pod names to check the status for
    */
-  private void verifyServersStatus(Domain domain, String[] pods) {
+  private void verifyServersStatus(Domain domain, String[] pods) throws Exception {
     K8sTestUtils testUtil = new K8sTestUtils();
     String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", DOMAINUID);
     String namespace = domain.getDomainNs();
     for (String pod : pods) {
-      assertTrue(
-          testUtil.isPodRunning(namespace, domain1LabelSelector, pod), pod + " Pod not running");
+      if (BaseTest.OKE_CLUSTER) {
+        TestUtils.checkPodReadyAndRunning(pod, domain.getDomainNs());
+      } else {
+        assertTrue(
+                testUtil.isPodRunning(namespace, domain1LabelSelector, pod), pod + " Pod not running");
+      }
     }
   }
 }
