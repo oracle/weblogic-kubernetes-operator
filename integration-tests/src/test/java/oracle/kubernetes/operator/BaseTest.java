@@ -75,10 +75,8 @@ public class BaseTest {
   private static String weblogicImageServer;
   private static String oracledbImageTag;
   private static String oracledbImageName;
-  private static String oracledbImageServer;
   private static String fmwImageTag;
   private static String fmwImageName;
-  private static String fmwImageServer;
   private static String domainApiVersion;
   private static int suffixCount = 0;
 
