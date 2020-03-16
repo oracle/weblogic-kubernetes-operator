@@ -125,14 +125,17 @@ public class ItManagedCoherence extends BaseTest {
    * @param pods      array pod names to check the status for
    * @param domainUid Domain UID
    */
-  private static void verifyServersStatus(Domain domain, String[] pods, String domainUid) {
+  private static void verifyServersStatus(Domain domain, String[] pods, String domainUid) throws Exception {
     K8sTestUtils testUtil = new K8sTestUtils();
     String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     String namespace = domain.getDomainNs();
     for (String pod : pods) {
-      assertTrue(
-          testUtil.isPodRunning(namespace, domain1LabelSelector, pod), pod + " Pod not running");
-      //pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
+      if (BaseTest.OKE_CLUSTER) {
+        TestUtils.checkPodReadyAndRunning(pod, domain.getDomainNs());
+      } else {
+        assertTrue(
+                testUtil.isPodRunning(namespace, domain1LabelSelector, pod), pod + " Pod not running");
+      }
     }
   }
 
