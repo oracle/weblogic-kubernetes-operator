@@ -228,7 +228,7 @@ To recover a domain's RCU tables between domain restarts or to share an RCU sche
 To save the wallet file
 
 ```
-    save_wallet.sh -s [-wf <name of the wallet file. Default ./ewallet.p12>] 
+    opss_wallet_util.sh -s [-wf <name of the wallet file. Default ./ewallet.p12>] 
 ```
 
 You should backup this file to a safe location that can be retrieved later
@@ -238,7 +238,7 @@ To reuse the wallet for subsequent redeployments or share the RCU tables between
 1. Store the wallet in a secret
 
 ```
-    save_wallet.sh -r [-wf <name of the wallet file. Default ./ewallet.p12>] [-ws <name of the secret. Default DOMAIN_UID-opss-walletfile-secret> ] 
+    opss_wallet_util.sh -r [-wf <name of the wallet file. Default ./ewallet.p12>] [-ws <name of the secret. Default DOMAIN_UID-opss-walletfile-secret> ] 
 
 ```
 
