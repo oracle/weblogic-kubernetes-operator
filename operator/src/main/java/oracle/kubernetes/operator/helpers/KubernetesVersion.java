@@ -115,8 +115,8 @@ public class KubernetesVersion {
     return this.major > 1 || (this.major == 1 && this.minor >= 8);
   }
 
-  boolean isCrdSubresourcesSupported() {
-    return this.major > 1 || (this.major == 1 && this.minor >= 10);
+  boolean isCrdV1Supported() {
+    return this.major > 1 || (this.major == 1 && this.minor >= 16);
   }
 
   @Override
