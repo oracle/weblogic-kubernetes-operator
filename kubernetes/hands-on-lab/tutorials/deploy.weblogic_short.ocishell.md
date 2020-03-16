@@ -48,7 +48,7 @@ Please note the only updated parameter in both cases is the domain namespace.
 
 To deploy WebLogic domain you need to create a domain resource definition which contains the necessary parameters for the operator to start the WebLogic domain properly.
 
-We provided for you domain.yaml file that contains yaml representation of the custom resource object. Please copy it locally
+We provided for you `domain.yaml` file that contains yaml representation of the custom resource object. Please copy it locally
 ```bash
 curl -LSs https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/master/kubernetes/hands-on-lab/domain.yaml >~/domain.yaml
 ```
