@@ -14,9 +14,9 @@
 # -s <secret-name>    : Name of secret. Required.
 # -l <key-value-pair> : Secret 'literal' key/value pair. Can be specified more than once. 
 #                       This script doesn't support spaces in the key value pair.
-# -f <filename>       : Secret 'file-name' key/value pair. Can be specified more than once. 
+# -f <filename>       : Secret 'file-name'. Can be specified more than once. 
 #                       Key will be the file-name, value will be file contents.
-# -fk <keyname> <filename>       : Secret 'file-name' key/value pair. Can be specified more than once.
+# -fk <key> <filename>: Secret 'file-name' key/value pair. Can be specified more than once.
 #                       Key will be the key-name, value will be file contents.
 
 set -e
