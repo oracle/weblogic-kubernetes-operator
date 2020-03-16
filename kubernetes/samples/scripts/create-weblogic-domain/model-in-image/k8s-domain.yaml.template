@@ -111,6 +111,3 @@ spec:
       
       # Name of secret with walletFile containing base64 encoded opss wallet
       #walletFileSecret: @@DOMAIN_UID@@-opss-walletfile-secret
-      
-      # Name of secret with runtimeEncryptionSecret 
-      runtimeEncryptionSecret: @@DOMAIN_UID@@-runtime-encryption-secret
