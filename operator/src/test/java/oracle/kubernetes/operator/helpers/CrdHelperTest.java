@@ -85,7 +85,6 @@ public class CrdHelperTest {
   private V1CustomResourceDefinitionSpec createSpec(String version) {
     return new V1CustomResourceDefinitionSpec()
         .group(KubernetesConstants.DOMAIN_GROUP)
-        // FIXME .version(version)
         .scope("Namespaced")
         .names(
             new V1CustomResourceDefinitionNames()
@@ -98,7 +97,6 @@ public class CrdHelperTest {
   private V1beta1CustomResourceDefinitionSpec createBetaSpec(String version) {
     return new V1beta1CustomResourceDefinitionSpec()
         .group(KubernetesConstants.DOMAIN_GROUP)
-        // FIXME .version(version)
         .scope("Namespaced")
         .names(
             new V1beta1CustomResourceDefinitionNames()
@@ -148,17 +146,24 @@ public class CrdHelperTest {
 
   @Test
   public void whenCrdV1SupportedAndNoCrd_createIt() {
-    // TODO
+    expectReadCrd().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
+    expectReadBetaCrd().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
+    expectSuccessfulCreateCrd(defaultCrd);
+
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null));
+
+    assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
   @Test
   public void whenCrdV1SupportedAndBetaCrd_upgradeIt() {
-    // TODO
-  }
+    expectReadCrd().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
+    expectReadBetaCrd().returning(defaultBetaCrd);
+    expectSuccessfulReplaceCrd(defaultCrd);
 
-  @Test
-  public void whenCrdV1NotSupportedAndNoCrd_createIt() {
-    // TODO
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null));
+
+    assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
   @Test
