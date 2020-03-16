@@ -326,10 +326,13 @@ public class ItManagedCoherence extends BaseTest {
         .append(domain.getDomainUid())
         .append(".org' ")
         .append("http://")
-        .append(domain.getHostNameForCurl())
-        .append(":")
-        .append(domain.getLoadBalancerWebPort())
-        .append("/")
+        .append(domain.getHostNameForCurl());
+    if (!BaseTest.OKE_CLUSTER) {
+
+      curlCmd.append(":")
+              .append(domain.getLoadBalancerWebPort());
+    }
+        curlCmd.append("/")
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
@@ -347,10 +350,13 @@ public class ItManagedCoherence extends BaseTest {
         .append(domain.getDomainUid())
         .append(".org' ")
         .append("http://")
-        .append(domain.getHostNameForCurl())
-        .append(":")
-        .append(domain.getLoadBalancerWebPort())
-        .append("/")
+        .append(domain.getHostNameForCurl());
+    if (!BaseTest.OKE_CLUSTER) {
+
+      curlCmd.append(":")
+              .append(domain.getLoadBalancerWebPort());
+    }
+        curlCmd.append("/")
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
@@ -368,10 +374,13 @@ public class ItManagedCoherence extends BaseTest {
         .append(domain.getDomainUid())
         .append(".org' ")
         .append("http://")
-        .append(domain.getHostNameForCurl())
-        .append(":")
-        .append(domain.getLoadBalancerWebPort())
-        .append("/")
+        .append(domain.getHostNameForCurl());
+    if (!BaseTest.OKE_CLUSTER) {
+
+      curlCmd.append(":")
+              .append(domain.getLoadBalancerWebPort());
+    }
+    curlCmd.append("/")
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
