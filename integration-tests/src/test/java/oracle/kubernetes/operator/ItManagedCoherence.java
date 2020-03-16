@@ -332,7 +332,7 @@ public class ItManagedCoherence extends BaseTest {
       curlCmd.append(":")
               .append(domain.getLoadBalancerWebPort());
     }
-        curlCmd.append("/")
+    curlCmd.append("/")
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
@@ -356,7 +356,7 @@ public class ItManagedCoherence extends BaseTest {
       curlCmd.append(":")
               .append(domain.getLoadBalancerWebPort());
     }
-        curlCmd.append("/")
+    curlCmd.append("/")
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
