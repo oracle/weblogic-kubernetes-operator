@@ -205,8 +205,15 @@ public class BaseTest {
             : appProps.getProperty("MONITORING_EXPORTER_BRANCH", "master");
 
     maxIterationsPod =
-        new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
-    waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
+        Integer.parseInt(System.getenv("MAX_ITERATIONS") != null
+            ? System.getenv("MAX_ITERATIONS")
+            : appProps.getProperty("maxIterationsPod", "" + maxIterationsPod));
+
+    waitTimePod =
+        Integer.parseInt(System.getenv("WAIT_TIME_SECONDS") != null
+            ? System.getenv("WAIT_TIME_SECONDS")
+            : appProps.getProperty("waitTimePod", "" + waitTimePod));
+
     if (System.getenv("RESULT_ROOT") != null) {
       resultRootCommon = System.getenv("RESULT_ROOT");
     } else {
