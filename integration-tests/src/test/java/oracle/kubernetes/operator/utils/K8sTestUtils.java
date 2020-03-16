@@ -10,6 +10,8 @@ import java.util.logging.Level;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
+import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.ApisApi;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
@@ -17,11 +19,14 @@ import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
+import io.kubernetes.client.openapi.models.V1APIGroup;
+import io.kubernetes.client.openapi.models.V1APIGroupList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleList;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1DeploymentList;
+import io.kubernetes.client.openapi.models.V1GroupVersionForDiscovery;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
@@ -34,6 +39,7 @@ import io.kubernetes.client.openapi.models.V1RoleList;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,7 +47,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class K8sTestUtils {
-
 
   static {
     try {
@@ -57,7 +62,9 @@ public class K8sTestUtils {
   private AppsV1Api appsV1Api = new AppsV1Api();
   private ExtensionsV1beta1Api extensionsV1beta1Api = new ExtensionsV1beta1Api();
   private RbacAuthorizationV1Api rbacAuthorizationV1Api = new RbacAuthorizationV1Api();
+  private ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
   private ApiextensionsV1Api apiextensionsV1Api = new ApiextensionsV1Api();
+  private ApisApi apisApi = new ApisApi();
 
   /**
    * verify domain CRD.
@@ -65,10 +72,26 @@ public class K8sTestUtils {
    */
   public void verifyDomainCrd() throws Exception {
     try {
-      V1CustomResourceDefinition domainCrd =
-          apiextensionsV1Api.readCustomResourceDefinition(
+      V1APIGroupList apis = apisApi.getAPIVersions();
+      for (V1APIGroup group : apis.getGroups()) {
+        if ("apiextensions.k8s.io".equals(group.getName())) {
+          for (V1GroupVersionForDiscovery version : group.getVersions()) {
+            if ("v1".equals(version.getVersion())) {
+              // v1 is supported
+              V1CustomResourceDefinition domainCrd =
+                  apiextensionsV1Api.readCustomResourceDefinition(
+                      "domains.weblogic.oracle", null, null, null);
+              assertNotNull(domainCrd, "Domain CRD exists");
+              return;
+            }
+          }
+          break;
+        }
+      }
+      V1beta1CustomResourceDefinition domainBetaCrd =
+          apiextensionsV1beta1Api.readCustomResourceDefinition(
               "domains.weblogic.oracle", null, null, null);
-      assertNotNull(domainCrd, "Domain CRD exists");
+      assertNotNull(domainBetaCrd, "Domain CRD exists");
     } catch (ApiException aex) {
       if (aex.getCode() == 404) {
         assertTrue(false, "Expected CRD domains.weblogic.oracle existed.");
