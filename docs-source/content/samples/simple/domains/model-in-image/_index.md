@@ -225,7 +225,34 @@ Note that when you succesfully deploy your JRF domain resource for the first tim
 
 To recover a domain's RCU tables between domain restarts or to share an RCU schema between different domains, it is necessary to extract this wallet file from the config map and save the OPSS wallet password secret that was used for the original domain. The wallet password and wallet file are needed again when you recreate the domain or share the database with other domains.
 
-TBD add instructions for modifying the domain resource in the sample to specify a wallet file, and the commands for extracting the wallet plus deploying the wallet as a secret, (also decide whether to keep the 'save ewallet' script or updated it.)
+To save the wallet file
+
+```
+    save_wallet.sh -s [-wf <name of the wallet file. Default ./ewallet.p12>] 
+```
+
+You should backup this file to a safe location that can be retrieved later
+
+To reuse the wallet for subsequent redeployments or share the RCU tables between different domains
+
+1. Store the wallet in a secret
+
+```
+    save_wallet.sh -r [-wf <name of the wallet file. Default ./ewallet.p12>] [-ws <name of the secret. Default DOMAIN_UID-opss-walletfile-secret> ] 
+
+```
+
+2. Modify the domain resource yaml file to provide the secret names
+
+```
+  configuration:
+    opss:
+      # Name of secret with walletPassword for extracting the wallet
+      walletPasswordSecret: sample-domain1-opss-wallet-password-secret      
+      # Name of secret with walletFile containing base64 encoded opss wallet
+      walletFileSecret: sample-domain1-opss-walletfile-secret
+
+```
 
 See TBD [Reusing an RCU Database between Domain Deployments](#reusing-an-rcu-database-between-domain-deployments) for instructions.
 
@@ -251,7 +278,38 @@ Run the script:
   $SAMPLEDIR/build.sh
   ```
 
-TBD Add note about remote k8s clusters.  Make sure there's support for a secret in the template file.
+If you intend to use a remote docker registry, you will need to tag and push the image to the remote docker registry:
+
+1.  Tag the image for the remote docker registry, e.g.:
+
+```
+docker tag <image-name>:<tag> <region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>:<tag>
+```
+
+2,  Push the image to the remote docker registry, e.g.:
+
+```
+docker push <region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>:<tag>
+```
+
+3, Create the pull secret for the remote docker registry:
+
+```
+ kubectl -n <domain namespace> create secret docker-registry <secret name> \
+     --docker-server=<region-key>.ocir.io/<tenancy-namespace>/<repo-name> \
+     --docker-username=your.email@some.com \
+     --docker-password=your-password \
+     --docker-email=your.email@some.com 
+
+```
+
+4. Update the domain template file `k8s-domain.yaml.template` to provide the imagePullSecret:
+
+```
+  imagePullSecrets:
+  - name: <secret name>
+
+```
 
 ### Create and deploy your Kubernetes resources
 
