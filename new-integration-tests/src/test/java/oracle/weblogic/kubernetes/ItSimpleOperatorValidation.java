@@ -53,7 +53,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
         // successful or not.
         boolean success = installOperator();
         // we can use a standard JUnit assertion to check on the result
-        assertEquals(true, success);
+        assertEquals(true, success, "There MUST be a descriptive message here");
 
         // we can use the injected logger like this:
         logger.info("hello");
