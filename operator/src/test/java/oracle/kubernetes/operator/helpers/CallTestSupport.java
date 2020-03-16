@@ -36,7 +36,7 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
  * specified name and namespace.
  *
  * <p>testSupport.createCannedResponse("readCRD") .withName(name) .returning(new
- * V1beta1CustomResourceDefinition());
+ * V1CustomResourceDefinition());
  *
  * <p>will return the specified custom resource definition.
  */
