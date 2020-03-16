@@ -122,9 +122,20 @@ if [ ${SAVE_WALLET} -eq 1 ] ; then
     > ${WALLET_FILE}
 fi
 
+if [ ! -f "$WALLET_FILE" ]; then
+  echo "@@ Error: Wallet file '$WALLET_FILE' not found."
+  exit 1
+fi
+
+FILESIZE=$(du -k "$WALLET_FILE" | cut -f1)
+if [ $FILESIZE = 0 ]; then
+  echo "@@ Error: Wallet file '$WALLET_FILE' is empty. Is this a JRF domain? The wallet file will be empty for a non-RCU/non-JRF domain."
+  exit 1
+fi
+
 if [ ${RESTORE_WALLET} -eq 1 ] ; then
   echo "@@ Info: Creating secret '${WALLET_SECRET}' in namespace '${DOMAIN_NAMESPACE}' for wallet file '${WALLET_FILE}'."
   $SCRIPTDIR/create_secret.sh \
     -s ${WALLET_SECRET} \
-    -fk walletFile ${WALLET_FILE}
+    -f walletFile=${WALLET_FILE}
 fi
