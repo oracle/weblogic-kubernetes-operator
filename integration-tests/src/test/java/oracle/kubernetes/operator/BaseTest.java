@@ -192,10 +192,6 @@ public class BaseTest {
         System.getenv("IMAGE_NAME_FMWINFRA") != null
             ? System.getenv("IMAGE_NAME_FMWINFRA")
             : appProps.getProperty("fmwImageName");
-    fmwImageServer =
-        System.getenv("OCR_SERVER") != null
-            ? System.getenv("OCR_SERVER")
-            : appProps.getProperty("OCR_SERVER");
     oracledbImageTag =
         System.getenv("IMAGE_TAG_ORACLEDB") != null
             ? System.getenv("IMAGE_TAG_ORACLEDB")
@@ -204,10 +200,6 @@ public class BaseTest {
         System.getenv("IMAGE_NAME_ORACLEDB") != null
             ? System.getenv("IMAGE_NAME_ORACLEDB")
             : appProps.getProperty("oracledbImageName");
-    oracledbImageServer =
-        System.getenv("OCR_SERVER") != null
-            ? System.getenv("OCR_SERVER")
-            : appProps.getProperty("OCR_SERVER");                    
     domainApiVersion =
         System.getenv("DOMAIN_API_VERSION") != null
             ? System.getenv("DOMAIN_API_VERSION")
@@ -385,15 +377,6 @@ public class BaseTest {
   }
 
   /**
-   * getter method for fmwImageServer.
-   *
-   * @return registry name of the FMW container
-   */
-  public static String getfmwImageServer() {
-    return fmwImageServer;
-  }
-  
-  /**
    * getter method for oracledbImageTag field.
    *
    * @return image tag of the Oracle DB docker images
@@ -402,7 +385,6 @@ public class BaseTest {
     return oracledbImageTag;
   }
 
-  
   /**
    * getter method for oracledbImageName.
    *
@@ -411,16 +393,6 @@ public class BaseTest {
   public static String getOracledbImageName() {
     return oracledbImageName;
   }
-
-  /**
-   * getter method for oracledbImageServer.
-   *
-   * @return registry name of the Oracle DB container
-   */
-  public static String getOracledbImageServer() {
-    return oracledbImageServer;
-  }
-
 
   public static String getDomainApiVersion() {
     return domainApiVersion;
