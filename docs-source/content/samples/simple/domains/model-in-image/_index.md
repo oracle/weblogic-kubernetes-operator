@@ -5,7 +5,7 @@ weight: 4
 description: "Sample for supplying a WebLogic Deploy Tool (WDT) model that the operator automatically expands into a full domain home during runtime."
 ---
 
-#### Contents
+### Contents
 
   - [Introduction](#introduction)
   - [References](#references)
@@ -18,9 +18,10 @@ description: "Sample for supplying a WebLogic Deploy Tool (WDT) model that the o
   - [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image)
   - [Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)
   - [Optionally test the sample application](#optionally-test-the-sample-application)
+  - [Optionally access the WebLogic console](#optionally-access-the-weblogic-console)
   - [Cleanup](#cleanup)
 
-#### Introduction
+### Introduction
 
 This sample demonstrates:
 
@@ -36,7 +37,7 @@ There are three types of domains supported by Model in Image: a standard `WLS` d
 
 The `JRF` domain path through the sample includes additional steps for deploying an infrastructure database and initializing the database using the Repository Creation Utility (RCU) tool. `JRF` domains may be  used by Oracle products that layer on top of WebLogic Server such as SOA, OSB, and FA. Similarly, `RestrictedJRF` domains may be used by Oracle layered products such as Oracle Communications products.
 
-#### References
+### References
 
 To reference the relevant user documentation, see:
  - [TBD Model-in-image documentation]
@@ -45,7 +46,7 @@ To reference the relevant user documentation, see:
 
 
 
-#### Prerequisites for all domain types
+### Prerequisites for all domain types
 
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK8 installation. (`JAVA_HOME` is used by the WebLogic Image Tool.)
 
@@ -112,7 +113,7 @@ To reference the relevant user documentation, see:
 
 8. If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains). You can do this step before or after you create your final image. If you're not using a `JRF` domain type, proceed to [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image).
 
-#### Prerequisites for JRF domains
+### Prerequisites for JRF domains
 
 > __NOTE__: This section is only required for demonstrating a `JRF` domain type. Skip this section and proceed to [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) if your domain type is `WLS` or `RestrictedJRF`.
 
@@ -228,7 +229,7 @@ TBD add instructions for modifying the domain resource in the sample to specify 
 
 See TBD [Reusing an RCU Database between Domain Deployments](#reusing-an-rcu-database-between-domain-deployments) for instructions.
 
-#### Use the WebLogic Image Tool to create an image
+### Use the WebLogic Image Tool to create an image
 
 Model in Image must contain a WebLogic install, a WebLogic Deploy Tool install, and your WDT model files. You can use the sample `./build.sh` script to build this image, which will perform the following steps for you:
 
@@ -252,13 +253,16 @@ Run the script:
 
 TBD Add note about remote k8s clusters.  Make sure there's support for a secret in the template file.
 
-#### Create and deploy your Kubernetes resources
+### Create and deploy your Kubernetes resources
 
 To deploy the sample operator domain and its required Kubernetes resources, use the sample script, `$SAMPLEDIR/run_domain.sh`, which will perform the following steps for you:
 
   - Deletes the domain with a `DomainUID` of `domain1` in the namespace, `sample-domain1-ns`, if it already exists.
   - Creates a secret containing your WebLogic administrator user name and password.
-  - Creates a secret containing your Model in Image encryption password.
+  - Creates a secret containing your Model in Image runtime encryption password:
+    - All model-in-image domains must supply a runtime encryption secret with a `password` value. 
+    - It is used to encrypt configuration that is passed around internally by the Operator.
+    - The value must be kept private but can be arbitrary: you can optionally supply a different secret value every time you restart the domain.
   - Creates secrets containing your RCU access URL, credentials, and prefix (these are unused unless the domain type is `JRF`).
   - Creates a config map containing an additional WDT model properties file, `$SAMPLEDIR/model1.20.properties`.
   - Generates a domain resource YAML file, `$WORKDIR/k8s-domain.yaml`, using `$SAMPLEDIR/k8s-domain.yaml.template`.
@@ -276,7 +280,7 @@ Run the script:
 At the end, you will see the message `Getting pod status - ctrl-c when all is running and ready to exit`. Then you should see a WebLogic Administration Server and two Managed Server pods start. After all the pods are up, you can use `ctrl-c` to exit the build script.
 
 
-#### Optionally test the sample application
+### Optionally test the sample application
 
 1. Ensure Traefik has been installed and is servicing external port 30305, as per [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
 
@@ -347,7 +351,11 @@ At the end, you will see the message `Getting pod status - ctrl-c when all is ru
 
    **Note**: If you're running on a remote Kubernetes cluster, then substitute `$(hostname).$(dnsdomainname)` with an external address suitable for contacting the cluster.
 
-#### Cleanup
+### Optionally access the WebLogic console
+
+TBD Add steps for accessing the WL console through Traefik. Likely simply involves adding an Ingress, etc. See sample-application steps above for the pattern.
+
+### Cleanup
 
 1. Delete the domain resource.
    ```
