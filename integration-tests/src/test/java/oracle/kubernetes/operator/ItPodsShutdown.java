@@ -199,7 +199,7 @@ public class ItPodsShutdown extends BaseTest {
       if (domain.getLoadBalancerName().equals("APACHE")) {
         testAppUrl.append("weblogic/");
       }
-      testAppUrl.append(testAppPath).append("/");
+      testAppUrl.append(testAppPath);
       // curl cmd to call webapp
 
       StringBuffer webServiceUrl = new StringBuffer("curl --silent --noproxy '*' ");
@@ -211,7 +211,7 @@ public class ItPodsShutdown extends BaseTest {
 
       // Send a HTTP request to keep open session
       String curlCmd = webServiceUrl.toString();
-      // LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
+      LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
       TestUtils.checkAnyCmdInLoop(curlCmd, "Ending to sleep");
     }
   }
