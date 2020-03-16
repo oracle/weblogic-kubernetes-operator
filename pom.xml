@@ -526,6 +526,17 @@
 
   <dependencyManagement>
     <dependencies>
+      <!-- Add direct bouncycastle dependency to override version from kubernetes/client-java until they update -->
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-ext-jdk15on</artifactId>
+        <version>1.64</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk15on</artifactId>
+        <version>1.64</version>
+      </dependency>
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-ext-jdk15on</artifactId>
@@ -641,11 +652,6 @@
         <groupId>org.glassfish.jersey.test-framework.providers</groupId>
         <artifactId>jersey-test-framework-provider-inmemory</artifactId>
         <version>${jersey-version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>${guava-version}</version>
       </dependency>
       <!-- JSON processing: jackson -->
       <dependency>
@@ -781,7 +787,6 @@
     <jackson-version>2.10.3</jackson-version>
     <jackson-databind-version>2.10.3</jackson-databind-version>
     <snakeyaml-version>1.26</snakeyaml-version>
-    <guava-version>28.2-jre</guava-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
