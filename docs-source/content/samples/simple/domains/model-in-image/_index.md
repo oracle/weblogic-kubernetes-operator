@@ -201,11 +201,7 @@ TBD Move most of the following directions to the create-oracle-db-service sample
 
 ##### Increase introspection job timeout
 
-Because JRF domain home creation takes a considerable amount of time the first time it's created, and because Model in Image creates your domain home for you using the introspection job, you should increase the timeout for the introspection job. Use the command `kubectl -n sample-weblogic-operator-ns edit configmap weblogic-operator-cm` to open up an editor for the operator settings, and then use this editor to add the parameter, `introspectorJobActiveDeadlineSeconds`, with a value of at least 300 seconds (default is 120 seconds).  
-
-TBD Replace these instructions with instructions for using the new domain resource attribute.
-
-
+Because JRF domain home creation takes a considerable amount of time the first time it is created, and because Model in Image creates your domain home for you using the introspection job, you should increase the timeout for the introspection job. Use the `configuration.instrospectorJobActiveDeadlineSeconds` in the domain resource configuration to override the default with a value of at least 300 seconds (the default is 120 seconds).  
 ##### Set up RCU model attributes, domain resource attributes, and secrets
 
 To allow Model in Image to access the RCU database and OPSS wallet, it's necessary to set up an RCU access secret and an OPSS secret before deploying your domain. It's also necessary to define an `RCUDbInfo` stanza in your model. The sample already sets up all of these for you.  See:
