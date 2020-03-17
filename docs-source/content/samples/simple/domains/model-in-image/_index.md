@@ -278,7 +278,7 @@ Run the script:
   $SAMPLEDIR/build.sh
   ```
 
-If you intend to use a remote docker registry, you will need to tag and push the image to the remote docker registry:
+If you intend to use a remote docker registry, you need to tag and push the image to the remote docker registry:
 
 1.  Tag the image for the remote docker registry, e.g.:
 
@@ -303,7 +303,7 @@ docker push <region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>:<t
 
 ```
 
-4. Update the domain template file `k8s-domain.yaml.template` to provide the imagePullSecret:
+4. Update the domain template file `$SAMPLEDIR/k8s-domain.yaml.template` to provide the imagePullSecret:
 
 ```
   imagePullSecrets:
