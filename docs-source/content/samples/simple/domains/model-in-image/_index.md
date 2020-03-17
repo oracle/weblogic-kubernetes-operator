@@ -411,7 +411,60 @@ At the end, you will see the message `Getting pod status - ctrl-c when all is ru
 
 ### Optionally access the WebLogic console
 
-TBD Add steps for accessing the WL console through Traefik. Likely simply involves adding an Ingress, etc. See sample-application steps above for the pattern.
+You can add an ingress rule to access the WebLogic Console from your local browser
+
+1. Find out the service name of the admin server
+
+The name follows the pattern <Domain UID>-admin-server, you can also find out by:
+
+```
+kubectl -n sample-domain1-ns get services
+```
+
+```
+NAME                               TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+sample-domain1-admin-server        ClusterIP   None           <none>        7001/TCP   48m
+```
+
+This shows the admin service name is `sample-domain1-admin-server` and the port for the console is `7001`
+
+2. Create an ingress rule for the WebLogic console
+
+Create a file called console-ingress.yaml.  This route the request path `/console` to the admin service port `7001` in the
+`serviceName` and `servicePort`
+
+```
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-pathrouting-1
+  namespace: sample-domain1-ns
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host:
+    http:
+      paths:
+      - path: /console
+        backend:
+          serviceName: sample-domain1-admin-server
+          servicePort: 7001
+
+```
+
+3.  Apply the ingress rule resource
+
+```
+kubectl apply -f console-ingress.yaml
+```
+
+4.  Access the WebLogic console from the brower
+
+```
+http://localhost:30305/console
+```
+
 
 ### Cleanup
 
@@ -430,9 +483,8 @@ TBD Add steps for accessing the WL console through Traefik. Likely simply involv
    ```
 
 3. If you set up a database:
-   TBD update this to reference JRF RCU DB sample cleanup instructions
    ```
-   kubectl delete -f k8s-db-slim.yaml
+   ${SRCDIR}/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
    ```
 
 4. Delete the operator and its namespace:
