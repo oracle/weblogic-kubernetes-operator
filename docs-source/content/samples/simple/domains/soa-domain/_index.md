@@ -165,7 +165,7 @@ spec:
   domainHomeSourceType: PersistentVolume
 
   # The WebLogic Server Docker image that the Operator uses to start the domain
-  image: "container-registry.oracle.com/middleware/soasuite:12.2.1.4"
+  image: "container-registry.oracle.com/middleware/soasuite:12.2.1.3"
 
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
@@ -369,7 +369,7 @@ Spec:
   Data Home:
   Domain Home:                    /u01/oracle/user_projects/domains/soainfra
   Domain Home In Image:           false
-  Image:                          container-registry.oracle.com/middleware/soasuite:12.2.1.4
+  Image:                          container-registry.oracle.com/middleware/soasuite:12.2.1.3
   Image Pull Policy:              IfNotPresent
   Include Server Out In Pod Log:  true
   Log Home:                       /u01/oracle/user_projects/domains/logs/soainfra

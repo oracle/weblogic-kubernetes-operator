@@ -49,7 +49,7 @@ In this release, SOA Suite domains are supported using the “domain on a persis
 * Flannel networking v0.11.0-amd64 (check with `docker images | grep flannel`).
 * Docker 18.9.1 (check with `docker version`)
 * Helm 2.14.0+ (check with `helm version`).
-* Oracle Fusion Middleware Infrastructure 12.2.1.3.0 image with patch 29135930 or the 12.2.1.4.0 image.
+* Oracle Fusion Middleware Infrastructure 12.2.1.3.0 image with patch 29135930.
   * The existing Fusion Middleware Infrastructure Docker image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, has all the necessary patches applied.
   * Check the Fusion Middleware Infrastructure patches with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3 sh -c '$ORACLE_HOME/OPatch/opatch lspatches'`.    
 * You must have the `cluster-admin` role to install the operator.
@@ -79,7 +79,7 @@ For early access customers, with bundle patch access, we recommend that you buil
 
 #### Obtaining the SOA Suite Docker Image
 
-The pre-built Oracle SOA Suite image is available at, `container-registry.oracle.com/middleware/soasuite:12.2.1.3` or `container-registry.oracle.com/middleware/soasuite:12.2.1.4`.
+The pre-built Oracle SOA Suite image is available at, `container-registry.oracle.com/middleware/soasuite:12.2.1.3`.
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
 using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.
@@ -96,7 +96,7 @@ $ docker login container-registry.oracle.com
 Then, you can pull the image with this command:
 
 ```
-$ docker pull container-registry.oracle.com/middleware/soasuite:12.2.1.4
+$ docker pull container-registry.oracle.com/middleware/soasuite:12.2.1.3
 ```
 
 #### Creating a SOA Suite Docker image
@@ -110,8 +110,8 @@ For the Fusion Middleware Infrastructure image, you must install the [required p
 
 
   ```bash
-    $ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4-200316
-    $ docker tag container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4-200316  oracle/fmw-infrastructure:12.2.1.4
+    $ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200316
+    $ docker tag container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200316  oracle/fmw-infrastructure:12.2.1.3
   ```
 
 {{% notice warning %}}
@@ -155,17 +155,17 @@ Follow these steps to build the necessary images - a patched Fusion Middleware I
 
     ```bash
     $ cd docker-images/OracleSOASuite/dockerfiles
-    $ ./buildDockerImage.sh -v 12.2.1.4 -s
+    $ ./buildDockerImage.sh -v 12.2.1.3 -s
     ```
 
-    The image produced will be named `oracle/soa:12.2.1.4`. The samples and
+    The image produced will be named `oracle/soa:12.2.1.3`. The samples and
     instructions assume the Oracle SOA Suite image is named
-    `container-registry.oracle.com/middleware/soasuite:12.2.1.4`.
+    `container-registry.oracle.com/middleware/soasuite:12.2.1.3`.
     You will need to rename your image to match this name,
      or update the samples to refer to the image you created.
 
     ```bash
-    $ docker tag oracle/soa:12.2.1.4 container-registry.oracle.com/middleware/soasuite:12.2.1.4
+    $ docker tag oracle/soa:12.2.1.3 container-registry.oracle.com/middleware/soasuite:12.2.1.3
     ```
 
     You can use this image to run the Repository Creation Utility and to run your domain using the “domain on a persistent volume” model.
@@ -261,7 +261,7 @@ $ ./create-rcu-schema.sh \
   -s SOA1 \
   -t soaessosb \
   -d oracle-db.soans.svc.cluster.local:1521/devpdb.k8s \
-  -i container-registry.oracle.com/middleware/soasuite:12.2.1.4
+  -i container-registry.oracle.com/middleware/soasuite:12.2.1.3
 ```
 
 For SOA domains, the `create-rcu-schema.sh` script supports the following domain types `soa,osb,soaosb,soaess,soaessosb`.
