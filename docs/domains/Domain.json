@@ -511,7 +511,7 @@
       "type": "object",
       "properties": {
         "runtimeEncryptionSecret": {
-          "description": "Runtime encryption secret. Required.",
+          "description": "Runtime encryption secret. Required when domainHomeSourceType is set to FromModel.",
           "type": "string"
         },
         "domainType": {

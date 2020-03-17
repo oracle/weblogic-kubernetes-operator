@@ -40,9 +40,9 @@ The `JRF` domain path through the sample includes additional steps for deploying
 ### References
 
 To reference the relevant user documentation, see:
- - [TBD Model-in-image documentation]
+ - [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
  - [Oracle WebLogic Server Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
- - [Oracle WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool).
+ - [Oracle WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
 
 
 
@@ -225,7 +225,34 @@ Note that when you succesfully deploy your JRF domain resource for the first tim
 
 To recover a domain's RCU tables between domain restarts or to share an RCU schema between different domains, it is necessary to extract this wallet file from the config map and save the OPSS wallet password secret that was used for the original domain. The wallet password and wallet file are needed again when you recreate the domain or share the database with other domains.
 
-TBD add instructions for modifying the domain resource in the sample to specify a wallet file, and the commands for extracting the wallet plus deploying the wallet as a secret, (also decide whether to keep the 'save ewallet' script or updated it.)
+To save the wallet file:
+
+```
+    opss_wallet_util.sh -s [-wf <name of the wallet file. Default ./ewallet.p12>]
+```
+
+You should back up this file to a safe location that can be retrieved later.
+
+To reuse the wallet for subsequent redeployments or share the RCU tables between different domains:
+
+1. Store the wallet in a secret:
+
+```
+    opss_wallet_util.sh -r [-wf <name of the wallet file. Default ./ewallet.p12>] [-ws <name of the secret. Default DOMAIN_UID-opss-walletfile-secret> ]
+
+```
+
+2. Modify the domain resource YAML file to provide the secret names:
+
+```
+  configuration:
+    opss:
+      # Name of secret with walletPassword for extracting the wallet
+      walletPasswordSecret: sample-domain1-opss-wallet-password-secret      
+      # Name of secret with walletFile containing base64 encoded opss wallet
+      walletFileSecret: sample-domain1-opss-walletfile-secret
+
+```
 
 See TBD [Reusing an RCU Database between Domain Deployments](#reusing-an-rcu-database-between-domain-deployments) for instructions.
 
@@ -251,7 +278,38 @@ Run the script:
   $SAMPLEDIR/build.sh
   ```
 
-TBD Add note about remote k8s clusters.  Make sure there's support for a secret in the template file.
+If you intend to use a remote Docker registry, you need to tag and push the image to the remote Docker registry.
+
+1.  Tag the image for the remote Docker registry, for example:
+
+```
+docker tag <image-name>:<tag> <region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>:<tag>
+```
+
+2.  Push the image to the remote Docker registry, for example:
+
+```
+docker push <region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>:<tag>
+```
+
+3. Create the pull secret for the remote Docker registry:
+
+```
+ kubectl -n <domain namespace> create secret docker-registry <secret name> \
+     --docker-server=<region-key>.ocir.io/<tenancy-namespace>/<repo-name> \
+     --docker-username=your.email@some.com \
+     --docker-password=your-password \
+     --docker-email=your.email@some.com
+
+```
+
+4. Update the domain template file, `$SAMPLEDIR/k8s-domain.yaml.template`, to provide `imagePullSecrets`:
+
+```
+  imagePullSecrets:
+  - name: <secret name>
+
+```
 
 ### Create and deploy your Kubernetes resources
 
@@ -260,7 +318,7 @@ To deploy the sample operator domain and its required Kubernetes resources, use 
   - Deletes the domain with a `DomainUID` of `domain1` in the namespace, `sample-domain1-ns`, if it already exists.
   - Creates a secret containing your WebLogic administrator user name and password.
   - Creates a secret containing your Model in Image runtime encryption password:
-    - All model-in-image domains must supply a runtime encryption secret with a `password` value. 
+    - All model-in-image domains must supply a runtime encryption secret with a `password` value.
     - It is used to encrypt configuration that is passed around internally by the Operator.
     - The value must be kept private but can be arbitrary: you can optionally supply a different secret value every time you restart the domain.
   - Creates secrets containing your RCU access URL, credentials, and prefix (these are unused unless the domain type is `JRF`).

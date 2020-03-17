@@ -27,6 +27,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
@@ -711,12 +712,22 @@ public class Domain {
       for (String secretName : getConfigOverrideSecrets()) {
         verifySecretExists(resourceLookup, secretName, SecretType.ConfigOverride);
       }
+
+      verifySecretExists(resourceLookup, getOpssWalletPasswordSecret(), SecretType.OpssWalletPassword);
+      verifySecretExists(resourceLookup, getOpssWalletFileSecret(), SecretType.OpssWalletFile);
+
       if (isDomainSourceFromModel(getDomainHomeSourceType())) {
         verifySecretExists(resourceLookup, getWdtEncryptionSecret(), SecretType.WdtEncryption);
         if (getRuntimeEncryptionSecret() == null) {
-          failures.add(DomainValidationMessages.missingRequiredSecret());
+          failures.add(DomainValidationMessages.missingRequiredSecret(
+              "spec.configuration.model.runtimeEncryptionSecret"));
         } else {
           verifySecretExists(resourceLookup, getRuntimeEncryptionSecret(), SecretType.RuntimeEncryption);
+        }
+        if (ModelInImageDomainType.JRF.toString().equals(getWdtDomainType()) 
+            && getOpssWalletPasswordSecret() == null) {
+          failures.add(DomainValidationMessages.missingRequiredOpssSecret(
+              "spec.configuration.opss.walletPasswordSecret"));
         }
       }
     }
@@ -755,6 +766,7 @@ public class Domain {
         failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName, getNamespace()));
       }
     }
+
   }
 
 }

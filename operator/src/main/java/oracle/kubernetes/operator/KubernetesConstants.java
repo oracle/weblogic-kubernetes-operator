@@ -17,7 +17,6 @@ public interface KubernetesConstants {
   String DOMAIN_SINGULAR = "domain";
   String DOMAIN_SHORT = "dom";
   String DOMAIN_VERSION = "v7";
-  String[] DOMAIN_ALTERNATE_VERSIONS = {"v2", "v3", "v4", "v5", "v6"};
 
   String DOMAIN_PATH = "/apis/" + DOMAIN_GROUP + "/" + DOMAIN_VERSION + "/namespaces/{namespace}/" + DOMAIN_PLURAL;
   String DOMAIN_SPECIFIC_PATH = DOMAIN_PATH + "/{name}";

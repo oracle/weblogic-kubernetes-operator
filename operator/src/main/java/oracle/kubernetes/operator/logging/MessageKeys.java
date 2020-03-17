@@ -130,6 +130,7 @@ public class MessageKeys {
   public static final String ILLEGAL_SIT_CONFIG_MII = "WLSDO-0007";
   public static final String MODEL_CONFIGMAP_NOT_FOUND = "WLSDO-0008";
   public static final String SECRET_NOT_SPECIFIED = "WLSDO-0009";
+  public static final String OPSS_SECRET_NOT_SPECIFIED = "WLSDO-0010";
 
   private MessageKeys() {
   }

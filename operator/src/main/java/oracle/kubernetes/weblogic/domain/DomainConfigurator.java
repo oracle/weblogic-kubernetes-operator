@@ -448,4 +448,28 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withRuntimeEncryptionSecret(String secret);
+
+  /**
+   * Add OPSS wallet password secret for the domain resource.
+   *
+   * @param secret the OPSS wallet password secret
+   * @return this object
+   */
+  public abstract DomainConfigurator withOpssWalletPasswordSecret(String secret);
+
+  /**
+   * Add OPSS wallet file secret for the domain resource.
+   *
+   * @param secret the OPSS wallet file secret
+   * @return this object
+   */
+  public abstract DomainConfigurator withOpssWalletFileSecret(String secret);
+
+  /**
+   * Add domain type for the domain resource.
+   *
+   * @param type the domain type
+   * @return this object
+   */
+  public abstract DomainConfigurator withDomainType(String type);
 }

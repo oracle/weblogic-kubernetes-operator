@@ -59,8 +59,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_VOLUME_SUFFIX;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -624,7 +622,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private static String getRuntimeEncryptionSecretVolumeName(String domainUid) {
-    return domainUid + RUNTIME_ENCRYPTION_SECRET_VOLUME_SUFFIX;
+    return RUNTIME_ENCRYPTION_SECRET_VOLUME;
   }
 
   /**

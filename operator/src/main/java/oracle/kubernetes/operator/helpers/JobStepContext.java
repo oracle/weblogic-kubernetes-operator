@@ -267,8 +267,11 @@ public abstract class JobStepContext extends BasePodStepContext {
             .serviceAccountName(info.getDomain().getSpec().getServiceAccountName())
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
-                new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
-
+                new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()))
+            .addVolumesItem(
+                new V1Volume()
+                    .name("mii" + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+                    .configMap(getIntrospectMD5VolumeSource()));
     if (getOpssWalletPasswordSecretVolume() != null) {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
           getOpssWalletPasswordSecretVolume()));
@@ -311,7 +314,7 @@ public abstract class JobStepContext extends BasePodStepContext {
       }
       podSpec.addVolumesItem(
           new V1Volume()
-              .name(getDomainUid() + RUNTIME_ENCRYPTION_SECRET_VOLUME_SUFFIX)
+              .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
               .secret(getRuntimeEncryptionSecretVolume()));
     }
     return podSpec;
@@ -320,7 +323,12 @@ public abstract class JobStepContext extends BasePodStepContext {
   protected V1Container createContainer(TuningParameters tuningParameters) {
     V1Container container = super.createContainer(tuningParameters)
         .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
+        .addVolumeMountsItem(
+          volumeMount(
+              "mii" + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX,
+              "/weblogic-operator/introspectormii")
+              .readOnly(false));
 
     if (getOpssWalletPasswordSecretVolume() != null) {
       container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_KEYPASSPHRASE_VOLUME, OPSS_KEY_MOUNT_PATH));
@@ -354,7 +362,7 @@ public abstract class JobStepContext extends BasePodStepContext {
             readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
       }
       container.addVolumeMountsItem(
-          readOnlyVolumeMount(getDomainUid() + RUNTIME_ENCRYPTION_SECRET_VOLUME_SUFFIX, 
+          readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
               RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
 
     }
@@ -429,6 +437,15 @@ public abstract class JobStepContext extends BasePodStepContext {
     return new V1ConfigMapVolumeSource()
           .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
           .defaultMode(ALL_READ_AND_EXECUTE);
+  }
+
+  protected V1ConfigMapVolumeSource getIntrospectMD5VolumeSource() {
+    V1ConfigMapVolumeSource result =
+        new V1ConfigMapVolumeSource()
+            .name(getDomainUid() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+            .defaultMode(ALL_READ_AND_EXECUTE);
+    result.setOptional(true);
+    return result;
   }
 
   private V1SecretVolumeSource getOverrideSecretVolumeSource(String name) {
