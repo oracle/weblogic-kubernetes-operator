@@ -26,6 +26,7 @@
   </licenses>
 
   <build>
+    <finalName>weblogic-kubernetes-operator</finalName>
     <plugins>
       <plugin>
         <groupId>pl.project13.maven</groupId>
