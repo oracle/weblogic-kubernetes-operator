@@ -18,7 +18,7 @@ function usage {
   echo "  -p FMW Infrastructure ImagePull Secret (optional) "
   echo "      (default: docker-store) "
   echo "  -i FMW Infrastructure Image (optional) "
-  echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3) "
+  echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4) "
   echo "  -h Help"
   exit $1
 }
@@ -60,7 +60,7 @@ if [ -z ${pullsecret} ]; then
 fi
 
 if [ -z ${fmwimage} ]; then
- fmwimage="container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3"
+ fmwimage="container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4"
 fi
 
 echo "ImagePullSecret[$pullsecret] Image[${fmwimage}] dburl[${dburl}] rcuType[${rcuType}]"

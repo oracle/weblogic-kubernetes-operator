@@ -61,7 +61,7 @@ The domain resource `spec` section contains elements for configuring the domain 
 Elements related to domain identification, Docker image, and domain home:
 
 * `domainUID`: The domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of `metadata.name`.
-* `image`: The WebLogic Docker image. Required when `domainHomeSourceType` is `Image`; otherwise, defaults to `container-registry.oracle.com/middleware/weblogic:12.2.1.3`.
+* `image`: The WebLogic Docker image. Required when `domainHomeSourceType` is `Image`; otherwise, defaults to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
 * `imagePullPolicy`: The image pull policy for the WebLogic Docker image. Legal values are `Always`, `Never` and `IfNotPresent`. Defaults to `Always` if image ends in `:latest`; `IfNotPresent` otherwise.
 * `imagePullSecrets`: A list of image pull secrets for the WebLogic Docker image.
 * `domainHome`: The folder for the WebLogic domain. Not required. Defaults to `/shared/domains/domains/domainUID` if `domainHomeSourceType` is `PersistentVolume`. Defaults to `/u01/oracle/user_projects/domains/` if `domainHomeSourceType` is `Image`. Defaults to `/u01/domains/domainUID` if `domainHomeSourceType` is `FromModel`.
@@ -178,7 +178,7 @@ metadata:
 spec:
   domainHome: /u01/oracle/user_projects/domains/domain1
   domainHomeSourceType: Image
-  image: "phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.3"
+  image: "phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.4"
   imagePullPolicy: "IfNotPresent"
   imagePullSecrets:
   - name: ocirsecret

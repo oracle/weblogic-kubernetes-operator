@@ -4,7 +4,7 @@
 
 #
 #  This script obtains a WebLogic docker image with patches.  The default
-#  version is 12.2.1.3 with interim patch 2915930. 
+#  version is 12.2.1.4 with no patches applied.
 #  
 #  Expects the following env vars to already be set:
 #
@@ -16,7 +16,7 @@
 #   BASE_IMAGE_NAME   - defaults to container-registry.oracle.com/middleware/weblogic for
 #                       the 'WLS' domain type, and otherwise defaults to
 #                       container-registry.oracle.com/middleware/fmw-infrastructure
-#   BASE_IMAGE_TAG    - defaults to 12.2.1.3
+#   BASE_IMAGE_TAG    - defaults to 12.2.1.4
 #   BASE_IMAGE_BUILD  - 'when-missing' (default) or 'always'
 
 set -eu
@@ -37,7 +37,7 @@ case "$WDT_DOMAIN_TYPE" in
     echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1 ;;
 esac
   
-BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.3}
+BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
 
 BASE_IMAGE_BUILD=${BASE_IMAGE_BUILD:-when-missing}
 

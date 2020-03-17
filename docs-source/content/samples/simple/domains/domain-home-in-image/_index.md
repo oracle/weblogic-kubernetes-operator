@@ -196,7 +196,7 @@ spec:
   # If the domain home is in the image
   domainHomeSourceType: Image
   # The WebLogic Server Docker image that the operator uses to start the domain
-  image: "domain-home-in-image:12.2.1.3"
+  image: "domain-home-in-image:12.2.1.4"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
   # Identify which Secret contains the credentials for pulling an image
@@ -329,7 +329,7 @@ Spec:
     Server Start State:           RUNNING
   Domain Home:                    /u01/oracle/user_projects/domains/domain1
   Domain Home In Image:           true
-  Image:                          domain-home-in-image:12.2.1.3
+  Image:                          domain-home-in-image:12.2.1.4
   Image Pull Policy:              IfNotPresent
   Include Server Out In Pod Log:  true
   Managed Servers:

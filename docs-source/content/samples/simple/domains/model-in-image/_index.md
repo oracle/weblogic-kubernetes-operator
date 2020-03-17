@@ -104,8 +104,8 @@ To reference the relevant user documentation, see:
      d. Use your terminal to locally log in to Docker: `docker login container-registry.oracle.com`.
 
      e. Later, when you run the sample, it will call `docker pull` for your base image based on the domain type.
-       - For `JRF` and `RestrictedJRF`, it will pull `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`.
-       - For `WLS`, it will pull `container-registry.oracle.com/middleware/weblogic:12.2.1.3`.
+       - For `JRF` and `RestrictedJRF`, it will pull `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`.
+       - For `WLS`, it will pull `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
 
    - __Option 2, create your own WebLogic base image.__
 
@@ -189,7 +189,7 @@ TBD Move most of the following directions to the create-oracle-db-service sample
 
    ```
    cd $SRCDIR/kubernetes/samples/scripts/create-rcu-schema
-   ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
+   ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
    ```
 
    __NOTE__:  If you need to drop the repository, use this command:

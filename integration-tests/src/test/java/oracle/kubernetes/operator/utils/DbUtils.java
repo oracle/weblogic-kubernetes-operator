@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 public class DbUtils {
   public static final String DEFAULT_FMWINFRA_DOCKER_IMAGENAME =
       "container-registry.oracle.com/middleware/fmw-infrastructure";
-  public static final String DEFAULT_FMWINFRA_DOCKER_IMAGETAG = "12.2.1.3";
+  public static final String DEFAULT_FMWINFRA_DOCKER_IMAGETAG = "12.2.1.4";
   public static final String DEFAULT_RCU_SCHEMA_USERNAME = "myrcuuser";
   public static final String DEFAULT_RCU_SCHEMA_PASSWORD = "Oradoc_db1";
   public static final String DEFAULT_RCU_SYS_USERNAME = "sys";
