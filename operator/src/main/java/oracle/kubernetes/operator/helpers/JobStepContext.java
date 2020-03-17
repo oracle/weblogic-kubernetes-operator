@@ -311,7 +311,7 @@ public abstract class JobStepContext extends BasePodStepContext {
       }
       podSpec.addVolumesItem(
           new V1Volume()
-              .name(getDomainUid() + RUNTIME_ENCRYPTION_SECRET_VOLUME_SUFFIX)
+              .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
               .secret(getRuntimeEncryptionSecretVolume()));
     }
     return podSpec;
@@ -354,7 +354,7 @@ public abstract class JobStepContext extends BasePodStepContext {
             readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
       }
       container.addVolumeMountsItem(
-          readOnlyVolumeMount(getDomainUid() + RUNTIME_ENCRYPTION_SECRET_VOLUME_SUFFIX, 
+          readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
               RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
 
     }

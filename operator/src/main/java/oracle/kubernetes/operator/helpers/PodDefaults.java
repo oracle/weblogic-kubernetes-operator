@@ -18,8 +18,8 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_M
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME_SUFFIX;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.WDT_CONFIG_MAP_VOLUME_SUFFIX;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.WDT_CONFIG_MAP_VOLUME;
 
 class PodDefaults {
   static final String K8S_SERVICE_ACCOUNT_MOUNT_PATH =
@@ -55,7 +55,7 @@ class PodDefaults {
   }
 
   private static String getSitConfigMapVolumeName(String domainUid) {
-    return domainUid + SIT_CONFIG_MAP_VOLUME_SUFFIX;
+    return SIT_CONFIG_MAP_VOLUME;
   }
 
   private static String getConfigMapName(String domainUid) {
@@ -67,7 +67,7 @@ class PodDefaults {
   }
 
   private static String getWdtConfigMapVolumeName(String domainUid) {
-    return domainUid + WDT_CONFIG_MAP_VOLUME_SUFFIX;
+    return WDT_CONFIG_MAP_VOLUME;
   }
 
   static List<V1VolumeMount> getStandardVolumeMounts(String domainUid) {
