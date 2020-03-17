@@ -19,23 +19,21 @@ exit 0
 }
 
 # WebLogic Kubernetes Operator Image Name
-IMAGE_NAME="oracle/weblogic-kubernetes-operator:3.0.0"
+name=""
 
 # Parameters
-while getopts "ht:" optname; do
-  case "$optname" in
-    "h")
+while getopts "t:" optname; do
+  case ${optname} in
+    t )
+      name="$OPTARG"
+      ;;
+    \? )
       usage
-      ;;
-    "t")
-      IMAGE_NAME="$OPTARG"
-      ;;
-    *)
-    # Should not occur
-      echo "Unknown error while processing options inside buildDockerImage.sh"
       ;;
   esac
 done
+
+IMAGE_NAME=${name:-oracle/weblogic-kubernetes-operator:3.0.0}
 
 # Proxy settings
 PROXY_SETTINGS=""
