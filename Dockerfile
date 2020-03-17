@@ -27,9 +27,8 @@ USER 1000
 
 ENV PATH=$PATH:/operator
 
-ARG VERSION
 COPY src/scripts/* /operator/
-COPY operator/target/weblogic-kubernetes-operator-$VERSION.jar /operator/weblogic-kubernetes-operator.jar
+COPY operator/target/weblogic-kubernetes-operator.jar /operator/weblogic-kubernetes-operator.jar
 COPY operator/target/lib/*.jar /operator/lib/
 
 HEALTHCHECK --interval=1m --timeout=10s \
