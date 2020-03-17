@@ -218,6 +218,8 @@ To allow Model in Image to access the RCU database and OPSS wallet, it's necessa
 
 Note that when you succesfully deploy your JRF domain resource for the first time, the introspector job will initialize the RCU tables for the domain using the `domainInfo -> RCUDbInfo` stanza in the WDT model plus the `configuration.opss.walletPasswordSecret` specified in the domain resource. The job will also create a new domain home. Finally, the operator will also capture an OPSS wallet file from the new domain's local directory and place this file in a new Kubernetes config map.
 
+There are scenarios when the domain needs to be re-created between updates such as WebLogic credentials are changed, security roles defined in the WDT model have been changed or you want to share the same RCU tables with different domains.  Under these scenarios, the operator needs the `walletPasswordSecret` as well as the OPSS wallet file, together with the exact information in `domainInfo -> RCUDbInfo` so that the domain can be re-created and access the same set of RCU tables.  Without the wallet file and wallet password, you will not be able to re-create a domain accessing the same set of RCU tables, therefore it is highly recommended to backup the wallet file.
+
 To recover a domain's RCU tables between domain restarts or to share an RCU schema between different domains, it is necessary to extract this wallet file from the config map and save the OPSS wallet password secret that was used for the original domain. The wallet password and wallet file are needed again when you recreate the domain or share the database with other domains.
 
 To save the wallet file:
