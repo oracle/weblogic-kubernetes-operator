@@ -6,6 +6,8 @@ package oracle.kubernetes.operator.utils;
 import java.util.Map;
 import java.util.logging.Level;
 
+import oracle.kubernetes.operator.BaseTest;
+
 /**
  * JRF Domain class with all the utility methods.
  */
@@ -61,7 +63,7 @@ public class JrfDomain extends Domain {
     // jrf specific input parameter
     domainMap.put(
         "image",
-        DbUtils.DEFAULT_FMWINFRA_DOCKER_IMAGENAME + ":" + DbUtils.DEFAULT_FMWINFRA_DOCKER_IMAGETAG);
+        BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag());
 
     if (System.getenv("IMAGE_PULL_SECRET_FMWINFRA") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_FMWINFRA"));
