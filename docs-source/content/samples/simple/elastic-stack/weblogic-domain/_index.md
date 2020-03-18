@@ -138,7 +138,7 @@ data:
       key_name timestamp 
       types timestamp:time
       # inject the @timestamp special field (as type time) into the record
-      # so you will can do time based queries.
+      # so you will be able to do time based queries.
       # not to be confused with timestamp which is of type string!!!
       include_timestamp true
     </match>
