@@ -69,6 +69,7 @@ public class DomainStatusUpdaterTest {
   private final String message = generator.getUniqueString();
   private String reason = generator.getUniqueString();
   private RuntimeException failure = new RuntimeException(message);
+  private String validationWarning = generator.getUniqueString();
 
   /**
    * Setup test environment.
@@ -257,14 +258,33 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void statusStep_containsValidationWarnings_from_info() {
-    final String warning = "validation warning";
-    info.addValidationWarning(warning);
+  public void statusStep_containsValidationWarnings() {
+    info.addValidationWarning(validationWarning);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
 
-    assertThat(getRecordedDomain().getStatus().getMessage(), containsString(warning));
+    assertThat(getRecordedDomain().getStatus().getMessage(), containsString(validationWarning));
+  }
+
+  @Test
+  public void progressingStep_containsValidationWarnings() {
+    info.addValidationWarning(validationWarning);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, true, endStep));
+
+    assertThat(getRecordedDomain().getStatus().getMessage(), containsString(validationWarning));
+  }
+
+  @Test
+  public void failedStepWithFailureMessage_doesNotContainValidationWarnings() {
+    info.addValidationWarning(validationWarning);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createFailedStep(failure, endStep));
+
+    assertThat(getRecordedDomain().getStatus().getMessage(), not(containsString(validationWarning)));
   }
 
   @Test
