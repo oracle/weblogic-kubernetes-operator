@@ -388,7 +388,10 @@ public class ConfigMapHelper {
             new SitConfigMapContext(
                 this, info.getDomainUid(), getOperatorNamespace(), info.getNamespace(), data);
 
-        return doNext(context.verifyConfigMap(getNext()), packet);
+        return doNext(
+            DomainValidationSteps.createValidateDomainTopologyStep(context.verifyConfigMap(getNext())),
+            packet
+        );
       }
 
       // TODO: How do we handle no topology?

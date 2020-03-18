@@ -244,6 +244,9 @@ public class DomainStatusUpdater {
     DomainStatus getNewStatus() {
       DomainStatus newStatus = cloneStatus();
       modifyStatus(newStatus);
+      if (newStatus.getMessage() == null) {
+        newStatus.setMessage(info.getValidationWarningsAsString());
+      }
       return newStatus;
     }
 
@@ -323,13 +326,10 @@ public class DomainStatusUpdater {
           return;
         }
 
-        String validationWarnings = null;
-
         if (getDomainConfig().isPresent()) {
           status.setServers(new ArrayList<>(getServerStatuses().values()));
           status.setClusters(new ArrayList<>(getClusterStatuses().values()));
           status.setReplicas(getReplicaSetting());
-          validationWarnings = getInfo().getValidationWarningsAsString();
         }
 
         if (isHasFailedPod()) {
@@ -341,9 +341,6 @@ public class DomainStatusUpdater {
                 .withReason(MANAGED_SERVERS_STARTING_PROGRESS_REASON));
         }
 
-        if (validationWarnings != null && status.getMessage() == null) {
-          status.setMessage(validationWarnings);
-        }
       }
 
       private boolean allIntendedServersRunning() {

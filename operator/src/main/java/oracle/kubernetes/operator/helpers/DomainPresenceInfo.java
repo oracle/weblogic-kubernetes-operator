@@ -480,7 +480,21 @@ public class DomainPresenceInfo {
     validationWarnings.add(validationWarning);
   }
 
+  /**
+   * Clear all validation warnings.
+   */
+  public void clearValidationWarnings() {
+    validationWarnings.clear();
+  }
+
+  /**
+   * Return all validation warnings as a String.
+   * @return validation warnings as a String, or null if there is no validation warnings
+   */
   public String getValidationWarningsAsString() {
+    if (validationWarnings.isEmpty()) {
+      return null;
+    }
     return String.join(lineSeparator(), validationWarnings);
   }
 
