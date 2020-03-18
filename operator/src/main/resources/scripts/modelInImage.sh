@@ -513,23 +513,35 @@ function createPrimordialDomain() {
     rm ${DECRYPTED_MERGED_MODEL}
     trace "createPrimordialDomain: model diff returns "${diff_rc}
 
-    #cat /tmp/diffed_model.json
 
     local security_info_updated="false"
     security_info_updated=$(contain_returncode ${diff_rc} ${SECURITY_INFO_UPDATED})
-    # recreate the domain if there is an unsafe security update such as admin password update
-    if [ ${security_info_updated} == "true" ]; then
-      recreate_domain=1
-    fi
+    # recreate the domain if there is an unsafe security update such as admin password update or security roles
+
     # Always use the schema password in RCUDbInfo.  Since once the password is updated by the DBA.  The
     # RCU cache table SCHEMA_COMPONENT_INFO stored password will never be correct,  and subsequenetly any
     # other updates such as admin credenitals or security roles that caused the re-create of the primordial
     # domain will fail since without this flag set, defaults is to use the RCU cached info. (aka. wlst
     # getDatabaseDefaults).
     #
-    if [ ${WDT_DOMAIN_TYPE} == "JRF" ] ; then
-      UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
+    if [ ${security_info_updated} == "true" ]; then
+      recreate_domain=1
+      if [ ${WDT_DOMAIN_TYPE} == "JRF" ] ; then
+        #UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
+        UPDATE_RCUPWD_FLAG=""
+      fi
     fi
+
+    # if the domain is JRF and the schema password has been changed. Set this so that updateDomain will also update
+    # the RCU password using the RCUDnbinfo
+
+    local rcu_password_updated="false"
+    rcu_password_updated=$(contain_returncode ${diff_rc} ${RCU_PASSWORD_CHANGED})
+    if [ ${WDT_DOMAIN_TYPE} == "JRF" ] && [ ${rcu_password_updated} == "true" ] ; then
+        #UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
+        UPDATE_RCUPWD_FLAG=""
+    fi
+
   fi
 
   # If there is no primordial domain or needs to recreate one due to password changes
