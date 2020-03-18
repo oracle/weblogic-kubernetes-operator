@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -88,30 +89,43 @@ public class DomainValidationSteps {
       super(next);
     }
 
-    private void logAndAddWarning(DomainPresenceInfo info, String messageKey, Object... params) {
+
+    private void logAndAddWarning(List<String> validationWarnings, String messageKey, Object... params) {
       LOGGER.warning(messageKey, params);
-      info.addValidationWarning(LOGGER.getFormattedMessage(messageKey, params));
+      validationWarnings.add(LOGGER.getFormattedMessage(messageKey, params));
     }
 
-    @Override
-    public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    private void validate(DomainPresenceInfo info, WlsDomainConfig wlsDomainConfig) {
+      List<String> validationWarnings = new ArrayList<>();
+
       Domain domain = info.getDomain();
-      WlsDomainConfig wlsDomainConfig = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+
       // log warnings for clusters that are specified in domain resource but not configured
       // in the WebLogic domain
       for (Cluster cluster : domain.getSpec().getClusters()) {
         if (!wlsDomainConfig.containsCluster(cluster.getClusterName())) {
-          logAndAddWarning(info, MessageKeys.NO_CLUSTER_IN_DOMAIN, cluster.getClusterName());
+          logAndAddWarning(validationWarnings, MessageKeys.NO_CLUSTER_IN_DOMAIN, cluster.getClusterName());
         }
       }
       // log warnings for managed servers that are specified in domain resource but not configured
       // in the WebLogic domain
       for (ManagedServer server : domain.getSpec().getManagedServers()) {
         if (!wlsDomainConfig.containsServer(server.getServerName())) {
-          logAndAddWarning(info, MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN, server.getServerName());
+          logAndAddWarning(validationWarnings, MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN, server.getServerName());
         }
       }
+      info.clearValidationWarnings();
+      for (String warning: validationWarnings) {
+        info.addValidationWarning(warning);
+      }
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      WlsDomainConfig wlsDomainConfig = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+      validate(info, wlsDomainConfig);
+
       return doNext(packet);
     }
   }
