@@ -236,8 +236,7 @@ public class LoadBalancer {
         .append("\" --wait");
 
     if (BaseTest.HELM_VERSION.equals("V2")) {
-      //cmd.append(" --cleanup-on-fail --force --timeout 240");
-      cmd.append(" --timeout 240");
+      cmd.append(" --cleanup-on-fail --force --timeout 240");
     }
     if (BaseTest.HELM_VERSION.equals("V3")) {
       cmd.append(" --cleanup-on-fail --force  --timeout 4m0s");
