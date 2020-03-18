@@ -812,11 +812,11 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
             // no-op
           } else if (!ex.getMessage()
               .contains(
-                   "HTTP/1.1 404 Not Found") &&
-                  ex.getMessage()
+                   "HTTP/1.1 404 Not Found")
+                  && ex.getMessage()
                           .contains("/operator/latest/domains/" + domain.getDomainUid())) {
             // no-op for OKE
-          }else {
+          } else {
             LoggerHelper.getLocal().log(Level.INFO,
                 "Got 404, Operator can not access the domain " + domain.getDomainUid());
             break;
