@@ -20,7 +20,7 @@ if [[ "$HELM_VERSION" =~ "v2" ]]; then
    v_helm_delete="helm delete --purge"
    t_helm_delete="helm delete --purge"
    v_helm_install="helm install appscode/voyager --name $VNAME  "
-   t_helm_install="helm install stable/traefik --name $TNAME --set serviceType=LoadBalancer"
+   t_helm_install="helm install stable/traefik --name $TNAME "
    helm_search_voyager="helm search repo | grep appscode/voyager"
    helm_search_traefik="helm search repo | grep stable/traefik"
 elif [[ "$HELM_VERSION" =~ "v3" ]]; then
@@ -29,8 +29,8 @@ elif [[ "$HELM_VERSION" =~ "v3" ]]; then
    t_list_args="--namespace $TSPACE "
    v_helm_delete="helm uninstall --keep-history --namespace $VSPACE "
    t_helm_delete="helm uninstall --keep-history --namespace $TSPACE "
-   v_helm_install="helm install $VNAME appscode/voyager  "
-   t_helm_install="helm install $TNAME stable/traefik --set serviceType=LoadBalancer"
+   v_helm_install="helm install $VNAME appscode/voyager"
+   t_helm_install="helm install $TNAME stable/traefik"
    helm_search_voyager="helm search appscode/voyager"
    helm_search_traefik="helm search stable/traefik"
 else
@@ -68,7 +68,7 @@ function createVoyager() {
       --namespace ${VSPACE} \
       --set cloudProvider=baremetal \
       --set apiserver.enableValidatingWebhook=false \
-      --set ingressClass=voyager
+      --set ingressClass=voyager --set serviceType=LoadBalancer
   else
     echo "Voyager operator is already installed."
   fi 
@@ -107,7 +107,7 @@ function createTraefik() {
 
   if [ "$(helm list ${t_list_args} | grep $TNAME |  wc -l)" = 0 ]; then
     echo "Installing Traefik Operator. ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml"
-    ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml
+    ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml --set serviceType=LoadBalancer
   else
     echo "Traefik Operator is already installed."
   fi
