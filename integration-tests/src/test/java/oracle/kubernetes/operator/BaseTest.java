@@ -76,6 +76,10 @@ public class BaseTest {
   private static String weblogicImageDevTag;
   private static String weblogicImageName;
   private static String weblogicImageServer;
+  private static String oracledbImageTag;
+  private static String oracledbImageName;
+  private static String fmwImageTag;
+  private static String fmwImageName;
   private static String domainApiVersion;
   private static int suffixCount = 0;
 
@@ -181,6 +185,22 @@ public class BaseTest {
         System.getenv("OCR_SERVER") != null
             ? System.getenv("OCR_SERVER")
             : appProps.getProperty("OCR_SERVER");
+    fmwImageTag =
+        System.getenv("IMAGE_TAG_FMWINFRA") != null
+            ? System.getenv("IMAGE_TAG_FMWINFRA")
+            : appProps.getProperty("fmwImageTag");
+    fmwImageName =
+        System.getenv("IMAGE_NAME_FMWINFRA") != null
+            ? System.getenv("IMAGE_NAME_FMWINFRA")
+            : appProps.getProperty("fmwImageName");
+    oracledbImageTag =
+        System.getenv("IMAGE_TAG_ORACLEDB") != null
+            ? System.getenv("IMAGE_TAG_ORACLEDB")
+            : appProps.getProperty("oracledbImageTag");
+    oracledbImageName =
+        System.getenv("IMAGE_NAME_ORACLEDB") != null
+            ? System.getenv("IMAGE_NAME_ORACLEDB")
+            : appProps.getProperty("oracledbImageName");
     domainApiVersion =
         System.getenv("DOMAIN_API_VERSION") != null
             ? System.getenv("DOMAIN_API_VERSION")
@@ -344,6 +364,42 @@ public class BaseTest {
    */
   public static String getWeblogicImageServer() {
     return weblogicImageServer;
+  }
+  
+  /**
+   * getter method for fmwImageTag field.
+   *
+   * @return image tag of the FMW docker images
+   */
+  public static String getfmwImageTag() {
+    return fmwImageTag;
+  }
+
+  /**
+   * getter method for fmwImageName.
+   *
+   * @return image name of the FMW docker image
+   */
+  public static String getfmwImageName() {
+    return fmwImageName;
+  }
+
+  /**
+   * getter method for oracledbImageTag field.
+   *
+   * @return image tag of the Oracle DB docker images
+   */
+  public static String getOracledbImageTag() {
+    return oracledbImageTag;
+  }
+
+  /**
+   * getter method for oracledbImageName.
+   *
+   * @return image name of the Oracle DB docker image
+   */
+  public static String getOracledbImageName() {
+    return oracledbImageName;
   }
 
   public static String getDomainApiVersion() {
