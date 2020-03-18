@@ -239,6 +239,9 @@ public class ItManagedCoherence extends BaseTest {
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
  
+    // The above command only tests that the pod from the 1st cluster is Running (1/1)
+    // So, checking the MS pod of the other cluster inidvidually here.
+    // When(If) we change the utils to handle 2 clusters, this can be removed.
     TestUtils.checkPodReady(domainUid + "-new-managed-server1", domainNS1);
     TestUtils.checkPodReady(domainUid + "-new-managed-server2", domainNS1);
 
@@ -258,15 +261,6 @@ public class ItManagedCoherence extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "stdout = " + result.stdout()
             + "\n stderr = " + result.stderr());
 
-    /*
-    restartCluster(domainUid);
-
-    LoggerHelper.getLocal().log(Level.INFO, " Printing the pods in the doamin after restarting the cluster");
-    result  = ExecCommand.exec("kubectl get pods -n " + domain.getDomainNs() + " -o wide");
-    LoggerHelper.getLocal().log(Level.INFO, "stdout = " + result.stdout()
-            + "\n stderr = " + result.stderr());
-    */
-
     // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
     TestUtils.buildDeployCoherenceAppInPod(
         domain,
@@ -279,19 +273,14 @@ public class ItManagedCoherence extends BaseTest {
   }
 
   private void coherenceCacheTest() throws Exception {
+    LoggerHelper.getLocal().log(Level.INFO, "Starting to test the cache");
 
     String[] firstNameList = {"Frodo", "Samwise", "Bilbo", "peregrin", "Meriadoc", "Gandalf"};
     String[] secondNameList = {"Baggins", "Gamgee", "Baggins", "Took", "Brandybuck", "TheGrey"};
     ExecResult result;
-    // for debugging
-    verifyServersIngressRunning();
     for (int i = 0; i < firstNameList.length; i++) {
       result = addDataToCache(firstNameList[i], secondNameList[i]);
       LoggerHelper.getLocal().log(Level.INFO, "addDataToCache returned" + result.stdout());
-      if (!result.stdout().contains(firstNameList[i])) {
-        // for debugging
-        verifyServersIngressRunning();
-      }
       assertTrue(result.stdout().contains(firstNameList[i]), "Did not add the expected record");
     }
 
@@ -302,6 +291,7 @@ public class ItManagedCoherence extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "number of records in cache = " + result.stdout());
       assertTrue("6".equals(result.stdout()), "Expected 6 records");
     }
+
     // get the data from cache
     result = getCacheContents();
     LoggerHelper.getLocal().log(Level.INFO,

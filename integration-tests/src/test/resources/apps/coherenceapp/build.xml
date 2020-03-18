@@ -16,10 +16,11 @@
 	<property name="builddir" location="builddir" />
 
        <path id="build.classpath">
-           <pathelement path="${env.ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
-           <pathelement path="${env.ORACLE_HOME}/coherence/lib/coherence.jar"/>
+           <pathelement path="${ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
+           <pathelement path="${ORACLE_HOME}/coherence/lib/coherence.jar"/>
         </path>
 
+	<echo message="ORACLE_HOME=${ORACLE_HOME}" />
 	<!-- Following application needs to be built one after the another -->
 	<target name="build">
 		<delete dir="${tempdir}" quiet="true" />
