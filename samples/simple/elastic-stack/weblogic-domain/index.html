@@ -12,18 +12,18 @@
     <title>WebLogic domain :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1584035182" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1584555384" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1584035182"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1584555384"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1584035182"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1584035182"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1584555384"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1584555384"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1584035182"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1584555384"></script>
 
     
   </div>
@@ -2743,6 +2743,10 @@ elasticsearchpassword: d2VsY29tZTE=
 </span><span style="color:#e6db74">        format11 / &lt;(?&lt;severity&gt;(.*?))&gt;/
 </span><span style="color:#e6db74">        format12 / &lt;(?&lt;messageID&gt;(.*?))&gt;/
 </span><span style="color:#e6db74">        format13 / &lt;(?&lt;message&gt;(.*?))&gt;/
+</span><span style="color:#e6db74">        # use the timestamp field in the message as the timestamp
+</span><span style="color:#e6db74">        # instead of the time the message was actually read 
+</span><span style="color:#e6db74">        time_key timestamp
+</span><span style="color:#e6db74">        keep_time_key true
 </span><span style="color:#e6db74">      &lt;/parse&gt;
 </span><span style="color:#e6db74">    &lt;/source&gt;
 </span><span style="color:#e6db74">    &lt;match **&gt;
@@ -2754,6 +2758,12 @@ elasticsearchpassword: d2VsY29tZTE=
 </span><span style="color:#e6db74">      index_name &#34;#{ENV[&#39;DOMAIN_UID&#39;]}&#34;
 </span><span style="color:#e6db74">      scheme https
 </span><span style="color:#e6db74">      ssl_version TLSv1_2
+</span><span style="color:#e6db74">      key_name timestamp 
+</span><span style="color:#e6db74">      types timestamp:time
+</span><span style="color:#e6db74">      # inject the @timestamp special field (as type time) into the record
+</span><span style="color:#e6db74">      # so you will be able to do time based queries.
+</span><span style="color:#e6db74">      # not to be confused with timestamp which is of type string!!!
+</span><span style="color:#e6db74">      include_timestamp true
 </span><span style="color:#e6db74">    &lt;/match&gt;
 </span><span style="color:#e6db74">EOF</span>
 </code></pre></div><h4 id="mount-the-configmap-as-a-volume-in-the-weblogic-server-container">Mount the ConfigMap as a volume in the <code>weblogic-server</code> container</h4>
@@ -4742,19 +4752,19 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1584035182"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1584555384"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1584035182"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1584555384"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1584035182" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1584035182"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1584555384" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1584555384"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

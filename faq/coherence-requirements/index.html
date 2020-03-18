@@ -12,18 +12,18 @@
     <title>Coherence Requirements :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1584035182" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1584035182" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1584555384" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1584035182"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1584555384"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1584035182"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1584035182"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1584555384"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1584555384"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1584035182"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1584555384"></script>
 
     
   </div>
@@ -2689,6 +2689,49 @@ above, you would need to run it twice.</p>
 the output is now an empty list.</p>
 <p>After making this change, restart your domain(s) and the Coherence cluster
 should now form correctly.</p>
+<h4 id="make-iptables-updates-permanent-across-reboots">Make iptables updates permanent across reboots</h4>
+<p>The recommended way to make <code>iptables</code> updates permanent across reboots is
+to create a <code>systemd</code> service that applies the necessary updates during
+the startup process.</p>
+<p>Here is an example, but you may need to adjust this to suit your own
+environment:</p>
+<ul>
+<li>
+<p>Create a <code>systemd</code> service:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#39;Set up systemd service to fix iptables nat chain at each reboot (so Coherence will work)...&#39;</span>
+mkdir -p /etc/systemd/system/
+cat &gt; /etc/systemd/system/fix-iptables.service <span style="color:#e6db74">&lt;&lt; EOF
+</span><span style="color:#e6db74">[Unit]
+</span><span style="color:#e6db74">Description=Fix iptables
+</span><span style="color:#e6db74">After=firewalld.service
+</span><span style="color:#e6db74">After=docker.service
+</span><span style="color:#e6db74">  
+</span><span style="color:#e6db74">[Service]
+</span><span style="color:#e6db74">ExecStart=/sbin/fix-iptables.sh
+</span><span style="color:#e6db74">  
+</span><span style="color:#e6db74">[Install]
+</span><span style="color:#e6db74">WantedBy=multi-user.target
+</span><span style="color:#e6db74">EOF</span>
+</code></pre></div></li>
+<li>
+<p>Create the script to update <code>iptables</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cat &gt; /sbin/fix-iptables.sh <span style="color:#e6db74">&lt;&lt; EOF
+</span><span style="color:#e6db74">#!/bin/bash
+</span><span style="color:#e6db74">echo &#39;Fixing iptables rules for Coherence issue...&#39;
+</span><span style="color:#e6db74">TIMES=$((`iptables -t nat -v -L POST_public_allow -n --line-number | wc -l` - 2))
+</span><span style="color:#e6db74">COUNTER=1
+</span><span style="color:#e6db74">while [ $COUNTER -le $TIMES ]; do
+</span><span style="color:#e6db74">  iptables -t nat -v -D POST_public_allow 1
+</span><span style="color:#e6db74">  ((COUNTER++))
+</span><span style="color:#e6db74">done
+</span><span style="color:#e6db74">EOF</span>
+</code></pre></div></li>
+<li>
+<p>Start the service (or just reboot):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#39;Start the systemd service to fix iptables nat chain...&#39;</span>
+systemctl enable --now fix-iptables
+</code></pre></div></li>
+</ul>
 
 
 <footer class=" footline" >
@@ -4468,19 +4511,19 @@ should now form correctly.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1584035182"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1584555384"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1584035182"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1584035182"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1584555384"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1584035182" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1584035182"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1584555384" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1584555384"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
