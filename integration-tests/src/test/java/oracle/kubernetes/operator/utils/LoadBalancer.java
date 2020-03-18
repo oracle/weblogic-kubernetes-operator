@@ -55,7 +55,7 @@ public class LoadBalancer {
         LoggerHelper.getLocal().log(Level.INFO, "Is going to createTraefikIngressPerDomain");
         createTraefikIngressPerDomain();
       }
-      if (BaseTest.OKE_CLUSTER) {
+      if (BaseTest.OKE_CLUSTER && lbMap.get("loadBalancer").equals("TRAEFIK")) {
         createTraefikPathRouting();
       }
 
