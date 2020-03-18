@@ -125,7 +125,7 @@ cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
 
 This will produce an image named `oracle/fmw-infrastructure:12213-update-k8s`.
 
-All samples and instructions reference the pre-built image, `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.4`. Since these samples build an image based on WebLogic Server 12.2.1.3 and use the tag, `oracle/fmw-infrastructure:12213-update-k8s`, be sure to update your sample inputs to use this `image` value.
+All samples and instructions reference the pre-built image, `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.4`. Because these samples build an image based on WebLogic Server 12.2.1.3 and use the tag, `oracle/fmw-infrastructure:12213-update-k8s`, be sure to update your sample inputs to use this `image` value.
 
 These samples allow you to create a Docker image containing the FMW Infrastructure
 binaries and the necessary patch.  You can use this image to run the Repository Creation Utility
