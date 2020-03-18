@@ -90,5 +90,52 @@ the output is now an empty list.
 After making this change, restart your domain(s) and the Coherence cluster
 should now form correctly. 
 
+#### Make iptables updates permanent across reboots
 
+The recommended way to make `iptables` updates permanent across reboots is 
+to create a `systemd` service that applies the necessary updates during 
+the startup process.
 
+Here is an example, but you may need to adjust this to suit your own 
+environment:
+
+* Create a `systemd` service:
+
+    ```bash 
+    echo 'Set up systemd service to fix iptables nat chain at each reboot (so Coherence will work)...'
+    mkdir -p /etc/systemd/system/
+    cat > /etc/systemd/system/fix-iptables.service << EOF
+    [Unit]
+    Description=Fix iptables
+    After=firewalld.service
+    After=docker.service
+    
+    [Service]
+    ExecStart=/sbin/fix-iptables.sh
+    
+    [Install]
+    WantedBy=multi-user.target
+    EOF
+    ```
+
+* Create the script to update `iptables`:
+
+    ```bash 
+    cat > /sbin/fix-iptables.sh << EOF
+    #!/bin/bash
+    echo 'Fixing iptables rules for Coherence issue...'
+    TIMES=$((`iptables -t nat -v -L POST_public_allow -n --line-number | wc -l` - 2))
+    COUNTER=1
+    while [ $COUNTER -le $TIMES ]; do
+      iptables -t nat -v -D POST_public_allow 1
+      ((COUNTER++))
+    done
+    EOF
+    ```
+
+* Start the service (or just reboot):
+
+    ```bash
+    echo 'Start the systemd service to fix iptables nat chain...'
+    systemctl enable --now fix-iptables
+    ```
