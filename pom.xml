@@ -7,7 +7,7 @@
 
   <groupId>oracle.kubernetes</groupId>
   <artifactId>operator-parent</artifactId>
-  <version>2.6.0</version>
+  <version>3.0.0</version>
 
   <modules>
     <module>build-tools</module>
@@ -526,6 +526,17 @@
 
   <dependencyManagement>
     <dependencies>
+      <!-- Add direct bouncycastle dependency to override version from kubernetes/client-java until they update -->
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-ext-jdk15on</artifactId>
+        <version>1.64</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk15on</artifactId>
+        <version>1.64</version>
+      </dependency>
       <dependency>
         <groupId>io.kubernetes</groupId>
         <artifactId>client-java</artifactId>
@@ -632,11 +643,6 @@
         <artifactId>jersey-test-framework-provider-inmemory</artifactId>
         <version>${jersey-version}</version>
       </dependency>
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>${guava-version}</version>
-      </dependency>
       <!-- JSON processing: jackson -->
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
@@ -702,7 +708,7 @@
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-lang3</artifactId>
-        <version>3.9</version>
+        <version>3.8.1</version>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>
@@ -771,7 +777,6 @@
     <jackson-version>2.10.3</jackson-version>
     <jackson-databind-version>2.10.3</jackson-databind-version>
     <snakeyaml-version>1.26</snakeyaml-version>
-    <guava-version>28.2-jre</guava-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
