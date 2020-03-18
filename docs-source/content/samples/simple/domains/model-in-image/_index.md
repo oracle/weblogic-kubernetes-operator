@@ -144,7 +144,6 @@ A JRF domain requires an infrastructure database and also requires initializing 
 | infrastructure schema password | `Oradoc_db1` |
 | database URL | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
 
-TBD Move most of the following directions to the create-oracle-db-service sample README
 
 1. Ensure you have access to the database image, and then deploy it:
 
@@ -218,6 +217,8 @@ To allow Model in Image to access the RCU database and OPSS wallet, it's necessa
 ##### Reusing or sharing RCU tables
 
 Note that when you succesfully deploy your JRF domain resource for the first time, the introspector job will initialize the RCU tables for the domain using the `domainInfo -> RCUDbInfo` stanza in the WDT model plus the `configuration.opss.walletPasswordSecret` specified in the domain resource. The job will also create a new domain home. Finally, the operator will also capture an OPSS wallet file from the new domain's local directory and place this file in a new Kubernetes config map.
+
+There are scenarios when the domain needs to be re-created between updates such as WebLogic credentials are changed, security roles defined in the WDT model have been changed or you want to share the same RCU tables with different domains.  Under these scenarios, the operator needs the `walletPasswordSecret` as well as the OPSS wallet file, together with the exact information in `domainInfo -> RCUDbInfo` so that the domain can be re-created and access the same set of RCU tables.  Without the wallet file and wallet password, you will not be able to re-create a domain accessing the same set of RCU tables, therefore it is highly recommended to backup the wallet file.
 
 To recover a domain's RCU tables between domain restarts or to share an RCU schema between different domains, it is necessary to extract this wallet file from the config map and save the OPSS wallet password secret that was used for the original domain. The wallet password and wallet file are needed again when you recreate the domain or share the database with other domains.
 
@@ -299,12 +300,19 @@ docker push <region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>:<t
 
 ```
 
-4. Update the domain template file, `$SAMPLEDIR/k8s-domain.yaml.template`, to provide `imagePullSecrets`:
+4. Update the domain template file `$SAMPLEDIR/k8s-domain.yaml.template` to provide the `imagePullSecrets`:
 
 ```
   imagePullSecrets:
   - name: <secret name>
 
+```
+
+5. Export the environment variables for the image name and tag using the same values in step 1:
+
+```
+export MODEL_IMAGE_NAME="<region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>"
+export MODEL_IMAGE_TAG="<tag>"
 ```
 
 ### Create and deploy your Kubernetes resources
@@ -409,9 +417,12 @@ At the end, you will see the message `Getting pod status - ctrl-c when all is ru
 
 You can add an ingress rule to access the WebLogic Console from your local browser
 
-1. Find out the service name of the admin server
+1. Find out the service name of the admin server and service port number.
 
-The name follows the pattern <Domain UID>-admin-server, you can also find out by:
+The name follows the pattern <Domain UID>-<admin server name> all lower case and the port number will be described in your 
+WDT model's admin server `listenPort`.
+
+You can also find the information by:
 
 ```
 kubectl -n sample-domain1-ns get services
@@ -433,7 +444,7 @@ Create a file called console-ingress.yaml.  This route the request path `/consol
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: traefik-pathrouting-1
+  name: sample-domain1-console-ingress
   namespace: sample-domain1-ns
   annotations:
     kubernetes.io/ingress.class: traefik
@@ -483,13 +494,18 @@ http://localhost:30305/console
    ${SRCDIR}/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
    ```
 
-4. Delete the operator and its namespace:
+4. If you have set up the Traefik ingress rule to the WebLogic console.
+   ```
+   kubectl delete -f console-ingress.yaml
+   ```
+
+5. Delete the operator and its namespace:
    ```
    helm delete --purge sample-weblogic-operator
    kubectl delete namespace sample-weblogic-operator-ns
    ```
 
-5. Delete the domain's namespace:
+6. Delete the domain's namespace:
    ```
    kubectl delete namepsace sample-domain1-ns
    ```
