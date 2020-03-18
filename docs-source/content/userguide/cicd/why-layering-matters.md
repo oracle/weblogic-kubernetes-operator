@@ -52,7 +52,7 @@ on top of this new layer."  That is very true, we can.  But there is a big cavea
 here.  When you create a WebLogic domain, a domain encryption key is created.  This
 key is stored in the `security/SerializedSystemIni.dat` file in your domain and it
 is used to encrypt several other things in your domain configuration, like passwords,
-for example.  Today (in WebLogic Server 12.2.1.3.0) there is no way to conveniently
+for example.  Today (in WebLogic Server 12.2.1.4.0) there is no way to conveniently
 "extract" or "reuse" this encryption key.  So what does this mean in practice?
 
 

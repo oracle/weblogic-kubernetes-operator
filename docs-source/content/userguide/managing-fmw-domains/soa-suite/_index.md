@@ -110,8 +110,8 @@ For the Fusion Middleware Infrastructure image, you must install the [required p
 
 
   ```bash
-    $ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109
-    $ docker tag container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109  oracle/fmw-infrastructure:12.2.1.3
+    $ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200316
+    $ docker tag container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200316  oracle/fmw-infrastructure:12.2.1.3
   ```
 
 {{% notice warning %}}

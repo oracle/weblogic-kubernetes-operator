@@ -20,7 +20,7 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 The following prerequisites must be handled prior to running the create domain script:
 
 * Make sure the WebLogic Kubernetes Operator is running.
-* The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied. For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}).
+* The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}).
 * Create a Kubernetes namespace for the domain unless you intend to use the default namespace.
 * In the same Kubernetes namespace, create the Kubernetes persistent volume (PV) where the domain
   home will be hosted, and the Kubernetes persistent volume claim (PVC) for the domain. For samples
@@ -115,7 +115,7 @@ The following parameters can be provided in the inputs file.
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
-| `image` | WebLogic Docker image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied. Refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}) for details on how to obtain or create the image. | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` |
+| `image` | WebLogic Docker image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. Refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}) for details on how to obtain or create the image. | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` |
 | `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never` | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified. |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server .out to the pod's stdout. | `true` |
@@ -182,7 +182,7 @@ spec:
   # If the domain home is in the image
   domainHomeSourceType: PersistentVolume
   # The WebLogic Server Docker image that the Operator uses to start the domain
-  image: “container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3"
+  image: “container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
   # Identify which Secret contains the credentials for pulling an image
@@ -324,7 +324,7 @@ Spec:
     Server Start State:           RUNNING
   Domain Home:                    /shared/domains/fmw-domain
   Domain Home In Image:           false
-  Image:                          container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
+  Image:                          container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
   Image Pull Policy:              IfNotPresent
   Include Server Out In Pod Log:  true
   Log Home:                       /shared/logs/fmw-domain

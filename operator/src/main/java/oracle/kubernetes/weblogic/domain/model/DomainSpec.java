@@ -116,11 +116,11 @@ public class DomainSpec extends BaseConfiguration {
   /**
    * The WebLogic Docker image.
    *
-   * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3
+   * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4
    */
   @Description(
       "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
-          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.")
+          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
   private String image;
 
   /**

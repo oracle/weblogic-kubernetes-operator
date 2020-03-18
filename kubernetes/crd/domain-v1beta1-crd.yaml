@@ -10562,7 +10562,7 @@ spec:
             image:
               type: string
               description: The WebLogic Docker image; required when domainHomeSourceType
-                is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.
+                is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
             imagePullPolicy:
               type: string
               description: The image pull policy for the WebLogic Docker image. Legal

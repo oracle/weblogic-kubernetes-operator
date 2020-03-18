@@ -79,8 +79,8 @@ The `JRF` domain path through the sample includes additional steps for deploying
    - Accept the license agreement by signing on dialog box on the right 
    - Use your terminal to locally login into docker `docker login container-registry.oracle.com`
    - When you later run the sample, it will call `docker pull` for your base image based on the domain type:
-     - For `JRF` and `RestrictedJRF`, it will pull `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`.
-     - For `WLS`, it will pull `container-registry.oracle.com/middleware/weblogic:12.2.1.3`.
+     - For `JRF` and `RestrictedJRF`, it will pull `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`.
+     - For `WLS`, it will pull `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
 
    Alternatively, you can create you're own base image and override the sample's default base image name and tag by exporting the BASE_IMAGE_NAME and BASE_IMAGE_TAG environment variables prior to running the sample scripts. If you want to create your own base image, see TBD.
 
@@ -310,7 +310,7 @@ TBD Move most of the following directions to the create-oracle-db-service sample
 
    ```
    cd $SRCDIR/kubernetes/samples/scripts/create-rcu-schema 
-   ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
+   ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
    ```
 
 3. __NOTE__:  If you need to drop the repository, you can use this command in the terminal:

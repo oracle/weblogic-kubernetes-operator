@@ -32,13 +32,13 @@ and accept the license agreement for the [WebLogic Server image](https://hub.doc
 
     a. First time users, follow these [directions]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
 
-    b. Find and then pull the WebLogic 12.2.1.3 install image:
+    b. Find and then pull the WebLogic 12.2.1.4 install image:
 
      ```bash
-     $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.3
+     $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
      ```
 
-    {{% notice note %}} The WebLogic Docker image, `weblogic:12.2.1.3`, has all the necessary patches applied.
+    {{% notice note %}} The WebLogic Docker image, `weblogic:12.2.1.3`, has all the necessary patches applied. The WebLogic Docker image, `weblogic:12.2.1.4`, does not require any additional patches.
     {{% /notice %}}
 
 

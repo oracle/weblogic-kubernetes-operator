@@ -37,7 +37,7 @@
 #    BASE_IMAGE_NAME   - defaults to container-registry.oracle.com/middleware/weblogic for
 #                        the 'WLS' domain type, and otherwise defaults to
 #                        container-registry.oracle.com/middleware/fmw-infrastructure
-#    BASE_IMAGE_TAG    - defaults to 12.2.1.3
+#    BASE_IMAGE_TAG    - defaults to 12.2.1.4
 #    BASE_IMAGE_BUILD  - 'when-missing' (default) or 'always'
 #    MODEL_IMAGE_NAME  - defaults to 'model-in-image'
 #    MODEL_IMAGE_TAG   - defaults to 'v1'
@@ -62,7 +62,7 @@ case "$WDT_DOMAIN_TYPE" in
     echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1 ;;
 esac
 
-BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.3}
+BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
 BASE_IMAGE_BUILD=${BASE_IMAGE_BUILD:-when-missing}
 
 MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}

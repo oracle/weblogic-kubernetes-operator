@@ -983,7 +983,7 @@ public class BaseTest {
           "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
     }
     domainMap.put("domainHomeImageBase",
-        "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
+        "container-registry.oracle.com/middleware/weblogic:12.2.1.4");
     domainMap.put("logHomeOnPV", "true");
     domainMap.put("clusterType", "CONFIGURED");
 
@@ -1014,7 +1014,7 @@ public class BaseTest {
     Map<String, Object> domainMap = createDomainMap(suffixCount, prefix);
     domainMap.put("domainHomeSourceType", "FromModel");
     domainMap.put("domainHomeImageBase",
-        "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
+        "container-registry.oracle.com/middleware/weblogic:12.2.1.4");
     domainMap.put("logHomeOnPV", "true");
     //domainMap.put("wdtDomainType", "WLS");
 
