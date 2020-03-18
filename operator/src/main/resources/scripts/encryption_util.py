@@ -20,7 +20,7 @@ from java.lang import System
 def decrypt_file(cipher_text, password, outputfile):
       try:
         pwd = String(password)
-        x = EncryptionUtils.decryptString(cipher_text, pwd.toCharArray());
+        x = EncryptionUtils.decryptString(cipher_text, pwd.toCharArray())
         restored_text = String(x)
         fh = open(outputfile, "w")
         fh.write(str(restored_text))
@@ -35,7 +35,7 @@ def decrypt_file(cipher_text, password, outputfile):
 def encrypt_file(clear_text, password, outputfile):
       try:
         pwd = String(password)
-        x = EncryptionUtils.encryptString(clear_text, pwd.toCharArray());
+        x = EncryptionUtils.encryptString(clear_text, pwd.toCharArray())
         encrypted_text = String(x)
         fh = open(outputfile, "w")
         fh.write(str(encrypted_text))

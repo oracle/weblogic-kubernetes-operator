@@ -31,6 +31,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.joda.time.DateTime;
@@ -141,6 +142,17 @@ public class ConfigMapHelper {
     int lastSlash = line.lastIndexOf('/');
     String fname = line.substring(lastSlash + 1, line.length());
     return fname;
+  }
+
+  /**
+   * getModelInImageSpecHash returns the hash for the fields that should be compared for changes.
+   *
+   * @return int hash value of the fields
+   */
+  public static int getModelInImageSpecHash(String imageName) {
+    return new HashCodeBuilder(17, 37)
+        .append(imageName)
+        .toHashCode();
   }
 
   /**
@@ -397,7 +409,7 @@ public class ConfigMapHelper {
         }
         String domainRestartVersion = info.getDomain().getAdminServerSpec().getDomainRestartVersion();
         String domainIntrospectVersion = info.getDomain().getAdminServerSpec().getDomainIntrospectVersion();
-        int modelInImageSpecHash =  info.getModelInImageSpecHash();
+        int modelInImageSpecHash =  ConfigMapHelper.getModelInImageSpecHash(info.getDomain().getSpec().getImage());
         if (domainRestartVersion != null) {
           packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
           data.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
