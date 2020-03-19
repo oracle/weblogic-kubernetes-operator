@@ -236,10 +236,18 @@ public class LoadBalancer {
         .append("\" --wait");
 
     if (BaseTest.HELM_VERSION.equals("V2")) {
-      cmd.append(" --cleanup-on-fail --force --timeout 240");
+      if (BaseTest.OKE_CLUSTER) {
+        cmd.append(" --cleanup-on-fail --force --timeout 240");
+      } else {
+        cmd.append("  --timeout 240");
+      }
     }
     if (BaseTest.HELM_VERSION.equals("V3")) {
-      cmd.append(" --cleanup-on-fail --force  --timeout 4m0s");
+      if (BaseTest.OKE_CLUSTER) {
+        cmd.append(" --cleanup-on-fail --force --timeout 4m0s");
+      } else {
+        cmd.append("  --timeout 4m0s");
+      }
     }
     LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
     ExecResult result = ExecCommand.exec(cmd.toString());

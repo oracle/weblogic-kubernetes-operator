@@ -440,11 +440,19 @@ public class Operator {
         .append(upgradeSet)
         .append("\" --reuse-values ");
 
-    if (BaseTest.HELM_VERSION.equals("V2")) { 
-      cmd.append(" --cleanup-on-fail --force --wait --timeout 180");
+    if (BaseTest.HELM_VERSION.equals("V2")) {
+      if (BaseTest.OKE_CLUSTER) {
+        cmd.append(" --cleanup-on-fail --force --wait --timeout 180");
+      } else {
+        cmd.append(" --wait --timeout 180");
+      }
     }
-    if (BaseTest.HELM_VERSION.equals("V3")) { 
-      cmd.append(" --cleanup-on-fail --force --wait --timeout 3m0s");
+    if (BaseTest.HELM_VERSION.equals("V3")) {
+      if (BaseTest.OKE_CLUSTER) {
+        cmd.append(" --cleanup-on-fail --force --wait --timeout 3m0s");
+      } else {
+        cmd.append(" --wait --timeout 3m0s");
+      }
     }
 
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
