@@ -3,9 +3,12 @@
 
 package oracle.kubernetes.operator.utils;
 
-import java.io.*;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -860,7 +863,6 @@ public class TestUtils {
    * @throws Exception on failure
    */
   public static void makeOperatorRestCallOke(Operator operator, String restUrl) throws Exception {
-    String operatorCert = getExternalOperatorCertificate(operator);
     String resourceDir = BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/oke";
     String yamlPath = operator.getUserProjectsDir()
@@ -878,6 +880,7 @@ public class TestUtils {
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't create pod " + result.stderr());
     }
+    String operatorCert = getExternalOperatorCertificate(operator);
     kubectlcp(operatorCert, "operator.cert.pem", "curl", "default");
     command = " kubectl exec curl -- " + restUrl;
     result = ExecCommand.exec(command, true);
