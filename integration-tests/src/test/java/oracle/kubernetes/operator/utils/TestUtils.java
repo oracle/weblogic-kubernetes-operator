@@ -3,12 +3,9 @@
 
 package oracle.kubernetes.operator.utils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -866,7 +863,17 @@ public class TestUtils {
     String operatorCert = getExternalOperatorCertificate(operator);
     String resourceDir = BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/oke";
-    String command = "kubectl apply -f " + resourceDir + "/curl.yaml";
+    String yamlPath = operator.getUserProjectsDir()
+            + "/weblogic-operators/"
+            + operator.getOperatorNamespace()
+            + "/curl.yaml";
+    copyFile(resourceDir + "/curl.yaml",  yamlPath);
+
+    replaceStringInFile(operator.getUserProjectsDir()
+            + "/weblogic-operators/"
+            + operator.getOperatorNamespace()
+            + "/curl.yaml", "default", operator.getOperatorNamespace());
+    String command = "kubectl apply -f " + yamlPath;
     ExecResult result = ExecCommand.exec(command, true);
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't create pod " + result.stderr());
@@ -896,10 +903,9 @@ public class TestUtils {
     response = response + result.stdout() + result.stderr();
     LoggerHelper.getLocal().log(Level.INFO, "response code is cat curl.out " + result.stdout() +  " : "
             + result.stderr());
-    if (!response.contains("HTTP/1.1 200 OK")) {
+    if (response.contains("\"status\":404,\"detail\":\"/operator/")) {
       throw new RuntimeException(" Failed to call rest api " + response);
     }
-
   }
 
   /**
