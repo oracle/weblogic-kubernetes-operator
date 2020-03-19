@@ -200,7 +200,8 @@ A JRF domain requires an infrastructure database and also requires initializing 
 
 ##### Increase introspection job timeout
 
-Because JRF domain home creation takes a considerable amount of time the first time it is created, and because Model in Image creates your domain home for you using the introspection job, you should increase the timeout for the introspection job. Use the `configuration.instrospectorJobActiveDeadlineSeconds` in the domain resource configuration to override the default with a value of at least 300 seconds (the default is 120 seconds).  
+Because JRF domain home creation takes a considerable amount of time the first time it is created, and because Model in Image creates your domain home for you using the introspection job, you should increase the timeout for the introspection job. Use the `configuration.introspectorJobActiveDeadlineSeconds` in `k8s-domain.yaml.template` to override the default with a value of at least 300 seconds (the default is 120 seconds).  
+
 ##### Set up RCU model attributes, domain resource attributes, and secrets
 
 To allow Model in Image to access the RCU database and OPSS wallet, it's necessary to set up an RCU access secret and an OPSS secret before deploying your domain. It's also necessary to define an `RCUDbInfo` stanza in your model. The sample already sets up all of these for you.  See:
@@ -210,7 +211,7 @@ To allow Model in Image to access the RCU database and OPSS wallet, it's necessa
 | `run_domain.sh` | Defines secret, `sample-domain1-opss-wallet-password-secret`, with `password=welcome1`. |
 | `run_domain.sh` | Defines secret, `sample-domain1-rcu-access`, with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string`. |
 | `model1.yaml.jrf` | Populates the `domainInfo -> RCUDbInfo` stanza `rcu_prefix`, `rcu_schema_password`, `rcu_admin_password`,  and `rcu_db_conn_string` attributes by referencing their locations in the `sample-domain1-rcu-access` secret. The `build.sh` script uses this model instead of `model.yaml.wls` when the source domain type is `JRF`. |
-| `k8s-domain.yaml.template` | Ensures that the domain mounts the OPSS key secret by setting the domain resource `configuration.opss.walletPasswordSecret` attribute to `sample-domain1-opss-wallet-password-secret`, and ensures the domain mounts the RCU access secret, `sample-domain1-rcu-access`, for reference by WDT model macros by setting the domain resource `configuration.secrets` attribute. |
+| `k8s-domain.yaml.template` | Ensures that the domain mounts the OPSS key secret by setting the domain resource `configuration.opss.walletPasswordSecret` attribute to `sample-domain1-opss-wallet-password-secret`, and ensures the domain mounts the RCU access secret, `sample-domain1-rcu-access`, for reference by WDT model macros by setting the domain resource `configuration.secrets` attribute. Use configuration.introspectorJobActiveDeadlineSeconds to increase the timeout value of the introspector job; see [Increase introspection job timeout](#increase-introspection-job-timeout). |
 
  **NOTE**: This step is for information purposes only. Do not run the above sample files directly. The sample's main build and run scripts will run them for you.
 
