@@ -1,33 +1,34 @@
-# Oracle WebLogic Operator Tutorial #
+# Oracle WebLogic Server Kubernetes Operator Tutorial #
 
-### Deploy Oracle WebLogic Domain (*Domain-home-in-image*) on Kubernetes using Oracle WebLogic Operator  ###
+### Deploy a WebLogic domain (*Domain-home-in-image*) on Kubernetes using the Oracle WebLogic Server Kubernetes Operator  ###
 
-This lab demonstrates how to deploy and run Weblogic Domain container packaged Web Application on Kubernetes Cluster using [Oracle WebLogic Server Kubernetes Operator 2.5](https://github.com/oracle/weblogic-kubernetes-operator).
+This lab shows you how to deploy and run a WebLogic domain container-packaged web application on a Kubernetes cluster using [Oracle WebLogic Server Kubernetes Operator 2.5](https://github.com/oracle/weblogic-kubernetes-operator) (the "operator").
 
-The demo Web Application is a simple JSP page which shows WebLogic Domain's MBean attributes to demonstrate WebLogic Operator features.
+The sample web application is a simple JSP page which shows WebLogic Server domain MBean attributes to demonstrate operator features.
 
 **Architecture**
 
-WebLogic domain can be located either in a persistent volume (PV) or in a Docker image. [There are advantages to both approaches, and there are sometimes technical limitations](https://github.com/oracle/weblogic-kubernetes-operator/blob/2.0/site/domains.md#create-and-manage-weblogic-domains) of various cloud providers that may make one approach better suited to your needs.
+A WebLogic domain can be located either in a persistent volume (PV) or in a Docker image. There are advantages to both approaches, and sometimes there are technical limitations of various cloud providers that may make one approach better suited to your needs. See
+[Choose a model](https://github.com/oracle/weblogic-kubernetes-operator/blob/2.0/site/domains.md#create-and-manage-weblogic-domains).
 
-This tutorial implements the Docker image with the WebLogic domain inside the image deployment. This means all the artefacts, domain related files are stored within the image. There is no central, shared domain folder from the pods. This is similar to the standard installation topology where you distribute your domain to different host to scale out Managed servers. The main difference is that using container packaged WebLogic Domain you don't need to use pack/unpack mechanism to distribute domain binaries and configuration files between multiple host.
+This tutorial uses the Docker image with the WebLogic domain inside the image deployment. This means that all the artefacts and domain-related files are stored within the image. There is no central, shared domain folder from the pods. This is similar to the standard installation topology where you distribute your domain to different hosts to scale out Managed Servers. The main difference is that by using a container-packaged WebLogic domain, you don't need to use the pack/unpack mechanism to distribute domain binaries and configuration files between multiple hosts.
 
 ![](images/wlsonk8s.domain-home-in-image.png)
 
-In Kubernetes environment WebLogic Operator ensures that only one Admin and multiple Managed servers will run in the domain. An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances of complex applications. The Oracle WebLogic Server Kubernetes Operator (the "operator") simplifies the management and operation of WebLogic domains and deployments.
+In a Kubernetes environment, the operator ensures that only one Administration Server and multiple Managed Servers will run in the domain. An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances of complex applications. The Oracle WebLogic Server Kubernetes Operator simplifies the management and operation of WebLogic domains and deployments.
 
-Helm is a framework that helps you manage Kubernetes applications, and helm charts help you define and install Helm applications into a Kubernetes cluster.
+Helm is a framework that helps you manage Kubernetes applications, and helm charts help you define and install Helm applications in a Kubernetes cluster.
 
-This tutorial has been tested on Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE).
+This tutorial has been tested on the Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE).
 
 ### The topics to be covered in this hands-on session are: ###
 
-1. [Setup Oracle Kubernetes Engine instance on Oracle Cloud Infrastructure.](tutorials/setup.oke.ocishell.md)
-2. [Install WebLogic Operator](tutorials/install.operator.ocishell.md)
-3. [Install Traefik Software Loadbalancer](tutorials/install.traefik.ocishell.md)
-4. [Deploy WebLogic Domain](tutorials/deploy.weblogic_short.ocishell.md)
-5. [Scaling WebLogic Cluster](tutorials/scale.weblogic.ocishell.md)
-6. [Override JDBC Datasource parameters](tutorials/override.jdbc.ocishell.md)
-7. [Updating deployed application by rolling restart to the new image](tutorials/update.application_short.ocishell.md)
-7. [Assigning WebLogic Pods to Nodes (scenario simulating cluster spanning 2 data center)](tutorials/node.selector.ocishell.md)
-8. [Assigning WebLogic Pods to Nodes (scenario simulating licensing only the subset of the cluster)](tutorials/node.selector.license.ocishell.md)
+1. [Set up an Oracle Kubernetes Engine instance on the Oracle Cloud Infrastructure](tutorials/setup.oke.ocishell.md)
+2. [Install the WebLogic Server Kubernetes Operator](tutorials/install.operator.ocishell.md)
+3. [Install a Traefik software load balancer](tutorials/install.traefik.ocishell.md)
+4. [Deploy a WebLogic domain](tutorials/deploy.weblogic_short.ocishell.md)
+5. [Scale a WebLogic cluster](tutorials/scale.weblogic.ocishell.md)
+6. [Override JDBC Data source parameters](tutorials/override.jdbc.ocishell.md)
+7. [Update a deployed application by a rolling restart of the new image](tutorials/update.application_short.ocishell.md)
+7. [Assign WebLogic pods to nodes (a scenario simulating a cluster spanning 2 data centers)](tutorials/node.selector.ocishell.md)
+8. [Assign WebLogic pods to nodes (a scenario simulating licensing only a subset of the cluster)](tutorials/node.selector.license.ocishell.md)

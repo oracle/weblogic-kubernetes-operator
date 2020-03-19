@@ -1,15 +1,15 @@
-# Oracle WebLogic Operator Tutorial #
+# Oracle WebLogic Server Kubernetes Operator Tutorial #
 
-### Install and configure Operator  ###
+### Install and configure the operator  ###
 
 An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances of complex applications. The Oracle WebLogic Server Kubernetes Operator (the "operator") simplifies the management and operation of WebLogic domains and deployments.
 
-#### Clone WebLogic Operator repository to Cloud Shell instance ####
-First clone the WebLogic Operator git repository to OCI Cloud Shell.
+#### Clone the operator repository to a Cloud Shell instance ####
+First, clone the operator git repository to OCI Cloud Shell.
 ```bash
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git  -b v2.5.0
 ```
-The output has to be similar to the following:
+The output should be similar to the following:
 ```bash
 Cloning into 'weblogic-kubernetes-operator'...
 remote: Enumerating objects: 1568, done.
@@ -32,7 +32,7 @@ do so (now or later) by using -b with the checkout command again. Example:
 Checking out files: 100% (8396/8396), done.
 ```
 #### Prepare the environment ####
-In order to use Helm to install and manage the operator, you need to ensure that the service account has the `cluster-admin` role.  The default would be `default` in namespace `kube-system`.  You can give that service
+In order to use Helm to install and manage the operator, you need to ensure that the service account has the `cluster-admin` role.  The default is `default` in namespace `kube-system`.  You can give that service
 account the necessary permissions with this command:
 
 ```bash
@@ -51,13 +51,13 @@ subjects:
   namespace: kube-system
 EOF
 ```
-The output has to be the following:
+The output should be as follows:
 ```bash
 clusterrolebinding.rbac.authorization.k8s.io/helm-user-cluster-admin-role created
 ```
-Kubernetes distinguishes between the concept of a user account and a service account for a number of reasons. The main reason is that user accounts are for humans while service accounts are for processes, which run in pods. WebLogic Operator also requires service accounts.  If service account not specified, it defaults to default (for example, the namespace's default service account). If you want to use a different service account, then you must create the operator's namespace and the service account before installing the operator Helm chart.
+Kubernetes distinguishes between the concept of a user account and a service account for a number of reasons. The main reason is that user accounts are for humans while service accounts are for processes, which run in pods. The operator also requires service accounts.  If a service account is not specified, it defaults to `default` (for example, the namespace's default service account). If you want to use a different service account, then you must create the operator's namespace and the service account before installing the operator Helm chart.
 
-Thus create operator's namespace in advance:
+Thus, create the operator's namespace in advance:
 ```bash
 kubectl create namespace sample-weblogic-operator-ns
 ```
@@ -65,31 +65,31 @@ Create the service account:
 ```bash
 kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
-Finally add stable repository to helm which will be neccessary later for 3rd party services.
+Finally, add a stable repository to Helm, which will be needed later for 3rd party services.
 ```bash
 helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 ```
-#### Install WebLogic Operator using Helm ####
-Make sure before execute operator `helm` install you are in the WebLogic Operator's local Git repository folder.
+#### Install the operator using Helm ####
+Before you execute the operator `helm` install, make sure that you are in the operator's local Git repository folder.
 ```bash
 cd ~/weblogic-kubernetes-operator/
 ```
 Use the `helm install` command to install the operator Helm chart. As part of this, you must specify a "release" name for their operator.
 
-You can override default configuration values in the operator Helm chart by doing one of the following:
+You can override the default configuration values in the operator Helm chart by doing one of the following:
 
 - Creating a [custom YAML](https://github.com/oracle/weblogic-kubernetes-operator/blob/v2.5.0/kubernetes/charts/weblogic-operator/values.yaml) file containing the values to be overridden, and specifying the `--value` option on the Helm command line.
 - Overriding individual values directly on the Helm command line, using the `--set` option.
 
-Using the last option simply define overriding values using the `--set` option.
+Using the last option, simply define overriding values using the `--set` option.
 
 Note the values:
 
-- **name**: name of the resource
-- **namespace**: where the operator deployed
-- **image**: the prebuilt WebLogic Operator 2.5.0 image. Available on public Docker hub.
-- **serviceAccount**: service account required to run operator
-- **domainNamespaces**: namespaces where WebLogic domains deployed in order to control. Note WebLogic domain is not yet deployed so this value will be updated when namespaces created for WebLogic deployment.
+- **name**: The name of the resource.
+- **namespace**: Where the operator is deployed.
+- **image**: The prebuilt operator 2.5.0 image, available on the public Docker hub.
+- **serviceAccount**: The service account required to run the operator.
+- **domainNamespaces**: The namespaces where WebLogic domains are deployed in order to control them. Note, the WebLogic domain is not deployed yet, so this value will be updated when namespaces are created for WebLogic deployment.
 
 Execute the following `helm install`:
 ```bash
@@ -100,7 +100,7 @@ helm install sample-weblogic-operator \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set "domainNamespaces={}"
 ```
-The output has to be similar:
+The output will be similar to the following:
 ```bash
 NAME: sample-weblogic-operator
 LAST DEPLOYED: Fri Mar  6 18:24:29 2020
@@ -115,11 +115,11 @@ $ kubectl get po -n sample-weblogic-operator-ns
 NAME                                READY   STATUS    RESTARTS   AGE
 weblogic-operator-86ff6fccc-gh79p   1/1     Running   0          69s
 ```
-Check the operator helm chart:
+Check the operator Helm chart:
 ```bash
 $ helm list -n sample-weblogic-operator-ns
 NAME                            NAMESPACE                       REVISION        UPDATED                                 STATUS          CHART                   APP VERSION
 sample-weblogic-operator        sample-weblogic-operator-ns     1               2020-03-06 18:24:29.312983566 +0000 UTC deployed        weblogic-operator-2.5.0
 ```
 
-The WebLogic Operator has been installed. You can continue with next tutorial module.
+The WebLogic Server Kubernetes Operator has been installed. You can continue with next tutorial module.

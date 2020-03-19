@@ -1,8 +1,8 @@
-# Oracle WebLogic Operator Tutorial #
+# Oracle WebLogic Server Kubernetes Operator Tutorial #
 
-### Deploy WebLogic domain  ###
+### Deploy a WebLogic domain  ###
 
-#### Preparing the Kubernetes cluster to run WebLogic domains ####
+#### Prepare the Kubernetes cluster to run WebLogic domains ####
 
 Create the domain namespace:
 ```bash
@@ -15,15 +15,16 @@ kubectl -n sample-domain1-ns create secret generic sample-domain1-weblogic-crede
   --from-literal=password=welcome1
 ```
 
-#### Update Traefik loadbalancer and WebLogic Operator configuration ####
+#### Update the Traefik load balancer and operator configuration ####
 
-Once you have your domain namespace (WebLogic domain not yet deployed) you have to update loadbalancer's and operator's configuration about where the domain will be deployed.
+After you have your domain namespace (the WebLogic domain is not deployed yet), you have to update the load balancer and operator configuration to specify where the domain will be deployed.
 
-Make sure before execute domain `helm` install you are in the WebLogic Operator's local Git repository folder.
+Before executing the domain `helm` install, be sure that you are in the WebLogic operator local Git repository folder.
+
 ```bash
 cd ~/weblogic-kubernetes-operator/
 ```
-To update operator execute the following `helm upgrade` command:
+To update the operator, execute the following `helm upgrade` command:
 ```bash
 helm upgrade sample-weblogic-operator \
   kubernetes/charts/weblogic-operator \
@@ -33,7 +34,7 @@ helm upgrade sample-weblogic-operator \
   --wait
 ```
 
-To update Traefik execute the following `helm upgrade` command:
+To update Traefik, execute the following `helm upgrade` command:
 ```bash
 helm upgrade traefik-operator \
   stable/traefik \
@@ -42,29 +43,29 @@ helm upgrade traefik-operator \
   --set "kubernetes.namespaces={traefik,sample-domain1-ns}" \
   --wait
 ```
-Please note the only updated parameter in both cases is the domain namespace.
+Note that in both cases, the only updated parameter is the domain namespace.
 
-#### Deploy WebLogic domain on Kubernetes ####
+#### Deploy a WebLogic domain on Kubernetes ####
 
-To deploy WebLogic domain you need to create a domain resource definition which contains the necessary parameters for the operator to start the WebLogic domain properly.
+To deploy WebLogic domain, you need to create a domain resource definition which contains the necessary parameters for the operator to start the WebLogic domain properly.
 
-We provided for you `domain.yaml` file that contains yaml representation of the custom resource object. Please copy it locally
+We provided for you a `domain.yaml` file that contains a YAML representation of the custom resource object. Please copy it locally:
 ```bash
 curl -LSs https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/master/kubernetes/hands-on-lab/domain.yaml >~/domain.yaml
 ```
-Please review it with your favourite editor or in the [browser](../domain.yaml).
+Review it in your favorite editor or a [browser](../domain.yaml).
 
-Cerate Domain custom resource object by applying the following command:
+Create the domain custom resource object with the following command:
 ```bash
 kubectl apply -f ~/domain.yaml
 ```
-Check the introspector job which needs to be run first:
+Check the introspector job, which needs to be run first:
 ```bash
 $ kubectl get pod -n sample-domain1-ns
 NAME                                         READY     STATUS              RESTARTS   AGE
 sample-domain1-introspect-domain-job-kcn4n   0/1       ContainerCreating   0          7s
 ```
-Check periodically the pods in the domain namespace and soon you will see the servers are starting:
+Periodically check the pods in the domain namespace and soon you will see the servers starting:
 ```bash
 $ kubectl get po -n sample-domain1-ns -o wide
 NAME                             READY     STATUS    RESTARTS   AGE       IP            NODE            NOMINATED NODE
@@ -72,13 +73,13 @@ sample-domain1-admin-server      1/1       Running   0          2m        10.244
 sample-domain1-managed-server1   1/1       Running   0          1m        10.244.2.11   130.61.84.41    <none>
 sample-domain1-managed-server2   0/1       Running   0          1m        10.244.1.4    130.61.52.240   <none>
 ```
-You have to see three running pods similar to the result above. If you don't see all the running pods please wait and check periodically. The whole domain deployment may take up to 2-3 minutes depending on the compute shapes.
+You should see three running pods similar to the results shown above. If you don't see all the running pods, wait and then check periodically. The entire domain deployment may take up to 2-3 minutes depending on the compute shapes.
 
-In order to access any application or admin console deployed on WebLogic you have to configure *Traefik* ingress. OCI Load balancer is already assigned during *Traefik* install in the previous step.
+In order to access any application or the Administration Console deployed on WebLogic, you have to configure a *Traefik* Ingress. An OCI load balancer is already assigned during the *Traefik* install in the previous step.
 
-As a simple solution the best is to configure path routing which will route the external traffic through *Traefik* to domain cluster address or admin server's console.
+As a simple solution, it's best to configure path routing, which will route external traffic through *Traefik* to the domain cluster address or the Administration Server Console.
 
-Execute the following ingress resource definition:
+Execute the following Ingress resource definition:
 ```bash
 cat << EOF | kubectl apply -f -
 apiVersion: extensions/v1beta1
@@ -105,26 +106,26 @@ EOF
 ```
 
 
-Please note the two backends and the namespace, serviceName, servicePort definitions. The first backend is the domain cluster service to reach the application at the root context path. The second is for the admin console which is a different service.
+Please note the two backends and the namespace, `serviceName`, `servicePort` definitions. The first backend is the domain cluster service to reach the application at the root context path. The second is for the admin console which is a different service.
 
-Once the Ingress has been created construct the URL of the admin console based on the following pattern:
+Once the Ingress has been created construct the URL of the Administration Console based on the following pattern:
 
 `http://EXTERNAL-IP/console`
 
-The EXTERNAL-IP was determined during Traefik install. If you forgot to note the execute the following command to get the public IP address:
+The `EXTERNAL-IP` was determined during the Traefik install. If you forgot to note it, then execute the following command to get the public IP address:
 ```
 $ kubectl describe svc traefik-operator --namespace traefik | grep Ingress | awk '{print $3}'
 129.213.172.44
 ```
-Construct the Administration Console's url and open in a browser:
+Construct the Administration Console URL and open it in a browser:
 
-Enter admin user credentials (weblogic/welcome1) and click **Login**
+Enter the administrative user credentials (weblogic/welcome1) and click **Login**.
 
 ![](../images/deploy.domain/weblogic.console.login.png)
 
-!Please note in this use case the use of Administration Console is just for demo/test purposes because domain configuration persisted in pod which means after the restart the original values (baked into the image) will be used again. To override certain configuration parameters - to ensure image portability - follow the override part of this tutorial.
+!Please note in this use case that the use of the Administration Console is just for demo/test purposes because the domain configuration is persisted in the pod, which means that after the restart, the original values (baked into the image) will be used again. To override certain configuration parameters - to ensure image portability - follow the override part of this tutorial.
 
-#### Test the demo Web Application ####
+#### Test the sample web application ####
 
 The URL pattern of the sample application is the following:
 
@@ -132,4 +133,4 @@ The URL pattern of the sample application is the following:
 
 ![](../images/deploy.domain/webapp.png)
 
-Refresh the page and notice the hostname changes. It reflects the managed server's name which responds to the request. You should see the load balancing between the two managed servers.
+Refresh the page and notice the hostname changes. It reflects the Managed Server's name which responds to the request. You should see load balancing between the two Managed Servers.
