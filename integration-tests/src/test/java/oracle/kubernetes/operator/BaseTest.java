@@ -826,9 +826,8 @@ public class BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Inside testOperatorLifecycle");
     operator.destroy();
     operator.create();
-    //FIXME
-    //operator.verifyExternalRestService();
-    //operator.verifyDomainExists(domain.getDomainUid());
+    operator.verifyExternalRestService();
+    operator.verifyDomainExists(domain.getDomainUid());
     domain.verifyDomainCreated();
     LoggerHelper.getLocal().log(Level.INFO, "Done - testOperatorLifecycle");
   }

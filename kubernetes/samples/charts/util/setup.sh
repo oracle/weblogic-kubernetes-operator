@@ -38,6 +38,10 @@ else
     exit 1
 fi
 
+if [ ${OKE_CLUSTER} = "true" ]; then
+  t_helm_extra_args =  --set serviceType=LoadBalancer
+fi
+
 function createNameSpace() {
  ns=$1
  namespace=`kubectl get namespace ${ns} | grep ${ns} | awk '{print $1}'`
@@ -68,7 +72,7 @@ function createVoyager() {
       --namespace ${VSPACE} \
       --set cloudProvider=baremetal \
       --set apiserver.enableValidatingWebhook=false \
-      --set ingressClass=voyager --set serviceType=LoadBalancer
+      --set ingressClass=voyager
   else
     echo "Voyager operator is already installed."
   fi 
@@ -107,7 +111,7 @@ function createTraefik() {
 
   if [ "$(helm list ${t_list_args} | grep $TNAME |  wc -l)" = 0 ]; then
     echo "Installing Traefik Operator. ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml"
-    ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml --set serviceType=LoadBalancer
+    ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml ${t_helm_extra_args}
   else
     echo "Traefik Operator is already installed."
   fi
