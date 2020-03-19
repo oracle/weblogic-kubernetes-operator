@@ -222,12 +222,16 @@ function buildWDTParams_MD5() {
     do
       md5sum ${IMG_VARIABLE_FILES_ROOTDIR}/$file >> ${INTROSPECTJOB_IMAGE_MD5}
       cat ${IMG_VARIABLE_FILES_ROOTDIR}/${file} >> ${variable_list}
+      # Make sure there is an extra line
+      echo "" >> ${variable_list}
     done
 
   for file in $(sort_files ${WDT_CONFIGMAP_ROOT} ".properties") ;
     do
       md5sum  ${WDT_CONFIGMAP_ROOT}/$file >> ${INTROSPECTJOB_CM_MD5}
       cat ${WDT_CONFIGMAP_ROOT}/${file} >> ${variable_list}
+      # Make sure there is an extra line
+      echo "" >> ${variable_list}
     done
 
 
