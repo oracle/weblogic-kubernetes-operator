@@ -38,8 +38,9 @@ else
     exit 1
 fi
 
-if [ ${OKE_CLUSTER} = "true" ]; then
-  t_helm_extra_args =  --set serviceType=LoadBalancer
+t_helm_extra_args=" "
+if [ "${OKE_CLUSTER}" = true ]; then
+  t_helm_extra_args=" --set serviceType=LoadBalancer"
 fi
 
 function createNameSpace() {
