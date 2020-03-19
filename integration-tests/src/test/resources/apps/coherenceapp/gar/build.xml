@@ -12,8 +12,8 @@
 		property="coherencegar.app.dir" />
 
         <path id="build.classpath">
-           <pathelement path="${ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
-           <pathelement path="${ORACLE_HOME}/coherence/lib/coherence.jar"/>
+           <pathelement path="${env.ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
+           <pathelement path="${env.ORACLE_HOME}/coherence/lib/coherence.jar"/>
         </path>
 
 	<property name="tempdir" location="../tempdir" />
