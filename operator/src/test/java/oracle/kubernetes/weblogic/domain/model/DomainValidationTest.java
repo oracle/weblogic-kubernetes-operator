@@ -317,8 +317,7 @@ public class DomainValidationTest {
   @Test
   public void whenWdtEncryptionSecretSpecifiedButDoesNotExist_Image_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString())
-        .withRuntimeEncryptionSecret("wdt-cm-secret-model3")
-        .withWdtEncryptionSecret("wdt-secret3");
+        .withRuntimeEncryptionSecret("wdt-cm-secret-model3");
     resourceLookup.defineResource("wdt-cm-secret-model3", KubernetesResourceType.Secret, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -332,21 +331,9 @@ public class DomainValidationTest {
   }
 
   @Test
-  public void whenWdtEncryptionSecretSpecifiedButDoesNotExist_fromModel_reportError() {
-    configureDomain(domain).withRuntimeEncryptionSecret("wdt-cm-secret-model4")
-        .withDomainHomeSourceType(DomainSourceType.FromModel.toString())
-        .withWdtEncryptionSecret("wdt-secret4");
-
-    resourceLookup.defineResource("wdt-cm-secret-model4", KubernetesResourceType.Secret, NS);
-    assertThat(domain.getValidationFailures(resourceLookup),
-        contains(stringContainsInOrder("WdtEncryption", "wdt-secret4", "not found", NS)));
-  }
-
-  @Test
   public void whenWdtEncryptionSecretExists_fromModel_dontReportError() {
     configureDomain(domain).withRuntimeEncryptionSecret("wdt-cm-secret-model5")
-        .withDomainHomeSourceType(DomainSourceType.FromModel.toString())
-        .withWdtEncryptionSecret("wdt-good-secret");        
+        .withDomainHomeSourceType(DomainSourceType.FromModel.toString());
 
     resourceLookup.defineResource("wdt-cm-secret-model5", KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource("wdt-good-secret", KubernetesResourceType.Secret, NS);

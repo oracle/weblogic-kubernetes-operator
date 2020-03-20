@@ -111,10 +111,6 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getOpssWalletFileSecret();
   }
 
-  String getWdtEncryptionSecretName() {
-    return getDomain().getWdtEncryptionSecret();
-  }
-
   String getRuntimeEncryptionSecretName() {
     return getDomain().getRuntimeEncryptionSecret();
   }
@@ -308,10 +304,6 @@ public abstract class JobStepContext extends BasePodStepContext {
                 .name(getWdtConfigMap() + "-volume")
                 .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
       }
-      if (getWdtEncryptionPassPhraseVolume() != null) {
-        podSpec.addVolumesItem(new V1Volume().name(WDT_ENCRYPT_PASSPHRASE_VOLUME)
-            .secret(getWdtEncryptionPassPhraseVolume()));
-      }
       podSpec.addVolumesItem(
           new V1Volume()
               .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
@@ -354,9 +346,6 @@ public abstract class JobStepContext extends BasePodStepContext {
     }
 
     if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
-      if (getWdtEncryptionPassPhraseVolume() != null) {
-        container.addVolumeMountsItem(readOnlyVolumeMount(WDT_ENCRYPT_PASSPHRASE_VOLUME, WDT_ENCRYPT_KEY_MOUNT_PATH));
-      }
       if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
         container.addVolumeMountsItem(
             readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
@@ -418,17 +407,6 @@ public abstract class JobStepContext extends BasePodStepContext {
       V1SecretVolumeSource result =  new V1SecretVolumeSource()
               .secretName(getOpssWalletFileSecretName())
               .defaultMode(420);
-      result.setOptional(true);
-      return result;
-    }
-    return null;
-  }
-
-  private V1SecretVolumeSource getWdtEncryptionPassPhraseVolume() {
-    if (getWdtEncryptionSecretName() != null) {
-      V1SecretVolumeSource result = new V1SecretVolumeSource()
-          .secretName(getWdtEncryptionSecretName())
-          .defaultMode(420);
       result.setOptional(true);
       return result;
     }

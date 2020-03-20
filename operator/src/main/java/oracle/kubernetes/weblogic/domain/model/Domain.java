@@ -366,15 +366,6 @@ public class Domain {
   }
 
   /**
-   * Reference to secret wdt encryption key passphrase.
-   *
-   * @return wdt encryption passphrase
-   */
-  public String getWdtEncryptionSecret() {
-    return spec.getWdtEncryptionSecret();
-  }
-
-  /**
    * Reference to runtime encryption secret.
    *
    * @return runtime encryption secret
@@ -717,7 +708,6 @@ public class Domain {
       verifySecretExists(resourceLookup, getOpssWalletFileSecret(), SecretType.OpssWalletFile);
 
       if (isDomainSourceFromModel(getDomainHomeSourceType())) {
-        verifySecretExists(resourceLookup, getWdtEncryptionSecret(), SecretType.WdtEncryption);
         if (getRuntimeEncryptionSecret() == null) {
           failures.add(DomainValidationMessages.missingRequiredSecret(
               "spec.configuration.model.runtimeEncryptionSecret"));

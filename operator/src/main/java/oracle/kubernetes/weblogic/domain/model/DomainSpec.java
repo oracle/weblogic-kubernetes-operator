@@ -639,14 +639,6 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
-
-  String getWdtEncryptionSecret() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getModel)
-        .map(Model::getWdtEncryptionSecret)
-        .orElse(null);
-  }
-
   String getRuntimeEncryptionSecret() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel)

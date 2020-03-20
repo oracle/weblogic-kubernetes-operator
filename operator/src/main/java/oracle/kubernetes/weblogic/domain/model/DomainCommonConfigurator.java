@@ -303,12 +303,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withWdtEncryptionSecret(String secret) {
-    getOrCreateModel().withWdtEncryptionSecret(secret);
-    return this;
-  }
-
-  @Override
   public DomainConfigurator withRuntimeEncryptionSecret(String secret) {
     getOrCreateModel().withRuntimeEncryptionSecret(secret);
     return this;

@@ -434,14 +434,6 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withModelConfigMap(String configmap);
 
   /**
-   * Add WDT model encryption secret for the domain resource.
-   *
-   * @param secret the wdt encryption secret for WDT model
-   * @return this object
-   */
-  public abstract DomainConfigurator withWdtEncryptionSecret(String secret);
-
-  /**
    * Add model runtime encryption secret for the domain resource.
    *
    * @param secret the runtime encryption secret for WDT model

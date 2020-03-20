@@ -10,8 +10,7 @@ public enum SecretType {
   WebLogicCredentials, 
   ImagePull, 
   ConfigOverride, 
-  WdtEncryption, 
-  RuntimeEncryption, 
+  RuntimeEncryption,
   OpssWalletPassword, 
   OpssWalletFile
 }

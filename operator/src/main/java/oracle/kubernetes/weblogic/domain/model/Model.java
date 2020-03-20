@@ -22,11 +22,6 @@ public class Model {
   @Description("WDT config map name.")
   private String configMap;
 
-  @Description("WDT encryption key passphrase secret. Required when WDT model files are encrypted.")
-  @Valid
-  @Nullable
-  private String wdtEncryptionSecret;
-
   @Valid
   @Nullable
   @Description("Runtime encryption secret. Required when domainHomeSourceType is set to FromModel.")
@@ -60,20 +55,6 @@ public class Model {
     return this;
   }
 
-  @Nullable
-  String getWdtEncryptionSecret() {
-    return wdtEncryptionSecret;
-  }
-
-  void setWdtEncryptionSecret(@Nullable String wdtEncryptionSecret) {
-    this.wdtEncryptionSecret = wdtEncryptionSecret;
-  }
-
-  public Model withWdtEncryptionSecret(@Nullable String wdtEncryptionSecret) {
-    this.wdtEncryptionSecret = wdtEncryptionSecret;
-    return this;
-  }
-
   String getRuntimeEncryptionSecret() {
     return runtimeEncryptionSecret;
   }
@@ -93,7 +74,6 @@ public class Model {
         new ToStringBuilder(this)
             .append("domainType", domainType)
             .append("configMap", configMap)
-            .append("wdtEncryptionSecret", wdtEncryptionSecret)
             .append("runtimeEncryptionSecret", runtimeEncryptionSecret);
 
     return builder.toString();
@@ -104,7 +84,6 @@ public class Model {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(domainType)
         .append(configMap)
-        .append(wdtEncryptionSecret)
         .append(runtimeEncryptionSecret);
 
     return builder.toHashCode();
@@ -124,7 +103,6 @@ public class Model {
         new EqualsBuilder()
             .append(domainType, rhs.domainType)
             .append(configMap,rhs.configMap)
-            .append(wdtEncryptionSecret, rhs.wdtEncryptionSecret)
             .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret);
 
     return builder.isEquals();
