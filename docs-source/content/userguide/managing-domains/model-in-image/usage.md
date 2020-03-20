@@ -156,7 +156,7 @@ Assuming you have an RCU database that's running and initialized, here are the s
 
 - Set `configuration.opss.walletPasswordSecret` to reference a secret that defines a `walletPassword` key. This is used to encrypt the domain's OPSS wallet file.
 
-- Set `configuration.opss.walletFileSecret` to reference a secret that contains your domain's OPSS wallet file in its `walletFile` key. This assumes you have an OPSS wallet file from a previous start of the same domain. It enables a restarted or migrated domain to access its RCU database information. For more information, see [Reusing an RCU database between domain deployments](#reusing-an-rcu-database-between-domain-deployments).
+- Set `configuration.opss.walletFileSecret` to reference a secret that contains your domain's OPSS wallet file in its `walletFile` key. This assumes you have an OPSS wallet file from a previous start of the same domain. It enables a restarted or migrated domain to access its RCU database information. For more information, see [Reusing an RCU database between domain deployments]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
 
 - Set the `configuration.introspectorJobActiveDeadlineSeconds` introspection job timeout to at least 300. This is needed because domain home creation takes a considerable amount of time the first time a JRF domain is created (due to initializing the domain's RCU database tables), and because Model in Image creates your domain home for you using the introspection job.
 
@@ -173,6 +173,6 @@ Assuming you have an RCU database that's running and initialized, here are the s
 
 For an example of using JRF in combination with Model in Image, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
 
-See [Reusing an RCU database between domain deployments](#reusing-an-rcu-database-between-domain-deployments).
+See [Reusing an RCU database between domain deployments]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
 
 See also, [Specifying RCU connection information in the model](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/rcuinfo.md) in the WDT documentation.
