@@ -208,7 +208,6 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | `configMap` | string | WDT config map name. |
 | `domainType` | string | WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS. |
 | `runtimeEncryptionSecret` | string | Runtime encryption secret. Required when domainHomeSourceType is set to FromModel. |
-| `wdtEncryptionSecret` | string | WDT encryption key passphrase secret. Required when WDT model files are encrypted. |
 
 ### Opss
 

@@ -526,10 +526,6 @@
         "configMap": {
           "description": "WDT config map name.",
           "type": "string"
-        },
-        "wdtEncryptionSecret": {
-          "description": "WDT encryption key passphrase secret. Required when WDT model files are encrypted.",
-          "type": "string"
         }
       }
     },
