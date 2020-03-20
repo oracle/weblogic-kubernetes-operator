@@ -31,4 +31,4 @@ This tutorial has been tested on the Oracle Cloud Infrastructure Container Engin
 6. [Override JDBC Data source parameters](tutorials/override.jdbc.ocishell.md)
 7. [Update a deployed application by a rolling restart of the new image](tutorials/update.application_short.ocishell.md)
 7. [Assign WebLogic pods to nodes (a scenario simulating a cluster spanning 2 data centers)](tutorials/node.selector.ocishell.md)
-8. [Assign WebLogic pods to nodes (a scenario simulating licensing only a subset of the cluster)](tutorials/node.selector.license.ocishell.md)
+8. [Assign WebLogic domain to nodes (a scenario simulating deploying WebLogic domain to only a subset of the cluster)](tutorials/node.selector.license.ocishell.md)
