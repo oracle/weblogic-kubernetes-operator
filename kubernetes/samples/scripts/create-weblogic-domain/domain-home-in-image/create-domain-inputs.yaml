@@ -4,8 +4,14 @@
 # The version of this inputs file.  Do not modify.
 version: create-weblogic-sample-domain-inputs-v1
 
+# Enable SSL in the admin and managed server(s).
+sslEnabled: false
+
 # Port number for admin server
 adminPort: 7001
+
+# SSL Port number for admin server
+adminServerSSLPort: 7002
 
 # Name of the Admin Server
 adminServerName: admin-server
@@ -33,6 +39,9 @@ managedServerNameBase: managed-server
 
 # Port number for each managed server
 managedServerPort: 8001
+
+# SSL Port number for each managed server
+managedServerSSLPort: 8002
 
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
@@ -112,7 +121,9 @@ exposeAdminNodePort: false
 namespace: default
 
 # Java Option for WebLogic Server
-javaOptions: -Dweblogic.StdoutDebugEnabled=false
+# -Dweblogic.security.SSL.ignoreHostnameVerification=true is necessary in order for the managed server(s) to connect to the admin server
+# while booting up if SSL is enabled.
+javaOptions: -Dweblogic.StdoutDebugEnabled=false -Dweblogic.security.SSL.ignoreHostnameVerification=true
 
 # Name of the persistent volume claim
 # If not specified, the value is derived from the domainUID as <domainUID>-weblogic-sample-pvc
