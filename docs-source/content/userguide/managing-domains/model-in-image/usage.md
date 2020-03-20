@@ -114,7 +114,7 @@ Notes:
 
  - There are additional attributes that are common to all domain home source types, such as the `image` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}) for a full list of domain resource fields.
 
- - There are also additional fields that are specific to JRF domain types. For more information, see [Prerequisites for JRF domain types](#6-prerequisites-for-jrf-domain-types).
+ - There are also additional fields that are specific to JRF domain types. For more information, see [Prerequisites for JRF domain types](#7-prerequisites-for-jrf-domain-types).
 
  - Sample domain resource: For an example of a fully specified sample domain resource, see the the operator source's `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/k8s-domain.yaml.template` file for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample. Note that the `@@` entries in this template are not processed by the operator; they need to replaced with actual values before the resource can be applied.
 
