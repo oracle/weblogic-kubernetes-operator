@@ -6,31 +6,27 @@ pre = "<b> </b>"
 description = "Debugging a deployed Model in Image domain."
 +++
 
-### Contents
+#### Contents
 
  - [Introduction](#introduction)
+ - [Check the domain resource status](#check-the-domain-resource-status)
+ - [Check the introspector job](#check-the-introspector-job)
+ - [Check the WebLogic Server pods](#check-the-weblogic-server-pods)
+ - [Check an operator log](#check-an-operator-log)
 
- - [Checking domain resource status](#checking-domain-resource-status)
+#### Introduction
 
- - [Checking the introspector job](#checking-the-introspector-job)
+Here are some suggestions for debugging problems with Model in Image after your domain resource is deployed.
 
- - [Checking WebLogic server pods](#checking-weblogic-server-pods)
+#### Check the domain resource status
 
- - [Checking an operator log](#checking-an-operator-log)
+To check the domain resource status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID`.
 
-### Introduction
+#### Check the introspector job
 
-Here are some suggestions for debugging problems with Model in Image once your domain resource is deployed.
+If your introspector job failed, then examine the `kubectl describe` of the job and its pod, and also examine its log, if one exists.
 
-### Checking domain resource status
-
-Check the domain resource status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID`.
-
-### Checking the introspector job 
-
-If your introspector job failed, then examine the `kubectl describe` of the job and its pod, and also examine its log if one exists.
-
-For example, assuming your domain uid is `sample-domain1` and your domain namespace is `sample-domain1-ns`:
+For example, assuming your domain UID is `sample-domain1` and your domain namespace is `sample-domain1-ns`:
 
   ```
   $ # here we see a failed introspector job pod among the domain's pods:
@@ -48,7 +44,7 @@ For example, assuming your domain uid is `sample-domain1` and your domain namesp
 
   $ # now let's look at the job's pod describe, in particular look at its 'events'
   $ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspect-domain-job-v2l7k
-  
+
   ...
 
   $ # finally let's look at job's pod's log
@@ -60,24 +56,24 @@ For example, assuming your domain uid is `sample-domain1` and your domain namesp
   # kubectl -n sample-domain1-ns logs pod/sample-domain1-introspect-domain-job-v2l7k
   ```
 
-  A common reason for the introspect job to fail is because of a typo in a model file. Here's some sample log output from an introspect job that shows such a failure:
+  A common reason for the introspector job to fail is because of a typo in a model file. Here's some sample log output from an introspector job that shows such a failure:
 
   ```
-  ... 
+  ...
 
   SEVERE Messages:
         1. WLSDPLY-05007: Model file /u01/wdt/models/model1.yaml,/weblogic-operator/wdt-config-map/..2020_03_19_15_43_05.993607882/datasource.yaml contains an unrecognized section: TYPOresources. The recognized sections are domainInfo, topology, resources, appDeployments, kubernetes
   ```
 
-### Checking WebLogic server pods
+#### Check the WebLogic Server pods
 
-If your introspector job succeeded then there will be no introspector job or pod, the operator will create a "MY_DOMAIN_UID-weblogic-domain-introspect-cm" configmap for your domain, and the operator will then run the domain's WebLogic pods. 
+If your introspector job succeeded, then there will be no introspector job or pod, the operator will create a `MY_DOMAIN_UID-weblogic-domain-introspect-cm` config map for your domain, and the operator will then run the domain's WebLogic pods.
 
-If a `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic pods have errors, then use `kubectl -n MY_NAMESPACE describe pod POD_NAME` and `kubectl -n MY_NAMESPACE logs POD_NAME` to debug.
+If `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic pods have errors, then use `kubectl -n MY_NAMESPACE describe pod POD_NAME` and `kubectl -n MY_NAMESPACE logs POD_NAME` to debug.
 
-### Checking an operator log
+#### Check an operator log
 
-Look for SEVERE and ERROR level messages in your operator logs. For example:
+Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
 
   ```
   $ # find your operator
@@ -93,8 +89,8 @@ Look for SEVERE and ERROR level messages in your operator logs. For example:
   {"timestamp":"03-18-2020T20:42:21.702+0000","thread":11,"fiber":"","domainUID":"","level":"WARNING","class":"oracle.kubernetes.operator.helpers.HealthCheckHelper","method":"createAndValidateKubernetesVersion","timeInMillis":1584564141702,"message":"Kubernetes minimum version check failed. Supported versions are 1.13.5+,1.14.8+,1.15.7+, but found version v1.12.3","exception":"","code":"","headers":{},"body":""}
   ```
 
-  You can filter out operator log messages specific to your domainUID by piping the above logs command through `grep "domainUID...MY_DOMAINUID"`. For example, assuming your operator is running in namespace `sample-weblogic-operator-ns` and your domain uid is `sample-domain1`:
-  
+  You can filter out operator log messages specific to your `domainUID` by piping the above logs command through `grep "domainUID...MY_DOMAINUID"`. For example, assuming your operator is running in namespace `sample-weblogic-operator-ns` and your domain UID is `sample-domain1`:
+
   ```
   $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
     | egrep -e "level...(SEVERE|WARNING)" \
