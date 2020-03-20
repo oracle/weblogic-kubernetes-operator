@@ -906,6 +906,7 @@ public class TestUtils {
     response = response + result.stdout() + result.stderr();
     LoggerHelper.getLocal().log(Level.INFO, "response code is cat curl.out " + result.stdout() +  " : "
             + result.stderr());
+    LoggerHelper.getLocal().log(Level.INFO, "DEBUG DEBUG DEBUG " + response);
     if (response.contains("\"status\":404,\"detail\":\"/operator/")) {
       throw new RuntimeException(" Failed to call rest api " + response);
     }
