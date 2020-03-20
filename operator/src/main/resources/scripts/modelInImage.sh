@@ -455,7 +455,7 @@ function diff_model() {
     org.python.util.jython \
     ${SCRIPTPATH}/model_diff.py $1 $2 > ${WDT_OUTPUT} 2>&1
   if [ $? -ne 0 ] ; then
-    trace SEVERE "diff model failed"
+    trace SEVERE "Failed to compare models. Check logs for error."
     trace SEVERE "$(cat ${WDT_OUTPUT})"
     exit 1
   fi
@@ -573,7 +573,7 @@ function generateMergedModel() {
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
   ret=$?
   if [ $ret -ne 0 ]; then
-    trace SEVERE "Validate Model Failed "
+    trace SEVERE "WDT Failed: Validate Model Failed "
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_validateDomain.log
     fi
@@ -604,7 +604,7 @@ function wdtCreatePrimordialDomain() {
     > ${WDT_OUTPUT}
   ret=$?
   if [ $ret -ne 0 ]; then
-    trace SEVERE "Create Domain Failed ${ret}"
+    trace SEVERE "WDT Create Domain Failed ${ret}"
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
     fi
@@ -637,7 +637,7 @@ function wdtUpdateModelDomain() {
   ret=$?
 
   if [ $ret -ne 0 ]; then
-    trace SEVERE "Create Domain Failed "
+    trace SEVERE "WDT Update Domain Failed "
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_updateDomain.log
     fi
@@ -690,7 +690,7 @@ function encrypt_decrypt_model() {
     ${SCRIPTPATH}/encryption_util.py $1 "$(cat $2)" $3 $4 > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
-    trace SEVERE "encrypt_decrypt_model failure "
+    trace SEVERE "WDT Failed to encrypt_decrypt_model failure. Check logs for error."
     trace SEVERE "$(cat ${WDT_OUTPUT})"
     exit 1
   fi
@@ -728,7 +728,9 @@ function encrypt_decrypt_domain_secret() {
     ${SCRIPTPATH}/encryption_util.py $1 "$(cat /tmp/secure.ini)" $3 ${tmp_output} > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
-    trace SEVERE "encrypt_decrypt_domain_secret failure "
+    trace SEVERE "Fatal Error: Failed to $1 domain secret. This error is irrecoverable.  Check to see if the secret " \
+    "described in runtimeEncryptionSecret in the domain resource has been changed since the creation of the domain. " \
+    " You can either reset the password to the original one and try again or delete the domain and recreates it."
     trace SEVERE "$(cat ${WDT_OUTPUT})"
     exit 1
   fi
@@ -747,7 +749,7 @@ function encrypt_decrypt_domain_secret() {
 #
 function error_handler() {
     if [ $1 -ne 0 ]; then
-        trace SEVERE  "There was an error at line: ${2} command: ${@:3:20}"
+        trace SEVERE  "Script Error: There was an error at line: ${2} command: ${@:3:20}"
         stop_trap
         exit 1
     fi
