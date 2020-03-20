@@ -805,6 +805,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
           break;
         }
       } catch (Exception ex) {
+        LoggerHelper.getLocal().log(Level.INFO, "DEBUG DEBUG - " + ex.getMessage());
         if (!isAccessible) {
           if (!ex.getMessage()
               .contains(
