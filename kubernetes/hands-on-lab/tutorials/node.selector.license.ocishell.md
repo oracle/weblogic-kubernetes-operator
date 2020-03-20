@@ -1,14 +1,14 @@
 # Oracle WebLogic Server Kubernetes Operator Tutorial #
 
-### Assign WebLogic pods to licensed nodes ###
+### Assign WebLogic domain to selected nodes ###
 
 This use case is similar to the [Assign WebLogic Pods to Nodes](node.selector.ocishell.md) lab, where individual servers/pods were assigned to specific node(s). However, the focus in this use case on the license coverage.
 
-At v1.13, Kubernetes supports clusters with up to 5000(!) nodes. However, certain software, such as WebLogic Server, requires a license. Using the `nodeSelector` feature, Kubernetes ensures that WebLogic pods end up on licensed worker node(s).
+Starting from v1.13, Kubernetes supports clusters with up to 5000(!) nodes. However, in certain situation you need to deploy WebLogic domain on selected node(s). Using the `nodeSelector` feature, Kubernetes ensures that all WebLogic pods belong to the domain end up on licensed worker node(s).
 
 In this lab you will learn how to assign all the WebLogic pods (a WebLogic domain) to specific node or nodes.
 
-#### Assigning WebLogic Servers/pods to licensed nodes #####
+#### Assigning WebLogic Servers/pods to selected nodes #####
 
 To assign pods to nodes, you need to label the desired node with a custom tag. Then, you define the `nodeSelector` property in the domain resource definition and set the value of the label you applied on the node. Finally, you apply the domain configuration changes.
 
@@ -37,11 +37,11 @@ As you can see from the result, Kubernetes evenly deployed the 3 Managed Servers
 
 ###### Labelling nodes ######
 
-In this example, the licensed node will be: `130.61.84.41`
+In this example, the selected node will be: `130.61.84.41`
 
-Label this node. The label can be any string, but for now, use `licensed-for-weblogic`. Execute the `kubectl label nodes <nodename> <labelname>=true` command but replace your node name and label properly:
+Label this node. The label can be any string, but for now, use `node-for-weblogic`. Execute the `kubectl label nodes <nodename> <labelname>=true` command but replace your node name and label properly:
 ```bash
-$ kubectl label nodes 130.61.84.41 licensed-for-weblogic=true
+$ kubectl label nodes 130.61.84.41 node-for-weblogic=true
 node/130.61.84.41 labeled
 ```
 ###### Modify the domain resource definition ######
@@ -52,7 +52,7 @@ serverPod:
   env:
   [...]
   nodeSelector:
-    licensed-for-weblogic: true
+    node-for-weblogic: true
 ```
 Be careful with the indentation. You can double check the syntax in the sample [domain.yaml](../domain.yaml) where this part is in a comment.
 
@@ -75,7 +75,7 @@ sample-domain1-managed-server3   1/1       Running   0          4h        10.244
 
 To delete the node assignment, delete the node's label using the `kubectl label node <nodename> <labelname>-` command, but replace the node name properly:
 ```bash
-$ kubectl label nodes 130.61.84.41 licensed-for-weblogic-
+$ kubectl label nodes 130.61.84.41 node-for-weblogic-
 node/130.61.84.41 labeled
 ```
 Delete or comment out the entries you added for node assignments in your `domain.yaml` file and apply:

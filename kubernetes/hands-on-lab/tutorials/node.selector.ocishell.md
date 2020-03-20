@@ -9,8 +9,7 @@ However, you can create affinity with a `nodeSelector` to constrain a pod to be 
 - To ensure that a pod ends up on a machine with an SSD attached to it
 - To co-locate pods, from two different services that communicate frequently, in the same availability zone
 - To ensure pods end up in different availability zones for better high availability
-- To move away (*draining*) all pods from a given node because of maintenance reasons
-- To ensure that pods running certain software end up in a licensed environment.
+- To move away (*draining*) all pods from a given node because of maintenance reasons.
 
 In this lab, you will learn how to assign pods to individual Managed Server instances and or the entire domain to particular node or nodes.
 

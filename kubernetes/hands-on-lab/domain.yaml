@@ -70,7 +70,7 @@ spec:
     - name: USER_MEM_ARGS
       value: "-Xms64m -Xmx256m "
 #    nodeSelector:
-#      licensed-for-weblogic: true
+#      node-for-weblogic: true
 
     # If you are storing your domain on a persistent volume (as opposed to inside the Docker image),
     # then uncomment this section and provide the PVC details and mount path here (standard images
