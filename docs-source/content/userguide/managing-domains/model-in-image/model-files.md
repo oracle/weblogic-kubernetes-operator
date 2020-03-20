@@ -61,9 +61,17 @@ Some notes about the sample model file:
 
 #### Important notes about Model in Image model files
 
-- You can use model macros to reference arbitrary secrets from model files. This is recommended for handling mutable values such as database user names, passwords, and URLs. See [Using secrets in model files](#using-secrets-in-model-files).
+- Understand when to use model macros.
 
-- You can use model macros to reference arbitrary environment variables from model files. This is useful for handling plain text mutable values that you can define using an `env` stanza in your domain resource, and is also useful for accessing the built in `DOMAIN_UID` environment variable. See [Using environment variables in model files](#using-environment-variables-in-model-files).
+  - You can use model macros to reference arbitrary secrets from model files. This is recommended for handling mutable values such as database user names, passwords, and URLs. See [Using secrets in model files](#using-secrets-in-model-files).
+
+    - All password fields in a model should use secret macro. Passwords should not be directly included in property or model files because the files may appear in logs or debugging. 
+
+    - Model files encrypted with the [WDT Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md) are not supported. Use secrets instead.
+
+  - You can use model macros to reference arbitrary environment variables from model files. This is useful for handling plain text mutable values that you can define using an `env` stanza in your domain resource, and is also useful for accessing the built in `DOMAIN_UID` environment variable. See [Using environment variables in model files](#using-environment-variables-in-model-files).
+
+  - For most models, it's useful to minimize or eliminate the usage of model variable files (also known as property files) and use secrets or environment variables instead.
 
 - A model __must__ contain a `domainInfo` stanza that references your WebLogic administrative credentials. You can use the `@@FILE` macro to reference your domain resource's WebLogic credentials secret for this purpose. For example:
 
@@ -72,11 +80,6 @@ Some notes about the sample model file:
       AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
       AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
     ```
-
-- For most models, it's useful to minimize or eliminate the usage of model variable files (also known as property files) and use secrets or environment variables instead.
-
-- For most models, passwords should not be directly included in property or model files - these files instead should use macros that reference secrets. But, if a property or model file must contain secure data, there is a WDT encryption option you can use. See [Optional WDT encryption secret]({{< relref "/userguide/managing-domains/model-in-image/usage.md#4-optional-wdt-encryption-secret" >}}).
-
 - You can control the order that WDT uses to load your model files, see [Model file naming and loading order](#model-file-naming-and-loading-order).
 
 #### Model file naming and loading order
