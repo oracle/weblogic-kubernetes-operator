@@ -12,10 +12,10 @@ description = "Steps for creating and deploying Model in Image images and their 
    - [WebLogic operator](#1-weblogic-operator)
    - [WebLogic image](#2-weblogic-image)
    - [Optional WDT model config map](#3-optional-wdt-model-config-map)
-   - [Required runtime encryption secret](#5-required-runtime-encryption-secret)
-   - [Secrets for model macros](#6-secrets-for-model-macros)
-   - [Domain resource attributes](#7-domain-resource-attributes)
-   - [Prerequisites for JRF domain types](#8-prerequisites-for-jrf-domain-types)
+   - [Required runtime encryption secret](#4-required-runtime-encryption-secret)
+   - [Secrets for model macros](#5-secrets-for-model-macros)
+   - [Domain resource attributes](#6-domain-resource-attributes)
+   - [Prerequisites for JRF domain types](#7-prerequisites-for-jrf-domain-types)
 
 #### Requirements
 
@@ -107,14 +107,14 @@ The following domain resource attributes are specific to Model in Image domains.
 | `domainHome`                                 |  Must reference an empty or non-existent directory within your image. Do not include the mount path of any persistent volume. Note that Model in Image recreates the domain home for a WebLogic pod every time the pod restarts.|
 | `configuration.model.wdtConfigMap`           | Optional. Set if you have stored additional models in a config map as per [Optional WDT model config map](#3-optional-wdt-model-config-map). |
 | `configuration.model.secrets`                | Optional. Set this array if your image or config map models contain macros that reference custom Kubernetes secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.|
-| `configuration.model.RuntimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#5-required-runtime-encryption-secret). |
+| `configuration.model.RuntimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#4-required-runtime-encryption-secret). |
 | `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF` where `WLS` is the default. See [WDT Domain Types](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/type_def.md).|
 
 Notes:
 
  - There are additional attributes that are common to all domain home source types, such as the `image` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}) for a full list of domain resource fields.
 
- - There are also additional fields that are specific to JRF domain types. For more information, see [Prerequisites for JRF domain types](#8-prerequisites-for-jrf-domain-types).
+ - There are also additional fields that are specific to JRF domain types. For more information, see [Prerequisites for JRF domain types](#6-prerequisites-for-jrf-domain-types).
 
  - Sample domain resource: For an example of a fully specified sample domain resource, see the the operator source's `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/k8s-domain.yaml.template` file for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample. Note that the `@@` entries in this template are not processed by the operator; they need to replaced with actual values before the resource can be applied.
 
