@@ -233,8 +233,8 @@ public class LoadBalancer {
        .append("\"")
        .append("kubernetes.namespaces=")
        .append(namespace)
-       .append("\" --debug");
-        //.append("\" --wait");
+        .append("\" --debug");
+    //.append("\" --wait");
 
     if (BaseTest.HELM_VERSION.equals("V2")) {
       if (BaseTest.OKE_CLUSTER) {
