@@ -40,7 +40,7 @@ The `JRF` domain path through the sample includes additional steps for deploying
 ### References
 
 To reference the relevant user documentation, see:
- - [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
+ - [Model in Image User Guide]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
  - [Oracle WebLogic Server Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
  - [Oracle WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
 
@@ -252,7 +252,7 @@ To reuse the wallet for subsequent redeployments or share the RCU tables between
 
 ```
 
-See TBD [Reusing an RCU Database between Domain Deployments](#reusing-an-rcu-database-between-domain-deployments) for instructions.
+See [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}) for instructions.
 
 ### Use the WebLogic Image Tool to create an image
 
@@ -438,8 +438,7 @@ This shows the admin service name is `sample-domain1-admin-server` and the port 
 
 2. Create an ingress rule for the WebLogic console
 
-Create a file called console-ingress.yaml.  This route the request path `/console` to the admin service port `7001` in the
-`serviceName` and `servicePort`
+Create the following file and call it `console-ingress.yaml` in your `$WORKDIR`.
 
 ```
 apiVersion: extensions/v1beta1
@@ -461,17 +460,26 @@ spec:
 
 ```
 
+This will route the request path `/console` to the admin service port `7001` at pod `sample-domain1-admin-server` in the `sample-domain1-ns` namespace.
+
 3.  Apply the ingress rule resource
 
 ```
-kubectl apply -f console-ingress.yaml
+kubectl apply -f $WORKDIR/console-ingress.yaml
 ```
 
 4.  Access the WebLogic console from the brower
 
+
 ```
+# If the domain and your browser are running the same machine:
 http://localhost:30305/console
+
+# If the domain is on a remote machine from your browser:
+http://your-domain-host-address:30305/console
 ```
+
+Login is 'weblogic/welcome1'.
 
 
 ### Cleanup
@@ -497,7 +505,7 @@ http://localhost:30305/console
 
 4. If you have set up the Traefik ingress rule to the WebLogic console.
    ```
-   kubectl delete -f console-ingress.yaml
+   kubectl delete -f $WORKDIR/console-ingress.yaml
    ```
 
 5. Delete the operator and its namespace:
