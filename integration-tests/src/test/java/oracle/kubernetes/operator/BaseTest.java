@@ -1039,8 +1039,7 @@ public class BaseTest {
       domainMap.put("domainHomeImageBuildPath",
           "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
     }
-    domainMap.put("domainHomeImageBase",
-        "container-registry.oracle.com/middleware/weblogic:12.2.1.4");
+    domainMap.put("domainHomeImageBase", weblogicImageName + ":" + weblogicImageTag);
     domainMap.put("logHomeOnPV", "true");
     domainMap.put("clusterType", "CONFIGURED");
 

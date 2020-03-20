@@ -32,7 +32,7 @@ public class MiiBaseTest extends BaseTest {
     Map<String, Object> domainMap = createDomainMap(suffixCount, prefix);
     domainMap.put("domainHomeSourceType", "FromModel");
     domainMap.put("domainHomeImageBase",
-        "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
+        getWeblogicImageName() + ":" + getWeblogicImageTag());
     domainMap.put("logHomeOnPV", "true");
     //domainMap.put("wdtDomainType", "WLS");
 
@@ -56,7 +56,7 @@ public class MiiBaseTest extends BaseTest {
    */
   public Domain createMIIDomainWithConfigMap(String domainUIDPrefix,
         String domainNS, String wdtModelFile, String wdtModelPropertiesFile,
-                                           String cmFile) throws Exception {
+        String cmFile, String wdtDomainType) throws Exception {
     Map<String, Object> domainMap =
         createModelInImageMap(getNewSuffixCount(), domainUIDPrefix);
     // config map before deploying domain crd
@@ -65,6 +65,7 @@ public class MiiBaseTest extends BaseTest {
     domainMap.put("namespace", domainNS);
     domainMap.put("wdtModelFile", wdtModelFile);
     domainMap.put("wdtModelPropertiesFile", wdtModelPropertiesFile);
+    domainMap.put("wdtDomainType", wdtDomainType);
 
     domainMap.put("miiConfigMap", cmName);
     domainMap.put("miiConfigMapFileOrDir", cmFile);

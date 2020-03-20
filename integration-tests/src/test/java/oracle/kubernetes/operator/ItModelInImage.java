@@ -62,9 +62,6 @@ public class ItModelInImage extends MiiBaseTest {
     if (operator == null) {
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
           true, testClassName);
-      /* ArrayList<String> targetDomainsNS = new ArrayList<String>();
-      targetDomainsNS.add("default");
-      operatorMap.put("domainNamespaces", targetDomainsNS); */
       operator = TestUtils.createOperator(operatorMap, RestCertType.SELF_SIGNED);
       Assertions.assertNotNull(operator);
       domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
@@ -142,24 +139,9 @@ public class ItModelInImage extends MiiBaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      /* Map<String, Object> domainMap =
-          createModelInImageMap(getNewSuffixCount(), testClassName);
-      // config map before deploying domain crd
-      String cmName = domainMap.get("domainUID") + "-mii-config-map1";
-      String cmFile = "./model.properties";
-      domainMap.put("namespace", domainNS);
-      domainMap.put("wdtModelFile", "./model.wls.yaml");
-      domainMap.put("wdtModelPropertiesFile", "./model.empty.properties");
-
-      domainMap.put("miiConfigMap", cmName);
-      domainMap.put("miiConfigMapFileOrDir", cmFile);
-
-      domain = TestUtils.createDomain(domainMap);
-      // domain = new Domain(domainMap, true, false);
-      domain.verifyDomainCreated();*/
 
       domain = createMIIDomainWithConfigMap(testClassName, domainNS, "./model.wls.yaml",
-          "./model.empty.properties", "./model.properties");
+          "./model.empty.properties", "./model.properties", "WLS");
       Map<String, Object> domainMap = domain.getDomainMap();
       //ToDo: access MS using port given in the configmap props
 
