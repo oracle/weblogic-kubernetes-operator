@@ -887,6 +887,8 @@ public class TestUtils {
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't execute rest command " + result.stderr());
     }
+    LoggerHelper.getLocal().log(Level.INFO, "response code stdout from " + restUrl + " : " + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "response code stderr from " + restUrl + " : " + result.stderr());
     if (!result.stdout().equalsIgnoreCase("200")) {
       LoggerHelper.getLocal().log(Level.INFO, "response code from " + restUrl + " : " + result.stdout()
           +  " : " + result.stderr());
