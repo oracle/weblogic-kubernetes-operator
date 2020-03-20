@@ -15,6 +15,7 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -41,6 +42,7 @@ public class ItOperatorUpgrade extends BaseTest {
   private static Operator operator;
   boolean testCompletedSuccessfully = false;
   static String testClassName = null;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed.
@@ -49,10 +51,23 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
+    namespaceList = new StringBuffer();
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
     initialize(APP_PROPS_FILE, testClassName);
   }
+
+  /**
+   * Releases k8s cluster lease, archives result, pv directories.
+   *
+   * @throws Exception exception
+   */
+  @AfterAll
+  public static void staticUnPrepare() throws Exception {
+    tearDown(new Object() {
+    }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+  }
+
 
   /**
    * This method gets called before every test. It creates the result/pv root directories
@@ -108,12 +123,14 @@ public class ItOperatorUpgrade extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator250";
+    DOM_NS = "weblogic-domain250";
+    namespaceList.append(OP_NS);
+    namespaceList.append(" ").append(DOM_NS);
     OP_DEP_NAME = "operator-upgrade250";
     OP_SA = "operator-sa250";
-    DOM_NS = "weblogic-domain250";
     DUID = "operatordomain250";
     setupOperatorAndDomain("release/2.5.0", "2.5.0");
-    upgradeOperator(false);
+    upgradeOperator();
     testCompletedSuccessfully = true;
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
   }
@@ -124,20 +141,21 @@ public class ItOperatorUpgrade extends BaseTest {
    * @param restart boolean parameter used to determine if a restart of domain is checked
    * @throws Exception when upgrade fails or basic usecase testing or scaling fails.
    */
-  private void upgradeOperator(boolean restart) throws Exception {
+  private void upgradeOperator() throws Exception {
     operator.callHelmUpgrade("image=" + OP_TARGET_RELEASE);
-    if (restart) {
-      checkDomainRollingRestarted();
-    }
+    checkDomainNotRestarted();
     checkCrdVersion();
-    checkDomainApiVersion();
+    // checkDomainApiVersion(); Not Needed 
     testClusterScaling(operator, domain, false);
   }
 
   /**
    * Checks Expected/Upgraded ApiVersion of the Domain Object in a loop. 
    * In Jenkins it takes nearly 8 minutes to show the updated value 
-   * in the domain Object
+   * 
+   * The .apiVersion of the domain will not be updated until the domain is 
+   * written again (e.g. by the operator when updating status)
+   * This contributes to long timepreiod. We can skip this check 
    *
    * @throws Exception when version does not match
    */
@@ -181,7 +199,7 @@ public class ItOperatorUpgrade extends BaseTest {
     for (int i = 0; i < 900; i = i + 10) {
       ExecResult exec =
           TestUtils.exec(
-              "kubectl get crd domains.weblogic.oracle -o jsonpath={.spec.version}", true);
+              "kubectl get crd domains.weblogic.oracle -o jsonpath='{.spec.versions[?(@.storage==true)].name}'", true);
       if (exec.stdout().contains(getCrdVersion())) {
         LoggerHelper.getLocal().log(Level.INFO, "Got expected CRD Version");
         result = true;
@@ -211,6 +229,20 @@ public class ItOperatorUpgrade extends BaseTest {
     }
   }
 
+  /**
+   * Check whether the weblogic server instances are still RUNNING 
+   * not restarted due to Operator Upgrade
+   *
+   * @throws Exception If restarted
+   */
+  private void checkDomainNotRestarted() throws Exception {
+    TestUtils.checkPodReady(DUID + "-" + domain.getAdminServerName(), DOM_NS);
+    for (int i = 2; i >= 1; i--) {
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Checking if managed server pod(" + DUID + "--managed-server" + i + ") is RUNNING");
+      TestUtils.checkPodReady(DUID + "-managed-server" + i, DOM_NS);
+    }
+  }
 
   /**
    * Creates operator based on operatorRelease passed to it and then creates a WebLogic domain

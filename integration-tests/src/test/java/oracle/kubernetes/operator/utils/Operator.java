@@ -394,7 +394,9 @@ public class Operator {
       cmd.append(" --wait --timeout 180");
     }
     if (BaseTest.HELM_VERSION.equals("V3")) { 
-      cmd.append(" --wait --timeout 3m0s");
+      cmd.append("--namespace ")
+          .append(operatorMap.get("namespace"))
+          .append(" --wait --timeout 3m0s");
     }
 
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
