@@ -2434,7 +2434,8 @@ public class Domain {
         }
         TestUtils.createConfigMap(domainMap.get(cmKeyName).toString(),
             resultsDir + "/samples/model-in-image/"
-                  + domainMap.get(cmFileKeyName), domainNS);
+                  + domainMap.get(cmFileKeyName), domainNS,
+            " weblogic.domainUID=" + domainUid);
 
       }
     }
