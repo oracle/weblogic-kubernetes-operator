@@ -60,7 +60,6 @@ echo "@@ Info: Creating rcu access secret (referenced by model yaml macros if do
 $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-rcu-access \
   -l rcu_prefix=FMW1 \
   -l rcu_schema_password=Oradoc_db1 \
-  -l rcu_admin_password=Oradoc_db1 \
   -l rcu_db_conn_string=oracle-db.${RCUDB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
 
 echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
