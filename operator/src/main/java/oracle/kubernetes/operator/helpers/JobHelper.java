@@ -80,8 +80,9 @@ public class JobHelper {
       String currentPodIntrospectVersion = info.getDomain().getAdminServerSpec().getDomainIntrospectVersion();
       String configMapRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
       String configMapIntrospectVersion = (String)packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
-      String configMapDomainName = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
-      String currentImageName = info.getDomain().getSpec().getImage();
+      String configMapSpecHash = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
+      String currentImageSpecHash = String.valueOf(ConfigMapHelper.getModelInImageSpecHash(info.getDomain()
+          .getSpec().getImage()));
 
       LOGGER.finest("JobHelper.isModelInImageUpdate currentPodRestartVersion " + currentPodRestartVersion);
       LOGGER.finest("JobHelper.isModelInImageUpdate currentPodIntrospectVersion " + currentPodIntrospectVersion);
@@ -110,7 +111,7 @@ public class JobHelper {
         return true;
       }
 
-      if (!currentImageName.equals(configMapDomainName)) {
+      if (!currentImageSpecHash.equals(configMapSpecHash)) {
         return true;
       }
 

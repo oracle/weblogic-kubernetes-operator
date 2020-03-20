@@ -442,18 +442,6 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * getModelInImageSpecHash returns the hash for the fields that should be compared for changes.
-   *
-   * @return int hash value of the fields
-   */
-  public int getModelInImageSpecHash() {
-    return new HashCodeBuilder(17, 37)
-        .append(getDomain().getSpec().getImage())
-        .toHashCode();
-
-  }
-
-  /**
    * Sets server startup info.
    *
    * @param serverStartupInfo Server startup info

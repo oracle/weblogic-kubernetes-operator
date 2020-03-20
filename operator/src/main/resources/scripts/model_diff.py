@@ -156,17 +156,17 @@ class ModelDiffer:
         if len(diff) > 0:
             for o in diff:
                 token=saved_token
-                # The token is a dotted string that is used to parse and rebuilt the structure later
+                # The token is a | separated string that is used to parse and rebuilt the structure later
                 debug('DEBUG: in recursive changed detail walking down 1 %s', o)
-                token=token+'.'+o
+                token=token+'|'+o
                 if a.is_dict(o):
                     debug('DEBUG: in recursive changed detail walking down 2 %s', token)
                     a.recursive_changed_detail(o,token, root)
-                    last=token.rfind('.')
+                    last=token.rfind('|')
                     token=root
                 else:
                     all_changes.append(token)
-                    last=token.rfind('.')
+                    last=token.rfind('|')
                     token=root
 
 
@@ -178,14 +178,14 @@ class ModelDiffer:
             for item in added:
                 token=saved_token
                 debug('DEBUG: recursive added token %s item %s ', token, item)
-                all_added.append(token + '.' + item)
+                all_added.append(token + '|' + item)
 
         # We don't really care about this, just put something here is enough
 
         if len(removed) > 0:
             for item in removed:
                 debug('DEBUG: removed %s', item)
-                all_removed.append(token + '.' + item)
+                all_removed.append(token + '|' + item)
         debug('DEBUG: Exiting recursive_changed_detail')
 
     def is_dict(self,key):
@@ -213,13 +213,13 @@ class ModelDiffer:
     def _add_results(self, ar_changes):
 
         # The ar_changes is the keys of changes in the dotted format
-        #  'resources.JDBCSystemResource.Generic2.JdbcResource.JDBCConnectionPoolParams.TestConnectionsOnReserve
+        #  'resources|JDBCSystemResource|Generic2|JdbcResource|JDBCConnectionPoolParams|TestConnectionsOnReserve
         #
         #  Now change it to python dictionrary
         for item in ar_changes:
             debug('DEBUG: add_results %s', item)
 
-            splitted=item.split('.',1)
+            splitted=item.split('|',1)
             n=len(splitted)
             result=dict()
             walked=[]
@@ -237,7 +237,7 @@ class ModelDiffer:
                 else:
                     result=tmp
                     walked.append(splitted[0])
-                splitted=splitted[1].split('.',1)
+                splitted=splitted[1].split('|',1)
                 n=len(splitted)
             #
             # result is the dictionary format
@@ -348,7 +348,7 @@ class ModelDiffer:
         """
         debug('DBEUG: in model keylist=%s dictionary %s', keylist, dictionary)
 
-        splitted=keylist.split('.')
+        splitted=keylist.split('|')
         n=len(splitted)
         i=0
         root_key = splitted[0]

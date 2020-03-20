@@ -395,9 +395,11 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private V1SecretVolumeSource getRuntimeEncryptionSecretVolume() {
-    return new V1SecretVolumeSource()
+    V1SecretVolumeSource result = new V1SecretVolumeSource()
           .secretName(getRuntimeEncryptionSecretName())
           .defaultMode(420);
+    result.setOptional(true);
+    return result;
   }
 
   private V1SecretVolumeSource getOpssWalletPasswordSecretVolume() {

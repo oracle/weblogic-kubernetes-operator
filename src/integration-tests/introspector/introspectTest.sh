@@ -60,7 +60,7 @@ export PV_ROOT=${PV_ROOT:-/scratch/$USER/wl_k8s_test_results}
 #
 
 export WEBLOGIC_IMAGE_NAME=${WEBLOGIC_IMAGE_NAME:-container-registry.oracle.com/middleware/weblogic}
-export WEBLOGIC_IMAGE_TAG=${WEBLOGIC_IMAGE_TAG:-12.2.1.3}
+export WEBLOGIC_IMAGE_TAG=${WEBLOGIC_IMAGE_TAG:-12.2.1.4}
 export WEBLOGIC_IMAGE_PULL_POLICY=${WEBLOGIC_IMAGE_PULL_POLICY:-IfNotPresent}
 
 export DOMAIN_UID=${DOMAIN_UID:-domain1}

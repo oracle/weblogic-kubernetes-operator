@@ -35,7 +35,7 @@ as described in [this section](#creating-a-custom-image-with-your-domain-inside-
 #### Setting up secrets to access the Oracle Container Registry
 
 {{% notice note %}}
-This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 29135930; the standard image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, already includes this patch pre-applied.
+This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 29135930; the standard image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, already includes this patch pre-applied. Images for WebLogic Server 12.2.1.4.0 do not require any patches.
 {{% /notice %}}  
 
 In order for Kubernetes to obtain the WebLogic Server Docker image from the Oracle Container Registry (OCR), which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with the OCR credentials, issue the following command:
@@ -75,13 +75,13 @@ $ docker login container-registry.oracle.com
 Then, you can pull the image with this command:
 
 ```
-$ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.3
+$ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
 ```
 If desired, you can:
 
-* Check the WLS version with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`
+* Check the WLS version with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.4 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`
 
-* Check the WLS patches with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`
+* Check the WLS patches with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.4 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`
 
 Additional information about using this image is available on the
 Oracle Container Registry.
@@ -89,7 +89,7 @@ Oracle Container Registry.
 #### Creating a custom image with patches applied
 
 The Oracle WebLogic Server Kubernetes Operator and WebLogic Server 12.2.1.3.0 image requires patch 29135930.
-This patch has some prerequisite patches that will also need to be applied. To create and customize the WebLogic Server image,
+This patch has some prerequisite patches that will also need to be applied. The WebLogic Server 12.2.1.4.0 image does not require any patches. To create and customize the WebLogic Server image,
 and apply the required patches, use the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool).
 
 To use the Image Tool, follow the [Setup](https://github.com/oracle/weblogic-image-tool/blob/master/README.md#setup) instructions
@@ -107,8 +107,8 @@ To build the WebLogic Server image and apply the patches:
 
     $ imagetool cache addInstaller \
     --type=wls \
-    --version=12.2.1.3.0 \
-    --path=/home/acmeuser/wls-installers/fmw_12.2.1.3.0_wls_Disk1_1of1.zip
+    --version=12.2.1.4.0 \
+    --path=/home/acmeuser/wls-installers/fmw_12.2.1.4.0_wls_Disk1_1of1.zip
     ```
 2. Use the [Create Tool](https://github.com/oracle/weblogic-image-tool/blob/master/site/create-image.md)
 to build the image and apply the patches.
@@ -147,6 +147,7 @@ are provided that demonstrate how to create the image using:
 In these samples, you will see a reference to a "base" or `FROM` image.  You should use an image
 with the mandatory patches installed as this base image.  This image could be either
 the standard `container-registry.oracle.com/middleware/weblogic:12.2.1.3` pre-patched image or an image you created using the instructions above.
+WebLogic Server 12.2.1.4.0 images do not require patches.
 
 {{% notice note %}}
 Oracle recommends that Docker images containing WebLogic domains

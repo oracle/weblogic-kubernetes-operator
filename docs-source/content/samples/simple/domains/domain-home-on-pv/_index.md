@@ -165,7 +165,7 @@ spec:
   # If the domain home is in the image
   domainHomeSourceType: PersistentVolume
   # The WebLogic Server Docker image that the operator uses to start the domain
-  image: "container-registry.oracle.com/middleware/weblogic:12.2.1.3"
+  image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
   # Identify which Secret contains the credentials for pulling an image
@@ -298,7 +298,7 @@ Spec:
     Server Start State:           RUNNING
   Domain Home:                    /shared/domains/domain1
   Domain Home In Image:           false
-  Image:                          container-registry.oracle.com/middleware/weblogic:12.2.1.3
+  Image:                          container-registry.oracle.com/middleware/weblogic:12.2.1.4
   Image Pull Policy:              IfNotPresent
   Include Server Out In Pod Log:  true
   Log Home:                       /shared/logs/domain1

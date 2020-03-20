@@ -76,8 +76,12 @@ public class BaseTest {
   private static String weblogicImageDevTag;
   private static String weblogicImageName;
   private static String weblogicImageServer;
+  private static String oracledbImageTag;
+  private static String oracledbImageName;
+  private static String fmwImageTag;
+  private static String fmwImageName;
   private static String domainApiVersion;
-  private static int suffixCount = 10;
+  private static int suffixCount = 0;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
@@ -99,11 +103,11 @@ public class BaseTest {
       result = ExecCommand.exec(cmd);
     } catch (Exception ex) {
       throw new RuntimeException(
-            "FAILURE: command to get Helm Version "
-                + cmd
-                + " failed, returned "
-                + result.stdout()
-                + result.stderr());
+          "FAILURE: command to get Helm Version "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + result.stderr());
     }
     LoggerHelper.getLocal().log(Level.INFO, result.stdout());
     System.out.println("Detected Helm Client Version[" + result.stdout() + "]");
@@ -114,11 +118,11 @@ public class BaseTest {
     } else {
       HELM_VERSION = "UNKNOWN";
       throw new RuntimeException(
-            "FAILURE: Unsupported Helm Version ["
-                + result.stdout()
-                + "]");
+          "FAILURE: Unsupported Helm Version ["
+              + result.stdout()
+              + "]");
     }
-    System.out.println("HELM_VERSION set to [" + HELM_VERSION  + "]");
+    System.out.println("HELM_VERSION set to [" + HELM_VERSION + "]");
 
     // if QUICKTEST is false, run all the tests including QUICKTEST
     if (!QUICKTEST) {
@@ -144,7 +148,7 @@ public class BaseTest {
   /**
    * initializes the application properties and creates directories for results.
    *
-   * @param appPropsFile application properties file
+   * @param appPropsFile  application properties file
    * @param testClassName test class name
    * @throws Exception exception
    */
@@ -181,6 +185,22 @@ public class BaseTest {
         System.getenv("OCR_SERVER") != null
             ? System.getenv("OCR_SERVER")
             : appProps.getProperty("OCR_SERVER");
+    fmwImageTag =
+        System.getenv("IMAGE_TAG_FMWINFRA") != null
+            ? System.getenv("IMAGE_TAG_FMWINFRA")
+            : appProps.getProperty("fmwImageTag");
+    fmwImageName =
+        System.getenv("IMAGE_NAME_FMWINFRA") != null
+            ? System.getenv("IMAGE_NAME_FMWINFRA")
+            : appProps.getProperty("fmwImageName");
+    oracledbImageTag =
+        System.getenv("IMAGE_TAG_ORACLEDB") != null
+            ? System.getenv("IMAGE_TAG_ORACLEDB")
+            : appProps.getProperty("oracledbImageTag");
+    oracledbImageName =
+        System.getenv("IMAGE_NAME_ORACLEDB") != null
+            ? System.getenv("IMAGE_NAME_ORACLEDB")
+            : appProps.getProperty("oracledbImageName");
     domainApiVersion =
         System.getenv("DOMAIN_API_VERSION") != null
             ? System.getenv("DOMAIN_API_VERSION")
@@ -221,7 +241,7 @@ public class BaseTest {
       resultRootCommon = System.getenv("RESULT_ROOT");
     } else {
       resultRootCommon = baseDir + "/" + System.getProperty("user.name")
-            + "/wl_k8s_test_results";
+          + "/wl_k8s_test_results";
     }
 
     if (System.getenv("PV_ROOT") != null) {
@@ -346,6 +366,42 @@ public class BaseTest {
     return weblogicImageServer;
   }
 
+  /**
+   * getter method for fmwImageTag field.
+   *
+   * @return image tag of the FMW docker images
+   */
+  public static String getfmwImageTag() {
+    return fmwImageTag;
+  }
+
+  /**
+   * getter method for fmwImageName.
+   *
+   * @return image name of the FMW docker image
+   */
+  public static String getfmwImageName() {
+    return fmwImageName;
+  }
+
+  /**
+   * getter method for oracledbImageTag field.
+   *
+   * @return image tag of the Oracle DB docker images
+   */
+  public static String getOracledbImageTag() {
+    return oracledbImageTag;
+  }
+
+  /**
+   * getter method for oracledbImageName.
+   *
+   * @return image name of the Oracle DB docker image
+   */
+  public static String getOracledbImageName() {
+    return oracledbImageName;
+  }
+
   public static String getDomainApiVersion() {
     return domainApiVersion;
   }
@@ -434,9 +490,9 @@ public class BaseTest {
   /**
    * build web service app inside pod.
    *
-   * @param domain domain
+   * @param domain      domain
    * @param testAppName test application name
-   * @param wsName web service name
+   * @param wsName      web service name
    * @throws Exception exception
    */
   public static void buildDeployWebServiceApp(Domain domain, String testAppName, String wsName)
@@ -834,7 +890,7 @@ public class BaseTest {
 
     TestUtils.kubectlexec(podName, domainNS,
         "chmod +x /shared/domains/"
-                  + domainUid + "/bin/scripts/scalingAction.sh");
+            + domainUid + "/bin/scripts/scalingAction.sh");
 
   }
 
@@ -870,6 +926,7 @@ public class BaseTest {
 
   /**
    * Returns a new suffixCount value which can be used to make namespaces,ports unique.
+   *
    * @return new suffixCount
    */
   public static int getNewSuffixCount() {
@@ -918,7 +975,7 @@ public class BaseTest {
    * @return map with domain input attributes
    */
   public Map<String, Object> createDomainMap(
-                      int suffixCount, String prefix) {
+      int suffixCount, String prefix) {
     Map<String, Object> domainMap = new HashMap<String, Object>();
     domainMap.put("domainUID", prefix.toLowerCase() + "-domain-" + suffixCount);
     domainMap.put("namespace", prefix.toLowerCase() + "-domainns-" + suffixCount);
@@ -983,7 +1040,7 @@ public class BaseTest {
           "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
     }
     domainMap.put("domainHomeImageBase",
-        "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
+        "container-registry.oracle.com/middleware/weblogic:12.2.1.4");
     domainMap.put("logHomeOnPV", "true");
     domainMap.put("clusterType", "CONFIGURED");
 
@@ -1000,6 +1057,4 @@ public class BaseTest {
     }
     return domainMap;
   }
-
-
 }

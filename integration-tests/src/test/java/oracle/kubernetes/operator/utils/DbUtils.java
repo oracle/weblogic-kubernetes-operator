@@ -6,10 +6,12 @@ package oracle.kubernetes.operator.utils;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import oracle.kubernetes.operator.BaseTest;
+
 public class DbUtils {
   public static final String DEFAULT_FMWINFRA_DOCKER_IMAGENAME =
       "container-registry.oracle.com/middleware/fmw-infrastructure";
-  public static final String DEFAULT_FMWINFRA_DOCKER_IMAGETAG = "12.2.1.3";
+  public static final String DEFAULT_FMWINFRA_DOCKER_IMAGETAG = "12.2.1.4";
   public static final String DEFAULT_RCU_SCHEMA_USERNAME = "myrcuuser";
   public static final String DEFAULT_RCU_SCHEMA_PASSWORD = "Oradoc_db1";
   public static final String DEFAULT_RCU_SYS_USERNAME = "sys";
@@ -53,7 +55,8 @@ public class DbUtils {
   public static void startOracleDB(String scriptsDir) throws Exception {
     String cmd1 = "sh "
         + scriptsDir
-        + "/scripts/create-oracle-db-service/start-db-service.sh";
+        + "/scripts/create-oracle-db-service/start-db-service.sh -i "
+        + BaseTest.getOracledbImageName() + ":" + BaseTest.getOracledbImageTag();
     TestUtils.exec(cmd1, true);
     String cmd2 = "kubectl get pod | grep oracle-db | cut -f1 -d \" \" ";
     ExecResult result = TestUtils.exec(cmd2);
@@ -89,7 +92,9 @@ public class DbUtils {
     String cmd = "sh " 
         + scriptsDir
         + "/scripts/create-rcu-schema/create-rcu-schema.sh -s "
-        + rcuSchemaPrefix;
+        + rcuSchemaPrefix
+        + " -i "
+        + BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag();
     TestUtils.exec(cmd, true);
   }
   

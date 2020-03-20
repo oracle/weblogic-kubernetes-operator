@@ -5,7 +5,7 @@ package oracle.kubernetes.operator;
 
 /** Kubernetes constants. */
 public interface KubernetesConstants {
-  String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.3";
+  String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.4";
   String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.Always.name();
   String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IfNotPresent.name();
   String LATEST_IMAGE_SUFFIX = ":latest";

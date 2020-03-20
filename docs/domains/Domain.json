@@ -313,7 +313,7 @@
           ]
         },
         "image": {
-          "description": "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.",
+          "description": "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.",
           "type": "string"
         },
         "imagePullPolicy": {
