@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #  This script uses the WebLogic Image Tool to build a docker image with model in image
