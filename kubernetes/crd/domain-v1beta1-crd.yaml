@@ -20624,7 +20624,7 @@ spec:
                       WebLogic Server.
                     type: string
                   desiredState:
-                    description: Desired state of this WebLogic Server. Required.
+                    description: Desired state of this WebLogic Server.
                     type: string
                   clusterName:
                     description: WebLogic cluster name, if the server is part of a

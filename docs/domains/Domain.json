@@ -633,7 +633,7 @@
           "type": "string"
         },
         "desiredState": {
-          "description": "Desired state of this WebLogic Server. Required.",
+          "description": "Desired state of this WebLogic Server.",
           "type": "string"
         },
         "clusterName": {

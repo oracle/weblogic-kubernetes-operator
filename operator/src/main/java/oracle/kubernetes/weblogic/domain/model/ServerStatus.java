@@ -29,9 +29,8 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @NotNull
   private String state;
 
-  @Description("Desired state of this WebLogic Server. Required.")
+  @Description("Desired state of this WebLogic Server.")
   @Expose
-  @NotNull
   private String desiredState;
 
   @Description("WebLogic cluster name, if the server is part of a cluster.")
@@ -57,6 +56,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   ServerStatus(ServerStatus other) {
     this.serverName = other.serverName;
     this.state = other.state;
+    this.desiredState = other.desiredState;
     this.clusterName = other.clusterName;
     this.nodeName = other.nodeName;
     this.health = Optional.ofNullable(other.health).map(ServerHealth::new).orElse(null);

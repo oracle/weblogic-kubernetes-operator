@@ -166,7 +166,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | Name | Type | Description |
 | --- | --- | --- |
 | `clusterName` | string | WebLogic cluster name, if the server is part of a cluster. |
-| `desiredState` | string | Desired state of this WebLogic Server. Required. |
+| `desiredState` | string | Desired state of this WebLogic Server. |
 | `health` | [Server Health](#server-health) | Current status and health of a specific WebLogic Server. |
 | `nodeName` | string | Name of node that is hosting the Pod containing this WebLogic Server. |
 | `serverName` | string | WebLogic Server name. Required. |
