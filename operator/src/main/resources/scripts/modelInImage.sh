@@ -25,7 +25,6 @@ LOCAL_PRIM_DOMAIN_ZIP="/tmp/prim_domain.tar.gz"
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
-WDT_ENCRYPTION_PASSPHRASE="/weblogic-operator/wdt-encrypt-key-passphrase/password"
 RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/model-runtime-secret/password"
 OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
@@ -119,21 +118,6 @@ function compareArtifactsMD5() {
     # if no config map before but adding one now
     if [ -f ${INTROSPECTJOB_CM_MD5} ]; then
       trace "New inventory in cm: create domain"
-      WDT_ARTIFACTS_CHANGED=1
-    fi
-  fi
-
-  trace "Checking passphrase"
-  if [ -f ${INTROSPECTCM_PASSPHRASE_MD5} ] ; then
-    has_md5=1
-    diff -B  ${INTROSPECTCM_PASSPHRASE_MD5} ${INTROSPECTJOB_PASSPHRASE_MD5}
-    if [ $? -ne 0 ] ; then
-      trace "WDT Encryption passphrase changed: create domain again"
-      WDT_ARTIFACTS_CHANGED=1
-    fi
-  else
-    if [ -f ${INTROSPECTJOB_PASSPHRASE_MD5} ]; then
-      trace "new passphrase: recreate domain"
       WDT_ARTIFACTS_CHANGED=1
     fi
   fi
@@ -246,14 +230,6 @@ function buildWDTParams_MD5() {
   if [ "$model_list" != "" ]; then
     model_list="-model_file ${model_list}"
   fi
-
-
-  if [ -f "${WDT_ENCRYPTION_PASSPHRASE}" ] ; then
-    #inventory_passphrase[wdtpassword]=$(md5sum $(wdt_encryption_passphrase) | cut -d' ' -f1)
-    md5sum ${WDT_ENCRYPTION_PASSPHRASE} >> ${INTROSPECTJOB_PASSPHRASE_MD5}
-    WDT_PASSPHRASE=$(cat ${WDT_ENCRYPTION_PASSPHRASE})
-  fi
-
 
   if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
     if [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
@@ -623,17 +599,10 @@ function wdtCreatePrimordialDomain() {
 
   export __WLSDEPLOY_STORE_MODEL__=1
 
-  if [ ! -z ${WDT_PASSPHRASE} ]; then
-    echo ${WDT_PASSPHRASE} | ${WDT_BINDIR}/createDomain.sh -oracle_home ${ORACLE_HOME} -domain_home \
-    ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
-    ${OPSS_FLAGS} ${UPDATE_RCUPWD_FLAG} >  ${WDT_OUTPUT}
-    ret=${PIPESTATUS[1]}
-  else
-    ${WDT_BINDIR}/createDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}  ${UPDATE_RCUPWD_FLAG}  \
+  ${WDT_BINDIR}/createDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
+  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE} ${OPSS_FLAGS}  ${UPDATE_RCUPWD_FLAG}  \
     > ${WDT_OUTPUT}
-    ret=$?
-  fi
+  ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "Create Domain Failed ${ret}"
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
@@ -663,16 +632,10 @@ function wdtUpdateModelDomain() {
   # make sure wdt create write out the merged model to a file in the root of the domain
   export __WLSDEPLOY_STORE_MODEL__=1
 
-  if [ ! -z ${WDT_PASSPHRASE} ]; then
-    echo ${WDT_PASSPHRASE} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${ORACLE_HOME} -domain_home \
-    ${DOMAIN_HOME} ${model_list} ${archive_list} ${variable_list} -use_encryption -domain_type ${WDT_DOMAIN_TYPE} \
-      ${UPDATE_RCUPWD_FLAG} > ${WDT_OUTPUT}
-    ret=${PIPESTATUS[1]}
-  else
-    ${WDT_BINDIR}/updateDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT}
-    ret=$?
-  fi
+  ${WDT_BINDIR}/updateDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
+  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT}
+  ret=$?
+
   if [ $ret -ne 0 ]; then
     trace SEVERE "Create Domain Failed "
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then

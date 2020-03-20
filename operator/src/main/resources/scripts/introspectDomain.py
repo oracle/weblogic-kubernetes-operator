@@ -1442,8 +1442,6 @@ class DomainIntrospector(SecretManager):
         MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
         trace("cfgmap write md5 cm")
         MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
-        trace("cfgmap write md5 passphrase")
-        MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_PASSPHRASE_MD5, '/tmp/inventory_passphrase.md5').generate()
         trace("cfgmap write wls version")
         MII_IntrospectCMFileGenerator(self.env, self.env.WLS_VERSION, '/tmp/wls_version').generate()
         trace("cfgmap write jdk_path")
