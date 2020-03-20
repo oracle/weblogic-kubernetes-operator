@@ -8,13 +8,14 @@ description = "Reusing an RCU database between deployments of a Model in Image J
 
 #### Reusing an RCU database between JRF domain deployments
 
-> IMPORTANT: This section only applies for a JRF domain type. Skip it if your domain type is simply a WLS or a RestrictedJRF domain.
+{{% notice info %}} This section only applies for a JRF domain type. Skip it if your domain type is `WLS` or `Restricted JRF`.
+{{% /notice %}}
 
-When you deploy a JRF domain for the first time, the domain will add itself to its RCU database tables, and also create a 'wallet' file in the domain's home directory that enables access to the domain's data in the RCU DB. This wallet is encrypted using an OPSS key password that you supply to the domain using a secret.
+When you deploy a JRF domain for the first time, the domain will add itself to its RCU database tables, and also create a 'wallet' file in the domain's home directory that enables access to the domain's data in the RCU database. This wallet is encrypted using an OPSS key password that you supply to the domain using a secret.
 
 If it is important to reuse or share the same database and data between deployments of your domain, then it is also important locate and preserve its OPSS wallet password and wallet file. An OPSS wallet password and wallet file allows a JRF deployment to access a FMW infrastructure database that has already been initialized and used before.
 
-When a domain is first deployed, the WebLogic Kubernetes Operator will copy its OPSS wallet file from the domain home and store it in the domain's introspect domain configmap. For a domain that has been created using Model in Image, here has how to export this wallet file for reuse:
+When a domain is first deployed, the operator will copy its OPSS wallet file from the domain home and store it in the domain's introspector domain config map. For a domain that has been created using Model in Image, here is how to export this wallet file for reuse:
 
     ```
     kubectl -n MY_DOMAIN_NAMESPACE \
@@ -23,13 +24,13 @@ When a domain is first deployed, the WebLogic Kubernetes Operator will copy its 
       > ewallet.p12
     ```
 
-Alternatively, you can use the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -s` command to export the wallet file (pass `-?` to this script's command line arguments and defaults).
+Alternatively, you can use the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -s` command to export the wallet file (pass `-?` to this script's command-line arguments and defaults).
 
 To reuse the wallet:
-  - (1) Create a secret with a key named `walletPassword` that contains the same OPSS password that you specified in the original domain and make sure that your domain resource `configuration.opss.walletPasswordSecret` attribute names this secret.
-  - (2) Create a secret with a key named `walletFile` that contains the OPSS wallet file that you exported above and make sure that your domain resource `configuration.opss.walletFileSecret` attribute names this secret.
+  - Create a secret with a key named `walletPassword` that contains the same OPSS password that you specified in the original domain and make sure that your domain resource `configuration.opss.walletPasswordSecret` attribute names this secret.
+  - Create a secret with a key named `walletFile` that contains the OPSS wallet file that you exported above and make sure that your domain resource `configuration.opss.walletFileSecret` attribute names this secret.
 
-Here's sample code for deploying the OPSS wallet password and wallet file secrets that assumes the wallet is in local file 'ewallet.p12' and that the secret passphrase is `welcome1`:
+Here's sample code for deploying the OPSS wallet password and wallet file secrets that assumes the wallet is in local file `ewallet.p12` and that the secret passphrase is `welcome1`:
 
     ```
     kubectl -n MY_DOMAIN_NAMESPACE \
@@ -47,7 +48,6 @@ Here's sample code for deploying the OPSS wallet password and wallet file secret
       weblogic.domainUID=sample-domain1
     ```
 
-Alternatively, you can use the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -r` command to deploy a local wallet file as a secret (pass `-?` to get this script's command line arguments and defaults).
+Alternatively, you can use the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -r` command to deploy a local wallet file as a secret (pass `-?` to get this script's command-line arguments and defaults).
 
-See also [(8) Prerequisites for JRF domain types.]({{< relref "/userguide/managing-domains/model-in-image/usage.md#8-prerequisites-for-jrf-domain-types" >}})
-
+See also, [Prerequisites for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage.md#8-prerequisites-for-jrf-domain-types" >}}).
