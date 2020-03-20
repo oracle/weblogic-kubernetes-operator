@@ -25,7 +25,7 @@ LOCAL_PRIM_DOMAIN_ZIP="/tmp/prim_domain.tar.gz"
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
-WDT_ENCRYPTION_PASSPHRASE="/weblogic-operator/wdt-encrypt-key-passphrase/passphrase"
+WDT_ENCRYPTION_PASSPHRASE="/weblogic-operator/wdt-encrypt-key-passphrase/password"
 RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/model-runtime-secret/password"
 OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
