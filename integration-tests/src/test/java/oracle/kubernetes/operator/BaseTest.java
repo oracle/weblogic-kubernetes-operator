@@ -77,7 +77,7 @@ public class BaseTest {
   private static String weblogicImageName;
   private static String weblogicImageServer;
   private static String domainApiVersion;
-  private static int suffixCount = 0;
+  private static int suffixCount = 10;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
@@ -1001,28 +1001,5 @@ public class BaseTest {
     return domainMap;
   }
 
-  /**
-   * Creates a map with customized domain input attributes using suffixCount and prefix
-   * to make the namespaces and ports unique for model in image
-   *
-   * @param suffixCount unique numeric value
-   * @param prefix      prefix for the artifact names
-   * @return map with domain input attributes
-   */
-  public Map<String, Object> createModelInImageMap(
-      int suffixCount, String prefix) {
-    Map<String, Object> domainMap = createDomainMap(suffixCount, prefix);
-    domainMap.put("domainHomeSourceType", "FromModel");
-    domainMap.put("domainHomeImageBase",
-        "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
-    domainMap.put("logHomeOnPV", "true");
-    //domainMap.put("wdtDomainType", "WLS");
 
-    if (prefix != null && !prefix.trim().equals("")) {
-      domainMap.put("image", prefix.toLowerCase() + "-modelinimage-" + suffixCount + ":latest");
-    } else {
-      domainMap.put("image", "modelinimage-" + suffixCount + ":latest");
-    }
-    return domainMap;
-  }
 }
