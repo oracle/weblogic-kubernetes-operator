@@ -881,14 +881,25 @@ public class TestUtils {
       throw new RuntimeException("Couldn't create pod " + result.stderr());
     }
     String operatorCert = getExternalOperatorCertificate(operator);
-    kubectlcp(operatorCert, "operator.cert.pem", "curl", "default");
+    kubectlcp(operatorCert, "operator.cert.pem", "curl", operator.getOperatorNamespace());
     command = " kubectl exec curl -- " + restUrl;
     result = ExecCommand.exec(command, true);
     if (result.exitValue() != 0) {
-      throw new RuntimeException("Couldn't call rest command " + result.stderr());
+      throw new RuntimeException("Couldn't execute rest command " + result.stderr());
     }
-    LoggerHelper.getLocal().log(Level.INFO, "response code from " + restUrl + " : " + result.stdout() +  " : "
-            + result.stderr());
+    if (!result.stdout().equalsIgnoreCase("200")) {
+      LoggerHelper.getLocal().log(Level.INFO, "response code from " + restUrl + " : " + result.stdout()
+          +  " : " + result.stderr());
+      command = " kubectl exec curl -- cat curl.out";
+      result = ExecCommand.exec(command, true);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException("Couldn't find curl.out file " + result.stderr());
+      }
+      LoggerHelper.getLocal().log(Level.INFO, "response code is cat curl.out " + result.stdout() +  " : "
+              + result.stderr());
+      throw new RuntimeException("Operator Rest Call failed " + result.stdout());
+    }
+    /*
     command = " kubectl exec curl -- cat curl.err";
     result = ExecCommand.exec(command, true);
     if (result.exitValue() != 0) {
@@ -910,6 +921,8 @@ public class TestUtils {
     if (response.contains("\"status\":404,\"detail\":\"/operator/")) {
       throw new RuntimeException(" Failed to call rest api " + response);
     }
+
+    */
   }
 
   /**
