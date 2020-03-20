@@ -586,7 +586,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private V1VolumeMount createRuntimeEncryptionSecretVolumeMount() {
-    return new V1VolumeMount().name(getRuntimeEncryptionSecretVolumeName(getDomainUid()))
+    return new V1VolumeMount().name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
         .mountPath(RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH).readOnly(true);
   }
 
@@ -613,16 +613,12 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private V1Volume createRuntimeEncryptionSecretVolume() {
     return new V1Volume()
-        .name(getRuntimeEncryptionSecretVolumeName(getDomainUid()))
+        .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
         .secret(getRuntimeEncryptionSecretVolumeSource(getRuntimeEncryptionSecret()));
   }
 
   private V1SecretVolumeSource getRuntimeEncryptionSecretVolumeSource(String name) {
     return new V1SecretVolumeSource().secretName(name).defaultMode(420);
-  }
-
-  private static String getRuntimeEncryptionSecretVolumeName(String domainUid) {
-    return RUNTIME_ENCRYPTION_SECRET_VOLUME;
   }
 
   /**

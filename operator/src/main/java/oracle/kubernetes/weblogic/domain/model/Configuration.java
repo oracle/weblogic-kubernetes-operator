@@ -103,7 +103,8 @@ public class Configuration {
             .append("model", model)
             .append("opss", opss)
             .append("secrets", secrets)
-            .append("overridesConfigMap", overridesConfigMap);
+            .append("overridesConfigMap", overridesConfigMap)
+            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds);
 
     return builder.toString();
   }
@@ -111,7 +112,8 @@ public class Configuration {
   @Override
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder()
-        .append(model).append(opss).append(secrets).append(overridesConfigMap);
+        .append(model).append(opss).append(secrets).append(overridesConfigMap)
+        .append(introspectorJobActiveDeadlineSeconds);
 
     return builder.toHashCode();
   }
@@ -131,7 +133,8 @@ public class Configuration {
             .append(model, rhs.model)
             .append(opss, rhs.opss)
             .append(secrets, rhs.secrets)
-            .append(overridesConfigMap, rhs.overridesConfigMap);
+            .append(overridesConfigMap, rhs.overridesConfigMap)
+            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds);
 
     return builder.isEquals();
   }
