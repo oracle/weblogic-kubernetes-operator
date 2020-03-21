@@ -330,9 +330,11 @@ if [ -x "$(command -v helm)" ]; then
   do 
      helm list --short --namespace $ns | while read helm_name; do
      if [ "$HELM_VERSION" == "V2" ]; then
+       echo "@@ Running command - helm delete --purge  $helm_name"
        helm delete --purge  $helm_name
-     else 
-      helm uninstall $helm_name -n $ns 
+     else
+       echo "@@ Running command - helm uninstall $helm_name -n $ns"
+       helm uninstall $helm_name -n $ns
      fi
      done
   done
