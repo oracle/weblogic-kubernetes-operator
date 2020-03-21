@@ -7,20 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-/*
-import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.K8sTestUtils;
-import oracle.kubernetes.operator.utils.LoggerHelper;
-import oracle.kubernetes.operator.utils.Operator;
-import oracle.kubernetes.operator.utils.Operator.RestCertType;
-import oracle.kubernetes.operator.utils.TestUtils;
- */
 
-import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.ExecCommand;
-import oracle.kubernetes.operator.utils.ExecResult;
-import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
