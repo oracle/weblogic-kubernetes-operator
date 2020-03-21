@@ -320,16 +320,6 @@ public class TestUtils {
    */
   public static void deletePvc(String pvcName, String namespace, String domainUid, String jobName)
       throws Exception {
-    /*
-    StringBuffer cmdDelJob = new StringBuffer("kubectl get job ");
-    cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
-    if (checkPodContains(cmdDelJob.toString(), jobName, jobName)) {
-      cmdDelJob = new StringBuffer("kubectl delete job ");
-      cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
-      LoggerHelper.getLocal().log(Level.INFO, "Deleting job " + cmdDelJob);
-      exec(cmdDelJob.toString());
-    }
-    */
     StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
     cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
     LoggerHelper.getLocal().log(Level.INFO, "Deleting job " + cmdDelJob);
@@ -889,7 +879,6 @@ public class TestUtils {
         throw new RuntimeException("Couldn't execute rest command " + result.stderr());
       }
       LoggerHelper.getLocal().log(Level.INFO, "response code stdout from " + restUrl + " : " + result.stdout());
-      LoggerHelper.getLocal().log(Level.INFO, "response code stderr from " + restUrl + " : " + result.stderr());
       if (!(result.stdout().trim()).equalsIgnoreCase("200")) {
         LoggerHelper.getLocal().log(Level.INFO, "response code from " + restUrl + " : " + result.stdout()
                 + " : " + result.stderr());
@@ -906,30 +895,6 @@ public class TestUtils {
       command = "kubectl delete -f " + yamlPath;
       ExecCommand.exec(command, true);
     }
-    /*
-    command = " kubectl exec curl -- cat curl.err";
-    result = ExecCommand.exec(command, true);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException("Couldn't call rest command " + result.stderr());
-    }
-    LoggerHelper.getLocal().log(Level.INFO, "response code is cat curl.err " + result.stdout() +  " : "
-        + result.stderr());
-    String response;
-    command = " kubectl exec curl -- cat curl.out";
-    response = result.stdout() + result.stderr();
-    result = ExecCommand.exec(command, true);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException("Couldn't call rest command " + result.stderr());
-    }
-    response = response + result.stdout() + result.stderr();
-    LoggerHelper.getLocal().log(Level.INFO, "response code is cat curl.out " + result.stdout() +  " : "
-            + result.stderr());
-    LoggerHelper.getLocal().log(Level.INFO, "DEBUG DEBUG DEBUG " + response);
-    if (response.contains("\"status\":404,\"detail\":\"/operator/")) {
-      throw new RuntimeException(" Failed to call rest api " + response);
-    }
-
-    */
   }
 
   /**
