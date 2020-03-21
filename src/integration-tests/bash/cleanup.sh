@@ -85,7 +85,7 @@ function getResWithLabel {
           -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{"\n"}{end}' \
           --all-namespaces=true >> $1
-  
+
 }
 
 #
@@ -159,6 +159,7 @@ function deleteWithOneLabel {
 # deleteNamespaces outputfile
 #
 function deleteNamespaces {
+  cat $1
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
     if [ "$line" != "default" ]; then
       echo "@@ Running command - kubectl $FAST_DELETE delete namespace $line --ignore-not-found"
@@ -191,6 +192,7 @@ function deleteWithLabels {
   LABEL_SELECTOR="weblogic.domainUID"
   #deleteWithOneLabel "$tempfile-0"
   getResWithLabel "$tempfile-0"
+  echo @@ tempfile "$tempfile-0"
   deleteNamespaces "$tempfile-0"
   deleteNonNamespacedResWithOneLabel "$tempfile-0"
 
