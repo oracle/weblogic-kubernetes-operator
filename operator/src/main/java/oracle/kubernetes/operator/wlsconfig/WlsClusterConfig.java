@@ -284,6 +284,16 @@ public class WlsClusterConfig {
   }
 
   /**
+   * Returns the minimum size of the dynamic cluster.
+   *
+   * @return the minimum size of the dynamic cluster, or -1 if there is no dynamic servers in this
+   *     cluster
+   */
+  public int getMinDynamicClusterSize() {
+    return dynamicServersConfig != null ? dynamicServersConfig.getMinDynamicClusterSize() : -1;
+  }
+
+  /**
    * Validate the proposed number of replicas to be applied to this configured WLS cluster. The
    * method also logs warning if inconsistent WLS configurations are found.
    *

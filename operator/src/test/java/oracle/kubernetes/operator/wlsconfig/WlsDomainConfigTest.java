@@ -160,6 +160,7 @@ public class WlsDomainConfigTest {
           + "            \"dynamicServers\": {\n"
           + "                \"dynamicClusterSize\": 2,\n"
           + "                \"maxDynamicClusterSize\": 8,\n"
+          + "                \"minDynamicClusterSize\": 1,\n"
           + "                \"serverNamePrefix\": \"dynamic-\",\n"
           + "                \"dynamicServerNames\": [\n"
           + "                    \"dynamic-1\",\n"
@@ -412,6 +413,7 @@ public class WlsDomainConfigTest {
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     assertEquals(2, wlsClusterConfig.getDynamicClusterSize());
     assertEquals(8, wlsClusterConfig.getMaxDynamicClusterSize());
+    assertEquals(1, wlsClusterConfig.getMinDynamicClusterSize());
 
     List<WlsServerConfig> serverConfigs = wlsClusterConfig.getServerConfigs();
     assertEquals(7, serverConfigs.size()); // 5 static + 2 dynamic servers
@@ -493,6 +495,7 @@ public class WlsDomainConfigTest {
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     assertEquals(2, wlsClusterConfig.getDynamicClusterSize());
     assertEquals(8, wlsClusterConfig.getMaxDynamicClusterSize());
+    assertEquals(1, wlsClusterConfig.getMinDynamicClusterSize());
 
     for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
       if (wlsServerConfig.isDynamicServer()) {

@@ -46,7 +46,7 @@ public class WlsClusterConfigTest {
   private Memento consoleControl;
 
   static WlsDynamicServersConfig createDynamicServersConfig(
-      int clusterSize, int maxClusterSize, String serverNamePrefix, String clusterName) {
+      int clusterSize, int maxClusterSize, int minClusterSize, String serverNamePrefix, String clusterName) {
     WlsServerConfig serverTemplate =
         new WlsServerConfig("serverTemplate1", "host1", null, 7001, 7002, null, null);
     List<String> serverNames = new ArrayList<>();
@@ -59,7 +59,7 @@ public class WlsClusterConfigTest {
             serverNames, serverTemplate, clusterName, "base-domain", false);
 
     return new WlsDynamicServersConfig(
-        clusterSize, maxClusterSize, serverNamePrefix, false, null, serverTemplate, serverConfigs);
+        clusterSize, maxClusterSize, minClusterSize, serverNamePrefix, false, null, serverTemplate, serverConfigs);
   }
 
   /**
@@ -125,21 +125,21 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyHasDynamicServersIsTrueForDynamicCluster() {
     WlsClusterConfig wlsClusterConfig =
-        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, "ms-", "clsuter1"));
+        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, 1,"ms-", "clsuter1"));
     assertTrue(wlsClusterConfig.hasDynamicServers());
   }
 
   @Test
   public void verifyHasStaticServersIsFalseForDynamicCluster() {
     WlsClusterConfig wlsClusterConfig =
-        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, "ms-", "clsuter1"));
+        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, 1,"ms-", "clsuter1"));
     assertFalse(wlsClusterConfig.hasStaticServers());
   }
 
   @Test
   public void verifyHasDynamicServersIsTrueForMixedCluster() {
     WlsClusterConfig wlsClusterConfig =
-        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, "ms-", "clsuter1"));
+        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, 1,"ms-", "clsuter1"));
     wlsClusterConfig.addServerConfig(createWlsServerConfig("mss-0", 8011, null));
     assertTrue(wlsClusterConfig.hasDynamicServers());
   }
@@ -147,7 +147,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyHasStaticServersIsTrueForMixedCluster() {
     WlsClusterConfig wlsClusterConfig =
-        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, "ms-", "clsuter1"));
+        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, 1,"ms-", "clsuter1"));
     wlsClusterConfig.addServerConfig(createWlsServerConfig("mss-0", 8011, null));
     assertTrue(wlsClusterConfig.hasStaticServers());
   }
@@ -155,7 +155,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyMaxClusterSizeIsSameAsNumberOfServersPlusDynamicSizeForMixedCluster() {
     WlsClusterConfig wlsClusterConfig =
-        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, "ms-", "clsuter1"));
+        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, 1,"ms-", "clsuter1"));
     wlsClusterConfig.addServerConfig(createWlsServerConfig("mss-0", 8011, null));
 
     assertEquals(6, wlsClusterConfig.getMaxClusterSize());
@@ -164,7 +164,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyMaxClusterSizeIsSameAsDynamicSizeForDynamicCluster() {
     WlsClusterConfig wlsClusterConfig =
-        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, "ms-", "clsuter1"));
+        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, 1,"ms-", "clsuter1"));
 
     assertEquals(5, wlsClusterConfig.getMaxClusterSize());
   }
@@ -172,16 +172,23 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyDynamicClusterSizeIsSameAsNumberOfDynamicServers() {
     WlsClusterConfig wlsClusterConfig =
-        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, "ms-", "clsuter1"));
+        new WlsClusterConfig("cluster1", createDynamicServersConfig(2, 5, 1,"ms-", "clsuter1"));
     assertEquals(0, wlsClusterConfig.getClusterSize());
     assertEquals(2, wlsClusterConfig.getDynamicClusterSize());
     assertEquals(5, wlsClusterConfig.getMaxDynamicClusterSize());
+    assertEquals(1, wlsClusterConfig.getMinDynamicClusterSize());
   }
 
   @Test
   public void verifyDynamicClusterSizeIsNeg1IfNoDynamicServers() {
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
     assertEquals(-1, wlsClusterConfig.getDynamicClusterSize());
+  }
+
+  @Test
+  public void verifyMinDynamicClusterSizeIsNeg1IfNoDynamicServers() {
+    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1");
+    assertEquals(-1, wlsClusterConfig.getMinDynamicClusterSize());
   }
 
   @Test
@@ -199,7 +206,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyGetServerConfigsReturnListOfAllServerConfigsWithDynamicServers() {
     WlsClusterConfig wlsClusterConfig =
-        new WlsClusterConfig("cluster1", createDynamicServersConfig(3, 5, "ms-", "clsuter1"));
+        new WlsClusterConfig("cluster1", createDynamicServersConfig(3, 5, 1,"ms-", "clsuter1"));
     wlsClusterConfig.addServerConfig(createWlsServerConfig("static-0", 8011, null));
     wlsClusterConfig.addServerConfig(createWlsServerConfig("static-1", 8012, null));
 
@@ -255,7 +262,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyMaxClusterSizeForDynamicCluster() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 1, "ms-", "cluster1");
+        createDynamicServersConfig(1, 1, 1,"ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
 
     assertThat(wlsClusterConfig.getMaxClusterSize(), equalTo(1));
@@ -264,7 +271,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyMaxClusterSizeForMixedCluster() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 1, "ms-", "cluster1");
+        createDynamicServersConfig(1, 1, 1,"ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
 
@@ -274,7 +281,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyValidateClusterStartupDoNotWarnIfOfNoServers_mixedCluster() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 1, "ms-", "cluster1");
+        createDynamicServersConfig(1, 1, 1,"ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     wlsClusterConfig.addServerConfig(createWlsServerConfig("ms-0", 8011, null));
 
@@ -285,7 +292,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyValidateClusterStartupSuggestsUpdateToDynamicClusterIfReplicasTooHigh() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 2, "ms-", "cluster1");
+        createDynamicServersConfig(1, 2, 1,"ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
 
@@ -301,7 +308,7 @@ public class WlsClusterConfigTest {
   public void
       verifyValidateClusterStartupDoNotSuggestsUpdateToDynamicClusterIfReplicasSameAsClusterSize() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 2, "ms-", "cluster2");
+        createDynamicServersConfig(1, 2, 1,"ms-", "cluster2");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster2", wlsDynamicServersConfig);
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
 
@@ -314,7 +321,7 @@ public class WlsClusterConfigTest {
   public void
       verifyValidateClusterStartupDoNotSuggestsUpdateToDynamicClusterIfReplicasLowerThanClusterSize() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(2, 2, "ms-", "cluster1");
+        createDynamicServersConfig(2, 2, 1,"ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
 
@@ -327,7 +334,7 @@ public class WlsClusterConfigTest {
   public void
       verifyValidateClusterStartupDoNotSuggestsUpdateToDynamicClusterIfCurrentSizeAlreadyMax() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(2, 2, "ms-", "cluster1");
+        createDynamicServersConfig(2, 2, 1,"ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
 
@@ -339,7 +346,7 @@ public class WlsClusterConfigTest {
   public void
       verifyValidateClusterStartupSuggestsUpdateToDynamicClusterEvenIfReplicasExceedsMaxClusterSize() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 2, "ms-", "cluster1");
+        createDynamicServersConfig(1, 2, 1,"ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
 
@@ -354,7 +361,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyValidateClusterStartupSuggestsUpdateToDynamicClusterIfNotEnoughMachines() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(2, 1, "ms-", "cluster1");
+        createDynamicServersConfig(2, 1, 1,"ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
 
     Map<String, WlsClusterConfig> clusters = new HashMap<>();
@@ -383,7 +390,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyValidateClusterStartupDoNotLowerClusterSizeIfNotEnoughMachines() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(2, 1, "ms-", "cluster1");
+        createDynamicServersConfig(2, 1, 1,"ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
 
     Map<String, WlsClusterConfig> clusters = new HashMap<>();
@@ -410,7 +417,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyValidateClusterStartupDoNotSuggestUpdateToDynamicClusterIfEnoughMachines() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 1, "ms-", "cluster1");
+        createDynamicServersConfig(1, 1, 1,"ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
 
     Map<String, WlsClusterConfig> clusters = new HashMap<>();
@@ -433,7 +440,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyGetUpdateDynamicClusterSizeUrlIncludesClusterName() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 1, "ms-", "cluster1");
+        createDynamicServersConfig(1, 1, 1,"ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     assertEquals(
         wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
@@ -443,7 +450,7 @@ public class WlsClusterConfigTest {
   @Test
   public void verifyGetUpdateDynamicClusterSizePayload() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 5, "ms-", "cluster1");
+        createDynamicServersConfig(1, 5, 1,"ms-", "cluster1");
     WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
     assertEquals(
         wlsClusterConfig.getUpdateDynamicClusterSizePayload(2), "{ dynamicClusterSize: 2 }");
@@ -502,7 +509,7 @@ public class WlsClusterConfigTest {
 
     WlsClusterConfig wlsClusterConfig =
         new WlsClusterConfig(
-            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, "ms-", "cluster1"));
+            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, 1,"ms-", "cluster1"));
     Map<String, WlsClusterConfig> clusters = new HashMap();
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
@@ -523,7 +530,7 @@ public class WlsClusterConfigTest {
 
     WlsClusterConfig wlsClusterConfig =
         new WlsClusterConfig(
-            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, "ms-", "cluster1"));
+            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, 1,"ms-", "cluster1"));
     Map<String, WlsClusterConfig> clusters = new HashMap();
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
@@ -540,7 +547,7 @@ public class WlsClusterConfigTest {
 
     WlsClusterConfig wlsClusterConfig =
         new WlsClusterConfig(
-            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, "ms-", "cluster1"));
+            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, 1,"ms-", "cluster1"));
     Map<String, WlsClusterConfig> clusters = new HashMap();
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
@@ -554,7 +561,7 @@ public class WlsClusterConfigTest {
 
     WlsClusterConfig wlsClusterConfig =
         new WlsClusterConfig(
-            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, "ms-", "cluster1"));
+            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, 1,"ms-", "cluster1"));
     Map<String, WlsClusterConfig> clusters = new HashMap();
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
@@ -576,7 +583,7 @@ public class WlsClusterConfigTest {
 
     WlsClusterConfig wlsClusterConfig =
         new WlsClusterConfig(
-            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, "ms-", "cluster1"));
+            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, 1,"ms-", "cluster1"));
     Map<String, WlsClusterConfig> clusters = new HashMap();
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
@@ -602,7 +609,7 @@ public class WlsClusterConfigTest {
 
     WlsClusterConfig wlsClusterConfig =
         new WlsClusterConfig(
-            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(1, 5, "ms-", "cluster1"));
+            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(1, 5, 1,"ms-", "cluster1"));
     Map<String, WlsClusterConfig> clusters = new HashMap();
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
@@ -624,7 +631,7 @@ public class WlsClusterConfigTest {
 
     WlsClusterConfig wlsClusterConfig =
         new WlsClusterConfig(
-            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, "ms-", "cluster1"));
+            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, 1,"ms-", "cluster1"));
 
     assertNull("verify no domain config is setup", wlsClusterConfig.getWlsDomainConfig());
 
@@ -636,7 +643,7 @@ public class WlsClusterConfigTest {
   public void verifyGetMachineNamesNoExceptionWhenPrefixIsNull() {
     WlsClusterConfig wlsClusterConfig =
         new WlsClusterConfig(
-            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(1, 5, "ms-", "cluster1"));
+            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(1, 5, 1,"ms-", "cluster1"));
     Map<String, WlsClusterConfig> clusters = new HashMap();
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
@@ -654,7 +661,7 @@ public class WlsClusterConfigTest {
   public void verifyGetMachineNamesReturnsEmptyArrayWhenNumIsInvalid() {
     WlsClusterConfig wlsClusterConfig =
         new WlsClusterConfig(
-            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(0, 5, "ms-", "clsuter1"));
+            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(0, 5, 1,"ms-", "clsuter1"));
     Map<String, WlsClusterConfig> clusters = new HashMap();
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
@@ -672,7 +679,7 @@ public class WlsClusterConfigTest {
   public void verifyGetMachineNamesReturnsUndefinedMachineNamesEvenWithSameTargetSize() {
     WlsClusterConfig wlsClusterConfig =
         new WlsClusterConfig(
-            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, "ms-", "clsuter1"));
+            "cluster1", WlsClusterConfigTest.createDynamicServersConfig(2, 5, 1,"ms-", "clsuter1"));
     Map<String, WlsClusterConfig> clusters = new HashMap();
     clusters.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
 
