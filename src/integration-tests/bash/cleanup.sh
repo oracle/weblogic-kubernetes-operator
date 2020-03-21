@@ -338,9 +338,9 @@ if [ -x "$(command -v helm)" ]; then
   done
 
   # cleanup tiller artifacts
-  if [ "$SHARED_CLUSTER" = "true" ]; then
-    cleanup_tiller
-  fi
+  #if [ "$SHARED_CLUSTER" = "true" ]; then
+  #  cleanup_tiller
+  #fi
 fi
 
 # second, try to delete with labels since the conversion is that all created resources need to
