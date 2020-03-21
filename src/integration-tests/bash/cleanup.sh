@@ -328,7 +328,7 @@ if [ -x "$(command -v helm)" ]; then
   namespaces=`kubectl get ns | grep -v NAME | awk '{ print $1 }'`
   for ns in $namespaces
   do 
-     helm list --short --namespace $ns | while read helm_name; do
+     helm list --short | while read helm_name; do
      if [ "$HELM_VERSION" == "V2" ]; then
        echo "@@ Running command - helm delete --purge  $helm_name"
        helm delete --purge  $helm_name
