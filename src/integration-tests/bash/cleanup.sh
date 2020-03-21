@@ -325,20 +325,21 @@ if [ -x "$(command -v helm)" ]; then
   [[ $? == 1 ]] && HELM_VERSION=V3
   echo "Detected Helm Version [$(helm version --short --client)]"
   echo @@ Deleting installed helm charts
-  namespaces=`kubectl get ns | grep -v NAME | awk '{ print $1 }'`
-  for ns in $namespaces
-  do
-     echo "@@ Running command - helm list --short | while read helm_name; do"
-     helm list --short | while read helm_name; do
-     if [ "$HELM_VERSION" == "V2" ]; then
-       echo "@@ Running command - helm delete --purge  $helm_name"
-       helm delete --purge  $helm_name
-     else
-       echo "@@ Running command - helm uninstall $helm_name -n $ns"
-       helm uninstall $helm_name -n $ns
-     fi
-     done
-  done
+  if [ "$HELM_VERSION" == "V2" ]; then
+    helm list --short | while read helm_name; do
+      echo "@@ Running command - helm delete --purge  $helm_name"
+      helm delete --purge  $helm_name
+    done
+  else
+    namespaces=`kubectl get ns | grep -v NAME | awk '{ print $1 }'`
+    for ns in $namespaces
+    do
+      helm list --short --namespace $ns | while read helm_name; do
+        echo "@@ Running command - helm uninstall $helm_name -n $ns"
+        helm uninstall $helm_name -n $ns
+      done
+    done
+  fi
 
   # cleanup tiller artifacts
   #if [ "$SHARED_CLUSTER" = "true" ]; then
