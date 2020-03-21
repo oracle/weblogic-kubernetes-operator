@@ -100,6 +100,8 @@ function deleteNonNamespacedResWithOneLabel {
   # delete non-namespaced types
   local no_namespace_count=`grep -c -v " -n " $1`
   if [ ! "$no_namespace_count" = "0" ]; then
+    echo "@@ Running command - kubectl $FAST_DELETE get $NOT_NAMESPACED_TYPES -l $LABEL_SELECTOR"
+    kubectl $FAST_DELETE get $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
     echo "@@ Running command - kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l $LABEL_SELECTOR"
     kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
   fi
