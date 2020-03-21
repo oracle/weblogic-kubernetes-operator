@@ -196,14 +196,14 @@ function deleteWithLabels {
   getResWithLabel "$tempfile-0"
   echo @@ tempfile "$tempfile-0"
   deleteNamespaces "$tempfile-0"
-  deleteNonNamespacedResWithOneLabel "$tempfile-0"
+  #deleteNonNamespacedResWithOneLabel "$tempfile-0"
 
   #echo @@ Deleting wls operator resources.
   LABEL_SELECTOR="weblogic.operatorName"
   #deleteWithOneLabel "$tempfile-1"
   getResWithLabel "$tempfile-1"
   deleteNamespaces "$tempfile-1"
-  deleteNonNamespacedResWithOneLabel "$tempfile-1"
+  #deleteNonNamespacedResWithOneLabel "$tempfile-1"
 
   echo @@ Deleting voyager controller.
   if [ "$HANDLE_VOYAGER" = "true" ]; then
