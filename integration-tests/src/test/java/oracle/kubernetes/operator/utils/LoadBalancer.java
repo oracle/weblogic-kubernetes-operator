@@ -145,41 +145,6 @@ public class LoadBalancer {
                       + result.stdout()
                       + result.stderr());
     }
-    /*
-    TestUtils.copyFile(
-            BaseTest.getProjectRoot()
-                    + "/integration-tests/src/test/resources/traefik-operatorhp.yaml",
-            userProjectsDir
-                    + "/load-balancers/"
-                    + lbMap.get("domainUID")
-                    + "/traefik-operatorhp.yaml");
-
-    TestUtils.replaceStringInFile(userProjectsDir
-            + "/load-balancers/"
-            + lbMap.get("domainUID")
-            + "/traefik-operatorhp", "%OPERATOR_NS%","itoperator-opns-1");
-
-
-
-    cmdLb =
-            "kubectl create -f "
-                    + userProjectsDir
-                    + "/load-balancers/"
-                    + lbMap.get("domainUID")
-                    + "/operatorhp.yaml";
-    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
-
-    result = ExecCommand.exec(cmdLb);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-              "FAILURE: command to create hostpath ingress "
-                      + cmdLb
-                      + " failed, returned "
-                      + result.stdout()
-                      + result.stderr());
-    }
-    */
-
   }
 
   /**

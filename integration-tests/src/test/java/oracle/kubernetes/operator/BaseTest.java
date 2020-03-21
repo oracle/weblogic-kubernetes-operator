@@ -672,9 +672,8 @@ public class BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Inside testDomainLifecyle");
     domain.destroy();
     domain.create();
-    //FIXME
-    //operator.verifyExternalRestService();
-    //operator.verifyDomainExists(domain.getDomainUid());
+    operator.verifyExternalRestService();
+    operator.verifyDomainExists(domain.getDomainUid());
     domain.verifyDomainCreated();
     // if domain created with domain home in image, re-deploy the webapp and verify load balancing
     if (domain.getDomainMap().containsKey("domainHomeImageBase")) {

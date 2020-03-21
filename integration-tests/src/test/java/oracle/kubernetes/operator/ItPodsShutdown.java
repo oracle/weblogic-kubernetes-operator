@@ -191,11 +191,11 @@ public class ItPodsShutdown extends BaseTest {
     if (!domain.getLoadBalancerName().equalsIgnoreCase("NONE")) {
       // url
       StringBuffer testAppUrl = new StringBuffer("http://");
-      if (BaseTest.OKE_CLUSTER) {
-        testAppUrl.append(BaseTest.LB_PUBLIC_IP).append("/");
-      } else {
-        testAppUrl.append(domain.getHostNameForCurl()).append(":").append(domain.getLoadBalancerWebPort()).append("/");
+      testAppUrl.append(domain.getHostNameForCurl());
+      if (!BaseTest.OKE_CLUSTER) {
+        testAppUrl.append(":").append(domain.getLoadBalancerWebPort());
       }
+      testAppUrl.append("/");
       if (domain.getLoadBalancerName().equals("APACHE")) {
         testAppUrl.append("weblogic/");
       }

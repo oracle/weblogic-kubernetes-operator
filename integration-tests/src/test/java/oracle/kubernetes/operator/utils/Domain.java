@@ -322,31 +322,21 @@ public class Domain {
           "nodePortHost " + nodePortHost + " nodePort " + nodePort);
 
       StringBuffer cmd = new StringBuffer();
-      if (BaseTest.OKE_CLUSTER) {
-        cmd.append("curl --silent --show-error  --noproxy ")
-                .append(BaseTest.LB_PUBLIC_IP)
-                .append(" http://")
-                .append(BaseTest.LB_PUBLIC_IP)
-                .append("/management/weblogic/latest/serverRuntime")
-                .append(" --user ")
-                .append(username)
-                .append(":")
-                .append(password)
-                .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
-      } else {
-        cmd.append("curl --silent --show-error --noproxy ")
-                .append(nodePortHost)
-                .append(" http://")
-                .append(nodePortHost)
-                .append(":")
-                .append(nodePort)
-                .append("/management/weblogic/latest/serverRuntime")
-                .append(" --user ")
-                .append(username)
-                .append(":")
-                .append(password)
-                .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
+      cmd.append("curl --silent --show-error --noproxy ")
+              .append(nodePortHost)
+              .append(" http://")
+              .append(nodePortHost);
+      if (!BaseTest.OKE_CLUSTER) {
+        cmd.append(":")
+                .append(nodePort);
       }
+      cmd.append("/management/weblogic/latest/serverRuntime")
+          .append(" --user ")
+          .append(username)
+          .append(":")
+          .append(password)
+          .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
+
       LoggerHelper.getLocal().log(Level.INFO, "cmd for curl " + cmd);
       ExecResult result = TestUtils.exec(cmd.toString());
       String output = result.stdout().trim();
@@ -982,31 +972,23 @@ public class Domain {
     }
     String nodePortHost = getHostNameForCurl();
     int nodePort = getAdminSericeLbNodePort();
-    String responseBodyFile =
-        userProjectsDir + "/weblogic-domains/" + domainUid + "/testconsole.response.body";
     LoggerHelper.getLocal().log(
         Level.INFO, "nodePortHost " + nodePortHost + " nodePort " + nodePort);
 
     StringBuffer cmd = new StringBuffer();
-    if (BaseTest.OKE_CLUSTER) {
-      cmd.append("curl --silent --show-error --noproxy ")
-              .append(BaseTest.LB_PUBLIC_IP)
-              .append(" http://")
-              .append(BaseTest.LB_PUBLIC_IP)
-              .append("/console/login/LoginForm.jsp")
-              .append(" --write-out %{http_code} -o ")
-              .append(responseBodyFile);
-    } else {
-      cmd.append("curl --silent --show-error --noproxy ")
-              .append(nodePortHost)
-              .append(" http://")
-              .append(nodePortHost)
-              .append(":")
-              .append(nodePort)
-              .append("/console/login/LoginForm.jsp")
-              .append(" --write-out %{http_code} -o ")
-              .append(responseBodyFile);
+    cmd.append("curl --silent --show-error --noproxy ")
+            .append(nodePortHost)
+            .append(" http://")
+            .append(nodePortHost);
+    if (!BaseTest.OKE_CLUSTER) {
+      cmd.append(":")
+              .append(nodePort);
     }
+    String responseBodyFile =
+            userProjectsDir + "/weblogic-domains/" + domainUid + "/testconsole.response.body";
+    cmd.append("/console/login/LoginForm.jsp")
+              .append(" --write-out %{http_code} -o ")
+              .append(responseBodyFile);
     LoggerHelper.getLocal().log(Level.INFO, "cmd for curl " + cmd);
 
     ExecResult result = TestUtils.exec(cmd.toString());
@@ -1551,15 +1533,6 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO, "Running " + createDomainScriptCmd);
     ExecResult result = ExecCommand.exec(createDomainScriptCmd, true, additionalEnvMap);
     if (result.exitValue() != 0) {
-      /*
-      LoggerHelper.getLocal().log(Level.INFO, "Running delete-domain-job ");
-      TestUtils.deleteDomainHomeDir(userProjectsDir
-              + "/weblogic-domains/" + domainUid, domainNS, domainUid);
-
-      result = ExecCommand.exec(createDomainScriptCmd, true, additionalEnvMap);
-      if (result.exitValue() != 0) {
-
-      */
       throw new RuntimeException(
               "FAILURE: command "
                       + createDomainScriptCmd
