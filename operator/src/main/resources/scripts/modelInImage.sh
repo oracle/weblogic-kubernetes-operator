@@ -21,9 +21,7 @@ INTROSPECTJOB_IMAGE_MD5="/tmp/inventory_image.md5"
 INTROSPECTJOB_CM_MD5="/tmp/inventory_cm.md5"
 INTROSPECTJOB_PASSPHRASE_MD5="/tmp/inventory_passphrase.md5"
 LOCAL_PRIM_DOMAIN_ZIP="/tmp/prim_domain.tar.gz"
-
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
-
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/model-runtime-secret/password"
 OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
@@ -52,6 +50,9 @@ SECURITY_INFO_UPDATED=4
 RCU_PASSWORD_CHANGED=5
 
 SCRIPT_ERROR=255
+
+export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
+export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="weblogic-cred=/weblogic-operator/secrets,weblogic-cred=/weblogic-operator/secrets"
 
 # sort_files  sort the files according to the names and naming conventions and write the result to stdout
 #    $1  directory
@@ -166,7 +167,6 @@ function buildWDTParams_MD5() {
   model_list=""
   archive_list=""
   variable_list="${IMG_MODELS_HOME}/_k8s_generated_props.properties"
-
 
   #
   # First build the command line parameters for WDT
@@ -505,8 +505,7 @@ function createPrimordialDomain() {
     if [ ${security_info_updated} == "true" ]; then
       recreate_domain=1
       if [ ${WDT_DOMAIN_TYPE} == "JRF" ] ; then
-        #UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
-        UPDATE_RCUPWD_FLAG=""
+        UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
       fi
     fi
 
@@ -516,8 +515,7 @@ function createPrimordialDomain() {
     local rcu_password_updated="false"
     rcu_password_updated=$(contain_returncode ${diff_rc} ${RCU_PASSWORD_CHANGED})
     if [ ${WDT_DOMAIN_TYPE} == "JRF" ] && [ ${rcu_password_updated} == "true" ] ; then
-        #UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
-        UPDATE_RCUPWD_FLAG=""
+        UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
     fi
 
   fi
