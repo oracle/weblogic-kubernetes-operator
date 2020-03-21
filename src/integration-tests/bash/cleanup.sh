@@ -101,10 +101,10 @@ function deleteWithOneLabel {
   echo @@ Deleting resources with label $LABEL_SELECTOR.
   getResWithLabel $1
   # delete namespaced types
-  cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
-    echo "@@ Running command - kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l $LABEL_SELECTOR"
-    kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
-  done
+  #cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
+  #  echo "@@ Running command - kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l $LABEL_SELECTOR"
+  #  kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
+  #done
 
   # delete non-namespaced types
   local no_namespace_count=`grep -c -v " -n " $1`
@@ -113,26 +113,26 @@ function deleteWithOneLabel {
     kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
   fi
 
-  echo "@@ Waiting for pods to stop running."
-  local total=0
-  local mstart=`date +%s`
-  local mnow=mstart
-  local maxwaitsecs=60
-  while [ $((mnow - mstart)) -lt $maxwaitsecs ]; do
-    pods=($(kubectl get pods --all-namespaces -l $LABEL_SELECTOR -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
-    total=${#pods[*]}
-    if [ $total -eq 0 ] ; then
-        break
-    else
-      echo "@@ There are $total running pods with label $LABEL_SELECTOR."
-    fi
-    sleep 3
-    mnow=`date +%s`
-  done
+  #echo "@@ Waiting for pods to stop running."
+  #local total=0
+  #local mstart=`date +%s`
+  #local mnow=mstart
+  #local maxwaitsecs=60
+  #while [ $((mnow - mstart)) -lt $maxwaitsecs ]; do
+  #  pods=($(kubectl get pods --all-namespaces -l $LABEL_SELECTOR -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
+  #  total=${#pods[*]}
+  #  if [ $total -eq 0 ] ; then
+  #      break
+  #  else
+  #    echo "@@ There are $total running pods with label $LABEL_SELECTOR."
+  #  fi
+  #  sleep 3
+  #  mnow=`date +%s`
+  #done
 
-  if [ $total -gt 0 ]; then
-    echo "Warning: after waiting $maxwaitsecs seconds, there are still $total running pods with label $LABEL_SELECTOR."
-  fi
+  #if [ $total -gt 0 ]; then
+  #  echo "Warning: after waiting $maxwaitsecs seconds, there are still $total running pods with label $LABEL_SELECTOR."
+  #fi
 }
 
 #
@@ -327,7 +327,8 @@ if [ -x "$(command -v helm)" ]; then
   echo @@ Deleting installed helm charts
   namespaces=`kubectl get ns | grep -v NAME | awk '{ print $1 }'`
   for ns in $namespaces
-  do 
+  do
+     echo "@@ Running command - helm list --short | while read helm_name; do"
      helm list --short | while read helm_name; do
      if [ "$HELM_VERSION" == "V2" ]; then
        echo "@@ Running command - helm delete --purge  $helm_name"
