@@ -85,7 +85,26 @@ function getResWithLabel {
           -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{"\n"}{end}' \
           --all-namespaces=true >> $1
+  
 }
+
+#
+# Usage:
+# deleteNonNamespacedResWithOneLabel outputfile
+#
+function deleteNonNamespacedResWithOneLabel {
+  echo @@ Delete non-namespaced resources with label $LABEL_SELECTOR.
+
+  #getResWithLabel $1
+
+  # delete non-namespaced types
+  local no_namespace_count=`grep -c -v " -n " $1`
+  if [ ! "$no_namespace_count" = "0" ]; then
+    echo "@@ Running command - kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l $LABEL_SELECTOR"
+    kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
+  fi
+}
+
 
 #
 # Usage:
@@ -100,11 +119,11 @@ function deleteWithOneLabel {
 
   echo @@ Deleting resources with label $LABEL_SELECTOR.
   getResWithLabel $1
-  # delete namespaced types
-  #cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
-  #  echo "@@ Running command - kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l $LABEL_SELECTOR"
-  #  kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
-  #done
+  delete namespaced types
+  cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
+    echo "@@ Running command - kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l $LABEL_SELECTOR"
+    kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
+  done
 
   # delete non-namespaced types
   local no_namespace_count=`grep -c -v " -n " $1`
@@ -113,26 +132,26 @@ function deleteWithOneLabel {
     kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
   fi
 
-  #echo "@@ Waiting for pods to stop running."
-  #local total=0
-  #local mstart=`date +%s`
-  #local mnow=mstart
-  #local maxwaitsecs=60
-  #while [ $((mnow - mstart)) -lt $maxwaitsecs ]; do
-  #  pods=($(kubectl get pods --all-namespaces -l $LABEL_SELECTOR -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
-  #  total=${#pods[*]}
-  #  if [ $total -eq 0 ] ; then
-  #      break
-  #  else
-  #    echo "@@ There are $total running pods with label $LABEL_SELECTOR."
-  #  fi
-  #  sleep 3
-  #  mnow=`date +%s`
-  #done
+  echo "@@ Waiting for pods to stop running."
+  local total=0
+  local mstart=`date +%s`
+  local mnow=mstart
+  local maxwaitsecs=60
+  while [ $((mnow - mstart)) -lt $maxwaitsecs ]; do
+    pods=($(kubectl get pods --all-namespaces -l $LABEL_SELECTOR -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
+    total=${#pods[*]}
+    if [ $total -eq 0 ] ; then
+        break
+    else
+      echo "@@ There are $total running pods with label $LABEL_SELECTOR."
+    fi
+    sleep 3
+    mnow=`date +%s`
+  done
 
-  #if [ $total -gt 0 ]; then
-  #  echo "Warning: after waiting $maxwaitsecs seconds, there are still $total running pods with label $LABEL_SELECTOR."
-  #fi
+  if [ $total -gt 0 ]; then
+    echo "Warning: after waiting $maxwaitsecs seconds, there are still $total running pods with label $LABEL_SELECTOR."
+  fi
 }
 
 #
@@ -168,16 +187,19 @@ function deleteWithLabels {
 
   tempfile="/tmp/$(basename $0).tmp.$$"  # == /tmp/[script-file-name].tmp.[pid]
 
-  echo @@ Deleting domain resources.
+  #echo @@ Deleting domain resources.
   LABEL_SELECTOR="weblogic.domainUID"
-  deleteWithOneLabel "$tempfile-0"
-
-  echo @@ Deleting wls operator resources.
-  LABEL_SELECTOR="weblogic.operatorName"
-  deleteWithOneLabel "$tempfile-1"
-
+  #deleteWithOneLabel "$tempfile-0"
+  getResWithLabel "$tempfile-0"
   deleteNamespaces "$tempfile-0"
+  deleteNonNamespacedResWithOneLabel "$tempfile-0"
+
+  #echo @@ Deleting wls operator resources.
+  LABEL_SELECTOR="weblogic.operatorName"
+  #deleteWithOneLabel "$tempfile-1"
+  getResWithLabel "$tempfile-1"
   deleteNamespaces "$tempfile-1"
+  deleteNonNamespacedResWithOneLabel "$tempfile-1"
 
   echo @@ Deleting voyager controller.
   if [ "$HANDLE_VOYAGER" = "true" ]; then
