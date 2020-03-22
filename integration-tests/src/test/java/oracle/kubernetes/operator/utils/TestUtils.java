@@ -879,7 +879,7 @@ public class TestUtils {
         throw new RuntimeException("Couldn't execute rest command " + result.stderr());
       }
       LoggerHelper.getLocal().log(Level.INFO, "response code stdout from " + restUrl + " : " + result.stdout());
-      if (!(result.stdout().trim()).equalsIgnoreCase("200") || !(result.stdout().trim()).equalsIgnoreCase("204")) {
+      if (!((result.stdout().trim()).contains("200") || (result.stdout().trim()).contains("204"))) {
         LoggerHelper.getLocal().log(Level.INFO, "response code from " + restUrl + " : " + result.stdout()
                 + " : " + result.stderr());
         command = " kubectl exec curl -- cat curl.out";
