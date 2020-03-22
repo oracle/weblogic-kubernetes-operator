@@ -65,6 +65,10 @@
 #             (See optional LEASE_ID env var above.)
 #
 
+function timestamp {
+  echo -n [`date '+%m-%d-%YT%H:%M:%S'`]
+}
+
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 PROJECT_ROOT="$SCRIPTPATH/../../.."
 RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
@@ -76,18 +80,18 @@ JOB_NAME="weblogic-command-job"
 DRY_RUN="false"
 [ "$1" = "-dryrun" ] && DRY_RUN="true"
 
-echo @@ Starting cleanup.
+echo @@ `timestamp` Starting cleanup.
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$(dirname "${script}")" > /dev/null 2>&1 ; pwd -P)"
 source $PROJECT_ROOT/kubernetes/internal/utility.sh
 
 if [ ! "$1" = "" ] && [ ! "$1" = "-dryrun" ]; then
-  echo "@@ Usage: '$(basename $0) [-dryrun]'. Pass -dryrun to skip deletes."
+  echo "@@ `timestamp` Usage: '$(basename $0) [-dryrun]'. Pass -dryrun to skip deletes."
   exit 1  
 fi
 
 function fail {
-  echo @@ cleanup.sh: Error "$@"
+  echo @@ `timestamp` cleanup.sh: Error "$@"
   exit 1
 }
 
@@ -104,7 +108,7 @@ function doDeleteByName {
 
   local ttextt=""
   [ "$DRY_RUN" = "true" ] && ttextt="DRYRUN"
-  echo @@ doDeleteByName $ttextt: kubectl $FAST_DELETE delete "$@" --ignore-not-found
+  echo @@ `timestamp` doDeleteByName $ttextt: kubectl $FAST_DELETE delete "$@" --ignore-not-found
   cat $tmpfile 
   rm $tmpfile
 
@@ -126,7 +130,7 @@ function doDeleteByRange {
 
   local ttextt=""
   [ "$DRY_RUN" = "true" ] && ttextt="DRYRUN"
-  echo @@ doDeleteByRange $ttextt: kubectl $FAST_DELETE delete "$@" --ignore-not-found
+  echo @@ `timestamp` doDeleteByRange $ttextt: kubectl $FAST_DELETE delete "$@" --ignore-not-found
   cat $tmpfile 
   rm $tmpfile
 
@@ -142,8 +146,8 @@ waitForWebLogicPods() {
   local pod_count_tot=0
   local max_secs=${1:-60}
   STARTSEC=$SECONDS
-  echo "@@ Info: Waiting $max_secs seconds for WebLogic server and introspector pods to exit."
-  echo -n "@@ Info: seconds/introspector-pod-count/wl-pod-count:"
+  echo "@@ `timestamp` Info: Waiting $max_secs seconds for WebLogic server and introspector pods to exit."
+  echo -n "@@ `timestamp` Info: seconds/introspector-pod-count/wl-pod-count:"
   while [ $((SECONDS - STARTSEC)) -lt $max_secs ]; do
     # WebLogic server pods have the 'weblogic.serverName' label
     pod_count_wls="$(kubectl --all-namespaces=true get pods -l weblogic.serverName -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | wc -l)"
@@ -159,11 +163,11 @@ waitForWebLogicPods() {
   echo
 
   if [ $((pod_count_tot)) -ne 0 ]; then
-    echo "@@ Warning: Wait timed out after $max_secs seconds. There are still $pod_count_tot pods running:"
+    echo "@@ `timestamp` Warning: Wait timed out after $max_secs seconds. There are still $pod_count_tot pods running:"
     kubectl --all-namespaces=true get pods -l weblogic.serverName
     kubectl --all-namespaces=true get pods -l weblogic.domainUID -l job-name
   else
-    echo "@@ Info: No pods detected after $((SECONDS - STARTSEC)) seconds."
+    echo "@@ `timestamp` Info: No pods detected after $((SECONDS - STARTSEC)) seconds."
   fi
 }
 
@@ -178,21 +182,21 @@ waitForLabelPods() {
   local mnow=mstart
   local maxwaitsecs=$1
   local pods
-  echo "@@ Waiting $maxwaitsecs for pods to stop running."
+  echo "@@ `timestamp` Waiting $maxwaitsecs for pods to stop running."
   while [ $((mnow - mstart)) -lt $maxwaitsecs ]; do
     pods=($(kubectl get pods --all-namespaces -l $LABEL_SELECTOR -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
     total=${#pods[*]}
     if [ $total -eq 0 ] ; then
         break
     else
-      echo "@@ There are $total running pods with label $LABEL_SELECTOR: $pods".
+      echo "@@ `timestamp` There are $total running pods with label $LABEL_SELECTOR: $pods".
     fi
     sleep 3
     mnow=`date +%s`
   done
 
   if [ $total -gt 0 ]; then
-    echo "@@ Warning: after waiting $maxwaitsecs seconds, there are still $total running pods with label $LABEL_SELECTOR: $pods"
+    echo "@@ `timestamp` Warning: after waiting $maxwaitsecs seconds, there are still $total running pods with label $LABEL_SELECTOR: $pods"
   fi
 }
 
@@ -203,7 +207,7 @@ deleteDomains() {
   local dn
   local domain_crd=domains.weblogic.oracle
   local count=0
-  echo "@@ Info: About to delete each domain."
+  echo "@@ `timestamp` Info: About to delete each domain."
   if [ $(kubectl get crd $domain_crd --ignore-not-found | grep $domain_crd | wc -l) = 1 ]; then
     for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
     do
@@ -214,13 +218,13 @@ deleteDomains() {
       done
     done
   fi
-  echo "@@ Info: Found and deleted $count domains."
+  echo "@@ `timestamp` Info: Found and deleted $count domains."
   return 0
 }
 
 # delete all operator deployments
 deleteOperators() {
-  echo "@@ Info: Deleting operator deployments."
+  echo "@@ `timestamp` Info: Deleting operator deployments."
   local ns
   for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
   do
@@ -230,7 +234,7 @@ deleteOperators() {
 
 # delete all WL pods
 deleteWebLogicPods() {
-  echo "@@ Info: Deleting WebLogic pods."
+  echo "@@ `timestamp` Info: Deleting WebLogic pods."
   local ns
   for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
   do
@@ -245,7 +249,7 @@ deleteWebLogicPods() {
 # - the delete order is order of NAMESPACED_TYPES and then NOT_NAMESPACED_TYPES
 # - uses $1 as a temporary file
 function deleteLabel {
-  echo @@ Delete resources with label $LABEL_SELECTOR.
+  echo @@ `timestamp` Delete resources with label $LABEL_SELECTOR.
 
   # clean the output file first
 
@@ -345,7 +349,7 @@ function deleteByTypeAndLabel {
   
   if [ "$HANDLE_VOYAGER" = "true" ]; then
     if [ ! "$DRY_RUN" = "true" ]; then
-      echo @@ Deleting voyager controller.
+      echo @@ `timestamp` Deleting voyager controller.
       # calls script in utility.sh
       deleteVoyagerOperator
     fi
@@ -387,7 +391,7 @@ function genericDelete {
       fi
     fi
 
-    echo "@@ Waiting up to $maxwaitsecs seconds for ${1:?} and ${2:?} artifacts that contain string ${3:?} to delete."
+    echo "@@ `timestamp` Waiting up to $maxwaitsecs seconds for ${1:?} and ${2:?} artifacts that contain string ${3:?} to delete."
 
     local artcount_no
     local artcount_yes
@@ -420,14 +424,14 @@ function genericDelete {
       mnow=`date +%s`
 
       if [ $((artcount_total)) -eq 0 ]; then
-        echo "@@ No artifacts found."
+        echo "@@ `timestamp` No artifacts found."
         return 0
       fi
 
       if [ "$iteration" = "first" ] && [ "$FAST_DELETE" = "" ]; then
         # in the first iteration we just wait to see if artifacts go away on there own
 
-        echo "@@ Waiting for $artcount_total artifacts to delete.  Wait time $((mnow - mstart)) seconds (max=$maxwaitsecs).  Waiting for:"
+        echo "@@ `timestamp` Waiting for $artcount_total artifacts to delete.  Wait time $((mnow - mstart)) seconds (max=$maxwaitsecs).  Waiting for:"
 
         cat $resfile_yes | awk '{ print "n=" $1 " " $2 }'
         cat $resfile_no | awk '{ print $1 }'
@@ -435,7 +439,7 @@ function genericDelete {
       else
         # in the second thirty seconds we try to delete remaining artifacts
 
-        echo "@@ Trying to delete ${artcount_total} leftover artifacts, including ${artcount_yes} namespaced artifacts and ${artcount_no} non-namespaced artifacts, wait time $((mnow - mstart)) seconds (max=$maxwaitsecs)."
+        echo "@@ `timestamp` Trying to delete ${artcount_total} leftover artifacts, including ${artcount_yes} namespaced artifacts and ${artcount_no} non-namespaced artifacts, wait time $((mnow - mstart)) seconds (max=$maxwaitsecs)."
 
         if [ ${artcount_yes} -gt 0 ]; then
           cat "$resfile_yes" | while read line; do
@@ -454,9 +458,9 @@ function genericDelete {
 
       if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
         if [ "$iteration" = "first" ]; then
-          echo "@@ Warning:  ${maxwaitsecs} seconds reached.   Will try deleting unexpected resources via kubectl delete."
+          echo "@@ `timestamp` Warning:  ${maxwaitsecs} seconds reached.   Will try deleting unexpected resources via kubectl delete."
         else
-          echo "@@ Error:  ${maxwaitsecs} seconds reached and possibly ${artcount_total} artifacts remaining.  Giving up."
+          echo "@@ `timestamp` Error:  ${maxwaitsecs} seconds reached and possibly ${artcount_total} artifacts remaining.  Giving up."
         fi
         break
       fi
@@ -469,12 +473,12 @@ function genericDelete {
 
 
 function fail {
-  echo @@ cleanup.sh: Error "$@"
+  echo @@ `timestamp` cleanup.sh: Error "$@"
   exit 1
 }
 
 
-echo "@@ RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT PV_ROOT=$PV_ROOT"
+echo "@@ `timestamp` RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT PV_ROOT=$PV_ROOT"
 
 mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
 
@@ -518,7 +522,7 @@ if [ -x "$(command -v helm)" ]; then
   [[ $? == 0 ]] && HELM_VERSION=V2
   [[ $? == 1 ]] && HELM_VERSION=V3
   echo "Detected Helm Version [$(helm version --short --client)]"
-  echo @@ Deleting installed helm charts
+  echo @@ `timestamp` Deleting installed helm charts
   namespaces=`kubectl get ns | grep -v NAME | awk '{ print $1 }'`
   for ns in $namespaces
   do 
@@ -537,9 +541,9 @@ if [ -x "$(command -v helm)" ]; then
      (
      helm list --short --namespace $ns | while read helm_name; do
        if [ "$HELM_VERSION" == "V2" ]; then
-         echo @@ Info: DRYRUN: helm delete --purge  $helm_name
+         echo @@ `timestamp` Info: DRYRUN: helm delete --purge  $helm_name
        else 
-         echo @@ Info: DRYRUN: helm uninstall $helm_name -n $ns 
+         echo @@ `timestamp` Info: DRYRUN: helm uninstall $helm_name -n $ns 
        fi
      done
      )
@@ -548,7 +552,7 @@ if [ -x "$(command -v helm)" ]; then
 
   # cleanup tiller artifacts
   if [ "$SHARED_CLUSTER" = "true" ]; then
-    echo @@ Skipping tiller delete.
+    echo @@ `timestamp` Skipping tiller delete.
     # TBD: According to MarkN no Tiller delete is needed.
     # kubectl $FAST_DELETE -n kube-system delete deployment tiller-deploy --ignore-not-found=true
     # kubectl $FAST_DELETE delete clusterrolebinding tiller-cluster-rule --ignore-not-found=true
@@ -571,7 +575,7 @@ deleteByTypeAndLabel
 #   arg2 - non-namespaced artifacts
 #   arg3 - keywords in deletable artifacts
 
-echo @@ Starting genericDelete
+echo @@ `timestamp` Starting genericDelete
 genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql"
 SUCCESS="$?"
 
@@ -583,20 +587,20 @@ if [ "${DELETE_FILES:-true}" = "true" ] && [ "$DRY_RUN" = "false" ]; then
 
   # Delete pv directories using a run (/sharedparent maps to PV_ROOT on the k8s cluster machines).
 
-  echo @@ Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
+  echo @@ `timestamp` Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
   # $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
   $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 600 -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/*/acceptance_test_pv'
   [ "$?" = "0" ] || SUCCESS="1"
-  echo @@ SUCCESS=$SUCCESS
+  echo @@ `timestamp` SUCCESS=$SUCCESS
 
   # Delete old test files owned by the current user.  
 
-  echo @@ Deleting local $RESULT_DIR contents.
+  echo @@ `timestamp` Deleting local $RESULT_DIR contents.
   rm -fr $RESULT_ROOT/*/acceptance_test_tmp
   [ "$?" = "0" ] || SUCCESS="1"
-  echo @@ SUCCESS=$SUCCESS
+  echo @@ `timestamp` SUCCESS=$SUCCESS
 
-  echo @@ Deleting /tmp/test_suite.\* files.
+  echo @@ `timestamp` Deleting /tmp/test_suite.\* files.
   rm -f /tmp/test_suite.*
 
 fi
@@ -607,14 +611,14 @@ if [ ! "$LEASE_ID" = "" ] && [ ! "$SUCCESS" = "0" ]; then
   # release the lease if we own it
   ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" > /tmp/release_lease.out 2>&1
   if [ "$?" = "0" ]; then
-    echo @@ Lease released.
+    echo @@ `timestamp` Lease released.
   else
-    echo @@ Lease could not be released:
+    echo @@ `timestamp` Lease could not be released:
     cat /tmp/release_lease.out
   fi
   rm -f /tmp/release_lease.out
 fi
 
-echo @@ Exiting with status $SUCCESS
+echo @@ `timestamp` Exiting with status $SUCCESS
 exit $SUCCESS
 
