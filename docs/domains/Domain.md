@@ -146,6 +146,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | --- | --- | --- |
 | `clusterName` | string | WebLogic cluster name. Required. |
 | `maximumReplicas` | number | The maximum number of cluster members. Required. |
+| `minimumReplicas` | number | The minimum number of cluster members. Required. |
 | `readyReplicas` | number | The number of ready cluster members. Required. |
 | `replicas` | number | The number of intended cluster members. Required. |
 

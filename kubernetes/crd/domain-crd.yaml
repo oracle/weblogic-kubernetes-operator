@@ -21150,6 +21150,10 @@ spec:
                 items:
                   type: object
                   properties:
+                    minimumReplicas:
+                      description: The minimum number of cluster members. Required.
+                      type: number
+                      minimum: 0.0
                     maximumReplicas:
                       description: The maximum number of cluster members. Required.
                       type: number
