@@ -169,6 +169,14 @@ public class WlsClusterConfig {
   }
 
   /**
+   * Returns the minimum size of the cluster.
+   * @return  For static clusters, the minimum size can be 0.  Dynamic servers will return the configured value.
+   */
+  public synchronized int getMinClusterSize() {
+    return hasDynamicServers() ? getMinDynamicClusterSize() : 0;
+  }
+
+  /**
    * Returns the name of the cluster that this WlsClusterConfig is created for.
    *
    * @return the name of the cluster that this WlsClusterConfig is created for
