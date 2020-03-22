@@ -1981,14 +1981,27 @@ public class TestUtils {
   }
 
   /**
-   * create configmap in given ns
+   * create configmap in the given namespace. Also creates label.
+   * @param cmName
+   * @param fileOrDirPath
+   * @param namespace
+   * @throws Exception
    */
   public static void createConfigMap(String cmName, String fileOrDirPath,
-                                     String namespace) throws Exception {
-    String str = "kubectl -n " + namespace
+                                     String namespace, String label) throws Exception {
+    String cmd = "kubectl -n " + namespace
         + " create configmap " + cmName
         + " --from-file=" + fileOrDirPath;
-    TestUtils.exec(str, true);
+    TestUtils.exec(cmd, true);
+
+    // create label for configmap
+    cmd =
+        "kubectl -n "
+            + namespace
+            + " label cm "
+            + cmName
+            + label;
+    TestUtils.exec(cmd);
   }
 
 }
