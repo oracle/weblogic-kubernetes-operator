@@ -95,7 +95,7 @@ Corresponding domain resource snippet:
 
 #### 5. Secrets for model macros
 
-Create additional secrets as needed by macros in your model files. For example, these can store database URLs and credentials that are accessed using `@@FILE` macros in your model that reference the secrets.  For a discussion of model macros, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}).
+Create additional secrets as needed by macros in your model files. For example, these can store database URLs and credentials that are accessed using `@@SECRET` macros in your model that reference the secrets.  For a discussion of model macros, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}).
 
 #### 6. Domain resource attributes
 
@@ -142,9 +142,9 @@ Assuming you have an RCU database that's running and initialized, here are the s
   ```
   domainInfo:
       RCUDbInfo:
-          rcu_prefix: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_prefix@@'
-          rcu_schema_password: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_schema_password@@'
-          rcu_db_conn_string: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_db_conn_string@@'
+          rcu_prefix:          '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access/rcu_prefix@@'
+          rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access/rcu_schema_password@@'
+          rcu_db_conn_string:  '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access/rcu_db_conn_string@@'
 
   ```
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-
 # This script contains the all the function of model in image
 # It is used by introspectDomain.sh job and starServer.sh
 
@@ -52,7 +51,12 @@ RCU_PASSWORD_CHANGED=5
 SCRIPT_ERROR=255
 
 export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
-export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="weblogic-cred=/weblogic-operator/secrets,weblogic-cred=/weblogic-operator/secrets"
+
+#TBD: CREDENTIALS_SECRET_NAME is unexpectedly empty. Maybe that's a regression?
+#  export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets,${CREDENTIALS_SECRET_NAME}=/weblogic-operator/secret"
+#For now:
+export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets"
+
 
 # sort_files  sort the files according to the names and naming conventions and write the result to stdout
 #    $1  directory

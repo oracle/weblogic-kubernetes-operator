@@ -15,7 +15,7 @@ description = "Model file requirements, macros, and loading order."
  - [Model file macros](#model-file-macros)
    - [Using secrets in model files](#using-secrets-in-model-files)
    - [Using environment variables in model files](#using-environment-variables-in-model-files)
-   - [Combining secrets and environment variable in model files](#combining-secrets-and-environment-variable-in-model-files)
+   - [Combining secrets and environment variables in model files](#combining-secrets-and-environment-variables-in-model-files)
 
 #### Introduction
 
@@ -30,8 +30,8 @@ Here's an example of a model `.yaml` file that defines a WebLogic Administration
 
 ```
 domainInfo:
-  AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
-  AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
+  AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+  AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
   ServerStartMode: 'prod'
 
 topology:
@@ -73,12 +73,12 @@ Some notes about the sample model file:
 
   - For most models, it's useful to minimize or eliminate the usage of model variable files (also known as property files) and use secrets or environment variables instead.
 
-- A model __must__ contain a `domainInfo` stanza that references your WebLogic administrative credentials. You can use the `@@FILE` macro to reference your domain resource's WebLogic credentials secret for this purpose. For example:
+- A model __must__ contain a `domainInfo` stanza that references your WebLogic administrative credentials. You can use the `@@SECRET` macro with the reserved secret name `__weblogic-credentials__` to reference your domain resource's WebLogic credentials secret for this purpose. For example:
 
     ```
     domainInfo:
-      AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
-      AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
+      AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+      AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
     ```
 - You can control the order that WDT uses to load your model files, see [Model file naming and loading order](#model-file-naming-and-loading-order).
 
@@ -118,14 +118,17 @@ Property files (ending in `.properties`) use the same sorting algorithm, but the
 
 ##### Using secrets in model files
 
-You can use WDT model `@@FILE` macros to reference the WebLogic administrator `username` and `password` keys that are stored in a Kubernetes secret and to optionally reference additional secrets.  These secrets must be deployed to the same namespace as your domain resource, and must be referenced in your domain resource using the `weblogicCredentialsSecret` and `configuration.secrets` fields. Here is the macro pattern for accessing these secrets:
+You can use WDT model `@@SECRET` macros to reference the WebLogic administrator `username` and `password` keys that are stored in a Kubernetes secret and to optionally reference additional secrets. Here is the macro pattern for accessing these secrets:
 
-  |Domain Resource Attribute|Corresponding WDT Model `@@FILE` Macro|
+
+  |Domain Resource Attribute|Corresponding WDT Model `@@SECRET` Macro|
   |---------------------|-------------|
-  |`webLogicCredentialsSecret`|`@@FILE:/weblogic-operator/secrets/username@@` and `@@FILE:/weblogic-operator/secrets/password@@`|
-  |`configuration.secrets`|`@@FILE:/weblogic-operator/config-overrides-secrets/SECRET_NAME/SECRET_KEY@@`|
+  |`webLogicCredentialsSecret`|`@@SECRET:__weblogic-credentials__:username@@` and `@@SECRET:__weblogic-credentials__:password@@`|
+  |`configuration.secrets`|`@@SECRET:mysecret:mykey@@`|
 
-For example, you can reference the WebLogic credential user name using `@@FILE:/weblogic-operator/secrets/username@@`, and you can reference a custom secret `mysecret` with key `mykey` using `@@FILE:/weblogic-operator/config-overrides-secrets/mysecret/mykey@@`.
+For example, you can reference the WebLogic credential user name using `@@SECRET:__weblogic-credentials__:username@@`, and you can reference a custom secret `mysecret` with key `mykey` using `@@SECRET:mysecret:mykey@@`.
+
+Any secrets that are referenced by an `@@SECRET` macro must be deployed to the same namespace as your domain resource, and must be referenced in your domain resource using the `weblogicCredentialsSecret` and `configuration.secrets` fields. 
 
 Here's a sample snippet from a domain resource that sets a `webLogicCredentialsSecret` and two custom secrets `my-custom-secret1` and `my-custom-secret2`.
 
@@ -141,12 +144,13 @@ Here's a sample snippet from a domain resource that sets a `webLogicCredentialsS
 
 ##### Using environment variables in model files
 
-You can reference operator environment variables in model files. This includes any that you define yourself in your domain resource, or the built-in `DOMAIN_UID` environment variable.  For example, the `@@ENV:DOMAIN_UID@@` macro resolves to the current domain's domain UID.
+You can reference operator environment variables in model files. This includes any that you define yourself in your domain resource, or the built-in `DOMAIN_UID` environment variable. 
 
-TBD test this once WDT releases this feature - feature dev is complete but unreleased as of 3/19
+For example, the `@@ENV:DOMAIN_UID@@` macro resolves to the current domain's domain UID.
 
-##### Combining secrets and environment variable in model files
+##### Combining secrets and environment variables in model files
 
-You can embed an environment variable macro in a secret macro. This is useful for referencing secrets that you've named based on your domain's `domainUID`. For example, if your `domainUID` is `domain1`, then the macro `@@FILE:/weblogic-operator/config-overrides-secrets/@@ENV:DOMAIN_UID@@-super-double-secret/mykey@@` resolves to the value stored on `mykey` for secret `domain1-super-double-secret`.
+You can embed an environment variable macro in a secret macro. This is useful for referencing secrets that you've named based on your domain's `domainUID`. 
 
-TBD test this once WDT releases the ENV feature - feature dev is complete but unreleased as of 3/19
+For example, if your `domainUID` is `domain1`, then the macro `@@SECRET:@@ENV:DOMAIN_UID@@-super-double-secret:mykey@@` resolves to the value stored in `mykey` for secret `domain1-super-double-secret`.
+
