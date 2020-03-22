@@ -10,16 +10,16 @@ HELM_VERSION=$(helm version --short --client)
 
 helm repo update
 export appname=grafana
-for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
+for p in `kubectl get po -l app=$appname -o name -n monitortestns `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
 
-kubectl --namespace monitoring create secret generic grafana-secret --from-literal=username=admin --from-literal=password=12345678
+kubectl --namespace monitortestns create secret generic grafana-secret --from-literal=username=admin --from-literal=password=12345678
 
 kubectl apply -f ${monitoringExporterEndToEndDir}/grafana/persistence.yaml
 echo "Detected Helm Version [${HELM_VERSION}]"
 if [[ "$HELM_VERSION" =~ "v2" ]]; then
-   helm install --wait --name grafana --namespace monitoring --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version ${grafanaVersionArgs}
+   helm install --wait --name grafana --namespace monitortestns --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version ${grafanaVersionArgs}
 elif [[ "$HELM_VERSION" =~ "v3" ]]; then
-   helm install  grafana --wait --namespace monitoring --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version ${grafanaVersionArgs}
+   helm install  grafana --wait --namespace monitortestns --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version ${grafanaVersionArgs}
 else
     echo "Detected Unsuppoted Helm Version [${HELM_VERSION}]"
     exit 1
