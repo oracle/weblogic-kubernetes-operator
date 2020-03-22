@@ -88,7 +88,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static String domainNS1;
   private static String domainNS2;
   private static String currentDateTime;
-
+  private static final String monitoringNS = "monitortestns";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -309,7 +309,7 @@ public class ItMonitoringExporter extends BaseTest {
     domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
 
     String webhookPod = getPodName("name=webhook", "monitoring");
-    String command = "kubectl -n monitoring logs " + webhookPod;
+    String command = "kubectl -n " + monitoringNS + " logs " + webhookPod;
     TestUtils.checkAnyCmdInLoop(command, "scaleup hook triggered successfully");
 
     TestUtils.checkPodCreated(domain.getDomainUid() + "-managed-server2", domain.getDomainNs());
@@ -868,7 +868,7 @@ public class ItMonitoringExporter extends BaseTest {
                                                   String domainNS,
                                                   String domainUid) throws Exception {
     String crdCmd =
-        " kubectl -n monitoring get cm prometheus-server -oyaml > "
+        " kubectl -n " + monitoringNS + " get cm prometheus-server -oyaml > "
             + monitoringExporterEndToEndDir
             + "/cm.yaml";
     TestUtils.exec(crdCmd);
@@ -878,7 +878,10 @@ public class ItMonitoringExporter extends BaseTest {
         monitoringExporterEndToEndDir + "/cm.yaml",
         oldDomainNS + ";" + oldDomainUid + ";cluster-1", domainNS + ";" + domainUid
             + ";cluster-1");
-    crdCmd = " kubectl -n monitoring apply -f " + monitoringExporterEndToEndDir + "/cm.yaml";
+    crdCmd = " kubectl -n " + monitoringNS
+        + " apply -f "
+        + monitoringExporterEndToEndDir
+        + "/cm.yaml";
     TestUtils.exec(crdCmd);
   }
 
@@ -1012,6 +1015,12 @@ public class ItMonitoringExporter extends BaseTest {
         monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "%PV_ROOT%", pvDir);
     replaceStringInFile(
         monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "%PV_ROOT%", pvDir);
+    replaceStringInFile(
+        monitoringExporterEndToEndDir + "/prometheus/persistence.yaml", "monitoring", monitoringNS);
+    replaceStringInFile(
+        monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "monitoring", monitoringNS);
+    replaceStringInFile(
+        monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "monitoring", monitoringNS);
 
   }
 
@@ -1173,7 +1182,7 @@ public class ItMonitoringExporter extends BaseTest {
 
   static void checkPromGrafana(String searchKey, String expectedVal) throws Exception {
 
-    String crdCmd = "kubectl -n monitoring get pods -l app=prometheus";
+    String crdCmd = "kubectl -n " + monitoringNS + " get pods -l app=prometheus";
     ExecResult resultStatus = ExecCommand.exec(crdCmd);
     LoggerHelper.getLocal().log(Level.INFO, "Status of the pods " + resultStatus.stdout());
 
@@ -1181,13 +1190,13 @@ public class ItMonitoringExporter extends BaseTest {
         resultStatus.stdout().contains("CrashLoopBackOff")
             || resultStatus.stdout().contains("Error"),
         "Can't create prometheus pods");
-    crdCmd = "kubectl -n monitoring get pods -l app=grafana";
+    crdCmd = "kubectl -n " + monitoringNS + " get pods -l app=grafana";
     resultStatus = ExecCommand.exec(crdCmd);
     LoggerHelper.getLocal().log(Level.INFO, "Status of the pods " + resultStatus.stdout());
 
-    String podName = getPodName("app=grafana", "monitoring");
+    String podName = getPodName("app=grafana", monitoringNS);
     assertNotNull("Grafana pod was not created", podName);
-    TestUtils.checkPodReady(podName, "monitoring");
+    TestUtils.checkPodReady(podName, monitoringNS);
 
     String myhost = domain.getHostNameForCurl();
     LoggerHelper.getLocal().log(Level.INFO, "installing grafana dashboard");
@@ -1237,8 +1246,8 @@ public class ItMonitoringExporter extends BaseTest {
         "setupWebHook.sh",
         webhookDir + " " + webhookResourceDir + " " + operator.getOperatorNamespace(),
         "setupWebHook.out");
-    String webhookPod = getPodName("name=webhook", "monitoring");
-    TestUtils.checkPodReady(webhookPod, "monitoring");
+    String webhookPod = getPodName("name=webhook", monitoringNS);
+    TestUtils.checkPodReady(webhookPod, monitoringNS);
   }
 
   /**
