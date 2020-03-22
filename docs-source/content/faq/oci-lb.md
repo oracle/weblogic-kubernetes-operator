@@ -1,7 +1,8 @@
 ---
-title: "Using an OCI Load Balancer"
+title: "Using an OCI load balancer"
 date: 2019-09-25T12:41:38-04:00
 draft: false
+weight: 50
 ---
 
 If you are running your Kubernetes cluster on Oracle Container Engine
@@ -25,7 +26,7 @@ cluster.
 {{% /notice %}}
 
 
-#### Requesting an OCI Load Balancer
+#### Requesting an OCI load balancer
 
 When your domain is created by the operator, a number of Kubernetes
 services are created by the operator, including one for the WebLogic
