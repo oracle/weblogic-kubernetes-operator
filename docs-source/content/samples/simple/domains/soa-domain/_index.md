@@ -19,13 +19,57 @@ artifacts of the corresponding domain.
 
 #### Prerequisites
 
-Before you begin, we recommend the following:
+Before you begin, perform the following steps:
 
 * Review the [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}) documentation.
-* Review the [operator prerequisites](https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/#operator-prerequisites)
-section for the supported versions of Kubernetes and Helm.
-* Complete the preliminary required steps documented [here]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md" >}}).
+* Review the [system requirements]({{< relref "/userguide/managing-fmw-domains/soa-suite#prerequisites-for-soa-suite-domains" >}}) for deploying Oracle SOA Suite domains on Kubernetes.
+* Make sure that Kubernetes is set up in the environment. For details, see the [Kubernetes setup guide]({{< relref "/userguide/overview/k8s-setup.md" >}}).
+* Make sure that the WebLogic Kubernetes operator is running. See [Manage operators]({{< relref "/userguide/managing-operators/_index.md" >}}) for operator infrastructure setup and [Install the operator]({{< relref "/userguide/managing-operators/installation/_index.md" >}}) for operator installation. Make sure you install the operator version 2.4.0.
+* Create a Kubernetes namespace (for example, `soans`) for the domain unless you intend to use the default namespace. Use the newly created namespace in all the other steps.
+For details, see [Prepare to run a domain]({{< relref "/userguide/managing-domains/prepare.md" >}}).
 
+  ```
+   $ kubectl create namespace soans
+  ```
+
+* In the Kubernetes namespace created above, create the PV and PVC for the database
+by running the [create-pv-pvc.sh]({{< relref "/samples/simple/storage/_index.md" >}}) script.
+Follow the instructions for using the scripts to create a PV and PVC.
+
+    * Change the values in the [create-pv-pvc-inputs.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml) file based on your requirements.
+
+    * Ensure that the path mentioned for the `weblogicDomainStoragePath` property does exists (if not, you need to create it), has read and write access permissions, and it must be an empty directory.
+
+* Create the Kubernetes secrets `username` and `password` of the administrative account in the same Kubernetes
+  namespace as the domain. For details, see this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/README.md).
+
+    ```bash
+    $ cd kubernetes/samples/scripts/create-weblogic-domain-credentials
+    $ ./create-weblogic-credentials.sh -u weblogic -p Welcome1 -n soans -d soainfra -s soainfra-domain-credentials
+    ```
+
+    You can check the secret with the `kubectl get secret` command. See the following example, including the output:
+
+    ```bash
+    $ kubectl get secret soainfra-domain-credentials -o yaml -n soans
+    apiVersion: v1
+    data:
+      password: V2VsY29tZTE=
+      username: d2VibG9naWM=
+    kind: Secret
+    metadata:
+      creationTimestamp: 2019-06-02T07:05:25Z
+      labels:
+        weblogic.domainName: soainfra
+        weblogic.domainUID: soainfra
+      name: soainfra-domain-credentials
+      namespace: soans
+      resourceVersion: "11561988"
+      selfLink: /api/v1/namespaces/soans/secrets/soainfra-domain-credentials
+      uid: a91ef4e1-6ca8-11e9-8143-fa163efa261a
+    type: Opaque
+    ```
+* Complete the other preliminary required steps documented [here]({{< relref "/userguide/managing-fmw-domains/soa-suite/_index.md" >}}).
 
 #### Prepare to use the create domain script
 
