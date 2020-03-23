@@ -37,13 +37,17 @@ import org.junit.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
+import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.AllOf.allOf;
@@ -97,7 +101,7 @@ public class DomainIntrospectorJobTest {
   }
 
   private String[] getMessageKeys() {
-    return new String[] {getJobCreatedMessageKey(), getJobDeletedMessageKey()};
+    return new String[] {getJobCreatedMessageKey(), getJobDeletedMessageKey(), getNoClusterInDomainMessageKey()};
   }
 
   /**
@@ -151,9 +155,13 @@ public class DomainIntrospectorJobTest {
     return JOB_DELETED;
   }
 
+  private String getNoClusterInDomainMessageKey() {
+    return NO_CLUSTER_IN_DOMAIN;
+  }
+
   @Test
   public void whenNoJob_createIt() throws JsonProcessingException {
-    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig());
+    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig("cluster-1"));
     testSupport.defineResources(
         new V1ConfigMap()
             .metadata(
@@ -167,8 +175,8 @@ public class DomainIntrospectorJobTest {
     assertThat(logRecords, containsInfo(getJobDeletedMessageKey()));
   }
 
-  private static WlsDomainConfig createDomainConfig() {
-    WlsClusterConfig clusterConfig = new WlsClusterConfig("cluster-1");
+  private static WlsDomainConfig createDomainConfig(String clusterName) {
+    WlsClusterConfig clusterConfig = new WlsClusterConfig(clusterName);
     for (String serverName : MANAGED_SERVER_NAMES) {
       clusterConfig.addServerConfig(new WlsServerConfig(serverName, "domain1-" + serverName, 8001));
     }
@@ -250,6 +258,43 @@ public class DomainIntrospectorJobTest {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(terminalStep.wasRun(), is(false));
+  }
+
+  @Test
+  public void whenIntrospectorJobIsRun_validatesDomainTopology() throws JsonProcessingException {
+    // create WlsDomainConfig with "cluster-2" whereas domain spec contains cluster-1
+    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig("cluster-2"));
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsInfo(getJobCreatedMessageKey()));
+    assertThat(logRecords, containsInfo(getJobDeletedMessageKey()));
+    assertThat(logRecords, containsWarning(getNoClusterInDomainMessageKey()));
+  }
+
+  @Test
+  public void whenIntrospectorJobNotNeeded_validatesDomainTopology() throws JsonProcessingException {
+    // create WlsDomainConfig with "cluster-2" whereas domain spec contains "cluster-1"
+    WlsDomainConfig wlsDomainConfig = createDomainConfig("cluster-2");
+    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(wlsDomainConfig);
+
+    // make JobHelper.runIntrospector() return false
+    getCluster("cluster-1").setServerStartPolicy(START_NEVER);
+    domain.getSpec().setServerStartPolicy(START_NEVER);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, wlsDomainConfig);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsWarning(getNoClusterInDomainMessageKey()));
+  }
+
+  private Cluster getCluster(String clusterName) {
+    for (Cluster cluster: domain.getSpec().getClusters()) {
+      if (clusterName.equals(cluster.getClusterName())) {
+        return cluster;
+      }
+    }
+    return null;
   }
 
   private String getDomainHome() {
