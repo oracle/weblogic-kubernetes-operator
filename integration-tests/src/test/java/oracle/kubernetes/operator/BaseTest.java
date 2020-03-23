@@ -5,7 +5,10 @@ package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -77,6 +80,10 @@ public class BaseTest {
   private static String weblogicImageDevTag;
   private static String weblogicImageName;
   private static String weblogicImageServer;
+  private static String oracledbImageTag;
+  private static String oracledbImageName;
+  private static String fmwImageTag;
+  private static String fmwImageName;
   private static String domainApiVersion;
   private static int suffixCount = 0;
 
@@ -200,6 +207,22 @@ public class BaseTest {
         System.getenv("OCR_SERVER") != null
             ? System.getenv("OCR_SERVER")
             : appProps.getProperty("OCR_SERVER");
+    fmwImageTag =
+        System.getenv("IMAGE_TAG_FMWINFRA") != null
+            ? System.getenv("IMAGE_TAG_FMWINFRA")
+            : appProps.getProperty("fmwImageTag");
+    fmwImageName =
+        System.getenv("IMAGE_NAME_FMWINFRA") != null
+            ? System.getenv("IMAGE_NAME_FMWINFRA")
+            : appProps.getProperty("fmwImageName");
+    oracledbImageTag =
+        System.getenv("IMAGE_TAG_ORACLEDB") != null
+            ? System.getenv("IMAGE_TAG_ORACLEDB")
+            : appProps.getProperty("oracledbImageTag");
+    oracledbImageName =
+        System.getenv("IMAGE_NAME_ORACLEDB") != null
+            ? System.getenv("IMAGE_NAME_ORACLEDB")
+            : appProps.getProperty("oracledbImageName");
     domainApiVersion =
         System.getenv("DOMAIN_API_VERSION") != null
             ? System.getenv("DOMAIN_API_VERSION")
@@ -227,8 +250,15 @@ public class BaseTest {
             : appProps.getProperty("MONITORING_EXPORTER_BRANCH", "master");
 
     maxIterationsPod =
-        new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
-    waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
+        Integer.parseInt(System.getenv("MAX_ITERATIONS") != null
+            ? System.getenv("MAX_ITERATIONS")
+            : appProps.getProperty("maxIterationsPod", "" + maxIterationsPod));
+
+    waitTimePod =
+        Integer.parseInt(System.getenv("WAIT_TIME_SECONDS") != null
+            ? System.getenv("WAIT_TIME_SECONDS")
+            : appProps.getProperty("waitTimePod", "" + waitTimePod));
+
     if (System.getenv("RESULT_ROOT") != null) {
       resultRootCommon = System.getenv("RESULT_ROOT");
     } else {
@@ -355,6 +385,42 @@ public class BaseTest {
    */
   public static String getWeblogicImageServer() {
     return weblogicImageServer;
+  }
+  
+  /**
+   * getter method for fmwImageTag field.
+   *
+   * @return image tag of the FMW docker images
+   */
+  public static String getfmwImageTag() {
+    return fmwImageTag;
+  }
+
+  /**
+   * getter method for fmwImageName.
+   *
+   * @return image name of the FMW docker image
+   */
+  public static String getfmwImageName() {
+    return fmwImageName;
+  }
+
+  /**
+   * getter method for oracledbImageTag field.
+   *
+   * @return image tag of the Oracle DB docker images
+   */
+  public static String getOracledbImageTag() {
+    return oracledbImageTag;
+  }
+
+  /**
+   * getter method for oracledbImageName.
+   *
+   * @return image name of the Oracle DB docker image
+   */
+  public static String getOracledbImageName() {
+    return oracledbImageName;
   }
 
   public static String getDomainApiVersion() {
@@ -1004,10 +1070,17 @@ public class BaseTest {
         "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
     domainMap.put("logHomeOnPV", "true");
     domainMap.put("clusterType", "CONFIGURED");
+
+    // To get unique image name
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    Date date = new Date();
+    String currentDateTime = dateFormat.format(date) + "-" + System.currentTimeMillis();
+
     if (prefix != null && !prefix.trim().equals("")) {
-      domainMap.put("image", prefix.toLowerCase() + "-dominimage-" + suffixCount + ":latest");
+      domainMap.put("image", prefix.toLowerCase() + "-dominimage-"
+          + suffixCount + ":" + currentDateTime);
     } else {
-      domainMap.put("image", "dominimage-" + suffixCount + ":latest");
+      domainMap.put("image", "dominimage-" + suffixCount + ":" + currentDateTime);
     }
     return domainMap;
   }

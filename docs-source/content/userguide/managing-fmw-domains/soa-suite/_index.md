@@ -193,12 +193,8 @@ Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 Follow these instructions to perform a basic deployment of the Oracle
 database in Kubernetes. For more details about database setup and configuration, refer to this [page]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#running-the-database-inside-kubernetes" >}}).
 
-When running the Oracle database in Kubernetes, you have an option
-to attach persistent volumes (PV) so that the database storage will
-be persisted across database restarts.
-If you prefer not to persist the database storage, follow the instructions in this
-[document](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-schema#create-the-rcu-schema-in-the-oracle-database)
-to set up a database in a container with no persistent volume (PV) attached.
+When running the Oracle database in Kubernetes, you have an option to attach persistent volumes (PV) so that the database storage will be persisted across database restarts. If you prefer not to persist the database storage, follow the instructions in this
+[document](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-schema#start-an-oracle-database-service-in-a-kubernetes-cluster) to set up a database in a container with no persistent volume (PV) attached.
 
 >**NOTE**: `start-db-service.sh` creates the database in the `default` namespace. If you
 >want to create the database in a different namespace, you need to manually update
@@ -422,7 +418,7 @@ Now you can access the Oracle SOA Suite domain URLs, as listed below, based on t
 
   http://\<hostname\>:\<port\>/weblogic/ready  
   http://\<hostname\>:\<port\>/console  
-  http://\<hostname\>:\<port\>/em
+  http://\<hostname\>:\<port\>/em  
   http://\<hostname\>:\<port\>/soa-infra  
   http://\<hostname\>:\<port\>/soa/composer  
   http://\<hostname\>:\<port\>/integration/worklistapp
