@@ -18,14 +18,13 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 
 Please be aware of the following important considerations for WebLogic domains running in Kubernetes:
 
-* _Domain Home Location:_ The WebLogic domain home location is determined by the domain resource `domainHome`, if specified; otherwise, a default location is determined by the `domainHomeSourceType` setting. If the domain resource `domainHome` field is not specified
-  and `domainHomeSourceType` is `Image` (the default), then the operator will
-  assume that the domain home is a directory under `/u01/oracle/user_projects/domains/` and report an error if no domain is found
-  or more than one domain is found.  If the domain resource `domainHome` field is not specified and `domainHomeSourceType` is `PersistentVolume`, then the operator will
-  assume that the domain home is `/shared/domains/DOMAIN_UID`. Finally, if the domain resource `domainHome` field is not specified and the `domainHomeSourceType` is `FromModel`, then the
-  operator will assume that the domain home is `/u01/domains/DOMAIN_UID`.
+* _Domain Home Location:_ The WebLogic domain home location is determined by the domain resource `domainHome`, if specified; otherwise, a default location is determined by the `domainHomeSourceType` setting. 
+  - If the domain resource `domainHome` field is not specified and `domainHomeSourceType` is `Image` (the default), then the operator will assume that the domain home is a directory under `/u01/oracle/user_projects/domains/` and report an error if no domain is found or more than one domain is found.  
+  - If the domain resource `domainHome` field is not specified and `domainHomeSourceType` is `PersistentVolume`, then the operator will assume that the domain home is `/shared/domains/DOMAIN_UID`. 
+  - Finally, if the domain resource `domainHome` field is not specified and the `domainHomeSourceType` is `FromModel`, then the operator will assume that the domain home is `/u01/domains/DOMAIN_UID`.
+  
   {{% notice warning %}}
-  Oracle strongly recommends storing an image containing a WebLogic domain home
+  Oracle strongly recommends storing an image containing a WebLogic domain home (`domainHomeSourceType` is `Image`)
   as private in the registry (for example, Oracle Cloud Infrastructure Registry, Docker Hub, and such).
   A Docker image that contains a WebLogic domain has sensitive information including
   keys and credentials that are used access external resources (for example, data source password).

@@ -35,7 +35,7 @@ Supported domain types:
 
 There are three types of domains supported by Model in Image: a standard `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, or a `RestrictedJRF` domain.
 
-The `JRF` domain path through the sample includes additional steps for deploying an infrastructure database and initializing the database using the Repository Creation Utility (RCU) tool. `JRF` domains may be  used by Oracle products that layer on top of WebLogic Server such as SOA, OSB, and FA. Similarly, `RestrictedJRF` domains may be used by Oracle layered products such as Oracle Communications products.
+The `JRF` domain path through the sample includes additional steps for deploying an infrastructure database and initializing the database using the Repository Creation Utility (RCU) tool. `JRF` domains may be  used by Oracle products that layer on top of WebLogic Server such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products such as Oracle Communications products.
 
 ### References
 
@@ -48,7 +48,7 @@ To reference the relevant user documentation, see:
 
 ### Prerequisites for all domain types
 
-1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK8 installation. (`JAVA_HOME` is used by the WebLogic Image Tool.)
+1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 installation. (`JAVA_HOME` is used by the WebLogic Image Tool.)
 
 2. Set a source directory environment variable `SRCDIR` that references the parent of the operator source tree. For example:
 
