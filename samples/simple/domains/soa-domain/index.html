@@ -12,18 +12,18 @@
     <title>SOA domain :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1584968780" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1584968780"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1584555384"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1584555384"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1584968780"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1584968780"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1584555384"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1584968780"></script>
 
     
   </div>
@@ -2657,12 +2657,65 @@ existing Kubernetes persistent volume (PV) and persistent volume claim (PVC). Th
 also generate the domain YAML file, which can then be used to start the Kubernetes
 artifacts of the corresponding domain.</p>
 <h4 id="prerequisites">Prerequisites</h4>
-<p>Before you begin, we recommend the following:</p>
+<p>Before you begin, perform the following steps:</p>
 <ul>
-<li>Review the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/">Domain resource</a> documentation.</li>
-<li>Review the <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/#operator-prerequisites">operator prerequisites</a>
-section for the supported versions of Kubernetes and Helm.</li>
-<li>Complete the preliminary required steps documented <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/">here</a>.</li>
+<li>
+<p>Review the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/">Domain resource</a> documentation.</p>
+</li>
+<li>
+<p>Review the <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/#prerequisites-for-soa-suite-domains">system requirements</a> for deploying Oracle SOA Suite domains on Kubernetes.</p>
+</li>
+<li>
+<p>Make sure that Kubernetes is set up in the environment. For details, see the <a href="/weblogic-kubernetes-operator/userguide/overview/k8s-setup/">Kubernetes setup guide</a>.</p>
+</li>
+<li>
+<p>Make sure that the WebLogic Kubernetes operator is running. See <a href="/weblogic-kubernetes-operator/userguide/managing-operators/">Manage operators</a> for operator infrastructure setup and <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/">Install the operator</a> for operator installation. Make sure you install the operator version 2.4.0.</p>
+</li>
+<li>
+<p>Create a Kubernetes namespace (for example, <code>soans</code>) for the domain unless you intend to use the default namespace. Use the newly created namespace in all the other steps.
+For details, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/prepare/">Prepare to run a domain</a>.</p>
+<pre><code> $ kubectl create namespace soans
+</code></pre></li>
+<li>
+<p>In the Kubernetes namespace created above, create the PV and PVC for the database
+by running the <a href="/weblogic-kubernetes-operator/samples/simple/storage/">create-pv-pvc.sh</a> script.
+Follow the instructions for using the scripts to create a PV and PVC.</p>
+<ul>
+<li>
+<p>Change the values in the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml">create-pv-pvc-inputs.yaml</a> file based on your requirements.</p>
+</li>
+<li>
+<p>Ensure that the path mentioned for the <code>weblogicDomainStoragePath</code> property does exists (if not, you need to create it), has read and write access permissions, and it must be an empty directory.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Create the Kubernetes secrets <code>username</code> and <code>password</code> of the administrative account in the same Kubernetes
+namespace as the domain. For details, see this <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/README.md">document</a>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cd kubernetes/samples/scripts/create-weblogic-domain-credentials
+$ ./create-weblogic-credentials.sh -u weblogic -p Welcome1 -n soans -d soainfra -s soainfra-domain-credentials
+</code></pre></div><p>You can check the secret with the <code>kubectl get secret</code> command. See the following example, including the output:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get secret soainfra-domain-credentials -o yaml -n soans
+apiVersion: v1
+data:
+  password: V2VsY29tZTE<span style="color:#f92672">=</span>
+  username: d2VibG9naWM<span style="color:#f92672">=</span>
+kind: Secret
+metadata:
+  creationTimestamp: 2019-06-02T07:05:25Z
+  labels:
+    weblogic.domainName: soainfra
+    weblogic.domainUID: soainfra
+  name: soainfra-domain-credentials
+  namespace: soans
+  resourceVersion: <span style="color:#e6db74">&#34;11561988&#34;</span>
+  selfLink: /api/v1/namespaces/soans/secrets/soainfra-domain-credentials
+  uid: a91ef4e1-6ca8-11e9-8143-fa163efa261a
+type: Opaque
+</code></pre></div></li>
+<li>
+<p>Complete the other preliminary required steps documented <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/">here</a>.</p>
+</li>
 </ul>
 <h4 id="prepare-to-use-the-create-domain-script">Prepare to use the create domain script</h4>
 <p>The sample scripts for Oracle SOA Suite domain deployment are available at <code>&lt;weblogic-kubernetes-operator-project&gt;/kubernetes/samples/scripts/create-soa-domain</code>.</p>
@@ -5018,19 +5071,19 @@ home that is generated using the <code>create-domain.sh</code> script. Do this b
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1584968780"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1584968780"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1584555384" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1584555384"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1584968780" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1584968780"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

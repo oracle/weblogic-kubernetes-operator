@@ -12,18 +12,18 @@
     <title>Manage SOA domains :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1584555384" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1584555384" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1584968780" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1584968780" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1584968780"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1584555384"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1584555384"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1584968780"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1584968780"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1584555384"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1584968780"></script>
 
     
   </div>
@@ -2790,12 +2790,8 @@ Oracle Support for Database Running on Docker (Doc ID 2216342.1).</p>
 <h5 id="running-the-database-inside-kubernetes">Running the database inside Kubernetes</h5>
 <p>Follow these instructions to perform a basic deployment of the Oracle
 database in Kubernetes. For more details about database setup and configuration, refer to this <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/#running-the-database-inside-kubernetes">page</a>.</p>
-<p>When running the Oracle database in Kubernetes, you have an option
-to attach persistent volumes (PV) so that the database storage will
-be persisted across database restarts.
-If you prefer not to persist the database storage, follow the instructions in this
-<a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-schema#create-the-rcu-schema-in-the-oracle-database">document</a>
-to set up a database in a container with no persistent volume (PV) attached.</p>
+<p>When running the Oracle database in Kubernetes, you have an option to attach persistent volumes (PV) so that the database storage will be persisted across database restarts. If you prefer not to persist the database storage, follow the instructions in this
+<a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-schema#start-an-oracle-database-service-in-a-kubernetes-cluster">document</a> to set up a database in a container with no persistent volume (PV) attached.</p>
 <blockquote>
 <p><strong>NOTE</strong>: <code>start-db-service.sh</code> creates the database in the <code>default</code> namespace. If you
 want to create the database in a different namespace, you need to manually update
@@ -2975,7 +2971,7 @@ voyager:
 <p>Oracle SOA:</p>
 <p>http://&lt;hostname&gt;:&lt;port&gt;/weblogic/ready<br>
 http://&lt;hostname&gt;:&lt;port&gt;/console<br>
-http://&lt;hostname&gt;:&lt;port&gt;/em
+http://&lt;hostname&gt;:&lt;port&gt;/em<br>
 http://&lt;hostname&gt;:&lt;port&gt;/soa-infra<br>
 http://&lt;hostname&gt;:&lt;port&gt;/soa/composer<br>
 http://&lt;hostname&gt;:&lt;port&gt;/integration/worklistapp</p>
@@ -4786,19 +4782,19 @@ See <a href="https://github.com/oracle/weblogic-logging-exporter">Publish logs t
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1584968780"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1584555384"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1584555384"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1584968780"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1584968780"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1584555384" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1584555384"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1584968780" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1584968780"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
