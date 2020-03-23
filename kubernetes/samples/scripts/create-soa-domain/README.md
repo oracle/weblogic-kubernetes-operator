@@ -25,4 +25,11 @@ Refer to the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/
 
 ### Getting started
 
-The fastest way to experience the operator is to follow the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/).
+For detailed information about deploying Oracle SOA Suite domains, see the [User guide](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/).
+
+### Additional Resources
+
+* [Using JDeveloper to Deploy Composites](https://blogs.oracle.com/integration/deploying-soa-composites-from-oracle-jdeveloper-to-oracle-soa-in-weblogic-kubernetes-operator-environment)
+* [Expose T3 protocol for Managed Servers in SOA Domain](https://blogs.oracle.com/integration/expose-t3-protocol-for-managed-servers-in-soa-domain-on-kubernetes) 
+* [Persisting SOA Adapters Customizations](https://blogs.oracle.com/integration/persisting-soa-adapters-customizations)
+
