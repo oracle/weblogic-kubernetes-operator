@@ -11,25 +11,25 @@ monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/en
 
 sed -i "s/default;domain1/${domainNS};${domainNS}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
 
-kubectl create ns monitoring
+kubectl create ns monitortestns
 
 kubectl apply -f ${monitoringExporterEndToEndDir}/prometheus/persistence.yaml
 kubectl apply -f ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.yaml
-kubectl get pv -n monitoring
-kubectl get pvc -n monitoring
+kubectl get pv -n monitortestns
+kubectl get pvc -n monitortestns
 
 HELM_VERSION=$(helm version --short --client)
 
 helm repo update
 
 export appname=prometheus
-for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
+for p in `kubectl get po -l app=$appname -o name -n monitortestns `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
 
 if [[ "$HELM_VERSION" =~ "v2" ]]; then
-  helm install --wait --name prometheus --namespace monitoring --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus  --version ${promVersionArgs}
+  helm install --wait --name prometheus --namespace monitortestns --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus  --version ${promVersionArgs}
 elif [[ "$HELM_VERSION" =~ "v3" ]]; then
-  helm install prometheus --wait --namespace monitoring --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus  --version ${promVersionArgs}
-POD_NAME=$(kubectl get pod -l app=prometheus -n monitoring -o jsonpath="{.items[0].metadata.name}")
+  helm install prometheus --wait --namespace monitortestns --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus  --version ${promVersionArgs}
+POD_NAME=$(kubectl get pod -l app=prometheus -n monitortestns -o jsonpath="{.items[0].metadata.name}")
 else
     echo "Detected Unsuppoted Helm Version [${HELM_VERSION}]"
     exit 1

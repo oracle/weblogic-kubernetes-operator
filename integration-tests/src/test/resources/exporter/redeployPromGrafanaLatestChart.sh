@@ -20,18 +20,18 @@ else
 fi
 
 export appname=grafana
-for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
+for p in `kubectl get po -l app=$appname -o name -n monitortestns `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
 
 export appname=prometheus
-for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
+for p in `kubectl get po -l app=$appname -o name -n monitortestns `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
 
 sed -i "s/${domainNS2};${domainNS2}/${domainNS1};${domainNS1}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
 if [[ "$HELM_VERSION" =~ "v2" ]]; then
-  helm install --wait --name prometheus --namespace monitoring --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus
-  helm install --wait --name grafana --namespace monitoring --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version=3.12.0
+  helm install --wait --name prometheus --namespace monitortestns --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus
+  helm install --wait --name grafana --namespace monitortestns --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version=3.12.0
 elif [[ "$HELM_VERSION" =~ "v3" ]]; then
-  helm install prometheus --wait --namespace monitoring --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus
-  helm install grafana --wait --namespace monitoring --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version=3.12.0
+  helm install prometheus --wait --namespace monitortestns --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus
+  helm install grafana --wait --namespace monitortestns --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version=3.12.0
 else
     echo "Detected Unsuppoted Helm Version [${HELM_VERSION}]"
     exit 1
