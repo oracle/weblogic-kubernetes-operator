@@ -38,8 +38,9 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   @Range(minimum = 0)
   private Integer maximumReplicas;
 
-  /** The requested number of cluster members. Required. */
-  @Description("The requested number of cluster members. Required.")
+  /** The requested number of cluster members from the domain spec. */
+  @Description("The requested number of cluster members from the domain spec. "
+      + "Cluster members will be started by the operator if this value is larger than zero.")
   @Range(minimum = 0)
   private Integer replicasGoal;
 

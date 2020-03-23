@@ -148,7 +148,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | `maximumReplicas` | number | The maximum number of cluster members. Required. |
 | `readyReplicas` | number | The number of ready cluster members. Required. |
 | `replicas` | number | The number of intended cluster members. Required. |
-| `replicasGoal` | number | The requested number of cluster members. Required. |
+| `replicasGoal` | number | The requested number of cluster members from the domain spec. Cluster members will be started by the operator if this value is larger than zero. |
 
 ### Domain Condition
 
