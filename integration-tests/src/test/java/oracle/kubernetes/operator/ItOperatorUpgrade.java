@@ -104,7 +104,7 @@ public class ItOperatorUpgrade extends BaseTest {
         operator.destroy();
       }
       TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
-      TestUtils.exec("kubectl get crd domains.weblogic.oracle --ignore-not-found");
+      TestUtils.exec("kubectl delete crd domains.weblogic.oracle --ignore-not-found");
       //ExecResult result = cleanup();
       LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
     }
@@ -155,7 +155,7 @@ public class ItOperatorUpgrade extends BaseTest {
    * 
    * The .apiVersion of the domain will not be updated until the domain is 
    * written again (e.g. by the operator when updating status)
-   * This contributes to long timepreiod. We can skip this check 
+   * This contributes to long time period. We can skip this check 
    *
    * @throws Exception when version does not match
    */
@@ -272,7 +272,7 @@ public class ItOperatorUpgrade extends BaseTest {
     domNs.add(DOM_NS);
     operatorMap.put("domainNamespaces", domNs);
     operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
-    Map<String, Object> wlstDomainMap = createDomainInImageMap(getNewSuffixCount(), false, testClassName);
+    Map<String, Object> wlstDomainMap = createDomainMap(getNewSuffixCount(),testClassName);
     wlstDomainMap.put("domainUID", DUID);
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
