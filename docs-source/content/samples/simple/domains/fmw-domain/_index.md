@@ -179,10 +179,10 @@ metadata:
 spec:
   # The WebLogic Domain Home
   domainHome: /shared/domains/fmw-domain
-  # If the domain home is in the image
+  # Set domain home type to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image
   domainHomeSourceType: PersistentVolume
   # The WebLogic Server Docker image that the Operator uses to start the domain
-  image: “container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4"
+  image: "container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
   # Identify which Secret contains the credentials for pulling an image

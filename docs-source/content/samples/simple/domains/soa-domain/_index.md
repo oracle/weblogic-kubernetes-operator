@@ -205,7 +205,7 @@ spec:
   # The WebLogic Domain Home
   domainHome: /u01/oracle/user_projects/domains/soainfra
 
-  # If the domain home is in the image
+  # Set domain home type to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image
   domainHomeSourceType: PersistentVolume
 
   # The WebLogic Server Docker image that the Operator uses to start the domain
