@@ -390,7 +390,7 @@ class SOA12213Provisioner:
         self.applyOSBTemplates()
         print 'Extension Templates added'
 
-        if 'osb_server1' not in self.ADDL_MANAGED_SERVERS:
+        if 'osb_server1' not in self.MANAGED_SERVERS and 'osb_server1' not in self.ADDL_MANAGED_SERVERS:
             print 'INFO: deleting osb_server1'
             cd('/')
             delete('osb_server1','Server')
