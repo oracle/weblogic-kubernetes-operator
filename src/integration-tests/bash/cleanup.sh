@@ -141,6 +141,7 @@ function deleteWithOneLabel {
 #
 function deleteNamespaces {
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
+
     if [ "$line" != "default" ] && [ "$line" != "monitoring" ]; then
       echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] Running command - kubectl $FAST_DELETE delete namespace $line --ignore-not-found"
       kubectl $FAST_DELETE delete namespace $line --ignore-not-found
