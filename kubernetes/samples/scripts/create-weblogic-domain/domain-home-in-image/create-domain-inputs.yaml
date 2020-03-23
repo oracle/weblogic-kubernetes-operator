@@ -123,7 +123,7 @@ namespace: default
 # Java Option for WebLogic Server
 # -Dweblogic.security.SSL.ignoreHostnameVerification=true is necessary in order for the managed server(s) to connect to the admin server
 # while booting up if SSL is enabled.
-javaOptions: -Dweblogic.StdoutDebugEnabled=false -Dweblogic.security.SSL.ignoreHostnameVerification=true
+javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim
 # If not specified, the value is derived from the domainUID as <domainUID>-weblogic-sample-pvc

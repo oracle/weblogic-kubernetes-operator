@@ -2791,6 +2791,18 @@ in the <strong><em>Security</em></strong> section.</p>
 </tr>
 
 <tr>
+<td><code>sslEnabled</code></td>
+<td>Whether to enable SSL for the Administration Server and Managed Server(s) inside the Kubernetes cluster.  See the <code>javaOptions</code> below.</td>
+<td><code>false</code></td>
+</tr>
+
+<tr>
+<td><code>adminSSLPort</code></td>
+<td>SSL Port number for the Administration Server inside the Kubernetes cluster.</td>
+<td><code>7002</code></td>
+</tr>
+
+<tr>
 <td><code>adminNodePort</code></td>
 <td>Port number of the Administration Server outside the Kubernetes cluster.</td>
 <td><code>30701</code></td>
@@ -2882,7 +2894,7 @@ in the <strong><em>Security</em></strong> section.</p>
 
 <tr>
 <td><code>javaOptions</code></td>
-<td>Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: <code>$(DOMAIN_NAME)</code>, <code>$(DOMAIN_HOME)</code>, <code>$(ADMIN_NAME)</code>, <code>$(ADMIN_PORT)</code>, and <code>$(SERVER_NAME)</code>.</td>
+<td>Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: <code>$(DOMAIN_NAME)</code>, <code>$(DOMAIN_HOME)</code>, <code>$(ADMIN_NAME)</code>, <code>$(ADMIN_PORT)</code>, and <code>$(SERVER_NAME)</code>.  If <code>sslEnabled</code> is <code>true</code>, add <code>-Dweblogic.security.SSL.ignoreHostnameVerification=true</code></td>
 <td><code>-Dweblogic.StdoutDebugEnabled=false</code></td>
 </tr>
 
@@ -2908,6 +2920,12 @@ in the <strong><em>Security</em></strong> section.</p>
 <td><code>managedServerPort</code></td>
 <td>Port number for each Managed Server.</td>
 <td><code>8001</code></td>
+</tr>
+
+<tr>
+<td><code>managedServerSSLPort</code></td>
+<td>SSL Port number for each Managed Server.</td>
+<td><code>8002</code></td>
 </tr>
 
 <tr>
