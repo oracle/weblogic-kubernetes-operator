@@ -1075,6 +1075,11 @@ window.onload = function() {
           "description": "The number of ready cluster members. Required.",
           "type": "number",
           "minimum": 0.0
+        },
+        "replicasGoal": {
+          "description": "The requested number of cluster members from the domain spec. Cluster members will be started by the operator if this value is larger than zero.",
+          "type": "number",
+          "minimum": 0.0
         }
       }
     },
@@ -1545,6 +1550,10 @@ window.onload = function() {
       "properties": {
         "nodeName": {
           "description": "Name of node that is hosting the Pod containing this WebLogic Server.",
+          "type": "string"
+        },
+        "desiredState": {
+          "description": "Desired state of this WebLogic Server.",
           "type": "string"
         },
         "clusterName": {
