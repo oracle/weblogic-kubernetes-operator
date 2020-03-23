@@ -17,7 +17,7 @@ When using the operator to deploy a WebLogic domain, you have the choice of WebL
 
 There are advantages to both approaches, and there are sometimes technical limitations of various cloud providers that may make one approach better suited to your needs.  You can also mix and match on a domain-by-domain basis.
 
-| PV in Image | Domain in a Docker image | Model in Docker image |
+| PV in Image | Domain in Image | Model in Image |
 | --- | --- | --- |
 | Let's you use the same standard read-only Docker image for every server in every domain. | Requires a different image for each domain, but all servers in that domain use the same image. | Same as Domain in Image. |
 | No state is kept in Docker images making them completely throw away (cattle not pets). | Runtime state should not be kept in the images, but applications and configuration are. | Same as Domain in Image |
