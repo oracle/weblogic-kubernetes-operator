@@ -318,6 +318,7 @@ public class TestUtils {
    * @param jobName job name
    * @throws Exception on failure
    */
+
   public static void deletePvc(String pvcName, String namespace, String domainUid, String jobName)
       throws Exception {
     StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
@@ -2148,32 +2149,48 @@ public class TestUtils {
   }
 
   /**
-   * Run script to delete DomainHome dirs in oke.
+   * Run script to delete all DomainHome dirs in oke.
    *
    * @throws Exception exception
    */
   public static void deleteDomainHomeDirOke() throws Exception {
+    deleteDomainHomeDirOke("");
+  }
+
+  /**
+   * Run script to delete DomainHome dirs in oke.
+   *
+   * @throws Exception exception
+   */
+  public static void deleteDomainHomeDirOke(String domainUid) throws Exception {
 
     String resourceDir = BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/oke";
     String cmd = " kubectl create ns cleanupoke";
     ExecResult result = ExecCommand.exec(cmd);
 
-    cmd = " kubectl create -f " + resourceDir + "/cleanupokepv.yaml";
+    cmd = " kubectl apply -f " + resourceDir + "/cleanupokepv.yaml";
     result = ExecCommand.exec(cmd);
     LoggerHelper.getLocal().log(
             Level.INFO, "created  pv to cleanup nfs mounted dirs " + result.stdout() + " err " + result.stderr());
-    cmd = " kubectl create -f " + resourceDir + "/cleanupokepvc.yaml";
+    cmd = " kubectl apply -f " + resourceDir + "/cleanupokepvc.yaml";
     result = ExecCommand.exec(cmd);
     LoggerHelper.getLocal().log(
             Level.INFO, "created  pvc to cleanup nfs mounted dirs " + result.stdout() + " err " + result.stderr());
-
-    LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmd);
-    cmd =
-            BaseTest.getProjectRoot()
-                    + "/src/integration-tests/bash/krun.sh -t 180 -m "
-                    + "cleanupoke-weblogic-sample-pvc:/shared/"
-                    + " -n cleanupoke -c \"rm -rf /shared/wdt/* /shared/domains/*\"";
+    if (domainUid.equals("")) {
+      cmd =
+              BaseTest.getProjectRoot()
+                      + "/src/integration-tests/bash/krun.sh -t 180 -m "
+                      + "cleanupoke-weblogic-sample-pvc:/shared/"
+                      + " -n cleanupoke -c \"rm -rf /shared/wdt/* /shared/domains/*\"";
+    } else {
+      cmd =
+              BaseTest.getProjectRoot()
+                      + "/src/integration-tests/bash/krun.sh -t 180 -m "
+                      + "cleanupoke-weblogic-sample-pvc:/shared/"
+                      + " -n cleanupoke -c \"rm -rf  /shared/domains/"
+                      + domainUid + "\"";
+    }
 
     LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmd);
     result = ExecCommand.exec(cmd);

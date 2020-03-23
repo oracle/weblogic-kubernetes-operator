@@ -125,20 +125,12 @@ public class ItOperator extends BaseTest {
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
-      /*
-      if (domain != null) {
-        domain.shutdown();
-      }
-      if (domainMap != null) {
-        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
-        TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
-                + "/weblogic-domains/" + (String)domainMap.get("domainUID"),
-                (String)domainMap.get("namespace"),
-                (String)domainMap.get("domainUID"));
-      }
-      */
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        String domainUid = domain.getDomainUid();
+        TestUtils.deleteWeblogicDomainResources(domainUid);
+        if (BaseTest.OKE_CLUSTER) {
+          TestUtils.deleteDomainHomeDirOke(domainUid);
+        }
       }
     }
 
@@ -193,27 +185,14 @@ public class ItOperator extends BaseTest {
       // domain.verifyAdminConsoleViaLB();
       testCompletedSuccessfully = true;
     } finally {
-      /*
-      if (domain != null) {
-        domain.shutdown();
-      }
-      if (domainMap != null) {
-        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
-        TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
-                + "/weblogic-domains/" + (String)domainMap.get("domainUID"),
-                (String)domainMap.get("namespace"),
-                (String)domainMap.get("domainUID"));
-      }
-      */
       // if (domain != null && (JENKINS || testCompletedSuccessfully)) {
       if (domain != null && testCompletedSuccessfully) {
-        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain: " + domain.getDomainUid());
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-
-        //FIXME in oke
-        if (!BaseTest.OKE_CLUSTER) {
-          TestUtils.verifyAfterDeletion(domain);
+        String domainUid = domain.getDomainUid();
+        TestUtils.deleteWeblogicDomainResources(domainUid);
+        if (BaseTest.OKE_CLUSTER) {
+          TestUtils.deleteDomainHomeDirOke(domainUid);
         }
+        TestUtils.verifyAfterDeletion(domain);
       }
       // if (operator != null && (JENKINS || testCompletedSuccessfully)) {
       if (operator != null && testCompletedSuccessfully) {
@@ -260,18 +239,11 @@ public class ItOperator extends BaseTest {
         domain.destroy();
       }
     }
-
+    String domainUid = domain.getDomainUid();
     domain.createDomainOnExistingDirectory();
-    /*
-    if (domainMap != null) {
-      LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
-      TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
-              + "/weblogic-domains/" + (String)domainMap.get("domainUID"),
-              (String)domainMap.get("namespace"),
-              (String)domainMap.get("domainUID"));
+    if (BaseTest.OKE_CLUSTER) {
+      TestUtils.deleteDomainHomeDirOke(domainUid);
     }
-    */
-
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -281,7 +253,7 @@ public class ItOperator extends BaseTest {
    *
    * @throws Exception exception
    */
-  //@Test
+  @Test
   public void testCreateDomainPvReclaimPolicyRecycle() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
@@ -349,20 +321,12 @@ public class ItOperator extends BaseTest {
       //testAdvancedUseCasesForADomain(operator1, domain10);
       testCompletedSuccessfully = true;
     } finally {
-      /*
-      if (domain != null) {
-        domain.shutdown();
-      }
-      if (domainMap != null) {
-        LoggerHelper.getLocal().log(Level.INFO, "About to delete domain dir: ");
-        TestUtils.deleteDomainHomeDir((String)domainMap.get("userProjectsDir")
-                + "/weblogic-domains/" + (String)domainMap.get("domainUID"),
-                (String)domainMap.get("namespace"),
-                (String)domainMap.get("domainUID"));
-      }
-      */
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        String domainUid = domain.getDomainUid();
+        TestUtils.deleteWeblogicDomainResources(domainUid);
+        if (BaseTest.OKE_CLUSTER) {
+          TestUtils.deleteDomainHomeDirOke(domainUid);
+        }
       }
     }
 
