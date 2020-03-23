@@ -111,7 +111,9 @@ To reference the relevant user documentation, see:
 
      Alternatively, you can create your own base image and override the sample's default base image name and tag by exporting the `BASE_IMAGE_NAME` and `BASE_IMAGE_TAG` environment variables prior to running the sample scripts. If you want to create your own base image, see [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
 
-8. If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains). You can do this step before or after you create your final image. If you're not using a `JRF` domain type, proceed to [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image).
+8. If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains). 
+
+> __NOTE__: Skip to section [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) if you're not using a `JRF` domain type.
 
 ### Prerequisites for JRF domains
 
