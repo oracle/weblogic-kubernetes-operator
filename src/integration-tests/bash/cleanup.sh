@@ -102,12 +102,14 @@ function deleteWithOneLabel {
   getResWithLabel $1
   # delete namespaced types
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
+    echo "@@ Running command - kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l $LABEL_SELECTOR"
     kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
   done
 
   # delete non-namespaced types
   local no_namespace_count=`grep -c -v " -n " $1`
   if [ ! "$no_namespace_count" = "0" ]; then
+    echo "@@ Running command - kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l $LABEL_SELECTOR"
     kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
   fi
 
@@ -140,6 +142,7 @@ function deleteWithOneLabel {
 function deleteNamespaces {
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
     if [ "$line" != "default" ]; then
+      echo "@@ Running command - kubectl $FAST_DELETE delete namespace $line --ignore-not-found"
       kubectl $FAST_DELETE delete namespace $line --ignore-not-found
     fi
   done
