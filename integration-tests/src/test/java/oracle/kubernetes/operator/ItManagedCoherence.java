@@ -172,6 +172,11 @@ public class ItManagedCoherence extends BaseTest {
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/" + COHERENCE_CLUSTER_SCRIPT);
+      domainMap.put(
+          "javaOptions",
+          "-Dweblogic.debug.DebugDeploymentService=true -Dweblogic.debug.DebugDeploymentServiceTransport=true " 
+          + "-Dweblogic.debug.DebugDeploymentServiceInternal=true "
+          + "-Dweblogic.debug.DebugDeploymentServiceTransport=true");
 
       createDomainAndDeployApp(domainMap, DOMAINUID);
       coherenceCacheTest();
