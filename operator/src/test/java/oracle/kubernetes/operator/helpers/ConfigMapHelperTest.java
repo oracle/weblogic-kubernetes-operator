@@ -63,7 +63,8 @@ public class ConfigMapHelperTest {
     "utils.sh",
     "wlst.sh",
     "tailLog.sh",
-    "monitorLog.sh"
+    "monitorLog.sh",
+    "encryption_util.py"
   };
   private static final String DOMAIN_NS = "namespace";
   private static final String OPERATOR_NS = "operator";
