@@ -245,6 +245,24 @@ public class DomainStatusTest {
     assertThat(clone, equalTo(domainStatus));
   }
 
+  @Test
+  public void verifyThat_getServers_serverInExpectedOrdering() {
+    ServerStatus cluster1Server1 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server1");
+    ServerStatus cluster1Server2 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server2");
+    ServerStatus cluster2Server1 = new ServerStatus().withClusterName("cluster-2").withServerName("cluster2-server1");
+    ServerStatus adminServer = new ServerStatus().withServerName("admin-server");
+
+    domainStatus.addServer(cluster1Server1).addServer(cluster2Server1)
+        .addServer(cluster1Server2).addServer(adminServer);
+
+    List<ServerStatus> serverStatuses = domainStatus.getServers();
+
+    assertThat(serverStatuses.get(0), equalTo(adminServer));
+    assertThat(serverStatuses.get(1), equalTo(cluster1Server1));
+    assertThat(serverStatuses.get(2), equalTo(cluster1Server2));
+    assertThat(serverStatuses.get(3), equalTo(cluster2Server1));
+  }
+
   static class ClusterStatusMatcher extends org.hamcrest.TypeSafeDiagnosingMatcher<ClusterStatus> {
     private String name;
     private Integer replicas;

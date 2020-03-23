@@ -10,6 +10,7 @@ import javax.validation.constraints.NotNull;
 
 import com.google.gson.annotations.Expose;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.utils.OperatorUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -263,7 +264,8 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
 
   @Override
   public int compareTo(@Nonnull ServerStatus o) {
-    return serverName.compareTo(o.serverName);
+    int clustersCompareTo = OperatorUtils.compareSortingStrings(clusterName, o.clusterName);
+    return clustersCompareTo == 0 ? OperatorUtils.compareSortingStrings(serverName, o.serverName) : clustersCompareTo;
   }
 
   @Override
