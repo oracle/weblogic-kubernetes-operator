@@ -1629,6 +1629,55 @@ public class TestUtils {
   }
 
   /**
+   * verify after deletion.
+   * @param domain domain
+   * @throws Exception on failure
+   */
+  public static void verifyAfterDeletion(Domain domain) throws Exception {
+    final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
+    final String domainUid = domain.getDomainUid();
+    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    final String credentialsName =
+        String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
+    if (!BaseTest.OKE_CLUSTER) {
+
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: " + domainUid);
+      k8sTestUtils.verifyDomainCrd();
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyDomainCrd ");
+      k8sTestUtils.verifyDomain(domainNs, domainUid, false);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyDomain ");
+      k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 0);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyPods ");
+      k8sTestUtils.verifyJobs(domain1LabelSelector, 0);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyJobs ");
+      k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoDeployments ");
+      k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoReplicaSets ");
+      k8sTestUtils.verifyServices(domain1LabelSelector, 0);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyServices ");
+      k8sTestUtils.verifyPvcs(domain1LabelSelector, 0);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyPvcs ");
+      k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 0);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyConfigMaps ");
+      k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoServiceAccounts ");
+      k8sTestUtils.verifyNoRoles(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoRoles ");
+      k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoRoleBindings ");
+      k8sTestUtils.verifySecrets(credentialsName, 0);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifySecrets ");
+      k8sTestUtils.verifyPvs(domain1LabelSelector, 0);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyPvs ");
+      k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoClusterRoles ");
+      k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "After deletion of domain: verifyNoClusterRoleBindings ");
+    }
+  }
+
+  /**
    * Replaces the string matching the given search pattern with a new string.
    *
    * @param filename       - filename in which the string will be replaced
