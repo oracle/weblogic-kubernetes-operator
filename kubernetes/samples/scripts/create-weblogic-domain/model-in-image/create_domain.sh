@@ -59,4 +59,5 @@ done
 if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
   sed -i -e "s/\#\(opss\):/\1:/" $DOMAIN_RESOURCE_FILE
   sed -i -e "s/\#\(walletPasswordSecret\):/\1:/" $DOMAIN_RESOURCE_FILE
+  sed -i -e "s/\#\(introspectorJobActiveDeadlineSeconds\):/\1:/" $DOMAIN_RESOURCE_FILE
 fi
