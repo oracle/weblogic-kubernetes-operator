@@ -24,7 +24,7 @@
 #   DELETE_FILES    Delete local test files, and launch a job to delete PV
 #                   hosted test files (default true).
 #
-#   FAST_DELETE     Set to "--grace-period=1 --timeout=1s" to speedup
+#   FAST_DELETE     Set to "--grace-period=1 --timeout=1" to speedup
 #                   deletes and skip phase 2.
 #
 # --------------------
@@ -41,7 +41,7 @@
 #   Phase 2:  Wait 15 seconds to see if previous phase succeeded, and
 #             if not, repeatedly search for all test related kubectl
 #             artifacts and try delete them directly for up to 60 more
-#             seconds. 
+#             seconds.
 #
 #   Phase 3:  Use a kubernetes job to delete the PV directories
 #             on the kubernetes cluster.
@@ -63,7 +63,7 @@ JOB_NAME="weblogic-command-job"
 
 
 function fail {
-  echo @@ cleanup.sh: Error "$@"
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] cleanup.sh: Error "$@"
   exit 1
 }
 
@@ -85,56 +85,35 @@ function getResWithLabel {
           -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{"\n"}{end}' \
           --all-namespaces=true >> $1
-
 }
-
-#
-# Usage:
-# deleteNonNamespacedResWithOneLabel outputfile
-#
-function deleteNonNamespacedResWithOneLabel {
-  echo @@ Delete non-namespaced resources with label $LABEL_SELECTOR.
-
-  #getResWithLabel $1
-
-  # delete non-namespaced types
-  local no_namespace_count=`grep -c -v " -n " $1`
-  if [ ! "$no_namespace_count" = "0" ]; then
-    echo "@@ Running command - kubectl $FAST_DELETE get $NOT_NAMESPACED_TYPES -l $LABEL_SELECTOR"
-    kubectl $FAST_DELETE get $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
-    echo "@@ Running command - kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l $LABEL_SELECTOR"
-    kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
-  fi
-}
-
 
 #
 # Usage:
 # deleteResWithLabel outputfile
 #
 function deleteWithOneLabel {
-  echo @@ Delete resources with label $LABEL_SELECTOR.
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Delete resources with label $LABEL_SELECTOR.
   # clean the output file first
   if [ -e $1 ]; then
     rm $1
   fi
 
-  echo @@ Deleting resources with label $LABEL_SELECTOR.
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Deleting resources with label $LABEL_SELECTOR.
   getResWithLabel $1
-  delete namespaced types
+  # delete namespaced types
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
-    echo "@@ Running command - kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l $LABEL_SELECTOR"
+    echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] Running command - kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l $LABEL_SELECTOR"
     kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
   done
 
   # delete non-namespaced types
   local no_namespace_count=`grep -c -v " -n " $1`
   if [ ! "$no_namespace_count" = "0" ]; then
-    echo "@@ Running command - kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l $LABEL_SELECTOR"
+    echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] Running command - kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l $LABEL_SELECTOR"
     kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
   fi
 
-  echo "@@ Waiting for pods to stop running."
+  echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] Waiting for pods to stop running."
   local total=0
   local mstart=`date +%s`
   local mnow=mstart
@@ -145,7 +124,7 @@ function deleteWithOneLabel {
     if [ $total -eq 0 ] ; then
         break
     else
-      echo "@@ There are $total running pods with label $LABEL_SELECTOR."
+      echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] There are $total running pods with label $LABEL_SELECTOR."
     fi
     sleep 3
     mnow=`date +%s`
@@ -161,10 +140,9 @@ function deleteWithOneLabel {
 # deleteNamespaces outputfile
 #
 function deleteNamespaces {
-  cat $1
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
-    if [ "$line" != "default" ]; then
-      echo "@@ Running command - kubectl $FAST_DELETE delete namespace $line --ignore-not-found"
+    if [ "$line" != "default" ] && [ "$line" != "monitoring" ]; then
+      echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] Running command - kubectl $FAST_DELETE delete namespace $line --ignore-not-found"
       kubectl $FAST_DELETE delete namespace $line --ignore-not-found
     fi
   done
@@ -190,22 +168,18 @@ function deleteWithLabels {
 
   tempfile="/tmp/$(basename $0).tmp.$$"  # == /tmp/[script-file-name].tmp.[pid]
 
-  #echo @@ Deleting domain resources.
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Deleting domain resources.
   LABEL_SELECTOR="weblogic.domainUID"
-  #deleteWithOneLabel "$tempfile-0"
-  getResWithLabel "$tempfile-0"
-  echo @@ tempfile "$tempfile-0"
-  deleteNamespaces "$tempfile-0"
-  #deleteNonNamespacedResWithOneLabel "$tempfile-0"
+  deleteWithOneLabel "$tempfile-0"
 
-  #echo @@ Deleting wls operator resources.
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Deleting wls operator resources.
   LABEL_SELECTOR="weblogic.operatorName"
-  #deleteWithOneLabel "$tempfile-1"
-  getResWithLabel "$tempfile-1"
-  deleteNamespaces "$tempfile-1"
-  #deleteNonNamespacedResWithOneLabel "$tempfile-1"
+  deleteWithOneLabel "$tempfile-1"
 
-  echo @@ Deleting voyager controller.
+  deleteNamespaces "$tempfile-0"
+  deleteNamespaces "$tempfile-1"
+
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Deleting voyager controller.
   if [ "$HANDLE_VOYAGER" = "true" ]; then
     deleteVoyagerOperator
   fi
@@ -242,7 +216,7 @@ function genericDelete {
       local maxwaitsecs=60
     fi
 
-    echo "@@ Waiting up to $maxwaitsecs seconds for ${1:?} and ${2:?} artifacts that contain string ${3:?} to delete."
+    echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] Waiting up to $maxwaitsecs seconds for ${1:?} and ${2:?} artifacts that contain string ${3:?} to delete."
 
     local artcount_no
     local artcount_yes
@@ -275,14 +249,14 @@ function genericDelete {
       mnow=`date +%s`
 
       if [ $((artcount_total)) -eq 0 ]; then
-        echo "@@ No artifacts found."
+        echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] No artifacts found."
         return 0
       fi
 
       if [ "$iteration" = "first" ] && [ "$FAST_DELETE" = "" ]; then
         # in the first iteration we just wait to see if artifacts go away on there own
 
-        echo "@@ Waiting for $artcount_total artifacts to delete.  Wait time $((mnow - mstart)) seconds (max=$maxwaitsecs).  Waiting for:"
+        echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] Waiting for $artcount_total artifacts to delete.  Wait time $((mnow - mstart)) seconds (max=$maxwaitsecs).  Waiting for:"
 
         cat $resfile_yes | awk '{ print "n=" $1 " " $2 }'
         cat $resfile_no | awk '{ print $1 }'
@@ -290,7 +264,7 @@ function genericDelete {
       else
         # in the second thirty seconds we try to delete remaining artifacts
 
-        echo "@@ Trying to delete ${artcount_total} leftover artifacts, including ${artcount_yes} namespaced artifacts and ${artcount_no} non-namespaced artifacts, wait time $((mnow - mstart)) seconds (max=$maxwaitsecs)."
+        echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] Trying to delete ${artcount_total} leftover artifacts, including ${artcount_yes} namespaced artifacts and ${artcount_no} non-namespaced artifacts, wait time $((mnow - mstart)) seconds (max=$maxwaitsecs)."
 
         if [ ${artcount_yes} -gt 0 ]; then
           cat "$resfile_yes" | while read line; do
@@ -311,9 +285,9 @@ function genericDelete {
 
       if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
         if [ "$iteration" = "first" ]; then
-          echo "@@ Warning:  ${maxwaitsecs} seconds reached.   Will try deleting unexpected resources via kubectl delete."
+          echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] Warning:  ${maxwaitsecs} seconds reached.   Will try deleting unexpected resources via kubectl delete."
         else
-          echo "@@ Error:  ${maxwaitsecs} seconds reached and possibly ${artcount_total} artifacts remaining.  Giving up."
+          echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] Error:  ${maxwaitsecs} seconds reached and possibly ${artcount_total} artifacts remaining.  Giving up."
         fi
         break
       fi
@@ -331,16 +305,16 @@ function cleanup_tiller {
 }
 
 function fail {
-  echo @@ cleanup.sh: Error "$@"
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] cleanup.sh: Error "$@"
   exit 1
 }
 
-echo @@ Starting cleanup.
+echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Starting cleanup.
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$(dirname "${script}")" > /dev/null 2>&1 ; pwd -P)"
 source $PROJECT_ROOT/kubernetes/internal/utility.sh
 
-echo "@@ RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT PV_ROOT=$PV_ROOT"
+echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT PV_ROOT=$PV_ROOT"
 
 mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
 
@@ -350,10 +324,10 @@ if [ -x "$(command -v helm)" ]; then
   [[ $? == 0 ]] && HELM_VERSION=V2
   [[ $? == 1 ]] && HELM_VERSION=V3
   echo "Detected Helm Version [$(helm version --short --client)]"
-  echo @@ Deleting installed helm charts
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Deleting installed helm charts
   if [ "$HELM_VERSION" == "V2" ]; then
     helm list --short | while read helm_name; do
-      echo "@@ Running command - helm delete --purge  $helm_name"
+      echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] Running command - helm delete --purge  $helm_name"
       helm delete --purge  $helm_name
     done
   else
@@ -361,7 +335,7 @@ if [ -x "$(command -v helm)" ]; then
     for ns in $namespaces
     do
       helm list --short --namespace $ns | while read helm_name; do
-        echo "@@ Running command - helm uninstall $helm_name -n $ns"
+        echo "@@[`date '+%m-%d-%YT%H:%M:%S'`] Running command - helm uninstall $helm_name -n $ns"
         helm uninstall $helm_name -n $ns
       done
     done
@@ -375,39 +349,39 @@ fi
 
 # second, try to delete with labels since the conversion is that all created resources need to
 # have the proper label(s)
-echo @@ Starting deleteWithLabels
+echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Starting deleteWithLabels
 deleteWithLabels
 
 # third, try a generic delete in case there are some leftover resources, this runs in two phases:
-#   phase 1:  wait to see if artifacts dissappear naturally due to the above 
+#   phase 1:  wait to see if artifacts dissappear naturally due to the above
 #   phase 2:  kubectl delete left over artifacts
 # arguments
 #   arg1 - namespaced kubernetes artifacts
 #   arg2 - non-namespaced artifacts
 #   arg3 - keywords in deletable artificats
 
-#echo @@ Starting genericDelete
-#genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql"
+echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Starting genericDelete
+genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql"
 SUCCESS="$?"
 
 if [ "${DELETE_FILES:-true}" = "true" ]; then
 
   # Delete pv directories using a run (/sharedparent maps to PV_ROOT on the k8s cluster machines).
 
-  echo @@ Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
   # $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
   $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 600 -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/*/acceptance_test_pv'
   [ "$?" = "0" ] || SUCCESS="1"
-  echo @@ SUCCESS=$SUCCESS
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] SUCCESS=$SUCCESS
 
-  # Delete old test files owned by the current user.  
+  # Delete old test files owned by the current user.
 
-  echo @@ Deleting local $RESULT_DIR contents.
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Deleting local $RESULT_DIR contents.
   rm -fr $RESULT_ROOT/*/acceptance_test_tmp
   [ "$?" = "0" ] || SUCCESS="1"
-  echo @@ SUCCESS=$SUCCESS
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] SUCCESS=$SUCCESS
 
-  echo @@ Deleting /tmp/test_suite.\* files.
+  echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Deleting /tmp/test_suite.\* files.
   rm -f /tmp/test_suite.*
 
 fi
@@ -418,14 +392,13 @@ if [ ! "$LEASE_ID" = "" ] && [ ! "$SUCCESS" = "0" ]; then
   # release the lease if we own it
   ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" > /tmp/release_lease.out 2>&1
   if [ "$?" = "0" ]; then
-    echo @@ Lease released.
+    echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Lease released.
   else
-    echo @@ Lease could not be released:
+    echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Lease could not be released:
     cat /tmp/release_lease.out
   fi
   rm -f /tmp/release_lease.out
 fi
 
-echo @@ Exiting with status $SUCCESS
+echo @@[`date '+%m-%d-%YT%H:%M:%S'`] Exiting with status $SUCCESS
 exit $SUCCESS
-
