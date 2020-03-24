@@ -12,11 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import static oracle.kubernetes.operator.BaseTest.JENKINS;
-import static oracle.kubernetes.operator.BaseTest.QUICKTEST;
-import static oracle.kubernetes.operator.BaseTest.TESTWEBAPP;
-import static oracle.kubernetes.operator.BaseTest.TESTWSAPP;
-import static oracle.kubernetes.operator.BaseTest.getNewSuffixCount;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
