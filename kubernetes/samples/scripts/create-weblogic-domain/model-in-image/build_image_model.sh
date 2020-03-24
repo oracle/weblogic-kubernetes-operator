@@ -1,6 +1,6 @@
 #!/bin/bash
-# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #  This script uses the WebLogic Image Tool to build a docker image with model in image
 #  artifacts. By default, it uses the base image obtained earlier with build_image_base.sh,
