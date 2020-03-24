@@ -19,6 +19,7 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
+import oracle.kubernetes.operator.utils.Secret;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -253,19 +254,21 @@ public class ItModelInImage extends MiiBaseTest {
       domainMap.put("namespace", domainNS);
       domainMap.put("wdtModelFile", "./model.wls.yaml");
       domainMap.put("wdtModelPropertiesFile", "./model.properties");
-      LoggerHelper.getLocal().log(Level.INFO, "testCredentialsChange: MAP VALUES " + domainMap.toString());
-
       domain = TestUtils.createDomain(domainMap);
-      // domain = new Domain(domainMap, true, false);
       domain.verifyDomainCreated();
-      // testAdminT3Channel(domain, true);
-      TestUtils.kubectlexecNoCheck(domainNS, TESTWSAPP, TESTWEBAPP);
+      Secret secret = new Secret(domain.getDomainNs(), domain.getDomainUid()
+          + "-weblogic-credentials", "system", "gumby1234");
+      secret = new Secret(domain.getDomainNs(), domain.getDomainUid()
+          + "-modelSecret", getUsername(), getPassword());
+
+      /*
       TestUtils.exec("kubectl -n " + domain.getDomainNs() + "  delete secret " + domain.getDomainUid()
           + "-weblogic-credentials --ignore-not-found");
       TestUtils.exec("kubectl -n " + domain.getDomainNs() + "  create secret generic " + domain.getDomainUid()
           + "-weblogic-credentials --from-literal=username=system --from-literal=password=gumby1234 ");
       TestUtils.exec("kubectl -n " + domain.getDomainNs() + "  label secret " + domain.getDomainUid()
           + "-weblogic-credentials weblogic.domainUID=" + (String) domainMap.get("domainUID"));
+      */
 
       String originalYaml
           = getUserProjectsDir()
@@ -277,6 +280,7 @@ public class ItModelInImage extends MiiBaseTest {
       Map<String, String> objectNode = new HashMap();
       objectNode.put("restartVersion", "v1.1");
       crd.addObjectNodeToDomain(objectNode);
+      crd.changeRuntimeEncryptionSecret(secret.getSecretName());
       String modYaml = crd.getYamlTree();
       LoggerHelper.getLocal().log(Level.INFO, modYaml);
       // Write the modified yaml to a new file

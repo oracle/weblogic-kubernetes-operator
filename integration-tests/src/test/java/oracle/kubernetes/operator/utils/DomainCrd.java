@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -34,7 +35,10 @@ public class DomainCrd {
   public static void main(String args[]){
       try {
           DomainCrd crd = new DomainCrd("C:\\Users\\Sankar\\Downloads\\domain.yaml");
-          crd.changeRuntimeEncryptionSecret("new secret");
+          Map<String, String> objectNode = new HashMap();
+          objectNode.put("restartVersion", "v1.1");
+          crd.addObjectNodeToDomain(objectNode);
+          crd.changeRuntimeEncryptionSecret("secret123");
           String jsonString = crd.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(crd.root);
           System.out.println(jsonString);
           System.out.println(crd.getYamlTree());
