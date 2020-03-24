@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import java.util.logging.Logger;
 
 /**
  * A Domain CRD utility class to manipulate domain yaml files.
@@ -29,6 +30,18 @@ public class DomainCrd {
 
   private final ObjectMapper objectMapper;
   private final JsonNode root;
+
+  public static void main(String args[]){
+      try {
+          DomainCrd crd = new DomainCrd("C:\\Users\\Sankar\\Downloads\\domain.yaml");
+          crd.changeRuntimeEncryptionSecret("new secret");
+          String jsonString = crd.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(crd.root);
+          System.out.println(jsonString);
+          System.out.println(crd.getYamlTree());
+      } catch (IOException ex) {
+          Logger.getLogger(DomainCrd.class.getName()).log(Level.SEVERE, null, ex);
+      }
+  }
 
   /**
    * Constructor to read the yaml file and initialize the root JsonNode with yaml equivalent of JSON
@@ -342,6 +355,17 @@ public class DomainCrd {
   }
 
   /**
+   * Utility method to replace runtimeEncryptionSecret in domain.yaml
+   * @param secret , new secret to be replaced
+   * @throws JsonProcessingException when runtimeEncryptionSecret not available
+   */
+  public void changeRuntimeEncryptionSecret(String secret) throws JsonProcessingException{
+      ObjectNode modelNode = (ObjectNode)getConfigModelNode();
+      modelNode.remove("runtimeEncryptionSecret");
+      ((ObjectNode) modelNode).put("runtimeEncryptionSecret", secret);
+  }
+
+  /**
    * Gets the spec node entry from Domain CRD JSON tree.
    */
   private JsonNode getSpecNode() {
@@ -482,6 +506,14 @@ public class DomainCrd {
       }
     }
     return arrayNode;
+  }
+
+  /**
+   * Gets the model object node
+   * @return model object as JsonNode
+   */
+  private JsonNode getConfigModelNode(){
+      return root.path("spec").path("configuration").path("model");
   }
 
   /**
