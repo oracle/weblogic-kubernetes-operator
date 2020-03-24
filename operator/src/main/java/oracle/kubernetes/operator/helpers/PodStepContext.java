@@ -815,12 +815,6 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
-        if (packet.isDynamicUpdate()) {
-          LOGGER.info("PodStepContext.verifyPodStep: isDynamicUpdate no restart necessary");
-          logPodExists();
-          return doNext(packet);
-
-        }
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             currentPod.getMetadata().getName(),
