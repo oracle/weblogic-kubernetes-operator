@@ -144,8 +144,10 @@ public class ItCoherenceTests extends BaseTest {
       final String podName = domain.getManagedSeverPodName(1);
       final String ProxyIP;
       if (BaseTest.OKE_CLUSTER) {
-        String cmd = " kubeclt get pods -o wide -n " + domainNS + " | grep " + podName + " | awk '{print $6}'";
+        String cmd = " kubeclt get pods -n " + domainNS + "-o wide | grep " + podName + " | awk '{print $6}'";
         ExecResult result = ExecCommand.exec(cmd);
+        LoggerHelper.getLocal().log(
+                Level.INFO, "command  " + cmd + " output " + result.stdout() + " : " + result.stderr());
         ProxyIP = result.stdout().trim();
         if (result.exitValue() != 0) {
           throw new RuntimeException(
@@ -155,10 +157,9 @@ public class ItCoherenceTests extends BaseTest {
         }
       } else {
         ProxyIP = TestUtils.getPodIP(domainNS, "", podName);
-        LoggerHelper.getLocal().log(
-                Level.INFO, "ProxyIP " + ProxyIP);
       }
-
+      LoggerHelper.getLocal().log(
+              Level.INFO, "ProxyIP " + ProxyIP);
       String cohAppLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + PROXY_CLIENT_APP_NAME;
       String cohAppLocationInPod = BaseTest.getAppLocationInPod() + "/" + PROXY_CLIENT_APP_NAME;
       final String cohScriptPathOnHost = cohAppLocationOnHost + "/" + PROXY_CLIENT_SCRIPT;
