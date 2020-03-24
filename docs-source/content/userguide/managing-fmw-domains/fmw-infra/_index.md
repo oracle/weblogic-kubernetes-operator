@@ -33,7 +33,7 @@ The remainder of the documentation in this site applies equally to FMW
 Infrastructure domains and WebLogic Server domains.
 
 FMW Infrastructure domains are supported using both the "domain on a persistent volume"
-and the "domain in a Docker image" [models]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
+and the "domain in a Docker image" [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 If you plan to experiment with upper stack products (which are not officially supported
 by the operator yet), we strongly recommend using the domain on a persistent
 volume approach.
@@ -146,9 +146,9 @@ same existing requirements apply.
 For testing and development, you may choose to run your database inside Kubernetes or outside of Kubernetes.
 
 {{% notice warning %}}
-The Oracle Database Docker images are only supported for non-production use. 
+The Oracle Database Docker images are only supported for non-production use.
 For more details, see My Oracle Support note:
-Oracle Support for Database Running on Docker (Doc ID 2216342.1) 
+Oracle Support for Database Running on Docker (Doc ID 2216342.1)
 {{% /notice %}}
 
 ##### Running the database inside Kubernetes

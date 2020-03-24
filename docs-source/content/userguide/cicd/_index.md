@@ -56,7 +56,7 @@ outside of the image.  The second approach puts the JDK, WebLogic binaries
 and the domain all in the Docker image.  Both of these approaches are perfectly
 valid (and fully supported) and they have various advantages and disadvantages.
 
-We have listed the [relative advantages of these two approaches here]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
+We have listed the [relative advantages of these approaches here]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 
 One of the key differences between these approaches is how many Docker images
 you have, and therefore, how you build and maintain them - your image CI/CD

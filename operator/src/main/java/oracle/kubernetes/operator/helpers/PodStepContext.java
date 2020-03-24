@@ -510,8 +510,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         + domainIntrospectVersion);
     LOGGER.finest("PodStepContext.createMetaData domainRestartVersion from serverspec "
         + getServerSpec().getDomainRestartVersion());
-    LOGGER.finest("PodStepContext.createMetaData domainIntrospectVersion from serverspec "
-        + getServerSpec().getDomainIntrospectVersion());
+    LOGGER.finest("PodStepContext.createMetaData domainIntrospectVersion from spec "
+        + getDomain().getIntrospectVersion());
     metadata
         .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
@@ -520,7 +520,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
         .putLabelsItem(
             LabelConstants.DOMAINRESTARTVERSION_LABEL, getServerSpec().getDomainRestartVersion())
-        .putLabelsItem(LabelConstants.DOMAININTROSPECTVERSION_LABEL, getServerSpec().getDomainIntrospectVersion())
+        .putLabelsItem(LabelConstants.DOMAININTROSPECTVERSION_LABEL, getDomain().getIntrospectVersion())
         .putLabelsItem(
             LabelConstants.CLUSTERRESTARTVERSION_LABEL, getServerSpec().getClusterRestartVersion())
         .putLabelsItem(
@@ -815,12 +815,6 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
-        if (packet.isDynamicUpdate()) {
-          LOGGER.info("PodStepContext.verifyPodStep: isDynamicUpdate no restart necessary");
-          logPodExists();
-          return doNext(packet);
-
-        }
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             currentPod.getMetadata().getName(),

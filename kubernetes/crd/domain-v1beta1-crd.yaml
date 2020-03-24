@@ -181,10 +181,6 @@ spec:
                   enum:
                   - RUNNING
                   - ADMIN
-                introspectVersion:
-                  type: string
-                  description: If present, every time this value is updated, the operator
-                    will start introspect domain job
                 serverService:
                   type: object
                   description: Customization affecting ClusterIP Kubernetes services
@@ -5332,10 +5328,6 @@ spec:
                     enum:
                     - RUNNING
                     - ADMIN
-                  introspectVersion:
-                    description: If present, every time this value is updated, the
-                      operator will start introspect domain job
-                    type: string
                   serverService:
                     description: Customization affecting ClusterIP Kubernetes services
                       for WebLogic Server instances.
@@ -15498,10 +15490,6 @@ spec:
                     enum:
                     - RUNNING
                     - ADMIN
-                  introspectVersion:
-                    description: If present, every time this value is updated, the
-                      operator will start introspect domain job
-                    type: string
                   serverService:
                     description: Customization affecting ClusterIP Kubernetes services
                       for WebLogic Server instances.
@@ -20711,6 +20699,9 @@ spec:
                     description: Name of node that is hosting the Pod containing this
                       WebLogic Server.
                     type: string
+                  desiredState:
+                    description: Desired state of this WebLogic Server.
+                    type: string
                   clusterName:
                     description: WebLogic cluster name, if the server is part of a
                       cluster.
@@ -20826,6 +20817,12 @@ spec:
                     type: string
                   readyReplicas:
                     description: The number of ready cluster members. Required.
+                    type: number
+                    minimum: 0.0
+                  replicasGoal:
+                    description: The requested number of cluster members from the
+                      domain spec. Cluster members will be started by the operator
+                      if this value is larger than zero.
                     type: number
                     minimum: 0.0
   versions:

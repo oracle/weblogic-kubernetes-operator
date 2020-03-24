@@ -15,7 +15,7 @@ description = "Introduction to Model in Image, description of its runtime behavi
 
 #### Introduction
 
-Model in Image is an alternative to the operator's Domain in Image and Domain on PV domain types. See [Choose a Model]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) for a comparison of operator domain types.
+Model in Image is an alternative to the operator's Domain in Image and Domain on PV domain types. See [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) for a comparison of operator domain types.
 
 Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource.
 

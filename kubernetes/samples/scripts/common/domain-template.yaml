@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
@@ -98,30 +98,3 @@ spec:
     replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
-
-  %MII_PREFIX%configuration:
-    # secrets: [ %DOMAIN_UID%-rcu-access ]
-
-  %MII_PREFIX%  model:
-      #
-      # Optional configmap for additional models and variable files
-      #
-  %MII_CONFIG_MAP_PREFIX%    configMap: %MII_CONFIG_MAP%
-
-      #
-      # wdt domain type for model in image case
-      # Valid WDT_DOMAIN_TYPE_VALUES are 'WLS', 'JRF', and 'RestrictedJRF'
-      #
-  %MII_PREFIX%    domainType: %WDT_DOMAIN_TYPE%
-  %MII_PREFIX%    runtimeEncryptionSecret: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
-
-    #opss:
-      #
-      # k8 secret for the opss extract wallet.  It contains the key passphrase used to extract the wallet
-      #
-      #walletPasswordSecret: %DOMAIN_UID%-opss-key-passphrase-secret
-      #
-      # opss wallet file secret containing key ewallet.p12 containing the base64 encoded opss wallet
-      #walletFileSecret: %DOMAIN_UID%-opss-walletfile-secret
-      #
-      #

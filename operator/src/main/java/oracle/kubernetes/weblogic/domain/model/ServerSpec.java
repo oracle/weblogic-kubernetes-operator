@@ -157,8 +157,6 @@ public interface ServerSpec {
 
   String getDomainRestartVersion();
 
-  String getDomainIntrospectVersion();
-
   String getClusterRestartVersion();
 
   String getServerRestartVersion();

@@ -25,7 +25,7 @@ description: "Sample for supplying a WebLogic Deploy Tool (WDT) model that the o
 
 This sample demonstrates:
 
-  - Using the WebLogic Image Tool to create a Docker image that contains a WebLogic install, a WebLogic Deploy Tool (WDT) install, a Java EE servlet application contained within a WDT archive, and a WebLogic domain that's defined using a WDT model file.
+  - Using the WebLogic Image Tool to create a Docker image that contains a WebLogic install, a WebLogic Deploy Tool (WDT) install, a Java EE servlet application contained within a WDT archive, and the model for a WebLogic domain configuration defined using a WDT model file.
   - Modifying the WDT model that's embedded within the Docker image using a WDT model file that's supplied using a Kubernetes config map.
   - Defining a `domainHomeSourceType: FromModel` domain resource that references the WDT model image and the WDT config map.
   - Deploying the model image, domain resource, model config map, and associated secrets that define user names, passwords, and URL values for the model and its domain resource.
@@ -35,7 +35,7 @@ Supported domain types:
 
 There are three types of domains supported by Model in Image: a standard `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, or a `RestrictedJRF` domain.
 
-The `JRF` domain path through the sample includes additional steps for deploying an infrastructure database and initializing the database using the Repository Creation Utility (RCU) tool. `JRF` domains may be  used by Oracle products that layer on top of WebLogic Server such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products such as Oracle Communications products.
+The `JRF` domain path through the sample includes additional steps for deploying an infrastructure database and initializing the database using the Repository Creation Utility (RCU) tool. `JRF` domains may be used by Oracle products that layer on top of WebLogic Server such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products such as Oracle Communications products.
 
 ### References
 
@@ -59,6 +59,8 @@ To reference the relevant user documentation, see:
    export SRCDIR=$(pwd)/weblogic-kubernetes-operator
    ```
 
+   We will refer to this environment variable later in this document.
+
    For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
 
 3. Create a sample directory environment variable `SAMPLEDIR` that references this sample's directory:
@@ -67,12 +69,16 @@ To reference the relevant user documentation, see:
    export SAMPLEDIR=${SRCDIR}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/
    ```
 
+   We will refer to this environment variable later in this document.
+
 4. Create an empty, temporary working directory with 10g of space, and store its location in the `WORKDIR` environment variable. For example:
 
    ```
    cd <location of empty temporary directory with 10g of space>
    export WORKDIR=$(pwd)
    ```
+
+   We will refer to this environment variable later in this document, and it is used by the sample scripts.
 
 5. Deploy the operator and set up the operator to manage the namespace, `sample-domain1-ns`. Optionally, deploy a Traefik load balancer that manages the same namespace. For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
@@ -111,7 +117,7 @@ To reference the relevant user documentation, see:
 
      Alternatively, you can create your own base image and override the sample's default base image name and tag by exporting the `BASE_IMAGE_NAME` and `BASE_IMAGE_TAG` environment variables prior to running the sample scripts. If you want to create your own base image, see [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
 
-8. If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains). 
+8. If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains).
 
 > __NOTE__: Skip to section [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) if you're not using a `JRF` domain type.
 
@@ -179,7 +185,7 @@ A JRF domain requires an infrastructure database and also requires initializing 
 
      This script will deploy a database with the URL, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password, `Oradoc_db1`.
 
-     {{% notice warning %}} The Oracle database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1) : All the data is gone when the database is restarted.
+     {{% notice warning %}} The Oracle Database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1) : All the data is gone when the database is restarted.
      {{% /notice %}}
 
      **NOTE**: This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
@@ -213,7 +219,8 @@ To allow Model in Image to access the RCU database and OPSS wallet, it's necessa
 | `run_domain.sh` | Defines secret, `sample-domain1-opss-wallet-password-secret`, with `password=welcome1`. |
 | `run_domain.sh` | Defines secret, `sample-domain1-rcu-access`, with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string`. |
 | `model1.yaml.jrf` | Populates the `domainInfo -> RCUDbInfo` stanza `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string` attributes by referencing their locations in the `sample-domain1-rcu-access` secret. The `build.sh` script uses this model instead of `model.yaml.wls` when the source domain type is `JRF`. |
-| `k8s-domain.yaml.template` | Ensures that the domain mounts the OPSS key secret by setting the domain resource `configuration.opss.walletPasswordSecret` attribute to `sample-domain1-opss-wallet-password-secret`, and ensures the domain mounts the RCU access secret, `sample-domain1-rcu-access`, for reference by WDT model macros by setting the domain resource `configuration.secrets` attribute. Use configuration.introspectorJobActiveDeadlineSeconds to increase the timeout value of the introspector job; see [Increase introspection job timeout](#increase-introspection-job-timeout). |
+| `k8s-domain.yaml.template` | Ensures that the domain mounts the OPSS key secret by setting the domain resource `configuration.opss.walletPasswordSecret` attribute to `sample-domain1-opss-wallet-password-secret`, and ensures the domain mounts the RCU access secret, `sample-domain1-rcu-access`, for reference by WDT model macros by setting the domain resource `configuration.secrets` attribute. |
+| `k8s-domain.yaml.template` | Set `configuration.introspectorJobActiveDeadlineSeconds` to 300; see [Increase introspection job timeout](#increase-introspection-job-timeout). |
 
  **NOTE**: This step is for information purposes only. Do not run the above sample files directly. The sample's main build and run scripts will run them for you.
 
@@ -422,7 +429,7 @@ You can add an ingress rule to access the WebLogic Console from your local brows
 
 1. Find out the service name of the admin server and service port number.
 
-The name follows the pattern <Domain UID>-<admin server name> all lower case and the port number will be described in your 
+The name follows the pattern <Domain UID>-<admin server name> all lower case and the port number will be described in your
 WDT model's admin server `listenPort`.
 
 You can also find the information by:
@@ -470,11 +477,11 @@ This will route the request path `/console` to the admin service port `7001` at 
 kubectl apply -f $WORKDIR/console-ingress.yaml
 ```
 
-4.  Access the WebLogic console from the brower
+4.  Access the WebLogic console from the browser
 
 
 ```
-# If the domain and your browser are running the same machine:
+# If the domain and your browser are running on the same machine:
 http://localhost:30305/console
 
 # If the domain is on a remote machine from your browser:
