@@ -481,7 +481,7 @@ kubectl apply -f $WORKDIR/console-ingress.yaml
 
 
 ```
-# If the domain and your browser are running the same machine:
+# If the domain and your browser are running on the same machine:
 http://localhost:30305/console
 
 # If the domain is on a remote machine from your browser:
