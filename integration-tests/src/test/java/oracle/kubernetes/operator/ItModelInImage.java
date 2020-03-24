@@ -3,11 +3,24 @@
 
 package oracle.kubernetes.operator;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
+import static oracle.kubernetes.operator.BaseTest.JENKINS;
+import static oracle.kubernetes.operator.BaseTest.QUICKTEST;
+import static oracle.kubernetes.operator.BaseTest.TESTWEBAPP;
+import static oracle.kubernetes.operator.BaseTest.TESTWSAPP;
+import static oracle.kubernetes.operator.BaseTest.getNewSuffixCount;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.DomainCrd;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
@@ -222,6 +235,81 @@ public class ItModelInImage extends MiiBaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
+  /**
+   * Create a domain using model in image with model yaml and model properties file in the image.
+   * Deploy the domain, verify the running domain has the correct configuration as given in the
+   * image.
+   *
+   * @throws Exception exception
+   */
+  @Test
+  public void testCredentialsChange() throws Exception {
+    Assumptions.assumeTrue(QUICKTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Creating Domain & waiting for the script to complete execution");
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> domainMap
+          = createModelInImageMap(getNewSuffixCount(), testClassName);
+      domainMap.put("namespace", domainNS);
+      domainMap.put("wdtModelFile", "./model.wls.yaml");
+      domainMap.put("wdtModelPropertiesFile", "./model.properties");
+      LoggerHelper.getLocal().log(Level.INFO, "testCredentialsChange: MAP VALUES " + domainMap.toString());
 
+      domain = TestUtils.createDomain(domainMap);
+      // domain = new Domain(domainMap, true, false);
+      domain.verifyDomainCreated();
+      // testAdminT3Channel(domain, true);
+      TestUtils.kubectlexecNoCheck(domainNS, TESTWSAPP, TESTWEBAPP);
+      TestUtils.exec("kubectl -n " + domain.getDomainNs() + "  delete secret " + domain.getDomainUid()
+          + "-weblogic-credentials --ignore-not-found");
+      TestUtils.exec("kubectl -n " + domain.getDomainNs() + "  create secret generic " + domain.getDomainUid()
+          + "-weblogic-credentials --from-literal=username=system --from-literal=password=gumby1234 ");
+      TestUtils.exec("kubectl -n " + domain.getDomainNs() + "  label secret " + domain.getDomainUid()
+          + "-weblogic-credentials weblogic.domainUID=" + (String) domainMap.get("domainUID"));
 
+      String originalYaml
+          = getUserProjectsDir()
+          + "/weblogic-domains/"
+          + domain.getDomainUid()
+          + "/domain.yaml";
+      // Modify the original domain yaml to include restartVersion in admin server node
+      DomainCrd crd = new DomainCrd(originalYaml);
+      Map<String, String> objectNode = new HashMap();
+      objectNode.put("restartVersion", "v1.1");
+      crd.addObjectNodeToDomain(objectNode);
+      String modYaml = crd.getYamlTree();
+      LoggerHelper.getLocal().log(Level.INFO, modYaml);
+      // Write the modified yaml to a new file
+      Path path = Paths.get(getUserProjectsDir()
+          + "/weblogic-domains/"
+          + domain.getDomainUid(), "modified.domain.yaml");
+      LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      Files.write(path, modYaml.getBytes(charset));
+
+      // Apply the new yaml to update the domain crd
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
+      domain.verifyAdminServerRestarted();
+      domain.verifyManagedServersRestarted();
+      domain.verifyDomainCreated();
+      Thread.sleep(60 * 3 * 1000);
+      // domain.verifyDomainRestarted();
+      // testAdminT3Channel(domain, true);
+      domain.verifyDomainCreated();
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+    }
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
 }
