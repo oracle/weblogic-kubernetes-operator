@@ -269,7 +269,7 @@ public class ItMultipleClusters extends BaseTest {
     String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", DOMAINUID);
     String namespace = domain.getDomainNs();
     for (String pod : pods) {
-      if (BaseTest.OKE_CLUSTER) {
+      if (OKE_CLUSTER) {
         TestUtils.checkPodReadyAndRunning(pod, domain.getDomainNs());
       } else {
         assertTrue(

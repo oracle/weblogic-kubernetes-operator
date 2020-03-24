@@ -130,7 +130,7 @@ public class ItManagedCoherence extends BaseTest {
     String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     String namespace = domain.getDomainNs();
     for (String pod : pods) {
-      if (BaseTest.OKE_CLUSTER) {
+      if (OKE_CLUSTER) {
         TestUtils.checkPodReadyAndRunning(pod, domain.getDomainNs());
       } else {
         assertTrue(
@@ -301,7 +301,7 @@ public class ItManagedCoherence extends BaseTest {
         .append(".org' ")
         .append("http://")
         .append(domain.getHostNameForCurl());
-    if (!BaseTest.OKE_CLUSTER) {
+    if (!OKE_CLUSTER) {
 
       curlCmd.append(":")
               .append(domain.getLoadBalancerWebPort());
@@ -327,7 +327,7 @@ public class ItManagedCoherence extends BaseTest {
         .append(".org' ")
         .append("http://")
         .append(domain.getHostNameForCurl());
-    if (!BaseTest.OKE_CLUSTER) {
+    if (!OKE_CLUSTER) {
 
       curlCmd.append(":")
               .append(domain.getLoadBalancerWebPort());
@@ -351,7 +351,7 @@ public class ItManagedCoherence extends BaseTest {
         .append(".org' ")
         .append("http://")
         .append(domain.getHostNameForCurl());
-    if (!BaseTest.OKE_CLUSTER) {
+    if (!OKE_CLUSTER) {
 
       curlCmd.append(":")
               .append(domain.getLoadBalancerWebPort());
@@ -375,7 +375,7 @@ public class ItManagedCoherence extends BaseTest {
         .append(".org' ")
         .append("http://")
         .append(domain.getHostNameForCurl());
-    if (!BaseTest.OKE_CLUSTER) {
+    if (!OKE_CLUSTER) {
 
       curlCmd.append(":")
               .append(domain.getLoadBalancerWebPort());

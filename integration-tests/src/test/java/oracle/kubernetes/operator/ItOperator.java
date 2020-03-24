@@ -128,7 +128,7 @@ public class ItOperator extends BaseTest {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         String domainUid = domain.getDomainUid();
         TestUtils.deleteWeblogicDomainResources(domainUid);
-        if (BaseTest.OKE_CLUSTER) {
+        if (OKE_CLUSTER) {
           TestUtils.deleteDomainHomeDirOke(domainUid);
         }
       }
@@ -189,7 +189,7 @@ public class ItOperator extends BaseTest {
       if (domain != null && testCompletedSuccessfully) {
         String domainUid = domain.getDomainUid();
         TestUtils.deleteWeblogicDomainResources(domainUid);
-        if (BaseTest.OKE_CLUSTER) {
+        if (OKE_CLUSTER) {
           TestUtils.deleteDomainHomeDirOke(domainUid);
         }
         TestUtils.verifyAfterDeletion(domain);
@@ -241,7 +241,7 @@ public class ItOperator extends BaseTest {
     }
     String domainUid = domain.getDomainUid();
     domain.createDomainOnExistingDirectory();
-    if (BaseTest.OKE_CLUSTER) {
+    if (OKE_CLUSTER) {
       TestUtils.deleteDomainHomeDirOke(domainUid);
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
@@ -253,9 +253,9 @@ public class ItOperator extends BaseTest {
    *
    * @throws Exception exception
    */
-  //@Test
+  @Test
   public void testCreateDomainPvReclaimPolicyRecycle() throws Exception {
-    Assumptions.assumeTrue(FULLTEST);
+    Assumptions.assumeTrue(FULLTEST && !OKE_CLUSTER);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -281,7 +281,7 @@ public class ItOperator extends BaseTest {
       }
     }
     domain.deletePvcAndCheckPvReleased();
-    if (BaseTest.OKE_CLUSTER) {
+    if (OKE_CLUSTER) {
       TestUtils.deleteDomainHomeDirOke(domain.getDomainUid());
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
@@ -327,7 +327,7 @@ public class ItOperator extends BaseTest {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         String domainUid = domain.getDomainUid();
         TestUtils.deleteWeblogicDomainResources(domainUid);
-        if (BaseTest.OKE_CLUSTER) {
+        if (OKE_CLUSTER) {
           TestUtils.deleteDomainHomeDirOke(domainUid);
         }
       }

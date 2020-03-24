@@ -192,7 +192,7 @@ public class ItPodsShutdown extends BaseTest {
       // url
       StringBuffer testAppUrl = new StringBuffer("http://");
       testAppUrl.append(domain.getHostNameForCurl());
-      if (!BaseTest.OKE_CLUSTER) {
+      if (!OKE_CLUSTER) {
         testAppUrl.append(":").append(domain.getLoadBalancerWebPort());
       }
       testAppUrl.append("/");

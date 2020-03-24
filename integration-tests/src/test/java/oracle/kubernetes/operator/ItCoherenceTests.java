@@ -143,7 +143,7 @@ public class ItCoherenceTests extends BaseTest {
       // Use the proxy running on Managed Server 1, get the internal POD IP
       final String podName = domain.getManagedSeverPodName(1);
       final String ProxyIP;
-      if (BaseTest.OKE_CLUSTER) {
+      if (OKE_CLUSTER) {
         String cmd = " kubeclt get pods -n " + domainNS + "-o wide | grep " + podName + " | awk '{print $6}'";
         ExecResult result = ExecCommand.exec(cmd);
         LoggerHelper.getLocal().log(

@@ -297,7 +297,7 @@ public class ItSessionMigration extends BaseTest {
         .append(".org' ")
         .append(" http://")
         .append(nodePortHost);
-    if (!BaseTest.OKE_CLUSTER) {
+    if (!OKE_CLUSTER) {
       webServiceUrl.append(":")
               .append(nodePort);
     }
