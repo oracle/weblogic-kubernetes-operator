@@ -146,7 +146,7 @@ public class ItCoherenceTests extends BaseTest {
       if (BaseTest.OKE_CLUSTER) {
         String cmd = " kubeclt get pods -o wide -n " + domainNS + " | grep " + podName + " | awk '{print $6}'";
         ExecResult result = ExecCommand.exec(cmd);
-        ProxyIP = result.stdout();
+        ProxyIP = result.stdout().trim();
         if (result.exitValue() != 0) {
           throw new RuntimeException(
                   "FAIL: Couldn't find the pod IP "
@@ -155,6 +155,8 @@ public class ItCoherenceTests extends BaseTest {
         }
       } else {
         ProxyIP = TestUtils.getPodIP(domainNS, "", podName);
+        LoggerHelper.getLocal().log(
+                Level.INFO, "ProxyIP " + ProxyIP);
       }
 
       String cohAppLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + PROXY_CLIENT_APP_NAME;
