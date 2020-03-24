@@ -507,7 +507,7 @@ public class DomainCrd {
   /**
    * Gets the model object node
    *
-   * @return model object as JsonNode
+   * @return JsonNode model object
    */
   private JsonNode getConfigModelNode() {
     return root.path("spec").path("configuration").path("model");
