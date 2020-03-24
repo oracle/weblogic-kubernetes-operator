@@ -393,6 +393,7 @@ function validateCommonInputs {
   validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
   validateFmwDomainType
+  # Below three validate methods are used for MII integration testing
   validateWdtDomainType
   validateWdtModelFile
   validateWdtModelPropertiesFile
@@ -414,6 +415,7 @@ function validateDomainPVC {
 
 #
 # Function to validate the WDT model file exists
+# used for MII integration testing
 #
 function validateWdtModelFile {
   # Check if the model file exists
@@ -427,6 +429,7 @@ function validateWdtModelFile {
 
 #
 # Function to validate the WDT model property file exists
+# used for MII integration testing
 #
 function validateWdtModelPropertiesFile {
   # Check if the model property file exists
@@ -439,7 +442,7 @@ function validateWdtModelPropertiesFile {
 }
 
 # Function to validate the wdtDomainType
-#
+# used for MII integration testing
 function validateWdtDomainType {
   if [ ! -z ${wdtDomainType} ]; then
     case ${wdtDomainType} in

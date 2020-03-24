@@ -1707,6 +1707,14 @@ public class Domain {
               + "/integration-tests/src/test/resources/model-in-image "
               + resultsDir + "/samples",
           true);
+      //append mii section to domain-template.yaml
+      Path domainTemplateFile = Paths.get(
+          resultsDir + "/samples/scripts/common/domain-template.yaml");
+      Path miiConfigPartFile = Paths.get(
+          resultsDir + "/samples/model-in-image/miisection-toaddin-domain-template.yaml");
+      Files.write(domainTemplateFile, Files.readAllBytes(miiConfigPartFile),
+          StandardOpenOption.APPEND);
+
     }
 
     this.voyager =

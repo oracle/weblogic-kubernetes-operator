@@ -302,12 +302,14 @@ function createFiles {
     istioPrefix="${disabledPrefix}"
   fi
 
+  # MII settings are used for model-in-image integration testing
   if [ "${domainHomeSourceType}" == "FromModel" ]; then
     miiPrefix="${enabledPrefix}"
   else
     miiPrefix="${disabledPrefix}"
   fi
 
+  # MII settings are used for model-in-image integration testing
   if [ -z "${miiConfigMap}" ]; then
     miiConfigMapPrefix="${disabledPrefix}"
   else
@@ -502,6 +504,7 @@ function createFiles {
   sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
+  # MII settings are used for model-in-image integration testing
   sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${dcrOutput}
   sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${dcrOutput}
   sed -i -e "s:%MII_CONFIG_MAP%:${miiConfigMap}:g" ${dcrOutput}
