@@ -265,9 +265,9 @@ See [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-i
 
 ### Use the WebLogic Image Tool to create an image
 
-Model in Image must contain a WebLogic install, a WebLogic Deploy Tool install, and your WDT model files. You can use the sample `./build.sh` script to build this image, which will perform the following steps for you:
+A Model in Image image must contain a WebLogic install, a WebLogic Deploy Tool install, and your WDT model files. You can use the sample `./build.sh` script to build this image, which will perform the following steps for you:
 
-  - Uses `docker pull` to obtain a base image. (See [Prerequisites for all domain types](#prerequisites-for-all-domain-types) to set up access to the base image.)
+  - Uses `docker pull` to obtain a base image which already contains a WebLogic install. (See [Prerequisites for all domain types](#prerequisites-for-all-domain-types) to set up access to the base image.)
   - Downloads the latest WebLogic Image Tool and WebLogic Deploy Tool to `WORKDIR`.
   - Creates and populates a staging directory `$WORKDIR/models` that contains your WDT model files and WDT application archive.
     - Builds  a simple servlet application in `$SAMPLEDIR/sample_app` into a WDT model application archive `$WORKDIR/models/archive1.zip`.
@@ -290,20 +290,20 @@ If you intend to use a remote Docker registry, you need to tag and push the imag
 1.  Tag the image for the remote Docker registry, for example:
 
 ```
-docker tag <image-name>:<tag> <region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>:<tag>
+docker tag model-in-image:v1 my.remote.registry.com/model-in-image:v1 
 ```
 
 2.  Push the image to the remote Docker registry, for example:
 
 ```
-docker push <region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>:<tag>
+docker push my.remote.registry.com/model-in-image:v1
 ```
 
 3. Create the pull secret for the remote Docker registry:
 
 ```
  kubectl -n <domain namespace> create secret docker-registry <secret name> \
-     --docker-server=<region-key>.ocir.io/<tenancy-namespace>/<repo-name> \
+     --docker-server=my.remote.registry.com \
      --docker-username=your.email@some.com \
      --docker-password=your-password \
      --docker-email=your.email@some.com
@@ -318,12 +318,16 @@ docker push <region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>:<t
 
 ```
 
+This domain template file will be used in the next step ([Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)) when it creates your final domain resource file.
+
 5. Export the environment variables for the image name and tag using the same values in step 1:
 
 ```
-export MODEL_IMAGE_NAME="<region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>"
-export MODEL_IMAGE_TAG="<tag>"
+export MODEL_IMAGE_NAME="my.remote.registry.com/model-in-image"
+export MODEL_IMAGE_TAG="v1"
 ```
+
+These environment variables will be used in the next step ([Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)) when it creates your final domain resource file.
 
 ### Create and deploy your Kubernetes resources
 
