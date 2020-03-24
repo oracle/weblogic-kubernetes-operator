@@ -301,6 +301,11 @@ function createFiles {
   else
     istioPrefix="${disabledPrefix}"
   fi
+  
+  # The FromModel, MII (model-in-image), and WDT_DOMAIN_TYPE updates in this script
+  # must remain even though they are not referenced by a sample. They're used by the 
+  # Operator integration test code. If you're interested in MII, 
+  # see './kubernetes/samples/scripts/create-weblogic-domain/model-in-image'.
 
   # MII settings are used for model-in-image integration testing
   if [ "${domainHomeSourceType}" == "FromModel" ]; then

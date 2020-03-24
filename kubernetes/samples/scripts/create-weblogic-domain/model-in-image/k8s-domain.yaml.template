@@ -92,6 +92,9 @@ spec:
 
     # secrets that are referenced by model yaml macros
     secrets: [ @@DOMAIN_UID@@-rcu-access ]
+    
+    # increase the introspector job active timeout value. Mainly for JRF use cases
+    #introspectorJobActiveDeadlineSeconds: 300
 
     model:
       # Optional configmap for additional models and variable files

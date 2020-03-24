@@ -386,7 +386,6 @@ public class ConfigMapHelper {
       String topologyYaml = data.get("topology.yaml");
       String miiModelSecretsHash = data.get("secrets.md5");
       String miiDomainZipHash = data.get("domainzip_hash");
-      String updateDomainResult = data.get("UPDATEDOMAINRESULT");
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
@@ -430,27 +429,7 @@ public class ConfigMapHelper {
             new SitConfigMapContext(
                 this, info.getDomainUid(), getOperatorNamespace(), info.getNamespace(), data);
 
-        // Cannot short circuit here
-        //
-        if (updateDomainResult != null) {
-          LOGGER.fine("ConfigMapHelper:updateDomainResult " + updateDomainResult);
-          if (updateDomainResult.equals("0")) {
-            LOGGER.fine("ConfigMapHelper apply: short circuit finished online update");
-            packet.setDynamicUpdate(true);
-            //return doNext(null, packet);
-          }
-        }
-
         return doNext(context.verifyConfigMap(getNext()), packet);
-      }
-
-      if (updateDomainResult != null) {
-        LOGGER.fine("ConfigMapHelper:updateDomainResult " + updateDomainResult);
-        if (updateDomainResult.equals("0")) {
-          LOGGER.fine("ConfigMapHelper apply: short circuit finished online update");
-          packet.setDynamicUpdate(true);
-          //return doNext(null, packet);
-        }
       }
 
       // TODO: How do we handle no topology?
