@@ -57,7 +57,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     this.replicas = other.replicas;
     this.readyReplicas = other.readyReplicas;
     this.maximumReplicas = other.maximumReplicas;
-    this.maximumReplicas = other.minimumReplicas;
+    this.minimumReplicas = other.minimumReplicas;
     this.replicasGoal = other.replicasGoal;
   }
 
