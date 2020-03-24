@@ -259,17 +259,7 @@ public class ItModelInImage extends MiiBaseTest {
       Secret secret = new Secret(domain.getDomainNs(), domain.getDomainUid()
           + "-weblogic-credentials", "system", "gumby1234");
       secret = new Secret(domain.getDomainNs(), domain.getDomainUid()
-          + "-modelSecret", getUsername(), getPassword());
-
-      /*
-      TestUtils.exec("kubectl -n " + domain.getDomainNs() + "  delete secret " + domain.getDomainUid()
-          + "-weblogic-credentials --ignore-not-found");
-      TestUtils.exec("kubectl -n " + domain.getDomainNs() + "  create secret generic " + domain.getDomainUid()
-          + "-weblogic-credentials --from-literal=username=system --from-literal=password=gumby1234 ");
-      TestUtils.exec("kubectl -n " + domain.getDomainNs() + "  label secret " + domain.getDomainUid()
-          + "-weblogic-credentials weblogic.domainUID=" + (String) domainMap.get("domainUID"));
-      */
-
+          + "-model-secret", getUsername(), getPassword());
       String originalYaml
           = getUserProjectsDir()
           + "/weblogic-domains/"
@@ -298,10 +288,6 @@ public class ItModelInImage extends MiiBaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
       domain.verifyAdminServerRestarted();
       domain.verifyManagedServersRestarted();
-      domain.verifyDomainCreated();
-      Thread.sleep(60 * 3 * 1000);
-      // domain.verifyDomainRestarted();
-      // testAdminT3Channel(domain, true);
       domain.verifyDomainCreated();
       testCompletedSuccessfully = true;
     } finally {
