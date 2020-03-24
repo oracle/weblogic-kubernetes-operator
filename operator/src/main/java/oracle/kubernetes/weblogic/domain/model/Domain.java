@@ -222,6 +222,14 @@ public class Domain {
     return getEffectiveConfigurationFactory().getAdminServerSpec();
   }
 
+  public String getRestartVersion() {
+    return spec.getRestartVersion();
+  }
+
+  public String getIntrospectVersion() {
+    return spec.getIntrospectVersion();
+  }
+
   private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
     return spec.getEffectiveConfigurationFactory(apiVersion, getResourceVersion());
   }

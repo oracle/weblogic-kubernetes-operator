@@ -181,10 +181,6 @@ spec:
                   enum:
                   - RUNNING
                   - ADMIN
-                introspectVersion:
-                  type: string
-                  description: If present, every time this value is updated, the operator
-                    will start introspect domain job
                 serverService:
                   type: object
                   description: Customization affecting ClusterIP Kubernetes services
@@ -5332,10 +5328,6 @@ spec:
                     enum:
                     - RUNNING
                     - ADMIN
-                  introspectVersion:
-                    description: If present, every time this value is updated, the
-                      operator will start introspect domain job
-                    type: string
                   serverService:
                     description: Customization affecting ClusterIP Kubernetes services
                       for WebLogic Server instances.
@@ -15498,10 +15490,6 @@ spec:
                     enum:
                     - RUNNING
                     - ADMIN
-                  introspectVersion:
-                    description: If present, every time this value is updated, the
-                      operator will start introspect domain job
-                    type: string
                   serverService:
                     description: Customization affecting ClusterIP Kubernetes services
                       for WebLogic Server instances.

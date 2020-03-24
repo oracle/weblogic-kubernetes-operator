@@ -232,11 +232,6 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   }
 
   @Override
-  public String getDomainIntrospectVersion() {
-    return domainSpec.getIntrospectVersion();
-  }
-
-  @Override
   public String getClusterRestartVersion() {
     return cluster != null ? cluster.getRestartVersion() : null;
   }

@@ -77,7 +77,7 @@ public class JobHelper {
     if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
 
       String currentPodRestartVersion = info.getDomain().getAdminServerSpec().getDomainRestartVersion();
-      String currentPodIntrospectVersion = info.getDomain().getAdminServerSpec().getDomainIntrospectVersion();
+      String currentPodIntrospectVersion = info.getDomain().getIntrospectVersion();
       String configMapRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
       String configMapIntrospectVersion = (String)packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
       String configMapSpecHash = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);

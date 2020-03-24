@@ -406,8 +406,8 @@ public class ConfigMapHelper {
         if (miiModelSecretsHash != null) {
           packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
         }
-        String domainRestartVersion = info.getDomain().getAdminServerSpec().getDomainRestartVersion();
-        String domainIntrospectVersion = info.getDomain().getAdminServerSpec().getDomainIntrospectVersion();
+        String domainRestartVersion = info.getDomain().getRestartVersion();
+        String domainIntrospectVersion = info.getDomain().getIntrospectVersion();
         int modelInImageSpecHash =  ConfigMapHelper.getModelInImageSpecHash(info.getDomain().getSpec().getImage());
         if (domainRestartVersion != null) {
           packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
@@ -637,7 +637,7 @@ public class ConfigMapHelper {
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version (from ino spec) "
             + info.getDomain().getAdminServerSpec().getDomainRestartVersion());
         LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version  (from ino spec) "
-            + info.getDomain().getAdminServerSpec().getDomainIntrospectVersion());
+            + info.getDomain().getIntrospectVersion());
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version from cm result "
             + domainRestartVersion);
         LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version from cm result "

@@ -182,6 +182,15 @@ public class DomainSpec extends BaseConfiguration {
           + " unspecified then domainHomeSourceType defaults to Image.")
   private String domainHomeSourceType;
 
+  /**
+   * Tells the operator to start the introspect domain job.
+   *
+   * @since 3.0.0
+   */
+  @Description(
+      "If present, every time this value is updated, the operator will start introspect domain job")
+  private String introspectVersion;
+
   @Description("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
 
@@ -522,6 +531,19 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
+  public String getIntrospectVersion() {
+    return introspectVersion;
+  }
+
+  public void setIntrospectVersionn(String introspectVersion) {
+    this.introspectVersion = introspectVersion;
+  }
+
+  public DomainSpec withIntrospectVersion(String introspectVersion) {
+    this.introspectVersion = introspectVersion;
+    return this;
+  }
+
   public Configuration getConfiguration() {
     return configuration;
   }
@@ -666,6 +688,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
             .append("domainHomeSourceType", domainHomeSourceType)
+            .append("introspectVersion", introspectVersion)
             .append("configuration", configuration)
             .append("serverStartPolicy", serverStartPolicy)
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
@@ -695,6 +718,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainHome)
             .append(domainHomeInImage)
             .append(domainHomeSourceType)
+            .append(introspectVersion)
             .append(configuration)
             .append(serverStartPolicy)
             .append(webLogicCredentialsSecret)
@@ -732,6 +756,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(domainHomeSourceType, rhs.domainHomeSourceType)
+            .append(introspectVersion, rhs.introspectVersion)
             .append(configuration, rhs.configuration)
             .append(serverStartPolicy, rhs.serverStartPolicy)
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
