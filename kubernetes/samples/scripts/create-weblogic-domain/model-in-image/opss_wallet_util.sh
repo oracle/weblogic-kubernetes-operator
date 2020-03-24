@@ -136,6 +136,8 @@ fi
 if [ ${RESTORE_WALLET} -eq 1 ] ; then
   echo "@@ Info: Creating secret '${WALLET_SECRET}' in namespace '${DOMAIN_NAMESPACE}' for wallet file '${WALLET_FILE}'."
   $SCRIPTDIR/create_secret.sh \
+    -n ${DOMAIN_NAMESPACE} \
+    -d ${DOMAIN_UID} \
     -s ${WALLET_SECRET} \
     -f walletFile=${WALLET_FILE}
 fi
