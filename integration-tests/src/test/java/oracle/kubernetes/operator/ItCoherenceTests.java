@@ -8,10 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
-import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.LoggerHelper;
-import oracle.kubernetes.operator.utils.Operator;
-import oracle.kubernetes.operator.utils.TestUtils;
+import oracle.kubernetes.operator.utils.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -140,7 +137,20 @@ public class ItCoherenceTests extends BaseTest {
 
       // Use the proxy running on Managed Server 1, get the internal POD IP
       final String podName = domain.getManagedSeverPodName(1);
-      final String ProxyIP = TestUtils.getPodIP(domainNS, "", podName);
+      final String ProxyIP;
+      if (BaseTest.OKE_CLUSTER) {
+        String cmd = " kubeclt get pods -o wide -n " + domainNS + " | grep " + podName + " | awk '{print $6}'";
+        ExecResult result = ExecCommand.exec(cmd);
+        ProxyIP = result.stdout();
+        if (result.exitValue() != 0) {
+          throw new RuntimeException(
+                  "FAIL: Couldn't find the pod IP "
+                          + podName + " in namespace "
+                          + domainNS + result.stdout());
+        }
+      } else {
+        ProxyIP = TestUtils.getPodIP(domainNS, "", podName);
+      }
 
       String cohAppLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + PROXY_CLIENT_APP_NAME;
       String cohAppLocationInPod = BaseTest.getAppLocationInPod() + "/" + PROXY_CLIENT_APP_NAME;
