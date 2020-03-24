@@ -34,7 +34,7 @@ function usage {
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -k Keep what has been previously from cloned https://github.com/oracle/docker-images.git, optional. "
   echo "     If not specified, this script will always remove existing project directory and clone again."
-  echo "  -s Skip the domain image build optional. "
+  echo "  -s Skip the domain image build, optional. "
   echo "  -h Help"
   exit $1
 }
@@ -178,7 +178,7 @@ function getDockerSample {
 # Image build is skipped when -s option is specified OR image is not available
 # e.g. If -s option is specified script will skip the image build only when 
 # image is available else build the image
-# If -s option is NOT specified script will ALWYAS build the image
+# If -s option is NOT specified script will ALWAYS build the image
 function createDomainHome {
 
   if [ "${skipImageBuild}" = false ] || [ -z "$(docker images $image | grep -v TAG)" ]; then

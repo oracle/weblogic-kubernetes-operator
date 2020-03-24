@@ -17,6 +17,7 @@ import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,14 +30,15 @@ import org.junit.jupiter.api.TestMethodOrder;
  */
 @TestMethodOrder(Alphanumeric.class)
 public class ItOperatorUpgrade extends BaseTest {
-
-  private static final String OP_BASE_REL = "2.0";
   private static String OP_TARGET_RELEASE = "weblogic-kubernetes-operator:latest";
   private static String OP_NS = "";
   private static String OP_DEP_NAME = "";
   private static String OP_SA = "";
   private static String DOM_NS = "";
   private static String DUID = "";
+  private static String M1_CTS = "";
+  private static String M2_CTS = "";
+  private static String ADMIN_CTS = "";
   private static String opUpgradeTmpDir;
   private Domain domain = null;
   private static Operator operator;
@@ -130,6 +132,10 @@ public class ItOperatorUpgrade extends BaseTest {
     OP_SA = "operator-sa250";
     DUID = "operatordomain250";
     setupOperatorAndDomain("release/2.5.0", "2.5.0");
+
+    M1_CTS = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server1");
+    M2_CTS = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server2");
+    ADMIN_CTS = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-admin-server");
     upgradeOperator();
     testCompletedSuccessfully = true;
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
@@ -138,49 +144,16 @@ public class ItOperatorUpgrade extends BaseTest {
   /**
    * Upgrades operator to develop branch by using the helm upgrade.
    *
-   * @param restart boolean parameter used to determine if a restart of domain is checked
    * @throws Exception when upgrade fails or basic usecase testing or scaling fails.
    */
   private void upgradeOperator() throws Exception {
     operator.callHelmUpgrade("image=" + OP_TARGET_RELEASE);
-    checkDomainNotRestarted();
     checkCrdVersion();
-    // checkDomainApiVersion(); Not Needed 
+    System.out.println("Before Upgrade M1CTS[" + M1_CTS + "]");
+    System.out.println("Before Upgrade M2CTS[" + M2_CTS + "]");
+    System.out.println("Before Upgrade ADMINCTS[" + ADMIN_CTS + "]");
+    checkDomainNotRestarted();
     testClusterScaling(operator, domain, false);
-  }
-
-  /**
-   * Checks Expected/Upgraded ApiVersion of the Domain Object in a loop. 
-   * In Jenkins it takes nearly 8 minutes to show the updated value 
-   * 
-   * The .apiVersion of the domain will not be updated until the domain is 
-   * written again (e.g. by the operator when updating status)
-   * This contributes to long time period. We can skip this check 
-   *
-   * @throws Exception when version does not match
-   */
-  private void checkDomainApiVersion() throws Exception {
-    boolean result = false;
-    LoggerHelper.getLocal().log(
-        Level.INFO,
-        "Checking for the domain apiVersion "
-            + getDomainApiVersion()
-            + " in a loop for up to 15 minutes");
-    for (int i = 0; i < 120; i++) {
-      ExecResult exec =
-          TestUtils.exec(
-              "kubectl get domain -n " + DOM_NS + "  " + DUID + " -o jsonpath={.apiVersion}", true);
-      if (exec.stdout().contains(getDomainApiVersion())) {
-        int ttime = 10 * (i - 1); 
-        LoggerHelper.getLocal().log(Level.INFO, "Got the expected API Version after [" + ttime + "] Seconds");
-        result = true;
-        break;
-      }
-      Thread.sleep(1000 * 10);
-    }
-    if (!result) {
-      throw new RuntimeException("FAILURE: Didn't get the expected API Version");
-    }
   }
 
   /**
@@ -196,7 +169,7 @@ public class ItOperatorUpgrade extends BaseTest {
         "Checking for the CRD Version "
             + getDomainApiVersion()
             + " in a loop for up to 15 minutes");
-    for (int i = 0; i < 900; i = i + 10) {
+    for (int i = 0; i < BaseTest.getMaxIterationsPod(); i++) {
       ExecResult exec =
           TestUtils.exec(
               "kubectl get crd domains.weblogic.oracle -o jsonpath='{.spec.versions[?(@.storage==true)].name}'", true);
@@ -205,10 +178,10 @@ public class ItOperatorUpgrade extends BaseTest {
         result = true;
         break;
       }
-      Thread.sleep(1000 * 10);
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
     }
     if (!result) {
-      throw new RuntimeException("FAILURE: Didn't get expected CRD Version");
+      throw new Exception("FAILURE: Didn't get expected CRD Version");
     }
   }
 
@@ -231,17 +204,26 @@ public class ItOperatorUpgrade extends BaseTest {
 
   /**
    * Check whether the weblogic server instances are still RUNNING 
-   * not restarted due to Operator Upgrade
+   * not restarted due to Operator Upgrade by comparing the creationTimestamp
+   * before and after upgrade
    *
    * @throws Exception If restarted
    */
   private void checkDomainNotRestarted() throws Exception {
     TestUtils.checkPodReady(DUID + "-" + domain.getAdminServerName(), DOM_NS);
     for (int i = 2; i >= 1; i--) {
-      LoggerHelper.getLocal().log(Level.INFO,
-          "Checking if managed server pod(" + DUID + "--managed-server" + i + ") is RUNNING");
-      TestUtils.checkPodReady(DUID + "-managed-server" + i, DOM_NS);
+     TestUtils.checkPodReady(DUID + "-managed-server" + i, DOM_NS);
     }
+    String m1 = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server1");
+    String m2 = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server2");
+    String admin = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-admin-server");
+    System.out.println("After Upgrade M1CTS[" + m1 + "]");
+    System.out.println("After Upgrade M2CTS[" + m2 + "]");
+    System.out.println("After Upgrade M2CTS[" + admin + "]");
+
+    Assertions.assertEquals(M1_CTS, m1);
+    Assertions.assertEquals(M2_CTS, m2);
+    Assertions.assertEquals(ADMIN_CTS, admin);
   }
 
   /**
