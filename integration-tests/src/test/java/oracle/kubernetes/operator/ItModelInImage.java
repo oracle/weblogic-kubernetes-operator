@@ -263,7 +263,7 @@ public class ItModelInImage extends MiiBaseTest {
 
       // Modify the original domain yaml to include restartVersion and change runtimeEncryptionSecret
       String originalYaml = getUserProjectsDir() + "/weblogic-domains/" + domain.getDomainUid()
-        + "/domain.yaml";
+          + "/domain.yaml";
       DomainCrd crd = new DomainCrd(originalYaml);
       Map<String, String> objectNode = new HashMap();
       objectNode.put("restartVersion", "v1.1");
@@ -273,7 +273,7 @@ public class ItModelInImage extends MiiBaseTest {
       LoggerHelper.getLocal().log(Level.INFO, modYaml);
       // Write the modified yaml to a new file
       Path path = Paths.get(getUserProjectsDir() + "/weblogic-domains/" + domain.getDomainUid(),
-        "modified.domain.yaml");
+          "modified.domain.yaml");
       LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, modYaml.getBytes(charset));
