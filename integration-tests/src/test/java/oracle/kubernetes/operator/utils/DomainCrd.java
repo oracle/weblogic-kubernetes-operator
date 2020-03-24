@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -27,22 +26,6 @@ public class DomainCrd {
 
   private final ObjectMapper objectMapper;
   private final JsonNode root;
-
-  public static void main(String args[]) {
-    try {
-      DomainCrd crd = new DomainCrd("C:\\Users\\Sankar\\Downloads\\domain.yaml");
-      Map<String, String> objectNode = new HashMap();
-      objectNode.put("restartVersion", "v1.1");
-      crd.addObjectNodeToDomain(objectNode);
-      crd.changeRuntimeEncryptionSecret("secret123");
-      String jsonString =
-          crd.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(crd.root);
-      System.out.println(jsonString);
-      System.out.println(crd.getYamlTree());
-    } catch (IOException ex) {
-      ex.printStackTrace();
-    }
-  }
 
   /**
    * Constructor to read the yaml file and initialize the root JsonNode with yaml equivalent of JSON

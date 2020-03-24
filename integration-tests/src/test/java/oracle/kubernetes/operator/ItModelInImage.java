@@ -233,19 +233,16 @@ public class ItModelInImage extends MiiBaseTest {
 
   /**
    * Create a domain using model in image with model yaml and model properties file in the image.
-   * Deploy the domain, verify the running domain has the correct configuration as given in the
-   * image.
+   * Change the weblogic credentials and verify the pods can restart with changed password
    *
    * @throws Exception exception
    */
   @Test
   public void testCredentialsChange() throws Exception {
-    Assumptions.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Creating Domain & waiting for the script to complete execution");
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
@@ -260,12 +257,9 @@ public class ItModelInImage extends MiiBaseTest {
           + "-weblogic-credentials", "system", "gumby1234");
       secret = new Secret(domain.getDomainNs(), domain.getDomainUid()
           + "-model-secret", getUsername(), getPassword());
-      String originalYaml
-          = getUserProjectsDir()
-          + "/weblogic-domains/"
-          + domain.getDomainUid()
-          + "/domain.yaml";
-      // Modify the original domain yaml to include restartVersion in admin server node
+      String originalYaml = getUserProjectsDir() + "/weblogic-domains/" + domain.getDomainUid()
+        + "/domain.yaml";
+      // Modify the original domain yaml to include restartVersion and change runtimeEncryptionSecret
       DomainCrd crd = new DomainCrd(originalYaml);
       Map<String, String> objectNode = new HashMap();
       objectNode.put("restartVersion", "v1.1");
@@ -274,9 +268,8 @@ public class ItModelInImage extends MiiBaseTest {
       String modYaml = crd.getYamlTree();
       LoggerHelper.getLocal().log(Level.INFO, modYaml);
       // Write the modified yaml to a new file
-      Path path = Paths.get(getUserProjectsDir()
-          + "/weblogic-domains/"
-          + domain.getDomainUid(), "modified.domain.yaml");
+      Path path = Paths.get(getUserProjectsDir() + "/weblogic-domains/" + domain.getDomainUid(),
+        "modified.domain.yaml");
       LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, modYaml.getBytes(charset));
