@@ -343,7 +343,7 @@ public class JobHelper {
               packet);
       }
 
-      return doNext(getNext(), packet);
+      return doNext(DomainValidationSteps.createValidateDomainTopologyStep(getNext()), packet);
     }
   }
 

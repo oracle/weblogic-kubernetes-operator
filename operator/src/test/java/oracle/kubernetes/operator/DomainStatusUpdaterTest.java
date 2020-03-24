@@ -23,6 +23,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
@@ -42,12 +43,14 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.SERVERS_READY_REASO
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STANDBY_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -66,6 +69,7 @@ public class DomainStatusUpdaterTest {
   private final String message = generator.getUniqueString();
   private String reason = generator.getUniqueString();
   private RuntimeException failure = new RuntimeException(message);
+  private String validationWarning = generator.getUniqueString();
 
   /**
    * Setup test environment.
@@ -127,6 +131,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(RUNNING_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("clusterA")
                 .withNodeName("node1")
                 .withServerName("server1")
@@ -136,6 +141,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(SHUTDOWN_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("clusterB")
                 .withNodeName("node2")
                 .withServerName("server2")
@@ -167,6 +173,7 @@ public class DomainStatusUpdaterTest {
 
   @Test
   public void statusStep_usesServerFromWlsConfig() {
+    configureServer("server4").withDesiredState(ADMIN_STATE);
     testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server3", RUNNING_STATE));
     testSupport.addToPacket(
         SERVER_HEALTH_MAP,
@@ -183,6 +190,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(RUNNING_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("clusterC")
                 .withServerName("server3")
                 .withHealth(overallHealth("health3"))));
@@ -191,6 +199,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(SHUTDOWN_STATE)
+                .withDesiredState(ADMIN_STATE)
                 .withClusterName("clusterC")
                 .withServerName("server4")
                 .withHealth(overallHealth("health4"))));
@@ -214,6 +223,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(STANDBY_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("wlsCluster")
                 .withNodeName("node2")
                 .withServerName("server2")
@@ -240,10 +250,41 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(RUNNING_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("clusterA")
                 .withNodeName("node1")
                 .withServerName("server1")
                 .withHealth(overallHealth("health1"))));
+  }
+
+  @Test
+  public void statusStep_containsValidationWarnings() {
+    info.addValidationWarning(validationWarning);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+
+    assertThat(getRecordedDomain().getStatus().getMessage(), containsString(validationWarning));
+  }
+
+  @Test
+  public void progressingStep_containsValidationWarnings() {
+    info.addValidationWarning(validationWarning);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, true, endStep));
+
+    assertThat(getRecordedDomain().getStatus().getMessage(), containsString(validationWarning));
+  }
+
+  @Test
+  public void failedStepWithFailureMessage_doesNotContainValidationWarnings() {
+    info.addValidationWarning(validationWarning);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createFailedStep(failure, endStep));
+
+    assertThat(getRecordedDomain().getStatus().getMessage(), not(containsString(validationWarning)));
   }
 
   @Test
@@ -555,6 +596,10 @@ public class DomainStatusUpdaterTest {
 
   private ServerConfigurator configureServer(String serverName) {
     return configureDomain().configureServer(serverName);
+  }
+
+  private ClusterConfigurator configureCluster(String clusterName) {
+    return configureDomain().configureCluster(clusterName);
   }
 
   private void generateStartupInfos(String... serverNames) {
