@@ -353,8 +353,41 @@ Run the script:
   $SAMPLEDIR/run_domain.sh
   ```
 
-At the end, you will see the message `Getting pod status - ctrl-c when all is running and ready to exit`. Then you should see a WebLogic Administration Server and two Managed Server pods start. After all the pods are up, you can use `ctrl-c` to exit the build script.
+At the end, you should see log statements like:
 
+  ```
+  @@ Info: Your Model in Image domain resource deployed!
+
+  @@ Info: To watch pods start and get their status, run 'kubectl get pods -n sample-domain1-ns --watch' and ctrl-c when done watching.
+
+  @@ Info: If the introspector job fails or you see any other unexpected issue, see 'User Guide -> Manage WebLogic Domains -> Model in Image -> Debugging' in the documentation.
+  ```
+
+If you run `kubectl get pods -n sample-domain1-ns --watch`, then you should see the introspector run and your WebLogic server pods start. The output should look something like this:
+
+  ```
+  $ kubectl get pods -n sample-domain1-ns --watch
+  NAME                                         READY   STATUS    RESTARTS   AGE
+  sample-domain1-introspect-domain-job-lqqj9   0/1   Pending   0     0s
+  sample-domain1-introspect-domain-job-lqqj9   0/1   ContainerCreating   0     0s
+  sample-domain1-introspect-domain-job-lqqj9   1/1   Running   0     1s
+  sample-domain1-introspect-domain-job-lqqj9   0/1   Completed   0     65s
+  sample-domain1-introspect-domain-job-lqqj9   0/1   Terminating   0     65s
+  sample-domain1-admin-server   0/1   Pending   0     0s
+  sample-domain1-admin-server   0/1   ContainerCreating   0     0s
+  sample-domain1-admin-server   0/1   Running   0     1s
+  sample-domain1-admin-server   1/1   Running   0     32s
+  sample-domain1-managed-server2   0/1   Pending   0     0s
+  sample-domain1-managed-server1   0/1   Pending   0     0s
+  sample-domain1-managed-server2   0/1   ContainerCreating   0     0s
+  sample-domain1-managed-server1   0/1   ContainerCreating   0     0s
+  sample-domain1-managed-server2   0/1   Running   0     2s
+  sample-domain1-managed-server1   0/1   Running   0     2s
+  sample-domain1-managed-server2   1/1   Running   0     42s
+  sample-domain1-managed-server1   1/1   Running   0     43s
+  ```
+
+If you see an error, then consult the [debugging chapter in the Model in Image user guide]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
 
 ### Optionally test the sample application
 
