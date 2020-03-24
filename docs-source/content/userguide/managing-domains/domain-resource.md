@@ -123,10 +123,10 @@ Note: Defining `-Djava.security.egd=file:/dev/./urandom` in the `NODEMGR_MEM_ARG
 
 This example snippet illustrates how to add the above environment variables using the `env` attribute under the `serverPod` configuration in your domain resource YAML file. 
 ```
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-apiVersion: "weblogic.oracle/v6"
+apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
   name: domain1
@@ -164,10 +164,10 @@ Prior to creating a pod, the operator replaces variable references allowing the 
 This example domain YAML file specifies that pods for WebLogic Server instances in the `cluster-1` cluster will have a per-managed server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled as much as possible on different nodes:
 
 ```
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-apiVersion: "weblogic.oracle/v6"
+apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
   name: domain1

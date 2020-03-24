@@ -188,7 +188,7 @@ The content of the generated `domain.yaml`:
 
 ```
 $ cat output/weblogic-domains/soainfra/domain.yaml
-# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.

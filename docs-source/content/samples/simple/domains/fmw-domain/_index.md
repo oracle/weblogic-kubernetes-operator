@@ -162,9 +162,8 @@ namespace, you need to replace `NAMESPACE` in the example `kubectl` commands wit
 The content of the generated `domain.yaml`:
 
 ```
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
 #
