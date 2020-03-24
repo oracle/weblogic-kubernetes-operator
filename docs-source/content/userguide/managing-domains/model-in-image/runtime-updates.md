@@ -178,9 +178,9 @@ For example, if you already have a running Model in Image domain in `sample-doma
 
 Here's an example script for adding a data source to a WebLogic cluster named `cluster-1` for a domain resource in namespace, `sample-domain1-ns`, with domain UID, `sample-domain1`. This example is designed to work on top of the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
 
-This example references a database running in the `default` namespace that is accessed with the URL `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, user `sys as dba`, and password `Oradoc_db1`. Note that you can still add this data source even if there's no database running at this location.
+This example references a database running in the `default` namespace that is accessed with the URL `jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, user `sys as dba`, and password `Oradoc_db1`. Note that you can still add this data source even if there's no database running at this location.
 
-{{% notice note %}} If you already have a WDT config map deployed for your running domain, as is true for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample, then you should ensure that it includes any other needed files that were in the original WDT config map, in addition to the new data source YAML file. For example, the Model in Image sample puts file(s) in a directory that it uses to stage its config map in `$WORKDIR/wdtconfigmap`.
+{{% notice note %}} If you already have a WDT config map deployed for your running domain, as is true for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample, then you should ensure that any updated config map that you supply includes any needed files that were in the original WDT config map. For example, the Model in Image sample puts file(s) in a directory that it uses to stage its config map in `$WORKDIR/wdtconfigmap`.
 {{% /notice %}}
 
 
@@ -209,7 +209,7 @@ This example references a database running in the `default` namespace that is ac
     -n ${DOMAIN_NAMESPACE} \
     -s ${DOMAIN_UID}-new-db-access-secret \
     -l password=Oradoc_db1 \
-    -l url=oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
+    -l url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s
 
   # Assume WORKDIR is your working directory
 
