@@ -2,16 +2,16 @@
 # Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-#  This script uses the WebLogic Image Tool to build a docker image with model in image
+#  This script uses the WebLogic Image Tool to build a Docker image with model in image
 #  artifacts. By default, it uses the base image obtained earlier with build_image_base.sh,
 #  and it gets model files from the WORKDIR/models directory that was setup by the build_model.sh script.
 #
 #  The model image is named MODEL_IMAGE_NAME:MODEL_IMAGE_TAG.  See build_init_image.sh for
 #  the defaults for these values.
-#  
+#
 #  Assumptions:
 #
-#    This script should be called by build.sh.  
+#    This script should be called by build.sh.
 #    The WebLogic Image Tool is downloaded to WORKDIR/weblogic-image-tool.zip (see ./build_download.sh).
 #    The WebLogic Deploy Tool is downloaded to WORKDIR/weblogic-deploy-tooling.zip (see ./build_download.sh).
 #    Model files have been staged in the "WORKDIR/models" directory (see ./build_model.sh) or
@@ -29,7 +29,7 @@
 #      which is populated by the ./build_model.sh script.
 #
 #    MODEL_YAML_FILES, MODEL_ARCHIVE_FILES, MODEL_VARIABLES_FILES:
-#      Optionally set one or more of these with comma-separated lists of file
+#      Optionally, set one or more of these with comma-separated lists of file
 #      locations to override the corresponding .yaml, .zip, and .properties
 #      files normally obtained from MODEL_DIR.
 #
@@ -54,11 +54,11 @@ cd ${WORKDIR}
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 
 case "$WDT_DOMAIN_TYPE" in
-  WLS) 
+  WLS)
     BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-container-registry.oracle.com/middleware/weblogic}" ;;
   JRF|RestrictedJRF)
     BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-container-registry.oracle.com/middleware/fmw-infrastructure}" ;;
-  *) 
+  *)
     echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1 ;;
 esac
 
@@ -118,7 +118,7 @@ echo "@@"
 
 #
 # Run the image tool to create the image. It will use the WDT binaries
-# in the local image tool cache marked with key 'myversion' (see 'cache' commands above). 
+# in the local image tool cache marked with key 'myversion' (see 'cache' commands above).
 #
 
 ${IMGTOOL_BIN} update \
@@ -130,4 +130,3 @@ ${IMGTOOL_BIN} update \
   --wdtModelOnly \
   --wdtVersion myversion \
   --wdtDomainType ${WDT_DOMAIN_TYPE}
-

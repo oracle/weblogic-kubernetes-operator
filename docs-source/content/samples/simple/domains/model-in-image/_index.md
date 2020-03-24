@@ -471,7 +471,7 @@ This will route the request path `/console` to the admin service port `7001` at 
 kubectl apply -f $WORKDIR/console-ingress.yaml
 ```
 
-4.  Access the WebLogic console from the brower
+4.  Access the WebLogic console from the browser
 
 
 ```
