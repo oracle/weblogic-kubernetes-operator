@@ -16,6 +16,7 @@ spec:
   domainHome: %DOMAIN_HOME%
 
   # The domain home source type
+  # Set to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image
   domainHomeSourceType: %DOMAIN_HOME_SOURCE_TYPE%
 
   # The WebLogic Server Docker image that the Operator uses to start the domain
