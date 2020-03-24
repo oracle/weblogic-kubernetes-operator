@@ -87,8 +87,9 @@ echo "@@ Info: Applying domain resource yaml '$WORKDIR/k8s-domain.yaml'"
 kubectl apply -f $WORKDIR/k8s-domain.yaml
 )
 
-
-echo "@@ Info: Getting pod status - ctrl-c when all is running and ready to exit"
-( set -x
-kubectl get pods -n ${DOMAIN_NAMESPACE} --watch
-)
+echo
+echo "@@ Info: Your Model in Image domain resource deployed!"
+echo
+echo "@@ Info: To watch pods start and get their status, run 'kubectl get pods -n ${DOMAIN_NAMESPACE} --watch' and ctrl-c when done watching."
+echo
+echo "@@ Info: If the introspector job fails or you see any other unexpected issue, see 'User Guide -> Manage WebLogic Domains -> Model in Image -> Debugging' in the documentation."
