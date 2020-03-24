@@ -129,21 +129,11 @@ As was mentioned in the [overview](#overview), one way to tell the operator to a
 
 The WebLogic Deploy Tooling [Discover Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md) generates model files from an existing domain home. You can use this tool to help determine the model file contents you would need to supply to update an existing model.
 
-For example, if you already have a running Model in Image domain in `sample-domain1-ns` with an Administration Server pod, `sample-domain1-admin-server`, you can do the following:
+For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and assuming your domain type is `WLS`:
 
   ```
-  # (1) get a bash prompt in your admin server pod
-  kubectl -n sample-domain1-ns \
-    exec -it sample-domain1-admin-server /bin/bash
 
-  # (2) In the pod, use the image's WDT discover script to
-  # get the original WDT configuration. Notes:
-  #  - WebLogic pods define ORACLE_HOME and DOMAIN_HOME
-  #    for you.
-  #  - A Model in Image image will already have WDT binaries
-  #    in '/u01/wdt/weblogic-deploy/bin'.
-  #  - Set 'domain_type' to one of WLS, JRF, or
-  #    RestrictedJRF.
+  # (1) Run discover for your existing domain home.
 
   /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
     -oracle_home $ORACLE_HOME \
@@ -153,12 +143,9 @@ For example, if you already have a running Model in Image domain in `sample-doma
     -model_file old.yaml \
     -variable_file old.properties
 
-  # (3) Now make some WebLogic config changes via the console or WLST.
+  # (2) Now make some WebLogic config changes via the console or WLST.
 
-  # (4) In the pod, use the image's WDT discover script to
-  # get the latest WDT configuration after your changes. Notes:
-  #  - Set 'domain_type' to one of WLS, JRF, or
-  #    RestrictedJRF.
+  # (3) Run discover for your existing domain home.
 
   /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
     -oracle_home $ORACLE_HOME \
@@ -168,11 +155,12 @@ For example, if you already have a running Model in Image domain in `sample-doma
     -model_file new.yaml \
     -variable_file new.properties
 
-  # (5) In the pod, compare your old and new yaml to see what
-  # changed.
+  # (4) Compare your old and new yaml to see what changed.
 
   diff new.yaml old.yaml
   ```
+
+> Note: Remember to change the domain type to `JRF` or `RestrictedJRF` in the above commands if your domain type isn't `WLS`.
 
 #### Example of adding a data source
 
