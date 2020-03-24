@@ -253,13 +253,17 @@ public class ItModelInImage extends MiiBaseTest {
       domainMap.put("wdtModelPropertiesFile", "./model.properties");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
+
+      // delete and recreate the weblogic-credentials secret
       Secret secret = new Secret(domain.getDomainNs(), domain.getDomainUid()
           + "-weblogic-credentials", "system", "gumby1234");
+      // use a different secret name for runtimeEncryptionSecret with original credentials
       secret = new Secret(domain.getDomainNs(), domain.getDomainUid()
           + "-model-secret", getUsername(), getPassword());
+
+      // Modify the original domain yaml to include restartVersion and change runtimeEncryptionSecret
       String originalYaml = getUserProjectsDir() + "/weblogic-domains/" + domain.getDomainUid()
         + "/domain.yaml";
-      // Modify the original domain yaml to include restartVersion and change runtimeEncryptionSecret
       DomainCrd crd = new DomainCrd(originalYaml);
       Map<String, String> objectNode = new HashMap();
       objectNode.put("restartVersion", "v1.1");
