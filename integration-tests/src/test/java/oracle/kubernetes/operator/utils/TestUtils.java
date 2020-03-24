@@ -2155,6 +2155,13 @@ public class TestUtils {
    */
   public static void deleteDomainHomeDirOke() throws Exception {
     deleteDomainHomeDirOke("");
+    String resourceDir = BaseTest.getProjectRoot()
+            + "/integration-tests/src/test/resources/oke";
+    String cmd = " kubectl delete -f " + resourceDir + "/cleanupokepvc.yaml";
+    ExecCommand.exec(cmd);
+
+    cmd = " kubectl delete -f " + resourceDir + "/cleanupokepv.yaml";
+    ExecCommand.exec(cmd);
   }
 
   /**

@@ -877,9 +877,6 @@ public class Domain {
    */
   public void deletePvcAndCheckPvReleased() throws Exception {
     deletePvcAndCheckPvReleased("create-weblogic-sample-domain-job");
-    if (BaseTest.OKE_CLUSTER) {
-      TestUtils.deleteDomainHomeDirOke(domainUid);
-    }
   }
 
   /**

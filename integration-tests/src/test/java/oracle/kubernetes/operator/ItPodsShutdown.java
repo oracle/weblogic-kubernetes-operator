@@ -459,7 +459,7 @@ public class ItPodsShutdown extends BaseTest {
       updateCrdYamlVerifyShutdown(crd, delayTime);
       Assertions.assertTrue(
           checkShutdownUpdatedProp(domainUid + "-managed-server1", "20", "false", "Graceful"));
-      if (terminationTime > (3 * 20 * 1000)) {
+      if (terminationTime > (4 * 20 * 1000)) {
         LoggerHelper.getLocal().log(Level.INFO, "\"FAILURE: ignored timeoutValue during shutdown");
         throw new Exception("FAILURE: ignored timeoutValue during shutdown");
       }

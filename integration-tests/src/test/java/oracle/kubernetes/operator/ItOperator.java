@@ -281,6 +281,9 @@ public class ItOperator extends BaseTest {
       }
     }
     domain.deletePvcAndCheckPvReleased();
+    if (BaseTest.OKE_CLUSTER) {
+      TestUtils.deleteDomainHomeDirOke(domain.getDomainUid());
+    }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
