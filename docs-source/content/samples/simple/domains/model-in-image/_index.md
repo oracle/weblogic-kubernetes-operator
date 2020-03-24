@@ -25,7 +25,7 @@ description: "Sample for supplying a WebLogic Deploy Tool (WDT) model that the o
 
 This sample demonstrates:
 
-  - Using the WebLogic Image Tool to create a Docker image that contains a WebLogic install, a WebLogic Deploy Tool (WDT) install, a Java EE servlet application contained within a WDT archive, and a WebLogic domain that's defined using a WDT model file.
+  - Using the WebLogic Image Tool to create a Docker image that contains a WebLogic install, a WebLogic Deploy Tool (WDT) install, a Java EE servlet application contained within a WDT archive, and the model for a WebLogic domain configuration defined using a WDT model file.
   - Modifying the WDT model that's embedded within the Docker image using a WDT model file that's supplied using a Kubernetes config map.
   - Defining a `domainHomeSourceType: FromModel` domain resource that references the WDT model image and the WDT config map.
   - Deploying the model image, domain resource, model config map, and associated secrets that define user names, passwords, and URL values for the model and its domain resource.
@@ -35,7 +35,7 @@ Supported domain types:
 
 There are three types of domains supported by Model in Image: a standard `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, or a `RestrictedJRF` domain.
 
-The `JRF` domain path through the sample includes additional steps for deploying an infrastructure database and initializing the database using the Repository Creation Utility (RCU) tool. `JRF` domains may be  used by Oracle products that layer on top of WebLogic Server such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products such as Oracle Communications products.
+The `JRF` domain path through the sample includes additional steps for deploying an infrastructure database and initializing the database using the Repository Creation Utility (RCU) tool. `JRF` domains may be used by Oracle products that layer on top of WebLogic Server such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products such as Oracle Communications products.
 
 ### References
 
@@ -111,7 +111,7 @@ To reference the relevant user documentation, see:
 
      Alternatively, you can create your own base image and override the sample's default base image name and tag by exporting the `BASE_IMAGE_NAME` and `BASE_IMAGE_TAG` environment variables prior to running the sample scripts. If you want to create your own base image, see [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
 
-8. If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains). 
+8. If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains).
 
 > __NOTE__: Skip to section [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) if you're not using a `JRF` domain type.
 
@@ -179,7 +179,7 @@ A JRF domain requires an infrastructure database and also requires initializing 
 
      This script will deploy a database with the URL, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password, `Oradoc_db1`.
 
-     {{% notice warning %}} The Oracle database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1) : All the data is gone when the database is restarted.
+     {{% notice warning %}} The Oracle Database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1) : All the data is gone when the database is restarted.
      {{% /notice %}}
 
      **NOTE**: This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
@@ -422,7 +422,7 @@ You can add an ingress rule to access the WebLogic Console from your local brows
 
 1. Find out the service name of the admin server and service port number.
 
-The name follows the pattern <Domain UID>-<admin server name> all lower case and the port number will be described in your 
+The name follows the pattern <Domain UID>-<admin server name> all lower case and the port number will be described in your
 WDT model's admin server `listenPort`.
 
 You can also find the information by:

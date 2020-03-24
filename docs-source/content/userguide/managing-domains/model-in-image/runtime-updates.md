@@ -90,7 +90,7 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 
   For more information, see [Using Multiple Models](https://github.com/oracle/weblogic-deploy-tooling#using-multiple-models) in the WebLogic Deploy Tooling documentation.
 
- - There is no way to directly delete an attribute from an MBean that's already been specified by a model file. The work-around is to do this using two model files: (a) add a model file that deletes the named bean/resource that is a parent to the attribute you want to delete, and (b) add another  subsequent model file that fully defines the named bean/resource but without the attribute you want to delete.
+ - There is no way to directly delete an attribute from an MBean that's already been specified by a model file. The work-around is to do this using two model files: (a) add a model file that deletes the named bean/resource that is a parent to the attribute you want to delete, and (b) add another subsequent model file that fully defines the named bean/resource but without the attribute you want to delete.
 
  - The following runtime updates haven't been tested and are _not_ supported in the first release of Model in Image. If you need to make these kinds of updates, consider shutting down your domain entirely before making the change:
    - Adding, removing, or altering the network configuration of an existing Managed Server. This includes, but isn't limited to network channels, ports, and cluster addresses.
