@@ -2154,17 +2154,15 @@ public class TestUtils {
    * @throws Exception exception
    */
   public static void deleteDomainHomeDirOke() throws Exception {
-    try {
-      deleteDomainHomeDirOke("");
-    } finally {
-      String resourceDir = BaseTest.getProjectRoot()
-              + "/integration-tests/src/test/resources/oke";
-      String cmd = " kubectl delete -f " + resourceDir + "/cleanupokepvc.yaml";
-      ExecCommand.exec(cmd);
 
-      cmd = " kubectl delete -f " + resourceDir + "/cleanupokepv.yaml";
-      ExecCommand.exec(cmd);
-    }
+    deleteDomainHomeDirOke("");
+    String resourceDir = BaseTest.getProjectRoot()
+            + "/integration-tests/src/test/resources/oke";
+    String cmd = " kubectl delete -f " + resourceDir + "/cleanupokepvc.yaml";
+    ExecCommand.exec(cmd);
+    cmd = " kubectl delete -f " + resourceDir + "/cleanupokepv.yaml";
+    ExecCommand.exec(cmd);
+
   }
 
   /**
@@ -2207,10 +2205,6 @@ public class TestUtils {
     if (result.exitValue() != 0) {
       //retry
       result = ExecCommand.exec(cmd);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(" Failed to clean FSS dir,"
-                + " rm -rf output " + result.stdout() + " err " + result.stderr());
-      }
     }
     LoggerHelper.getLocal().log(
             Level.INFO, "rm -rf output " + result.stdout() + " err " + result.stderr());
