@@ -105,8 +105,8 @@ The following domain resource attributes are specific to Model in Image domains.
 | -------------------------                    |  ------------------ |
 | `domainHomeSourceType`                       |  Required. Set to `FromModel`. |
 | `domainHome`                                 |  Must reference an empty or non-existent directory within your image. Do not include the mount path of any persistent volume. Note that Model in Image recreates the domain home for a WebLogic pod every time the pod restarts.|
-| `configuration.model.wdtConfigMap`           | Optional. Set if you have stored additional models in a config map as per [Optional WDT model config map](#3-optional-wdt-model-config-map). |
-| `configuration.model.secrets`                | Optional. Set this array if your image or config map models contain macros that reference custom Kubernetes secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.|
+| `configuration.model.configMap`             | Optional. Set if you have stored additional models in a config map as per [Optional WDT model config map](#3-optional-wdt-model-config-map). |
+| `configuration.secrets`                      | Optional. Set this array if your image or config map models contain macros that reference custom Kubernetes secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.|
 | `configuration.model.RuntimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#4-required-runtime-encryption-secret). |
 | `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF` where `WLS` is the default. See [WDT Domain Types](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/type_def.md).|
 
