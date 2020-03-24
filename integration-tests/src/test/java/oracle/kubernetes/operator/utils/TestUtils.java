@@ -2154,14 +2154,17 @@ public class TestUtils {
    * @throws Exception exception
    */
   public static void deleteDomainHomeDirOke() throws Exception {
-    deleteDomainHomeDirOke("");
-    String resourceDir = BaseTest.getProjectRoot()
-            + "/integration-tests/src/test/resources/oke";
-    String cmd = " kubectl delete -f " + resourceDir + "/cleanupokepvc.yaml";
-    ExecCommand.exec(cmd);
+    try {
+      deleteDomainHomeDirOke("");
+    } finally {
+      String resourceDir = BaseTest.getProjectRoot()
+              + "/integration-tests/src/test/resources/oke";
+      String cmd = " kubectl delete -f " + resourceDir + "/cleanupokepvc.yaml";
+      ExecCommand.exec(cmd);
 
-    cmd = " kubectl delete -f " + resourceDir + "/cleanupokepv.yaml";
-    ExecCommand.exec(cmd);
+      cmd = " kubectl delete -f " + resourceDir + "/cleanupokepv.yaml";
+      ExecCommand.exec(cmd);
+    }
   }
 
   /**
@@ -2187,7 +2190,7 @@ public class TestUtils {
     if (domainUid.equals("")) {
       cmd =
               BaseTest.getProjectRoot()
-                      + "/src/integration-tests/bash/krun.sh -t 180 -m "
+                      + "/src/integration-tests/bash/krun.sh -t 240 -m "
                       + "cleanupoke-weblogic-sample-pvc:/shared/"
                       + " -n cleanupoke -c \"rm -rf /shared/wdt/* /shared/domains/*\"";
     } else {
@@ -2201,6 +2204,14 @@ public class TestUtils {
 
     LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmd);
     result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      //retry
+      result = ExecCommand.exec(cmd);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(" Failed to clean FSS dir,"
+                + " rm -rf output " + result.stdout() + " err " + result.stderr());
+      }
+    }
     LoggerHelper.getLocal().log(
             Level.INFO, "rm -rf output " + result.stdout() + " err " + result.stderr());
   }
