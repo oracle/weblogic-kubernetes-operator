@@ -451,6 +451,8 @@ If you see an error, then consult the [debugging chapter in the Model in Image u
 
 ### Optionally access the WebLogic console
 
+> WARNING: This sample externally exposes the WebLogic console and exposes it using a plain text http port. This is not secure and should not be done in production deployments.
+
 You can add an ingress rule to access the WebLogic Console from your local browser
 
 1. Find out the service name of the admin server and service port number.
