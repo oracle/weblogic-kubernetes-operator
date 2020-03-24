@@ -9,12 +9,10 @@
 # This script is called from run_domain.sh, which also sets up the resources
 # that the domain resource depends on plus deploys the domain resource.
 #
-# Expects the following env vars to already be set:
-#
-#   WORKDIR - working directory for the sample with at least 10g of space
-#
-# Optional:
-#
+# Optional environment variables:
+#   WORKDIR                  - Working directory for the sample with at least
+#                              10g of space. Defaults to 
+#                              '/tmp/$USER/model-in-image-sample-work-dir'.
 #   DOMAIN_UID               - defaults to 'sample-domain1'
 #   DOMAIN_NAMESPACE         - defaults to '${DOMAIN_UID}-ns'
 #   MODEL_IMAGE_NAME         - defaults to 'model-in-image'
@@ -29,6 +27,7 @@ set -eu
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 echo "@@ Info: Running '$(basename "$0")'."
 
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
@@ -36,6 +35,9 @@ MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
 DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-$SCRIPTDIR/k8s-domain.yaml.template}"
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 DOMAIN_RESOURCE_FILE="${WORKDIR}/k8s-domain.yaml"
+
+echo "@@ Info: WORKDIR='$WORKDIR'."
+mkdir -p ${WORKDIR}
 
 echo "@@ Info: Creating domain resource file '${DOMAIN_RESOURCE_FILE}' from '${DOMAIN_RESOURCE_TEMPLATE}'"
 

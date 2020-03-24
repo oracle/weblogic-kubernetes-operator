@@ -17,11 +17,11 @@
 #    Model files have been staged in the "WORKDIR/models" directory (see ./build_model.sh) or
 #    MODEL_DIR has been explicitly set to point to a different location.
 #
-#  Required environment variables:
-#
-#    WORKDIR - working directory for the sample with at least 10g of space
-#
 #  Optional environment variables:
+#
+#    WORKDIR
+#      Working directory for the sample with at least 10g of space.
+#      Defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
 #
 #    MODEL_DIR:
 #      Location of the model .zip, .properties, and .yaml files
@@ -49,6 +49,11 @@ set -eu
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 echo "@@ Info: Running '$(basename "$0")'."
 
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+
+echo "@@ Info: WORKDIR='$WORKDIR'."
+
+mkdir -p ${WORKDIR}
 cd ${WORKDIR}
 
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}

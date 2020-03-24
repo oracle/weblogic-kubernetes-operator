@@ -6,12 +6,11 @@
 # This is an example of how to setup a WebLogic Kubernetes Cluster for model-in-image. This
 # script can to be called once an model-in-image image is prepared via "./build.sh".
 #
-# Expects the following env vars to already be set:
+# Optional environment variables:
 #
-#   WORKDIR - working directory for the sample with at least 10g of space
-#
-# Optional:
-#
+#   WORKDIR                  - Working directory for the sample with at least
+#                              10g of space. Defaults to 
+#                              '/tmp/$USER/model-in-image-sample-work-dir'.
 #   DOMAIN_UID                - defaults to 'sample-domain1'
 #   DOMAIN_NAMESPACE          - defaults to '${DOMAIN_UID}-ns'
 #   WDTCONFIGMAPDIR           - defaults to './wdtconfigmap' (a directory populated by build_model.sh)
@@ -28,11 +27,15 @@ set -eu
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 echo "@@ Info: Running '$(basename "$0")'."
 
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 WDTCONFIGMAPDIR=${WDTCONFIGMAPDIR:-$WORKDIR/wdtconfigmap}
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 RCUDB_NAMESPACE=${RCUDB_NAMESPACE:-default}
+
+echo "@@ Info: WORKDIR='$WORKDIR'."
+mkdir -p ${WORKDIR}
 
 case "${WDT_DOMAIN_TYPE}" in
   WLS|JRF|RestrictedJRF) ;;

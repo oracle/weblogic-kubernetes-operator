@@ -78,7 +78,7 @@ To reference the relevant user documentation, see:
    export WORKDIR=$(pwd)
    ```
 
-   We will refer to this environment variable later in this document, and it is used by the sample scripts.
+   We will refer to this environment variable later in this document, and it is used by the sample scripts. If you do not set this environement variable, then the sample scripts will default to `/tmp/$USER/model-in-image-sample-work-dir` where `$USER` is your user name.
 
 5. Deploy the operator and set up the operator to manage the namespace, `sample-domain1-ns`. Optionally, deploy a Traefik load balancer that manages the same namespace. For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 

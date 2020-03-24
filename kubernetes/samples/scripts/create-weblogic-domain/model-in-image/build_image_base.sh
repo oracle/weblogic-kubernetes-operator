@@ -6,24 +6,32 @@
 #  This script obtains a WebLogic docker image with patches.  The default
 #  version is 12.2.1.4 with no patches applied.
 #  
-#  Expects the following env vars to already be set:
+#  Optional environment variables:
 #
-#   WORKDIR - working directory for the sample with at least 10g of space
-#
-#  Optional env vars:
+#   WORKDIR           - working directory for the sample with at least 10g of space
+#                       defaults to /tmp/$USER/model-in-image-sample-work-dir
 #
 #   WDT_DOMAIN_TYPE   - WLS (default), RestrictedJRF, or JRF
+#
 #   BASE_IMAGE_NAME   - defaults to container-registry.oracle.com/middleware/weblogic for
 #                       the 'WLS' domain type, and otherwise defaults to
 #                       container-registry.oracle.com/middleware/fmw-infrastructure
+#
 #   BASE_IMAGE_TAG    - defaults to 12.2.1.4
+#
 #   BASE_IMAGE_BUILD  - 'when-missing' (default) or 'always'
+#
 
 set -eu
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 echo "@@ Info: Running '$(basename "$0")'."
 
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+
+echo "@@ Info: WORKDIR='$WORKDIR'."
+
+mkdir -p ${WORKDIR}
 cd ${WORKDIR}
 
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}

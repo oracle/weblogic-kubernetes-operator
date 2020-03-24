@@ -5,9 +5,11 @@
 #
 # Usage: build.sh 
 #
-# Expects the following env var to already be set:
+# Optionally set the following env var:
 #
-#    WORKDIR - working directory for the sample with at least 10g of space
+#    WORKDIR
+#      Working directory for the sample with at least 10g of space.
+#      Defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
 #
 # For other env vars, see the scripts that this script calls.
 #

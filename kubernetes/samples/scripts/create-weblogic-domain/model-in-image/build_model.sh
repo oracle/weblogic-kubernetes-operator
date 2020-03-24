@@ -20,24 +20,27 @@
 #
 #   - It copies 'WORKDIR/model1.20.properties' to 'WORKDIR/wdtconfigmap'.
 #
+# Optionally set these environment variables:
+#
+#    WORKDIR
+#      Working directory for the sample with at least 10g of space.
+#      Defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
+#
+#    WDT_DOMAIN_TYPE 
+#      'WLS' (default), 'JRF', or 'RestrictedJRF'.
+#
 # CUSTOMIZATION NOTE:
+#
 #   If you want to specify your own model files for an image and your own
 #   wdt config map files, then you don't need to run this script. Instead:
+#
 #   - Set environment variables that indicate the location 
-#     of your model files as per prior to building your image
+#     of your model files prior to building your image
 #     as per the instructions in './build_image_model.sh'.
+#
 #   - Set the WDTCONFIGMAPDIR to indicate the location of your
 #     wdt config map files, prior to creating your wdt config
 #     map (see ./run_domain.sh).
-#
-# This script expects the following env vars to already be set:
-#    
-#    WORKDIR - working directory for the sample with at least 10g of space
-#
-# Optionally set:
-#
-#    WDT_DOMAIN_TYPE - 'WLS' (default), 'JRF', or 'RestrictedJRF'.
-#
 #
 
 set -eu
@@ -49,6 +52,11 @@ echo @@
 echo @@ Info: Staging sample app model archive from SCRIPTDIR/sample_app to WORKDIR/models/archive1.zip
 echo @@
 
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+
+echo "@@ Info: WORKDIR='$WORKDIR'."
+
+mkdir -p ${WORKDIR}
 cd ${WORKDIR?}
 
 mkdir -p ${WORKDIR}/models
