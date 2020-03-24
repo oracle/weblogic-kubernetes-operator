@@ -217,8 +217,8 @@ public class DomainStatusPatchTest {
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus()
           .addCluster(new ClusterStatus()
-              .withClusterName("cluster1").withReplicas(2).withReadyReplicas(4).withMaximumReplicas(10)
-                  .withMinimumReplicas(2))
+              .withClusterName("cluster1").withReplicas(2).withReadyReplicas(4)
+              .withMaximumReplicas(10).withReplicasGoal(10).withMinimumReplicas(2))
           .addCluster(new ClusterStatus()
               .withClusterName("cluster2").withReplicas(4).withMaximumReplicas(8).withMinimumReplicas(1));
 
@@ -227,7 +227,7 @@ public class DomainStatusPatchTest {
     assertThat(builder.getPatches(),
           hasItemsInOrder(
                 "ADD /status/clusters/- {'clusterName':'cluster1','maximumReplicas':10,'minimumReplicas':2,"
-                        + "'readyReplicas':4,'replicas':2}",
+                    + "'readyReplicas':4,'replicas':2,'replicasGoal':10}",
                 "ADD /status/clusters/- {'clusterName':'cluster2','maximumReplicas':8,'minimumReplicas':1,'replicas':4}"
                 ));
   }
@@ -283,7 +283,8 @@ public class DomainStatusPatchTest {
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus()
           .addServer(new ServerStatus()
-                .withServerName("ms1").withClusterName("cluster1").withState(RUNNING_STATE).withNodeName("node1"))
+                .withServerName("ms1").withClusterName("cluster1")
+                .withState(RUNNING_STATE).withNodeName("node1").withDesiredState(RUNNING_STATE))
           .addServer(new ServerStatus()
                 .withServerName("ms2").withClusterName("cluster1").withState(STARTING_STATE));
 
@@ -291,7 +292,8 @@ public class DomainStatusPatchTest {
 
     assertThat(builder.getPatches(),
           hasItemsInOrder(
-             "ADD /status/servers/- {'clusterName':'cluster1','nodeName':'node1','serverName':'ms1','state':'RUNNING'}",
+             "ADD /status/servers/- {'clusterName':'cluster1','desiredState':'RUNNING',"
+                 + "'nodeName':'node1','serverName':'ms1','state':'RUNNING'}",
              "ADD /status/servers/- {'clusterName':'cluster1','serverName':'ms2','state':'STARTING'}"
              ));
   }
