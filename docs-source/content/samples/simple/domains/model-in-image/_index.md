@@ -395,17 +395,6 @@ If you see an error, then consult the [debugging chapter in the Model in Image u
 
 2. Create a Kubernetes Ingress for the domain's WebLogic cluster in the domain's namespace by using the sample Helm chart:
 
-   For Helm 2.x:
-
-   ```
-   cd $SRCDIR
-   $ helm install kubernetes/samples/charts/ingress-per-domain \
-     --name sample-domain1-ingress \
-     --namespace sample-domain1-ns \
-     --set wlsDomain.domainUID=sample-domain1 \
-     --set traefik.hostname=sample-domain1.org
-   ```
-
    For Helm 3.x:
 
    ```
@@ -467,7 +456,6 @@ You can add an ingress rule to access the WebLogic Console from your local brows
 1. Find out the service name of the admin server and service port number.
 
 The name follows the pattern <Domain UID>-<admin server name> all lower case and the port number will be described in your
-WDT model's admin server `listenPort`.
 
 You can also find the information by:
 
