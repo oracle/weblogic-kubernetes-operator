@@ -59,6 +59,8 @@ To reference the relevant user documentation, see:
    export SRCDIR=$(pwd)/weblogic-kubernetes-operator
    ```
 
+   We will refer to this environment variable later in this document.
+
    For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
 
 3. Create a sample directory environment variable `SAMPLEDIR` that references this sample's directory:
@@ -67,12 +69,16 @@ To reference the relevant user documentation, see:
    export SAMPLEDIR=${SRCDIR}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/
    ```
 
+   We will refer to this environment variable later in this document.
+
 4. Create an empty, temporary working directory with 10g of space, and store its location in the `WORKDIR` environment variable. For example:
 
    ```
    cd <location of empty temporary directory with 10g of space>
    export WORKDIR=$(pwd)
    ```
+
+   We will refer to this environment variable later in this document, and it is used by the sample scripts.
 
 5. Deploy the operator and set up the operator to manage the namespace, `sample-domain1-ns`. Optionally, deploy a Traefik load balancer that manages the same namespace. For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
