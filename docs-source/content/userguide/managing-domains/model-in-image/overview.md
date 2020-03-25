@@ -30,7 +30,7 @@ It enables:
 
 WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file.  The WDT model format is described in the open source [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
 
-For JRF domains, Model in Image provides additional support for (a) initializing the RCU database for a domain when a domain is started for first time, (b) supplying an RCU password, and finally (c) obtaining an RCU wallet for re-use in subsequent restarts of the same domain. See [Prerequisites for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage.md#7-prerequisites-for-jrf-domain-types" >}}) and [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
+For JRF domains, Model in Image provides additional support for (a) initializing the RCU database for a domain when a domain is started for first time, (b) supplying an RCU password, and finally (c) obtaining an RCU wallet for re-use in subsequent restarts of the same domain. See [Prerequisites for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#7-prerequisites-for-jrf-domain-types" >}}) and [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
 
 
 #### Runtime behavior overview

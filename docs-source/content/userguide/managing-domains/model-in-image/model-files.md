@@ -86,7 +86,7 @@ Some notes about the sample model file:
 
 Refer to this section if you need to control the order in which your model files are loaded.
 
-During domain home creation, model and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT config map described in [Optional WDT model config map]({{< relref "/userguide/managing-domains/model-in-image/usage.md#3-optional-wdt-model-config-map" >}}).
+During domain home creation, model and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT config map described in [Optional WDT model config map]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#3-optional-wdt-model-config-map" >}}).
 
 The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` is a numeric number that specifies the desired order, and then is determined alphabetically as a tie-breaker. File names that don't include `.##.` sort _before_ other files as if they implicitly have the lowest possible `.##.`.
 

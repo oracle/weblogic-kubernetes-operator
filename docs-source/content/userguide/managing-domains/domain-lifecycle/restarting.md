@@ -35,7 +35,8 @@ For detailed information on how to restart servers in a Oracle WebLogic Server i
 This document describes what actions you need to take to properly restart your servers for a number of common scenarios:
 
 * Modifying the WebLogic configuration
-* Changing the custom domain configuration overrides (also called situational configuration)
+* Changing the custom domain configuration overrides (also called situational configuration) for Domain in PV and Domain in Image domains
+* Changing the model files for Model in Image domains
 * Changing the WebLogic Server credentials (the user name and password)
 * Changing properties on the domain resource that affect server pods (such as `image`, `volumes`, and `env`)
 * Applying WebLogic Server patches
@@ -52,6 +53,18 @@ For domain home in image, any changes (dynamic or non-dynamic) to the WebLogic c
     * If you create a new image with a new name, then you must avoid a rolling restart, which can cause unexpected behavior for the running domain due to configuration inconsistencies as seen by the various servers, by following the steps in [Avoiding a rolling restart when changing image property on a domain resource](#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource).
     * If you create a new image with the same name, then you must manually initiate a full domain restart. See [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts" >}}) in Starting, stopping, and restarting servers.
 
+* **Model in image:**
+
+    * For Model in Image, any image that supplies configuration changes that are incompatible with the current running domain require a full shutdown before changing the domain resource image setting instead of a rolling restart. Consult [Supported and unsupported updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#supported-and-unsupported-updates" >}}) in Model in Image Runtime Updates for changes that support a rolling restart.
+
+    * If you create a new image with a new name, and you want to avoid a rolling restart, see [Avoiding a rolling restart when changing image property on a domain resource](#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource).
+
+    * If you create a new image with the same name, then you must manually initiate either a full domain restart or rolling restart for Pods to run with the new image. To initiate a full restart, see [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts" >}}) in Starting, stopping, and restarting servers. To initiate a rolling restart, change the value of your domain resource `restartVersion` field.  See [Restarting Servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}) and [Rolling Restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#rolling-restarts" >}}) in Starting, stopping, and restarting servers
+
+    * If you are supplying updated models or secrets for a running domain, and you want the configuration updates to take effect using a rolling restart: 
+      * You must either supply a new image name in the domain resource or change the domain resource's `restartVersion` in order to force the Operator to reload the configuration. 
+      * With either of these two changes, the operator will rerun the domain's introspector job which will verify and apply the new configuration. If the introspector's configuration verification succeeds, it will then subsequently roll the pods but if the job fails, then a roll will not occur.
+      * If you change other fields that normally cause a restart, such as volumes, env, etc, then the introspector will not rerun and a rolling restart will proceed without loading the configuration changes.
 
 * **Domain home on PV:**
 For domain home on PV, the type of restart needed to apply the changes, depends on the nature of the WebLogic configuration change:
@@ -122,7 +135,7 @@ With patches that are not rolling compatible:
 #### Updating deployed applications for domain home in image
 
 Frequent updates of deployed applications using a continuous integration/continuous delivery (CI/CD) process is a very common use case.
-The process for applying an updated application is different for domain home in image than it is for domain home on PV.
+The process for applying an updated application is different for domain home in image and model in image than it is for domain home on PV.
 A rolling compatible application update is where some servers are running the old version and some are running the new version
 of the application during the rolling restart process. On the other hand, an application update that is not rolling compatible requires that all the servers
 in the domain be shutdown and restarted.
@@ -137,13 +150,15 @@ If the application update is not rolling compatible:
 * If you keep the same image name, then you must manually initiate a full domain restart. See [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}) in Starting, stopping, and restarting servers.
 * If you update the `image` property with a new image name, then you must avoid the rolling restart by following the steps in [Avoiding a rolling restart when changing image property on a domain resource](#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource).
 
-#### Rolling out an updated domain home in image
+#### Rolling out an updated domain home in image or model in image
 
 Follow these steps to create new rolling compatible image if you only need to patch your WebLogic Server domain or update application deployment files:
 
 a. Select a different name for the new image.
 
-b. Using the same domain home-in-image Docker image as a base, create a new Docker image by copying (`COPY`
+b. For domain home in image domains, it is important to keep your original domain home in your new image.
+
+Using the same domain home-in-image Docker image as a base, create a new Docker image by copying (`COPY`
 command in a Dockerfile) the updated application deployment files or WebLogic Server patches into the Docker image during the Docker image build.
 
 {{% notice note %}}

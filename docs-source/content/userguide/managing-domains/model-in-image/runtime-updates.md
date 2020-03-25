@@ -32,7 +32,7 @@ After changes are in place, you can tell the operator to load the changes and pr
 
  - Check for [Supported and unsupported updates](#supported-and-unsupported-updates).
 
- - If you specify multiple model files in your image or WDT config map, the order in which they're loaded and merged is determined as described in [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files.md#model-file-naming-and-loading-order" >}}).
+ - If you specify multiple model files in your image or WDT config map, the order in which they're loaded and merged is determined as described in [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
 
  - You can use the WDT Discover Domain Tool to help generate your model file updates. See [Using the WDT Discover Domain Tool](#using-the-wdt-discover-tool).
 
@@ -69,34 +69,50 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 
  - You can remove a named MBean or resource by specifying a model file with a `!` symbol just before the bean or resource name. For example, if you have a data source named `mynewdatasource` defined in your model, it can be removed by specifying a small model file that loads after the model file that defines the data source, where the small model file looks like this:
 
-  ```
-  resources:
-    JDBCSystemResource:
-      !mynewdatasource:
-  ```
+   ```
+   resources:
+     JDBCSystemResource:
+       !mynewdatasource:
+   ```
 
-  For more information, see [Declaring Named MBeans to Delete](https://github.com/oracle/weblogic-deploy-tooling#declaring-named-mbeans-to-delete) in the WebLogic Deploying Tooling documentation.
+   For more information, see [Declaring Named MBeans to Delete](https://github.com/oracle/weblogic-deploy-tooling#declaring-named-mbeans-to-delete) in the WebLogic Deploying Tooling documentation.
 
  - You can add or alter an MBean attribute by specifying a YAML snippet along with its parent bean hierarchy that references an existing MBean and the attribute. For example, to add or alter the max capacity of a data source named `mynewdatasource`:
 
-  ```
-  resources:
-    JDBCSystemResource:
-      mynewdatasource:
-        JdbcResource:
-          JDBCConnectionPoolParams:
-            MaxCapacity: 5
-  ```
+   ```
+   resources:
+     JDBCSystemResource:
+       mynewdatasource:
+         JdbcResource:
+           JDBCConnectionPoolParams:
+             MaxCapacity: 5
+   ```
 
-  For more information, see [Using Multiple Models](https://github.com/oracle/weblogic-deploy-tooling#using-multiple-models) in the WebLogic Deploy Tooling documentation.
+   For more information, see [Using Multiple Models](https://github.com/oracle/weblogic-deploy-tooling#using-multiple-models) in the WebLogic Deploy Tooling documentation.
 
  - There is no way to directly delete an attribute from an MBean that's already been specified by a model file. The work-around is to do this using two model files: (a) add a model file that deletes the named bean/resource that is a parent to the attribute you want to delete, and (b) add another subsequent model file that fully defines the named bean/resource but without the attribute you want to delete.
 
- - The following runtime updates haven't been tested and are _not_ supported in the first release of Model in Image. If you need to make these kinds of updates, consider shutting down your domain entirely before making the change:
-   - Adding, removing, or altering the network configuration of an existing Managed Server. This includes, but isn't limited to network channels, ports, and cluster addresses.
-   - Adding a Managed Server to an existing configured cluster.
-   - Altering the `cluster-size` or `max-cluster-size` of an existing dynamic cluster.
-   - TBD This needs some research. Check with QA, etc.
+ - The following types of runtime update configuration haven't been tested and are _not_ supported in the first release of Model in Image. If you need to make these kinds of updates, consider shutting down your domain entirely before making the change:
+   * Domain topology (cluster members)
+   * Network channel listen address, port, and enabled configuration
+   * Server and domain log locations
+   * Node Manager related configuration
+   * Changing any existing MBean name
+
+   **Specifically, do not apply runtime updates for:**
+
+   * Adding or removing:
+     * Servers
+     * Clusters
+     * Network Access Points (custom channels)
+   * Changing any of the following:
+     * Dynamic cluster size
+     * Default, SSL, and Admin channel `Enabled`, listen address, and port
+     * Network Access Point (custom channel), listen address, or port
+     * Server and domain log locations -- use the `logHome` domain setting instead
+     * Node Manager access credentials
+
+   Note that it's OK, even expected, to override Network Access Point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the Network Access Point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
 
 #### Changing a domain resource 'restartVersion'
 

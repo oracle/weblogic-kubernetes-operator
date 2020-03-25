@@ -281,6 +281,12 @@ The primary server creates a primary session state on the server to which the cl
 Specifying a `maxUnavailable` property value of `1` protects against inadvertent session state loss which could occur if both the primary and secondary
 servers are shut down at the same time during the rolling restart process.
 
+{{% notice note %}}
+If you are supplying updated models or secrets for a running Model in Image domain, and you want the configuration updates to take effect using a rolling restart, consult [Modifying WebLogic Configuration]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting/_index.md#modifying-the-weblogic-configuration" >}}) and [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) before consulting this chapter.
+{{% /notice %}}
+
+### Common restarting scenarios
+
 #### Using `restartVersion` to force the operator to restart servers
 
 The `restartVersion` property lets you force the operator to restart servers.
@@ -298,7 +304,6 @@ The `restartVersion` property can be specified at the domain, cluster, and serve
 The servers will also be restarted if `restartVersion` is removed from the domain resource (for example, if you had previously specified a value to cause a restart, then you remove that value after the previous restart has completed).
 {{% /notice %}}
 
-### Common restarting scenarios
 
 #### Restart all the servers in the domain
 
