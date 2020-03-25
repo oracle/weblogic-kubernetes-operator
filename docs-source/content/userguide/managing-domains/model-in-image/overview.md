@@ -35,16 +35,16 @@ For JRF domains, Model in Image provides additional support for (a) initializing
 
 #### Runtime behavior overview
 
-When you deploy a Model in Image domain resource, the operator will:
+When you deploy a Model in Image domain resource:
 
-  - Run a Kubernetes job called the 'introspector job' that:
+  - The operator will run a Kubernetes job called the 'introspector job' that:
     - Merges your WDT artifacts.
     - Runs WDT tooling to generate a domain home.
     - Packages up the domain home and passes it to the operator.
   - After the introspector job completes:
     - The operator creates a config map named `DOMAIN_UID-weblogic-domain-introspect-cm` and puts the packaged domain home in it.
     - The operator subsequently boots your domain's WebLogic Server pods.
-    - The pods will obtain their domain home from the introspector's output config map.
+    - The pods will obtain their domain home from the config map.
 
 #### Runtime updates overview
 
