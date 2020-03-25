@@ -1593,7 +1593,11 @@ public class TestUtils {
             .append(domainUid);
     TestUtils.exec(cmd.toString(), true);
     if (BaseTest.OKE_CLUSTER) {
-      TestUtils.deleteDomainHomeDirOke(domainUid);
+      String[] items = domainUid.split(",");
+      for (String item : items) {
+        LoggerHelper.getLocal().log(Level.INFO, "Running deleteDomainHomeDirOke for domainUid:" + item);
+        TestUtils.deleteDomainHomeDirOke(item);
+      }
     }
   }
 
