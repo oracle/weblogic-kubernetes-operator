@@ -146,7 +146,7 @@ domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.3
 
 # Location of the WebLogic "domain home in image" Docker image sample in the
 # `https://github.com/oracle/docker-images.git` project.
-# If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image".
+# If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-ssl".
 # Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt",
 # which uses WDT, instead of WLST, to generate the domain configuration.
 domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-ssl
