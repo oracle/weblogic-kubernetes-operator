@@ -417,7 +417,7 @@ public class ConfigMapHelper {
           packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
           data.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
         }
-        if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
+        if ("FromModel".equals(info.getDomain().getDomainHomeSourceType())) {
           packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
           data.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
         }
@@ -635,7 +635,7 @@ public class ConfigMapHelper {
         final String modelInImageSpecHash = data.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
 
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version (from ino spec) "
-            + info.getDomain().getAdminServerSpec().getDomainRestartVersion());
+            + info.getDomain().getRestartVersion());
         LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version  (from ino spec) "
             + info.getDomain().getIntrospectVersion());
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version from cm result "
