@@ -78,7 +78,7 @@ To reference the relevant user documentation, see:
    export WORKDIR=$(pwd)
    ```
 
-   We will refer to this environment variable later in this document, and it is used by the sample scripts.
+   We will refer to this environment variable later in this document, and it is used by the sample scripts. If you do not set this environement variable, then the sample scripts will default to `/tmp/$USER/model-in-image-sample-work-dir` where `$USER` is your user name.
 
 5. Deploy the operator and set up the operator to manage the namespace, `sample-domain1-ns`. Optionally, deploy a Traefik load balancer that manages the same namespace. For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
@@ -265,9 +265,9 @@ See [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-i
 
 ### Use the WebLogic Image Tool to create an image
 
-Model in Image must contain a WebLogic install, a WebLogic Deploy Tool install, and your WDT model files. You can use the sample `./build.sh` script to build this image, which will perform the following steps for you:
+A Model in Image image must contain a WebLogic install, a WebLogic Deploy Tool install, and your WDT model files. You can use the sample `./build.sh` script to build this image, which will perform the following steps for you:
 
-  - Uses `docker pull` to obtain a base image. (See [Prerequisites for all domain types](#prerequisites-for-all-domain-types) to set up access to the base image.)
+  - Uses `docker pull` to obtain a base image which already contains a WebLogic install. (See [Prerequisites for all domain types](#prerequisites-for-all-domain-types) to set up access to the base image.)
   - Downloads the latest WebLogic Image Tool and WebLogic Deploy Tool to `WORKDIR`.
   - Creates and populates a staging directory `$WORKDIR/models` that contains your WDT model files and WDT application archive.
     - Builds  a simple servlet application in `$SAMPLEDIR/sample_app` into a WDT model application archive `$WORKDIR/models/archive1.zip`.
@@ -290,20 +290,20 @@ If you intend to use a remote Docker registry, you need to tag and push the imag
 1.  Tag the image for the remote Docker registry, for example:
 
 ```
-docker tag <image-name>:<tag> <region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>:<tag>
+docker tag model-in-image:v1 my.remote.registry.com/model-in-image:v1 
 ```
 
 2.  Push the image to the remote Docker registry, for example:
 
 ```
-docker push <region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>:<tag>
+docker push my.remote.registry.com/model-in-image:v1
 ```
 
 3. Create the pull secret for the remote Docker registry:
 
 ```
  kubectl -n <domain namespace> create secret docker-registry <secret name> \
-     --docker-server=<region-key>.ocir.io/<tenancy-namespace>/<repo-name> \
+     --docker-server=my.remote.registry.com \
      --docker-username=your.email@some.com \
      --docker-password=your-password \
      --docker-email=your.email@some.com
@@ -318,12 +318,16 @@ docker push <region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>:<t
 
 ```
 
+This domain template file will be used in the next step ([Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)) when it creates your final domain resource file.
+
 5. Export the environment variables for the image name and tag using the same values in step 1:
 
 ```
-export MODEL_IMAGE_NAME="<region-key>.ocir.io/<tenancy-namespace>/<repo-name>/<image-name>"
-export MODEL_IMAGE_TAG="<tag>"
+export MODEL_IMAGE_NAME="my.remote.registry.com/model-in-image"
+export MODEL_IMAGE_TAG="v1"
 ```
+
+These environment variables will be used in the next step ([Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)) when it creates your final domain resource file.
 
 ### Create and deploy your Kubernetes resources
 
@@ -349,25 +353,47 @@ Run the script:
   $SAMPLEDIR/run_domain.sh
   ```
 
-At the end, you will see the message `Getting pod status - ctrl-c when all is running and ready to exit`. Then you should see a WebLogic Administration Server and two Managed Server pods start. After all the pods are up, you can use `ctrl-c` to exit the build script.
+At the end, you should see log statements like:
 
+  ```
+  @@ Info: Your Model in Image domain resource deployed!
+
+  @@ Info: To watch pods start and get their status, run 'kubectl get pods -n sample-domain1-ns --watch' and ctrl-c when done watching.
+
+  @@ Info: If the introspector job fails or you see any other unexpected issue, see 'User Guide -> Manage WebLogic Domains -> Model in Image -> Debugging' in the documentation.
+  ```
+
+If you run `kubectl get pods -n sample-domain1-ns --watch`, then you should see the introspector run and your WebLogic server pods start. The output should look something like this:
+
+  ```
+  $ kubectl get pods -n sample-domain1-ns --watch
+  NAME                                         READY   STATUS    RESTARTS   AGE
+  sample-domain1-introspect-domain-job-lqqj9   0/1   Pending   0     0s
+  sample-domain1-introspect-domain-job-lqqj9   0/1   ContainerCreating   0     0s
+  sample-domain1-introspect-domain-job-lqqj9   1/1   Running   0     1s
+  sample-domain1-introspect-domain-job-lqqj9   0/1   Completed   0     65s
+  sample-domain1-introspect-domain-job-lqqj9   0/1   Terminating   0     65s
+  sample-domain1-admin-server   0/1   Pending   0     0s
+  sample-domain1-admin-server   0/1   ContainerCreating   0     0s
+  sample-domain1-admin-server   0/1   Running   0     1s
+  sample-domain1-admin-server   1/1   Running   0     32s
+  sample-domain1-managed-server2   0/1   Pending   0     0s
+  sample-domain1-managed-server1   0/1   Pending   0     0s
+  sample-domain1-managed-server2   0/1   ContainerCreating   0     0s
+  sample-domain1-managed-server1   0/1   ContainerCreating   0     0s
+  sample-domain1-managed-server2   0/1   Running   0     2s
+  sample-domain1-managed-server1   0/1   Running   0     2s
+  sample-domain1-managed-server2   1/1   Running   0     42s
+  sample-domain1-managed-server1   1/1   Running   0     43s
+  ```
+
+If you see an error, then consult the [debugging chapter in the Model in Image user guide]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
 
 ### Optionally test the sample application
 
 1. Ensure Traefik has been installed and is servicing external port 30305, as per [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
 
 2. Create a Kubernetes Ingress for the domain's WebLogic cluster in the domain's namespace by using the sample Helm chart:
-
-   For Helm 2.x:
-
-   ```
-   cd $SRCDIR
-   $ helm install kubernetes/samples/charts/ingress-per-domain \
-     --name sample-domain1-ingress \
-     --namespace sample-domain1-ns \
-     --set wlsDomain.domainUID=sample-domain1 \
-     --set traefik.hostname=sample-domain1.org
-   ```
 
    For Helm 3.x:
 
@@ -425,12 +451,13 @@ At the end, you will see the message `Getting pod status - ctrl-c when all is ru
 
 ### Optionally access the WebLogic console
 
+> WARNING: This sample externally exposes the WebLogic console and exposes it using a plain text http port. This is not secure and should not be done in production deployments.
+
 You can add an ingress rule to access the WebLogic Console from your local browser
 
 1. Find out the service name of the admin server and service port number.
 
 The name follows the pattern <Domain UID>-<admin server name> all lower case and the port number will be described in your
-WDT model's admin server `listenPort`.
 
 You can also find the information by:
 

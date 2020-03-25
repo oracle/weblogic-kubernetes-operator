@@ -24,9 +24,13 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 
 #### YAML files
 
-Domain resources are defined using the domain resource YAML files. For each WLS domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample script, `create-domain.sh`, generates a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WLS domain parameters that define your WLS domain.
+Domain resources are defined using the domain resource YAML files. For each WLS domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample scripts generates a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WLS domain parameters that define your WLS domain.
 
-See the WebLogic sample [Domain home on a persistent volume]({{< relref "/samples/simple/domains/domain-home-on-pv/_index.md" >}}) README.
+* WebLogic sample [Domain home on a persistent volume]({{< relref "/samples/simple/domains/domain-home-on-pv/_index.md" >}}).
+
+* WebLogic sample [Domain home on image]({{< relref "/samples/simple/domains/domain-home-on-image/_index.md" >}}).
+
+* WebLogic sample [Model in image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}).
 
 #### Kubernetes resources
 
@@ -65,7 +69,7 @@ Elements related to domain identification, Docker image, and domain home:
 * `imagePullPolicy`: The image pull policy for the WebLogic Docker image. Legal values are `Always`, `Never` and `IfNotPresent`. Defaults to `Always` if image ends in `:latest`; `IfNotPresent` otherwise.
 * `imagePullSecrets`: A list of image pull secrets for the WebLogic Docker image.
 * `domainHome`: The folder for the WebLogic domain. Not required. Defaults to `/shared/domains/domains/domainUID` if `domainHomeSourceType` is `PersistentVolume`. Defaults to `/u01/oracle/user_projects/domains/` if `domainHomeSourceType` is `Image`. Defaults to `/u01/domains/domainUID` if `domainHomeSourceType` is `FromModel`.
-* `domainHomeSourceType`: The source for the domain home. Legal values are `Image`, `PersistentVolume`, and `FromModel`. Defaults to `Image`.
+* `domainHomeSourceType`: The source for the domain home. Legal values are `Image` (for Domain in Image), `PersistentVolume` (for Domain in PV), and `FromModel` (for Model in Image). Defaults to `Image`.
 
 Elements related to logging:
 
@@ -76,6 +80,7 @@ Elements related to logging:
 Elements related to security:
 
 * `webLogicCredentialsSecret`: The name of a pre-created Kubernetes secret, in the domain resource's namespace, that holds the user name and password needed to boot WebLogic Server under the `username` and `password` fields.
+* See also elements under `configuration` below.
 
 Elements related to domain [startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}):
 
@@ -84,11 +89,25 @@ Elements related to domain [startup and shutdown]({{< relref "/userguide/managin
 * `restartVersion`: If present, every time this value is updated, the operator will restart the required servers.
 * `replicas`: The number of Managed Servers to run in any cluster that does not specify a `replicas` count.
 
-Elements related to overriding WebLogic domain configuration:
+Elements related to specifying and overriding WebLogic domain configuration:
 
-These elements are under `configuration`.
-* `overridesConfigMap`: The name of the config map for optional WebLogic configuration overrides. The value should be empty/unset, if the `domainHomeSourceType` is set to `FromModel`.
-* `secrets`: A list of names of the secrets for optional WebLogic configuration overrides or model.
+* These elements are under `configuration`.
+
+  * `overridesConfigMap`: The name of the config map for optional [WebLogic Configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}). The value only applies if the `domainHomeSourceType` is `Image` or `PersistentVolume`. Do not set this value if the `domainHomeSourceType` is `FromModel`.
+  * `secrets`: A list of secret names for optional [WebLogic configuration override]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}) macros or [Model in Image model file]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) macros. Often used for specifying data source URLs, usernames, and passwords.
+  * `introspectorJobActiveDeadlineSeconds`: Time in seconds before timing out the introspector job. Default is 120 seconds.
+
+* These elements are under `configuration.model`, only apply if the `domainHomeSourceType` is `FromModel`, and are discussed in [Model in image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}).
+
+  * `configMap`: Optional configuration map for supplying [runtime model file updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) to Model in Image model configuration.
+  * `domainType`: Must be one of `WLS`, `JRF`, or `RestrictedJRF`.  Default is `WLS`.
+  * `runtimeEncryptionSecret`: Required. Expected field is `password`. This is used by Model in Image internals to encrypt data while the data is passed from the introspector to WebLogic pods. The password can be arbitrary: the only requirement is that it must stay the same for the life of a domain resource. If a domain resource is deleted then redeployed, it's fine to change the password during the interim.
+  * `wdtEncryptionSecret`: Optional. Rarely used. See Model in Image documentation for details.
+
+* These elements are under `configuration.opss`, and only apply if the `domainHomeSourceType` is `FromModel` andthe `domainType` is `JRF`. They're discussed in [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
+
+  * `walletPasswordSecret`: The expected secret field is 'walletPassword'. Used to encrypt/decrypt the wallet that's used for accessing the domain's entries in its RCU database.
+  * `walletFileSecret`: Optional. The expected secret field is 'walletFile'. Use this to allow a JRF domain to reuse its entries in the RCU database (specify a wallet file that was obtained from the domain home while the domain was booted for the first time).
 
 Elements related to Kubernetes pod and service generation:
 

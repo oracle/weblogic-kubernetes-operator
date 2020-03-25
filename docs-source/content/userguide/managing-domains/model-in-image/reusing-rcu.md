@@ -50,4 +50,4 @@ Here's sample code for deploying the OPSS wallet password and wallet file secret
 
 Alternatively, you can use the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -r` command to deploy a local wallet file as a secret (pass `-?` to get this script's command-line arguments and defaults).
 
-See also, [Prerequisites for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage.md#7-prerequisites-for-jrf-domain-types" >}}).
+See also, [Prerequisites for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#7-prerequisites-for-jrf-domain-types" >}}).

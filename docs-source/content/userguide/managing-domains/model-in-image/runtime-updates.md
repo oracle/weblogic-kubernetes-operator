@@ -32,7 +32,7 @@ After changes are in place, you can tell the operator to load the changes and pr
 
  - Check for [Supported and unsupported updates](#supported-and-unsupported-updates).
 
- - If you specify multiple model files in your image or WDT config map, the order in which they're loaded and merged is determined as described in [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files.md#model-file-naming-and-loading-order" >}}).
+ - If you specify multiple model files in your image or WDT config map, the order in which they're loaded and merged is determined as described in [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
 
  - You can use the WDT Discover Domain Tool to help generate your model file updates. See [Using the WDT Discover Domain Tool](#using-the-wdt-discover-tool).
 
@@ -69,34 +69,50 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 
  - You can remove a named MBean or resource by specifying a model file with a `!` symbol just before the bean or resource name. For example, if you have a data source named `mynewdatasource` defined in your model, it can be removed by specifying a small model file that loads after the model file that defines the data source, where the small model file looks like this:
 
-  ```
-  resources:
-    JDBCSystemResource:
-      !mynewdatasource:
-  ```
+   ```
+   resources:
+     JDBCSystemResource:
+       !mynewdatasource:
+   ```
 
-  For more information, see [Declaring Named MBeans to Delete](https://github.com/oracle/weblogic-deploy-tooling#declaring-named-mbeans-to-delete) in the WebLogic Deploying Tooling documentation.
+   For more information, see [Declaring Named MBeans to Delete](https://github.com/oracle/weblogic-deploy-tooling#declaring-named-mbeans-to-delete) in the WebLogic Deploying Tooling documentation.
 
  - You can add or alter an MBean attribute by specifying a YAML snippet along with its parent bean hierarchy that references an existing MBean and the attribute. For example, to add or alter the max capacity of a data source named `mynewdatasource`:
 
-  ```
-  resources:
-    JDBCSystemResource:
-      mynewdatasource:
-        JdbcResource:
-          JDBCConnectionPoolParams:
-            MaxCapacity: 5
-  ```
+   ```
+   resources:
+     JDBCSystemResource:
+       mynewdatasource:
+         JdbcResource:
+           JDBCConnectionPoolParams:
+             MaxCapacity: 5
+   ```
 
-  For more information, see [Using Multiple Models](https://github.com/oracle/weblogic-deploy-tooling#using-multiple-models) in the WebLogic Deploy Tooling documentation.
+   For more information, see [Using Multiple Models](https://github.com/oracle/weblogic-deploy-tooling#using-multiple-models) in the WebLogic Deploy Tooling documentation.
 
  - There is no way to directly delete an attribute from an MBean that's already been specified by a model file. The work-around is to do this using two model files: (a) add a model file that deletes the named bean/resource that is a parent to the attribute you want to delete, and (b) add another subsequent model file that fully defines the named bean/resource but without the attribute you want to delete.
 
- - The following runtime updates haven't been tested and are _not_ supported in the first release of Model in Image. If you need to make these kinds of updates, consider shutting down your domain entirely before making the change:
-   - Adding, removing, or altering the network configuration of an existing Managed Server. This includes, but isn't limited to network channels, ports, and cluster addresses.
-   - Adding a Managed Server to an existing configured cluster.
-   - Altering the `cluster-size` or `max-cluster-size` of an existing dynamic cluster.
-   - TBD This needs some research. Check with QA, etc.
+ - The following types of runtime update configuration haven't been tested and are _not_ supported in the first release of Model in Image. If you need to make these kinds of updates, consider shutting down your domain entirely before making the change:
+   * Domain topology (cluster members)
+   * Network channel listen address, port, and enabled configuration
+   * Server and domain log locations
+   * Node Manager related configuration
+   * Changing any existing MBean name
+
+   **Specifically, do not apply runtime updates for:**
+
+   * Adding or removing:
+     * Servers
+     * Clusters
+     * Network Access Points (custom channels)
+   * Changing any of the following:
+     * Dynamic cluster size
+     * Default, SSL, and Admin channel `Enabled`, listen address, and port
+     * Network Access Point (custom channel), listen address, or port
+     * Server and domain log locations -- use the `logHome` domain setting instead
+     * Node Manager access credentials
+
+   Note that it's OK, even expected, to override Network Access Point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the Network Access Point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
 
 #### Changing a domain resource 'restartVersion'
 
@@ -129,21 +145,11 @@ As was mentioned in the [overview](#overview), one way to tell the operator to a
 
 The WebLogic Deploy Tooling [Discover Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md) generates model files from an existing domain home. You can use this tool to help determine the model file contents you would need to supply to update an existing model.
 
-For example, if you already have a running Model in Image domain in `sample-domain1-ns` with an Administration Server pod, `sample-domain1-admin-server`, you can do the following:
+For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and assuming your domain type is `WLS`:
 
   ```
-  # (1) get a bash prompt in your admin server pod
-  kubectl -n sample-domain1-ns \
-    exec -it sample-domain1-admin-server /bin/bash
 
-  # (2) In the pod, use the image's WDT discover script to
-  # get the original WDT configuration. Notes:
-  #  - WebLogic pods define ORACLE_HOME and DOMAIN_HOME
-  #    for you.
-  #  - A Model in Image image will already have WDT binaries
-  #    in '/u01/wdt/weblogic-deploy/bin'.
-  #  - Set 'domain_type' to one of WLS, JRF, or
-  #    RestrictedJRF.
+  # (1) Run discover for your existing domain home.
 
   /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
     -oracle_home $ORACLE_HOME \
@@ -153,12 +159,9 @@ For example, if you already have a running Model in Image domain in `sample-doma
     -model_file old.yaml \
     -variable_file old.properties
 
-  # (3) Now make some WebLogic config changes via the console or WLST.
+  # (2) Now make some WebLogic config changes via the console or WLST.
 
-  # (4) In the pod, use the image's WDT discover script to
-  # get the latest WDT configuration after your changes. Notes:
-  #  - Set 'domain_type' to one of WLS, JRF, or
-  #    RestrictedJRF.
+  # (3) Run discover for your existing domain home.
 
   /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
     -oracle_home $ORACLE_HOME \
@@ -168,11 +171,12 @@ For example, if you already have a running Model in Image domain in `sample-doma
     -model_file new.yaml \
     -variable_file new.properties
 
-  # (5) In the pod, compare your old and new yaml to see what
-  # changed.
+  # (4) Compare your old and new yaml to see what changed.
 
   diff new.yaml old.yaml
   ```
+
+> Note: Remember to change the domain type to `JRF` or `RestrictedJRF` in the above commands if your domain type isn't `WLS`.
 
 #### Example of adding a data source
 
@@ -211,9 +215,9 @@ This example references a database running in the `default` namespace that is ac
     -l password=Oradoc_db1 \
     -l url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s
 
-  # Assume WORKDIR is your working directory
+  # Assume WORKDIR is your working directory, default is /tmp/$USER/model-in-image-sample-work-dir
 
-  cd $WORKDIR
+  cd ${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
   # Create a WDT configmap with the datasource WDT yaml snippet
 
@@ -233,8 +237,8 @@ This example references a database running in the `default` namespace that is ac
             GlobalTransactionsProtocol: TwoPhaseCommit
           JDBCDriverParams:
             DriverName: oracle.jdbc.xa.client.OracleXADataSource
-            URL:               '@@SECRET:@@ENV:DOMAIN_UID@@-new-db-access-secret/url@@'
-            PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-new-db-access-secret/password@@'
+            URL:               '@@SECRET:sample-domain1-new-db-access-secret:url@@'
+            PasswordEncrypted: '@@SECRET:sample-domain1-new-db-access-secret:password@@'
             Properties:
               user:
                 Value: 'sys as sysdba'
@@ -244,9 +248,9 @@ This example references a database running in the `default` namespace that is ac
                 Value: 30000
           JDBCConnectionPoolParams:
               InitialCapacity: 0
-              MaxCapacity: 1                   # This is a comment
-              TestTableName: SQL ISVALID       # This is a comment
-              TestConnectionsOnReserve: true   # This is a comment
+              MaxCapacity: 1                # Optionally include comments like this
+              TestTableName: SQL ISVALID       
+              TestConnectionsOnReserve: true
   EOF
 
   # Create a config map containing the model snippet

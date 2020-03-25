@@ -4,6 +4,12 @@ This sample demonstrates the WebLogic Kubernetes Operator "Model in Image" featu
 
 # References
 
-- Sample doc: [source](../../../../../docs-source/content/samples/simple/domains/model-in-image/_index.md), [latest public](https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/model-in-image).
+- Sample doc: 
+  - Location in documentation menu: `Samples -> Simple Samples -> Domains -> Model in Image`.
+  - [source](../../../../../docs-source/content/samples/simple/domains/model-in-image/_index.md)
+  - [latest public](https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/model-in-image)
 
-- User doc: [source](../../../../../docs-source/content/userguide/managing-domains/model-in-image/_index.md), [latest public](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image).
+- User doc: 
+  - Location in documentation menu: `User Guide -> Manage WebLogic Domains -> Model in Image`.
+  - [source](../../../../../docs-source/content/userguide/managing-domains/model-in-image/_index.md)
+  - [latest public](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image)

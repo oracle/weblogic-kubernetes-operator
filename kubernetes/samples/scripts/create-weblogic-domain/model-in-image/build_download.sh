@@ -6,12 +6,12 @@
 # This script downloads the latest WebLogic Deploy Tool and WebLogic Image Tool 
 # to the WORKDIR directory.
 #
-# Expects the following env vars to already be set:
-#    
+# Optional environment variables:
+#
 #    WORKDIR 
 #      working directory for the sample with at least 10g of space
+#      defaults to /tmp/$USER/model-in-image-sample-work-dir
 #
-# Optional env vars:
 #    http_proxy https_proxy
 #      If running behind a proxy, then set as needed to allow curl access to github.com.
 #
@@ -34,12 +34,16 @@ set -eu
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 echo "@@ Info: Running '$(basename "$0")'."
 
-cd ${WORKDIR}
-
 DOWNLOAD_WIT=${DOWNLOAD_WIT:-when-missing}
 DOWNLOAD_WDT=${DOWNLOAD_WDT:-when-missing}
 WDT_INSTALLER_URL=${WDT_INSTALLER_URL:-https://github.com/oracle/weblogic-deploy-tooling/releases/latest}
 WIT_INSTALLER_URL=${WIT_INSTALLER_URL:-https://github.com/oracle/weblogic-image-tool/releases/latest}
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+
+echo "@@ Info: WORKDIR='$WORKDIR'."
+
+mkdir -p ${WORKDIR}
+cd ${WORKDIR}
 
 download_zip() {
   set -eu
