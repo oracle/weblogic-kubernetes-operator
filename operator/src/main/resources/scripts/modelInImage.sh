@@ -653,8 +653,20 @@ function wdtUpdateModelDomain() {
   if [ ! -z ${UPDATE_RCUPWD_FLAG} ]; then
     trace "Updating wallet because schema password changed"
     gunzip ${LOCAL_PRIM_DOMAIN_ZIP}
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "wdtUpdateModelDomain: failed to upzip primordial domain"
+      exit 1
+    fi
     tar uf ${LOCAL_PRIM_DOMAIN_TAR} ${DOMAIN_HOME}/config/fmwconfig/bootstrap/cwallet.sso
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "wdtUpdateModelDomain: failed to tar update wallet file"
+      exit 1
+    fi
     gzip ${LOCAL_PRIM_DOMAIN_TAR}
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "wdtUpdateModelDomain: failed to zip up primordial domain"
+      exit 1
+    fi
   fi
 
   # This is the complete model and used for life-cycle comparision, encrypt this before storing in
