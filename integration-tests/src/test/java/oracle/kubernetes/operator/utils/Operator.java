@@ -690,6 +690,9 @@ public class Operator {
    * @param logLocation - location where the logs to be written
    */
   public void writePodLog(String logLocation) throws Exception {
+    //create dir
+    TestUtils.exec("mkdir -p " + logLocation);
+    
     //write operator pod describe
     String cmd = "kubectl describe " + getOperatorPodName() + " -n "
         + getOperatorNamespace() + " >> " + logLocation
