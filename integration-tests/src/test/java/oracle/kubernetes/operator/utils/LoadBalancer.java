@@ -198,22 +198,21 @@ public class LoadBalancer {
        .append("\"")
        .append("kubernetes.namespaces=")
        .append(namespace)
-        .append("\" --debug");
-    //.append("\" --wait");
+        .append("\"");
 
     if (BaseTest.HELM_VERSION.equals("V2")) {
       if (BaseTest.OKE_CLUSTER) {
         //cmd.append(" --cleanup-on-fail --force --timeout 240");
-        cmd.append(" --timeout 240");
+        cmd.append(" --debug --timeout 240");
       } else {
-        cmd.append("  --timeout 240");
+        cmd.append("  --wait --timeout 240");
       }
     }
     if (BaseTest.HELM_VERSION.equals("V3")) {
       if (BaseTest.OKE_CLUSTER) {
-        cmd.append(" --cleanup-on-fail --force --timeout 4m0s");
+        cmd.append(" --debug  --timeout 4m0s");
       } else {
-        cmd.append("  --timeout 4m0s");
+        cmd.append("  --wait --timeout 4m0s");
       }
     }
     LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());

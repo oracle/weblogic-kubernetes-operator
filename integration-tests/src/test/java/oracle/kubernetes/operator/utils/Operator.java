@@ -442,14 +442,14 @@ public class Operator {
 
     if (BaseTest.HELM_VERSION.equals("V2")) {
       if (BaseTest.OKE_CLUSTER) {
-        cmd.append(" --cleanup-on-fail --force --wait --timeout 180");
+        cmd.append("  --debug --timeout 240");
       } else {
-        cmd.append(" --wait --timeout 180");
+        cmd.append(" --wait --timeout 240");
       }
     }
     if (BaseTest.HELM_VERSION.equals("V3")) {
       if (BaseTest.OKE_CLUSTER) {
-        cmd.append(" --cleanup-on-fail --force --wait --timeout 3m0s");
+        cmd.append("  --debug --timeout 4m0s");
       } else {
         cmd.append(" --wait --timeout 3m0s");
       }
