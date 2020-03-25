@@ -6,8 +6,7 @@
 #  artifacts. By default, it uses the base image obtained earlier with build_image_base.sh,
 #  and it gets model files from the WORKDIR/models directory that was setup by the build_model.sh script.
 #
-#  The model image is named MODEL_IMAGE_NAME:MODEL_IMAGE_TAG.  See build_init_image.sh for
-#  the defaults for these values.
+#  The model image is named MODEL_IMAGE_NAME:MODEL_IMAGE_TAG. 
 #
 #  Assumptions:
 #
@@ -38,7 +37,6 @@
 #                        the 'WLS' domain type, and otherwise defaults to
 #                        container-registry.oracle.com/middleware/fmw-infrastructure
 #    BASE_IMAGE_TAG    - defaults to 12.2.1.4
-#    BASE_IMAGE_BUILD  - 'when-missing' (default) or 'always'
 #    MODEL_IMAGE_NAME  - defaults to 'model-in-image'
 #    MODEL_IMAGE_TAG   - defaults to 'v1'
 #    MODEL_IMAGE_BUILD - 'when-missing' or 'always' (default)
@@ -68,7 +66,6 @@ case "$WDT_DOMAIN_TYPE" in
 esac
 
 BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
-BASE_IMAGE_BUILD=${BASE_IMAGE_BUILD:-when-missing}
 
 MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
 MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
