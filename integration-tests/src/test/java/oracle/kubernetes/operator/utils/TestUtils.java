@@ -860,12 +860,15 @@ public class TestUtils {
             + "/weblogic-operators/"
             + operator.getOperatorNamespace()
             + "/curl.yaml";
-    copyFile(resourceDir + "/curl.yaml",  yamlPath);
+    File f = new File(TestUtils.class.getClassLoader().getResource(yamlPath).getFile());
+    if (!f.exists()) {
+      copyFile(resourceDir + "/curl.yaml", yamlPath);
 
-    replaceStringInFile(operator.getUserProjectsDir()
-            + "/weblogic-operators/"
-            + operator.getOperatorNamespace()
-            + "/curl.yaml", "default", operator.getOperatorNamespace());
+      replaceStringInFile(operator.getUserProjectsDir()
+              + "/weblogic-operators/"
+              + operator.getOperatorNamespace()
+              + "/curl.yaml", "default", operator.getOperatorNamespace());
+    }
     String command = "kubectl apply -f " + yamlPath;
     ExecResult result = ExecCommand.exec(command, true);
     if (result.exitValue() != 0) {

@@ -11,7 +11,7 @@ spec:
     - image: pstauffer/curl
       command:
         - sleep
-        - "3600"
+        - "5600"
       imagePullPolicy: IfNotPresent
       name: curl
   restartPolicy: Always
