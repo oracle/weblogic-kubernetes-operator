@@ -10,9 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
@@ -164,20 +162,20 @@ public class ItModelInImageOverride extends MiiBaseTest {
         + "/integration-tests/src/test/resources/model-in-image";
     String origModelFile = origDir + "/model.jdbc.yaml";
     String origPropFile = origDir + "/model.jdbc.properties";
-    String destDir = getResultDir() + "/samples/model-in-image";;
+    String destDir = getResultDir() + "/samples/model-in-image-override";;
     String destModelFile = destDir + "/model.jdbc_2.yaml";
     String destPropFile = destDir + "/model.jdbc_2.properties";
+    Files.createDirectories(Paths.get(destDir));
 
     TestUtils.copyFile(origModelFile, destModelFile);
     TestUtils.copyFile(origPropFile, destPropFile);
-    Set<String> cmModelFileSet = new HashSet<>();
 
     // Re-create config map after deploying domain crd
     final String domainUid = domain.getDomainUid();
     final String cmName = domainUid + configMapSuffix;
-    cmModelFileSet.add(destModelFile);
-    cmModelFileSet.add(destPropFile);
-    TestUtils.createConfigMapWMultiModels(cmName, cmModelFileSet, domainUid, domainNS);
+    final String label = "weblogic.domainUID=" + domainUid;
+
+    TestUtils.createConfigMap(cmName, destDir, domainNS, label);
   }
 
   private void modifyDomainYamlWithRestartVersion()

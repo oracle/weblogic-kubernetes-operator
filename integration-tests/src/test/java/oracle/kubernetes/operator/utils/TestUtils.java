@@ -17,7 +17,6 @@ import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.logging.Level;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -1991,6 +1990,11 @@ public class TestUtils {
   public static void createConfigMap(String cmName, String fileOrDirPath,
                                      String namespace, String label) throws Exception {
     String cmd = "kubectl -n " + namespace
+        + " delete configmap " + cmName
+        + " --ignore-not-found";
+    TestUtils.exec(cmd);
+
+    cmd = "kubectl -n " + namespace
         + " create configmap " + cmName
         + " --from-file=" + fileOrDirPath;
     TestUtils.exec(cmd, true);
@@ -2001,50 +2005,8 @@ public class TestUtils {
             + namespace
             + " label cm "
             + cmName
+            + " "
             + label;
     TestUtils.exec(cmd);
-  }
-
-  /**
-   * create configmap in given ns.
-   * @param cmName configMap name
-   * @param fileOrDirPath Model files
-   * @param domainNS Domain namespace
-   * @throws Exception on failure
-   */
-  public static void createConfigMapWMultiModels(String cmName, Set<String> fileOrDirPath,
-                                     String domainUid, String domainNS) throws Exception {
-    StringBuffer strBuff =
-        new StringBuffer("kubectl -n ")
-        .append(domainNS)
-        .append(" delete configmap ")
-        .append(cmName)
-        .append(" --ignore-not-found");
-
-    LoggerHelper.getLocal().log(Level.INFO, "======= Delete cm: " + strBuff.toString());
-    TestUtils.exec(strBuff.toString(), true);
-
-    strBuff =
-      new StringBuffer("kubectl -n ")
-        .append(domainNS)
-        .append(" create configmap ")
-        .append(cmName);
-
-    for (String file : fileOrDirPath) {
-      strBuff.append(" --from-file=").append(file);
-    }
-
-    LoggerHelper.getLocal().log(Level.INFO, "======= Create cm: " + strBuff.toString());
-    TestUtils.exec(strBuff.toString(), true);
-
-    // create label for configmap
-    strBuff =
-      new StringBuffer("kubectl -n ")
-        .append(domainNS)
-        .append(" label configmap ")
-        .append(cmName)
-        .append(" weblogic.domainUID=")
-        .append(domainUid);
-    TestUtils.exec(strBuff.toString());
   }
 }
