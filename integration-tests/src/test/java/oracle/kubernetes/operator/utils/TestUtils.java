@@ -871,31 +871,28 @@ public class TestUtils {
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't create pod " + result.stderr());
     }
-    try {
-      String operatorCert = getExternalOperatorCertificate(operator);
-      kubectlcp(operatorCert, "operator.cert.pem", "curl", operator.getOperatorNamespace());
-      command = " kubectl exec curl -- " + restUrl;
+
+    String operatorCert = getExternalOperatorCertificate(operator);
+    kubectlcp(operatorCert, "operator.cert.pem", "curl", operator.getOperatorNamespace());
+    command = " kubectl exec curl -- " + restUrl;
+    result = ExecCommand.exec(command, true);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException("Couldn't execute rest command " + result.stderr());
+    }
+    LoggerHelper.getLocal().log(Level.INFO, "response code stdout from " + restUrl + " : " + result.stdout());
+    if (!((result.stdout().trim()).contains("200") || (result.stdout().trim()).contains("204"))) {
+      LoggerHelper.getLocal().log(Level.INFO, "response code from " + restUrl + " : " + result.stdout()
+              + " : " + result.stderr());
+      command = " kubectl exec curl -- cat curl.out";
       result = ExecCommand.exec(command, true);
       if (result.exitValue() != 0) {
-        throw new RuntimeException("Couldn't execute rest command " + result.stderr());
+        throw new RuntimeException("Couldn't find curl.out file " + result.stderr());
       }
-      LoggerHelper.getLocal().log(Level.INFO, "response code stdout from " + restUrl + " : " + result.stdout());
-      if (!((result.stdout().trim()).contains("200") || (result.stdout().trim()).contains("204"))) {
-        LoggerHelper.getLocal().log(Level.INFO, "response code from " + restUrl + " : " + result.stdout()
-                + " : " + result.stderr());
-        command = " kubectl exec curl -- cat curl.out";
-        result = ExecCommand.exec(command, true);
-        if (result.exitValue() != 0) {
-          throw new RuntimeException("Couldn't find curl.out file " + result.stderr());
-        }
-        LoggerHelper.getLocal().log(Level.INFO, "response code is cat curl.out " + result.stdout() + " : "
-                + result.stderr());
-        throw new RuntimeException("Operator Rest Call failed " + result.stdout().trim());
-      }
-    } finally {
-      command = "kubectl delete -f " + yamlPath;
-      ExecCommand.exec(command, true);
+      LoggerHelper.getLocal().log(Level.INFO, "response code is cat curl.out " + result.stdout() + " : "
+              + result.stderr());
+      throw new RuntimeException("Operator Rest Call failed " + result.stdout().trim());
     }
+
   }
 
   /**
