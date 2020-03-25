@@ -11,7 +11,7 @@ When using the operator to deploy a WebLogic domain, you have the choice of the 
  - **Domain in Image**: Supply your domain home in a Docker image.
  - **Model in Image**: Supply a WebLogic Deployment Tool model file in a Docker image.
 
-There are advantages to all approaches, and there are sometimes technical limitations of various cloud providers that may make one approach better suited to your needs.  You can also mix and match on a domain-by-domain basis.
+There are advantages to each approach, but sometimes there are technical limitations of various cloud providers that may make one approach better suited to your needs.  You can also mix and match on a domain-by-domain basis.
 
 | Domain in PV | Domain in Image | Model in Image |
 | --- | --- | --- |

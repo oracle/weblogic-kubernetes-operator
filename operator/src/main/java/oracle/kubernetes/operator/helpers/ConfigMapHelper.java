@@ -147,6 +147,7 @@ public class ConfigMapHelper {
   /**
    * getModelInImageSpecHash returns the hash for the fields that should be compared for changes.
    *
+   * @param imageName image name
    * @return int hash value of the fields
    */
   public static int getModelInImageSpecHash(String imageName) {
@@ -417,7 +418,7 @@ public class ConfigMapHelper {
           packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
           data.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
         }
-        if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
+        if ("FromModel".equals(info.getDomain().getDomainHomeSourceType())) {
           packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
           data.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
         }
@@ -627,15 +628,15 @@ public class ConfigMapHelper {
       V1ConfigMap result = callResponse.getResult();
       if (result != null) {
         Map<String, String> data = result.getData();
-        String topologyYaml = data.get("topology.yaml");
-        String miiModelSecretsHash = data.get("secrets.md5");
-        String miiDomainZipHash = data.get("domainzip_hash");
-        String domainRestartVersion = data.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-        String domainIntrospectVersion = data.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
-        String modelInImageSpecHash = data.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
+        final String topologyYaml = data.get("topology.yaml");
+        final String miiModelSecretsHash = data.get("secrets.md5");
+        final String miiDomainZipHash = data.get("domainzip_hash");
+        final String domainRestartVersion = data.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
+        final String domainIntrospectVersion = data.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
+        final String modelInImageSpecHash = data.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
 
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version (from ino spec) "
-            + info.getDomain().getAdminServerSpec().getDomainRestartVersion());
+            + info.getDomain().getRestartVersion());
         LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version  (from ino spec) "
             + info.getDomain().getIntrospectVersion());
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version from cm result "

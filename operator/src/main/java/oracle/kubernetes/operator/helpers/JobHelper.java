@@ -76,12 +76,12 @@ public class JobHelper {
   private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
     if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
 
-      String currentPodRestartVersion = info.getDomain().getAdminServerSpec().getDomainRestartVersion();
-      String currentPodIntrospectVersion = info.getDomain().getIntrospectVersion();
-      String configMapRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-      String configMapIntrospectVersion = (String)packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
-      String configMapSpecHash = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
-      String currentImageSpecHash = String.valueOf(ConfigMapHelper.getModelInImageSpecHash(info.getDomain()
+      final String currentPodRestartVersion = info.getDomain().getRestartVersion();
+      final String currentPodIntrospectVersion = info.getDomain().getIntrospectVersion();
+      final String configMapRestartVersion = (String) packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
+      final String configMapIntrospectVersion = (String) packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
+      final String configMapSpecHash = (String) packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
+      final String currentImageSpecHash = String.valueOf(ConfigMapHelper.getModelInImageSpecHash(info.getDomain()
           .getSpec().getImage()));
 
       LOGGER.finest("JobHelper.isModelInImageUpdate currentPodRestartVersion " + currentPodRestartVersion);

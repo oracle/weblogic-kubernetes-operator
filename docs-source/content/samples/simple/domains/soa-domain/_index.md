@@ -193,7 +193,7 @@ $ cat output/weblogic-domains/soainfra/domain.yaml
 #
 # This is an example of how to define a Domain resource.
 #
-apiVersion: "weblogic.oracle/v6"
+apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
   name: soainfra
@@ -314,13 +314,13 @@ Namespace:    soans
 Labels:       weblogic.domainUID=soainfra
               weblogic.resourceVersion=domain-v2
 Annotations:  <none>
-API Version:  weblogic.oracle/v6
+API Version:  weblogic.oracle/v7
 Kind:         Domain
 Metadata:
   Creation Timestamp:  2020-01-27T10:04:11Z
   Generation:          6
   Resource Version:    18537800
-  Self Link:           /apis/weblogic.oracle/v6/namespaces/soans/domains/soainfra
+  Self Link:           /apis/weblogic.oracle/v7/namespaces/soans/domains/soainfra
   UID:                 5dcb76e4-40ec-11ea-b332-020017041cc2
 Spec:
   Admin Server:

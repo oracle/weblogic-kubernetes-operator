@@ -1982,10 +1982,10 @@ public class TestUtils {
 
   /**
    * create configmap in the given namespace. Also creates label.
-   * @param cmName
-   * @param fileOrDirPath
-   * @param namespace
-   * @throws Exception
+   * @param cmName config map name
+   * @param fileOrDirPath File path
+   * @param namespace namespace
+   * @throws Exception on failure
    */
   public static void createConfigMap(String cmName, String fileOrDirPath,
                                      String namespace, String label) throws Exception {

@@ -192,7 +192,7 @@ function prepareMIIServer() {
 
   mkdir -p ${DOMAIN_HOME}/lib
   if [ $? -ne 0 ] ; then
-    trace "Domain type is FromModel, cannot create ${DOMAIN_HOME}/lib "
+    trace  SEVERE "Domain Source Type is FromModel, cannot create ${DOMAIN_HOME}/lib "
     exit 1
   fi
 
@@ -200,10 +200,10 @@ function prepareMIIServer() {
     do
         # expand the archive domain libraries to the domain lib
         cd ${DOMAIN_HOME}/lib  || exit 1
-        jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
+        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
 
         if [ $? -ne 0 ] ; then
-          trace "Domain type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           exit 1
         fi
 
@@ -211,14 +211,12 @@ function prepareMIIServer() {
         # the config.xml is referencing them from that path
 
         cd ${DOMAIN_HOME} || exit 1
-        jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
+        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
 
         if [ $? -ne 0 ] ; then
-          trace "Domain type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           exit 1
         fi
-        # no need we are not expanding to it
-        #rm -fr wlsdeploy/domainLibraries
     done
 
 }

@@ -502,7 +502,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected V1ObjectMeta createMetadata() {
-    V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
+    final V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
 
     LOGGER.finest("PodStepContext.createMetaData domainRestartVersion from INIT "
         + domainRestartVersion);
