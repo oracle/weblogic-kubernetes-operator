@@ -28,7 +28,7 @@ pre = "<b> </b>"
 Configuration overrides can only be used in combination with Domain in Image and Domain in PV domains. For Model in Image domains, use [Model in Image Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
 {{% /notice %}}
 
-Use configuration overrides (also called _situational configuration_) to customize a Model in Image or Domain in PV domain's WebLogic domain home configuration without modifying the domain's actual `config.xml` or system resource files. For example, you may want to override a JDBC data source XML module user name, password, and URL so that it references a local database.
+Use configuration overrides (also called _situational configuration_) to customize a Domain in Image or Domain in PV domain's WebLogic domain home configuration without modifying the domain's actual `config.xml` or system resource files. For example, you may want to override a JDBC data source XML module user name, password, and URL so that it references a local database.
 
 You can use overrides to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site.
 
