@@ -140,7 +140,7 @@ public class ItModelInImage extends MiiBaseTest {
     boolean testCompletedSuccessfully = false;
     try {
 
-      domain = createMIIDomainWithConfigMap(testClassName, domainNS, "./model.wls.yaml",
+      domain = createMiiDomainWithConfigMap(testClassName, domainNS, "./model.wls.yaml",
           "./model.empty.properties", "./model.properties", "WLS");
       Map<String, Object> domainMap = domain.getDomainMap();
       //ToDo: access MS using port given in the configmap props
@@ -203,7 +203,7 @@ public class ItModelInImage extends MiiBaseTest {
       domain = new Domain(domainMap, true, false);
       domain.verifyDomainCreated();
 
-      domain.createMIIConfigMap("overridesConfigMap",
+      domain.createMiiConfigMap("overridesConfigMap",
           "overridesConfigMapFileOrDir");
 
       //append overridesConfigMap to domain.yaml

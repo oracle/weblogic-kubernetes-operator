@@ -103,7 +103,7 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.ILLEGAL_SECRET_NAMESPACE, namespace);
   }
 
-  static String illegalSitConfigForMII(String configOverrides) {
+  static String illegalSitConfigForMii(String configOverrides) {
     return getMessage(MessageKeys.ILLEGAL_SIT_CONFIG_MII, configOverrides);
   }
 

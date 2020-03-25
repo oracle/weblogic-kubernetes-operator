@@ -1393,8 +1393,8 @@ public class Domain {
   }
 
   /**
-   * verify if all the servers in the domain are restarted
-   * @throws Exception
+   * verify if all the servers in the domain are restarted.
+   * @throws Exception on failure
    */
   public void verifyDomainRestarted() throws Exception {
     verifyAdminServerRestarted();
@@ -1525,7 +1525,7 @@ public class Domain {
     }
 
     //create configmap for MII
-    createMIIConfigMap("miiConfigMap", "miiConfigMapFileOrDir");
+    createMiiConfigMap("miiConfigMap", "miiConfigMapFileOrDir");
 
     // write configOverride and configOverrideSecrets to domain.yaml and/or create domain
     if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")
@@ -2428,12 +2428,12 @@ public class Domain {
   }
 
   /**
-   * create config map with given keys for map name and file
-   * @param cmKeyName
-   * @param cmFileKeyName
-   * @throws Exception
+   * create config map with given keys for map name and file.
+   * @param cmKeyName Config map key name
+   * @param cmFileKeyName Config map file key name
+   * @throws Exception on failure
    */
-  public void createMIIConfigMap(String cmKeyName, String cmFileKeyName) throws Exception {
+  public void createMiiConfigMap(String cmKeyName, String cmFileKeyName) throws Exception {
     if (domainHomeSourceType.equals("FromModel")) {
       if (domainMap.containsKey(cmKeyName)) {
         if (!domainMap.containsKey(cmFileKeyName)) {
@@ -2450,8 +2450,8 @@ public class Domain {
   }
 
   /**
-   * append overridesConfigMap to domain.yaml and apply
-   * @throws Exception
+   * append overridesConfigMap to domain.yaml and apply.
+   * @throws Exception on failure
    */
   public void appendOverridesConfigMapAndApply() throws Exception {
     if (!domainMap.containsKey("overridesConfigMap")) {

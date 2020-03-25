@@ -262,7 +262,7 @@ public class DomainValidationTest {
   }
 
   @Test
-  public void whenConfigOverrideCMExistsTypeImage_dontReportError() {
+  public void whenConfigOverrideCmExistsTypeImage_dontReportError() {
     resourceLookup.defineResource("overrides-cm-image", KubernetesResourceType.ConfigMap, NS);
     configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeSourceType("Image");
 
@@ -270,7 +270,7 @@ public class DomainValidationTest {
   }
 
   @Test
-  public void whenConfigOverrideCMExistsTypeFromModel_reportError() {
+  public void whenConfigOverrideCmExistsTypeFromModel_reportError() {
     resourceLookup.defineResource("overrides-cm-model", KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource("wdt-cm-secret", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withConfigOverrides("overrides-cm-model")
