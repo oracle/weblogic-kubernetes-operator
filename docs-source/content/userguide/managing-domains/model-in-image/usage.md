@@ -127,7 +127,7 @@ A JRF domain requires an infrastructure database called an RCU database, initial
 
 Furthermore, if you want to have a restarted JRF domain access updates to the infrastructure database that the domain made at an earlier time, the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain, as discussed in [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
 
-Here are the required settings for Model in Image JRF domains:
+__Here are the required settings for Model in Image JRF domains:__
 
 - Set `configuration.model.domainType` to `JRF`.
 
@@ -142,11 +142,29 @@ Here are the required settings for Model in Image JRF domains:
   ```
   domainInfo:
       RCUDbInfo:
-          rcu_prefix:          '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access/rcu_prefix@@'
-          rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access/rcu_schema_password@@'
-          rcu_db_conn_string:  '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access/rcu_db_conn_string@@'
+          rcu_prefix:          '@@SECRET:sample-domain1-rcu-access/rcu_prefix@@'
+          rcu_schema_password: '@@SECRET:sample-domain1-rcu-access/rcu_schema_password@@'
+          rcu_db_conn_string:  '@@SECRET:sample-domain1-rcu-access/rcu_db_conn_string@@'
 
   ```
+
+__Important instructions when changing an RCU schema password:__
+
+  {{% notice warning %}}
+  Carefully follow these instructions in order to prevent unrecoverably locking up your RCU database schema account when changing your RCU schema password.
+  {{% /notice %}}
+
+- Shutdown all domains that access the RCU database schema. For example, set their `serverStartPolicy` to `NEVER`.
+
+- Update the RCU schema password in the database.
+
+- Update the Kubernetes secret that contains your `RCUDbInfo.rcu_schema_password` for each domain.
+
+- Restart the domains. For example, change their `serverStartPolicy` from `NEVER` to `IF_NEEDED`.
+
+- Save your wallet files again, as changing your RCU schema password generates a different wallet. See [Reusing an RCU database between domain deployments]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
+
+__References:__
 
 For an example of using JRF in combination with Model in Image, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
 
