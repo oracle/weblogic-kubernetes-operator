@@ -144,7 +144,7 @@ public class ItCoherenceTests extends BaseTest {
       final String podName = domain.getManagedSeverPodName(1);
       final String ProxyIP;
       if (OKE_CLUSTER) {
-        String cmd = " kubectl get pods -n " + domainNS + "-o wide | grep " + podName + " | awk '{print $6}'";
+        String cmd = " kubectl get pods -n " + domainNS + " -o wide | grep " + podName + " | awk '{print $6}'";
         ExecResult result = ExecCommand.exec(cmd);
         LoggerHelper.getLocal().log(
                 Level.INFO, "command  " + cmd + " output " + result.stdout() + " : " + result.stderr());
