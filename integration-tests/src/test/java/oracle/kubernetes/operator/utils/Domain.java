@@ -140,13 +140,22 @@ public class Domain {
     verifyServersReady();
     if (createLoadBalancer) {
       String cmd;
-      if (getLoadBalancerName().equalsIgnoreCase("TRAEFIK") && BaseTest.OKE_CLUSTER) {
-        String cmdip = "kubectl describe svc traefik-operator --namespace traefik | grep Ingress | awk '{print $3}'";
-        result = TestUtils.exec(cmdip);
-        BaseTest.LB_PUBLIC_IP = result.stdout();
-        cmd = "curl --silent --noproxy '*' -H 'host: " + domainUid
-          + ".org' http://" + BaseTest.LB_PUBLIC_IP
-          + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+      if (BaseTest.OKE_CLUSTER) {
+        if (getLoadBalancerName().equalsIgnoreCase("TRAEFIK")) {
+          String cmdip = "kubectl describe svc traefik-operator --namespace traefik | grep Ingress | awk '{print $3}'";
+          result = TestUtils.exec(cmdip);
+          BaseTest.LB_PUBLIC_IP = result.stdout().trim();
+          if (BaseTest.LB_PUBLIC_IP == null || BaseTest.LB_PUBLIC_IP.equals("")) {
+            throw new RuntimeException(" Can't retrieve Public IP for Load Balancer " + result.stderr());
+          }
+          LoggerHelper.getLocal().log(Level.INFO,
+                  "Load Balancer Public IP : " + BaseTest.LB_PUBLIC_IP);
+          cmd = "curl --silent --noproxy '*' -H 'host: " + domainUid
+                  + ".org' http://" + BaseTest.LB_PUBLIC_IP
+                  + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+        } else {
+          throw new RuntimeException ("FAILURE: OKE supports only Traefik Load Balancer");
+        }
       } else {
         cmd = "curl --silent --noproxy '*' -H 'host: " + domainUid
           + ".org' http://" + getHostNameForCurl() + ":" + getLoadBalancerWebPort()

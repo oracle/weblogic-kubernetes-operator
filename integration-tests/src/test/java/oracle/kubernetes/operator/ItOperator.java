@@ -128,9 +128,6 @@ public class ItOperator extends BaseTest {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         String domainUid = domain.getDomainUid();
         TestUtils.deleteWeblogicDomainResources(domainUid);
-        if (OKE_CLUSTER) {
-          TestUtils.deleteDomainHomeDirOke(domainUid);
-        }
       }
     }
 
@@ -189,9 +186,6 @@ public class ItOperator extends BaseTest {
       if (domain != null && testCompletedSuccessfully) {
         String domainUid = domain.getDomainUid();
         TestUtils.deleteWeblogicDomainResources(domainUid);
-        if (OKE_CLUSTER) {
-          TestUtils.deleteDomainHomeDirOke(domainUid);
-        }
         TestUtils.verifyAfterDeletion(domain);
       }
       // if (operator != null && (JENKINS || testCompletedSuccessfully)) {
@@ -327,9 +321,6 @@ public class ItOperator extends BaseTest {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         String domainUid = domain.getDomainUid();
         TestUtils.deleteWeblogicDomainResources(domainUid);
-        if (OKE_CLUSTER) {
-          TestUtils.deleteDomainHomeDirOke(domainUid);
-        }
       }
     }
 
