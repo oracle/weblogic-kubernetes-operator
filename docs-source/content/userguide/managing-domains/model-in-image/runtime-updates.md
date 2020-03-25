@@ -199,9 +199,9 @@ This example references a database running in the `default` namespace that is ac
     -l password=Oradoc_db1 \
     -l url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s
 
-  # Assume WORKDIR is your working directory
+  # Assume WORKDIR is your working directory, default is /tmp/$USER/model-in-image-sample-work-dir
 
-  cd $WORKDIR
+  cd ${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
   # Create a WDT configmap with the datasource WDT yaml snippet
 
@@ -232,9 +232,9 @@ This example references a database running in the `default` namespace that is ac
                 Value: 30000
           JDBCConnectionPoolParams:
               InitialCapacity: 0
-              MaxCapacity: 1                   # This is a comment
-              TestTableName: SQL ISVALID       # This is a comment
-              TestConnectionsOnReserve: true   # This is a comment
+              MaxCapacity: 1                # Optionally include comments like this
+              TestTableName: SQL ISVALID       
+              TestConnectionsOnReserve: true
   EOF
 
   # Create a config map containing the model snippet
