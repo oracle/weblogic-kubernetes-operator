@@ -23,4 +23,3 @@ def filter_model(model):
 	if model and 'resources' in model:
             model['resources'] = {}
 
-        print model
