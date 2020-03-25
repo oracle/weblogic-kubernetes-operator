@@ -63,9 +63,9 @@ Some notes about the sample model file:
 
 - Understand when to use model macros.
 
-  - You can use model macros to reference arbitrary secrets from model files. This is recommended for handling mutable values such as database user names, passwords, and URLs. See [Using secrets in model files](#using-secrets-in-model-files).
+  - You can use model macros to reference arbitrary secrets from model files. This is recommended for handling mutable values such as database user names, passwords, and URLs. See **[Using secrets in model files](#using-secrets-in-model-files)**.
 
-    - All password fields in a model should use secret macro. Passwords should not be directly included in property or model files because the files may appear in logs or debugging. 
+    - All password fields in a model should use a secret macro. Passwords should not be directly included in property or model files because the files may appear in logs or debugging. 
 
     - Model files encrypted with the [WDT Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md) are not supported. Use secrets instead.
 
