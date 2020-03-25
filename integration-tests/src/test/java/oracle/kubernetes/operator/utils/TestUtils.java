@@ -1592,6 +1592,9 @@ public class TestUtils {
             .append("-d ")
             .append(domainUid);
     TestUtils.exec(cmd.toString(), true);
+    if (BaseTest.OKE_CLUSTER) {
+      TestUtils.deleteDomainHomeDirOke(domainUid);
+    }
   }
 
   /**
