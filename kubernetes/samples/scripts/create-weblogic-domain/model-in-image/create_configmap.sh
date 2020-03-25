@@ -1,19 +1,25 @@
 # !/bin/sh
 # Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-#
-# Helper script for creating and labeling a Kubernetes configmap.  The configmap
-# is labeled with the specified domain-uid.
-#
-# Usage:
-#
-# ./create_configmap.sh [-n mynamespace] [-d mydomainuid] -c myconfigmap [-l key1=val1] [-l key2=val2] ...
-# 
-# -d <domain_uid>     : Defaults to $DOMAIN_UID if DOMAIN_UID is set, 'sample-domain1' otherwise.
-# -n <namespace>      : Defaults to $DOMAIN_NAMESPACE if DOMAIN_NAMESPACE is set, 'DOMAIN_UID-ns' otherwise.
-# -c <configmap-name> : Name of configmap. Required.
-# -f <filename>       : File or directory location. Can be specified more than once. 
-#                       Key will be the file-name(s), value will be file contents.
+
+function usage() {
+
+  cat << EOF
+  
+  This is a helper script for creating and labeling a Kubernetes configmap.  The configmap
+  is labeled with the specified domain-uid.
+  
+  Usage:
+  
+  $(basename $0) [-n mynamespace] [-d mydomainuid] -c myconfigmap [-l key1=val1] [-l key2=val2] ...
+  
+  -d <domain_uid>     : Defaults to \$DOMAIN_UID if set, 'sample-domain1' otherwise.
+  -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'DOMAIN_UID-ns' otherwise.
+  -c <configmap-name> : Name of configmap. Required.
+  -f <filename>       : File or directory location. Can be specified more than once. 
+                        Key will be the file-name(s), value will be file contents. Required.
+EOF
+}
 
 set -e
 
@@ -23,8 +29,8 @@ CONFIGMAP_NAME=""
 FILENAMES=""
 
 while [ ! "$1" = "" ]; do
-  if [ "$2" = "" ]; then
-    echo Syntax Error
+  if [ ! "$1" = "-?" ] && [ "$2" = "" ]; then
+    echo "Syntax Error. Pass '-?' for help."
     exit 1
   fi
   case "$1" in
@@ -36,13 +42,26 @@ while [ ! "$1" = "" ]; do
         ;;
     -f) FILENAMES="${FILENAMES} --from-file=${2}"
         ;;
-    *)  echo Syntax Error
+    -?) usage
+        exit 1
+        ;;
+    *)  echo "Syntax Error. Pass '-?' for help."
         exit 1
         ;;
   esac
   shift
   shift
 done
+
+if [ -z "$CONFIGMAP_NAME" ]; then
+  echo "Error: Missing '-c' argument. Pass '-?' for help."
+  exit 1
+fi
+
+if [ -z "$FILENAMES" ]; then
+  echo "Error: Missing '-f' argument. Pass '-?' for help."
+  exit 1
+fi
 
 set -eux
 
