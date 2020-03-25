@@ -55,7 +55,7 @@ fi
 cp ${DOMAIN_RESOURCE_TEMPLATE} ${DOMAIN_RESOURCE_FILE}
 
 for template_var in WDT_DOMAIN_TYPE DOMAIN_UID DOMAIN_NAMESPACE MODEL_IMAGE_NAME MODEL_IMAGE_TAG; do
-  sed -i -e "s/@@${template_var}@@/${!template_var}/" $DOMAIN_RESOURCE_FILE
+  sed -i -e "s;@@${template_var}@@;${!template_var};" $DOMAIN_RESOURCE_FILE
 done
 
 if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
