@@ -3,14 +3,23 @@
 
 package oracle.kubernetes.operator;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.DomainCrd;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
+import oracle.kubernetes.operator.utils.Secret;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -222,6 +231,67 @@ public class ItModelInImage extends MiiBaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
+  /**
+   * Create a domain using model in image with model yaml and model properties file in the image.
+   * Change the weblogic credentials and verify the pods can restart with changed password
+   *
+   * @throws Exception exception
+   */
+  @Test
+  public void testCredentialsChange() throws Exception {
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> domainMap
+          = createModelInImageMap(getNewSuffixCount(), testClassName);
+      domainMap.put("namespace", domainNS);
+      domainMap.put("wdtModelFile", "./model.wls.yaml");
+      domainMap.put("wdtModelPropertiesFile", "./model.properties");
+      domain = TestUtils.createDomain(domainMap);
+      domain.verifyDomainCreated();
 
+      // delete and recreate the weblogic-credentials secret
+      Secret secret = new Secret(domain.getDomainNs(), domain.getDomainUid()
+          + "-weblogic-credentials", "system", "gumby1234");
+      // use a different secret name for runtimeEncryptionSecret with original credentials
+      secret = new Secret(domain.getDomainNs(), domain.getDomainUid()
+          + "-model-secret", getUsername(), getPassword());
 
+      // Modify the original domain yaml to include restartVersion and change runtimeEncryptionSecret
+      String originalYaml = getUserProjectsDir() + "/weblogic-domains/" + domain.getDomainUid()
+          + "/domain.yaml";
+      DomainCrd crd = new DomainCrd(originalYaml);
+      Map<String, String> objectNode = new HashMap();
+      objectNode.put("restartVersion", "v1.1");
+      crd.addObjectNodeToDomain(objectNode);
+      crd.changeRuntimeEncryptionSecret(secret.getSecretName());
+      String modYaml = crd.getYamlTree();
+      LoggerHelper.getLocal().log(Level.INFO, modYaml);
+      // Write the modified yaml to a new file
+      Path path = Paths.get(getUserProjectsDir() + "/weblogic-domains/" + domain.getDomainUid(),
+          "modified.domain.yaml");
+      LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      Files.write(path, modYaml.getBytes(charset));
+
+      // Apply the new yaml to update the domain crd
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
+      domain.verifyAdminServerRestarted();
+      domain.verifyManagedServersRestarted();
+      domain.verifyDomainCreated();
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+    }
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
 }
