@@ -192,7 +192,7 @@ function prepareMIIServer() {
 
   mkdir -p ${DOMAIN_HOME}/lib
   if [ $? -ne 0 ] ; then
-    trace  SEVERE "Domain type is FromModel, cannot create ${DOMAIN_HOME}/lib "
+    trace  SEVERE "Domain Source Type is FromModel, cannot create ${DOMAIN_HOME}/lib "
     exit 1
   fi
 
@@ -203,7 +203,7 @@ function prepareMIIServer() {
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
 
         if [ $? -ne 0 ] ; then
-          trace SEVERE  "Domain type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           exit 1
         fi
 
@@ -214,7 +214,7 @@ function prepareMIIServer() {
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
 
         if [ $? -ne 0 ] ; then
-          trace SEVERE "Domain type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           exit 1
         fi
     done
