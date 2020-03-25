@@ -53,7 +53,7 @@ For domain home in image, any changes (dynamic or non-dynamic) to the WebLogic c
     * If you create a new image with a new name, then you must avoid a rolling restart, which can cause unexpected behavior for the running domain due to configuration inconsistencies as seen by the various servers, by following the steps in [Avoiding a rolling restart when changing image property on a domain resource](#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource).
     * If you create a new image with the same name, then you must manually initiate a full domain restart. See [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts" >}}) in Starting, stopping, and restarting servers.
 
-* **Model in Image:**
+* **Model in image:**
 
     * For Model in Image, any image that supplies configuration changes that are incompatible with the current running domain require a full shutdown before changing the domain resource image setting instead of a rolling restart. Consult [Supported and unsupported updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#supported-and-unsupported-updates" >}}) in Model in Image Runtime Updates for changes that support a rolling restart.
 
