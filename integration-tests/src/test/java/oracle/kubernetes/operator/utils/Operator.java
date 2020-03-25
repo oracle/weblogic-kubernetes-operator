@@ -685,4 +685,21 @@ public class Operator {
     NONE
   }
 
+  /**
+   * writes operator pod describe and logs to a file
+   * @param logLocation - location where the logs to be written
+   */
+  public void writePodLog(String logLocation) throws Exception {
+    //write operator pod describe
+    String cmd = "kubectl describe " + getOperatorPodName() + " -n "
+        + getOperatorNamespace() + " >> " + logLocation
+        + "/pod-describe." + operatorNS + "." + getOperatorPodName();
+    TestUtils.exec(cmd, true);
+
+    //write operator pod logs
+    cmd = "kubectl logs " + getOperatorPodName() + " -n "
+        + getOperatorNamespace() + " >> " + logLocation
+        + "/pod-log." + operatorNS + "." + getOperatorPodName();
+    TestUtils.exec(cmd, true);
+  }
 }
