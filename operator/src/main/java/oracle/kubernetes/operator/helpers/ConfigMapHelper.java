@@ -147,6 +147,7 @@ public class ConfigMapHelper {
   /**
    * getModelInImageSpecHash returns the hash for the fields that should be compared for changes.
    *
+   * @param imageName image name
    * @return int hash value of the fields
    */
   public static int getModelInImageSpecHash(String imageName) {
