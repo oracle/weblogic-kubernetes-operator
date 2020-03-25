@@ -36,9 +36,9 @@ public class ItOperatorUpgrade extends BaseTest {
   private static String OP_SA = "";
   private static String DOM_NS = "";
   private static String DUID = "";
-  private static String M1_CTS = "";
-  private static String M2_CTS = "";
-  private static String ADMIN_CTS = "";
+  private static String Managed1_CreateTimeStamp = "";
+  private static String Managed2_CreateTimeStamp = "";
+  private static String Admin_CreateTimeStamp = "";
   private static String opUpgradeTmpDir;
   private Domain domain = null;
   private static Operator operator;
@@ -97,7 +97,6 @@ public class ItOperatorUpgrade extends BaseTest {
     if (testCompletedSuccessfully) {
       LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
       if (domain != null) {
-        //domain.destroy();
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
         domain.deleteImage();
@@ -107,7 +106,9 @@ public class ItOperatorUpgrade extends BaseTest {
       }
       TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
       TestUtils.exec("kubectl delete crd domains.weblogic.oracle --ignore-not-found");
-      //ExecResult result = cleanup();
+      // Make sure domain CRD is deleted form k8s 
+      ExecResult result = TestUtils.exec("kubectl get crd domains.weblogic.oracle");
+      Assertions.assertEquals(1, result.exitValue());
       LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
     }
   }
@@ -133,9 +134,14 @@ public class ItOperatorUpgrade extends BaseTest {
     DUID = "operatordomain250";
     setupOperatorAndDomain("release/2.5.0", "2.5.0");
 
-    M1_CTS = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server1");
-    M2_CTS = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server2");
-    ADMIN_CTS = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-admin-server");
+    // Save the CreateTimeStamp for the server pod(s) to compare with 
+    // CreateTimeStamp after upgrade to make sure the pod(s) are not re-stated
+    Managed1_CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server1");
+    Managed2_CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server2");
+    Admin_CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-admin-server");
+    System.out.println("Before Upgrade CreateTimeStamp for managed-server1 pod [" + Managed1_CreateTimeStamp + "]");
+    System.out.println("Before Upgrade CreateTimeStamp for managed-server2 pod [" + Managed2_CreateTimeStamp + "]");
+    System.out.println("Before Upgrade CreateTimeStamp for admin-server pod [" + Admin_CreateTimeStamp + "]");
     upgradeOperator();
     testCompletedSuccessfully = true;
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
@@ -149,9 +155,6 @@ public class ItOperatorUpgrade extends BaseTest {
   private void upgradeOperator() throws Exception {
     operator.callHelmUpgrade("image=" + OP_TARGET_RELEASE);
     checkCrdVersion();
-    System.out.println("Before Upgrade M1CTS[" + M1_CTS + "]");
-    System.out.println("Before Upgrade M2CTS[" + M2_CTS + "]");
-    System.out.println("Before Upgrade ADMINCTS[" + ADMIN_CTS + "]");
     checkDomainNotRestarted();
     testClusterScaling(operator, domain, false);
   }
@@ -178,7 +181,11 @@ public class ItOperatorUpgrade extends BaseTest {
         result = true;
         break;
       }
-      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      try { 
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000); 
+      } catch (InterruptedException e) {
+        System.out.println("Got InterruptedException " + e);
+      } 
     }
     if (!result) {
       throw new Exception("FAILURE: Didn't get expected CRD Version");
@@ -212,22 +219,21 @@ public class ItOperatorUpgrade extends BaseTest {
   private void checkDomainNotRestarted() throws Exception {
     TestUtils.checkPodReady(DUID + "-" + domain.getAdminServerName(), DOM_NS);
     for (int i = 2; i >= 1; i--) {
-     TestUtils.checkPodReady(DUID + "-managed-server" + i, DOM_NS);
+      TestUtils.checkPodReady(DUID + "-managed-server" + i, DOM_NS);
     }
     String m1 = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server1");
     String m2 = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server2");
     String admin = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-admin-server");
-    System.out.println("After Upgrade M1CTS[" + m1 + "]");
-    System.out.println("After Upgrade M2CTS[" + m2 + "]");
-    System.out.println("After Upgrade M2CTS[" + admin + "]");
-
-    Assertions.assertEquals(M1_CTS, m1);
-    Assertions.assertEquals(M2_CTS, m2);
-    Assertions.assertEquals(ADMIN_CTS, admin);
+    System.out.println("After Upgrade CreateTimeStamp for managed-server1 pod [" + m1 + "]");
+    System.out.println("After Upgrade CreateTimeStamp for managed-server2 pod [" + m2 + "]");
+    System.out.println("After Upgrade CreateTimeStamp for admin-server pod [" + admin + "]");
+    Assertions.assertEquals(Managed1_CreateTimeStamp, m1);
+    Assertions.assertEquals(Managed2_CreateTimeStamp, m2);
+    Assertions.assertEquals(Admin_CreateTimeStamp, admin);
   }
 
   /**
-   * Creates operator based on operatorRelease passed to it and then creates a WebLogic domain
+   * Creates operator based on operatorRelease passed to it and then creates a Weblogic domain
    * controlled by that operator.
    *
    * @param operatorGitRelease Git branch name of the operator release version

@@ -1981,8 +1981,9 @@ public class TestUtils {
   }
 
   /**
-   * @param namesapce
-   * @param pod name
+   * @param namespace
+   * @param pod 
+   *
    * @return creationTimestamp of the Pod 
    * @throws Exception on failure
    */
@@ -1992,14 +1993,14 @@ public class TestUtils {
               + " --namespace "
               + namespace
               + " -o jsonpath='{.metadata.creationTimestamp}'";
-    System.out.println("KUBECTL CMD " + kcmd);
     ExecResult result = ExecCommand.exec(kcmd);
     return result.stdout().trim();
   }
 
   /**
-   * @param namesapce
-   * @param pod name
+   * @param namespace
+   * @param pod 
+   *
    * @return deletionTimestamp of the Pod 
    * @throws Exception on failure
    */
