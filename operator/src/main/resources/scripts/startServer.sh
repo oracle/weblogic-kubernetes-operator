@@ -217,8 +217,6 @@ function prepareMIIServer() {
           trace "Domain type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           exit 1
         fi
-        # no need we are not expanding to it
-        #rm -fr wlsdeploy/domainLibraries
     done
 
 }
