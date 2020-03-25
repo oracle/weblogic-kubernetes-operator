@@ -9,8 +9,8 @@ description = "Steps for creating and deploying Model in Image images and their 
 
 #### Contents
 
-   - [WebLogic operator](#1-weblogic-operator)
-   - [WebLogic image](#2-weblogic-image)
+   - [WebLogic Kubernetes Operator](#1-weblogic-kubernetes-operator)
+   - [WebLogic Server image](#2-weblogic-server-image)
    - [Optional WDT model config map](#3-optional-wdt-model-config-map)
    - [Required runtime encryption secret](#4-required-runtime-encryption-secret)
    - [Secrets for model macros](#5-secrets-for-model-macros)
@@ -21,15 +21,15 @@ description = "Steps for creating and deploying Model in Image images and their 
 
 Here's what's needed to create and deploy a typical Model in Image domain. These items do not need to be created in order.
 
-#### 1. WebLogic operator
+#### 1. WebLogic Kubernetes Operator
 
-Deploy a WebLogic operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See [Manage operators]({{< relref "/userguide/managing-operators/_index.md" >}}) and [Quick Start]({{< relref "/quickstart/_index.md" >}}).
+Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See [Manage operators]({{< relref "/userguide/managing-operators/_index.md" >}}) and [Quick Start]({{< relref "/quickstart/_index.md" >}}).
 
-#### 2. WebLogic image
+#### 2. WebLogic Server image
 
 Model in Image requires creating a 'final' deployable image that has WebLogic Server and WDT installed, plus your model and application files.
 
-You can start with a WebLogic 12.2.1.3 or later pre-built base image obtained from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or similar, manually build your own base image as per [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}), or build a base image using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch). For an example of the first approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
+You can start with a WebLogic Server 12.2.1.3 or later pre-built base image obtained from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or similar, manually build your own base image as per [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}), or build a base image using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch). For an example of the first approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
 
 After you have a base image, Model in Image requires layering the following directory structure for its (optional) WDT models artifacts and (required) WDT binaries:
 
