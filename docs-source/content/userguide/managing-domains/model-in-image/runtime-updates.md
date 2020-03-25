@@ -221,8 +221,8 @@ This example references a database running in the `default` namespace that is ac
             GlobalTransactionsProtocol: TwoPhaseCommit
           JDBCDriverParams:
             DriverName: oracle.jdbc.xa.client.OracleXADataSource
-            URL:               '@@SECRET:@@ENV:DOMAIN_UID@@-new-db-access-secret/url@@'
-            PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-new-db-access-secret/password@@'
+            URL:               '@@SECRET:sample-domain1-new-db-access-secret:url@@'
+            PasswordEncrypted: '@@SECRET:sample-domain1-new-db-access-secret:password@@'
             Properties:
               user:
                 Value: 'sys as sysdba'
