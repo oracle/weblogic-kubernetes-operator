@@ -24,7 +24,11 @@ pre = "<b> </b>"
 ---
 ### Overview
 
-Use configuration overrides (also called _situational configuration_) to customize a WebLogic domain home configuration without modifying the domain's actual `config.xml` or system resource files. For example, you may want to override a JDBC data source XML module user name, password, and URL so that it references a local database.
+{{% notice note %}}
+Configuration overrides can only be used in combination with Domain in Image and Domain in PV domains. For Model in Image domains, use [Model in Image Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
+{{% /notice %}}
+
+Use configuration overrides (also called _situational configuration_) to customize a Model in Image or Domain in PV domain's WebLogic domain home configuration without modifying the domain's actual `config.xml` or system resource files. For example, you may want to override a JDBC data source XML module user name, password, and URL so that it references a local database.
 
 You can use overrides to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site.
 
@@ -58,6 +62,8 @@ For a detailed walk-through of the runtime flow, see the [Internal design flow](
 
 ---
 ### Prerequisites
+
+* Configuration overrides can only be used in combination with Domain in Image and Domain in PV domains (the `domainHomeSourceType` must be either `PersistentVolume` or `Image`). For Model in Image domains (`domainHomeSourceType` is `FromModel`), use [Model in Image Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
 
 * A WebLogic domain home must not contain any situational configuration XML file in its `optconfig` directory that was not placed there by the operator. Any existing situational configuration XML files in this directory will be deleted and replaced by your operator override templates (if any).
 
