@@ -146,7 +146,12 @@ public class Domain {
           result = TestUtils.exec(cmdip);
           BaseTest.LB_PUBLIC_IP = result.stdout().trim();
           if (BaseTest.LB_PUBLIC_IP == null || BaseTest.LB_PUBLIC_IP.equals("")) {
-            throw new RuntimeException(" Can't retrieve Public IP for Load Balancer " + result.stderr());
+            String cmd1 = "kubectl describe svc traefik-operator --namespace traefik ";
+            ExecResult result1 = TestUtils.exec(cmd1);
+            throw new RuntimeException(" Can't retrieve Public IP for Load Balancer "
+                    + result.stdout()
+                    + result.stderr()
+                    + result1.stdout());
           }
           LoggerHelper.getLocal().log(Level.INFO,
                   "Load Balancer Public IP : " + BaseTest.LB_PUBLIC_IP);
