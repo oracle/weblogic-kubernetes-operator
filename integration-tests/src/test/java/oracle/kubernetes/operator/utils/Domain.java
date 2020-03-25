@@ -154,7 +154,7 @@ public class Domain {
                   + ".org' http://" + BaseTest.LB_PUBLIC_IP
                   + "/weblogic/ready --write-out %{http_code} -o /dev/null";
         } else {
-          throw new RuntimeException ("FAILURE: OKE supports only Traefik Load Balancer");
+          throw new RuntimeException("FAILURE: OKE supports only Traefik Load Balancer");
         }
       } else {
         cmd = "curl --silent --noproxy '*' -H 'host: " + domainUid
