@@ -861,6 +861,7 @@ public class BaseTest {
    */
   public void testOperatorLifecycle(Operator operator, Domain domain) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Inside testOperatorLifecycle");
+    operator.writePodLog(getResultDir() + "/state-dump-logs/");
     operator.destroy();
     operator.create();
     operator.verifyExternalRestService();
