@@ -142,6 +142,7 @@ public class Domain {
       String cmd;
       if (BaseTest.OKE_CLUSTER) {
         if (getLoadBalancerName().equalsIgnoreCase("TRAEFIK")) {
+          TestUtils.checkLbPublicIPCreated();
           String cmdip = "kubectl describe svc traefik-operator --namespace traefik | grep Ingress | awk '{print $3}'";
           result = TestUtils.exec(cmdip);
           BaseTest.LB_PUBLIC_IP = result.stdout().trim();

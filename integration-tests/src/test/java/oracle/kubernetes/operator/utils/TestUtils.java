@@ -150,6 +150,46 @@ public class TestUtils {
   }
 
   /**
+   * Checks that externalIP is created in OKE.
+   *
+   * @throws Exception exception
+   */
+  public static void checkLbPublicIPCreated() throws Exception {
+    int i = 0;
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get svc traefik-operator --namespace traefik -w ");
+
+    // check for service
+    while (i < BaseTest.getMaxIterationsPod()) {
+      ExecResult result = ExecCommand.exec(cmd.toString());
+
+      // service might not have been created
+      if (result.exitValue() != 0
+              || (result.exitValue() == 0 && result.stdout().contains("pending"))) {
+        LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
+
+        // check for last iteration
+        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+          throw new RuntimeException("FAILURE: Public IP for Load Balancer is not created, exiting!");
+        }
+        LoggerHelper.getLocal().log(Level.INFO,
+                "Public IP for Load Balancer is not created Ite ["
+                        + i
+                        + "/"
+                        + BaseTest.getMaxIterationsPod()
+                        + "], sleeping "
+                        + BaseTest.getWaitTimePod()
+                        + " seconds more");
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+        i++;
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO, "Public IP for Load Balancer is Created");
+        break;
+      }
+    }
+  }
+
+  /**
    * Checks that service is created.
    *
    * @param serviceName service name
@@ -167,7 +207,7 @@ public class TestUtils {
 
       // service might not have been created
       if (result.exitValue() != 0
-          || (result.exitValue() == 0 && !result.stdout().contains(serviceName))) {
+              || (result.exitValue() == 0 && !result.stdout().contains(serviceName))) {
         LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
 
         // check for last iteration
@@ -175,13 +215,13 @@ public class TestUtils {
           throw new RuntimeException("FAILURE: service is not created, exiting!");
         }
         LoggerHelper.getLocal().log(Level.INFO,
-            "Service is not created Ite ["
-                + i
-                + "/"
-                + BaseTest.getMaxIterationsPod()
-                + "], sleeping "
-                + BaseTest.getWaitTimePod()
-                + " seconds more");
+                "Service is not created Ite ["
+                        + i
+                        + "/"
+                        + BaseTest.getMaxIterationsPod()
+                        + "], sleeping "
+                        + BaseTest.getWaitTimePod()
+                        + " seconds more");
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {
