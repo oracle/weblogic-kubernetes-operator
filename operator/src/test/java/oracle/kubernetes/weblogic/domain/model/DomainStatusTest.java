@@ -209,11 +209,12 @@ public class DomainStatusTest {
   public void whenClusterStatusAdded_matchingClusterStatusesReplaced() {
     domainStatus.addCluster(new ClusterStatus().withClusterName("cluster1").withReplicas(3).withReplicasGoal(5));
 
-    domainStatus.addCluster(
-        new ClusterStatus().withClusterName("cluster1").withMaximumReplicas(10).withReplicasGoal(6));
+    domainStatus.addCluster(new ClusterStatus().withClusterName("cluster1").withMaximumReplicas(10)
+        .withMinimumReplicas(2).withReplicasGoal(6));
 
     assertThat(domainStatus.getClusters(), hasItem(clusterStatus("cluster1").withMaximumReplicas(10)));
     assertThat(domainStatus.getClusters(), hasItem(clusterStatus("cluster1").withReplicasGoal(6)));
+    assertThat(domainStatus.getClusters(), hasItem(clusterStatus("cluster1").withMinimumReplicas(2)));
     assertThat(domainStatus.getClusters(), not(hasItem(clusterStatus("cluster1").withReplicas(3))));
     assertThat(domainStatus.getClusters(), not(hasItem(clusterStatus("cluster1").withReplicasGoal(5))));
   }
@@ -267,6 +268,7 @@ public class DomainStatusTest {
     private String name;
     private Integer replicas;
     private Integer maximumReplicas;
+    private Integer minimumReplicas;
     private Integer readyReplicas;
     private Integer replicasGoal;
 
@@ -288,6 +290,11 @@ public class DomainStatusTest {
       return this;
     }
 
+    ClusterStatusMatcher withMinimumReplicas(int minimumReplicas) {
+      this.minimumReplicas = minimumReplicas;
+      return this;
+    }
+
     ClusterStatusMatcher withReadyReplicas(int readyReplicas) {
       this.readyReplicas = readyReplicas;
       return this;
@@ -304,6 +311,7 @@ public class DomainStatusTest {
       matcher.check("clusterName", name, clusterStatus.getClusterName());
       matcher.check("replicas", replicas, clusterStatus.getReplicas());
       matcher.check("maximumReplicas", maximumReplicas, clusterStatus.getMaximumReplicas());
+      matcher.check("minimumReplicas", minimumReplicas, clusterStatus.getMinimumReplicas());
       matcher.check("readyReplicas", readyReplicas, clusterStatus.getReadyReplicas());
       matcher.check("replicasGoal", replicasGoal, clusterStatus.getReplicasGoal());
 
@@ -318,6 +326,9 @@ public class DomainStatusTest {
       }
       if (maximumReplicas != null) {
         description.appendText(", with " + maximumReplicas + " maximum replicas");
+      }
+      if (minimumReplicas != null) {
+        description.appendText(", with " + minimumReplicas + " minimum replicas");
       }
       if (readyReplicas != null) {
         description.appendText(", with " + readyReplicas + " ready replicas");
