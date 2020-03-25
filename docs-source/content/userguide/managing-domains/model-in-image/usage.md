@@ -151,7 +151,7 @@ __Here are the required settings for Model in Image JRF domains:__
 __Important instructions when changing an RCU schema password:__
 
   {{% notice warning %}}
-  Carefully follow these instructions in order to prevent unrecoverably locking up your RCU database schema account when changing your RCU schema password.
+  Carefully follow these instructions in order to prevent irrecoverably locking up your RCU database schema account when changing your RCU schema password.
   {{% /notice %}}
 
 - Shutdown all domains that access the RCU database schema. For example, set their `serverStartPolicy` to `NEVER`.
