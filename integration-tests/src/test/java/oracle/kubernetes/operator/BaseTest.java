@@ -805,7 +805,7 @@ public class BaseTest {
     replicas = 2;
     podName = domainUid + "-" + managedServerNameBase + (replicas + 1);
     LoggerHelper.getLocal().log(Level.INFO, "Scale down to " + replicas + " managed servers");
-    if (BaseTest.OKE_CLUSTER) {
+    if (OKE_CLUSTER) {
       operator.scaleOke(domainUid, clusterName, replicas);
     } else {
       operator.scale(domainUid, clusterName, replicas);
