@@ -119,6 +119,7 @@ public class MessageKeys {
   public static final String DOMAIN_VALIDATION_FAILED = "WLSKO-0157";
   public static final String NO_INTERNAL_CERTIFICATE = "WLSKO-162";
   public static final String NO_EXTERNAL_CERTIFICATE = "WLSKO-163";
+  public static final String REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT = "WLSKO-0164";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
@@ -127,6 +128,8 @@ public class MessageKeys {
   public static final String BAD_VOLUME_MOUNT_PATH = "WLSDO-0004";
   public static final String RESERVED_ENVIRONMENT_VARIABLES = "WLSDO-0005";
   public static final String ILLEGAL_SECRET_NAMESPACE = "WLSDO-0006";
+  public static final String NO_CLUSTER_IN_DOMAIN = "WLSDO-0007";
+  public static final String NO_MANAGED_SERVER_IN_DOMAIN = "WLSDO-0008";
 
   private MessageKeys() {
   }

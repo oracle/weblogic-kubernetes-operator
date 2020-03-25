@@ -27,6 +27,6 @@ echo "deploying webhook"
 kubectl apply -f ${webhookDir}/webhook-deployment.yaml
 echo "after deploying webhook"
 sleep 15
-kubectl get pods -n monitoring
+kubectl get pods -n monitortestns
 kubectl apply -f ${webhookDir}/crossrbac_monitoring.yaml
 echo "Run the script [setupWebHook.sh] ..."
