@@ -11,7 +11,10 @@ function usage() {
   
   Usage:
   
-  $(basename $0) [-n mynamespace] [-d mydomainuid] -c myconfigmap [-l key1=val1] [-l key2=val2] ...
+  $(basename $0) -c configmapname \\
+                [-n mynamespace]  \\
+                [-d mydomainuid]  \\
+                [-f filenameordir] [-f filenameor dir] ...
   
   -d <domain_uid>     : Defaults to \$DOMAIN_UID if set, 'sample-domain1' otherwise.
   -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'DOMAIN_UID-ns' otherwise.
