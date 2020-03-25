@@ -10,6 +10,9 @@ def filter_model(model):
             else:
                 model['topology'] = {}
 
+            if 'Name' in topology:
+                model['topology']['Name'] = topology['Name']
+
             if 'Security' in topology:
                 model['topology']['Security'] = topology['Security']
 
