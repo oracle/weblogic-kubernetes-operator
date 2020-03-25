@@ -40,9 +40,9 @@ When you deploy a Model in Image domain resource, the operator will:
   - Run a Kubernetes job called the 'introspector job' that:
     - Merges your WDT artifacts.
     - Runs WDT tooling to generate a domain home.
-    - Packages up the domain home.
-    - Puts the package in an output Kubernetes config map named `DOMAIN_UID-weblogic-domain-introspect-cm`.
+    - Packages up the domain home and passes it to the operator.
   - After the introspector job completes:
+    - The operator creates a config map named `DOMAIN_UID-weblogic-domain-introspect-cm` and puts the packaged domain home in it.
     - The operator subsequently boots your domain's WebLogic Server pods.
     - The pods will obtain their domain home from the introspector's output config map.
 
