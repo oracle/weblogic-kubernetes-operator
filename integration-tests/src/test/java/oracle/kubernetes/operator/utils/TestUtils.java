@@ -2197,7 +2197,7 @@ public class TestUtils {
               BaseTest.getProjectRoot()
                       + "/src/integration-tests/bash/krun.sh -t 240 -m "
                       + "cleanupoke-weblogic-sample-pvc:/shared/"
-                      + " -n cleanupoke -c \"rm -rf /shared/wdt/* /shared/domains/*\"";
+                      + " -n cleanupoke -c \"rm -rf /shared/logs/* /shared/wdt/* /shared/domains/*\"";
     } else {
       cmd =
               BaseTest.getProjectRoot()
