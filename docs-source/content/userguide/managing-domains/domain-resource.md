@@ -24,7 +24,7 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 
 #### YAML files
 
-Domain resources are defined using the domain resource YAML files. For each WLS domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample scripts generates a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WLS domain parameters that define your WLS domain.
+Domain resources are defined using the domain resource YAML files. For each WLS domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample scripts generate a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WLS domain parameters that define your WLS domain.
 
 * WebLogic sample [Domain home on a persistent volume]({{< relref "/samples/simple/domains/domain-home-on-pv/_index.md" >}}).
 
