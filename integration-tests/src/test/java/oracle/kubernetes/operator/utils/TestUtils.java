@@ -1981,9 +1981,9 @@ public class TestUtils {
   }
 
   /**
-   * @param namespace
-   * @param pod 
-   *
+   * Utility method to find CreationTimeStamp for a Pod
+   * @param namespace namespace for the pod
+   * @param pod       name of the pod
    * @return creationTimestamp of the Pod 
    * @throws Exception on failure
    */
@@ -1998,9 +1998,9 @@ public class TestUtils {
   }
 
   /**
-   * @param namespace
-   * @param pod 
-   *
+   * Utility method to find DeletionTimestamp for a Pod
+   * @param namespace namespace for the pod
+   * @param pod       name of the pod
    * @return deletionTimestamp of the Pod 
    * @throws Exception on failure
    */

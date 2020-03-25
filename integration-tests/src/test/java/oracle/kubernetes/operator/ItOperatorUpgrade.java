@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
@@ -107,7 +108,7 @@ public class ItOperatorUpgrade extends BaseTest {
       TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
       TestUtils.exec("kubectl delete crd domains.weblogic.oracle --ignore-not-found");
       // Make sure domain CRD is deleted form k8s 
-      ExecResult result = TestUtils.exec("kubectl get crd domains.weblogic.oracle");
+      ExecResult result = ExecCommand.exec("kubectl get crd domains.weblogic.oracle",true);
       Assertions.assertEquals(1, result.exitValue());
       LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
     }
@@ -193,7 +194,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Check whether the weblogic server instances are rolling restarted.
+   * Check whether the WebLogic server instances are rolling restarted.
    *
    * @throws Exception If restart fails or not restarted
    */
@@ -210,7 +211,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Check whether the weblogic server instances are still RUNNING 
+   * Check whether the WebLogic server instances are still RUNNING 
    * not restarted due to Operator Upgrade by comparing the creationTimestamp
    * before and after upgrade
    *
@@ -233,7 +234,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Creates operator based on operatorRelease passed to it and then creates a Weblogic domain
+   * Creates operator based on operatorRelease passed to it and then creates a WebLogic domain
    * controlled by that operator.
    *
    * @param operatorGitRelease Git branch name of the operator release version
