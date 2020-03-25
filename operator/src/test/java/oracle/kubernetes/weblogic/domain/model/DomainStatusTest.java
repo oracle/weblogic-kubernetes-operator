@@ -18,6 +18,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Availa
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 import static oracle.kubernetes.weblogic.domain.model.DomainStatusTest.ClusterStatusMatcher.clusterStatus;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
@@ -258,10 +259,8 @@ public class DomainStatusTest {
 
     List<ServerStatus> serverStatuses = domainStatus.getServers();
 
-    assertThat(serverStatuses.get(0), equalTo(adminServer));
-    assertThat(serverStatuses.get(1), equalTo(cluster1Server1));
-    assertThat(serverStatuses.get(2), equalTo(cluster1Server2));
-    assertThat(serverStatuses.get(3), equalTo(cluster2Server1));
+    assertThat(serverStatuses,
+        contains(adminServer, cluster1Server1, cluster1Server2, cluster2Server1));
   }
 
   static class ClusterStatusMatcher extends org.hamcrest.TypeSafeDiagnosingMatcher<ClusterStatus> {
