@@ -643,8 +643,33 @@ public class ConfigMapHelper {
             + domainRestartVersion);
         LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version from cm result "
             + domainIntrospectVersion);
+        LOGGER.finest("ReadSituConfigMapStep.onSuccess image spec hash from cm result "
+            + modelInImageSpecHash);
 
         if (topologyYaml != null) {
+
+          if (miiDomainZipHash != null) {
+            LOGGER.info("DEBUG: ReadSituConfigMapStep miiDomainZipHash");
+            packet.put(ProcessingConstants.DOMAIN_HASH, miiDomainZipHash);
+          }
+
+          if (miiModelSecretsHash != null) {
+            LOGGER.info("DEBUG: ReadSituConfigMapStep miiModelSecretsHash");
+            packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
+          }
+
+          if (domainIntrospectVersion != null) {
+            packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
+          }
+
+          if (domainRestartVersion != null) {
+            packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
+          }
+
+          if (modelInImageSpecHash != null) {
+            packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, modelInImageSpecHash);
+          }
+
           ConfigMapHelper.DomainTopology domainTopology =
               ConfigMapHelper.parseDomainTopologyYaml(topologyYaml);
           if (domainTopology != null) {
@@ -658,25 +683,6 @@ public class ConfigMapHelper {
           }
         }
 
-        if (miiDomainZipHash != null) {
-          packet.put(ProcessingConstants.DOMAIN_HASH, miiDomainZipHash);
-        }
-
-        if (miiModelSecretsHash != null) {
-          packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
-        }
-
-        if (domainIntrospectVersion != null) {
-          packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
-        }
-
-        if (domainRestartVersion != null) {
-          packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
-        }
-
-        if (modelInImageSpecHash != null) {
-          packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, modelInImageSpecHash);
-        }
       }
       return doNext(packet);
     }
