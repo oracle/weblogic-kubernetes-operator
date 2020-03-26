@@ -21,23 +21,11 @@ For example, if the operator was installed with the Helm release name `weblogic-
 in the namespace `weblogic-operator-ns` and the kubernetes `tls secret` is named
 `weblogic-operator-cert`, the following commands can be used to update the operator
 certificate(s) and key:
+
 ```bash
 $ kubectl create secret tls weblogic-operator-cert -n weblogic-operator-ns \
   --cert=<path-to-certificate> --key=<path-to-private-key>
 ```
-
-For Helm 2.x:
-
-```bash
-$ helm get values weblogic-operator
-
-$ helm upgrade --wait --recreate-pods --reuse-values \
-  --set externalRestEnabled=true \
-  --set externalRestIdentitySecret=weblogic-operator-cert \
-  weblogic-operator kubernetes/charts/weblogic-operator
-```
-
-For Helm 3.x:
 
 ```bash
 $ helm get values weblogic-operator -n weblogic-operator-ns
@@ -45,7 +33,7 @@ $ helm get values weblogic-operator -n weblogic-operator-ns
 $ helm -n weblogic-operator-ns upgrade weblogic-operator kubernetes/charts/weblogic-operator \
   --wait --recreate-pods --reuse-values \
   --set externalRestEnabled=true \
-  --set externalRestIdentitySecret=weblogic-operator-cert 
+  --set externalRestIdentitySecret=weblogic-operator-cert
 ```
 
 

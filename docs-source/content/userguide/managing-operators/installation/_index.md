@@ -21,26 +21,7 @@ You supply the `–namespace` argument from the `helm install` command line to s
 
 Similarly, you may override the default `serviceAccount` configuration value to specify which service account in the operator's namespace, the operator should use.  If not specified, then it defaults to `default` (for example, the namespace's default service account).  If you want to use a different service account, then you must create the operator's namespace and the service account before installing the operator Helm chart.
 
-For example:
-
-Using Helm 2.x:
-
-```
-$ helm install kubernetes/charts/weblogic-operator \
-  --name weblogic-operator --namespace weblogic-operator-namespace \
-  --values custom-values.yaml --wait
-```
-Or:
-```
-$ helm install kubernetes/charts/weblogic-operator \
-  --name weblogic-operator --namespace weblogic-operator-namespace \
-  --set "javaLoggingLevel=FINE" --wait
-```
-
-If `weblogic-operator-namespace` exists, then it will be used.  If it does not exist, then Helm 2.x will create it.
-
-
-Using Helm 3.x:
+For example, using Helm 3.x:
 
 ```
 $ kubectl create namespace weblogic-operator-namespace
@@ -92,14 +73,6 @@ $ helm repo update
 
 Install the operator from the repository:
 
-For Helm 2.x:
-
-```
-$ helm install weblogic-operator/weblogic-operator --name weblogic-operator
-```
-
-For Helm 3.x:
-
 ```
 $ helm install weblogic-operator weblogic-operator/weblogic-operator
 ```
@@ -107,14 +80,6 @@ $ helm install weblogic-operator weblogic-operator/weblogic-operator
 #### Removing the operator
 
 The `helm delete` command is used to remove an operator release and its associated resources from the Kubernetes cluster.  The release name used with the `helm delete` command is the same release name used with the `helm install` command (see [Install the Helm chart](#install-the-operator-helm-chart)).  For example:
-
-For Helm 2.x:
-
-```
-$ helm delete --purge weblogic-operator
-```
-
-For Helm 3.x:
 
 ```
 $ helm uninstall weblogic-operator

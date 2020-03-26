@@ -672,7 +672,7 @@ public class Operator {
     LoggerHelper.getLocal().log(Level.INFO, "Command to query Operator pod name: " + cmd);
     ExecResult result = TestUtils.exec(cmd);
 
-    return result.stdout();
+    return result.stdout().trim();
   }
 
   public static enum RestCertType {
@@ -687,4 +687,24 @@ public class Operator {
     NONE
   }
 
+  /**
+   * writes operator pod describe and logs to a file
+   * @param logLocation - location where the logs to be written
+   */
+  public void writePodLog(String logLocation) throws Exception {
+    //create dir
+    TestUtils.exec("mkdir -p " + logLocation);
+
+    //write operator pod describe
+    String cmd = "kubectl describe pod " + getOperatorPodName() + " -n "
+        + getOperatorNamespace() + " >> " + logLocation
+        + "/pod-describe." + operatorNS + "." + getOperatorPodName();
+    TestUtils.exec(cmd, true);
+
+    //write operator pod logs
+    cmd = "kubectl logs pod/" + getOperatorPodName() + " -n "
+        + getOperatorNamespace() + " >> " + logLocation
+        + "/pod-log." + operatorNS + "." + getOperatorPodName();
+    TestUtils.exec(cmd, true);
+  }
 }

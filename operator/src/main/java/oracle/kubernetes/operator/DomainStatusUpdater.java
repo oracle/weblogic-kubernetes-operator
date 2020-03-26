@@ -445,6 +445,7 @@ public class DomainStatusUpdater {
             .withReadyReplicas(
                 Optional.ofNullable(getClusterCounts(true).get(clusterName)).map(Long::intValue).orElse(null))
             .withMaximumReplicas(getClusterMaximumSize(clusterName))
+            .withMinimumReplicas(getClusterMinimumSize(clusterName))
             .withReplicasGoal(getClusterSizeGoal(clusterName));
       }
 
@@ -493,6 +494,11 @@ public class DomainStatusUpdater {
       private Integer getClusterMaximumSize(String clusterName) {
         return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
             .map(cluster -> cluster.map(WlsClusterConfig::getMaxClusterSize).orElse(0)).get();
+      }
+
+      private Integer getClusterMinimumSize(String clusterName) {
+        return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
+                .map(cluster -> cluster.map(WlsClusterConfig::getMinClusterSize).orElse(0)).get();
       }
 
       private Integer getClusterSizeGoal(String clusterName) {

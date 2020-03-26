@@ -612,6 +612,7 @@ class TopologyGenerator(Generator):
     self.writeln("serverNamePrefix: " + self.quote(dynamicServer.getServerNamePrefix()))
     self.writeln("dynamicClusterSize: " + str(dynamicServer.getDynamicClusterSize()))
     self.writeln("maxDynamicClusterSize: " + str(dynamicServer.getMaxDynamicClusterSize()))
+    self.writeln("minDynamicClusterSize: " + str(dynamicServer.getMinDynamicClusterSize()))
 
   def getClusteredServers(self, cluster):
     rtn = []
