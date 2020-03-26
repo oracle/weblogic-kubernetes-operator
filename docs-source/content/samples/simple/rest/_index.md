@@ -45,21 +45,6 @@ in the ***Security*** section.
 The script as used below will create the `tls secret` named `weblogic-operator-identity` in the namespace `weblogic-operator-ns` using a self-signed
 certificate and private key:
 
-For Helm 2.x:
-
-```
-$ echo "externalRestEnabled: true" > my_values.yaml
-$ generate-external-rest-identity.sh \
-  -a "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" \
-  -n weblogic-operator-ns -s weblogic-operator-identity >> my_values.yaml
-#
-$ kubectl -n weblogic-operator-ns describe secret weblogic-operator-identity
-$ helm install kubernetes/charts/weblogic-operator --name my_operator \
-  --namespace weblogic-operator-ns --values my_values.yaml --wait
-```
-
-For Helm 3.x:
-
 ```
 $ echo "externalRestEnabled: true" > my_values.yaml
 $ generate-external-rest-identity.sh \
