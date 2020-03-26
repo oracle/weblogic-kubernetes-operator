@@ -10,7 +10,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
@@ -41,6 +44,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
   private static String testClassName;
   private static StringBuffer namespaceList;
   private static final String configMapSuffix = "-mii-config-map";
+  private static final String jndiName = "jdbc/generic1";
   private static final String dsName = "MyDataSource";
   private static final String readTimeout_1 = "30001";
   private static final String readTimeout_2 = "30002";
@@ -126,17 +130,16 @@ public class ItModelInImageOverride extends MiiBaseTest {
       // apply the domain yaml, verify domain restarted
       modifyDomainYamlWithRestartVersion();
 
-      // verify the test result
+      // verify the test result by checking override config file on server pod
       verifyJdbcOverride();
-      String jdbcDsValues = getJdbcResourceValues();
 
-      // verify JDBC DS name
-      Assumptions.assumeTrue(jdbcDsValues.contains(dsName), dsName + " not found");
-      LoggerHelper.getLocal().log(Level.INFO, dsName + " is found from WLST return values");
-      // verify value of read timeout
-      Assumptions.assumeTrue(jdbcDsValues.contains(readTimeout_1), "readTimeout not found");
-      LoggerHelper.getLocal().log(Level.INFO, dsName
-            + "oracle.jdbc.ReadTimeout=" + readTimeout_1 + " is found from WLST return values");
+      // verify the test result by getting JDBC DS props via WLST on server pod
+      Set<String> jdbcResourcesToVerify = new HashSet<String>();
+      // verify JDBC DS name and value of read timeout
+      jdbcResourcesToVerify.add("datasource.name.1=" + dsName);
+      jdbcResourcesToVerify.add("datasource.readTimeout.1=" + readTimeout_1);
+
+      verifyJdbcResources(jdbcResourcesToVerify);
 
       testCompletedSuccessfully = true;
     } finally {
@@ -246,24 +249,31 @@ public class ItModelInImageOverride extends MiiBaseTest {
         .append(" -- bash -c 'cd /u01/oracle/user_projects/domains/")
         .append(domainName)
         .append("/config/jdbc/")
-        .append(" && grep -R jdbc/generic1")
+        .append(" && grep -R ")
+        .append(jndiName)
         .append("'");
 
     LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
     result = TestUtils.exec(cmdStrBuff.toString());
     LoggerHelper.getLocal().log(Level.INFO, "JDBC DS info from server pod: " + result.stdout());
 
-    Assumptions.assumeTrue(result.stdout().contains("<jndi-name>jdbc/generic1</jndi-name>"),
+    Assertions.assertTrue(result.stdout().contains("<jndi-name>" + jndiName + "</jndi-name>"),
         "JDBC DS doesn't override");
   }
 
-  /**
-   * Create a JDBC system resource in domain.
-   *
-   * @param domain - Domain object
-   * @throws Exception JDBC resource creation fails
-   */
-  private String getJdbcResourceValues() throws Exception {
+  private void verifyJdbcResources(Set<String> jdbcResourcesSet) throws Exception {
+    // verify JDBC DS props via WLST on server pod
+    String jdbcResources = getJdbcResources();
+
+    Iterator<String> iterator = jdbcResourcesSet.iterator();
+    while (iterator.hasNext()) {
+      String prop = iterator.next();
+      Assertions.assertTrue(jdbcResources.contains(prop), prop + " is not found");
+      LoggerHelper.getLocal().log(Level.INFO, prop + " exists");
+    }
+  }
+
+  private String getJdbcResources() throws Exception {
     // get domain name
     StringBuffer cmdStrBuff = new StringBuffer("kubectl get domain -n ");
     cmdStrBuff
@@ -314,7 +324,6 @@ public class ItModelInImageOverride extends MiiBaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
     TestUtils.exec(cmdStrBuff.toString(), true);
 
-    LoggerHelper.getLocal().log(Level.INFO, "====AppLoc: " + BaseTest.getAppLocationInPod());
     TestUtils.copyFileViaCat(
         Paths.get(tempDir, pyFileName).toString(),
         BaseTest.getAppLocationInPod() + "/" + pyFileName,
@@ -333,8 +342,6 @@ public class ItModelInImageOverride extends MiiBaseTest {
         .append("'");
     LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
     result = TestUtils.exec(cmdStrBuff.toString(), true);
-
-    LoggerHelper.getLocal().log(Level.INFO, "WLST returns: " + result.stdout());
 
     return result.stdout();
   }
