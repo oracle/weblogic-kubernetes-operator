@@ -6,15 +6,11 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -30,7 +26,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
-import static oracle.kubernetes.utils.OperatorUtils.getSortingString;
+import static oracle.kubernetes.utils.OperatorUtils.createSortedMap;
 
 /**
  * After the {@link PodHelper} identifies servers that are presently running, but that are using an
@@ -79,17 +75,6 @@ public class RollingHelper {
       super(next);
       // sort the rolling map so servers would be restarted in order based on server names
       this.rolling = createSortedMap(rolling);
-    }
-
-    private Map<String, StepAndPacket> createSortedMap(Map<String, StepAndPacket> map) {
-      return map.entrySet()
-          .stream()
-          .sorted(Comparator
-              .comparing((Entry<String, StepAndPacket> entry) -> getSortingString(entry.getKey())))
-          .collect(Collectors.toMap(
-              Map.Entry::getKey,
-              Map.Entry::getValue,
-              (oldValue, newValue) -> oldValue, LinkedHashMap::new));
     }
 
     @Override
@@ -148,6 +133,7 @@ public class RollingHelper {
       }
 
       if (!clusteredRestarts.isEmpty()) {
+        clusteredRestarts = createSortedMap(clusteredRestarts);
         for (Map.Entry<String, Queue<StepAndPacket>> entry : clusteredRestarts.entrySet()) {
           work.add(
               new StepAndPacket(

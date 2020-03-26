@@ -3,7 +3,12 @@
 
 package oracle.kubernetes.utils;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 public class OperatorUtils {
   /**
@@ -20,6 +25,25 @@ public class OperatorUtils {
         : list.get(0);
   }
 
+  /**
+   * Create a Map using the elements from the given map, with their keys sorted
+   * using the 'numero lexi sorting name'.
+   *
+   * @param map Map containing elements to be sorted by the keys
+   * @param <T> Type of map entries
+   * @return A sorted Map containing the elements from the give map
+   */
+  public static <T> Map<String, T> createSortedMap(Map<String, T> map) {
+    return map.entrySet()
+        .stream()
+        .sorted(Comparator
+            .comparing((Entry<String, T> entry) -> getSortingString(entry.getKey())))
+        .collect(Collectors.toMap(
+            Map.Entry::getKey,
+            Map.Entry::getValue,
+            (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+  }
+  
   /**
    * Compare the 'numero lexi sorting name' as defined in {@link #getSortingString(String)} of the
    * given 2 Strings.
