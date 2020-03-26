@@ -7,6 +7,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import org.junit.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertThat;
@@ -64,5 +65,17 @@ public class DomainPresenceInfoTest {
     info.setServerPod("myserver", pod);
 
     assertThat(info.getServerPod("myserver"), sameInstance(pod));
+  }
+
+  @Test
+  public void afterValidationWarningsAdded_nextCallReturnsThem() {
+    final String warning1 = "warning1";
+    final String warning2 = "warning2";
+
+    info.addValidationWarning(warning1);
+    info.addValidationWarning(warning2);
+
+    assertThat(info.getValidationWarningsAsString(), containsString(warning1));
+    assertThat(info.getValidationWarningsAsString(), containsString(warning2));
   }
 }

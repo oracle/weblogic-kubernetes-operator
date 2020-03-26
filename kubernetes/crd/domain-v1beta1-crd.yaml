@@ -20623,6 +20623,9 @@ spec:
                     description: Name of node that is hosting the Pod containing this
                       WebLogic Server.
                     type: string
+                  desiredState:
+                    description: Desired state of this WebLogic Server.
+                    type: string
                   clusterName:
                     description: WebLogic cluster name, if the server is part of a
                       cluster.
@@ -20725,6 +20728,10 @@ spec:
               items:
                 type: object
                 properties:
+                  minimumReplicas:
+                    description: The minimum number of cluster members.
+                    type: number
+                    minimum: 0.0
                   maximumReplicas:
                     description: The maximum number of cluster members. Required.
                     type: number
@@ -20738,6 +20745,12 @@ spec:
                     type: string
                   readyReplicas:
                     description: The number of ready cluster members. Required.
+                    type: number
+                    minimum: 0.0
+                  replicasGoal:
+                    description: The requested number of cluster members from the
+                      domain spec. Cluster members will be started by the operator
+                      if this value is larger than zero.
                     type: number
                     minimum: 0.0
   versions:

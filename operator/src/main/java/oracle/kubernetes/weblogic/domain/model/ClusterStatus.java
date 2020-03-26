@@ -38,6 +38,17 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   @Range(minimum = 0)
   private Integer maximumReplicas;
 
+  /** The minimum number of cluster members. */
+  @Description("The minimum number of cluster members.")
+  @Range(minimum = 0)
+  private Integer minimumReplicas;
+
+  /** The requested number of cluster members from the domain spec. */
+  @Description("The requested number of cluster members from the domain spec. "
+      + "Cluster members will be started by the operator if this value is larger than zero.")
+  @Range(minimum = 0)
+  private Integer replicasGoal;
+
   public ClusterStatus() {
   }
 
@@ -46,6 +57,8 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     this.replicas = other.replicas;
     this.readyReplicas = other.readyReplicas;
     this.maximumReplicas = other.maximumReplicas;
+    this.minimumReplicas = other.minimumReplicas;
+    this.replicasGoal = other.replicasGoal;
   }
 
   /**
@@ -108,6 +121,24 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return this;
   }
 
+  Integer getMinimumReplicas() {
+    return minimumReplicas;
+  }
+
+  public ClusterStatus withMinimumReplicas(Integer minimumReplicas) {
+    this.minimumReplicas = minimumReplicas;
+    return this;
+  }
+
+  Integer getReplicasGoal() {
+    return replicasGoal;
+  }
+
+  public ClusterStatus withReplicasGoal(Integer replicasGoal) {
+    this.replicasGoal = replicasGoal;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -115,6 +146,8 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .append("replicas", replicas)
         .append("readyReplicas", readyReplicas)
         .append("maximumReplicas", maximumReplicas)
+        .append("mimimumReplicas", minimumReplicas)
+        .append("replicasGoal", replicasGoal)
         .toString();
   }
 
@@ -125,6 +158,8 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .append(replicas)
         .append(readyReplicas)
         .append(maximumReplicas)
+        .append(minimumReplicas)
+        .append(replicasGoal)
         .toHashCode();
   }
 
@@ -142,6 +177,8 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .append(replicas, rhs.replicas)
         .append(readyReplicas, rhs.readyReplicas)
         .append(maximumReplicas, rhs.maximumReplicas)
+        .append(minimumReplicas, rhs.minimumReplicas)
+        .append(replicasGoal, rhs.replicasGoal)
         .isEquals();
   }
 
@@ -158,8 +195,10 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   private static final ObjectPatch<ClusterStatus> clusterPatch = createObjectPatch(ClusterStatus.class)
         .withStringField("clusterName", ClusterStatus::getClusterName)
         .withIntegerField("maximumReplicas", ClusterStatus::getMaximumReplicas)
+        .withIntegerField("minimumReplicas", ClusterStatus::getMinimumReplicas)
         .withIntegerField("readyReplicas", ClusterStatus::getReadyReplicas)
-        .withIntegerField("replicas", ClusterStatus::getReplicas);
+        .withIntegerField("replicas", ClusterStatus::getReplicas)
+        .withIntegerField("replicasGoal", ClusterStatus::getReplicasGoal);
 
   static ObjectPatch<ClusterStatus> getObjectPatch() {
     return clusterPatch;
