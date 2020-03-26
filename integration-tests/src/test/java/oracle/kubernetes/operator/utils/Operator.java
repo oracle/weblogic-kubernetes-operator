@@ -240,9 +240,9 @@ public class Operator {
    * scale the given cluster in a domain to the given number of servers using Operator REST API.
    *
    * @param domainUid   uid
-   * @param clusterName cluster
-   * @param numOfMS     num
-   * @throws Exception exception
+   * @param clusterName cluster name
+   * @param numOfMS     number of servers
+   * @throws Exception fails if scaling is not successful
    */
   public void scale(String domainUid, String clusterName, int numOfMS) throws Exception {
     if (BaseTest.OKE_CLUSTER) {
@@ -261,21 +261,19 @@ public class Operator {
                       .append("/clusters/")
                       .append(clusterName)
                       .append("/scale");
-
-      TestUtils.makeOperatorPostRestCall(this, myOpRestApiUrl.toString(), myJsonObjStr);
-      // give sometime to complete
-      LoggerHelper.getLocal().log(Level.INFO, "Wait 30 sec for scaling to complete...");
-      Thread.sleep(30 * 1000);
     }
+    // give sometime to complete
+    LoggerHelper.getLocal().log(Level.INFO, "Wait 30 sec for scaling to complete...");
+    Thread.sleep(30 * 1000);
   }
 
   /**
    * scale the given cluster in a domain to the given number of servers using Operator REST API.
    *
-   * @param domainUid   uid
-   * @param clusterName cluster
-   * @param numOfMS     num
-   * @throws Exception exception
+   * @param domainUid   domainuid there to scale the cluster
+   * @param clusterName cluster name
+   * @param numOfMS     num of servers
+   * @throws Exception fails if scaling is not successful
    */
 
   public void scaleOke(String domainUid, String clusterName, int numOfMS) throws Exception {
@@ -292,9 +290,6 @@ public class Operator {
     String scaleCurl = TestUtils.createRestCallCurl(this, myOpRestApiUrl.toString(), myJsonObjStr);
     LoggerHelper.getLocal().log(Level.INFO, "command called inside the pod " + scaleCurl);
     TestUtils.makeOperatorRestCallOke(this, scaleCurl);
-    // give sometime to complete
-    LoggerHelper.getLocal().log(Level.INFO, "Wait 30 sec for scaling to complete...");
-    Thread.sleep(30 * 1000);
   }
 
   /**

@@ -89,7 +89,6 @@ public class LoadBalancer {
    * @throws Exception on failure
    */
   public void createTraefikLoadBalancer() throws Exception {
-
     String cmdLb = null;
     cmdLb = BaseTest.getProjectRoot() + "/kubernetes/samples/charts/util/setup.sh create traefik ";
     LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
@@ -107,11 +106,10 @@ public class LoadBalancer {
   }
 
   /**
-   * Create Traefik path routing.
-   * @throws Exception on failure
+   * Create Traefik path routing to access servers via LB.
+   * @throws Exception on failure to execute kubectl
    */
   public void createTraefikPathRouting() throws Exception {
-
     TestUtils.copyFile(
             BaseTest.getProjectRoot()
                     + "/integration-tests/src/test/resources/traefik-path-routing.yaml",
@@ -138,7 +136,7 @@ public class LoadBalancer {
 
     ExecResult result = ExecCommand.exec(cmdLb);
     if (result.exitValue() != 0) {
-      throw new RuntimeException(
+      throw new Exception(
               "FAILURE: command to create hostpath ingress "
                       + cmdLb
                       + " failed, returned "
@@ -297,7 +295,6 @@ public class LoadBalancer {
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
   }
-
 
   /**
    * Create Voyager load balancer.
