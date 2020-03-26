@@ -63,9 +63,9 @@ cp ${APP_DIR_INPOD}/builddir/${APP_NAME}.ear ${APP_DIR_INPOD}/.
 
 echo "Deploy ${APP_NAME} gar using curl:"
 
-echo -e "curl --noproxy '*' -v --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:application/json -d "{name: '${APP_NAME}GAR', sourcePath='${ARCHIVE_FILE_GAR}', targets: [ { identity: [ 'clusters', '${GAR_DEPLOY_TARGET}' ] } ] }" -X POST http://${HOST}:${PORT}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployGAR.out\n"
-
-curl --noproxy '*' -v --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:application/json -d "{name: '${APP_NAME}GAR', sourcePath='${ARCHIVE_FILE_GAR}', targets: [ { identity: [ 'clusters', '${GAR_DEPLOY_TARGET}' ] } ] }" -X POST http://${HOST}:${PORT}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployGAR.out
+CMD="curl --noproxy '*' -v --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:application/json -d \"{name: '${APP_NAME}GAR', sourcePath='${ARCHIVE_FILE_GAR}', targets: [ { identity: [ 'clusters', '${GAR_DEPLOY_TARGET}' ] } ] }\" -X POST http://${HOST}:${PORT}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployGAR.out"
+echo "Executing ${CMD}"
+eval "${CMD}"
 
 grep -q "\"progress\": \"success\"" ${APP_DIR_INPOD}/deployGAR.out
 cres=$?
@@ -74,9 +74,9 @@ cres=$?
 
 echo "Deploy ${APP_NAME} ear using curl:"
 
-echo -e "curl --noproxy '*' -v --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:application/json -d "{name: '${APP_NAME}', sourcePath='${ARCHIVE_FILE_EAR}', targets: [ { identity: [ 'clusters', '${EAR_DEPLOY_TARGET}' ] } ] }" -X POST http://${HOST}:${PORT}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployear.out\n"
-
-curl --noproxy '*' -v --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:application/json -d "{name: '${APP_NAME}', sourcePath='${ARCHIVE_FILE_EAR}', targets: [ { identity: [ 'clusters', '${EAR_DEPLOY_TARGET}' ] } ] }" -X POST http://${HOST}:${PORT}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployear.out
+CMD="curl --noproxy '*' -v --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:application/json -d \"{name: '${APP_NAME}', sourcePath='${ARCHIVE_FILE_EAR}', targets: [ { identity: [ 'clusters', '${EAR_DEPLOY_TARGET}' ] } ] }\" -X POST http://${HOST}:${PORT}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployear.out"
+echo "Executing ${CMD}"
+eval "${CMD}"
 
 grep -q "\"progress\": \"success\"" ${APP_DIR_INPOD}/deployear.out
 cres=$?
