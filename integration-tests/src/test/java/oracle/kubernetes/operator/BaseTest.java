@@ -81,6 +81,7 @@ public class BaseTest {
   private static String fmwImageTag;
   private static String fmwImageName;
   private static String domainApiVersion;
+  private static String crdVersion;
   private static int suffixCount = 0;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
@@ -205,6 +206,10 @@ public class BaseTest {
         System.getenv("DOMAIN_API_VERSION") != null
             ? System.getenv("DOMAIN_API_VERSION")
             : appProps.getProperty("DOMAIN_API_VERSION");
+    crdVersion =
+        System.getenv("CRD_VERSION") != null
+            ? System.getenv("CRD_VERSION")
+            : appProps.getProperty("CRD_VERSION");
     WDT_VERSION =
         System.getenv("WDT_VERSION") != null
             ? System.getenv("WDT_VERSION")
@@ -404,6 +409,10 @@ public class BaseTest {
 
   public static String getDomainApiVersion() {
     return domainApiVersion;
+  }
+
+  public static String getCrdVersion() {
+    return crdVersion;
   }
 
   protected ExecResult cleanup() throws Exception {
