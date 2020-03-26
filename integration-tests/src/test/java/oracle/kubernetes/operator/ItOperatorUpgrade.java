@@ -50,7 +50,7 @@ public class ItOperatorUpgrade extends BaseTest {
   /**
    * This method gets called only once before any of the test methods are executed.
    *
-   * @throws Exception exception
+   * @throws Exception exception when test initialization fails
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
@@ -62,15 +62,15 @@ public class ItOperatorUpgrade extends BaseTest {
 
   /**
    * Releases k8s cluster lease, archives result, pv directories.
-   *
-   * @throws Exception exception
+   * 
+   * @throws Exception if tearDown() fails
+   * @see BaseTest#tearDown
    */
   @AfterAll
   public static void staticUnPrepare() throws Exception {
     tearDown(new Object() {
     }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
   }
-
 
   /**
    * This method gets called before every test. It creates the result/pv root directories
@@ -159,23 +159,22 @@ public class ItOperatorUpgrade extends BaseTest {
 
   /**
    * Checks the expected Upgraded Version of CustomResourceDefintion (CRD) 
-   * in default NameSpace in a loop. 
    *
    * @throws Exception when version does not match
    */
   private void checkCrdVersion() throws Exception {
     boolean result = false;
+    ExecResult exec = null;
     LoggerHelper.getLocal().log(
         Level.INFO,
         "Checking for the CRD Version "
             + getCrdVersion()
             + " in a loop ");
     for (int i = 0; i < BaseTest.getMaxIterationsPod(); i++) {
-      ExecResult exec =
-          TestUtils.exec(
+      exec = TestUtils.exec(
               "kubectl get crd domains.weblogic.oracle -o jsonpath='{.spec.versions[?(@.storage==true)].name}'", true);
       if (exec.stdout().contains(getCrdVersion())) {
-        LoggerHelper.getLocal().log(Level.INFO, "Got expected CRD Version");
+        LoggerHelper.getLocal().log(Level.INFO, "Got Expected CRD Version");
         result = true;
         break;
       }
@@ -186,7 +185,8 @@ public class ItOperatorUpgrade extends BaseTest {
       } 
     }
     if (!result) {
-      throw new Exception("FAILURE: Didn't get expected CRD Version");
+      throw new Exception("FAILURE: Expceted CRD version " + getCrdVersion() 
+         + "but got " + exec.stdout());
     }
   }
 
