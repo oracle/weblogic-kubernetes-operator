@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script creates a WebLogic domain home in docker image, and generates the domain resource
-#  yaml file, which can be used to restart the Kubernetes artifacts of the corresponding domain.
+#  This sample script creates a WebLogic domain home in Docker image, and generates the domain resource
+#  YAML file, which can be used to restart the Kubernetes artifacts of the corresponding domain.
 #
 #  The domain creation inputs can be customized by editing create-domain-inputs.yaml
 #
 #  The following pre-requisites must be handled prior to running this script:
-#    * The WDT sample requires that JAVA_HOME is set to a java JDK version 1.8 or greater
-#    * The kubernetes namespace must already be created
-#    * The kubernetes secrets 'username' and 'password' of the admin account have been created in the namespace
+#    * The WDT sample requires that JAVA_HOME is set to a Java JDK version 1.8 or greater
+#    * The Kubernetes namespace must already be created
+#    * The Kubernetes secrets 'username' and 'password' of the admin account have been created in the namespace
 #    * The host directory that will be used as the persistent volume must already exist
 #      and have the appropriate file permissions set.
-#    * If logHomeOnPV is enabled, the kubernetes persisitent volume must already be created
-#    * If logHomeOnPV is enabled, the kubernetes persisitent volume claim must already be created
+#    * If logHomeOnPV is enabled, the Kubernetes persistent volume must already be created
+#    * If logHomeOnPV is enabled, the Kubernetes persistent volume claim must already be created
 #
 
 # Initialize
@@ -161,7 +161,7 @@ function initialize {
 }
 
 #
-# Function to get the dependency docker sample
+# Function to get the dependency Docker sample
 #
 function getDockerSample {
   dockerImagesDir=${domainHomeImageBuildPath%/OracleWebLogic*}
@@ -170,7 +170,7 @@ function getDockerSample {
 }
 
 #
-# Function to build docker image and create WebLogic domain home
+# Function to build Docker image and create WebLogic domain home
 #
 function createDomainHome {
   dockerDir=${domainHomeImageBuildPath}
@@ -212,7 +212,7 @@ function createDomainHome {
 #
 function printSummary {
 
-  # Get the IP address of the kubernetes cluster (into K8S_IP)
+  # Get the IP address of the Kubernetes cluster (into K8S_IP)
   getKubernetesClusterIP
 
   echo ""
