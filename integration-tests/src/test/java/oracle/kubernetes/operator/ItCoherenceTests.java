@@ -144,13 +144,16 @@ public class ItCoherenceTests extends BaseTest {
       final String podName = domain.getManagedSeverPodName(1);
       final String ProxyIP;
       if (OKE_CLUSTER) {
-        String cmd = " kubectl get pods -n " + domainNS + " -o wide | grep " + podName + " | awk '{print $6}'";
+        //String cmd = " kubectl get pods -n " + domainNS + " -o wide | grep " + podName + " | awk '{print $6}'";
+        String cmd = "kubectl get pods -o jsonpath='{.items[?(@.metadata.name == \""
+                + podName
+                + "\")].status.podIP}'";
         ExecResult result = ExecCommand.exec(cmd);
         LoggerHelper.getLocal().log(
                 Level.INFO, "command  " + cmd + " output " + result.stdout() + " : " + result.stderr());
         ProxyIP = result.stdout().trim();
         if (result.exitValue() != 0) {
-          throw new RuntimeException(
+          throw new Exception(
                   "FAIL: Couldn't find the pod IP "
                           + podName + " in namespace "
                           + domainNS + result.stdout());

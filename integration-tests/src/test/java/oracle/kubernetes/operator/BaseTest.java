@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
@@ -158,12 +159,7 @@ public class BaseTest {
     }
     projectRoot = System.getProperty("user.dir") + "/..";
     if (OKE_CLUSTER) {
-      try {
-        TestUtils.deleteDomainHomeDirOke();
-      } catch (Exception ex) {
-        throw new RuntimeException(
-              "FAILURE: command to clean fss pv directory failed");
-      }
+      TestUtils.deleteDomainHomeDirOke();
     }
   }
 

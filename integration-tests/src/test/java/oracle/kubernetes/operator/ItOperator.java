@@ -258,9 +258,8 @@ public class ItOperator extends BaseTest {
         "Creating Domain domain & verifing the domain creation");
     // create domain
     Domain domain = null;
-    Map<String, Object> domainMap = null;
     try {
-      domainMap = createDomainMap(
+      Map<String, Object> domainMap = createDomainMap(
                   getNewSuffixCount(), testClassName);
       domainMap.put("weblogicDomainStorageReclaimPolicy", "Recycle");
       domainMap.put("clusterType", "CONFIGURED");
@@ -303,9 +302,8 @@ public class ItOperator extends BaseTest {
     // create domain10
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
-    Map<String, Object> domainMap = null;
     try {
-      domainMap = new HashMap<String, Object>();
+      Map<String, Object> domainMap domainMap = new HashMap<String, Object>();
       domainMap.put("domainUID", "domainsampledefaults");
       domainMap.put("namespace", domainNS1);
       domainMap.put("resultDir", getResultDir());
@@ -319,8 +317,7 @@ public class ItOperator extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        String domainUid = domain.getDomainUid();
-        TestUtils.deleteWeblogicDomainResources(domainUid);
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
     }
 

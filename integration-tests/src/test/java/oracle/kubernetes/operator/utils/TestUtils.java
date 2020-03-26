@@ -150,11 +150,11 @@ public class TestUtils {
   }
 
   /**
-   * Checks that externalIP is created in OKE.
+   * Checks that ExternalIP LB is created in OKE.
    *
-   * @throws Exception exception
+   * @throws Exception fails if not generated after MaxIterations number is reached.
    */
-  public static void checkLbPublicIPCreated() throws Exception {
+  public static void checkLbPublicIpCreated() throws Exception {
     int i = 0;
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get svc traefik-operator --namespace traefik -w ");
@@ -170,7 +170,7 @@ public class TestUtils {
 
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
-          throw new RuntimeException("FAILURE: Public IP for Load Balancer is not created, exiting!");
+          throw new Exception("FAILURE: Public IP for Load Balancer is not created, exiting!");
         }
         LoggerHelper.getLocal().log(Level.INFO,
                 "Public IP for Load Balancer is not created Ite ["
@@ -940,11 +940,11 @@ public class TestUtils {
 
   /**
    * generate url for rest invoke inside the pod.
-   * @param operator operator
-   * @param restUrl restUrl
-   * @param jsonObject jsonObject
-   * @return curlUrl
-   * @throws Exception on failure.
+   * @param operator operator object
+   * @param restUrl rest api command  /operator/...
+   * @param jsonObject if POST command pass json formed params, for GET pass null
+   * @return curl command to call operator rest api
+   * @throws Exception on failure to retrieve access token.
    */
   public static String createRestCallCurl(Operator operator, String restUrl, String jsonObject) throws Exception {
     StringBuffer call = new StringBuffer();
@@ -1636,15 +1636,15 @@ public class TestUtils {
       String[] items = domainUid.split(",");
       for (String item : items) {
         LoggerHelper.getLocal().log(Level.INFO, "Running deleteDomainHomeDirOke for domainUid:" + item);
-        TestUtils.deleteDomainHomeDirOke(item);
+        deleteDomainHomeDirOke(item);
       }
     }
   }
 
   /**
    * verify before deletion.
-   * @param domain domain
-   * @throws Exception on failure
+   * @param domain domain object to verify resources before deletion
+   * @throws Exception on failure to retrieve info
    */
   public static void verifyBeforeDeletion(Domain domain) throws Exception {
 
@@ -1656,21 +1656,37 @@ public class TestUtils {
 
     LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: " + domainUid);
     if (!BaseTest.OKE_CLUSTER) {
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyDomainCrd");
       k8sTestUtils.verifyDomainCrd();
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyDomain");
       k8sTestUtils.verifyDomain(domainNs, domainUid, true);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyPods");
       k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 4);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyJobs");
       k8sTestUtils.verifyJobs(domain1LabelSelector, 1);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyNoDeployments");
       k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyNoReplicaSets");
       k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyServices");
       k8sTestUtils.verifyServices(domain1LabelSelector, 5);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyPvcs");
       k8sTestUtils.verifyPvcs(domain1LabelSelector, 1);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyConfigMaps");
       k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 2);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: erifyNoServiceAccounts");
       k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyNoRoles");
       k8sTestUtils.verifyNoRoles(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyNoRoleBindings");
       k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifySecrets");
       k8sTestUtils.verifySecrets(credentialsName, 1);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyPvs");
       k8sTestUtils.verifyPvs(domain1LabelSelector, 1);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyNoClusterRoles");
       k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
+      LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: verifyNoClusterRoleBindings");
       k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
     }
 
@@ -2163,59 +2179,29 @@ public class TestUtils {
   }
 
   /**
-   * Run script to delete DomainHome dir.
-   *
-   * @throws Exception exception
-   */
-  public static void deleteDomainHomeDir(String scriptDir, String namespace, String domainUid) throws Exception {
-
-    String jobName = "create-weblogic-sample-domain-job";
-    StringBuffer cmdDelJob = new StringBuffer("kubectl get job ");
-    cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
-    if (checkPodContains(cmdDelJob.toString(), jobName, jobName)) {
-      cmdDelJob = new StringBuffer("kubectl delete job ");
-      cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
-      LoggerHelper.getLocal().log(Level.INFO, "Deleting job " + cmdDelJob);
-      exec(cmdDelJob.toString());
-    }
-
-    StringBuffer command = new StringBuffer();
-    command.append("kubectl create -f  ").append(scriptDir).append("/delete-domain-job.yaml");
-    ExecResult result = TestUtils.exec(command.toString());
-    if (!result.stdout().contains("sample-domain-job created")) {
-      throw new RuntimeException("FAILURE: delete domain job fails, exiting!");
-    }
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get pods ").append(" -n ").append(namespace).append(" | grep delete");
-
-    // check for completion
-    checkAnyCmdInLoop(cmd.toString(), "Completed");
-    command = new StringBuffer();
-    command.append("kubectl delete -f  ").append(scriptDir).append("/delete-domain-job.yaml");
-    TestUtils.exec(command.toString());
-  }
-
-  /**
    * Run script to delete all DomainHome dirs in oke.
-   *
-   * @throws Exception exception
    */
-  public static void deleteDomainHomeDirOke() throws Exception {
+  public static void deleteDomainHomeDirOke() {
 
-    deleteDomainHomeDirOke("");
-    String resourceDir = BaseTest.getProjectRoot()
-            + "/integration-tests/src/test/resources/oke";
-    String cmd = " kubectl delete -f " + resourceDir + "/cleanupokepvc.yaml";
-    ExecCommand.exec(cmd);
-    cmd = " kubectl delete -f " + resourceDir + "/cleanupokepv.yaml";
-    ExecCommand.exec(cmd);
-
+    try {
+      deleteDomainHomeDirOke("");
+      StringBuffer cmdLine = new StringBuffer()
+              .append(" kubectl delete -f ")
+              .append(BaseTest.getProjectRoot())
+              .append("/integration-tests/src/test/resources/oke");
+      String cmd = cmdLine.toString() + "/cleanupokepvc.yaml";
+      ExecCommand.exec(cmd);
+      cmd = cmdLine.toString() + "/cleanupokepv.yaml";
+      ExecCommand.exec(cmd);
+    } catch (Exception ex) {
+      LoggerHelper.getLocal().log(Level.INFO, "WARNING: cleaning entire domain home dirs failed ");
+    }
   }
 
   /**
-   * Run script to delete DomainHome dirs in oke.
+   * Method to clean up DomainHome dirs in oke.
    *
-   * @throws Exception exception
+   * @throws Exception if fails to execute kubectl commands
    */
   public static void deleteDomainHomeDirOke(String domainUid) throws Exception {
 
@@ -2227,26 +2213,25 @@ public class TestUtils {
     cmd = " kubectl apply -f " + resourceDir + "/cleanupokepv.yaml";
     result = ExecCommand.exec(cmd);
     LoggerHelper.getLocal().log(
-            Level.INFO, "created  pv to cleanup nfs mounted dirs " + result.stdout() + " err " + result.stderr());
+            Level.INFO, "created  pv to cleanup nfs mounted dirs " + result.stdout());
     cmd = " kubectl apply -f " + resourceDir + "/cleanupokepvc.yaml";
     result = ExecCommand.exec(cmd);
     LoggerHelper.getLocal().log(
-            Level.INFO, "created  pvc to cleanup nfs mounted dirs " + result.stdout() + " err " + result.stderr());
+            Level.INFO, "created  pvc to cleanup nfs mounted dirs " + result.stdout());
+    StringBuffer cmdRemove = new StringBuffer();
+    cmdRemove.append(BaseTest.getProjectRoot())
+            .append("/src/integration-tests/bash/krun.sh -t 240 -m ")
+            .append("cleanupoke-weblogic-sample-pvc:/shared/")
+            .append(" -n cleanupoke -c \"rm -rf ");
     if (domainUid.equals("")) {
-      cmd =
-              BaseTest.getProjectRoot()
-                      + "/src/integration-tests/bash/krun.sh -t 240 -m "
-                      + "cleanupoke-weblogic-sample-pvc:/shared/"
-                      + " -n cleanupoke -c \"rm -rf /shared/logs/* /shared/wdt/* /shared/domains/*\"";
+      cmdRemove.append("/shared/logs/* ")
+              .append("/shared/wdt/* ")
+              .append("/shared/domains/*\"");
     } else {
-      cmd =
-              BaseTest.getProjectRoot()
-                      + "/src/integration-tests/bash/krun.sh -t 180 -m "
-                      + "cleanupoke-weblogic-sample-pvc:/shared/"
-                      + " -n cleanupoke -c \"rm -rf  /shared/domains/"
-                      + domainUid + "\"";
+      cmdRemove.append("/shared/domains/")
+          .append(domainUid + "\"");
     }
-
+    cmd = cmdRemove.toString();
     LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmd);
     result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
