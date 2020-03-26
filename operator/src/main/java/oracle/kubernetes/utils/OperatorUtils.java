@@ -47,7 +47,7 @@ public class OperatorUtils {
    * be used to ensure "member2foo" sorts before "member12foo"
    * as these would munge to "member000002foo" and "member000012foo".
    *
-   * <p>Handles up to 6 digits... - otherwise it doesn't zero fill...
+   * <p>Handles up to 20 digits... - otherwise it doesn't zero fill...
    */
   public static String getSortingString(String orig) {
     String ret = "";
@@ -71,7 +71,7 @@ public class OperatorUtils {
       return word;
     }
     if (Character.isDigit(word.charAt(0))) {
-      for (int i = word.length(); i < 6; i++) {
+      for (int i = word.length(); i < 20; i++) {
         word = '0' + word;
       }
     }

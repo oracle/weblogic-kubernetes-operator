@@ -17,8 +17,8 @@ public class OperatorUtilsTest {
   }
 
   @Test
-  public void verifyThatCompareSortingStrings_worksOnStringWith6Digits() {
-    assertThat(compareSortingStrings("member2foo", "member123456foo"), lessThan(0));
+  public void verifyThatCompareSortingStrings_worksOnStringWith20Digits() {
+    assertThat(compareSortingStrings("member2foo", "member12345678901234567890foo"), lessThan(0));
   }
 
 }
