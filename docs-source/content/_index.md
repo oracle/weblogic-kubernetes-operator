@@ -28,7 +28,7 @@ The next planned release is 3.0.0-rc1 (release candidate).  This release candida
 be suitable for use by early adopters who wish to test 3.0.0 features and provide
 feedback.  
 
-This release is planned in March or April 2020, subject to change.
+This release is planned for April 2020, subject to change.
 
 The planned feature changes in 3.0.0-rc1 are:
 
