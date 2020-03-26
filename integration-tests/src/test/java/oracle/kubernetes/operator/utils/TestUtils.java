@@ -2185,6 +2185,10 @@ public class TestUtils {
   public static void deleteDomainHomeDirOke() {
 
     try {
+      String pvYaml = BaseTest.getProjectRoot()
+              + "/integration-tests/src/test/resources/oke/cleanupokepv.yaml";
+      replaceStringInFile(pvYaml, "NFS_SERVER", BaseTest.NFS_SERVER);
+      replaceStringInFile(pvYaml, "FSS_DIR", BaseTest.FSS_DIR);
       deleteDomainHomeDirOke("");
       StringBuffer cmdLine = new StringBuffer()
               .append(" kubectl delete -f ")

@@ -17,5 +17,5 @@ spec:
   # Valid values are Retain, Delete or Recycle
   persistentVolumeReclaimPolicy: Retain
   nfs:
-    server: 10.0.10.6
-    path: "/ci-oke-2"
+    server: NFS_SERVER
+    path: "FSS_DIR"
