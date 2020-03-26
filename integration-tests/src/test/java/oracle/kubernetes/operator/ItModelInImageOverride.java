@@ -28,7 +28,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Simple JUnit test file used for testing Model in Image.
+ * This JUnit test is used for testing
+ * Wdt Config Override with Model File(s) to existing MII domain
  *
  * <p>This test is used for creating domain using model in image.
  */
@@ -40,13 +41,17 @@ public class ItModelInImageOverride extends MiiBaseTest {
   private static String testClassName;
   private static StringBuffer namespaceList;
   private static final String configMapSuffix = "-mii-config-map";
+  private static final String dsName = "MyDataSource";
+  private static final String readTimeout_1 = "30001";
+  private static final String readTimeout_2 = "30002";
 
   /**
-   * This method gets called only once before any of the test methods are executed. It does the
-   * initialization of the integration test properties defined in OperatorIT.properties and setting
+   * This method does the initialization of the integration test
+   * properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
    *
-   * @throws Exception exception
+   * @throws Exception exception if initializing the application properties
+   *          and creates directories for results fails.
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
@@ -58,8 +63,8 @@ public class ItModelInImageOverride extends MiiBaseTest {
   }
 
   /**
-   * This method gets called before every test. It creates the result/pv root directories
-   * for the test. Creates the operator and domain if its not running.
+   * This method creates the result/pv root directories for the test.
+   * Creates the operator if its not running.
    *
    * @throws Exception exception if result/pv/operator/domain creation fails
    */
@@ -96,9 +101,8 @@ public class ItModelInImageOverride extends MiiBaseTest {
    * Create a domain using model in image and having configmap in the domain.yaml
    * before deploying the domain. After deploying the domain crd,
    * re-create the configmap with a model file that define a JDBC DataSource
-   * and update the domain crd to new config map and change domain
-   * restartVersion to reload the model, generate new config and initiate a
-   * rolling restart.
+   * and update the domain crd to change domain restartVersion
+   * to reload the model, generate new config and initiate a rolling restart.
    *
    * @throws Exception exception
    */
@@ -124,6 +128,15 @@ public class ItModelInImageOverride extends MiiBaseTest {
 
       // verify the test result
       verifyJdbcOverride();
+      String jdbcDsValues = getJdbcResourceValues();
+
+      // verify JDBC DS name
+      Assumptions.assumeTrue(jdbcDsValues.contains(dsName), dsName + " not found");
+      LoggerHelper.getLocal().log(Level.INFO, dsName + " is found from WLST return values");
+      // verify value of read timeout
+      Assumptions.assumeTrue(jdbcDsValues.contains(readTimeout_1), "readTimeout not found");
+      LoggerHelper.getLocal().log(Level.INFO, dsName
+            + "oracle.jdbc.ReadTimeout=" + readTimeout_1 + " is found from WLST return values");
 
       testCompletedSuccessfully = true;
     } finally {
@@ -212,19 +225,19 @@ public class ItModelInImageOverride extends MiiBaseTest {
 
   private void verifyJdbcOverride() throws Exception {
     // get domain name
-    StringBuffer cmdKubectlSh = new StringBuffer("kubectl get domain -n ");
-    cmdKubectlSh
+    StringBuffer cmdStrBuff = new StringBuffer("kubectl get domain -n ");
+    cmdStrBuff
         .append(domainNS)
         .append(" -o=jsonpath='{.items[0].metadata.name}'");
 
-    LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdKubectlSh);
-    ExecResult result = TestUtils.exec(cmdKubectlSh.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
+    ExecResult result = TestUtils.exec(cmdStrBuff.toString());
     String domainName = result.stdout();
     LoggerHelper.getLocal().log(Level.INFO, "Domain name is: " + domainName);
 
     // check JDBC DS override
-    cmdKubectlSh = new StringBuffer("kubectl -n ");
-    cmdKubectlSh
+    cmdStrBuff = new StringBuffer("kubectl -n ");
+    cmdStrBuff
         .append(domainNS)
         .append(" exec -it ")
         .append(domain.getDomainUid())
@@ -236,11 +249,93 @@ public class ItModelInImageOverride extends MiiBaseTest {
         .append(" && grep -R jdbc/generic1")
         .append("'");
 
-    LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdKubectlSh);
-    result = TestUtils.exec(cmdKubectlSh.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
+    result = TestUtils.exec(cmdStrBuff.toString());
     LoggerHelper.getLocal().log(Level.INFO, "JDBC DS info from server pod: " + result.stdout());
 
     Assumptions.assumeTrue(result.stdout().contains("<jndi-name>jdbc/generic1</jndi-name>"),
         "JDBC DS doesn't override");
+  }
+
+  /**
+   * Create a JDBC system resource in domain.
+   *
+   * @param domain - Domain object
+   * @throws Exception JDBC resource creation fails
+   */
+  private String getJdbcResourceValues() throws Exception {
+    // get domain name
+    StringBuffer cmdStrBuff = new StringBuffer("kubectl get domain -n ");
+    cmdStrBuff
+        .append(domainNS)
+        .append(" -o=jsonpath='{.items[0].metadata.name}'");
+    LoggerHelper.getLocal().log(Level.INFO, "Command to domain name: " + cmdStrBuff);
+    ExecResult result = TestUtils.exec(cmdStrBuff.toString());
+    String domainName = result.stdout();
+    LoggerHelper.getLocal().log(Level.INFO, "Domain name is: " + domainName);
+
+    // copy verification file to test dir
+    String origDir = BaseTest.getProjectRoot()
+        + "/integration-tests/src/test/resources/model-in-image/scripts/";
+    String pyFileName = "verify-jdbc-resource.py";
+    String destDir = getResultDir() + "/samples/model-in-image/scripts/";;
+    Files.createDirectories(Paths.get(destDir));
+    TestUtils.copyFile(origDir + pyFileName, destDir + pyFileName);
+
+    // replace var in verification file
+    String tempDir = getResultDir() + "/jdbcoverridetemp-" + domainNS;
+    Files.createDirectories(Paths.get(tempDir));
+    String content =
+        new String(Files.readAllBytes(Paths.get(destDir + pyFileName)), StandardCharsets.UTF_8);
+    content = content.replaceAll("DOMAINNAME", domainName);
+    Files.write(
+        Paths.get(tempDir, pyFileName),
+        content.getBytes(StandardCharsets.UTF_8));
+
+    // get server pod name
+    cmdStrBuff = new StringBuffer("kubectl get pod -n ");
+    cmdStrBuff
+        .append(domainNS)
+        .append(" -o=jsonpath='{.items[0].metadata.name}' | grep admin-server");
+    LoggerHelper.getLocal().log(Level.INFO, "Command to get pod name: " + cmdStrBuff);
+    result = TestUtils.exec(cmdStrBuff.toString());
+    String adminPodName = result.stdout();
+    LoggerHelper.getLocal().log(Level.INFO, "pod name is: " + adminPodName);
+
+    // copy verification file to the pod
+    cmdStrBuff = new StringBuffer("kubectl -n ");
+    cmdStrBuff
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(adminPodName)
+        .append(" -- bash -c 'mkdir ")
+        .append(BaseTest.getAppLocationInPod())
+        .append("'");
+    LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
+    TestUtils.exec(cmdStrBuff.toString(), true);
+
+    LoggerHelper.getLocal().log(Level.INFO, "====AppLoc: " + BaseTest.getAppLocationInPod());
+    TestUtils.copyFileViaCat(
+        Paths.get(tempDir, pyFileName).toString(),
+        BaseTest.getAppLocationInPod() + "/" + pyFileName,
+        adminPodName,
+        domainNS);
+
+    cmdStrBuff = new StringBuffer("kubectl -n ");
+    cmdStrBuff
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(adminPodName)
+        .append(" -- bash -c 'wlst.sh ")
+        .append(BaseTest.getAppLocationInPod())
+        .append("/")
+        .append(pyFileName)
+        .append("'");
+    LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
+    result = TestUtils.exec(cmdStrBuff.toString(), true);
+
+    LoggerHelper.getLocal().log(Level.INFO, "WLST returns: " + result.stdout());
+
+    return result.stdout();
   }
 }
