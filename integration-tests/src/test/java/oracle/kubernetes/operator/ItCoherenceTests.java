@@ -145,7 +145,7 @@ public class ItCoherenceTests extends BaseTest {
       final String ProxyIP;
       if (OKE_CLUSTER) {
         //String cmd = " kubectl get pods -n " + domainNS + " -o wide | grep " + podName + " | awk '{print $6}'";
-        String cmd = "kubectl get pods -o jsonpath='{.items[?(@.metadata.name == \""
+        String cmd = "kubectl get pods -n " + domainNS + " -o jsonpath='{.items[?(@.metadata.name == \""
                 + podName
                 + "\")].status.podIP}'";
         ExecResult result = ExecCommand.exec(cmd);
