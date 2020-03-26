@@ -543,7 +543,8 @@ public class BaseTest {
 
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() == 0) {
-        LoggerHelper.getLocal().log(Level.INFO, "Executed statedump.sh " + result.stdout());
+        LoggerHelper.getLocal().log(Level.INFO, "Executed statedump.sh "
+            + result.stdout() + "\n" + result.stderr());
       } else {
         LoggerHelper.getLocal().log(Level.INFO, "Execution of statedump.sh failed, "
             + result.stderr() + "\n" + result.stdout());
