@@ -649,12 +649,10 @@ public class ConfigMapHelper {
         if (topologyYaml != null) {
 
           if (miiDomainZipHash != null) {
-            LOGGER.info("DEBUG: ReadSituConfigMapStep miiDomainZipHash");
             packet.put(ProcessingConstants.DOMAIN_HASH, miiDomainZipHash);
           }
 
           if (miiModelSecretsHash != null) {
-            LOGGER.info("DEBUG: ReadSituConfigMapStep miiModelSecretsHash");
             packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
           }
 
