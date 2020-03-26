@@ -154,7 +154,7 @@ public class TestUtils {
    *
    * @throws Exception fails if not generated after MaxIterations number is reached.
    */
-  public static void checkLbPublicIpCreated() throws Exception {
+  public static void checkLbExternalIpCreated() throws Exception {
     int i = 0;
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get svc traefik-operator --namespace traefik -w ");
@@ -163,17 +163,17 @@ public class TestUtils {
     while (i < BaseTest.getMaxIterationsPod()) {
       ExecResult result = ExecCommand.exec(cmd.toString());
 
-      // service might not have been created
+      // external IP might not have been created
       if (result.exitValue() != 0
               || (result.exitValue() == 0 && result.stdout().contains("pending"))) {
         LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
 
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
-          throw new Exception("FAILURE: Public IP for Load Balancer is not created, exiting!");
+          throw new Exception("FAILURE: External IP for Load Balancer is not created, exiting!");
         }
         LoggerHelper.getLocal().log(Level.INFO,
-                "Public IP for Load Balancer is not created Ite ["
+                "External IP for Load Balancer is not created Ite ["
                         + i
                         + "/"
                         + BaseTest.getMaxIterationsPod()
@@ -183,7 +183,7 @@ public class TestUtils {
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {
-        LoggerHelper.getLocal().log(Level.INFO, "Public IP for Load Balancer is Created");
+        LoggerHelper.getLocal().log(Level.INFO, "External IP for Load Balancer is Created");
         break;
       }
     }
@@ -194,7 +194,7 @@ public class TestUtils {
    *
    * @param serviceName service name
    * @param domainNS    namespace
-   * @throws Exception exception
+   * @throws Exception  if kubectl command fails.
    */
   public static void checkServiceCreated(String serviceName, String domainNS) throws Exception {
     int i = 0;
@@ -207,7 +207,7 @@ public class TestUtils {
 
       // service might not have been created
       if (result.exitValue() != 0
-              || (result.exitValue() == 0 && !result.stdout().contains(serviceName))) {
+         || (result.exitValue() == 0 && !result.stdout().contains(serviceName))) {
         LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
 
         // check for last iteration
@@ -215,13 +215,13 @@ public class TestUtils {
           throw new RuntimeException("FAILURE: service is not created, exiting!");
         }
         LoggerHelper.getLocal().log(Level.INFO,
-                "Service is not created Ite ["
-                        + i
-                        + "/"
-                        + BaseTest.getMaxIterationsPod()
-                        + "], sleeping "
-                        + BaseTest.getWaitTimePod()
-                        + " seconds more");
+      "Service is not created Ite ["
+              + i
+              + "/"
+              + BaseTest.getMaxIterationsPod()
+              + "], sleeping "
+              + BaseTest.getWaitTimePod()
+              + " seconds more");
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {

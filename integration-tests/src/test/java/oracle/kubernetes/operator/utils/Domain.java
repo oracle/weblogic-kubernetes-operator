@@ -143,7 +143,7 @@ public class Domain {
       if (BaseTest.OKE_CLUSTER) {
         if (getLoadBalancerName().equalsIgnoreCase("TRAEFIK")) {
           //running in the loop to check if ExternalIP was assigned
-          TestUtils.checkLbPublicIpCreated();
+          TestUtils.checkLbExternalIpCreated();
           String cmdip = "kubectl describe svc traefik-operator --namespace traefik | grep Ingress | awk '{print $3}'";
           result = TestUtils.exec(cmdip);
           BaseTest.LB_PUBLIC_IP = result.stdout().trim();

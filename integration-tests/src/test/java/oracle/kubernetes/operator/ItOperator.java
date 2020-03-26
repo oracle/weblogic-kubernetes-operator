@@ -156,7 +156,6 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
     Operator operator = null;
     boolean testCompletedSuccessfully = false;
-    Map<String, Object> domainMap = null;
     try {
       //create operator just for this test to match the namespaces with wldf-policy.yaml
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
@@ -169,7 +168,7 @@ public class ItOperator extends BaseTest {
       namespaceList.append(" ").append((String)operatorMap.get("namespace"));
 
       // create domain
-      domainMap = createDomainMap(getNewSuffixCount(), testClassName);
+      Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
       domainMap.put("namespace", "test2");
       domainMap.put("createDomainFilesDir", "wdt");
       domainMap.put("domainUID", "domainonpvwdt");
@@ -215,9 +214,8 @@ public class ItOperator extends BaseTest {
         "Creating Domain domain & verifing the domain creation");
     // create domain
     Domain domain = null;
-    Map<String, Object> domainMap = null;
     try {
-      domainMap = createDomainMap(
+      Map<String, Object> domainMap = createDomainMap(
                         getNewSuffixCount(), testClassName);
       domainMap.put("serverStartPolicy", "ADMIN_ONLY");
       domainMap.put("namespace", domainNS1);
@@ -303,7 +301,7 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object>  domainMap = new HashMap<String, Object>();
+      Map<String, Object> domainMap = new HashMap<String, Object>();
       domainMap.put("domainUID", "domainsampledefaults");
       domainMap.put("namespace", domainNS1);
       domainMap.put("resultDir", getResultDir());
