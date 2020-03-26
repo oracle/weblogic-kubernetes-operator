@@ -207,15 +207,14 @@ public class TestUtils {
 
       // service might not have been created
       if (result.exitValue() != 0
-         || (result.exitValue() == 0 && !result.stdout().contains(serviceName))) {
+          || (result.exitValue() == 0 && !result.stdout().contains(serviceName))) {
         LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
 
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException("FAILURE: service is not created, exiting!");
         }
-        LoggerHelper.getLocal().log(Level.INFO,
-      "Service is not created Ite ["
+        LoggerHelper.getLocal().log(Level.INFO, "Service is not created Ite ["
               + i
               + "/"
               + BaseTest.getMaxIterationsPod()
