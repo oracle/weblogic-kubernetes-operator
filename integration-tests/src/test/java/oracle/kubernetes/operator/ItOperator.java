@@ -303,7 +303,7 @@ public class ItOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      Map<String, Object> domainMap domainMap = new HashMap<String, Object>();
+      Map<String, Object>  domainMap = new HashMap<String, Object>();
       domainMap.put("domainUID", "domainsampledefaults");
       domainMap.put("namespace", domainNS1);
       domainMap.put("resultDir", getResultDir());
