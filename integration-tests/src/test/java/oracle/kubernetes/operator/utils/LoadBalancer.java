@@ -190,7 +190,12 @@ public class LoadBalancer {
         String trimmed = debracketed.replaceAll("\\s+", "");
         // now have an ArrayList containing "foo", "bar" and "baz"
         ArrayList<String> list = new ArrayList<String>(Arrays.asList(trimmed.split(",")));
-        list.add(domainNamespace);
+        if (!list.contains(domainNamespace)) {
+          list.add(domainNamespace);
+        } else {
+          LoggerHelper.getLocal().log(Level.INFO,
+              "Skip namespace as the namespace is already in the list");
+        }
         return list.toString().replace("[", "{")
             .replace("]", "}").replace(" ", "");
       }
