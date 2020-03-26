@@ -19,7 +19,13 @@ application archives.  The model used by these tools is a sparse set of
 attributes needed to create or update the domain. A model can be as sparse
 as providing only the WebLogic Server administrative password, although not very
 interesting.  A good way to get a jumpstart on a model is to use the
-`discoverDomain` tool in WDT which builds a model based on an existing domain.  
+`discoverDomain` tool in WDT which builds a model based on an existing domain.
+
+{{% notice note %}}
+A Model in Image domain takes heavy advantage of the WDT tool, it allows
+you to specify an Operator domain directly with a model instead of requiring
+that you supply a domain home.
+{{% /notice %}}
 
 Other than the tools themselves, there are three components to the WDT tools:  
 
@@ -41,10 +47,15 @@ Other than the tools themselves, there are three components to the WDT tools:
 - (Kubernetes) A similar sample of creating a domain in a Docker image with WDT
   can be found in the WebLogic Kubernetes Operator project for creating a
   [domain-in-image with WDT](https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/domain-home-in-image/).
+- (Kubernetes) A [Model in Image sample]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}})
+  for supplying an image that contains only a WDT model
+  instead of a domain home. In this case, the operator generates the domain
+  home for you at runtime.
 
 ### WebLogic Scripting Tool (WLST)
 
-You can use WLST scripts to create and/or update domains in a CI/CD pipeline.
+You can use WLST scripts to create and/or update domain homes in a CI/CD pipeline
+for Domain in Image and Domain in PV domains.
 We recommend that you use offline WLST for this purpose.  There may be some
 scenarios where it is necessary to use WLST online, but we recommend that
 you do that only as an exception, and when absolutely necessary.
@@ -59,6 +70,6 @@ manually when migrating to a new version of WebLogic for example.
 ### WebLogic pack and unpack tools
 
 WebLogic Server provides tools called "pack" and "unpack" that can be used to
-"clone" a domain.  These tools do not preserve the domain encryption key.
-You can use these tools to make copies of domains in scenarios when you do
-not need the same domain encryption key.
+"clone" a domain home.  These tools do not preserve the domain encryption key.
+You can use these tools to make copies of Domain in PV and Domain in Image
+domain homes in scenarios when you do not need the same domain encryption key.
