@@ -93,25 +93,30 @@ public class JobHelper {
 
       if (currentPodIntrospectVersion != null
             && !currentPodIntrospectVersion.equals(configMapIntrospectVersion)) {
+        LOGGER.fine("JobHelper: currentPodIntrospect version different from configmap");
         return true;
       }
 
       if (currentPodRestartVersion != null
             && !currentPodRestartVersion.equals(configMapRestartVersion)) {
+        LOGGER.fine("JobHelper: currentPodRestartVersion version different from configmap");
         return true;
       }
 
       if (configMapRestartVersion != null
           && !configMapRestartVersion.equals(currentPodRestartVersion)) {
+        LOGGER.fine("JobHelper: configMapRestartVersion version different from configmap");
         return true;
       }
 
       if (configMapIntrospectVersion != null
           && !configMapIntrospectVersion.equals(currentPodIntrospectVersion)) {
+        LOGGER.fine("JobHelper: configMapIntrospectVersion version different ");
         return true;
       }
 
       if (!currentImageSpecHash.equals(configMapSpecHash)) {
+        LOGGER.fine("JobHelper: currentImageSpecHash version different from configmap");
         return true;
       }
 
