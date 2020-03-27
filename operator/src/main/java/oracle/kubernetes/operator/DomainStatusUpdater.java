@@ -327,7 +327,7 @@ public class DomainStatusUpdater {
         }
 
         if (getDomainConfig().isPresent()) {
-          status.setServers(new ArrayList<>(getServerStatuses(getDomainConfig().get()).values()));
+          status.setServers(new ArrayList<>(getServerStatuses(getDomainConfig().get().getAdminServerName()).values()));
           status.setClusters(new ArrayList<>(getClusterStatuses().values()));
           status.setReplicas(getReplicaSetting());
         }
@@ -384,13 +384,13 @@ public class DomainStatusUpdater {
         return Optional.ofNullable(getInfo().getServerPod(serverName)).filter(PodHelper::getReadyStatus).isPresent();
       }
 
-      Map<String, ServerStatus> getServerStatuses(WlsDomainConfig wlsDomainConfig) {
+      Map<String, ServerStatus> getServerStatuses(final String adminServerName) {
         return getServerNames().stream()
             .collect(Collectors.toMap(Function.identity(),
-                s -> createServerStatus(s,s.equals(wlsDomainConfig.getAdminServerName()))));
+                s -> createServerStatus(s,adminServerName)));
       }
 
-      private ServerStatus createServerStatus(String serverName, boolean isAdminServer) {
+      private ServerStatus createServerStatus(String serverName, String adminServerName) {
         String clusterName = getClusterName(serverName);
         return new ServerStatus()
             .withServerName(serverName)
@@ -399,7 +399,7 @@ public class DomainStatusUpdater {
             .withHealth(serverHealth.get(serverName))
             .withClusterName(clusterName)
             .withNodeName(getNodeName(serverName))
-            .withIsAdminServer(isAdminServer);
+            .withIsAdminServer(serverName.equals(adminServerName));
       }
 
       private String getRunningState(String serverName) {

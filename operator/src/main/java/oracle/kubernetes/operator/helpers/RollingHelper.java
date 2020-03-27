@@ -133,7 +133,6 @@ public class RollingHelper {
       }
 
       if (!clusteredRestarts.isEmpty()) {
-        clusteredRestarts = createSortedMap(clusteredRestarts);
         for (Map.Entry<String, Queue<StepAndPacket>> entry : clusteredRestarts.entrySet()) {
           work.add(
               new StepAndPacket(

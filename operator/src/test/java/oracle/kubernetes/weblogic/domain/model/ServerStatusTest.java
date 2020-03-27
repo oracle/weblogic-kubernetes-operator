@@ -23,6 +23,10 @@ public class ServerStatusTest {
   static ServerStatus standAloneServer2 = new ServerStatus().withServerName("server2");
   static ServerStatus standAloneServer10 = new ServerStatus().withServerName("server10");
 
+  static ServerStatus adminServer = new ServerStatus().withServerName("admin-server").withIsAdminServer(true);
+  static ServerStatus cluster1ServerA = new ServerStatus().withClusterName("cluster-1").withServerName("a");
+  static ServerStatus standAloneServerA = new ServerStatus().withServerName("a");
+
   static ServerStatus nullClusterNullServer = new ServerStatus();
 
   @Test
@@ -30,6 +34,7 @@ public class ServerStatusTest {
     assertThat(nullClusterNullServer.compareTo(nullClusterNullServer), equalTo(0));
     assertThat(cluster1Server1.compareTo(cluster1Server1), equalTo(0));
     assertThat(standAloneServer1.compareTo(standAloneServer1), equalTo(0));
+    assertThat(adminServer.compareTo(adminServer), equalTo(0));
   }
 
   @Test
@@ -81,6 +86,15 @@ public class ServerStatusTest {
 
     assertThat(cluster1Server2.compareTo(cluster1Server10), lessThan(0));
     assertThat(cluster1Server10.compareTo(cluster1Server2), greaterThan(0));
+  }
+
+  @Test
+  public void verifyThat_adminServer_before_serverA() {
+    assertThat(adminServer.compareTo(standAloneServerA), lessThan(0));
+    assertThat(standAloneServerA.compareTo(adminServer), greaterThan(0));
+
+    assertThat(adminServer.compareTo(cluster1ServerA), lessThan(0));
+    assertThat(cluster1ServerA.compareTo(adminServer), greaterThan(0));
   }
 
 }

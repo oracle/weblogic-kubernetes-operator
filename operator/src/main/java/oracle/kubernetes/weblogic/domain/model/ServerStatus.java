@@ -47,9 +47,8 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @Valid
   private ServerHealth health;
 
-  @Description("true if this WebLogic Server is the admin server")
-  @Expose
-  private String isAdminServer;
+  // volatile so it will not be included in the json schema
+  private volatile boolean isAdminServer;
 
   public ServerStatus() {
   }
@@ -224,12 +223,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     return this;
   }
 
-  /**
-   * Whether this Weblogic Server is an admin server.
-   *
-   * @return "true" if this WebLogic Server is an admin server, null otherwise.
-   */
-  public String getIsAdminServer() {
+  private boolean isAdminServer() {
     return isAdminServer;
   }
 
@@ -240,7 +234,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
    * @return this
    */
   public ServerStatus withIsAdminServer(boolean isAdminServer) {
-    this.isAdminServer = isAdminServer ? Boolean.toString(isAdminServer) : null;
+    this.isAdminServer = isAdminServer;
     return this;
   }
 
@@ -292,11 +286,17 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
 
   @Override
   public int compareTo(@Nonnull ServerStatus o) {
-    if (Boolean.TRUE.toString().equals(isAdminServer)) {
+    int clustersCompareTo = OperatorUtils.compareSortingStrings(clusterName, o.clusterName);
+    return clustersCompareTo == 0 ? compareToServer(o) : clustersCompareTo;
+  }
+
+  private int compareToServer(ServerStatus o) {
+    if (!isAdminServer && o.isAdminServer) {
+      return 1;
+    } else if (isAdminServer && !o.isAdminServer) {
       return -1;
     }
-    int clustersCompareTo = OperatorUtils.compareSortingStrings(clusterName, o.clusterName);
-    return clustersCompareTo == 0 ? OperatorUtils.compareSortingStrings(serverName, o.serverName) : clustersCompareTo;
+    return OperatorUtils.compareSortingStrings(serverName, o.serverName);
   }
 
   @Override
@@ -310,8 +310,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .withStringField("state", ServerStatus::getState)
         .withStringField("desiredState", ServerStatus::getDesiredState)
         .withStringField("nodeName", ServerStatus::getNodeName)
-        .withObjectField("health", ServerStatus::getHealth, ServerHealth.getObjectPatch())
-        .withStringField("isAdminServer", ServerStatus::getIsAdminServer);
+        .withObjectField("health", ServerStatus::getHealth, ServerHealth.getObjectPatch());
 
   static ObjectPatch<ServerStatus> getObjectPatch() {
     return serverPatch;
