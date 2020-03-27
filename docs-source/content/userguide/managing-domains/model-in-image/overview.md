@@ -55,7 +55,7 @@ Model updates can be applied at runtime by changing the image, secrets, or WDT m
 
 ##### General CI/CD considerations
 
-For a full discussion of CI/CD with the operator, see [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
+To understand how Model in Image works with CI/CD, see [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
 
 ##### Always use external state
 
