@@ -33,7 +33,7 @@ various approaches.  We can start by asking ourselves questions like these:
   These are placed in a Kubernetes config map, meaning that they are outside of the image, so
   they do not require rebuilding the Docker image.  If all of your changes fit into
   this category, it is probably much better to just use configuration overrides
-  instead of building a new image.  
+  for Domain in PV and Domain in Image, and use model updates for Model in Image.
 
 - *Are you only changing the WebLogic configuration, for example, deploying or updating an
   application, changing a resource configuration in a way that is not supported by
