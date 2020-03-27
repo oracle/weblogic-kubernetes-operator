@@ -229,7 +229,6 @@ deleteOperators() {
   for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
   do
     doDeleteByRange -n $ns deployments -l weblogic.operatorName
-    kubectl delete $ns
   done
 }
 
