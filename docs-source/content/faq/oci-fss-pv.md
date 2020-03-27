@@ -1,8 +1,8 @@
 ---
-title: "Using OCI File Storage (FSS) for Persistent Volumes"
+title: "Using OCI File Storage (FSS) for persistent volumes"
 date: 2020-02-12T12:12:12-05:00
 draft: false
-weight: 6
+weight: 40
 ---
 
 If you are running your Kubernetes cluster on Oracle Container Engine
