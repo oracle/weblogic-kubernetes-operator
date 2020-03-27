@@ -30,11 +30,11 @@ various approaches.  We can start by asking ourselves questions like these:
   environment than you do in your development/test environments.  You probably also
   want to have different credentials.  You may want to change the service name, and
   so on. All of these kinds of updates can be made with configuration overrides
-  for Domain in PV and Domain in Image, and with model updates for Model in Image.
+  for Domain in PV and Domain in Image, or with model updates for Model in Image.
   These are placed in a Kubernetes config map, that is, they are outside of the image, so
   they do not require rebuilding the Docker image.  If all of your changes fit into
   this category, it is probably much better to just use configuration overrides
-  instead of building a new image.  
+  for Domain in PV and Domain in Image, or model updates for Model in Image.
 
 - *Are you only changing the WebLogic configuration, for example, deploying or updating an
   application, changing a resource configuration in a way that is not supported by
