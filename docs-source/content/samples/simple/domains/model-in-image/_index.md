@@ -23,7 +23,7 @@ description: "Sample for supplying a WebLogic Deploy Tool (WDT) model that the o
 
 ### Introduction
 
-This sample demonstrates deploying a Model in Image domain home source type. Unlike the Domain in PV and Domain in Image domain source types, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource. Instead, a Model in Image deployment uses a WebLogic Deploy Tool (WDT) model to specify your WebLogic configuration. 
+This sample demonstrates deploying a Model in Image domain home source type. Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource. Instead, a Model in Image deployment uses a WebLogic Deploy Tool (WDT) model to specify your WebLogic configuration. 
 
 WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
 
