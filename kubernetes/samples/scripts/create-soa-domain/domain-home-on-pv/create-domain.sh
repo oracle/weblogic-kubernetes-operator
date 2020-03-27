@@ -197,7 +197,7 @@ function createDomainHome {
   cp ${dcrOutput} ${dcrOutput}.bak
   export PRECREATE_SERVICE="\    \serverService:\n\
       precreateService: true"
-  sed -i -e "/serverPod:/a ${PRECREATE_SERVICE}" ${dcrOutput}
+  #sed -i -e "/serverPod:/a ${PRECREATE_SERVICE}" ${dcrOutput}
   
   if [ -n "${domainType}" ]; then
     sed -i -e "s:%DOMAIN_TYPE%:${domainType}:g" ${createJobOutput}
