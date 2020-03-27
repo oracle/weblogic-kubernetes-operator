@@ -167,9 +167,12 @@ function prepareMIIServer() {
     return 1
   fi
 
-  cd / && base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz && \
-   tar -xzf /tmp/domain.tar.gz
+  trace "Model-in-Image: Restoring primordial domain"
+  cd / || return 1
+  base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz || return 1
+  tar -xzf /tmp/domain.tar.gz || return 1
 
+  trace "Model-in-Image: Restore domain secret"
   # decrypt the SerializedSystemIni first
   if [ -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
     MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
@@ -182,6 +185,7 @@ function prepareMIIServer() {
 
   # restore the config zip
   #
+  trace "Model-in-Image: Restore domain config"
   cd / || return 1
   base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz || return 1
   tar -xzf /tmp/domain.tar.gz || return 1
@@ -189,7 +193,7 @@ function prepareMIIServer() {
 
   # restore the archive apps and libraries
   #
-  trace "Model-in-Image: Deploying libraries."
+  trace "Model-in-Image: Restoring apps and libraries"
 
   mkdir -p ${DOMAIN_HOME}/lib
   if [ $? -ne 0 ] ; then
@@ -204,7 +208,7 @@ function prepareMIIServer() {
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
 
         if [ $? -ne 0 ] ; then
-          trace SEVERE  "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domain libs ${IMG_ARCHIVES_ROOTDIR}/${file}"
           return 1
         fi
 
@@ -230,7 +234,12 @@ traceDirs before
 traceTiming "POD '${SERVICE_NAME}' MII UNZIP START"
 
 if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
-  prepareMIIServer || exitOrLoop
+  prepareMIIServer
+  if [ $? -ne 0 ] ; then
+    trace SEVERE  "Domain Source Type is FromModel, unable to start the server, check other error messages in the log"
+    exitOrLoop
+  fi
+
 fi
 
 traceTiming "POD '${SERVICE_NAME}' MII UNZIP COMPLETE"
