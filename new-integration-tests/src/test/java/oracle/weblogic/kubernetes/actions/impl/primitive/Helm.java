@@ -21,4 +21,17 @@ public class Helm {
         return true;
     }
 
+    public static boolean upgradeRelease(
+        String chart,
+        String name,
+        HashMap<String, String> values
+    ) {
+        // do something !!!
+        return true;
+    }
+
+    public static boolean deleteRelease(String name) {
+        return true;
+    }
+
 }

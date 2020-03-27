@@ -54,4 +54,21 @@ public class Kubernetes {
         }
     }
 
+    // --------------------------- create, delete resource using yaml --------------------------
+
+    public static boolean create(String yaml) {
+        return true;
+    }
+
+    public static boolean delete(String yaml) {
+        return true;
+    }
+
+    // --------------------------- create config map ---------------------------
+
+    public static boolean createConfigMap(String cmName, String namespace, String fromFile) {
+        return true;
+    }
+
+    // --------------------------
 }
