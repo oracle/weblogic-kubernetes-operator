@@ -49,7 +49,7 @@ level of detail needed to implement something like this.
 
 Next you might think, "Oh, that’s ok, we can just rebuild the layers above the JDK
 on top of this new layer."  That is very true, we can.  But there is a big caveat
-here for Domain in Image type domains. When
+here for Domain in Image domains. When
 you create a WebLogic domain, a domain encryption key is created.  This
 key is stored in the `security/SerializedSystemIni.dat` file in your domain and it
 is used to encrypt several other things in your domain configuration, like passwords,
@@ -62,14 +62,14 @@ a domain that is for all intents and purposes identical to the previous domain, 
 will have a different encryption key.
 {{% /notice %}}
 
-This means that technically it is a "different" domain for Domain in Image type domains.
+This means that technically, it is a "different" domain for Domain in Image type domains.
 Does this matter?  Maybe,
 maybe not.  It depends.  If you want to do a rolling restart of your domain, then
 yes, it matters.  First of all, the "new" servers will fail to start because the
 operator will be trying to inject credentials to start the server which were
 encrypted with the "old" domain encryption key.
 
-But even if this did not prevent Domain in Image pods from starting, there would still 
+But even if this did not prevent Domain in Image pods from starting, there would still
 be a problem.  You cannot have members of a domain with different encryption keys.  If WebLogic
 saw a new member trying to join the domain with a different key, it would consider
 it to be an intruder and refuse to accept it into the domain.  Client HTTP sessions

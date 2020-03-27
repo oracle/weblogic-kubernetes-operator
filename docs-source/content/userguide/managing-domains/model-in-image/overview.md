@@ -11,7 +11,7 @@ description = "Introduction to Model in Image, description of its runtime behavi
  - [Introduction](#introduction)
  - [Runtime behavior overview](#runtime-behavior-overview)
  - [Runtime updates overview](#runtime-updates-overview)
- - [Continuous integration and delivery 'CI/CD'](#continuous-integration-and-delivery-cicd)
+ - [Continuous integration and delivery (CI/CD)](#continuous-integration-and-delivery-cicd)
  - [References](#references)
 
 #### Introduction
@@ -51,23 +51,23 @@ When you deploy a Model in Image domain resource:
 
 Model updates can be applied at runtime by changing the image, secrets, or WDT model config map after initial deployment. If the image name changes, or the domain resource `restartVersion` changes, then this will cause the introspector to rerun and generate a new domain home, and subsequently the changed domain home will be propagated to the domain's WebLogic pods using a rolling upgrade (each pod restarting one at a time). See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
-#### Continuous integration and delivery 'CI/CD'
+#### Continuous integration and delivery (CI/CD)
 
 ##### General CI/CD considerations
 
-See [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}) for a full discussion of CI/CD with the WebLogic operator.
+For a full discussion of CI/CD with the operator, see [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
 
 ##### Always use external state
 
 Regardless of the domain home source type, you should always keep
 state outside the Docker image. This means that you should
-use JDBC stores for leasing tables, JMS and Transaction stores,
+use JDBC stores for leasing tables, JMS and transaction stores,
 EJB timers, JMS queues, and so on. This ensures that data will not be lost when
-a container is destroyed. 
+a container is destroyed.
 
 We recommend that state be kept in a database to take advantage of built-in
 database server HA, and the fact that disaster recovery of sites across all
-but the shortest distances almost always requires using a single database
+but the shortest distances, almost always requires using a single database
 server to consolidate and replicate data (DataGuard).
 
 #### References

@@ -46,21 +46,21 @@ There is also other information associated with a domain that needs to live
 somewhere, for example leasing tables, message and transaction stores, and so
 on.  We recommend that these be kept in a database to take advantage of built-in
 database server HA, and the fact that disaster recovery of sites across all
-but the shortest distances almost always requires using a single database
+but the shortest distances, almost always requires using a single database
 server to consolidate and replicate data (DataGuard).
 
 There are three common approaches on how to structure these components:
  * The first,
-   which we call "domain on persistent volume" or Domain in PV, 
+   which we call "domain on persistent volume" or Domain in PV,
    places the JDK and WebLogic binaries
    in the Docker image, but the domain home is kept on a separate persistent storage
    outside of the image.
  * The second, which we call Domain in Image,
-   puts the JDK, WebLogic binaries
-   and the domain home all in the Docker image. 
- * Finally, the third approach, which we 
+   puts the JDK, WebLogic binaries,
+   and the domain home all in the Docker image.
+ * The third approach, which we
    call Model in Image, puts the JDK, WebLogic binaries, and a domain model
-   in the Docker image, and generates the domain home at runtime 
+   in the Docker image, and generates the domain home at runtime
    from the domain model.
 
 All of these approaches are perfectly

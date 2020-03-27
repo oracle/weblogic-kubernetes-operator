@@ -12,7 +12,7 @@ description = "Updating a running Model in Image domain's images and model files
  - [Important notes](#important-notes)
  - [Frequently asked questions](#frequently-asked-questions)
  - [Supported and unsupported updates](#supported-and-unsupported-updates)
- - [Changing a domain resource 'restartVersion'](#changing-a-domain-resource-restartversion)
+ - [Changing a domain resource `restartVersion`](#changing-a-domain-resource-restartversion)
  - [Using the WDT Discover Domain Tool](#using-the-wdt-discover-domain-tool)
  - [Example of adding a data source](#example-of-adding-a-data-source)
 
@@ -92,7 +92,7 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 
  - There is no way to directly delete an attribute from an MBean that's already been specified by a model file. The work-around is to do this using two model files: (a) add a model file that deletes the named bean/resource that is a parent to the attribute you want to delete, and (b) add another subsequent model file that fully defines the named bean/resource but without the attribute you want to delete.
 
- - There is no way to directly change the mbean name of an attribute. Instead you can remove a named MBean using the '!' syntax as described above, and then add a new one as a replacement.
+ - There is no way to directly change the MBean name of an attribute. Instead, you can remove a named MBean using the '!' syntax as described above, and then add a new one as a replacement.
 
  - You cannot change the domain name at runtime.
 
@@ -118,7 +118,7 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 
    Note that it's OK, even expected, to override Network Access Point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the Network Access Point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
 
-#### Changing a domain resource 'restartVersion'
+#### Changing a domain resource `restartVersion`
 
 As was mentioned in the [overview](#overview), one way to tell the operator to apply your configuration changes to a running domain is by altering the domain resource `restartVersion`. Here are some common ways to do this:
 
