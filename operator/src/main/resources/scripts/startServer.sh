@@ -158,13 +158,13 @@ function prepareMIIServer() {
   # Both are needed for the complete domain reconstruction
 
   if [ ! -f /weblogic-operator/introspector/primordial_domainzip.secure ] ; then
-    trace "Domain Source Type is FromModel, the primordial model archive is missing, cannot start server"
-    exit 1
+    trace SEVERE "Domain Source Type is FromModel, the primordial model archive is missing, cannot start server"
+    return 1
   fi
 
   if [ ! -f /weblogic-operator/introspector/domainzip.secure ] ; then
-    trace "Domain type is FromModel, the domain configuration archive is missing, cannot start server"
-    exit 1
+    trace SEVERE  "Domain type is FromModel, the domain configuration archive is missing, cannot start server"
+    return 1
   fi
 
   cd / && base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz && \
@@ -176,15 +176,16 @@ function prepareMIIServer() {
   else
     trace SEVERE "Domain Source Type is 'FromModel' which requires specifying a runtimeEncryptionSecret " \
     "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
-    exit 1
+    return 1
   fi
   encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
 
   # restore the config zip
   #
-  cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz && \
-    tar -xzf /tmp/domain.tar.gz
-  chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh
+  cd / || return 1
+  base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz || return 1
+  tar -xzf /tmp/domain.tar.gz || return 1
+  chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh  || return 1
 
   # restore the archive apps and libraries
   #
@@ -193,32 +194,32 @@ function prepareMIIServer() {
   mkdir -p ${DOMAIN_HOME}/lib
   if [ $? -ne 0 ] ; then
     trace  SEVERE "Domain Source Type is FromModel, cannot create ${DOMAIN_HOME}/lib "
-    exit 1
+    return 1
   fi
 
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
         # expand the archive domain libraries to the domain lib
-        cd ${DOMAIN_HOME}/lib  || exit 1
+        cd ${DOMAIN_HOME}/lib || return 1
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
 
         if [ $? -ne 0 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
-          exit 1
+          return 1
         fi
 
         # expand the archive apps and shared lib to the wlsdeploy/* directories
         # the config.xml is referencing them from that path
 
-        cd ${DOMAIN_HOME} || exit 1
+        cd ${DOMAIN_HOME} || return 1
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
 
         if [ $? -ne 0 ] ; then
           trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
-          exit 1
+          return 1
         fi
     done
-
+  return 0
 }
 
 # trace env vars and dirs before export.*Home calls
@@ -229,7 +230,7 @@ traceDirs before
 traceTiming "POD '${SERVICE_NAME}' MII UNZIP START"
 
 if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
-  prepareMIIServer
+  prepareMIIServer || exitOrLoop
 fi
 
 traceTiming "POD '${SERVICE_NAME}' MII UNZIP COMPLETE"

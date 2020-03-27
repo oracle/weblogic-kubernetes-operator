@@ -275,7 +275,7 @@ function createWLDomain() {
   if [ ! -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
     trace SEVERE "Domain Source Type is 'FromModel' which requires specifying a runtimeEncryptionSecret " \
     "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
-    exit 1
+    exitOrLoop
   fi
   # Check if /u01/wdt/models and /u01/wdt/weblogic-deploy exists
 
@@ -371,11 +371,11 @@ function checkDirNotExistsOrEmpty() {
   if [ $# -eq 1 ] ; then
     if [ ! -d $1 ] ; then
       trace SEVERE "Directory $1 does not exists"
-      exit 1
+      exitOrLoop
     else
       if [ -z "$(ls -A $1)" ] ; then
         trace SEVERE "Directory $1 is empty"
-        exit 1
+        exitOrLoop
       fi
     fi
   fi
@@ -463,7 +463,7 @@ function diff_model() {
   if [ $? -ne 0 ] ; then
     trace SEVERE "Failed to compare models. Check logs for error."
     trace SEVERE "$(cat ${WDT_OUTPUT})"
-    exit 1
+    exitOrLoop
   fi
   trace "Exiting diff_model"
   return ${rc}
@@ -582,7 +582,7 @@ function generateMergedModel() {
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_validateDomain.log
     fi
     trace SEVERE "$(cat ${WDT_OUTPUT})"
-    exit 1
+    exitOrLoop
   fi
 
   # restore trap
@@ -613,7 +613,7 @@ function wdtCreatePrimordialDomain() {
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
     fi
     trace SEVERE "$(cat ${WDT_OUTPUT})"
-    exit 1
+    exitOrLoop
   fi
 
   # restore trap
@@ -646,7 +646,7 @@ function wdtUpdateModelDomain() {
       cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_updateDomain.log
     fi
     trace SEVERE "$(cat ${WDT_OUTPUT})"
-    exit 1
+    exitOrLoop
   fi
 
   # update the wallet
@@ -655,17 +655,17 @@ function wdtUpdateModelDomain() {
     gunzip ${LOCAL_PRIM_DOMAIN_ZIP}
     if [ $? -ne 0 ] ; then
       trace SEVERE "wdtUpdateModelDomain: failed to upzip primordial domain"
-      exit 1
+      exitOrLoop
     fi
     tar uf ${LOCAL_PRIM_DOMAIN_TAR} ${DOMAIN_HOME}/config/fmwconfig/bootstrap/cwallet.sso
     if [ $? -ne 0 ] ; then
       trace SEVERE "wdtUpdateModelDomain: failed to tar update wallet file"
-      exit 1
+      exitOrLoop
     fi
     gzip ${LOCAL_PRIM_DOMAIN_TAR}
     if [ $? -ne 0 ] ; then
       trace SEVERE "wdtUpdateModelDomain: failed to zip up primordial domain"
-      exit 1
+      exitOrLoop
     fi
   fi
 
@@ -716,7 +716,7 @@ function encrypt_decrypt_model() {
   if [ $rc -ne 0 ]; then
     trace SEVERE "WDT Failed to encrypt_decrypt_model failure. Check logs for error."
     trace SEVERE "$(cat ${WDT_OUTPUT})"
-    exit 1
+    exitOrLoop
   fi
 
   trace "Exiting encrypt_wdtmodel"
@@ -756,7 +756,7 @@ function encrypt_decrypt_domain_secret() {
     "described in runtimeEncryptionSecret in the domain resource has been changed since the creation of the domain. " \
     " You can either reset the password to the original one and try again or delete the domain and recreates it."
     trace SEVERE "$(cat ${WDT_OUTPUT})"
-    exit 1
+    exitOrLoop
   fi
 
   if [ "$1" == "decrypt" ] ; then
@@ -775,7 +775,7 @@ function error_handler() {
     if [ $1 -ne 0 ]; then
         trace SEVERE  "Script Error: There was an error at line: ${2} command: ${@:3:20}"
         stop_trap
-        exit 1
+        exitOrLoop
     fi
 }
 
