@@ -43,7 +43,7 @@ public class OperatorUtils {
             Map.Entry::getValue,
             (oldValue, newValue) -> oldValue, LinkedHashMap::new));
   }
-  
+
   /**
    * Compare the 'numero lexi sorting name' as defined in {@link #getSortingString(String)} of the
    * given 2 Strings.

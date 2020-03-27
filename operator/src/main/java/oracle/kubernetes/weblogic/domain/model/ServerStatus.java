@@ -47,6 +47,10 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @Valid
   private ServerHealth health;
 
+  @Description("true if this WebLogic Server is the admin server")
+  @Expose
+  private String isAdminServer;
+
   public ServerStatus() {
   }
 
@@ -60,6 +64,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     this.desiredState = other.desiredState;
     this.clusterName = other.clusterName;
     this.nodeName = other.nodeName;
+    this.isAdminServer = other.isAdminServer;
     this.health = Optional.ofNullable(other.health).map(ServerHealth::new).orElse(null);
   }
 
@@ -219,10 +224,31 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     return this;
   }
 
+  /**
+   * Whether this Weblogic Server is an admin server.
+   *
+   * @return "true" if this WebLogic Server is an admin server, null otherwise.
+   */
+  public String getIsAdminServer() {
+    return isAdminServer;
+  }
+
+  /**
+   * Boolean indication whether this server is the admin server.
+   *
+   * @param isAdminServer whether this server is the admin server
+   * @return this
+   */
+  public ServerStatus withIsAdminServer(boolean isAdminServer) {
+    this.isAdminServer = isAdminServer ? Boolean.toString(isAdminServer) : null;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("serverName", serverName)
+        .append("isAdminServer", isAdminServer)
         .append("state", state)
         .append("desiredState", desiredState)
         .append("clusterName", clusterName)
@@ -240,6 +266,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(state)
         .append(desiredState)
         .append(clusterName)
+        .append(isAdminServer)
         .toHashCode();
   }
 
@@ -259,11 +286,15 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(state, rhs.state)
         .append(desiredState, rhs.desiredState)
         .append(clusterName, rhs.clusterName)
+        .append(isAdminServer, rhs.isAdminServer)
         .isEquals();
   }
 
   @Override
   public int compareTo(@Nonnull ServerStatus o) {
+    if (Boolean.TRUE.toString().equals(isAdminServer)) {
+      return -1;
+    }
     int clustersCompareTo = OperatorUtils.compareSortingStrings(clusterName, o.clusterName);
     return clustersCompareTo == 0 ? OperatorUtils.compareSortingStrings(serverName, o.serverName) : clustersCompareTo;
   }
@@ -279,7 +310,8 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .withStringField("state", ServerStatus::getState)
         .withStringField("desiredState", ServerStatus::getDesiredState)
         .withStringField("nodeName", ServerStatus::getNodeName)
-        .withObjectField("health", ServerStatus::getHealth, ServerHealth.getObjectPatch());
+        .withObjectField("health", ServerStatus::getHealth, ServerHealth.getObjectPatch())
+        .withStringField("isAdminServer", ServerStatus::getIsAdminServer);
 
   static ObjectPatch<ServerStatus> getObjectPatch() {
     return serverPatch;

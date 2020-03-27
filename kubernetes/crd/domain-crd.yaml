@@ -21053,6 +21053,9 @@ spec:
                       description: WebLogic cluster name, if the server is part of
                         a cluster.
                       type: string
+                    isAdminServer:
+                      description: true if this WebLogic Server is the admin server
+                      type: string
                     serverName:
                       description: WebLogic Server name. Required.
                       type: string

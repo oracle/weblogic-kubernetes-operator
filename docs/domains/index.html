@@ -1565,6 +1565,9 @@ window.onload = function() {
           "description": "WebLogic cluster name, if the server is part of a cluster.",
           "type": "string"
         },
+        "isAdminServer": {
+          "type": "boolean"
+        },
         "serverName": {
           "description": "WebLogic Server name. Required.",
           "type": "string"
@@ -1577,7 +1580,10 @@ window.onload = function() {
           "description": "Current state of this WebLogic Server. Required.",
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "isAdminServer"
+      ]
     },
     "Shutdown": {
       "description": "Shutdown describes the configuration for shutting down a server instance.",
