@@ -59,6 +59,8 @@ for template_var in WDT_DOMAIN_TYPE DOMAIN_UID DOMAIN_NAMESPACE MODEL_IMAGE_NAME
 done
 
 if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
+  # uncomment domain resource template fields used by the JRF path through the sample
+  sed -i -e "s/\#\(secrets\):/\1:/" $DOMAIN_RESOURCE_FILE
   sed -i -e "s/\#\(opss\):/\1:/" $DOMAIN_RESOURCE_FILE
   sed -i -e "s/\#\(walletPasswordSecret\):/\1:/" $DOMAIN_RESOURCE_FILE
   sed -i -e "s/\#\(introspectorJobActiveDeadlineSeconds\):/\1:/" $DOMAIN_RESOURCE_FILE
