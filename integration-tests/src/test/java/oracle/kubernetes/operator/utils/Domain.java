@@ -2248,6 +2248,7 @@ public class Domain {
             + ", stderr='"
             + result.stderr()
             + "'";
+    LoggerHelper.getLocal().log(Level.INFO, "App deploy result " + resultStr);
     if (!resultStr.contains("Unable to use a TTY") && result.exitValue() != 0) {
       throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
     }
@@ -2444,7 +2445,31 @@ public class Domain {
             resultsDir + "/samples/model-in-image/"
                   + domainMap.get(cmFileKeyName), domainNS,
             " weblogic.domainUID=" + domainUid);
+      }
+    }
+  }
 
+  /**
+   * write server pod logs
+   *
+   * @throws Exception exception
+   */
+  public void logServerPods() throws Exception {
+    // check admin pod
+    String adminPodName = domainUid + "-" + adminServerName;
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Writing admin pod(" + adminPodName + ") log");
+    TestUtils.exec("kubectl logs " + adminPodName + " -n "
+        + domainNS + " > " + resultsDir + "/pod-" + adminPodName + ".log", true);
+
+    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
+      // check managed server pods
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        String msPodName = domainUid + "-" + managedServerNameBase + i;
+        LoggerHelper.getLocal().log(Level.INFO,
+            "Writing managed pod(" + msPodName + ") log");
+        TestUtils.exec("kubectl logs " + msPodName
+            + " -n " + domainNS + " > " + resultsDir + "/pod-" + msPodName + ".log", true);
       }
     }
   }
