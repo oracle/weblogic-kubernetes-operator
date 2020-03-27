@@ -252,15 +252,29 @@ public class DomainStatusTest {
     ServerStatus cluster1Server1 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server1");
     ServerStatus cluster1Server2 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server2");
     ServerStatus cluster2Server1 = new ServerStatus().withClusterName("cluster-2").withServerName("cluster2-server1");
-    ServerStatus adminServer = new ServerStatus().withServerName("admin-server");
+    ServerStatus adminServer = new ServerStatus().withServerName("admin-server").withIsAdminServer(true);
+    ServerStatus standAloneServerA = new ServerStatus().withServerName("a");
 
     domainStatus.addServer(cluster1Server1).addServer(cluster2Server1)
-        .addServer(cluster1Server2).addServer(adminServer);
+        .addServer(cluster1Server2).addServer(standAloneServerA).addServer(adminServer);
 
     List<ServerStatus> serverStatuses = domainStatus.getServers();
 
     assertThat(serverStatuses,
-        contains(adminServer, cluster1Server1, cluster1Server2, cluster2Server1));
+        contains(adminServer, standAloneServerA, cluster1Server1, cluster1Server2, cluster2Server1));
+  }
+
+  @Test
+  public void verifyThat_getClusters_clustersInExpectedOrdering() {
+    ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster-1");
+    ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster-2");
+    ClusterStatus cluster10 = new ClusterStatus().withClusterName("cluster-10");
+
+    domainStatus.addCluster(cluster10).addCluster(cluster1).addCluster(cluster2);
+
+    List<ClusterStatus> clusterStatuses = domainStatus.getClusters();
+
+    assertThat(clusterStatuses, contains(cluster1, cluster2, cluster10));
   }
 
   static class ClusterStatusMatcher extends org.hamcrest.TypeSafeDiagnosingMatcher<ClusterStatus> {
