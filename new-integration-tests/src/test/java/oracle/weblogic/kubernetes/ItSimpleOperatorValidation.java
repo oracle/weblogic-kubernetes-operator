@@ -1,12 +1,12 @@
-// Copyright 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
-import oracle.weblogic.kubernetes.extensions.tags.MustNotRunInParallel;
-import oracle.weblogic.kubernetes.extensions.tags.Slow;
+import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
+import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 // order. this is controlled with the TestMethodOrder annotation
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Simple validation of basic operator functions")
-// this is an exmaple of registering an extension that will time how long each test takes.
+// this is an example of registering an extension that will time how long each test takes.
 @ExtendWith(Timing.class)
 // by implementing the LoggedTest, we will automatically get a logger injected and it
 // will also automatically log entry/exit messages for each test method.
