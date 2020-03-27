@@ -690,8 +690,11 @@ public class ItMonitoringExporter extends BaseTest {
     assertNotNull(page);
     LoggerHelper.getLocal().log(Level.INFO, "page - " + page.asText());
     assertTrue(page.asText().contains("domainQualifier"));
-    String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
-    assertTrue(checkMetricsViaPrometheus(searchKey, "domain="));
+    //1.1.1 does not contain the fix for parsing error in prometheus
+    if (!MONITORING_EXPORTER_VERSION.equals("1.1.1")) {
+      String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
+      assertTrue(checkMetricsViaPrometheus(searchKey, "\"domain\":\"" + domain.getDomainUid() + "\""));
+    }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
