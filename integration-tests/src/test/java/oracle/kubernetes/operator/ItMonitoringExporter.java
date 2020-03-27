@@ -418,6 +418,7 @@ public class ItMonitoringExporter extends BaseTest {
     test16_ChangeConfigInvalidPass();
     test17_ChangeConfigEmptyUser();
     test18_ChangeConfigEmptyPass();
+    test19_ReplaceMetricsDomainQualifierTrueConfiguration();
   }
 
 
@@ -664,15 +665,33 @@ public class ItMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    final WebClient webClient = new WebClient();
-    HtmlPage originalPage = webClient.getPage(exporterUrl);
-    assertNotNull(originalPage);
     HtmlPage page =
         submitConfigureForm(exporterUrl, "replace", configPath + "/rest_snakecasefalse.yml");
     assertNotNull(page);
     assertFalse(page.asText().contains("metricsNameSnakeCase"));
     String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
     assertTrue(checkMetricsViaPrometheus(searchKey, "httpsessionreptestapp"));
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to replace monitoring exporter configuration with configuration file with
+   * NameSnakeCase=false.
+   *
+   * @throws Exception exception
+   */
+  private void test19_ReplaceMetricsDomainQualifierTrueConfiguration() throws Exception {
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    HtmlPage page =
+        submitConfigureForm(exporterUrl, "replace", configPath + "/rest_domainqualtrue.yml");
+    assertNotNull(page);
+    LoggerHelper.getLocal().log(Level.INFO, "page - " + page.asText());
+    assertTrue(page.asText().contains("domainQualifier"));
+    String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
+    assertTrue(checkMetricsViaPrometheus(searchKey, "domain="));
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -952,7 +971,7 @@ public class ItMonitoringExporter extends BaseTest {
   private HtmlPage submitConfigureForm(
       String exporterUrl, String effect, String configFile, WebClient webClient) throws Exception {
     // Get the first page
-    final HtmlPage page1 = webClient.getPage(exporterUrl);
+    final HtmlPage page1 =webClient.getPage(exporterUrl);
     assertNotNull(page1);
     assertTrue((page1.asText()).contains("This is the WebLogic Monitoring Exporter."));
 
