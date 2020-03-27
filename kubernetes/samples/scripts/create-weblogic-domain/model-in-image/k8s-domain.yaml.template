@@ -91,7 +91,8 @@ spec:
   configuration:
 
     # secrets that are referenced by model yaml macros
-    secrets: [ @@DOMAIN_UID@@-rcu-access ]
+    # @@DOMAIN_UID@@-rcu-access is used for JRF domains
+    #secrets: [ @@DOMAIN_UID@@-rcu-access ]
     
     # increase the introspector job active timeout value. Mainly for JRF use cases
     #introspectorJobActiveDeadlineSeconds: 300
@@ -109,8 +110,8 @@ spec:
 
     #opss:
 
-      # Name of secret with walletPassword for extracting the wallet
+      # Name of secret with walletPassword for extracting the wallet, used for JRF domains
       #walletPasswordSecret: @@DOMAIN_UID@@-opss-wallet-password-secret
       
-      # Name of secret with walletFile containing base64 encoded opss wallet
+      # Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domain
       #walletFileSecret: @@DOMAIN_UID@@-opss-walletfile-secret
