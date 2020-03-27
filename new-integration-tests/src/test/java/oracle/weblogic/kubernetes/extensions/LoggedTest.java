@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public interface LoggedTest {
-    static final Logger logger = Logger.getLogger(LoggedTest.class.getName());
+    Logger logger = Logger.getLogger(LoggedTest.class.getName());
 
     @BeforeEach
     default void beforeEachTest(TestInfo testInfo) {
@@ -29,7 +29,11 @@ public interface LoggedTest {
     }
 
     private String getMethodName(TestInfo testInfo) {
-        String[] tempMethodName = testInfo.getTestMethod().get().toString().split(" ");
-        return tempMethodName[tempMethodName.length - 1];
+        if (testInfo.getTestMethod().isPresent()) {
+            String[] tempMethodName = testInfo.getTestMethod().get().toString().split(" ");
+            return tempMethodName[tempMethodName.length - 1];
+        } else {
+            return "NO_METHOD";
+        }
     }
 }
