@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.LoggerHelper;
@@ -130,6 +131,7 @@ public class ItManagedCoherence extends BaseTest {
     String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     String namespace = domain.getDomainNs();
     for (String pod : pods) {
+      LoggerHelper.getLocal().log(Level.INFO, "Checking if pod " + pod + " is running");
       if (OKE_CLUSTER) {
         TestUtils.checkPodReadyAndRunning(pod, domain.getDomainNs());
       } else {
@@ -168,12 +170,20 @@ public class ItManagedCoherence extends BaseTest {
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/" + COHERENCE_CLUSTER_SCRIPT);
+      domainMap.put(
+          "javaOptions",
+          "-Dweblogic.debug.DebugDeploymentService=true -Dweblogic.debug.DebugDeploymentServiceTransport=true " 
+          + "-Dweblogic.debug.DebugDeploymentServiceInternal=true "
+          + "-Dweblogic.debug.DebugDeploymentServiceTransport=true");
 
       createDomainAndDeployApp(domainMap, DOMAINUID);
       coherenceCacheTest();
 
       testCompletedSuccessfully = true;
     } finally {
+      if (domain != null) {
+        domain.logServerPods();
+      }
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
@@ -231,6 +241,12 @@ public class ItManagedCoherence extends BaseTest {
     domain = null;
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
+ 
+    // The above command only tests that the pod from the 1st cluster is Running (1/1)
+    // So, checking the MS pod of the other cluster individually here.
+    // When(If) we change the utils to handle 2 clusters, this can be removed.
+    TestUtils.checkPodReady(domainUid + "-new-managed-server1", domainNS1);
+    TestUtils.checkPodReady(domainUid + "-new-managed-server2", domainNS1);
 
     String[] pods = {
       domainUid + "-" + domain.getAdminServerName(),
@@ -240,7 +256,12 @@ public class ItManagedCoherence extends BaseTest {
       domainUid + "-new-managed-server1",
       domainUid + "-new-managed-server2",
     };
-    verifyServersStatus(domain, pods, domainUid);
+    
+    LoggerHelper.getLocal().log(Level.INFO, " Printing the pods in the doamin");
+    ExecResult result  = ExecCommand.exec("kubectl get pods -n " + domain.getDomainNs() + " -o wide");
+    LoggerHelper.getLocal().log(Level.INFO, "stdout = " + result.stdout()
+            + "\n stderr = " + result.stderr());
+
     // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
     TestUtils.buildDeployCoherenceAppInPod(
         domain,
@@ -253,16 +274,17 @@ public class ItManagedCoherence extends BaseTest {
   }
 
   private void coherenceCacheTest() throws Exception {
+    LoggerHelper.getLocal().log(Level.INFO, "Starting to test the cache");
 
     String[] firstNameList = {"Frodo", "Samwise", "Bilbo", "peregrin", "Meriadoc", "Gandalf"};
     String[] secondNameList = {"Baggins", "Gamgee", "Baggins", "Took", "Brandybuck", "TheGrey"};
     ExecResult result;
-
     for (int i = 0; i < firstNameList.length; i++) {
       result = addDataToCache(firstNameList[i], secondNameList[i]);
       LoggerHelper.getLocal().log(Level.INFO, "addDataToCache returned" + result.stdout());
       assertTrue(result.stdout().contains(firstNameList[i]), "Did not add the expected record");
     }
+
     // check if cache size is 6
     result = getCacheSize();
     LoggerHelper.getLocal().log(Level.INFO, "number of records in cache = " + result.stdout());
@@ -270,6 +292,7 @@ public class ItManagedCoherence extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "number of records in cache = " + result.stdout());
       assertTrue("6".equals(result.stdout()), "Expected 6 records");
     }
+
     // get the data from cache
     result = getCacheContents();
     LoggerHelper.getLocal().log(Level.INFO,
@@ -287,6 +310,7 @@ public class ItManagedCoherence extends BaseTest {
   }
 
   private ExecResult addDataToCache(String firstName, String secondName) throws Exception {
+
     LoggerHelper.getLocal().log(Level.INFO, "Add initial data to cache");
 
     StringBuffer curlCmd = new StringBuffer("curl --silent ");
@@ -313,6 +337,7 @@ public class ItManagedCoherence extends BaseTest {
 
     LoggerHelper.getLocal().log(Level.INFO, "curlCmd is " + curlCmd.toString());
     ExecResult result = TestUtils.exec(curlCmd.toString(), true);
+
     return result;
   }
 
@@ -387,5 +412,4 @@ public class ItManagedCoherence extends BaseTest {
     ExecResult result = TestUtils.exec(curlCmd.toString(), true);
     return result;
   }
-
 }

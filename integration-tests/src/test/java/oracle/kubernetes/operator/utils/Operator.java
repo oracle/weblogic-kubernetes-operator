@@ -444,9 +444,13 @@ public class Operator {
     }
     if (BaseTest.HELM_VERSION.equals("V3")) {
       if (BaseTest.OKE_CLUSTER) {
-        cmd.append("  --debug --timeout 4m0s");
+        cmd.append("--namespace ")
+            .append(operatorMap.get("namespace"))
+            .append("  --debug --timeout 4m0s");
       } else {
-        cmd.append(" --wait --timeout 3m0s");
+        cmd.append("--namespace ")
+            .append(operatorMap.get("namespace"))
+            .append(" --wait --timeout 3m0s");
       }
     }
 
@@ -730,7 +734,7 @@ public class Operator {
     LoggerHelper.getLocal().log(Level.INFO, "Command to query Operator pod name: " + cmd);
     ExecResult result = TestUtils.exec(cmd);
 
-    return result.stdout();
+    return result.stdout().trim();
   }
 
   public static enum RestCertType {
@@ -745,4 +749,24 @@ public class Operator {
     NONE
   }
 
+  /**
+   * writes operator pod describe and logs to a file
+   * @param logLocation - location where the logs to be written
+   */
+  public void writePodLog(String logLocation) throws Exception {
+    //create dir
+    TestUtils.exec("mkdir -p " + logLocation);
+
+    //write operator pod describe
+    String cmd = "kubectl describe pod " + getOperatorPodName() + " -n "
+        + getOperatorNamespace() + " >> " + logLocation
+        + "/pod-describe." + operatorNS + "." + getOperatorPodName();
+    TestUtils.exec(cmd, true);
+
+    //write operator pod logs
+    cmd = "kubectl logs pod/" + getOperatorPodName() + " -n "
+        + getOperatorNamespace() + " >> " + logLocation
+        + "/pod-log." + operatorNS + "." + getOperatorPodName();
+    TestUtils.exec(cmd, true);
+  }
 }

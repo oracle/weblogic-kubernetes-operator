@@ -29,6 +29,7 @@ APP_DIR_INPOD=$4
 EAR_DEPLOY_TARGET=$6
 APP_NAME=$7
 GAR_DEPLOY_TARGET=$8
+
 ARCHIVE_FILE_GAR=${APP_DIR_INPOD}/${APP_NAME}.gar
 ARCHIVE_FILE_EAR=${APP_DIR_INPOD}/${APP_NAME}.ear
 echo "App location in the pod: ${APP_DIR_INPOD}"
@@ -62,23 +63,28 @@ cp ${APP_DIR_INPOD}/builddir/${APP_NAME}.gar ${APP_DIR_INPOD}/.
 cp ${APP_DIR_INPOD}/builddir/${APP_NAME}.ear ${APP_DIR_INPOD}/.
 
 echo "Deploy ${APP_NAME} gar using curl:"
-echo -e "curl --noproxy '*' --silent  --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:multipart/form-data -F \"model={ name: '${APP_NAME}GAR', targets: [ { identity: [ clusters, '${GAR_DEPLOY_TARGET}' ] } ] }\" -F \"sourcePath=@${ARCHIVE_FILE_GAR}\"  -H \"Prefer:respond-async\" -X POST http://${URL}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployGAR.out\n"
-curl --noproxy '*' --silent  --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:multipart/form-data -F "model={ name: '${APP_NAME}GAR', targets: [ { identity: [ clusters, '${GAR_DEPLOY_TARGET}' ] } ] }" -F "sourcePath=@${ARCHIVE_FILE_GAR}" -H "Prefer:respond-async" -X POST http://${URL}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployGAR.out
-sleep 10
-grep -q "STATE_RUNNING" ${APP_DIR_INPOD}/deployGAR.out
+
+CMD="curl --noproxy '*' -v --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:application/json -d \"{name: '${APP_NAME}GAR', sourcePath='${ARCHIVE_FILE_GAR}', targets: [ { identity: [ 'clusters', '${GAR_DEPLOY_TARGET}' ] } ] }\" -X POST http://${URL}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployGAR.out"
+echo "Executing ${CMD}"
+eval "${CMD}"
+
+grep -q "\"progress\": \"success\"" ${APP_DIR_INPOD}/deployGAR.out
+
 cres=$?
 [[ $cres != 0 ]] && echo "[FAIL] Unable to deploy  gar app ..." && exit -1
 [[ $cres == 0 ]] && echo "[SUCCESS] gar app is deployed  ..."
 
 echo "Deploy ${APP_NAME} ear using curl:"
-echo -e "curl --noproxy '*' --silent  --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:multipart/form-data -F \"model={ name: '${APP_NAME}', targets: [ { identity: [ clusters, '${EAR_DEPLOY_TARGET}' ] } ] }\" -F \"sourcePath=@${ARCHIVE_FILE_EAR}\" -H \"Prefer:respond-async\" -X POST http://${URL}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployear.out\n"
-curl --noproxy '*' --silent  --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:multipart/form-data -F "model={ name: '${APP_NAME}', targets: [ { identity: [ clusters, '${EAR_DEPLOY_TARGET}' ] } ] }" -F "sourcePath=@${ARCHIVE_FILE_EAR}" -H "Prefer:respond-async" -X POST http://${URL}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployear.out
-sleep 10
-grep -q "STATE_RUNNING" ${APP_DIR_INPOD}/deployear.out
+
+CMD="curl --noproxy '*' -v --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:application/json -d \"{name: '${APP_NAME}', sourcePath='${ARCHIVE_FILE_EAR}', targets: [ { identity: [ 'clusters', '${EAR_DEPLOY_TARGET}' ] } ] }\" -X POST http://${URL}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployear.out"
+echo "Executing ${CMD}"
+eval "${CMD}"
+
+grep -q "\"progress\": \"success\"" ${APP_DIR_INPOD}/deployear.out
+
 cres=$?
 [[ $cres != 0 ]] && echo "[FAIL] Unable to deploy ear  ..." exit -1
 [[ $cres == 0 ]] && echo "[SUCCESS] ear file is deployed  ..."
-
 
 rm -rf ${APP_DIR_INPOD}/builddir
 
