@@ -116,4 +116,57 @@ public class MiiBaseTest extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
 
   }
+
+  /**
+   * Modify the domain yaml to change domain-level restart version.
+   * @param domain the domain
+   * @param versionNo version number of domain
+   *
+   * @throws Exception on failure
+   */
+  protected void modifyDomainYamlWithRestartVersion(
+      Domain domain, String versionNo) throws Exception {
+    String originalYaml =
+        getUserProjectsDir()
+        + "/weblogic-domains/"
+        + domain.getDomainUid()
+        + "/domain.yaml";
+
+    // Modify the original domain yaml to include restartVersion in admin server node
+    DomainCrd crd = new DomainCrd(originalYaml);
+    Map<String, String> objectNode = new HashMap();
+    objectNode.put("restartVersion", versionNo);
+    crd.addObjectNodeToDomain(objectNode);
+    String modYaml = crd.getYamlTree();
+    LoggerHelper.getLocal().log(Level.INFO, modYaml);
+
+    // Write the modified yaml to a new file
+    Path path = Paths.get(getUserProjectsDir()
+        + "/weblogic-domains/"
+        + domain.getDomainUid(), "modified.domain.yaml");
+    LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+    Charset charset = StandardCharsets.UTF_8;
+    Files.write(path, modYaml.getBytes(charset));
+
+    // Apply the new yaml to update the domain crd
+    LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
+    ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+    LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
+    domain.verifyDomainRestarted();
+  }
+
+  enum WdtDomainType {
+    WLS("WLS"), JRF("JRF"), RestrictedJRF("RestrictedJRF");
+
+    private String type;
+
+    WdtDomainType(String type) {
+      this.type = type;
+    }
+
+    public String geWdtDomainType() {
+      return type;
+    }
+  }
 }
