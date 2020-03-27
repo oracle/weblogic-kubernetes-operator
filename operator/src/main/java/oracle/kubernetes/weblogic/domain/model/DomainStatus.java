@@ -327,6 +327,7 @@ public class DomainStatus {
   }
 
   public List<ClusterStatus> getClusters() {
+    clusters.sort(Comparator.naturalOrder());
     return clusters;
   }
 
