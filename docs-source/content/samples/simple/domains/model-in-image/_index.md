@@ -23,7 +23,13 @@ description: "Sample for supplying a WebLogic Deploy Tool (WDT) model that the o
 
 ### Introduction
 
-This sample demonstrates:
+This sample demonstrates deploying a Model in Image domain home source type. Unlike the Domain in PV and Domain in Image domain source types, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource. Instead, a Model in Image deployment uses a WebLogic Deploy Tool (WDT) model to specify your WebLogic configuration. 
+
+WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
+
+For more information on Model in Image, see the [Model in Image user guide]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}), and for a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
+
+In detail, this sample demonstrates Model in Image:
 
   - Using the WebLogic Image Tool to create a Docker image that contains a WebLogic install, a WebLogic Deploy Tool (WDT) install, a Java EE servlet application contained within a WDT archive, and the model for a WebLogic domain configuration defined using a WDT model file.
   - Modifying the WDT model that's embedded within the Docker image using a WDT model file that's supplied using a Kubernetes config map.
@@ -31,7 +37,7 @@ This sample demonstrates:
   - Deploying the model image, domain resource, model config map, and associated secrets that define user names, passwords, and URL values for the model and its domain resource.
   - Deploying and accessing a Traefik load balancer that redirects HTTP protocol calls to its Java EE servlet application.
 
-Supported domain types:
+__Note about Model in Image domain types:__
 
 There are three types of domains supported by Model in Image: a standard `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, or a `RestrictedJRF` domain.
 
