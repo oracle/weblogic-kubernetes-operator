@@ -971,7 +971,7 @@ public class ItMonitoringExporter extends BaseTest {
   private HtmlPage submitConfigureForm(
       String exporterUrl, String effect, String configFile, WebClient webClient) throws Exception {
     // Get the first page
-    final HtmlPage page1 =webClient.getPage(exporterUrl);
+    final HtmlPage page1 = webClient.getPage(exporterUrl);
     assertNotNull(page1);
     assertTrue((page1.asText()).contains("This is the WebLogic Monitoring Exporter."));
 
