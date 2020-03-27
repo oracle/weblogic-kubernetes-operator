@@ -27,7 +27,7 @@ This sample demonstrates deploying a Model in Image domain home source type. Unl
 
 WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
 
-For more information on Model in Image, see the [Model in Image user guide]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}), and for a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
+For more information on Model in Image, see the [Model in Image user guide]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}). For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 
 In detail, this sample demonstrates Model in Image:
 
