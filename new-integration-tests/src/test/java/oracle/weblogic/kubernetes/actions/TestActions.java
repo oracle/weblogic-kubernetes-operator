@@ -59,8 +59,8 @@ public class TestActions {
             new WebLogicImageTool()
                 .with(new WITParams()
                      .baseName(baseImageName).tag(imageTag).modelFiles(modelFiles)
-    	             .modelVariableFiles(modelVariableFiles).modelArchiveFiles(modelArchiveFiles)
-    		     .wdtVersion(wdtVersion).domainType(domainType)).updateImage();
+                     .modelVariableFiles(modelVariableFiles).modelArchiveFiles(modelArchiveFiles)
+                     .wdtVersion(wdtVersion).domainType(domainType)).updateImage();
     }
  
  
