@@ -24,9 +24,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
+import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-
-import static oracle.kubernetes.utils.OperatorUtils.createSortedMap;
 
 /**
  * After the {@link PodHelper} identifies servers that are presently running, but that are using an
@@ -74,7 +73,7 @@ public class RollingHelper {
     private RollingStep(Map<String, StepAndPacket> rolling, Step next) {
       super(next);
       // sort the rolling map so servers would be restarted in order based on server names
-      this.rolling = createSortedMap(rolling);
+      this.rolling = OperatorUtils.createSortedMap(rolling);
     }
 
     @Override

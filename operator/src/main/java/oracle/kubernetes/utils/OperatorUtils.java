@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.utils;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,6 +35,9 @@ public class OperatorUtils {
    * @return A sorted Map containing the elements from the give map
    */
   public static <T> Map<String, T> createSortedMap(Map<String, T> map) {
+    if (map == null) {
+      return Collections.emptyMap();
+    }
     return map.entrySet()
         .stream()
         .sorted(Comparator
