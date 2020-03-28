@@ -327,7 +327,7 @@ public class DomainStatusUpdater {
         }
 
         if (getDomainConfig().isPresent()) {
-          status.setServers(new ArrayList<>(getServerStatuses().values()));
+          status.setServers(new ArrayList<>(getServerStatuses(getDomainConfig().get().getAdminServerName()).values()));
           status.setClusters(new ArrayList<>(getClusterStatuses().values()));
           status.setReplicas(getReplicaSetting());
         }
@@ -384,12 +384,13 @@ public class DomainStatusUpdater {
         return Optional.ofNullable(getInfo().getServerPod(serverName)).filter(PodHelper::getReadyStatus).isPresent();
       }
 
-      Map<String, ServerStatus> getServerStatuses() {
+      Map<String, ServerStatus> getServerStatuses(final String adminServerName) {
         return getServerNames().stream()
-            .collect(Collectors.toMap(Function.identity(), this::createServerStatus));
+            .collect(Collectors.toMap(Function.identity(),
+                s -> createServerStatus(s,adminServerName)));
       }
 
-      private ServerStatus createServerStatus(String serverName) {
+      private ServerStatus createServerStatus(String serverName, String adminServerName) {
         String clusterName = getClusterName(serverName);
         return new ServerStatus()
             .withServerName(serverName)
@@ -397,7 +398,8 @@ public class DomainStatusUpdater {
             .withDesiredState(getDesiredState(serverName, clusterName))
             .withHealth(serverHealth.get(serverName))
             .withClusterName(clusterName)
-            .withNodeName(getNodeName(serverName));
+            .withNodeName(getNodeName(serverName))
+            .withIsAdminServer(serverName.equals(adminServerName));
       }
 
       private String getRunningState(String serverName) {
