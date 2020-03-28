@@ -175,7 +175,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Releases k8s cluster lease, archives result, pv directories.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to delete resource
    */
   @AfterAll
   public static void staticUnPrepare() throws Exception {
@@ -318,7 +318,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * clone, build , deploy monitoring exporter on specified domain, operator.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to deploy
    */
   private static void deployRunMonitoringExporter(Domain domain, Operator operator)
       throws Exception {
@@ -538,7 +538,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Try to append monitoring exporter configuration with empty configuration.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to apply configuration or check the expected values.
    */
   private void test07_AppendWithEmptyConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -572,7 +572,7 @@ public class ItMonitoringExporter extends BaseTest {
    * Try to replace monitoring exporter configuration with configuration file not in the yaml
    * format.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to apply configuration or check the expected values.
    */
   private void test08_2ReplaceWithNotYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -605,7 +605,7 @@ public class ItMonitoringExporter extends BaseTest {
    * Try to replace monitoring exporter configuration with configuration file in the corrupted yaml
    * format.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to apply configuration or check the expected values.
    */
   private void test10_ReplaceWithCorruptedYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -658,7 +658,7 @@ public class ItMonitoringExporter extends BaseTest {
    * Try to replace monitoring exporter configuration with configuration file with
    * NameSnakeCase=false.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to apply configuration or check the expected values.
    */
   private void test13_ReplaceMetricsNameSnakeCaseFalseConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -675,10 +675,10 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Try to replace monitoring exporter configuration with configuration file with
-   * NameSnakeCase=false.
+   * Test to replace monitoring exporter configuration with configuration file with
+   * domainQualifier=true.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to apply configuration or check the expected values.
    */
   private void test19_ReplaceMetricsDomainQualifierTrueConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -699,9 +699,9 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Try to change monitoring exporter configuration without authentication.
+   * Test to change monitoring exporter configuration without authentication.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to apply configuration or check the expected values.
    */
   // verify that change configuration fails without authentication
   private void test14_ChangeConfigNoCredentials() throws Exception {
