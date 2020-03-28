@@ -31,7 +31,7 @@ public class TestActions {
 
     /**
      * Upgrade existing Operator release
-     * @param values values to update
+     * @param values map with values
      * @return true if the operator is successfully upgraded, false otherwise.
      */
     public static boolean upgradeOperator(HashMap<String, String> values) {
@@ -154,7 +154,7 @@ public class TestActions {
      * @return true on success, false otherwise
      */
     public static boolean deletePersistentVolume(String pvName) {
-        return PersistentVolume.create(pvName);
+        return PersistentVolume.delete(pvName);
     }
 
     /**
