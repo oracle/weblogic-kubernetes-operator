@@ -24,6 +24,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
+import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 /**
@@ -71,7 +72,8 @@ public class RollingHelper {
 
     private RollingStep(Map<String, StepAndPacket> rolling, Step next) {
       super(next);
-      this.rolling = rolling;
+      // sort the rolling map so servers would be restarted in order based on server names
+      this.rolling = OperatorUtils.createSortedMap(rolling);
     }
 
     @Override
