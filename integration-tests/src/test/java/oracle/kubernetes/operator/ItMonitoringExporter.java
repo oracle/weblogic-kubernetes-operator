@@ -949,24 +949,19 @@ public class ItMonitoringExporter extends BaseTest {
       String effect, String configFile, String expectedErrorMsg, String username, String password)
       throws Exception {
     try {
-      HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile, username, password);
+      final WebClient webClient = new WebClient();
+      setCredentials(webClient, username, password);
+      HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile, webClient);
       throw new RuntimeException("Expected exception was not thrown ");
     } catch (FailingHttpStatusCodeException ex) {
       assertTrue((ex.getMessage()).contains(expectedErrorMsg));
     }
   }
 
-  private HtmlPage submitConfigureForm(
-      String exporterUrl, String effect, String configFile, String username, String password)
-      throws Exception {
-    final WebClient webClient = new WebClient();
-    setCredentials(webClient, username, password);
-    return submitConfigureForm(exporterUrl, effect, configFile, webClient);
-  }
-
   private HtmlPage submitConfigureForm(String exporterUrl, String effect, String configFile)
       throws Exception {
     final WebClient webClient = new WebClient();
+    webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
     setCredentials(webClient);
     return submitConfigureForm(exporterUrl, effect, configFile, webClient);
   }
@@ -974,7 +969,11 @@ public class ItMonitoringExporter extends BaseTest {
   private HtmlPage submitConfigureForm(
       String exporterUrl, String effect, String configFile, WebClient webClient) throws Exception {
     // Get the first page
-    final HtmlPage page1 = webClient.getPage(exporterUrl);
+    HtmlPage page1 = webClient.getPage(exporterUrl);
+    if (page1 == null) {
+      //try again
+      page1 = webClient.getPage(exporterUrl);
+    }
     assertNotNull(page1);
     assertTrue((page1.asText()).contains("This is the WebLogic Monitoring Exporter."));
 
