@@ -11,4 +11,6 @@ public class PersistentVolume {
         return Kubernetes.create(pvYaml);
     }
 
+    public static boolean delete(String pvName) { return Kubernetes.deletePv(pvName); }
+
 }

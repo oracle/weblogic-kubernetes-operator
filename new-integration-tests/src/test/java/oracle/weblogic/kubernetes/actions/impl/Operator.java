@@ -29,9 +29,9 @@ public class Operator {
         boolean success = false;
         if (addRepo(OPERATOR_HELM_REPO_URL)) {
             success = installRelease(
-                    OPERATOR_CHART_NAME,
-                    "weblogic-operator",
-                    new HashMap<>());
+                OPERATOR_CHART_NAME,
+                "weblogic-operator",
+                new HashMap<>());
         }
         return success;
     }
@@ -39,7 +39,7 @@ public class Operator {
     public static boolean upgrade(HashMap<String, String> values) {
         return upgradeRelease(OPERATOR_CHART_NAME, "weblogic-operator", values);
     }
-    
+
     public static boolean scaleDomain(String domainUID, String clusterName, int numOfServers) {
         return true;
     }

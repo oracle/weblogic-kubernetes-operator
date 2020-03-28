@@ -11,4 +11,7 @@ public class ConfigMap {
         return Kubernetes.createConfigMap(cmName, namespace, fromFile);
     }
 
+    public static boolean delete(String cmName, String namespace) {
+        return Kubernetes.deleteConfigMap(cmName, namespace);
+    }
 }

@@ -11,4 +11,7 @@ public class PersistentVolumeClaim {
         return Kubernetes.create(pvcYaml);
     }
 
+    public static boolean delete(String pvcName, String namespace) {
+        return Kubernetes.deletePvc(pvcName, namespace);
+    }
 }
