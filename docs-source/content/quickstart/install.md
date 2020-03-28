@@ -51,18 +51,6 @@ $ kubectl create namespace traefik
 
 Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
 
-For Helm 2.x:
-
-```bash
-$ helm install stable/traefik \
-  --name traefik-operator \
-  --namespace traefik \
-  --values kubernetes/samples/charts/traefik/values.yaml \
-  --set "kubernetes.namespaces={traefik}" \
-  --wait
-```
-
-For Helm 3.x:
 
 ```bash
 $ helm install traefik-operator stable/traefik \
@@ -88,19 +76,6 @@ $ helm install traefik-operator stable/traefik \
 
 3.  Use `helm` to install and start the operator from the directory you just cloned:	 
 
-    For Helm 2.x:
-
-    ```bash
-    $ helm install kubernetes/charts/weblogic-operator \
-      --name sample-weblogic-operator \
-      --namespace sample-weblogic-operator-ns \
-      --set image=oracle/weblogic-kubernetes-operator:2.5.0 \
-      --set serviceAccount=sample-weblogic-operator-sa \
-      --set "domainNamespaces={}" \
-      --wait
-    ```
-
-    For Helm 3.x:
 
     ```bash
     $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
