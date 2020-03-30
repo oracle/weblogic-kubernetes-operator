@@ -55,11 +55,12 @@ class ItSimpleOperatorValidation implements LoggedTest {
         // the kubernetes deployment.  this will complete quickly, and will either be
         // successful or not.
 
+        String opns = "opns1";
         OperatorParams opParams =
             new OperatorParams().image("weblogic-kubernetes-operator:test_itsimpleoperator")
                                 .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
                                 .serviceAccount("sa-opns1");
-        boolean success = installOperator("weblogic-operator", "opns1", opParams);
+        boolean success = installOperator("weblogic-operator", opns, opParams);
 
         // we can use a standard JUnit assertion to check on the result
         assertEquals(true, success, "There MUST be a descriptive message here");
@@ -85,7 +86,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
                 // and here we can set the maximum time we are prepared to wait
                 .await().atMost(5, MINUTES)
                 // operatorIsRunning() is one of our custom, reusable assertions
-                .until(operatorIsRunning(""));
+                .until(operatorIsRunning(opns));
 
         // i have not done anything yet about reporting the reason for the failure :)
     }
