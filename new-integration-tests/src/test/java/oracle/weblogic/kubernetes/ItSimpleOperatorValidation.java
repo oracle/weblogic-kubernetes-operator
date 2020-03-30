@@ -3,7 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.HashMap;
+import java.util.Arrays;
 
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
@@ -16,6 +16,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -53,7 +54,13 @@ class ItSimpleOperatorValidation implements LoggedTest {
         // imagine that installOperator() will try to install the operator, by creating
         // the kubernetes deployment.  this will complete quickly, and will either be
         // successful or not.
-        boolean success = installOperator("weblogic-operator", "ns1", new HashMap<String, String>());
+
+        OperatorParams opParams =
+            new OperatorParams().image("weblogic-kubernetes-operator:test_itsimpleoperator")
+                                .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
+                                .serviceAccount("sa-opns1");
+        boolean success = installOperator("weblogic-operator", "opns1", opParams);
+
         // we can use a standard JUnit assertion to check on the result
         assertEquals(true, success, "There MUST be a descriptive message here");
 

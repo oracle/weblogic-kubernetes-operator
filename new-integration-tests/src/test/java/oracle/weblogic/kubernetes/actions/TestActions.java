@@ -9,6 +9,7 @@ import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
@@ -28,8 +29,8 @@ public class TestActions {
      * @param values map with values
      * @return true if the operator is successfully installed, false otherwise.
      */
-    public static boolean installOperator(String name, String namespace, HashMap<String, String> values) {
-        return Operator.install(name, namespace, values);
+    public static boolean installOperator(String name, String namespace, OperatorParams params) {
+        return Operator.install(name, namespace, params);
     }
 
     /**
@@ -39,8 +40,8 @@ public class TestActions {
      * @param values map with values
      * @return true if the operator is successfully upgraded, false otherwise.
      */
-    public static boolean upgradeOperator(String name, String namespace, HashMap<String, String> values) {
-        return Operator.upgrade(name, namespace, values);
+    public static boolean upgradeOperator(String name, String namespace, OperatorParams params) {
+        return Operator.upgrade(name, namespace, params);
     }
 
     /**
