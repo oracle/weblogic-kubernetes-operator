@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.util.HashMap;
+
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
 import oracle.weblogic.kubernetes.extensions.tags.MustNotRunInParallel;
@@ -51,7 +53,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
         // imagine that installOperator() will try to install the operator, by creating
         // the kubernetes deployment.  this will complete quickly, and will either be
         // successful or not.
-        boolean success = installOperator();
+        boolean success = installOperator("weblogic-operator", "ns1", new HashMap<String, String>());
         // we can use a standard JUnit assertion to check on the result
         assertEquals(true, success, "There MUST be a descriptive message here");
 

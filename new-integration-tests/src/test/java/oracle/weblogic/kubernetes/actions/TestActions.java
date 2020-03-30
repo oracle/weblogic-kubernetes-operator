@@ -23,19 +23,24 @@ public class TestActions {
 
     /**
      * Install WebLogic Kubernetes Operator
+     * @param name operator release name
+     * @param namespace the name of the namespace
+     * @param values map with values
      * @return true if the operator is successfully installed, false otherwise.
      */
-    public static boolean installOperator() {
-        return Operator.install();
+    public static boolean installOperator(String name, String namespace, HashMap<String, String> values) {
+        return Operator.install(name, namespace, values);
     }
 
     /**
      * Upgrade existing Operator release
+     * @param name operator release name
+     * @param namespace the name of the namespace
      * @param values map with values
      * @return true if the operator is successfully upgraded, false otherwise.
      */
-    public static boolean upgradeOperator(HashMap<String, String> values) {
-        return Operator.upgrade(values);
+    public static boolean upgradeOperator(String name, String namespace, HashMap<String, String> values) {
+        return Operator.upgrade(name, namespace, values);
     }
 
     /**
@@ -51,9 +56,14 @@ public class TestActions {
 
     /**
      * Delete the Operator release
+     * @param name operator release name
+     * @param namespace the name of the namespace
      * @return true on success, false otherwise
      */
-    public static boolean deleteOperator() { return Operator.delete(); }
+
+    public static boolean deleteOperator(String name, String namespace) {
+        return Operator.delete(name, namespace);
+    }
 
     // ----------------------   domain  -----------------------------------
 

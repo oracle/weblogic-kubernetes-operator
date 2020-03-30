@@ -5,15 +5,27 @@ package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.HashMap;
 
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Helm.installRelease;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 
 public class Traefik {
+    /**
+     * The URL of the Traefik's Helm Repository.
+     */
+    private static String TRAEFIK_HELM_REPO_URL = "";
+    /**
+     * The name of the Traefik Helm Chart (in the repository).
+     */
+    private static String TRAEFIK_CHART_NAME = "traefik";
 
     public static boolean install(String valuesYaml) {
-        return installRelease(
-            valuesYaml,
-            "traefik-operator",
-            new HashMap<>());
+        boolean success = false;
+        if(new Helm.HelmBuilder(TRAEFIK_HELM_REPO_URL).build().addRepo()) {
+            success = new Helm.HelmBuilder(TRAEFIK_CHART_NAME, "traefik-operator")
+                .namespace("traefik")
+                .values(new HashMap<>())
+                .build().install();
+        }
+        return success;
     }
 
     public static boolean createIngress(String valuesYaml) {
