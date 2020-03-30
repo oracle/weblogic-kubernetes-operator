@@ -58,7 +58,7 @@ public class ItJrfPvWlst extends BaseTest {
   public void prepare() throws Exception {
     if (QUICKTEST) {
       createResultAndPvDirs(testClassName);
-      setMaxIterationsPod(80);
+      //setMaxIterationsPod(80);
       
       TestUtils.exec(
           "cp -rf " 
@@ -133,7 +133,7 @@ public class ItJrfPvWlst extends BaseTest {
             "Creating and verifying the domain creation with domainUid: " + domainUid);
 
         jrfdomain = new JrfDomain(domainMap);
-        jrfdomain.verifyDomainCreated();
+        jrfdomain.verifyDomainCreated(80);
         
         // basic test cases
         testBasicUseCases(jrfdomain, false);
