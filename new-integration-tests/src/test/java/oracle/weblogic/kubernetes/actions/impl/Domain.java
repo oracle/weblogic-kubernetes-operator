@@ -8,4 +8,16 @@ public class Domain {
     public static boolean createDomainCustomResource(String domainUID, String namespace, String domainYAML) {
         return true;
     }
+
+    public static boolean shutdown(String domainUID, String namespace) {
+        return true;
+    }
+
+    public static boolean restart(String domainUID, String namespace) {
+        return true;
+    }
+
+    public static boolean deleteDomainCustomResource(String domainUID, String namespace) {
+        return true;
+    }
 }
