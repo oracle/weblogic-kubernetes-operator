@@ -13,6 +13,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,6 +53,10 @@ class ItSimpleDomainValidation implements LoggedTest {
         // wait for the admin server pod to exist
 
         // wait for the managed servers to exist
+
+        // Delete namespace
+        deleteNamespace(namespace);
+        logger.info("Deleted namespace: " + namespace);
 
     }
 

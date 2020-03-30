@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions;
@@ -6,6 +6,8 @@ package oracle.weblogic.kubernetes.actions;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
+
+import java.util.List;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
@@ -24,6 +26,10 @@ public class TestActions {
         return Domain.createDomainCustomResource(domainUID, namespace, domainYAML);
     }
 
+    public static List<String> listDomainCustomResources(String namespace) {
+        return Domain.listDomainCustomResources(namespace);
+    }
+
     // ------------------------   ingress controller ----------------------
 
 
@@ -36,6 +42,14 @@ public class TestActions {
 
     public static String createUniqueNamespace() {
         return Namespace.createUniqueNamespace();
+    }
+
+    public static List<String> listNamespaces() {
+        return Namespace.listNamespaces();
+    }
+
+    public static boolean deleteNamespace(String name) {
+        return Namespace.deleteNamespace(name);
     }
 
     // etc...
