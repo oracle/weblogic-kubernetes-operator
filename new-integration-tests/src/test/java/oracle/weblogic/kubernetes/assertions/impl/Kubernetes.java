@@ -1,17 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.util.concurrent.Callable;
 
-/**
- *
- * @author Sankar
- */
 public class Kubernetes {
 
   public static Callable<Boolean> podExists(String podName, String domainUID, String namespace) {
