@@ -46,25 +46,10 @@ public class TestActions {
 
     // ------------------------ Docker image  -------------------------
 
-    public static boolean createMIIImage(
-        String baseImageName, 
-        String imageTag,
-        List<String> modelFiles,
-        List<String> modelVariableFiles,
-        List<String> modelArchiveFiles,
-        String wdtVersion,
-        String domainType) {
-  
+    public static boolean createMIIImage(WITParams params) {
     	return 
             new WebLogicImageTool()
-                .with(new WITParams()
-                     .baseName(baseImageName)
-                     .tag(imageTag)
-                     .modelFiles(modelFiles)
-                     .modelVariableFiles(modelVariableFiles)
-                     .modelArchiveFiles(modelArchiveFiles)
-                     .wdtVersion(wdtVersion)
-                     .domainType(domainType))
+                .with(params)
                 .updateImage();
     }
  
