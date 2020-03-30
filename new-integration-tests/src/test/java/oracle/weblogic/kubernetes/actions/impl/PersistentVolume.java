@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class PersistentVolume {
@@ -11,6 +12,6 @@ public class PersistentVolume {
         return Kubernetes.create(pvYaml);
     }
 
-    public static boolean delete(String pvName) { return Kubernetes.deletePv(pvName); }
+    public static boolean delete(String pvName) throws ApiException { return Kubernetes.deletePv(pvName); }
 
 }

@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class PersistentVolumeClaim {
@@ -11,7 +12,7 @@ public class PersistentVolumeClaim {
         return Kubernetes.create(pvcYaml);
     }
 
-    public static boolean delete(String pvcName, String namespace) {
+    public static boolean delete(String pvcName, String namespace) throws ApiException {
         return Kubernetes.deletePvc(pvcName, namespace);
     }
 }

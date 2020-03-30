@@ -20,6 +20,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.InstallParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WITParams;
 
+import java.io.IOException;
 import java.util.List;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
@@ -232,7 +233,7 @@ public class TestActions {
      * @param pvName the name of the Persistent Volume
      * @return true on success, false otherwise
      */
-    public static boolean deletePersistentVolume(String pvName) {
+    public static boolean deletePersistentVolume(String pvName) throws ApiException {
         return PersistentVolume.delete(pvName);
     }
 
@@ -251,7 +252,7 @@ public class TestActions {
      * @param namespace the namespace of the Persistent Volume Claim
      * @return true on success, false otherwise
      */
-    public static boolean deletePersistentVolumeClaim(String pvcName, String namespace) {
+    public static boolean deletePersistentVolumeClaim(String pvcName, String namespace) throws ApiException {
         return PersistentVolumeClaim.delete(pvcName, namespace);
     }
 
@@ -266,7 +267,7 @@ public class TestActions {
      * @return true on success, false otherwise
      */
     public static boolean createSecret(String secretName,
-                                       String userName, String password, String namespace) {
+                                       String userName, String password, String namespace) throws ApiException {
         return Secret.create(secretName, userName, password, namespace);
     }
 
@@ -276,7 +277,7 @@ public class TestActions {
      * @param namespace the name of the namespace
      * @return true on success, false otherwise
      */
-    public static boolean deleteSecret(String secretName, String namespace) {
+    public static boolean deleteSecret(String secretName, String namespace) throws ApiException {
         return Secret.delete(secretName, namespace);
     }
     // -------------------------- config map ---------------------------------
@@ -288,7 +289,8 @@ public class TestActions {
      * @param fromFile file or dir path
      * @return true on success, false otherwise
      */
-    public static boolean createConfigMap(String cmName, String namespace, String fromFile) {
+    public static boolean createConfigMap(String cmName, String namespace, String fromFile) throws ApiException,
+            IOException {
         return ConfigMap.create(cmName, namespace, fromFile);
     }
 
@@ -298,7 +300,7 @@ public class TestActions {
      * @param namespace the name of the namespace
      * @return true on success, false otherwise
      */
-    public static boolean deleteConfigMap(String cmName, String namespace) {
+    public static boolean deleteConfigMap(String cmName, String namespace) throws ApiException {
         return ConfigMap.delete(cmName, namespace);
     }
 

@@ -11,19 +11,28 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import org.apache.commons.collections.map.HashedMap;
 
 import java.io.File;;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Random;
 
 // TODO ryan - in here we want to implement all of the kubernetes
@@ -227,34 +236,157 @@ public class Kubernetes implements LoggedTest {
 
     // --------------------------- config map ---------------------------
 
-    public static boolean createConfigMap(String cmName, String namespace, String fromFile) {
+    public static boolean createConfigMap(String cmName, String namespace, String fromFile) throws ApiException,
+            IOException {
+        V1ObjectMeta meta = new V1ObjectMeta().name(cmName);
+        V1ConfigMap body = new V1ConfigMap().metadata(meta);
+
+        Properties cmProperties = loadProps(fromFile);
+        body.data((Map) cmProperties);
+
+        V1ConfigMap configMap = coreV1Api.createNamespacedConfigMap(
+                namespace, // config map's namespace
+                body, // config map configuration data
+                pretty, // pretty print output
+                null, // indicates that modifications should not be persisted
+                null  // fieldManager is a name associated with the actor
+                // or entity that is making these changes
+        );
+
         return true;
     }
 
-    public static boolean deleteConfigMap(String cmName, String namespace) {
+    public static List<String> listConfigMaps(String namespace) throws ApiException {
+        ArrayList<String> configMaps = new ArrayList<>();
+
+        V1ConfigMapList configMapList = coreV1Api.listNamespacedConfigMap(
+                namespace, // config map's namespace
+                pretty, // pretty print output
+                allowWatchBookmarks, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+                null, // set when retrieving more results from the server
+                null, // selector to restrict the list of returned objects by their fields
+                null, // selector to restrict the list of returned objects by their labels
+                null, // maximum number of responses to return for a list call
+                resourceVersion, // shows changes that occur after that particular version of a resource
+                timeoutSeconds, // Timeout for the list/watch call
+                false // Watch for changes to the described resources
+                );
+
+        for (V1ConfigMap cm : configMapList.getItems()) {
+            configMaps.add(cm.getMetadata().getName());
+        }
+
+        return configMaps;
+    }
+
+    public static boolean deleteConfigMap(String cmName, String namespace) throws ApiException {
+        V1DeleteOptions deleteOptions = new V1DeleteOptions();
+
+        V1Status status = coreV1Api.deleteNamespacedConfigMap(
+                cmName, // name of config map
+                namespace,  // name of the Namespace
+                pretty, // pretty print output
+                null, // indicates that modifications should not be persisted
+                0, // duration in seconds before the object should be deleted
+                false, // Should the dependent objects be orphaned
+                "Foreground", // Whether and how garbage collection will be performed
+                deleteOptions
+        );
+
         return true;
     }
 
     // --------------------------- secret ---------------------------
 
     public static boolean createSecret(String secretName,
-                                       String username, String password, String namespace) {
+                                       String username, String password, String namespace) throws ApiException {
+        V1ObjectMeta meta = new V1ObjectMeta().name(secretName);
+        HashMap<String, byte[]> data = new HashMap<>();
+        data.put("username", username.getBytes(StandardCharsets.UTF_8));
+        data.put("password", password.getBytes(StandardCharsets.UTF_8));
+        V1Secret body = new V1Secret().metadata(meta).type("Opaque").data(data);
+
+        // TODO: what about labels?
+
+        V1Secret secret = coreV1Api.createNamespacedSecret(
+                namespace, // name of the Namespace
+                body, // secret configuration data
+                pretty, // pretty print output
+                null, // indicates that modifications should not be persisted
+                null // fieldManager is a name associated with the actor
+        );
+
         return true;
     }
 
-    public static boolean deleteSecret(String cmName, String namespace) {
+    public static boolean deleteSecret(String cmName, String namespace) throws ApiException {
+        V1DeleteOptions deleteOptions = new V1DeleteOptions();
+
+        V1Status status = coreV1Api.deleteNamespacedSecret(
+                cmName,// name of secret
+                namespace,  // name of the Namespace
+                pretty, // pretty print output
+                null, // indicates that modifications should not be persisted
+                0, // duration in seconds before the object should be deleted
+                false, // Should the dependent objects be orphaned
+                "Foreground", // Whether and how garbage collection will be performed
+                deleteOptions
+        );
+
         return true;
     }
 
     // --------------------------- pv/pvc ---------------------------
 
-    public static boolean deletePv(String pvName) {
+    public static boolean deletePv(String pvName) throws ApiException {
+        V1DeleteOptions deleteOptions = new V1DeleteOptions();
+
+        V1Status status = coreV1Api.deletePersistentVolume(
+                pvName, // persistent volume (PV) name
+                pretty, // pretty print output
+                null, // indicates that modifications should not be persisted
+                0, // duration in seconds before the object should be deleted
+                false, // Should the dependent objects be orphaned
+                "Foreground", // Whether and how garbage collection will be performed
+                deleteOptions
+        );
+
         return true;
     }
 
-    public static boolean deletePvc(String pvcName, String namespace) {
+    public static boolean deletePvc(String pvcName, String namespace) throws ApiException {
+        V1DeleteOptions deleteOptions = new V1DeleteOptions();
+
+        V1Status status = coreV1Api.deleteNamespacedPersistentVolumeClaim(
+                pvcName, // persistent volume claim (PV) name
+                namespace,
+                pretty, // pretty print output
+                null, // indicates that modifications should not be persisted
+                0, // duration in seconds before the object should be deleted
+                false, // Should the dependent objects be orphaned
+                "Foreground", // Whether and how garbage collection will be performed
+                deleteOptions
+        );
+
         return true;
     }
     // --------------------------
 
+    /**
+     * TODO:  This should go in a utilities class?
+     * load properties.
+     * @param propsFile properties file
+     * @return properties
+     * @throws Exception on failure
+     */
+    private static Properties loadProps(String propsFile) throws IOException {
+        Properties props = new Properties();
+
+        // load props
+        FileInputStream inStream = new FileInputStream(propsFile);
+        props.load(inStream);
+        inStream.close();
+
+        return props;
+    }
 }
