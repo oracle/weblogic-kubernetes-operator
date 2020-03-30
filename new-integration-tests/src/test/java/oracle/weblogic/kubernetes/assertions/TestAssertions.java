@@ -32,7 +32,7 @@ public class TestAssertions {
   }
 
   /**
-   * Check if a weblogic custom resource domain exists in specified namespace and all its pods are running.
+   * Check if a WebLogic custom resource domain exists in specified namespace and all its pods are running.
    * @param domainUID ID of the domain
    * @param namespace in which the domain custom resource exists
    * @return true if domain exists and pods running otherwise false
@@ -42,9 +42,9 @@ public class TestAssertions {
   }
 
   /**
-   * Check if a kubernetes pod is in running/ready state.
+   * Check if a Kubernetes pod is in running/ready state.
    * @param podName name of the pod to check for
-   * @param domainUID weblogic domain uid in which the pod belongs
+   * @param domainUID WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is running otherwise false
    */
@@ -55,7 +55,7 @@ public class TestAssertions {
   /**
    * Check if a pod given by the podName is in Terminating state.
    * @param podName name of the pod to check for Terminating status
-   * @param domainUID weblogic domain uid in which the pod belongs
+   * @param domainUID WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is terminating otherwise false
    */
@@ -75,7 +75,7 @@ public class TestAssertions {
 
   /**
    * Check if a loadbalancer pod is ready.
-   * @param domainUID id of the weblogic domain custom resource domain
+   * @param domainUID id of the WebLogic domain custom resource domain
    * @return
    */
   public static boolean loadbalancerReady(String domainUID) {
@@ -95,7 +95,7 @@ public class TestAssertions {
   /**
    * Check if a adminserver T3 channel is accessible.
    * @param domainUID id of the domain in which admin server pod is running
-   * @param namespace in which the weblogic server pod exists
+   * @param namespace in which the WebLogic server pod exists
    * @return true if the admin T3 channel is accessible otherwise false
    */
   public static boolean adminT3ChannelAccessible(String domainUID, String namespace) {
@@ -105,7 +105,7 @@ public class TestAssertions {
   /**
    * Check if a admin server pod admin node port is accessible.
    * @param domainUID domainUID id of the domain in which admin server pod is running
-   * @param namespace in which the weblogic server pod exists
+   * @param namespace in which the WebLogic server pod exists
    * @return true if the admin node port is accessible otherwise false
    */
   public static boolean adminNodePortAccessible(String domainUID, String namespace) {
