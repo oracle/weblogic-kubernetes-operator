@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -10,7 +10,7 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Operator {
 
-    public static Callable<Boolean> isRunning() {
+    public static Callable<Boolean> isRunning(String namespace) {
         // this uses a rand, to simulate that this operation can take
         // variable amounts of time to complete
         return () -> {
@@ -23,5 +23,8 @@ public class Operator {
                 return false;
             }
         };
+    }
+    public static boolean isRestServiceCreated(String namespace) {
+        return true;
     }
 }

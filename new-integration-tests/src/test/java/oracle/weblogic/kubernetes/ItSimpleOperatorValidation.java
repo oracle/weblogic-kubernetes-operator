@@ -85,7 +85,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
                 // and here we can set the maximum time we are prepared to wait
                 .await().atMost(5, MINUTES)
                 // operatorIsRunning() is one of our custom, reusable assertions
-                .until(operatorIsRunning());
+                .until(operatorIsRunning(""));
 
         // i have not done anything yet about reporting the reason for the failure :)
     }
