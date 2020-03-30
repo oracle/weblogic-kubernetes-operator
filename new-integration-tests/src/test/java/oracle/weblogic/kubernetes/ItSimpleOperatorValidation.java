@@ -1,12 +1,14 @@
-// Copyright 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.util.Arrays;
+
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
-import oracle.weblogic.kubernetes.extensions.tags.MustNotRunInParallel;
-import oracle.weblogic.kubernetes.extensions.tags.Slow;
+import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
+import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -14,6 +16,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -32,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 // order. this is controlled with the TestMethodOrder annotation
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Simple validation of basic operator functions")
-// this is an exmaple of registering an extension that will time how long each test takes.
+// this is an example of registering an extension that will time how long each test takes.
 @ExtendWith(Timing.class)
 // by implementing the LoggedTest, we will automatically get a logger injected and it
 // will also automatically log entry/exit messages for each test method.
@@ -51,7 +54,13 @@ class ItSimpleOperatorValidation implements LoggedTest {
         // imagine that installOperator() will try to install the operator, by creating
         // the kubernetes deployment.  this will complete quickly, and will either be
         // successful or not.
-        boolean success = installOperator();
+
+        OperatorParams opParams =
+            new OperatorParams().image("weblogic-kubernetes-operator:test_itsimpleoperator")
+                                .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
+                                .serviceAccount("sa-opns1");
+        boolean success = installOperator("weblogic-operator", "opns1", opParams);
+
         // we can use a standard JUnit assertion to check on the result
         assertEquals(true, success, "There MUST be a descriptive message here");
 

@@ -1,14 +1,13 @@
-// Copyright 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.extensions.Timing;
-import oracle.weblogic.kubernetes.extensions.tags.Slow;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -16,10 +15,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static org.awaitility.Awaitility.with;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Simple validation of basic domain functions")
-@ExtendWith(Timing.class)
+@IntegrationTest
 class ItSimpleDomainValidation implements LoggedTest {
 
     @Test
@@ -36,7 +35,7 @@ class ItSimpleDomainValidation implements LoggedTest {
 
         // create the domain CR
         boolean success = createDomainCustomResource(domainUID, namespace, domainYAML);
-        assertEquals(true, success);
+        assertTrue(success);
 
         // wait for the domain to exist
         with().pollDelay(30, SECONDS)

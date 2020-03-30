@@ -2004,4 +2004,37 @@ public class TestUtils {
     TestUtils.exec(cmd);
   }
 
+  /**
+   * Utility method to find CreationTimeStamp for a Pod.
+   * @param namespace namespace for the pod
+   * @param pod       name of the pod
+   * @return creationTimestamp of the Pod 
+   * @throws Exception on failure
+   */
+  public static String getCreationTimeStamp(String namespace, String pod) throws Exception {
+    String kcmd = "kubectl get pod "
+              + pod 
+              + " --namespace "
+              + namespace
+              + " -o jsonpath='{.metadata.creationTimestamp}'";
+    ExecResult result = ExecCommand.exec(kcmd);
+    return result.stdout().trim();
+  }
+
+  /**
+   * Utility method to find DeletionTimestamp for a Pod.
+   * @param namespace namespace for the pod
+   * @param pod       name of the pod
+   * @return deletionTimestamp of the Pod 
+   * @throws Exception on failure
+   */
+  public static String getDeletionTimestamp(String namespace, String pod) throws Exception {
+    String kcmd = "kubectl get pod "
+              + pod 
+              + " --namespace "
+              + namespace
+              + " -o jsonpath='{.metadata.deletionTimestamp}'";
+    ExecResult result = ExecCommand.exec(kcmd);
+    return result.stdout().trim();
+  }
 }
