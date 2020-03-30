@@ -27,7 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * This JUnit test is used for testing
  * Wdt Config Override with Model File(s) to existing MII domain
  *
  * <p>This test is used for creating domain using model in image.
@@ -49,7 +48,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
    * properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
    *
-   * @throws Exception exception if initializing the application properties
+   * @throws Exception if initializing the application properties
    *          and creates directories for results fails.
    */
   @BeforeAll
@@ -65,7 +64,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
    * This method creates the result/pv root directories for the test.
    * Creates the operator if its not running.
    *
-   * @throws Exception exception if result/pv/operator/domain creation fails
+   * @throws Exception if Operator creation fails
    */
   @BeforeEach
   public void prepare() throws Exception {
@@ -86,7 +85,8 @@ public class ItModelInImageOverride extends MiiBaseTest {
   /**
    * Releases k8s cluster lease, archives result, pv directories.
    *
-   * @throws Exception exception
+   * @throws Exception when errors while running statedump.sh or cleanup.sh
+   *         scripts or while renewing the lease for shared cluster run
    */
   @AfterAll
   public static void staticUnPrepare() throws Exception {
@@ -103,7 +103,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
    * and update the domain crd to change domain restartVersion to reload the model,
    * generate new config and initiate a rolling restart.
    *
-   * @throws Exception exception
+   * @throws Exception if domain creation, config override or test veriofication fails
    */
   @Test
   public void testMiiOverrideNonExistJdbc() throws Exception {
@@ -122,13 +122,12 @@ public class ItModelInImageOverride extends MiiBaseTest {
       // copy model files that contains JDBC DS to a dir to re-create cm
       String destDir = copyTestModelFiles();
 
-      // override config
+      // re-create cm to override config
       wdtConfigOverride(destDir);
 
       // update domain yaml with restartVersion and
       // apply the domain yaml, verify domain restarted
-      String versionNo = "v1.1";
-      modifyDomainYamlWithRestartVersion(domain, versionNo);
+      modifyDomainYamlWithRestartVersion(domain, domainNS);
 
       // verify the test result by checking override config file on server pod
       verifyJdbcOverride();
@@ -158,7 +157,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
    * and update the domain crd to change domain restartVersion to reload the model,
    * generate new config and initiate a rolling restart.
    *
-   * @throws Exception exception
+   * @throws Exception if domain creation, config override or test veriofication fails
    */
   @Test
   public void testMiiOverrideExistJdbc() throws Exception {
@@ -180,20 +179,18 @@ public class ItModelInImageOverride extends MiiBaseTest {
       Set<String> jdbcResourcesToVerify = new HashSet<String>();
       jdbcResourcesToVerify.add("datasource.name.1=" + dsName);
       jdbcResourcesToVerify.add("datasource.readTimeout.1=" + readTimeout_1);
-      String destDir = getResultDir() + "/samples/model-in-image/scripts/";
 
+      // Get dest dir and
+      // copy another model files that contain JDBC DS to a dir to re-create cm
+      String destDir = copyTestModelFiles();
       verifyJdbcResources(jdbcResourcesToVerify, destDir);
 
-      // copy another model files that contain JDBC DS to a dir to re-create cm
-      destDir = copyTestModelFiles();
-
-      // override config
+      // re-create cm to override config
       wdtConfigOverride(destDir);
 
       // update domain yaml with restartVersion and
       // apply the domain yaml, verify domain restarted
-      String versionNo = "v1.1";
-      modifyDomainYamlWithRestartVersion(domain, versionNo);
+      modifyDomainYamlWithRestartVersion(domain, domainNS);
 
       // verify the test result by checking override config file on server pod
       verifyJdbcOverride();
@@ -344,16 +341,16 @@ public class ItModelInImageOverride extends MiiBaseTest {
 
     // copy verification file to test dir
     String origDir = BaseTest.getProjectRoot()
-        + "/integration-tests/src/test/resources/model-in-image/scripts/";
+        + "/integration-tests/src/test/resources/model-in-image/scripts";
     String pyFileName = "verify-jdbc-resource.py";
     Files.createDirectories(Paths.get(destDir));
-    TestUtils.copyFile(origDir + pyFileName, destDir + pyFileName);
+    TestUtils.copyFile(origDir + "/" + pyFileName, destDir + "/" + pyFileName);
 
     // replace var in verification file
     String tempDir = getResultDir() + "/jdbcoverridetemp-" + domainNS;
     Files.createDirectories(Paths.get(tempDir));
     String content =
-        new String(Files.readAllBytes(Paths.get(destDir + pyFileName)), StandardCharsets.UTF_8);
+        new String(Files.readAllBytes(Paths.get(destDir + "/" + pyFileName)), StandardCharsets.UTF_8);
     content = content.replaceAll("DOMAINNAME", domainName);
     Files.write(
         Paths.get(tempDir, pyFileName),
@@ -375,7 +372,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
         .append(domainNS)
         .append(" exec -it ")
         .append(adminPodName)
-        .append(" -- bash -c 'mkdir ")
+        .append(" -- bash -c 'mkdir -p ")
         .append(BaseTest.getAppLocationInPod())
         .append("'");
     LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);

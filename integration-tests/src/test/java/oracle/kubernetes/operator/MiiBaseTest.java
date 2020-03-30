@@ -119,41 +119,68 @@ public class MiiBaseTest extends BaseTest {
 
   /**
    * Modify the domain yaml to change domain-level restart version.
-   * @param domain the domain
+   * @param domainNS the domain namespace
+   * @param domainUid the domain UID
    * @param versionNo version number of domain
    *
-   * @throws Exception on failure
+   * @throws Exception if patching domain fails
    */
   protected void modifyDomainYamlWithRestartVersion(
-      Domain domain, String versionNo) throws Exception {
-    String originalYaml =
-        getUserProjectsDir()
-        + "/weblogic-domains/"
-        + domain.getDomainUid()
-        + "/domain.yaml";
+      Domain domain, String domainNS) throws Exception {
+    String versionNo = getRestartVersion(domainNS, domain.getDomainUid());
+    StringBuffer patchDomainCmd = new StringBuffer("kubectl -n ");
+    patchDomainCmd
+        .append(domainNS)
+        .append(" patch domain ")
+        .append(domain.getDomainUid())
+        .append(" --type='json' ")
+        .append(" -p='[{\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"'")
+        .append(versionNo)
+        .append("'\" }]'");
 
-    // Modify the original domain yaml to include restartVersion in admin server node
-    DomainCrd crd = new DomainCrd(originalYaml);
-    Map<String, String> objectNode = new HashMap();
-    objectNode.put("restartVersion", versionNo);
-    crd.addObjectNodeToDomain(objectNode);
-    String modYaml = crd.getYamlTree();
-    LoggerHelper.getLocal().log(Level.INFO, modYaml);
+    // patching the domain
+    LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
+    ExecResult result = TestUtils.exec(patchDomainCmd.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
 
-    // Write the modified yaml to a new file
-    Path path = Paths.get(getUserProjectsDir()
-        + "/weblogic-domains/"
-        + domain.getDomainUid(), "modified.domain.yaml");
-    LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
-    Charset charset = StandardCharsets.UTF_8;
-    Files.write(path, modYaml.getBytes(charset));
+    // verify the domain restarted
+    domain.verifyAdminServerRestarted();
+    domain.verifyManagedServersRestarted();
+  }
 
-    // Apply the new yaml to update the domain crd
-    LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
-    ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
-    LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
-    LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
-    domain.verifyDomainRestarted();
+  private String getRestartVersion(String domainNS, String domainUid) throws Exception {
+    String versionNo = "1";
+    StringBuffer getVersionCmd = new StringBuffer("kubectl -n ");
+    getVersionCmd
+        .append(domainNS)
+        .append(" get domain ")
+        .append(domainUid)
+        .append("-o=jsonpath='{.spec.restartVersion}'");
+
+    LoggerHelper.getLocal().log(Level.INFO, "Command to get restartVersion: " + getVersionCmd);
+    try {
+      ExecResult result = TestUtils.exec(getVersionCmd.toString());
+      String existinVersion = result.stdout();
+      LoggerHelper.getLocal().log(Level.INFO, "Existing restartVersion is: " + existinVersion);
+
+      // check restartVersion number is digit
+      if (existinVersion.matches("-?(0|[1-9]\\d*)")) {
+        int number = Integer.parseInt(existinVersion);
+        // if restartVersion is a digit, increase it by 1
+        versionNo = String.valueOf(Integer.parseInt(versionNo) + number);
+      } else {
+        // if restartVersion is not a digit, append 1 to it
+        versionNo = existinVersion + versionNo;
+      }
+    } catch (Exception ex) {
+      if (ex.getMessage().contains("not found")) {
+        LoggerHelper.getLocal().log(Level.INFO, "Not Version num found. Set the restartVersion the first time");
+      }
+    }
+
+    LoggerHelper.getLocal().log(Level.INFO, "New restartVersion is: " + versionNo);
+
+    return versionNo;
   }
 
   enum WdtDomainType {
