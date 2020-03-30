@@ -27,12 +27,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Wdt Config Override with Model File(s) to existing MII domain
+ * Wdt Config Update with Model File(s) to existing MII domain
  *
  * <p>This test is used for creating domain using model in image.
  */
 
-public class ItModelInImageOverride extends MiiBaseTest {
+public class ItModelInImageConfigUpdate extends MiiBaseTest {
   private static Operator operator;
   private static Domain domain;
   private static String domainNS;
@@ -49,7 +49,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
    * the resultRoot, pvRoot and projectRoot attributes.
    *
    * @throws Exception if initializing the application properties
-   *          and creates directories for results fails.
+   *         and creates directories for results fails.
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
@@ -70,7 +70,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
   public void prepare() throws Exception {
     createResultAndPvDirs(testClassName);
 
-    // create operator1
+    // create operator
     if (operator == null) {
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
           true, testClassName);
@@ -103,10 +103,10 @@ public class ItModelInImageOverride extends MiiBaseTest {
    * and update the domain crd to change domain restartVersion to reload the model,
    * generate new config and initiate a rolling restart.
    *
-   * @throws Exception if domain creation, config override or test veriofication fails
+   * @throws Exception if domain creation, config update or test veriofication fails
    */
   @Test
-  public void testMiiOverrideNonExistJdbc() throws Exception {
+  public void testMiiConfigUpdateNonExistJdbc() throws Exception {
     Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -122,15 +122,15 @@ public class ItModelInImageOverride extends MiiBaseTest {
       // copy model files that contains JDBC DS to a dir to re-create cm
       String destDir = copyTestModelFiles();
 
-      // re-create cm to override config
-      wdtConfigOverride(destDir);
+      // re-create cm to update config
+      wdtConfigUpdate(destDir);
 
       // update domain yaml with restartVersion and
       // apply the domain yaml, verify domain restarted
       modifyDomainYamlWithRestartVersion(domain, domainNS);
 
-      // verify the test result by checking override config file on server pod
-      verifyJdbcOverride();
+      // verify the test result by checking updated config file on server pod
+      verifyJdbcUpdate();
 
       // verify that JDBC DS is created by checking JDBC DS name and read timeout
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
@@ -157,10 +157,10 @@ public class ItModelInImageOverride extends MiiBaseTest {
    * and update the domain crd to change domain restartVersion to reload the model,
    * generate new config and initiate a rolling restart.
    *
-   * @throws Exception if domain creation, config override or test veriofication fails
+   * @throws Exception if domain creation, config update or test veriofication fails
    */
   @Test
-  public void testMiiOverrideExistJdbc() throws Exception {
+  public void testMiiConfigUpdateExistJdbc() throws Exception {
     Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -185,15 +185,15 @@ public class ItModelInImageOverride extends MiiBaseTest {
       String destDir = copyTestModelFiles();
       verifyJdbcResources(jdbcResourcesToVerify, destDir);
 
-      // re-create cm to override config
-      wdtConfigOverride(destDir);
+      // re-create cm to update config
+      wdtConfigUpdate(destDir);
 
       // update domain yaml with restartVersion and
       // apply the domain yaml, verify domain restarted
       modifyDomainYamlWithRestartVersion(domain, domainNS);
 
-      // verify the test result by checking override config file on server pod
-      verifyJdbcOverride();
+      // verify the test result by checking updated config file on server pod
+      verifyJdbcUpdate();
 
       // verify that JDBC DS is created by checking JDBC DS name,
       // connection timeout and read timeout via WLST on server pod
@@ -219,7 +219,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Creating configMap");
     String origDir = BaseTest.getProjectRoot()
         + "/integration-tests/src/test/resources/model-in-image";
-    String destDir = getResultDir() + "/samples/model-in-image-override";
+    String destDir = getResultDir() + "/samples/model-in-image-update";
     final String modelFile = "model.jdbc.yaml";
     final String propFile = "model.jdbc.properties";
     Files.deleteIfExists(Paths.get(destDir));
@@ -269,7 +269,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
     Assertions.assertNotNull(domain, "Failed to create a domain");
   }
 
-  private void wdtConfigOverride(String destDir) throws Exception {
+  private void wdtConfigUpdate(String destDir) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Creating configMap...");
 
     // Re-create config map after deploying domain crd
@@ -280,7 +280,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
     TestUtils.createConfigMap(cmName, destDir, domainNS, label);
   }
 
-  private void verifyJdbcOverride() throws Exception {
+  private void verifyJdbcUpdate() throws Exception {
     final String jndiName = "jdbc/generic1";
     // get domain name
     StringBuffer cmdStrBuff = new StringBuffer("kubectl get domain -n ");
@@ -293,7 +293,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
     String domainName = result.stdout();
     LoggerHelper.getLocal().log(Level.INFO, "Domain name is: " + domainName);
 
-    // check JDBC DS override
+    // check JDBC DS update
     cmdStrBuff = new StringBuffer("kubectl -n ");
     cmdStrBuff
         .append(domainNS)
@@ -313,7 +313,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "JDBC DS info from server pod: " + result.stdout());
 
     Assertions.assertTrue(result.stdout().contains("<jndi-name>" + jndiName + "</jndi-name>"),
-        "JDBC DS doesn't override");
+        "JDBC DS doesn't update");
   }
 
   private void verifyJdbcResources(Set<String> jdbcResourcesSet, String destDir) throws Exception {
@@ -347,7 +347,7 @@ public class ItModelInImageOverride extends MiiBaseTest {
     TestUtils.copyFile(origDir + "/" + pyFileName, destDir + "/" + pyFileName);
 
     // replace var in verification file
-    String tempDir = getResultDir() + "/jdbcoverridetemp-" + domainNS;
+    String tempDir = getResultDir() + "/configupdatetemp-" + domainNS;
     Files.createDirectories(Paths.get(tempDir));
     String content =
         new String(Files.readAllBytes(Paths.get(destDir + "/" + pyFileName)), StandardCharsets.UTF_8);
