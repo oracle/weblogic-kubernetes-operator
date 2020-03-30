@@ -11,11 +11,6 @@ public class Domain {
     return () -> {
       String pods[] = {};
       for (String pod : pods) {
-        if (!Kubernetes.podExists(pod, domainUID, namespace).call().booleanValue()) {
-          return false;
-        }
-      }
-      for (String pod : pods) {
         if (!Kubernetes.podRunning(pod, domainUID, namespace).call().booleanValue()) {
           return false;
         }
