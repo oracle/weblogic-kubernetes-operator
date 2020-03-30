@@ -239,7 +239,7 @@ public class Operator {
   /**
    * scale the given cluster in a domain to the given number of servers using Operator REST API.
    *
-   * @param domainUid   uid
+   * @param domainUid   uid of domain there scale happen
    * @param clusterName cluster name
    * @param numOfMS     number of servers
    * @throws Exception fails if scaling is not successful
