@@ -12,22 +12,50 @@ import java.util.Random;
 public class WITParams {
 
     // TODO we'll start with these parameters, and will add as needed.
-    private String baseName;
-    private String tag;
+    private String baseImageName;
+    private String baseImageTag;
+    private String modelImageName;
+    private String modelImageTag;
     private List<String> modelFiles;
     private List<String> modelVariableFiles;
     private List<String> modelArchiveFiles;
     private String wdtVersion;
     private String domainType;
         
-    public WITParams baseName(String baseName) {
-    	this.baseName = baseName;
+    public WITParams baseImageName(String baseImageName) {
+    	this.baseImageName = baseImageName;
     	return this;
     }
 
-    public WITParams tag(String tag) {
-    	this.tag = tag;
+    public String getBaseImageName() {
+        return baseImageName;
+    }
+
+    public WITParams baseImageTag(String baseImageTag) {
+    	this.baseImageTag = baseImageTag;
     	return this;
+    }
+
+    public String getBaseImageTag() {
+        return baseImageTag;
+    }
+
+    public WITParams modelImageName(String modelImageName) {
+    	this.modelImageName = modelImageName;
+    	return this;
+    }
+
+    public String getModelImageName() {
+        return modelImageName;
+    }
+
+    public WITParams modelImageTag(String modelImageTag) {
+    	this.modelImageTag = modelImageTag;
+    	return this;
+    }
+
+    public String getModelImageTag() {
+        return modelImageTag;
     }
 
     public WITParams wdtVersion(String wdtVersion) {
@@ -35,9 +63,17 @@ public class WITParams {
     	return this;
     }
 
-    public WITParams domainType(String baseName) {
-    	this.baseName = baseName;
+    public String getWdtVersion() {
+        return wdtVersion;
+    }
+
+    public WITParams domainType(String domainType) {
+    	this.domainType = domainType;
     	return this;
+    }
+
+    public String getDomainType() {
+        return domainType;
     }
 
     public WITParams modelFiles(List<String> modelFiles) {
@@ -45,9 +81,17 @@ public class WITParams {
     	return this;
     }
 
-    public WITParams modelVariableFiles(List<String> modelVeriableFiles) {
+    public List<String> getModelFiles() {
+        return modelFiles;
+    }
+
+    public WITParams modelVariableFiles(List<String> modelVariableFiles) {
     	this.modelVariableFiles = modelVariableFiles;
     	return this;
+    }
+
+    public List<String> getModelVariableFiles() {
+        return modelVariableFiles;
     }
 
     public WITParams modelArchiveFiles(List<String> modelArchiveFiles) {
@@ -55,4 +99,12 @@ public class WITParams {
     	return this;
     }
    
+    public List<String> getModelArchiveFiles() {
+        return modelArchiveFiles;
+    }
+
+    public String getGeneratedImageName() {
+        return modelImageName + ":" + modelImageTag;
+    }
+
 }

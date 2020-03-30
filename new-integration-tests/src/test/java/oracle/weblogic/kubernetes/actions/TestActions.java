@@ -59,7 +59,7 @@ public class TestActions {
     public static boolean verifyAndInstallWIT(String version, String location) {
         return new Installer()
             .with(new InstallParams()
-                  .type("WIT")
+                  .type(InstallParams.WIT_TYPE)
                   .version(version)
                   .location(location))
             .download();
@@ -68,7 +68,7 @@ public class TestActions {
     public static boolean verifyAndInstallWDT(String version, String location) {
         return new Installer()
             .with(new InstallParams()
-                  .type("WDT")
+                  .type(InstallParams.WDT_TYPE)
                   .version(version)
                   .location(location))
             .download();
