@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -31,8 +32,19 @@ class ItSimpleDomainValidation implements LoggedTest {
         String domainYAML= "something";
 
         // get a new unique namespace
-        String namespace = createUniqueNamespace();
-        logger.info(String.format("Got a new namespace called %s", namespace));
+        String namespace = null;
+        try {
+            namespace = createUniqueNamespace();
+            logger.info(String.format("Got a new namespace called %s", namespace));
+        } catch (ApiException e) {
+            // TODO: test in the calling method where we say something like
+            //
+            //  assert.DoesNotThrow(whatever(), ApiException.class, e,
+            //    String.format("could not do whatever, got exception %s", e))
+            //
+            //  so we have the exception and we can print out a meaningful error message
+        }
+
 
         // create the domain CR
         boolean success = createDomainCustomResource(domainUID, namespace, domainYAML);
@@ -55,8 +67,14 @@ class ItSimpleDomainValidation implements LoggedTest {
         // wait for the managed servers to exist
 
         // Delete namespace
-        deleteNamespace(namespace);
-        logger.info("Deleted namespace: " + namespace);
+        try {
+            deleteNamespace(namespace);
+            logger.info("Deleted namespace: " + namespace);
+        } catch (Exception e) {
+            // TODO: Fix as there is a known bug that delete can return either the object
+            //  just deleted or a status.  We can workaround by either retrying or using
+            //  the general GenericKubernetesApi client class and doing our own type checks
+        }
 
     }
 

@@ -1,8 +1,9 @@
-// Copyright 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions;
 
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
@@ -26,7 +27,7 @@ public class TestActions {
         return Domain.createDomainCustomResource(domainUID, namespace, domainYAML);
     }
 
-    public static List<String> listDomainCustomResources(String namespace) {
+    public static List<String> listDomainCustomResources(String namespace) throws ApiException {
         return Domain.listDomainCustomResources(namespace);
     }
 
@@ -36,19 +37,19 @@ public class TestActions {
 
     // -------------------------  namespaces -------------------------------
 
-    public static boolean createNamespace(String name) {
+    public static boolean createNamespace(String name) throws ApiException {
         return Namespace.createNamespace(name);
     }
 
-    public static String createUniqueNamespace() {
+    public static String createUniqueNamespace() throws ApiException {
         return Namespace.createUniqueNamespace();
     }
 
-    public static List<String> listNamespaces() {
+    public static List<String> listNamespaces() throws ApiException {
         return Namespace.listNamespaces();
     }
 
-    public static boolean deleteNamespace(String name) {
+    public static boolean deleteNamespace(String name) throws ApiException {
         return Namespace.deleteNamespace(name);
     }
 

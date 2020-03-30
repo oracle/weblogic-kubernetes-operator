@@ -1,4 +1,4 @@
-// Copyright 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.ClientBuilder;
+import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
 import java.io.File;
 import java.io.FileReader;
@@ -30,7 +31,7 @@ import java.util.Random;
 // primitives that we need, using the API, not spawning a process
 // to run kubectl.
 
-public class Kubernetes {
+public class Kubernetes implements LoggedTest {
 
     private static String pretty = "false";
     private static Boolean allowWatchBookmarks = false;
@@ -77,19 +78,19 @@ public class Kubernetes {
 
     // --------------------------- namespaces -----------------------------------
 
-    public static boolean createNamespace(String name) {
-        V1ObjectMeta meta = new V1ObjectMeta();
-        meta.name(name);
-        V1Namespace namespace = new V1Namespace();
-        namespace.metadata(meta);
-        try {
-            namespace = coreV1Api.createNamespace(namespace, pretty, null, null);
-            System.out.println("Kubernetes.createNamespace namespace: " + namespace);
-            return true;
-        } catch (ApiException e) {
-            e.printStackTrace();
-        }
-        return false;
+    public static boolean createNamespace(String name) throws ApiException {
+        V1ObjectMeta meta = new V1ObjectMeta().name(name);
+        V1Namespace namespace = new V1Namespace().metadata(meta);
+
+        namespace = coreV1Api.createNamespace(
+                namespace, // name of the Namespace
+                pretty, // pretty print output
+                null, // indicates that modifications should not be persisted
+                null // fieldManager is a name associated with the actor
+                // or entity that is making these changes
+        );
+
+        return true;
     }
 
     /**
@@ -98,7 +99,7 @@ public class Kubernetes {
      * 26^4 possible combinations, and create a namespace using that random name.
      * @return the name of the new namespace.
      */
-    public static String createUniqueNamespace() {
+    public static String createUniqueNamespace() throws ApiException {
         char[] name = new char[4];
         for (int i = 0; i < name.length; i++) {
             name[i] = (char)(random.nextInt(25) + (int)'a');
@@ -111,71 +112,95 @@ public class Kubernetes {
         }
     }
 
-    public static List<String> listNamespaces() {
+    public static List<String> listNamespaces() throws ApiException {
         ArrayList<String> nameSpaces = new ArrayList<>();
-        try {
-            V1NamespaceList namespaceList = coreV1Api.listNamespace(pretty, allowWatchBookmarks, null, null, null, null, resourceVersion, timeoutSeconds, false);
 
-            for (V1Namespace namespace : namespaceList.getItems()) {
-                nameSpaces.add(namespace.getMetadata().getName());
-            }
-        } catch (ApiException e) {
-            e.printStackTrace();
+        V1NamespaceList namespaceList = coreV1Api.listNamespace(
+                pretty, // pretty print output
+                allowWatchBookmarks, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+                null, // set when retrieving more results from the server
+                null, // selector to restrict the list of returned objects by their fields
+                null, // selector to restrict the list of returned objects by their labels
+                null, // maximum number of responses to return for a list call
+                resourceVersion, // shows changes that occur after that particular version of a resource
+                timeoutSeconds, // Timeout for the list/watch call
+                false // Watch for changes to the described resources
+        );
+
+        for (V1Namespace namespace : namespaceList.getItems()) {
+            nameSpaces.add(namespace.getMetadata().getName());
         }
 
         return nameSpaces;
     }
 
-    public static boolean deleteNamespace(String name) {
+    public static boolean deleteNamespace(String name) throws ApiException {
         V1DeleteOptions deleteOptions = new V1DeleteOptions();
-        try {
-            V1Status status = coreV1Api.deleteNamespace(name, pretty, null, timeoutSeconds, false, "Foreground", deleteOptions);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
+
+        V1Status status = coreV1Api.deleteNamespace(
+                name, // name of the Namespace
+                pretty, // pretty print output
+                null, // indicates that modifications should not be persisted
+                0, // duration in seconds before the object should be deleted
+                false, // Should the dependent objects be orphaned
+                "Foreground", // Whether and how garbage collection will be performed
+                deleteOptions
+        );
+        return true;
+
     }
 
     // --------------------------- Custom Resource Domain -----------------------------------
 
-    public static boolean createDomain(String domainUID, String namespace, String domainYAML) {
+    public static boolean createDomain(String domainUID, String namespace, String domainYAML) throws IOException, ApiException {
         final String localVarPath =
                 DOMAIN_PATH.replaceAll("\\{namespace\\}", apiClient.escapeString(namespace));
 
         Object json = null;
-        try {
-            json = convertYamlToJson(domainYAML);
-            Object response = customObjectsApi.createClusterCustomObject(DOMAIN_GROUP, DOMAIN_VERSION, localVarPath, json, null);
-            return true;
-        } catch (ApiException | IOException e) {
-            e.printStackTrace();
-        }
-        return false;
+
+        json = convertYamlToJson(domainYAML);
+        Object response = customObjectsApi.createNamespacedCustomObject(
+                DOMAIN_GROUP, // custom resource's group name
+                DOMAIN_VERSION, // //custom resource's version
+                namespace, // custom resource's namespace
+                localVarPath, // custom resource's plural name
+                json, // JSON schema of the Resource to create
+                null // pretty print output
+        );
+        return true;
+
     }
 
     private static Object convertYamlToJson(String yamlFile) throws IOException {
         ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
         Object yamlObj = yamlReader.readValue(new File(yamlFile), Object.class);
-        System.out.println("Kubernetes.convertYamlToJson yaml: " + yamlObj);
+        logger.info("Kubernetes.convertYamlToJson yaml: " + yamlObj);
 
         ObjectMapper jsonWriter = new ObjectMapper();
         String writeValueAsString = jsonWriter.writeValueAsString(yamlObj);
-        System.out.println("Kubernetes.convertYamlToJson writeValueAsString: " + writeValueAsString);
+        logger.info("Kubernetes.convertYamlToJson writeValueAsString: " + writeValueAsString);
         JsonNode root = new ObjectMapper().readTree(writeValueAsString);
         return root;
     }
 
-    public static List<String> listDomains(String namespace) {
+    public static List<String> listDomains(String namespace) throws ApiException {
         ArrayList<String> domains = new ArrayList<>();
-        try {
-            Map response = (Map) customObjectsApi.listNamespacedCustomObject(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL, null,
-                    null, null, null,null, null, timeoutSeconds,
-                    false);
-            domains = getDomainNames(namespace, domains, response);
-        } catch (ApiException e) {
-            e.printStackTrace();
-        }
+
+        Map response = (Map) customObjectsApi.listNamespacedCustomObject(
+                DOMAIN_GROUP, // custom resource's group name
+                DOMAIN_VERSION, //custom resource's version
+                namespace, // custom resource's namespace
+                DOMAIN_PLURAL, // custom resource's plural name
+                null, // pretty print output
+                null, // set when retrieving more results from the server
+                null, // selector to restrict the list of returned objects by their fields
+                null, // selector to restrict the list of returned objects by their labels
+                null, // maximum number of responses to return for a list call
+                null, // shows changes that occur after that particular version of a resource
+                timeoutSeconds, // Timeout for the list/watch call
+                false // Watch for changes to the described resources
+        );
+        domains = getDomainNames(namespace, domains, response);
 
         return domains;
     }
