@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.actions;
 
 import java.util.HashMap;
+import java.util.List;
 
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
@@ -14,6 +15,11 @@ import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Traefik;
+
+import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
+import oracle.weblogic.kubernetes.actions.impl.primitive.InstallParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WITParams;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
@@ -148,6 +154,36 @@ public class TestActions {
         return Namespace.createUniqueNamespace();
     }
 
+    // ------------------------ Docker image  -------------------------
+
+    public static boolean createMIIImage(WITParams params) {
+    	return 
+            new WebLogicImageTool()
+                .with(params)
+                .updateImage();
+    }
+ 
+ 
+    // ------------------------ Installer  -------------------------
+
+    public static boolean verifyAndInstallWIT(String version, String location) {
+        return new Installer()
+            .with(new InstallParams()
+                  .type("WIT")
+                  .version(version)
+                  .location(location))
+            .download();
+    }
+ 
+    public static boolean verifyAndInstallWDT(String version, String location) {
+        return new Installer()
+            .with(new InstallParams()
+                  .type("WDT")
+                  .version(version)
+                  .location(location))
+            .download();
+    }
+  
     // -------------------------   pv/pvc  ---------------------------------
 
     /**
@@ -252,5 +288,5 @@ public class TestActions {
     }
 
     // etc...
-
+ 
 }
