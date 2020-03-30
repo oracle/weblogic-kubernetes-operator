@@ -17,4 +17,16 @@ public class Domain {
     public static List<String> listDomainCustomResources(String namespace) throws ApiException {
         return Kubernetes.listDomains(namespace);
     }
+
+    public static boolean shutdown(String domainUID, String namespace) {
+        return true;
+    }
+
+    public static boolean restart(String domainUID, String namespace) {
+        return true;
+    }
+
+    public static boolean deleteDomainCustomResource(String domainUID, String namespace) {
+        return true;
+    }
 }

@@ -19,8 +19,7 @@ import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
-import java.io.File;
-import java.io.FileReader;
+import java.io.File;;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -215,4 +214,47 @@ public class Kubernetes implements LoggedTest {
         }
         return domains;
     }
+
+    // --------------------------- create, delete resource using yaml --------------------------
+
+    public static boolean create(String yaml) {
+        return true;
+    }
+
+    public static boolean delete(String yaml) {
+        return true;
+    }
+
+    // --------------------------- config map ---------------------------
+
+    public static boolean createConfigMap(String cmName, String namespace, String fromFile) {
+        return true;
+    }
+
+    public static boolean deleteConfigMap(String cmName, String namespace) {
+        return true;
+    }
+
+    // --------------------------- secret ---------------------------
+
+    public static boolean createSecret(String secretName,
+                                       String username, String password, String namespace) {
+        return true;
+    }
+
+    public static boolean deleteSecret(String cmName, String namespace) {
+        return true;
+    }
+
+    // --------------------------- pv/pvc ---------------------------
+
+    public static boolean deletePv(String pvName) {
+        return true;
+    }
+
+    public static boolean deletePvc(String pvcName, String namespace) {
+        return true;
+    }
+    // --------------------------
+
 }
