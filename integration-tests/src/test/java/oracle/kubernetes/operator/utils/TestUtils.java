@@ -1644,7 +1644,7 @@ public class TestUtils {
 
   /**
    * verify before deletion.
-   * @param domain domain object to verify resources before deletion
+   * @param domain object to verify resources before deletion
    * @throws Exception on failure to retrieve info
    */
   public static void verifyBeforeDeletion(Domain domain) throws Exception {
