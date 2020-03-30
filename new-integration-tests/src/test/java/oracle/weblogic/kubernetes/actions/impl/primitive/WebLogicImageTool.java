@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
+import java.io.File;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
@@ -10,8 +11,7 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 // Implementation of all of the WIT primitives that the IT test needs.
 
-public class WebLogicImageTool {
-    private static final String TEST_RESULT_DIR = "/scratch/it-results";
+public class WebLogicImageTool extends BaseInstallWIT {
     public static final String WLS = "WLS";
     public static final String JRF = "JRF";
     public static final String RJRF = "RestrictedJRF";
@@ -36,22 +36,16 @@ public class WebLogicImageTool {
     }
 
     public boolean updateImage() {
-      String command = buildCommand();
-        logger.info("Executing command = " + command);
-        try {
-          ExecResult result = ExecCommand.exec(command, true);
-          verifyExitValue(result, command);
-          return result.exitValue() == 0;
-        } catch (Exception ioe) {
-          return false;
-        }
+      return executeAndVerify(buildCommand());
     }
 
     private String buildCommand() {
-      String command = TEST_RESULT_DIR + "/imagetool/bin/imagetool.sh update ";
-      command += " --tag " + params.getModelImageName() + ":" + params.getModelImageTag();
-      command += " --fromImage " + params.getBaseImageName() + ":" + params.getBaseImageTag();
-      command += " --wdtModelOnly ";
+      String command = TEST_RESULT_DIR + "/imagetool/bin/imagetool.sh update "
+          + " --tag " + params.getModelImageName() + ":" + params.getModelImageTag()
+          + " --fromImage " + params.getBaseImageName() + ":" + params.getBaseImageTag()
+          + " --wdtDomainType " + params.getDomainType()
+          + " --wdtModelOnly ";
+      
       if (params.getModelFiles() != null && params.getModelFiles().size() != 0) {
           command += " --wdtModel " + params.getModelFiles();
       }
@@ -61,24 +55,7 @@ public class WebLogicImageTool {
       if (params.getModelArchiveFiles() != null && params.getModelArchiveFiles().size() != 0) {
           command += " --wdtArchive " + params.getModelArchiveFiles();
       }
-      command += " --wdtDomainType " + params.getDomainType();
+      
       return command;
-    }
-
-    protected boolean executeAndVerify(String command) {
-        logger.info("Executing command = " + command);
-        try {
-          ExecResult result = ExecCommand.exec(command, true);
-          verifyExitValue(result, command);
-          return result.exitValue() == 0;
-        } catch (Exception ioe) {
-          return false;
-        }
-    }
-
-    private void verifyExitValue(ExecResult result, String command) throws Exception {
-        if (result.exitValue() != 0) {
-            throw new Exception("executing the following command failed: " + command);
-        }
     }
 }
