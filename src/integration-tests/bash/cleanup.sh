@@ -523,32 +523,38 @@ if [ -x "$(command -v helm)" ]; then
   [[ $? == 1 ]] && HELM_VERSION=V3
   echo "Detected Helm Version [$(helm version --short --client)]"
   echo @@ `timestamp` Deleting installed helm charts
-  namespaces=`kubectl get ns | grep -v NAME | awk '{ print $1 }'`
-  for ns in $namespaces
-  do 
+  if [ "$HELM_VERSION" == "V2" ]; then
+   helm list --short | while read helm_name; do
    if [ ! "$DRY_RUN" = "true" ]; then
-     (
+   (
      set -x
-     helm list --short --namespace $ns | while read helm_name; do
-       if [ "$HELM_VERSION" == "V2" ]; then
-         helm delete --purge  $helm_name
-       else 
-         helm uninstall $helm_name -n $ns 
-       fi
-     done
-     )
+     helm delete --purge  $helm_name
+    )
    else
-     (
-     helm list --short --namespace $ns | while read helm_name; do
-       if [ "$HELM_VERSION" == "V2" ]; then
-         echo @@ `timestamp` Info: DRYRUN: helm delete --purge  $helm_name
+     echo @@ `timestamp` Info: DRYRUN: helm delete --purge  $helm_name
+   fi
+   done
+  fi
+
+  if [ "$HELM_VERSION" == "V3" ]; then
+   namespaces=`helm list --all-namespaces | grep -v NAME | awk '{print $2}'`
+   for ns in $namespaces
+   do 
+     echo "Looking for helm lists in namesapce $ns"
+     helm_names=`helm list --short -n $ns`
+     for helm_name in $helm_names
+     do 
+        if [ ! "$DRY_RUN" = "true" ]; then
+        (
+          set -x
+          helm uninstall $helm_name -n $ns
+        )
        else 
-         echo @@ `timestamp` Info: DRYRUN: helm uninstall $helm_name -n $ns 
+         echo @@ `timestamp` Info: DRYRUN: helm uninstall $helm_name -n $ns
        fi
      done
-     )
-   fi
-  done
+   done
+  fi
 
   # cleanup tiller artifacts
   if [ "$SHARED_CLUSTER" = "true" ]; then
