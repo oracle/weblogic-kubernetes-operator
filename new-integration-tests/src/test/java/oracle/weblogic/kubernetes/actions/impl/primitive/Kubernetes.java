@@ -13,86 +13,87 @@ import java.util.Random;
 
 public class Kubernetes {
 
-    public static Random random = new Random(System.currentTimeMillis());
+  public static Random random = new Random(System.currentTimeMillis());
 
-    // ------------------------  deployments -----------------------------------
+  // ------------------------  deployments -----------------------------------
 
-    public static boolean createDeployment(String deploymentYaml) {
-        // do something with the command!!!
-        return true;
+  public static boolean createDeployment(String deploymentYaml) {
+    // do something with the command!!!
+    return true;
+  }
+
+  public static List listDeployments() {
+    return new ArrayList();
+  }
+
+  // --------------------------- pods -----------------------------------------
+
+
+  // --------------------------- namespaces -----------------------------------
+
+  public static boolean createNamespace(String name) {
+    return true;
+  }
+
+  /**
+   * Create a new namespace with a "unique" name.
+   * This method will create a "unique" name by choosing a random name from
+   * 26^4 possible combinations, and create a namespace using that random name.
+   *
+   * @return the name of the new namespace.
+   */
+  public static String createUniqueNamespace() {
+    char[] name = new char[4];
+    for (int i = 0; i < name.length; i++) {
+      name[i] = (char) (random.nextInt(25) + (int) 'a');
     }
-
-    public static List listDeployments() {
-        return new ArrayList();
+    String namespace = "ns-" + new String(name);
+    if (createNamespace(namespace)) {
+      return namespace;
+    } else {
+      return "";
     }
+  }
 
-    // --------------------------- pods -----------------------------------------
+  // --------------------------- create, delete resource using yaml --------------------------
 
+  public static boolean create(String yaml) {
+    return true;
+  }
 
-    // --------------------------- namespaces -----------------------------------
+  public static boolean delete(String yaml) {
+    return true;
+  }
 
-    public static boolean createNamespace(String name) {
-        return true;
-    }
+  // --------------------------- config map ---------------------------
 
-    /**
-     * Create a new namespace with a "unique" name.
-     * This method will create a "unique" name by choosing a random name from
-     * 26^4 possible combinations, and create a namespace using that random name.
-     * @return the name of the new namespace.
-     */
-    public static String createUniqueNamespace() {
-        char[] name = new char[4];
-        for (int i = 0; i < name.length; i++) {
-            name[i] = (char)(random.nextInt(25) + (int)'a');
-        }
-        String namespace = "ns-" + new String( name);
-        if (createNamespace(namespace)) {
-            return namespace;
-        } else {
-            return "";
-        }
-    }
+  public static boolean createConfigMap(String cmName, String namespace, String fromFile) {
+    return true;
+  }
 
-    // --------------------------- create, delete resource using yaml --------------------------
+  public static boolean deleteConfigMap(String cmName, String namespace) {
+    return true;
+  }
 
-    public static boolean create(String yaml) {
-        return true;
-    }
+  // --------------------------- secret ---------------------------
 
-    public static boolean delete(String yaml) {
-        return true;
-    }
+  public static boolean createSecret(String secretName,
+                                     String username, String password, String namespace) {
+    return true;
+  }
 
-    // --------------------------- config map ---------------------------
+  public static boolean deleteSecret(String cmName, String namespace) {
+    return true;
+  }
 
-    public static boolean createConfigMap(String cmName, String namespace, String fromFile) {
-        return true;
-    }
+  // --------------------------- pv/pvc ---------------------------
 
-    public static boolean deleteConfigMap(String cmName, String namespace) {
-        return true;
-    }
+  public static boolean deletePv(String pvName) {
+    return true;
+  }
 
-    // --------------------------- secret ---------------------------
-
-    public static boolean createSecret(String secretName,
-                                       String username, String password, String namespace) {
-        return true;
-    }
-
-    public static boolean deleteSecret(String cmName, String namespace) {
-        return true;
-    }
-
-    // --------------------------- pv/pvc ---------------------------
-
-    public static boolean deletePv(String pvName) {
-        return true;
-    }
-
-    public static boolean deletePvc(String pvcName, String namespace) {
-        return true;
-    }
-    // --------------------------
+  public static boolean deletePvc(String pvcName, String namespace) {
+    return true;
+  }
+  // --------------------------
 }

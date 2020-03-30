@@ -21,38 +21,39 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItSimpleDomainValidation implements LoggedTest {
 
-    @Test
-    @DisplayName("Create a domain")
-    @Slow
-    public void testCreatingDomain() {
+  @Test
+  @DisplayName("Create a domain")
+  @Slow
+  public void testCreatingDomain() {
 
-        String domainUID = "domain1";
-        String domainYAML= "something";
+    String domainUID = "domain1";
+    String domainYAML = "something";
 
-        // get a new unique namespace
-        String namespace = createUniqueNamespace();
-        logger.info(String.format("Got a new namespace called %s", namespace));
+    // get a new unique namespace
+    String namespace = createUniqueNamespace();
+    logger.info(String.format("Got a new namespace called %s", namespace));
 
-        // create the domain CR
-        boolean success = createDomainCustomResource(domainUID, namespace, domainYAML);
-        assertTrue(success);
+    // create the domain CR
+    boolean success = createDomainCustomResource(domainUID, namespace, domainYAML);
+    assertTrue(success);
 
-        // wait for the domain to exist
-        with().pollDelay(30, SECONDS)
-                .and().with().pollInterval(10, SECONDS)
-                .conditionEvaluationListener(
-                        condition -> logger.info(() -> String.format("Waiting for domain to be running (elapsed time %dms, remaining time %dms)",
-                                condition.getElapsedTimeInMS(),
-                                condition.getRemainingTimeInMS())))
-                // and here we can set the maximum time we are prepared to wait
-                .await().atMost(5, MINUTES)
-                // operatorIsRunning() is one of our custom, reusable assertions
-                .until(domainExists(domainUID, namespace));
+    // wait for the domain to exist
+    with().pollDelay(30, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .conditionEvaluationListener(
+            condition -> logger.info(() ->
+                String.format("Waiting for domain to be running (elapsed time %dms, remaining time %dms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS())))
+        // and here we can set the maximum time we are prepared to wait
+        .await().atMost(5, MINUTES)
+        // operatorIsRunning() is one of our custom, reusable assertions
+        .until(domainExists(domainUID, namespace));
 
         // wait for the admin server pod to exist
 
         // wait for the managed servers to exist
 
-    }
+  }
 
 }
