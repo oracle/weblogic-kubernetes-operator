@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
+
 /**
  * Class that holds the results of using java to exec a command (i.e. exit value, stdout and stderr)
  */
@@ -16,9 +18,9 @@ public class ExecResult {
    * @param exitValue exit value
    * @param stdout standard out
    * @param stderr standard err
-   * @throws Exception on failure
+   * @throws IOException on failure
    */
-  public ExecResult(int exitValue, String stdout, String stderr) throws Exception {
+  public ExecResult(int exitValue, String stdout, String stderr) throws IOException {
     this.exitValue = exitValue;
     this.stdout = stdout;
     this.stderr = stderr;

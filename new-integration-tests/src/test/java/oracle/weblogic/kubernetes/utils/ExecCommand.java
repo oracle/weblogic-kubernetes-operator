@@ -19,11 +19,12 @@ import com.google.common.io.ByteStreams;
 /** Class for executing shell commands from java. */
 public class ExecCommand {
 
-  public static ExecResult exec(String command) throws Exception {
+  public static ExecResult exec(String command) throws IOException, InterruptedException {
     return exec(command, false, null);
   }
 
-  public static ExecResult exec(String command, boolean isRedirectToOut) throws Exception {
+  public static ExecResult exec(String command, boolean isRedirectToOut) 
+      throws IOException, InterruptedException {
     return exec(command, isRedirectToOut, null);
   }
 
@@ -33,11 +34,12 @@ public class ExecCommand {
    * @param isRedirectToOut redirect to out flag
    * @param additionalEnvMap additional environment map
    * @return result
-   * @throws Exception on failure
+   * @throws IOException if the command failed to execute
+   * @throws InterruptedException if the process was interrupted
    */
   public static ExecResult exec(
       String command, boolean isRedirectToOut, Map<String, String> additionalEnvMap)
-      throws Exception {
+      throws IOException, InterruptedException {
 
     Process p = null;
     if (additionalEnvMap == null) {
@@ -99,7 +101,7 @@ public class ExecCommand {
     return strArray;
   }
 
-  private static String read(InputStream is) throws Exception {
+  private static String read(InputStream is) throws IOException {
     return new BufferedReader(new InputStreamReader(is)).lines().collect(Collectors.joining("\n"));
   }
 

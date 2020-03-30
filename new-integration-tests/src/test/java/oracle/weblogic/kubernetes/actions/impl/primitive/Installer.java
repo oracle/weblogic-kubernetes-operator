@@ -15,7 +15,7 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Installer extends BaseInstallWIT {
     // temporary dir, will fix this once we decide on the
-    private static final String downloadDir = TEST_RESULT_DIR + "/download";
+    private static final String downloadDir = WORK_DIR + "/download";
     private InstallParams params;
 
     public Installer with(InstallParams params) {

@@ -40,7 +40,7 @@ public class WebLogicImageTool extends BaseInstallWIT {
     }
 
     private String buildCommand() {
-      String command = TEST_RESULT_DIR + "/imagetool/bin/imagetool.sh update "
+      String command = WORK_DIR + "/imagetool/bin/imagetool.sh update "
           + " --tag " + params.getModelImageName() + ":" + params.getModelImageTag()
           + " --fromImage " + params.getBaseImageName() + ":" + params.getBaseImageTag()
           + " --wdtDomainType " + params.getDomainType()

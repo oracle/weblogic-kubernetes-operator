@@ -16,16 +16,18 @@ public class BaseInstallWIT {
 	// TODO most of the following will be setup outside of the java code
 	// prior to running the Java code.
 	// I hard coded them here temporarily to get things going.
-    protected static final String TEST_RESULT_DIR = System.getProperty("java.io.tmpdir") + "/it-results";
+    protected static final String WORK_DIR = System.getProperty("java.io.tmpdir") + "/it-results";
 
     protected boolean executeAndVerify(String command) {
-        logger.info("Executing command = " + command + " TEST_RESULT_DIR = " + TEST_RESULT_DIR);
+        logger.info("Executing command = " + command + " WORK_DIR = " + WORK_DIR);
         try {
-          checkDirectory(TEST_RESULT_DIR);
+          checkDirectory(WORK_DIR);
           ExecResult result = ExecCommand.exec(command, true);
           verifyExitValue(result, command);
           return result.exitValue() == 0;
         } catch (IOException ioe) {
+          return false;
+        } catch (InterruptedException ie) {
           return false;
         }
     }
