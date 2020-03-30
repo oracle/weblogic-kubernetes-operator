@@ -58,22 +58,35 @@ public class TestActions {
     	return 
             new WebLogicImageTool()
                 .with(new WITParams()
-                     .baseName(baseImageName).tag(imageTag).modelFiles(modelFiles)
-                     .modelVariableFiles(modelVariableFiles).modelArchiveFiles(modelArchiveFiles)
-                     .wdtVersion(wdtVersion).domainType(domainType)).updateImage();
+                     .baseName(baseImageName)
+                     .tag(imageTag)
+                     .modelFiles(modelFiles)
+                     .modelVariableFiles(modelVariableFiles)
+                     .modelArchiveFiles(modelArchiveFiles)
+                     .wdtVersion(wdtVersion)
+                     .domainType(domainType))
+                .updateImage();
     }
  
  
     // ------------------------ Installer  -------------------------
 
     public static boolean verifyAndInstallWIT(String version, String location) {
-        return new Installer().with(new InstallParams().type("WIT").version(version).location(location))
-        		      .download();
+        return new Installer()
+            .with(new InstallParams()
+                  .type("WIT")
+                  .version(version)
+                  .location(location))
+            .download();
     }
  
     public static boolean verifyAndInstallWDT(String version, String location) {
-        return new Installer().with(new InstallParams().type("WDT").version(version).location(location))
-  		      .download();
+        return new Installer()
+            .with(new InstallParams()
+                  .type("WDT")
+                  .version(version)
+                  .location(location))
+            .download();
 
     }
  
