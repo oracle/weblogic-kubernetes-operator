@@ -26,7 +26,7 @@ public class TestActions {
      * Install WebLogic Kubernetes Operator
      * @param name operator release name
      * @param namespace the name of the namespace
-     * @param values map with values
+     * @param params operator parameters for helm values
      * @return true if the operator is successfully installed, false otherwise.
      */
     public static boolean installOperator(String name, String namespace, OperatorParams params) {
@@ -37,7 +37,7 @@ public class TestActions {
      * Upgrade existing Operator release
      * @param name operator release name
      * @param namespace the name of the namespace
-     * @param values map with values
+     * @param params operator parameters for helm values
      * @return true if the operator is successfully upgraded, false otherwise.
      */
     public static boolean upgradeOperator(String name, String namespace, OperatorParams params) {
