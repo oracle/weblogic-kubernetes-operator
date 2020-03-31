@@ -3,11 +3,12 @@
 
 package oracle.weblogic.kubernetes.assertions;
 
+import java.util.concurrent.Callable;
+
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
-
-import java.util.concurrent.Callable;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
+
 
 // as in the actions, it is intended tests only use these assertaions and do
 // not go direct to the impl classes

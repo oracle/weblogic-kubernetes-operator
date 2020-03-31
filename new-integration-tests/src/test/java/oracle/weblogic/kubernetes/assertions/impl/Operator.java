@@ -10,7 +10,7 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Operator {
 
-    public static Callable<Boolean> isRunning(String namespace) {
+  public static Callable<Boolean> isRunning(String namespace) {
         // this uses a rand, to simulate that this operation can take
         // variable amounts of time to complete
         return () -> {
@@ -27,4 +27,5 @@ public class Operator {
     public static boolean isRestServiceCreated(String namespace) {
         return true;
     }
+
 }

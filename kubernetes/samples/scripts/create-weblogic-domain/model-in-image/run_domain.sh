@@ -58,16 +58,17 @@ $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-weblogic-credentials \
   -l username=weblogic \
   -l password=welcome1
 
+if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
+  echo "@@ Info: Creating rcu access secret (referenced by model yaml macros if domain type is JRF)"
+  $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-rcu-access \
+    -l rcu_prefix=FMW1 \
+    -l rcu_schema_password=Oradoc_db1 \
+    -l rcu_db_conn_string=oracle-db.${RCUDB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
 
-echo "@@ Info: Creating rcu access secret (referenced by model yaml macros if domain type is JRF)"
-$SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-rcu-access \
-  -l rcu_prefix=FMW1 \
-  -l rcu_schema_password=Oradoc_db1 \
-  -l rcu_db_conn_string=oracle-db.${RCUDB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
-
-echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
-$SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-opss-wallet-password-secret \
-  -l walletPassword=welcome1
+  echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
+  $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-opss-wallet-password-secret \
+    -l walletPassword=welcome1
+fi
 
 echo "@@ Info: Creating model runtime encryption secret"
 $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-runtime-encryption-secret \
