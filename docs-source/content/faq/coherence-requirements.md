@@ -14,7 +14,7 @@ and so these requirements apply to them.
 
 #### Unicast and Well Known Address
 When the first Coherence process starts, it will form a cluster.  The next
-Coherence process to start (for example, in a different pod), it will use UDP to try
+Coherence process to start (for example, in a different pod), will use UDP to try
 to contact the senior member.  
 
 If you create a WebLogic domain which contains a Coherence cluster
