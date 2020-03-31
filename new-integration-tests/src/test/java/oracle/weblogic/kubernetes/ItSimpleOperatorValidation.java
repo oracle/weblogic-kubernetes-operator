@@ -93,7 +93,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
       // operatorIsRunning() is one of our custom, reusable assertions
       .until(operatorIsRunning(opns));
 
-    // i have not done anything yet about reporting the reason for the failure :)
+      // i have not done anything yet about reporting the reason for the failure :)
   }
 
 }
