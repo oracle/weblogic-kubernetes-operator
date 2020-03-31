@@ -29,8 +29,7 @@ Please be aware of the following important considerations for WebLogic domains r
   A Docker image that contains a WebLogic domain has sensitive information including
   keys and credentials that are used access external resources (for example, data source password).
   For more information, see
-  [domain home in image protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}})
-  in the ***Security*** section.
+  [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}}).
   {{% /notice %}}
 
 * _Log File Locations:_ The operator can automatically override WebLogic domain and server log locations using situational
@@ -40,7 +39,7 @@ Please be aware of the following important considerations for WebLogic domains r
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
   SSL, admin, or custom channel listen addresses (using situational configuration overrides).  These will become `domainUID` followed by a
   hyphen and then the server name, all lower case, and underscores converted to hyphens.  For example, if `domainUID=domain1` and
-  the WebLogic server name is `Admin_Server`, then its listen address becomes `domain1-admin-server`.
+  the WebLogic Server name is `Admin_Server`, then its listen address becomes `domain1-admin-server`.
 
 * _Domain, Cluster, Server, and Network-Access-Point Names:_ WebLogic domain, cluster, server, and network-access-point (channel)
   names must contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`.  This ensures that they can be converted to
@@ -55,9 +54,8 @@ Please be aware of the following important considerations for WebLogic domains r
   {{% notice warning %}}
   Exposing admin, RMI, or T3 capable channels via a Kubernetes `NodePort`
   can create an insecure configuration. In general, only HTTP protocols should be made available externally and this exposure
-  is usually accomplished by setting up an external load balancer that can access internal (non-NodePort) services.
-  For more information, see [T3 channels]({{<relref "/security/domain-security/weblogic-channels.md#weblogic-t3-channels">}})
-  in the ***Security*** section.
+  is usually accomplished by setting up an external load balancer that can access internal (non-`NodePort`) services.
+  For more information, see [T3 channels]({{<relref "/security/domain-security/weblogic-channels.md#weblogic-t3-channels">}}).
   {{% /notice %}}
 
 * _Host Path Persistent Volumes:_ If using a `hostPath` persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
@@ -66,12 +64,12 @@ Please be aware of the following important considerations for WebLogic domains r
 * _Security Note:_ The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
 
 * _JVM Memory and Java Option Arguments:_ The following environment variables can be used to customize the JVM memory and Java options for both the WebLogic Managed Servers and Node Manager instances:
- 
+
     * `JAVA_OPTIONS` - Java options for starting WebLogic Server
     * `USER_MEM_ARGS` - JVM mem args for starting WebLogic Server
     * `NODEMGR_JAVA_OPTIONS` - Java options for starting Node Manager instance
     * `NODEMGR_MEM_ARGS` - JVM mem args for starting Node Manager instance
-    
+
     For more information, see [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
 
 The following features are **not** certified or supported in this release:
@@ -89,7 +87,7 @@ Please consult My Oracle Support Doc ID 2349228.1 for up-to-date information abo
 ### Creating and managing WebLogic domains
 
 You can locate a WebLogic domain either in a persistent volume (PV) or in a Docker image.
-For examples of each, see the [WebLogic Kubernetes Operator samples]({{< relref "/samples/simple/domains/_index.md" >}}).
+For examples of each, see the [WebLogic Server Kubernetes Operator samples]({{< relref "/samples/simple/domains/_index.md" >}}).
 
 If you want to create your own Docker images, for example, to choose a specific set of patches or to create a domain
 with a specific configuration and/or applications deployed, then you can create the domain custom resource
@@ -98,7 +96,7 @@ sample]({{< relref "/samples/simple/domains/manually-create-domain/_index.md" >}
 
 ### Modifying domain configurations
 
-You can modify the WebLogic domain configuration for both the "domain in persistent volume" and the "domain in image" options before deploying a domain resource:
+You can modify the WebLogic domain configuration for both Domain in PV and the Domain in Image before deploying a domain resource:
 
 * When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.
 * For either case, you can use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).   
@@ -107,12 +105,12 @@ Configuration overrides allow changing a configuration without modifying its ori
 
 ### About the domain resource
 
-For information about the domain resource, see [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
+For more information, see [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
 
-### Managing life cycle operations
+### Managing lifecycle operations
 
-You can perform life cycle operations on WebLogic servers, clusters, or domains.
-See [Starting, stopping, and restarting servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}) and [Restarting WebLogic servers]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting.md" >}}).
+You can perform lifecycle operations on WebLogic Servers, clusters, or domains.
+See [Starting and stopping]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}) and [Restarting]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting.md" >}}) servers.
 
 ### Scaling clusters
 

@@ -5,23 +5,23 @@ draft: false
 weight: 1
 ---
 
-Each WebLogic operator deployment manages a number of Kubernetes namespaces. For information about setting domain namespaces, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}). A number of Kubernetes resources
+Each operator deployment manages a number of Kubernetes namespaces. For information about setting domain namespaces, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}). A number of Kubernetes resources
 must be present in a namespace before any WebLogic domain custom resources can be successfully
 deployed into it.
 Those Kubernetes resources are created either as part of the installation
 of the operator's Helm chart, or created by the operator at runtime.
 
-This FAQ describes some considerations to be aware of when you manage the namespaces while the WebLogic operator is running. For example:
+This FAQ describes some considerations to be aware of when you manage the namespaces while the operator is running. For example:
 
-* [Check the namespaces that an operator manages](#check-the-namespaces-that-an-operator-manages)
-* [Add a namespace for an operator to manage](#add-a-kubernetes-namespace-to-an-operator)
-* [Delete a namespace from an operator's domain namespace list](#delete-a-kubernetes-namespace-from-an-operator)
-* [Delete and recreate a Kubernetes namespace that an operator manages](#recreate-a-previously-deleted-kubernetes-namespace)
+* [Check the namespaces that the operator manages](#check-the-namespaces-that-the-operator-manages)
+* [Add a namespace for the operator to manage](#add-a-kubernetes-namespace-to-the-operator)
+* [Delete a namespace from the operator's domain namespace list](#delete-a-kubernetes-namespace-from-the-operator)
+* [Delete and recreate a Kubernetes namespace that the operator manages](#recreate-a-previously-deleted-kubernetes-namespace)
 
 For others, see [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#common-mistakes-and-solutions" >}}).
 
-#### Check the namespaces that an operator manages
-You can find the list of the namespaces that an operator manages using the `helm get values` command.
+#### Check the namespaces that the operator manages
+You can find the list of the namespaces that the operator manages using the `helm get values` command.
 For example, the following command shows all the values of the operator release `weblogic-operator`; the `domainNamespaces` list contains `default` and `ns1`.
 
 ```
@@ -53,8 +53,8 @@ If you don't know the release name of the operator, you can use `helm ls` to lis
 $ helm ls
 ```
 
-#### Add a Kubernetes namespace to an operator
-If you want a WebLogic operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be pre-created, for example, using the `kubectl create` command.
+#### Add a Kubernetes namespace to the operator
+If you want an operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be pre-created, for example, using the `kubectl create` command.
 
 Adding a namespace to the `domainNamespaces` list tells the operator deployment or runtime
 to initialize the necessary Kubernetes resources for the namespace so that the operator is ready to host WebLogic domain resources in that namespace.
@@ -93,8 +93,8 @@ NAME                 DATA      AGE
 weblogic-domain-cm   14        12m
 ```
 
-####  Delete a Kubernetes namespace from an operator
-When you no longer want a namespace to be managed by an operator, you need to remove it from
+####  Delete a Kubernetes namespace from the operator
+When you no longer want a namespace to be managed by the operator, you need to remove it from
 the operator's `domainNamespaces` list, so that the corresponding Kubernetes resources that are
 associated with the namespace can be cleaned up.
 
@@ -167,6 +167,6 @@ $ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace
 $ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas=1
 ```
 
-Note that restarting an operator pod makes the operator temporarily unavailable for managing its namespaces.
+Note that restarting the operator pod makes the operator temporarily unavailable for managing its namespaces.
 For example, a domain that is created while the operator is restarting will not be started until the
 operator pod is fully up again.
