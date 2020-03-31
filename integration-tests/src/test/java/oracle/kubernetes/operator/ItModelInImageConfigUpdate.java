@@ -3,8 +3,10 @@
 
 package oracle.kubernetes.operator;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,6 +42,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
   private static StringBuffer namespaceList;
   private static final String configMapSuffix = "-mii-config-map";
   private static final String dsName = "MyDataSource";
+  private static final String appName = "myear";
   private static final String readTimeout_1 = "30001";
   private static final String readTimeout_2 = "30002";
 
@@ -242,7 +245,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
       // verify that JDBC DS is created by checking JDBC DS name and read timeout
       // verify the test result by checking override config file on server pod
       // verify that application is accessible from inside the managed server pod
-      verifyJdbcOverride();
+      verifyJdbcUpdate();
       Assertions.assertTrue(verifyApp().contains("Hello"), "Application is not found");
 
       // delete config and application using new model file
@@ -454,4 +457,56 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
 
     return result.stdout();
   }
+
+  private void wdtConfigDeleteOverride() throws Exception {
+    LoggerHelper.getLocal().log(Level.INFO, "Creating configMap");
+    String origDir = BaseTest.getProjectRoot()
+        + "/integration-tests/src/test/resources/model-in-image";
+    String origModelFile = origDir + "/model.jdbc.yaml";
+    String origPropFile = origDir + "/model.jdbc.properties";
+    String destDir = getResultDir() + "/samples/model-in-image-override";;
+    String destModelFile = destDir + "/model.jdbc_2.yaml";
+    String destPropFile = destDir + "/model.jdbc_2.properties";
+    Files.createDirectories(Paths.get(destDir));
+
+    Path path = Paths.get(origModelFile);
+    Charset charset = StandardCharsets.UTF_8;
+    String content = new String(Files.readAllBytes(path), charset);
+    // prefix the JDBC DataSource and application name with !
+    content = content.replaceAll(dsName, "!" + dsName);
+    content = content.replaceAll(appName, "!" + appName);
+    Files.write(Paths.get(destModelFile), content.getBytes(charset));
+    TestUtils.copyFile(origPropFile, destPropFile);
+
+    // Re-create config map after deploying domain crd
+    final String domainUid = domain.getDomainUid();
+    final String cmName = domainUid + configMapSuffix;
+    final String label = "weblogic.domainUID=" + domainUid;
+
+    TestUtils.createConfigMap(cmName, destDir, domainNS, label);
+  }
+
+  private String verifyApp() throws Exception {
+    // get managed server pod name
+    StringBuffer cmdStrBuff = new StringBuffer();
+    cmdStrBuff
+        .append("kubectl get pod -n ")
+        .append(domainNS)
+        .append(" -o=jsonpath='{.items[1].metadata.name}' | grep managed-server1");
+    String msPodName = TestUtils.exec(cmdStrBuff.toString()).stdout();
+
+    // access the application deployed in managed-server1
+    cmdStrBuff = new StringBuffer();
+    cmdStrBuff
+        .append("kubectl -n ")
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(msPodName)
+        .append(" -- bash -c ")
+        .append("'curl http://" + msPodName + ":8001/sample_war/")
+        .append("'");
+    ExecResult exec = TestUtils.exec(cmdStrBuff.toString(), true);
+    return exec.stdout();
+  }
+
 }
