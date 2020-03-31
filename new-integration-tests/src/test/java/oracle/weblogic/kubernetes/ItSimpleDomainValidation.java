@@ -32,8 +32,7 @@ class ItSimpleDomainValidation implements LoggedTest {
     String domainYAML = "something";
 
     // get a new unique namespace
-    String namespace = null;
-    namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
+    String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
         "Failed to create unique namespace due to ApiException");
     logger.info(String.format("Got a new namespace called %s", namespace));
 
