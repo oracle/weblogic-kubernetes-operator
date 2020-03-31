@@ -150,7 +150,7 @@ public class Domain {
    * Verifies the required pods are created, services are created and the servers are ready.
    *
    * @param maxIterations max iteration count
-   * @throws Exception exception
+   * @throws RuntimeException if pods/services of the domain are not created or WLS is not running
    */
   public void verifyDomainCreated(int maxIterations) throws Exception {
     StringBuffer command = new StringBuffer();
@@ -200,7 +200,7 @@ public class Domain {
    * verify pods are created.
    *
    * @param maxIterations max iteration count
-   * @throws Exception exception
+   * @throws RuntimeException if pod is not in running state
    */
   public void verifyPodsCreated(int maxIterations) throws Exception {
     // check admin pod
@@ -237,7 +237,7 @@ public class Domain {
    * 
    * @param maxIterations max iteration counts
    *
-   * @throws Exception exception
+   * @throws RuntimeException if service is not created
    */
   public void verifyServicesCreated(int maxIterations) throws Exception {
     verifyServicesCreated(false, maxIterations);
@@ -248,7 +248,7 @@ public class Domain {
    *
    * @param precreateService - if true check services are created for configuredManagedServerCount
    *                         number of servers else check for initialManagedServerReplicas number of servers
-   * @throws Exception exception
+   * @throws RuntimeException if service is not created
    */
   public void verifyServicesCreated(boolean precreateService, int maxIterations) throws Exception {
     // check admin service
@@ -401,7 +401,7 @@ public class Domain {
    * 
    * @param maxIterations max iterations count
    *
-   * @throws Exception exception
+   * @throws RuntimeException if WLS pod is not ready and pod output doesn't contain 1/1
    */
   public void verifyServersReady(int maxIterations) throws Exception {
     // check admin pod

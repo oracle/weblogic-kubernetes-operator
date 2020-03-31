@@ -58,7 +58,7 @@ public class TestUtils {
    * @param podName  pod name
    * @param domainNS namespace
    * @param maxIterations  max iterations count
-   * @throws Exception exception
+   * @throws RuntimeException if pod is not ready and output doesn't contain 1/1
    */
   public static void checkPodReady(String podName, String domainNS, int maxIterations) throws Exception {
     StringBuffer cmd = new StringBuffer();
@@ -106,6 +106,7 @@ public class TestUtils {
    * @param podName  - pod name
    * @param domainNS - domain namespace name
    * @param maxIterations max iterations count
+   * @throws Exception RuntimeException if pod is not in Running state 
    */
   public static void checkPodCreated(String podName, String domainNS, int maxIterations) throws Exception {
 
@@ -229,7 +230,7 @@ public class TestUtils {
    * @param serviceName service name
    * @param domainNS    namespace
    * @param maxIterations max iterations count
-   * @throws Exception exception
+   * @throws RuntimeException if service is not created
    */
   public static void checkServiceCreated(String serviceName, String domainNS, int maxIterations) throws Exception {
     int i = 0;
@@ -1722,7 +1723,7 @@ public class TestUtils {
    * @param matchStr matcher
    * @param k8sObjName object name
    * @param maxIterationsPod pod max iteration count
-   * @throws Exception on failure
+   * @throws RuntimeException if pod output does not contain match string defined by caller
    */
   public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName, int maxIterationsPod)
       throws Exception {
