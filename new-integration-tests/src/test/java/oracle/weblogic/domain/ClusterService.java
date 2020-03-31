@@ -39,7 +39,7 @@ public class ClusterService {
   }
 
   public void setLabels(Map<String, String> labels) {
-    this.labels = labels
+    this.labels = labels;
   }
 
   public ClusterService annotations(Map<String, String> annotations) {
