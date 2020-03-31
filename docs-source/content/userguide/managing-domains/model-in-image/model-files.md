@@ -63,9 +63,9 @@ Some notes about the sample model file:
 
 - Understand when to use model macros.
 
-  - You can use model macros to reference arbitrary secrets from model files. This is recommended for handling mutable values such as database user names, passwords, and URLs. See [Using secrets in model files](#using-secrets-in-model-files).
+  - You can use model macros to reference arbitrary secrets from model files. This is recommended for handling mutable values such as database user names, passwords, and URLs. See **[Using secrets in model files](#using-secrets-in-model-files)**.
 
-    - All password fields in a model should use secret macro. Passwords should not be directly included in property or model files because the files may appear in logs or debugging. 
+    - All password fields in a model should use a secret macro. Passwords should not be directly included in property or model files because the files may appear in logs or debugging. 
 
     - Model files encrypted with the [WDT Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md) are not supported. Use secrets instead.
 
@@ -84,9 +84,9 @@ Some notes about the sample model file:
 
 #### Model file naming and loading order
 
-Refer to this section if you need to control the order in which your model files are loaded.
+Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that's loaded has the highest precedence.
 
-During domain home creation, model and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT config map described in [Optional WDT model config map]({{< relref "/userguide/managing-domains/model-in-image/usage.md#3-optional-wdt-model-config-map" >}}).
+During domain home creation, model and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT config map described in [Optional WDT model config map]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#3-optional-wdt-model-config-map" >}}).
 
 The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` is a numeric number that specifies the desired order, and then is determined alphabetically as a tie-breaker. File names that don't include `.##.` sort _before_ other files as if they implicitly have the lowest possible `.##.`.
 

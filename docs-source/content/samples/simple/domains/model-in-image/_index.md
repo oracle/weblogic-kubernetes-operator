@@ -18,12 +18,18 @@ description: "Sample for supplying a WebLogic Deploy Tool (WDT) model that the o
   - [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image)
   - [Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)
   - [Optionally test the sample application](#optionally-test-the-sample-application)
-  - [Optionally access the WebLogic console](#optionally-access-the-weblogic-console)
+  - [Optionally access the WebLogic Server Console](#optionally-access-the-weblogic-server-console)
   - [Cleanup](#cleanup)
 
 ### Introduction
 
-This sample demonstrates:
+This sample demonstrates deploying a Model in Image domain home source type. Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource. Instead, a Model in Image deployment uses a WebLogic Deploy Tool (WDT) model to specify your WebLogic configuration. 
+
+WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
+
+For more information on Model in Image, see the [Model in Image user guide]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}). For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
+
+In detail, this sample demonstrates Model in Image:
 
   - Using the WebLogic Image Tool to create a Docker image that contains a WebLogic install, a WebLogic Deploy Tool (WDT) install, a Java EE servlet application contained within a WDT archive, and the model for a WebLogic domain configuration defined using a WDT model file.
   - Modifying the WDT model that's embedded within the Docker image using a WDT model file that's supplied using a Kubernetes config map.
@@ -31,7 +37,7 @@ This sample demonstrates:
   - Deploying the model image, domain resource, model config map, and associated secrets that define user names, passwords, and URL values for the model and its domain resource.
   - Deploying and accessing a Traefik load balancer that redirects HTTP protocol calls to its Java EE servlet application.
 
-Supported domain types:
+__Note about Model in Image domain types:__
 
 There are three types of domains supported by Model in Image: a standard `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, or a `RestrictedJRF` domain.
 
@@ -290,7 +296,7 @@ If you intend to use a remote Docker registry, you need to tag and push the imag
 1.  Tag the image for the remote Docker registry, for example:
 
 ```
-docker tag model-in-image:v1 my.remote.registry.com/model-in-image:v1 
+docker tag model-in-image:v1 my.remote.registry.com/model-in-image:v1
 ```
 
 2.  Push the image to the remote Docker registry, for example:
@@ -363,7 +369,7 @@ At the end, you should see log statements like:
   @@ Info: If the introspector job fails or you see any other unexpected issue, see 'User Guide -> Manage WebLogic Domains -> Model in Image -> Debugging' in the documentation.
   ```
 
-If you run `kubectl get pods -n sample-domain1-ns --watch`, then you should see the introspector run and your WebLogic server pods start. The output should look something like this:
+If you run `kubectl get pods -n sample-domain1-ns --watch`, then you should see the introspector run and your WebLogic Server pods start. The output should look something like this:
 
   ```
   $ kubectl get pods -n sample-domain1-ns --watch
@@ -387,7 +393,7 @@ If you run `kubectl get pods -n sample-domain1-ns --watch`, then you should see 
   sample-domain1-managed-server1   1/1   Running   0     43s
   ```
 
-If you see an error, then consult the [debugging chapter in the Model in Image user guide]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
+If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
 ### Optionally test the sample application
 
@@ -449,17 +455,19 @@ If you see an error, then consult the [debugging chapter in the Model in Image u
 
    **Note**: If you're running on a remote Kubernetes cluster, then substitute `$(hostname).$(dnsdomainname)` with an external address suitable for contacting the cluster.
 
-### Optionally access the WebLogic console
+### Optionally access the WebLogic Server Console
 
-> WARNING: This sample externally exposes the WebLogic console and exposes it using a plain text http port. This is not secure and should not be done in production deployments.
+{{% notice warning %}} This sample externally exposes the WebLogic Server Console using a plain text HTTP port. This is _not_ secure and should not be done in production deployments.
+{{% /notice %}}
 
-You can add an ingress rule to access the WebLogic Console from your local browser
+You can add an Ingress rule to access the WebLogic Server Console from your local browser.
 
-1. Find out the service name of the admin server and service port number.
+1. Find out the service name of the Administration Server and service port number.
 
-The name follows the pattern <Domain UID>-<admin server name> all lower case and the port number will be described in your
+   The service name follows the pattern `domainuid-adminservername`, all lower case, with a hyphen `-` substituted for each underscore `_`.
+   The port number for administration traffic is configured in your WebLogic configuration (your model files), where the default is `7001`.
 
-You can also find the information by:
+   If your domain resource is deployed, then you can also find the information by getting the port number for the Administration Server's pod:
 
 ```
 kubectl -n sample-domain1-ns get services
@@ -470,11 +478,11 @@ NAME                               TYPE        CLUSTER-IP     EXTERNAL-IP   PORT
 sample-domain1-admin-server        ClusterIP   None           <none>        7001/TCP   48m
 ```
 
-This shows the admin service name is `sample-domain1-admin-server` and the port for the console is `7001`
+  This shows the administration service name is `sample-domain1-admin-server` and the port for the Console is `7001`.
 
-2. Create an ingress rule for the WebLogic console
+2. Create an Ingress rule for the Console.
 
-Create the following file and call it `console-ingress.yaml` in your `$WORKDIR`.
+   Create the following file and call it `console-ingress.yaml` in your `$WORKDIR`.
 
 ```
 apiVersion: extensions/v1beta1
@@ -496,15 +504,15 @@ spec:
 
 ```
 
-This will route the request path `/console` to the admin service port `7001` at pod `sample-domain1-admin-server` in the `sample-domain1-ns` namespace.
+This will route the request path `/console` to the administration service port `7001` at pod `sample-domain1-admin-server` in the `sample-domain1-ns` namespace.
 
-3.  Apply the ingress rule resource
+3.  Apply the Ingress rule resource.
 
 ```
 kubectl apply -f $WORKDIR/console-ingress.yaml
 ```
 
-4.  Access the WebLogic console from the browser
+4.  Access the Console from the browser.
 
 
 ```
@@ -515,7 +523,7 @@ http://localhost:30305/console
 http://your-domain-host-address:30305/console
 ```
 
-Login is 'weblogic/welcome1'.
+The login credentials are `weblogic/welcome1`.
 
 
 ### Cleanup
@@ -539,7 +547,7 @@ Login is 'weblogic/welcome1'.
    ${SRCDIR}/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
    ```
 
-4. If you have set up the Traefik ingress rule to the WebLogic console.
+4. If you have set up the Traefik Ingress rule to the WebLogic Server Console.
    ```
    kubectl delete -f $WORKDIR/console-ingress.yaml
    ```

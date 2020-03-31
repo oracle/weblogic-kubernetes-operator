@@ -38,9 +38,11 @@ cat << EOF
 
   Parameters:
 
-    -d   <domain-uid>   Domain UID. Default is '$DOMAIN_UID'.
+    -d   <domain-uid>   Domain UID. 
+                        Default is '\$DOMAIN_UID' if set, '-sample-domain1' otherwise.
 
-    -n   <namespace>    Kubernetes namespace. Default is '$DOMAIN_NAMESPACE'.
+    -n   <namespace>    Kubernetes namespace. 
+                        Default is '\$DOMAIN_NAMESPACE' if set, 'DOMAIN_UID-ns' otherwise.
 
     -s                  Save an OPSS wallet file from an introspector
                         configmap to a file. (See also '-wf'.)
@@ -49,13 +51,14 @@ cat << EOF
                         (See also '-wf' and '-ws').
 
     -wf  <wallet-file>  Name of OPSS wallet file on local file system.
-                        Default is '$WALLET_FILE'.
+                        Default is '\$WALLET_FILE' if set, './ewallet.p12' otherwise.
 
     -ws  <secret-name>  Name of Kubernetes secret to create from the OPSS wallet file.
                         This must match the 'configuration.opss.walletFileSecret'
                         configured in your domain resource.
                         Ignored if '-r' not specified. 
-                        Default is 'DOMAIN_UID-opss-walletfile-secret'.
+                        Default is '\$WALLET_SECRET' if set, 
+                        and 'DOMAIN_UID-opss-walletfile-secret' otherwise.
 
     -?                  Output this help message.
 

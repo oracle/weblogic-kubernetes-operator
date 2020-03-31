@@ -119,6 +119,7 @@ public class MessageKeys {
   public static final String DOMAIN_VALIDATION_FAILED = "WLSKO-0157";
   public static final String NO_INTERNAL_CERTIFICATE = "WLSKO-162";
   public static final String NO_EXTERNAL_CERTIFICATE = "WLSKO-163";
+  public static final String REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT = "WLSKO-0164";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";

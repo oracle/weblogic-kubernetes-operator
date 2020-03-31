@@ -9,8 +9,8 @@ description = "Steps for creating and deploying Model in Image images and their 
 
 #### Contents
 
-   - [WebLogic operator](#1-weblogic-operator)
-   - [WebLogic image](#2-weblogic-image)
+   - [WebLogic Kubernetes Operator](#1-weblogic-kubernetes-operator)
+   - [WebLogic Server image](#2-weblogic-server-image)
    - [Optional WDT model config map](#3-optional-wdt-model-config-map)
    - [Required runtime encryption secret](#4-required-runtime-encryption-secret)
    - [Secrets for model macros](#5-secrets-for-model-macros)
@@ -21,15 +21,15 @@ description = "Steps for creating and deploying Model in Image images and their 
 
 Here's what's needed to create and deploy a typical Model in Image domain. These items do not need to be created in order.
 
-#### 1. WebLogic operator
+#### 1. WebLogic Kubernetes Operator
 
-Deploy a WebLogic operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See [Manage operators]({{< relref "/userguide/managing-operators/_index.md" >}}) and [Quick Start]({{< relref "/quickstart/_index.md" >}}).
+Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See [Manage operators]({{< relref "/userguide/managing-operators/_index.md" >}}) and [Quick Start]({{< relref "/quickstart/_index.md" >}}).
 
-#### 2. WebLogic image
+#### 2. WebLogic Server image
 
 Model in Image requires creating a 'final' deployable image that has WebLogic Server and WDT installed, plus your model and application files.
 
-You can start with a WebLogic 12.2.1.3 or later pre-built base image obtained from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or similar, manually build your own base image as per [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}), or build a base image using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch). For an example of the first approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
+You can start with a WebLogic Server 12.2.1.3 or later pre-built base image obtained from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or similar, manually build your own base image as per [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}), or build a base image using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch). For an example of the first approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
 
 After you have a base image, Model in Image requires layering the following directory structure for its (optional) WDT models artifacts and (required) WDT binaries:
 
@@ -107,7 +107,7 @@ The following domain resource attributes are specific to Model in Image domains.
 | `domainHome`                                 |  Must reference an empty or non-existent directory within your image. Do not include the mount path of any persistent volume. Note that Model in Image recreates the domain home for a WebLogic pod every time the pod restarts.|
 | `configuration.model.configMap`             | Optional. Set if you have stored additional models in a config map as per [Optional WDT model config map](#3-optional-wdt-model-config-map). |
 | `configuration.secrets`                      | Optional. Set this array if your image or config map models contain macros that reference custom Kubernetes secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.|
-| `configuration.model.RuntimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#4-required-runtime-encryption-secret). |
+| `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#4-required-runtime-encryption-secret). |
 | `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF` where `WLS` is the default. See [WDT Domain Types](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/type_def.md).|
 
 Notes:
@@ -125,9 +125,9 @@ Notes:
 
 A JRF domain requires an infrastructure database called an RCU database, initializing this database, and configuring your domain to access this database. All of these steps must occur before you first deploy your domain. When you first deploy your domain, the introspector job will initialize it's RCU schema tables in the database - a process that can take several minutes.
 
-Furthermore, if you want to have a restarted JRF domain access updates to the infrastructure database that the domain made at an earlier time, the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain, as discussed in [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
+Furthermore, if you want to safely ensure that a restarted JRF domain can access updates to the infrastructure database that the domain made at an earlier time, the original domain's wallet file must be safely saved as soon as practical, and the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain, as discussed in [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
 
-Here are the required settings for Model in Image JRF domains:
+__Here are the required settings for Model in Image JRF domains:__
 
 - Set `configuration.model.domainType` to `JRF`.
 
@@ -142,11 +142,29 @@ Here are the required settings for Model in Image JRF domains:
   ```
   domainInfo:
       RCUDbInfo:
-          rcu_prefix:          '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access/rcu_prefix@@'
-          rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access/rcu_schema_password@@'
-          rcu_db_conn_string:  '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access/rcu_db_conn_string@@'
+          rcu_prefix:          '@@SECRET:sample-domain1-rcu-access/rcu_prefix@@'
+          rcu_schema_password: '@@SECRET:sample-domain1-rcu-access/rcu_schema_password@@'
+          rcu_db_conn_string:  '@@SECRET:sample-domain1-rcu-access/rcu_db_conn_string@@'
 
   ```
+
+__Important instructions when changing an RCU schema password:__
+
+  {{% notice warning %}}
+  Carefully follow these instructions in order to prevent irrecoverably locking up your RCU database schema account when changing your RCU schema password.
+  {{% /notice %}}
+
+- Shutdown all domains that access the RCU database schema. For example, set their `serverStartPolicy` to `NEVER`.
+
+- Update the RCU schema password in the database.
+
+- Update the Kubernetes secret that contains your `RCUDbInfo.rcu_schema_password` for each domain.
+
+- Restart the domains. For example, change their `serverStartPolicy` from `NEVER` to `IF_NEEDED`.
+
+- Save your wallet files again, as changing your RCU schema password generates a different wallet. See [Reusing an RCU database between domain deployments]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
+
+__References:__
 
 For an example of using JRF in combination with Model in Image, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
 

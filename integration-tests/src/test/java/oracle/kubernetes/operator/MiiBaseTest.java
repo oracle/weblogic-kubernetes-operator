@@ -21,7 +21,7 @@ import oracle.kubernetes.operator.utils.TestUtils;
 public class MiiBaseTest extends BaseTest {
   /**
    * Creates a map with customized domain input attributes using suffixCount and prefix
-   * to make the namespaces and ports unique for model in image
+   * to make the namespaces and ports unique for model in image.
    *
    * @param suffixCount unique numeric value
    * @param prefix      prefix for the artifact names
@@ -46,19 +46,19 @@ public class MiiBaseTest extends BaseTest {
 
   /**
    * Create domain using model in image.
-   * @param domainUIDPrefix
-   * @param domainNS
-   * @param wdtModelFile - file should be under test/resouces/model-in-image dir,
+   * @param domainUidPrefix domain UID prefix
+   * @param domainNS domain namespace
+   * @param wdtModelFile file should be under test/resouces/model-in-image dir,
    *                     value can be ./model.wls.yaml
-   * @param wdtModelPropertiesFile - file should be under test/resouces/model-in-image dir,
+   * @param wdtModelPropertiesFile file should be under test/resouces/model-in-image dir,
    *                               value can be ./model.empty.properties
-   * @param cmFile - creates configmap from this file or dir
+   * @param cmFile creates configmap from this file or dir
    */
-  public Domain createMIIDomainWithConfigMap(String domainUIDPrefix,
-        String domainNS, String wdtModelFile, String wdtModelPropertiesFile,
-        String cmFile, String wdtDomainType) throws Exception {
+  public Domain createMiiDomainWithConfigMap(String domainUidPrefix,
+                                             String domainNS, String wdtModelFile, String wdtModelPropertiesFile,
+                                             String cmFile, String wdtDomainType) throws Exception {
     Map<String, Object> domainMap =
-        createModelInImageMap(getNewSuffixCount(), domainUIDPrefix);
+        createModelInImageMap(getNewSuffixCount(), domainUidPrefix);
     // config map before deploying domain crd
     String cmName = domainMap.get("domainUID") + "-mii-config-map";
 
@@ -77,10 +77,10 @@ public class MiiBaseTest extends BaseTest {
   }
 
   /**
-   *
-   * @param cmName
-   * @param domain
-   * @throws Exception
+   * Modify the domain yaml to add reference to config map and change domain-level restart version.
+   * @param cmName Config map name
+   * @param domain the domain
+   * @throws Exception on failure
    */
   public void modifyDomainYamlWithNewConfigMapAndDomainRestartVersion(
       String cmName, Domain domain)
@@ -93,7 +93,7 @@ public class MiiBaseTest extends BaseTest {
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    Map<String, String> objectNode = new HashMap();
+    Map<String, String> objectNode = new HashMap<>();
     objectNode.put("restartVersion", "v1.1");
     crd.addObjectNodeToDomain(objectNode);
     String modYaml = crd.getYamlTree();

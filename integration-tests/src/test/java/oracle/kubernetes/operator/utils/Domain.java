@@ -1393,8 +1393,8 @@ public class Domain {
   }
 
   /**
-   * verify if all the servers in the domain are restarted
-   * @throws Exception
+   * verify if all the servers in the domain are restarted.
+   * @throws Exception on failure
    */
   public void verifyDomainRestarted() throws Exception {
     verifyAdminServerRestarted();
@@ -1525,7 +1525,7 @@ public class Domain {
     }
 
     //create configmap for MII
-    createMIIConfigMap("miiConfigMap", "miiConfigMapFileOrDir");
+    createMiiConfigMap("miiConfigMap", "miiConfigMapFileOrDir");
 
     // write configOverride and configOverrideSecrets to domain.yaml and/or create domain
     if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")
@@ -2248,6 +2248,7 @@ public class Domain {
             + ", stderr='"
             + result.stderr()
             + "'";
+    LoggerHelper.getLocal().log(Level.INFO, "App deploy result " + resultStr);
     if (!resultStr.contains("Unable to use a TTY") && result.exitValue() != 0) {
       throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
     }
@@ -2428,12 +2429,12 @@ public class Domain {
   }
 
   /**
-   * create config map with given keys for map name and file
-   * @param cmKeyName
-   * @param cmFileKeyName
-   * @throws Exception
+   * create config map with given keys for map name and file.
+   * @param cmKeyName Config map key name
+   * @param cmFileKeyName Config map file key name
+   * @throws Exception on failure
    */
-  public void createMIIConfigMap(String cmKeyName, String cmFileKeyName) throws Exception {
+  public void createMiiConfigMap(String cmKeyName, String cmFileKeyName) throws Exception {
     if (domainHomeSourceType.equals("FromModel")) {
       if (domainMap.containsKey(cmKeyName)) {
         if (!domainMap.containsKey(cmFileKeyName)) {
@@ -2444,14 +2445,38 @@ public class Domain {
             resultsDir + "/samples/model-in-image/"
                   + domainMap.get(cmFileKeyName), domainNS,
             " weblogic.domainUID=" + domainUid);
-
       }
     }
   }
 
   /**
-   * append overridesConfigMap to domain.yaml and apply
-   * @throws Exception
+   * write server pod logs
+   *
+   * @throws Exception exception
+   */
+  public void logServerPods() throws Exception {
+    // check admin pod
+    String adminPodName = domainUid + "-" + adminServerName;
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Writing admin pod(" + adminPodName + ") log");
+    TestUtils.exec("kubectl logs " + adminPodName + " -n "
+        + domainNS + " > " + resultsDir + "/pod-" + adminPodName + ".log", true);
+
+    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
+      // check managed server pods
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        String msPodName = domainUid + "-" + managedServerNameBase + i;
+        LoggerHelper.getLocal().log(Level.INFO,
+            "Writing managed pod(" + msPodName + ") log");
+        TestUtils.exec("kubectl logs " + msPodName
+            + " -n " + domainNS + " > " + resultsDir + "/pod-" + msPodName + ".log", true);
+      }
+    }
+  }
+
+  /**
+   * append overridesConfigMap to domain.yaml and apply.
+   * @throws Exception on failure
    */
   public void appendOverridesConfigMapAndApply() throws Exception {
     if (!domainMap.containsKey("overridesConfigMap")) {

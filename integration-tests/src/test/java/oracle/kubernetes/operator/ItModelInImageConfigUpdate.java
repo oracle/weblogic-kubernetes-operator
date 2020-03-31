@@ -258,7 +258,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
 
     LoggerHelper.getLocal().log(Level.INFO, "Params used to create domain: " + paramBuff);
 
-    domain = createMIIDomainWithConfigMap(
+    domain = createMiiDomainWithConfigMap(
         testClassName,
         domainNS,
         wdtModelFile,

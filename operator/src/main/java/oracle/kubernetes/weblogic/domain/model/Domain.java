@@ -572,7 +572,7 @@ public class Domain {
       addUnmappedLogHome();
       addReservedEnvironmentVariables();
       addMissingSecrets(kubernetesResources);
-      addIllegalSitConfigForMII();
+      addIllegalSitConfigForMii();
       verifyNoAlternateSecretNamespaceSpecified();
       addMissingModelConfigMap(kubernetesResources);
 
@@ -652,10 +652,10 @@ public class Domain {
       }
     }
 
-    private void addIllegalSitConfigForMII() {
+    private void addIllegalSitConfigForMii() {
       if (isDomainSourceFromModel(getDomainHomeSourceType())
           && getConfigOverrides() != null) {
-        failures.add(DomainValidationMessages.illegalSitConfigForMII(getConfigOverrides()));
+        failures.add(DomainValidationMessages.illegalSitConfigForMii(getConfigOverrides()));
       }
     }
 
