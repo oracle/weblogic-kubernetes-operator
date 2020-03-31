@@ -3,9 +3,9 @@
 
 package oracle.weblogic.kubernetes.assertions;
 
-import io.kubernetes.client.openapi.ApiException;
 import java.util.concurrent.Callable;
 
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;

@@ -3,8 +3,6 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
-import java.util.concurrent.Callable;
-
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
@@ -13,7 +11,9 @@ import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.util.ClientBuilder;
+
 import java.io.IOException;
+import java.util.concurrent.Callable;
 
 public class Kubernetes {
 
@@ -41,7 +41,11 @@ public class Kubernetes {
   public static Callable<Boolean> podRunning(String podName, String domainUID, String namespace) throws ApiException {
     V1PodList list = coreV1Api.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null);
     for (V1Pod item : list.getItems()) {
-      System.out.println(item.getMetadata().getName());
+      if (item.getMetadata().getNamespace().equals(namespace)) {
+        System.out.println("NAME:" + item.getMetadata().getName());
+        System.out.println("LABELS:" + item.getMetadata().getLabels());
+        System.out.println("NAMESPACE:" + item.getMetadata().getNamespace());
+      }
     }
     return () -> {
       return true;
