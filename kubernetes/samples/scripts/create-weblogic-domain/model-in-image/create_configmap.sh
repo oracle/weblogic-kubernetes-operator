@@ -14,12 +14,12 @@ function usage() {
   $(basename $0) -c configmapname \\
                 [-n mynamespace]  \\
                 [-d mydomainuid]  \\
-                [-f filenameordir] [-f filenameor dir] ...
+                [-f filename_or_dir] [-f filename_or_dir] ...
   
   -d <domain_uid>     : Defaults to \$DOMAIN_UID if set, 'sample-domain1' otherwise.
   -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'DOMAIN_UID-ns' otherwise.
   -c <configmap-name> : Name of configmap. Required.
-  -f <filename>       : File or directory location. Can be specified more than once. 
+  -f <filename_or_dir>: File or directory location. Can be specified more than once. 
                         Key will be the file-name(s), value will be file contents. Required.
 EOF
 }
