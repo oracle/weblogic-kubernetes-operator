@@ -26,7 +26,8 @@ public class Domain {
     return true;
   }
 
-  public static boolean deleteDomainCustomResource(String domainUID, String namespace) {
-    return true;
+  public static boolean deleteDomainCustomResource(String domainUID, String namespace)
+      throws ApiException {
+    return Kubernetes.deleteDomainCustomResource(domainUID, namespace);
   }
 }

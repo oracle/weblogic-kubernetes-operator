@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.kubernetes.client.openapi.ApiClient;
@@ -32,6 +31,9 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import org.jose4j.json.internal.json_simple.JSONObject;
+import org.jose4j.json.internal.json_simple.parser.JSONParser;
+import org.jose4j.json.internal.json_simple.parser.ParseException;
 
 // TODO ryan - in here we want to implement all of the kubernetes
 // primitives that we need, using the API, not spawning a process
@@ -148,42 +150,68 @@ public class Kubernetes implements LoggedTest {
         "Foreground", // Whether and how garbage collection will be performed
         deleteOptions
     );
-    return true;
 
+    if (status.getCode() == 200 || status.getCode() == 202) {
+      // status code 200 = OK, 202 = Accepted
+      return true;
+    }
+
+    return false;
   }
 
   // --------------------------- Custom Resource Domain -----------------------------------
 
-  public static boolean createDomain(String domainUID, String namespace, String domainYAML)
+  public static boolean createDomainCustomResource(String domainUID, String namespace, String domainYAML)
       throws IOException, ApiException {
-    final String localVarPath =
-        DOMAIN_PATH.replaceAll("\\{namespace\\}", apiClient.escapeString(namespace));
-
     Object json = null;
+    try {
+      json = convertYamlToJson(domainYAML);
+    } catch (ParseException e) {
+      throw new IOException("Failed to parse " + domainYAML, e);
+    }
 
-    json = convertYamlToJson(domainYAML);
     Object response = customObjectsApi.createNamespacedCustomObject(
         DOMAIN_GROUP, // custom resource's group name
         DOMAIN_VERSION, // //custom resource's version
         namespace, // custom resource's namespace
-        localVarPath, // custom resource's plural name
+        DOMAIN_PLURAL, // custom resource's plural name
         json, // JSON schema of the Resource to create
         null // pretty print output
     );
-    return true;
 
+    return true;
   }
 
-  private static Object convertYamlToJson(String yamlFile) throws IOException {
+  public static boolean deleteDomainCustomResource(String domainUID, String namespace)
+      throws ApiException {
+    V1DeleteOptions deleteOptions = new V1DeleteOptions();
+
+    Object status = customObjectsApi.deleteNamespacedCustomObject(
+        DOMAIN_GROUP, // custom resource's group name
+        DOMAIN_VERSION, // //custom resource's version
+        namespace, // custom resource's namespace
+        DOMAIN_PLURAL, // custom resource's plural name
+        domainUID, // custom object's name
+        0, // duration in seconds before the object should be deleted
+        false, // Should the dependent objects be orphaned
+        "Foreground", // Whether and how garbage collection will be performed
+        deleteOptions
+    );
+
+    return true;
+  }
+
+  private static Object convertYamlToJson(String yamlFile) throws IOException, ParseException {
+    // Read the yaml from file
     ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
     Object yamlObj = yamlReader.readValue(new File(yamlFile), Object.class);
-    logger.info("Kubernetes.convertYamlToJson yaml: " + yamlObj);
 
+    // Convert to JSON object
     ObjectMapper jsonWriter = new ObjectMapper();
-    String writeValueAsString = jsonWriter.writeValueAsString(yamlObj);
-    logger.info("Kubernetes.convertYamlToJson writeValueAsString: " + writeValueAsString);
-    JsonNode root = new ObjectMapper().readTree(writeValueAsString);
-    return root;
+    String writeValueAsString = jsonWriter.writerWithDefaultPrettyPrinter().writeValueAsString(yamlObj);
+    JSONParser parser = new JSONParser();
+    JSONObject json = (JSONObject) parser.parse(writeValueAsString);
+    return json;
   }
 
   public static List<String> listDomains(String namespace) throws ApiException {
@@ -289,7 +317,12 @@ public class Kubernetes implements LoggedTest {
         deleteOptions
     );
 
-    return true;
+    if (status.getCode() == 200 || status.getCode() == 202) {
+      // status code 200 = OK, 202 = Accepted
+      return true;
+    }
+
+    return false;
   }
 
   // --------------------------- secret ---------------------------
@@ -329,7 +362,12 @@ public class Kubernetes implements LoggedTest {
         deleteOptions
     );
 
-    return true;
+    if (status.getCode() == 200 || status.getCode() == 202) {
+      // status code 200 = OK, 202 = Accepted
+      return true;
+    }
+
+    return false;
   }
 
   // --------------------------- pv/pvc ---------------------------
@@ -347,7 +385,12 @@ public class Kubernetes implements LoggedTest {
         deleteOptions
     );
 
-    return true;
+    if (status.getCode() == 200 || status.getCode() == 202) {
+      // status code 200 = OK, 202 = Accepted
+      return true;
+    }
+
+    return false;
   }
 
   public static boolean deletePvc(String pvcName, String namespace) throws ApiException {
@@ -364,7 +407,12 @@ public class Kubernetes implements LoggedTest {
         deleteOptions
     );
 
-    return true;
+    if (status.getCode() == 200 || status.getCode() == 202) {
+      // status code 200 = OK, 202 = Accepted
+      return true;
+    }
+
+    return false;
   }
   // --------------------------
 

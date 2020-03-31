@@ -117,7 +117,8 @@ public class TestActions {
   /**
    * @return true on success, false otherwise
    */
-  public static boolean deleteDomainCustomResource(String domainUID, String namespace) {
+  public static boolean deleteDomainCustomResource(String domainUID, String namespace)
+      throws ApiException {
     return Domain.deleteDomainCustomResource(domainUID, namespace);
   }
 
@@ -150,6 +151,7 @@ public class TestActions {
    *
    * @param name the name of the namespace
    * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean createNamespace(String name) throws ApiException {
     return Namespace.createNamespace(name);
@@ -159,6 +161,7 @@ public class TestActions {
    * Create a namespace with unique name
    *
    * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
    */
   public static String createUniqueNamespace() throws ApiException {
     return Namespace.createUniqueNamespace();
@@ -168,7 +171,7 @@ public class TestActions {
    * List of namespaces in Kubernetes cluster
    *
    * @return - List of names of all namespaces in Kubernetes cluster
-   * @throws ApiException - Kubernetes request exception
+   * @throws ApiException - if Kubernetes client API call fails
    */
   public static List<String> listNamespaces() throws ApiException {
     return Namespace.listNamespaces();
@@ -179,7 +182,7 @@ public class TestActions {
    *
    * @param name - name of namespace
    * @return true if successful delete, false otherwise
-   * @throws ApiException - Kubernetes request exception
+   * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean deleteNamespace(String name) throws ApiException {
     return Namespace.deleteNamespace(name);
@@ -231,6 +234,7 @@ public class TestActions {
    *
    * @param pvName the name of the Persistent Volume
    * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean deletePersistentVolume(String pvName) throws ApiException {
     return PersistentVolume.delete(pvName);
@@ -252,6 +256,7 @@ public class TestActions {
    * @param pvcName the name of the Persistent Volume Claim
    * @param namespace the namespace of the Persistent Volume Claim
    * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean deletePersistentVolumeClaim(String pvcName, String namespace)
       throws ApiException {
@@ -268,6 +273,8 @@ public class TestActions {
    * @param password password
    * @param namespace the name of the namespace
    * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
+   *
    */
   public static boolean createSecret(String secretName,
       String userName, String password, String namespace) throws ApiException {
@@ -280,6 +287,7 @@ public class TestActions {
    * @param secretName the name of the secret
    * @param namespace the name of the namespace
    * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean deleteSecret(String secretName, String namespace) throws ApiException {
     return Secret.delete(secretName, namespace);
@@ -293,6 +301,8 @@ public class TestActions {
    * @param namespace the name of the namespace
    * @param fromFile file or dir path
    * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
+   * @throws IOException - if fail to read fromFile
    */
   public static boolean createConfigMap(String cmName, String namespace, String fromFile)
       throws IOException, ApiException {
@@ -305,6 +315,7 @@ public class TestActions {
    * @param cmName the name of the Config Map
    * @param namespace the name of the namespace
    * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean deleteConfigMap(String cmName, String namespace) throws ApiException {
     return ConfigMap.delete(cmName, namespace);

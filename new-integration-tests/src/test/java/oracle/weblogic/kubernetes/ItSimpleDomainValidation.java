@@ -54,9 +54,10 @@ class ItSimpleDomainValidation implements LoggedTest {
         .and().with().pollInterval(10, SECONDS)
         .conditionEvaluationListener(
             condition -> logger.info(() ->
-                String.format("Waiting for domain to be running (elapsed time %dms, remaining time %dms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS())))
+                String.format(
+                    "Waiting for domain to be running (elapsed time %dms, remaining time %dms)",
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS())))
         // and here we can set the maximum time we are prepared to wait
         .await().atMost(5, MINUTES)
         // operatorIsRunning() is one of our custom, reusable assertions
@@ -68,8 +69,9 @@ class ItSimpleDomainValidation implements LoggedTest {
 
     // Delete namespace
     try {
-      deleteNamespace(namespace);
-      logger.info("Deleted namespace: " + namespace);
+      if (deleteNamespace(namespace)) {
+        logger.info("Deleted namespace: " + namespace);
+      }
     } catch (Exception e) {
       // TODO: Fix as there is a known bug that delete can return either the object
       //  just deleted or a status.  We can workaround by either retrying or using
