@@ -21,19 +21,19 @@ public class Operator {
 
     // it is intended that methods in these impl classes are only ever called by
     // TestActions.java, and never directly from a test
-    public static boolean install(String releaseName, String namespace, OperatorParams params) {
+    public static boolean install(OperatorParams params) {
         // i would use primitives to do what i need to do
         boolean success = false;
         if(new Helm.HelmBuilder(OPERATOR_HELM_REPO_URL).build().addRepo()) {
-            success = new Helm.HelmBuilder(OPERATOR_CHART_NAME, releaseName)
-                .namespace(namespace)
+            success = new Helm.HelmBuilder(OPERATOR_CHART_NAME, params.getReleaseName())
+                .namespace(params.getNamespace())
                 .values(params.values())
                 .build().install();
         }
         return success;
     }
 
-    public static boolean upgrade(String releaseName, String namespace, OperatorParams params) {
+    public static boolean upgrade(OperatorParams params) {
         return true;
     }
 

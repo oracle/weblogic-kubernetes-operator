@@ -56,10 +56,12 @@ class ItSimpleOperatorValidation implements LoggedTest {
         // successful or not.
 
         OperatorParams opParams =
-            new OperatorParams().image("weblogic-kubernetes-operator:test_itsimpleoperator")
+            new OperatorParams().releaseName("weblogic-operator")
+                                .namespace("opns1")
+                                .image("weblogic-kubernetes-operator:test_itsimpleoperator")
                                 .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
                                 .serviceAccount("sa-opns1");
-        boolean success = installOperator("weblogic-operator", "opns1", opParams);
+        boolean success = installOperator(opParams);
 
         // we can use a standard JUnit assertion to check on the result
         assertEquals(true, success, "There MUST be a descriptive message here");

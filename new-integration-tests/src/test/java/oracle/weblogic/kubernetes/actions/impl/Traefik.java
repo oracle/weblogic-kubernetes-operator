@@ -17,12 +17,12 @@ public class Traefik {
      */
     private static String TRAEFIK_CHART_NAME = "traefik";
 
-    public static boolean install(String valuesYaml) {
+    public static boolean install(TraefikParams params) {
         boolean success = false;
         if(new Helm.HelmBuilder(TRAEFIK_HELM_REPO_URL).build().addRepo()) {
-            success = new Helm.HelmBuilder(TRAEFIK_CHART_NAME, "traefik-operator")
-                .namespace("traefik")
-                .values(new HashMap<>())
+            success = new Helm.HelmBuilder(TRAEFIK_CHART_NAME, params.getReleaseName())
+                .namespace(params.getNamespace())
+                .values(params.values())
                 .build().install();
         }
         return success;

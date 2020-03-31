@@ -14,6 +14,7 @@ import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Traefik;
+import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
@@ -24,24 +25,20 @@ public class TestActions {
 
     /**
      * Install WebLogic Kubernetes Operator
-     * @param name operator release name
-     * @param namespace the name of the namespace
      * @param params operator parameters for helm values
      * @return true if the operator is successfully installed, false otherwise.
      */
-    public static boolean installOperator(String name, String namespace, OperatorParams params) {
-        return Operator.install(name, namespace, params);
+    public static boolean installOperator(OperatorParams params) {
+        return Operator.install(params);
     }
 
     /**
      * Upgrade existing Operator release
-     * @param name operator release name
-     * @param namespace the name of the namespace
      * @param params operator parameters for helm values
      * @return true if the operator is successfully upgraded, false otherwise.
      */
-    public static boolean upgradeOperator(String name, String namespace, OperatorParams params) {
-        return Operator.upgrade(name, namespace, params);
+    public static boolean upgradeOperator(OperatorParams params) {
+        return Operator.upgrade(params);
     }
 
     /**
@@ -113,11 +110,11 @@ public class TestActions {
 
     /**
      * Install Traefik Operator
-     * @param valuesYaml values yaml file to be used
+     * @param params parameters for helm values
      * @return true on success, false otherwise
      */
-    public static boolean installTraefik(String valuesYaml) {
-        return Traefik.install(valuesYaml);
+    public static boolean installTraefik(TraefikParams params) {
+        return Traefik.install(params);
     }
 
     /**
