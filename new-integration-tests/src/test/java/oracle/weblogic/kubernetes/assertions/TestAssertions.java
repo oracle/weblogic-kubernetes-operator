@@ -9,11 +9,12 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
+import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
 
 // as in the actions, it is intended tests only use these assertaions and do
 // not go direct to the impl classes
-public class TestAssertions {
+public class TestAssertions implements LoggedTest {
 
   /**
    * Check if Operator is running.
