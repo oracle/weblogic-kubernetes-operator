@@ -41,7 +41,7 @@ public class Kubernetes {
      * 26^4 possible combinations, and create a namespace using that random name.
      * @return the name of the new namespace.
      */
-    public static String createUniqueNamespace() {
+    /* public static String createUniqueNamespace() {
         char[] name = new char[4];
         for (int i = 0; i < name.length; i++) {
             name[i] = (char)(random.nextInt(25) + (int)'a');
@@ -52,7 +52,7 @@ public class Kubernetes {
         } else {
             return "";
         }
-    }
+    } */
 
     // --------------------------- create, delete resource using yaml --------------------------
 

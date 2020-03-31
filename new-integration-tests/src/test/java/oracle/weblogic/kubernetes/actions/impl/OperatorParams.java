@@ -15,9 +15,11 @@ public class OperatorParams {
   private String namespace;
   private List<String> domainNamespaces;
   private String image;
-  private String serviceAccount;
+  private String serviceAccount = "default";  // Q: assume default if not given?
   private boolean externalRestEnabled;
+  private String externalRestIdentitySecret;
   private int externalRestHttpsPort;
+  private String imagePullPolicy;
 
   public OperatorParams releaseName(String releaseName) {
     this.releaseName = releaseName;
@@ -54,12 +56,25 @@ public class OperatorParams {
     return this;
   }
 
+  public OperatorParams imagePullPolicy(String imagePullPolicy) {
+    this.imagePullPolicy = imagePullPolicy;
+    return this;
+  }
+
+  public OperatorParams externalRestIdentitySecret(String externalRestIdentitySecret) {
+    this.externalRestIdentitySecret  = externalRestIdentitySecret;
+    return this;
+  }
   public String getReleaseName() {
     return releaseName;
   }
 
   public String getNamespace() {
     return namespace;
+  }
+
+  public String getServiceAccount() {
+    return serviceAccount;
   }
 
   public HashMap<String, String> values() {

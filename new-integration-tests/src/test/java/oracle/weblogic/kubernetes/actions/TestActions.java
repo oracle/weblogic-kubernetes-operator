@@ -134,7 +134,7 @@ public class TestActions {
      * @return true on success, false otherwise
      */
     public static boolean createNamespace(String name) {
-        return Namespace.createNamespace(name);
+        return new Namespace().name(name).create();
     }
 
     /**
@@ -142,7 +142,9 @@ public class TestActions {
      * @return true on success, false otherwise
      */
     public static String createUniqueNamespace() {
-        return Namespace.createUniqueNamespace();
+        String name = Namespace.uniqueName();
+        new Namespace().name(name).create();
+        return name;
     }
 
     // -------------------------   pv/pvc  ---------------------------------

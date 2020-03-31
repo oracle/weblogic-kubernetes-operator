@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes.actions.impl;
 import java.util.HashMap;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class Operator {
 
@@ -22,11 +23,31 @@ public class Operator {
     // it is intended that methods in these impl classes are only ever called by
     // TestActions.java, and never directly from a test
     public static boolean install(OperatorParams params) {
-        // i would use primitives to do what i need to do
+
+        // check for required params and assert here?
+        String namespace = params.getNamespace();
+
+        // Question - Do these here or in test using TestActions?
+        //delete the namespace if it exists ?
+
+        // create namespace
+        new Namespace().name(namespace).create();
+
+        // create service account
+        if(!params.getServiceAccount().equals("default")) {
+            // Kubernetes.createServiceAccount(params.getServiceAccount(), namespace);
+        }
+
+        // create domain namespaces here?
+
+        // use kubernetes/samples/scripts/rest/generate-external-rest-identity.sh to create the
+        // secret with the self-signed certificate and private key in the same namespace as op ns?
+
+        // Question - end
         boolean success = false;
         if(new Helm.HelmBuilder(OPERATOR_HELM_REPO_URL).build().addRepo()) {
             success = new Helm.HelmBuilder(OPERATOR_CHART_NAME, params.getReleaseName())
-                .namespace(params.getNamespace())
+                .namespace(namespace)
                 .values(params.values())
                 .build().install();
         }
