@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.assertions;
 
+import io.kubernetes.client.openapi.ApiException;
 import java.util.concurrent.Callable;
 
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
@@ -49,7 +50,7 @@ public class TestAssertions {
    * @param namespace in which the pod is running
    * @return true if the pod is running otherwise false
    */
-  public static Callable<Boolean> podReady(String podName, String domainUID, String namespace) {
+  public static Callable<Boolean> podReady(String podName, String domainUID, String namespace) throws ApiException {
     return Kubernetes.podRunning(podName, domainUID, namespace);
   }
 
