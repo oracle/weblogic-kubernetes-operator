@@ -84,7 +84,7 @@ Some notes about the sample model file:
 
 #### Model file naming and loading order
 
-Refer to this section if you need to control the order in which your model files are loaded.
+Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that's loaded has the highest precedence.
 
 During domain home creation, model and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT config map described in [Optional WDT model config map]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#3-optional-wdt-model-config-map" >}}).
 
