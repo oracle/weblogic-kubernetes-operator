@@ -13,7 +13,7 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
  *  install everything before the Java test starts to run.
  */
 
-public class Installer extends BaseInstallWIT {
+public class Installer extends InstallWITCommon {
   // temporary dir, will fix this once we decide on the
   private static final String downloadDir = WORK_DIR + "/download";
   private InstallParams params;

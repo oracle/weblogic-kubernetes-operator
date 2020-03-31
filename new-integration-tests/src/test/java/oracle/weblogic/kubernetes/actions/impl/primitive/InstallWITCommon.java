@@ -14,7 +14,7 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 /**
  * The common fuctionality of Installer and WebLogicImageTool
  */
-public class BaseInstallWIT {
+public class InstallWITCommon {
 
   protected static final String WORK_DIR 
       = System.getProperty("java.io.tmpdir") + "/it-results";

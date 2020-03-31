@@ -7,7 +7,7 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
  * Implementation of actions that use WebLogic Image Tool to create or update a WebLogic Docker image.
  */
 
-public class WebLogicImageTool extends BaseInstallWIT {
+public class WebLogicImageTool extends InstallWITCommon {
   public static final String WLS = "WLS";
   public static final String JRF = "JRF";
   public static final String RJRF = "RestrictedJRF";
