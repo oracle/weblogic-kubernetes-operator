@@ -26,7 +26,7 @@ public class InstallWITCommon {
   protected boolean executeAndVerify(String command, boolean redirectOutput) {
     ProcessBuilder builder = new ProcessBuilder();
     builder.command(command);
-    logger.info("Executing command = " + command + "/ env = " + builder.environment());
+    logger.info("Executing command = " + command + "\n env = " + builder.environment());
     try {
       Process process = builder.start();
 
