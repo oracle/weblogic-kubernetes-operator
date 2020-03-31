@@ -6,8 +6,8 @@ package oracle.weblogic.kubernetes.assertions;
 import java.util.concurrent.Callable;
 
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
-import oracle.weblogic.kubernetes.assertions.impl.Operator;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
+import oracle.weblogic.kubernetes.assertions.impl.Operator;
 
 
 // as in the actions, it is intended tests only use these assertaions and do

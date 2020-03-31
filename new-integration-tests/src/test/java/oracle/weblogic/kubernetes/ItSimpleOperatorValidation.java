@@ -4,25 +4,25 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.Arrays;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
-
-import static org.awaitility.Awaitility.with;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
+import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // this is a POC for a new way of writing tests.
 // this is meant to be a simple test.  later i will add more complex tests and deal
@@ -61,9 +61,9 @@ class ItSimpleOperatorValidation implements LoggedTest {
 
     String opns = "opns1";
     OperatorParams opParams
-      = new OperatorParams().image("weblogic-kubernetes-operator:test_itsimpleoperator")
-        .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
-        .serviceAccount("sa-opns1");
+        = new OperatorParams().image("weblogic-kubernetes-operator:test_itsimpleoperator")
+          .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
+          .serviceAccount("sa-opns1");
     boolean success = installOperator("weblogic-operator", opns, opParams);
 
     // we can use a standard JUnit assertion to check on the result
@@ -85,9 +85,9 @@ class ItSimpleOperatorValidation implements LoggedTest {
       // this listener lets us report some status with each poll
       .conditionEvaluationListener(
         condition -> logger.info(()
-          -> String.format("Waiting for operator to be running (elapsed time %dms, remaining time %dms)",
-          condition.getElapsedTimeInMS(),
-          condition.getRemainingTimeInMS())))
+            -> String.format("Waiting for operator to be running (elapsed time %dms, remaining time %dms)",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS())))
       // and here we can set the maximum time we are prepared to wait
       .await().atMost(5, MINUTES)
       // operatorIsRunning() is one of our custom, reusable assertions

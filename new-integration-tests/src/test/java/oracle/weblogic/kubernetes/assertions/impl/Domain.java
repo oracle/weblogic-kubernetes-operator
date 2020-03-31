@@ -9,7 +9,7 @@ public class Domain {
 
   public static Callable<Boolean> exists(String domainUID, String namespace) {
     return () -> {
-      String pods[] = {};
+      String[] pods= {};
       for (String pod : pods) {
         if (!Kubernetes.podRunning(pod, domainUID, namespace).call().booleanValue()) {
           return false;
