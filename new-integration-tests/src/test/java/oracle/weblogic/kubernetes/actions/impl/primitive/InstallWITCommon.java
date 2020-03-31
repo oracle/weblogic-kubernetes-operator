@@ -3,8 +3,11 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
+// import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+// import java.io.InputStreamReader;
+// import java.util.Map;
 
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -19,12 +22,40 @@ public class InstallWITCommon {
   protected static final String WORK_DIR 
       = System.getProperty("java.io.tmpdir") + "/it-results";
 
+  /* Use ProcessBuilder
+  protected boolean executeAndVerify(String command, boolean redirectOutput) {
+    ProcessBuilder builder = new ProcessBuilder();
+    builder.command(command);
+    logger.info("Executing command = " + command + "/ env = " + builder.environment());
+    try {
+      Process process = builder.start();
+
+      // if (redirectOutput) {
+      StringBuilder output = new StringBuilder();
+
+      BufferedReader reader = new BufferedReader(
+          new InputStreamReader(process.getInputStream()));
+      String line;
+      while ((line = reader.readLine()) != null) {
+        output.append(line + "\n");
+      }
+      int exitCode = process.waitFor();
+      return exitCode == 0;
+    } catch (IOException ioe) {
+      ioe.printStackTrace();
+      return false;
+    } catch (InterruptedException ie) {
+      ie.printStackTrace();
+      return false;
+    }
+  }
+  */
+  
   protected boolean executeAndVerify(String command, boolean redirectOutput) {
     logger.info("Executing command = " + command);
     try {
       checkDirectory(WORK_DIR);
       ExecResult result = ExecCommand.exec(command, redirectOutput);
-      verifyExitValue(result, command);
       return result.exitValue() == 0;
     } catch (IOException ioe) {
       return false;
@@ -33,12 +64,6 @@ public class InstallWITCommon {
     }
   }
 
-  protected void verifyExitValue(ExecResult result, String command) throws IOException {
-    if (result.exitValue() != 0) {
-      throw new IOException("executing the following command failed: " + command);
-    }
-  }
-  
   // this most likely is thrown-away code. Eventually the directory will be created
   // upfront by a script before the Java test is invoked. 
   protected void checkDirectory(String dir) {
