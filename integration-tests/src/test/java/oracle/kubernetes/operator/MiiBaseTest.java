@@ -116,4 +116,84 @@ public class MiiBaseTest extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
 
   }
+
+  /**
+   * Modify the domain yaml to change domain-level restart version.
+   * @param domainNS the domain namespace
+   * @param domainUid the domain UID
+   * @param versionNo version number of domain
+   *
+   * @throws Exception if patching domain fails
+   */
+  protected void modifyDomainYamlWithRestartVersion(
+      Domain domain, String domainNS) throws Exception {
+    String versionNo = getRestartVersion(domainNS, domain.getDomainUid());
+    StringBuffer patchDomainCmd = new StringBuffer("kubectl -n ");
+    patchDomainCmd
+        .append(domainNS)
+        .append(" patch domain ")
+        .append(domain.getDomainUid())
+        .append(" --type='json' ")
+        .append(" -p='[{\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"'")
+        .append(versionNo)
+        .append("'\" }]'");
+
+    // patching the domain
+    LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
+    ExecResult result = TestUtils.exec(patchDomainCmd.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
+
+    // verify the domain restarted
+    domain.verifyAdminServerRestarted();
+    domain.verifyManagedServersRestarted();
+  }
+
+  private String getRestartVersion(String domainNS, String domainUid) throws Exception {
+    String versionNo = "1";
+    StringBuffer getVersionCmd = new StringBuffer("kubectl -n ");
+    getVersionCmd
+        .append(domainNS)
+        .append(" get domain ")
+        .append(domainUid)
+        .append("-o=jsonpath='{.spec.restartVersion}'");
+
+    LoggerHelper.getLocal().log(Level.INFO, "Command to get restartVersion: " + getVersionCmd);
+    try {
+      ExecResult result = TestUtils.exec(getVersionCmd.toString());
+      String existinVersion = result.stdout();
+      LoggerHelper.getLocal().log(Level.INFO, "Existing restartVersion is: " + existinVersion);
+
+      // check restartVersion number is digit
+      if (existinVersion.matches("-?(0|[1-9]\\d*)")) {
+        int number = Integer.parseInt(existinVersion);
+        // if restartVersion is a digit, increase it by 1
+        versionNo = String.valueOf(Integer.parseInt(versionNo) + number);
+      } else {
+        // if restartVersion is not a digit, append 1 to it
+        versionNo = existinVersion + versionNo;
+      }
+    } catch (Exception ex) {
+      if (ex.getMessage().contains("not found")) {
+        LoggerHelper.getLocal().log(Level.INFO, "Not Version num found. Set the restartVersion the first time");
+      }
+    }
+
+    LoggerHelper.getLocal().log(Level.INFO, "New restartVersion is: " + versionNo);
+
+    return versionNo;
+  }
+
+  enum WdtDomainType {
+    WLS("WLS"), JRF("JRF"), RestrictedJRF("RestrictedJRF");
+
+    private String type;
+
+    WdtDomainType(String type) {
+      this.type = type;
+    }
+
+    public String geWdtDomainType() {
+      return type;
+    }
+  }
 }
