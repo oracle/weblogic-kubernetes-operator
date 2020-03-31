@@ -215,6 +215,61 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
+  /**
+   * Create a domain using model in image and having configmap in the domain.yaml
+   * The model file has predeployed application and a JDBC DataSource. After deploying
+   * the domain crd, re-create the configmap with a model file that removes the JDBC
+   * and application through the ! notation and update the domain crd to change domain
+   * restartVersion to reload the model, generate new config and initiate a rolling restart.
+   * Verify the JDBC DataSource and application no longer exists in the WebLogic domain.
+   *
+   * @throws Exception when test fails
+   */
+  @Test
+  public void testMiiConfigAppDelete() throws Exception {
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    try {
+      // create Domain with JDBC DataSource and application using the image created by MII
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Creating Domain & waiting for the script to complete execution");
+      boolean createDS = true;
+      createDomainUsingMii(createDS);
+
+      // verify that JDBC DS is created by checking JDBC DS name and read timeout
+      // verify the test result by checking override config file on server pod
+      // verify that application is accessible from inside the managed server pod
+      verifyJdbcOverride();
+      Assertions.assertTrue(verifyApp().contains("Hello"), "Application is not found");
+
+      // delete config and application using new model file
+      wdtConfigDeleteOverride();
+
+      // update domain yaml with restartVersion and
+      // apply the domain yaml, verify domain restarted
+      modifyDomainYamlWithRestartVersion(domain, domainNS);
+
+      // verify the test result by getting JDBC DS via WLST on server pod
+      String destDir = getResultDir() + "/samples/model-in-image-override";
+      String jdbcResources = getJdbcResources(destDir);
+      Assertions.assertFalse(jdbcResources.contains(dsName), dsName + " is found");
+
+      // verify the app access returns 404
+      Assertions.assertFalse(verifyApp().contains("Hello"), "Application is found");
+
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+    }
+
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
+
   private String copyTestModelFiles() throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Creating configMap");
     String origDir = BaseTest.getProjectRoot()
