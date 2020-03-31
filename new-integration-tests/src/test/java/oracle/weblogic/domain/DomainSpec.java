@@ -1,0 +1,632 @@
+// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+package oracle.kubernetes.weblogic.domain.model;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import javax.annotation.Nullable;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
+import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1SecretReference;
+import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.json.Pattern;
+import oracle.kubernetes.json.Range;
+import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.ImagePullPolicy;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.ModelInImageDomainType;
+import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+@Description("DomainSpec is a description of a domain.")
+public class DomainSpec {
+
+  @Description(
+      "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
+          + " Defaults to the value of metadata.name.")
+  @Pattern("^[a-z0-9-.]{1,253}$")
+  @SerializedName("domainUID")
+  private String domainUid;
+
+  @Description(
+      "The folder for the WebLogic Domain. Not required."
+          + " Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume."
+          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image."
+          + " Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel.")
+  private String domainHome;
+
+  @Description(
+      "The strategy for deciding whether to start a server. "
+          + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.")
+  private String serverStartPolicy;
+
+  @Description(
+      "The name of a pre-created Kubernetes secret, in the domain's namespace, that holds"
+          + " the username and password needed to boot WebLogic Server under the 'username' and "
+          + "'password' fields.")
+  private V1SecretReference webLogicCredentialsSecret;
+
+  @Description(
+      "The in-pod name of the directory in which to store the domain, node manager, server logs, "
+          + "and server  *.out files. Defaults to /shared/logs/<domainUID>. Ignored if logHomeEnabled is false.")
+  private String logHome;
+
+  @Description(
+      "Specified whether the log home folder is enabled. Not required. "
+          + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
+  private Boolean logHomeEnabled;
+
+  @Description(
+      "An optional, in-pod location for data storage of default and custom file stores. "
+          + "If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") "
+          + "then the data storage directories are determined from the WebLogic domain home configuration.")
+  private String dataHome;
+
+  @Description("If true (the default), the server .out file will be included in the pod's stdout.")
+  private Boolean includeServerOutInPodLog;
+
+  @Description(
+      "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
+          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
+  private String image;
+
+  @Description(
+      "The image pull policy for the WebLogic Docker image. "
+          + "Legal values are Always, Never and IfNotPresent. "
+          + "Defaults to Always if image ends in :latest, IfNotPresent otherwise.")
+  private String imagePullPolicy;
+
+  @Description("A list of image pull secrets for the WebLogic Docker image.")
+  private List<V1LocalObjectReference> imagePullSecrets = new ArrayList<>();
+
+  @Description(
+      "The number of managed servers to run in any cluster that does not specify a replica count.")
+  @Range(minimum = 0)
+  private Integer replicas;
+
+  @Deprecated
+  @Description(
+      "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
+          + " True indicates that the domain home file system is contained in the Docker image"
+          + " specified by the image field. False indicates that the domain home file system is located"
+          + " on a persistent volume.")
+  private Boolean domainHomeInImage;
+
+  @Description(
+      "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
+          + " Image indicates that the domain home file system is contained in the Docker image"
+          + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
+          + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
+          + " and managed by the operator based on a WDT domain model."
+          + " If this field is specified it overrides the value of domainHomeInImage. If both fields are"
+          + " unspecified then domainHomeSourceType defaults to Image.")
+  private String domainHomeSourceType;
+
+  @Description(
+      "If present, every time this value is updated, the operator will start introspect domain job")
+  private String introspectVersion;
+
+  @Description("Models and overrides affecting the WebLogic domain configuration.")
+  private Configuration configuration;
+
+  @Deprecated
+  @Description("Deprecated. Use configuration.overridesConfigMap instead."
+      + " Ignored if configuration.overridesConfigMap is specified."
+      + " The name of the config map for optional WebLogic configuration overrides.")
+  private String configOverrides;
+
+  @Deprecated
+  @Description("Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
+      + " A list of names of the secrets for optional WebLogic configuration overrides.")
+  private List<String> configOverrideSecrets = new ArrayList<>();
+
+  @Description("Configuration for the Administration Server.")
+  private AdminServer adminServer;
+
+  @Description("Configuration for individual Managed Servers.")
+  private final List<ManagedServer> managedServers = new ArrayList<>();
+
+  @Description("Configuration for the clusters.")
+  protected final List<Cluster> clusters = new ArrayList<>();
+
+  @Description("Experimental feature configurations.")
+  private Experimental experimental;
+
+  @Description("Configuration affecting server pods.")
+  private final ServerPod serverPod;
+
+  @Description(
+      "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
+  private final ServerService serverService;
+
+  @Description(
+      "The state in which the server is to be started. Use ADMIN if server should start "
+          + "in the admin state. Defaults to RUNNING.")
+  private String serverStartState;
+
+  @Description(
+      "If present, every time this value is updated the operator will restart"
+          + " the required servers.")
+  private String restartVersion;
+
+  public DomainSpec domainUid(String domainUid) {
+    this.domainUid = domainUid;
+    return this;
+  }
+
+  public String getDomainUid() {
+    return domainUid;
+  }
+
+  public void setDomainUid(String domainUid) {
+    this.domainUid = domainUid;
+  }
+
+  public DomainSpec domainHome(String domainHome) {
+    this.domainHome = domainHome;
+    return this;
+  }
+
+  public String getDomainHome() {
+    return domainHome;
+  }
+
+  public void setDomainHome(String domainHome) {
+    this.domainHome = domainHome;
+  }
+
+  public DomainSpec serverStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+    return this;
+  }
+
+  public String getServerStartPolicy() {
+    return serverStartPolicy;
+  }
+
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+  }
+
+  public DomainSpec webLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+    this.webLogicCredentialsSecret = webLogicCredentialsSecret;
+    return this;
+  }
+
+  public V1SecretReference getWebLogicCredentialsSecret() {
+    return webLogicCredentialsSecret;
+  }
+
+  void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+    this.webLogicCredentialsSecret = webLogicCredentialsSecret;
+  }
+
+  public DomainSpec withWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+    this.webLogicCredentialsSecret = webLogicCredentialsSecret;
+    return this;
+  }
+
+  public DomainSpec logHome(String logHome) {
+    this.logHome = logHome;
+    return this;
+  }
+
+  public String getLogHome() {
+    return logHome;
+  }
+
+  public void setLogHome(String logHome) {
+    this.logHome = logHome;
+  }
+
+  public DomainSpec logHomeEnabled(Boolean logHomeEnabled) {
+    this.logHomeEnabled = logHomeEnabled;
+    return this;
+  }
+
+  public Boolean getLogHomeEnabled() {
+    return logHomeEnabled;
+  }
+
+  public void setLogHomeEnabled(Boolean logHomeEnabled) {
+    this.logHomeEnabled = logHomeEnabled;
+  }
+
+  public DomainSpec dataHome(String dataHome) {
+    this.dataHome = dataHome;
+    return this;
+  }
+
+  public String getDataHome() {
+    return dataHome;
+  }
+
+  public void setDataHome(String dataHome) {
+    this.dataHome = dataHome;
+  }
+
+  public DomainSpec withIncludeServerOutInPodLog(Boolean includeServerOutInPodLog) {
+    this.includeServerOutInPodLog = includeServerOutInPodLog;
+    return this;
+  }
+
+  public Boolean getIncludeServerOutInPodLog() {
+    return includeServerOutInPodLog;
+  }
+
+  public void setIncludeServerOutInPodLog(Boolean includeServerOutInPodLog) {
+    this.includeServerOutInPodLog = includeServerOutInPodLog;
+  }
+
+  public DomainSpec image(String image) {
+    this.image = image;
+    return this;
+  }
+
+  public String getImage() {
+    return image;
+  }
+
+  public void setImage(String image) {
+    this.image = image;
+  }
+
+  public DomainSpec imagePullPolicy(String imagePullPolicy) {
+    this.imagePullPolicy = imagePullPolicy;
+    return this;
+  }
+
+  public String getImagePullPolicy() {
+    return imagePullPolicy;
+  }
+
+  public void setImagePullPolicy(String imagePullPolicy) {
+    this.imagePullPolicy = imagePullPolicy;
+  }
+
+  public DomainSpec imagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
+    this.imagePullSecrets = imagePullSecrets;
+  }
+
+  public DomainSpec addImagePullSecretsItem(V1LocalObjectReference imagePullSecretsItem) {
+    if (imagePullSecrets == null) {
+      imagePullSecrets = new ArrayList<>();
+    }
+    imagePullSecrets.add(imagePullSecretsItem);
+    return this;
+  }
+
+  public List<V1LocalObjectReference> getImagePullSecrets() {
+    return imagePullSecrets;
+  }
+
+  public void setImagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
+    this.imagePullSecrets = imagePullSecrets;
+  }
+
+  public DomainSpec replicas(Integer replicas) {
+    this.replicas = replicas;
+    return this;
+  }
+
+  public Integer getReplicas() {
+    return this.replicas;
+  }
+
+  public void setReplicas(Integer replicas) {
+    this.replicas = replicas;
+  }
+
+  public DomainSpec domainHomeInImage(boolean domainHomeInImage) {
+    setDomainHomeInImage(domainHomeInImage);
+    return this;
+  }
+
+  public Boolean getDomainHomeInImage() {
+    return domainHomeInImage;
+  }
+
+  public void setDomainHomeInImage(boolean domainHomeInImage) {
+    this.domainHomeInImage = domainHomeInImage;
+  }
+
+  public DomainSpec domainHomeSourceType(String domainHomeSourceType) {
+    this.domainHomeSourceType = domainHomeSourceType;
+    return this;
+  }
+
+  public String getDomainHomeSourceType() {
+    return domainHomeSourceType;
+  }
+
+  public void setDomainHomeSourceType(String domainHomeSourceType) {
+    this.domainHomeSourceType = domainHomeSourceType;
+  }
+
+  public DomainSpec introspectVersion(String introspectVersion) {
+    this.introspectVersion = introspectVersion;
+    return this;
+  }
+
+  public String getIntrospectVersion() {
+    return introspectVersion;
+  }
+
+  public void setIntrospectVersionn(String introspectVersion) {
+    this.introspectVersion = introspectVersion;
+  }
+
+  public DomainSpec configuration(Configuration configuration) {
+    this.configuration = configuration;
+    return this;
+  }
+
+  public Configuration getConfiguration() {
+    return configuration;
+  }
+
+  public void setConfiguration(Configuration configuration) {
+    this.configuration = configuration;
+  }
+
+  public DomainSpec configOverrides(String configOverrides) {
+    this.configOverrides = configOverrides;
+    return this;
+  }
+
+  String getConfigOverrides() {
+    return configOverrides;
+  }
+
+  void setConfigOverrides(String configOverrides) {
+    this.configOverrides = configOverrides;
+  }
+
+  public DomainSpec configOverrideSecrets(List<String> configOverrideSecrets) {
+    this.configOverrideSecrets = configOverrideSecrets;
+    return this;
+  }
+
+  public DomainSpec addConfigOverrideSecretsItem(String configOverrideSecretsItem) {
+    if (configOverrideSecrets == null) {
+      configOverrideSecrets = new ArrayList<>();
+    }
+    configOverrideSecrets.add(configOverrideSecretsItem);
+    return this;
+  }
+
+  public List<String> getConfigOverrideSecrets() {
+    return configOverrideSecrets;
+  }
+
+  public void setConfigOverrideSecrets(List<String> configOverrideSecrets) {
+    this.configOverrideSecrets = configOverrideSecrets;
+  }
+
+  public DomainSpec adminServer(AdminServer adminServer) {
+    this.adminServer = adminServer;
+    return this;
+  }
+
+  public AdminServer getAdminServer() {
+    return adminServer;
+  }
+
+  public void setAdminServer(AdminServer adminServer) {
+    this.adminServer = adminServer;
+  }
+
+  public DomainSpec managedServers(List<ManagedServer> managedServers) {
+    this.managedServers = managedServers;
+    return this;
+  }
+
+  public DomainSpec addManagedServersItem(ManagedServer managedServersItem) {
+    if (managedServers == null) {
+      managedServers = new ArrayList<>();
+    }
+    managedServers.add(managedServersItem);
+    return this;
+  }
+
+  public List<ManagedServer> getManagedServers() {
+    return managedServers;
+  }
+
+  public void setManagedServers(List<ManagedServers> managedServers) {
+    this.managedServers = managedServers;
+  }
+
+  public DomainSpec clusters(List<Cluster> clusters) {
+    this.clusters = clusters;
+    return this;
+  }
+
+  public DomainSpec addClustersItem(Cluster clustersItem) {
+    if (clusters == null) {
+      clusters = new ArrayList<>();
+    }
+    clusters.add(clustersItem);
+    return this;
+  }
+
+  public List<Cluster> getClusters() {
+    return clusters;
+  }
+
+  public void setClusters(List<Cluster> clusters) {
+    this.clusters = clusters;
+  }
+
+  public DomainSpec experimental(Experimental experimental) {
+    this.experimental = experimental;
+    return this;
+  }
+
+  public Experimental getExperimental() {
+    return experimental;
+  }
+
+  public void setExperimental(Experimental experimental) {
+    this.experimental = experimental;
+  }
+
+  public DomainSpec serverPod(ServerPod serverPod) {
+    this.serverPod = serverPod;
+    return this;
+  }
+
+  public ServerPod getServerPod() {
+    return serverPod;
+  }
+
+  public void setServerPod(ServerPod serverPod) {
+    this.serverPod = serverPod;
+  }
+
+  public DomainSpec serverStartState(String serverStartState) {
+    this.serverStartState = serverStartState;
+    return this;
+  }
+
+  public String getServerStartState() {
+    return serverStartState;
+  }
+
+  public void setServerStartState(String serverStartState) {
+    this.serverStartState = serverStartState;
+  }
+
+  public DomainSpec restartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
+  }
+
+  public String getRestartVersion() {
+    return restartVersion;
+  }
+
+  public void setRestartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
+  }
+
+  @Override
+  public String toString() {
+    ToStringBuilder builder =
+        new ToStringBuilder(this)
+            .append("domainUID", domainUid)
+            .append("domainHome", domainHome)
+            .append("serverStartPolicy", serverStartPolicy)
+            .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
+            .append("logHome", logHome)
+            .append("logHomeEnabled", logHomeEnabled)
+            .append("dataHome", dataHome)
+            .append("includeServerOutInPodLog", includeServerOutInPodLog)
+            .append("image", image)
+            .append("imagePullPolicy", imagePullPolicy)
+            .append("imagePullSecrets", imagePullSecrets)
+            .append("replicas", replicas)
+            .append("domainHomeInImage", domainHomeInImage)
+            .append("domainHomeSourceType", domainHomeSourceType)
+            .append("introspectVersion", introspectVersion)
+            .append("configuration", configuration)
+            .append("configOverrides", configOverrides)
+            .append("configOverrideSecrets", configOverrideSecrets)
+            .append("adminServer", adminServer)
+            .append("managedServers", managedServers)
+            .append("clusters", clusters)
+            .append("experimental", experimental)
+            .append("serverStartState", serverStartState)
+            .append("serverPod", serverPod)
+            .append("serverService", serverService)
+            .append("restartVersion", restartVersion);
+
+    return builder.toString();
+  }
+
+  @Override
+  public int hashCode() {
+    HashCodeBuilder builder =
+        new HashCodeBuilder()
+            .append(domainUid)
+            .append(domainHome)
+            .append(serverStartPolicy)
+            .append(webLogicCredentialsSecret)
+            .append(logHome)
+            .append(logHomeEnabled)
+            .append(dataHome)
+            .append(includeServerOutInPodLog)
+            .append(image)
+            .append(imagePullPolicy)
+            .append(imagePullSecrets)
+            .append(replicas)
+            .append(domainHomeInImage)
+            .append(domainHomeSourceType)
+            .append(introspectVersion)
+            .append(configuration)
+            .append(configOverrides)
+            .append(configOverrideSecrets)
+            .append(adminServer)
+            .append(managedServers)
+            .append(clusters)
+            .append(experimental)
+            .append(serverPod)
+            .append(serverService)
+            .append(serverStartState)
+            .append(restartVersion);
+
+    return builder.toHashCode();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (other == this) {
+      return true;
+    }
+    if (!(other instanceof DomainSpec)) {
+      return false;
+    }
+
+    DomainSpec rhs = ((DomainSpec) other);
+    EqualsBuilder builder =
+        new EqualsBuilder()
+            .append(domainUid, rhs.domainUid)
+            .append(domainHome, rhs.domainHome)
+            .append(serverStartPolicy, rhs.serverStartPolicy)
+            .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
+            .append(logHome, rhs.logHome)
+            .append(logHomeEnabled, rhs.logHomeEnabled)
+            .append(dataHome, rhs.dataHome)
+            .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
+            .append(image, rhs.image)
+            .append(imagePullPolicy, rhs.imagePullPolicy)
+            .append(imagePullSecrets, rhs.imagePullSecrets)
+            .append(replicas, rhs.replicas)
+            .append(domainHomeInImage, rhs.domainHomeInImage)
+            .append(domainHomeSourceType, rhs.domainHomeSourceType)
+            .append(introspectVersion, rhs.introspectVersion)
+            .append(configuration, rhs.configuration)
+            .append(configOverrides, rhs.configOverrides)
+            .append(configOverrideSecrets, rhs.configOverrideSecrets)
+            .append(adminServer, rhs.adminServer)
+            .append(managedServers, rhs.managedServers)
+            .append(clusters, rhs.clusters)
+            .append(experimental, rhs.experimental)
+            .append(serverPod, rhs.serverPod)
+            .append(serverService, rhs.serverService)
+            .append(serverStartState, rhs.serverStartState)
+            .append(restartVersion, rhs.restartVersion);
+    return builder.isEquals();
+  }
+
+}
