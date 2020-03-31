@@ -3,7 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
-import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -13,10 +13,10 @@ import org.junit.jupiter.api.Test;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Simple validation of basic domain functions")
@@ -33,17 +33,9 @@ class ItSimpleDomainValidation implements LoggedTest {
 
     // get a new unique namespace
     String namespace = null;
-    try {
-      namespace = createUniqueNamespace();
-      logger.info(String.format("Got a new namespace called %s", namespace));
-    } catch (ApiException e) {
-      // TODO: test in the calling method where we say something like
-      //
-      //  assert.DoesNotThrow(whatever(), ApiException.class, e,
-      //    String.format("could not do whatever, got exception %s", e))
-      //
-      //  so we have the exception and we can print out a meaningful error message
-    }
+    namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
+        "Failed to create unique namespace due to ApiException");
+    logger.info(String.format("Got a new namespace called %s", namespace));
 
     // create the domain CR
     boolean success = createDomainCustomResource(domainUID, namespace, domainYAML);
