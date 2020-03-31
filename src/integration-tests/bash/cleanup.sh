@@ -537,23 +537,15 @@ if [ -x "$(command -v helm)" ]; then
   fi
 
   if [ "$HELM_VERSION" == "V3" ]; then
-   namespaces=`helm list --all-namespaces | grep -v NAME | awk '{print $2}'`
-   for ns in $namespaces
-   do 
-     echo "Looking for helm lists in namesapce $ns"
-     helm_names=`helm list --short -n $ns`
-     for helm_name in $helm_names
-     do 
-        if [ ! "$DRY_RUN" = "true" ]; then
-        (
-          set -x
-          helm uninstall $helm_name -n $ns
-        )
-       else 
-         echo @@ `timestamp` Info: DRYRUN: helm uninstall $helm_name -n $ns
-       fi
-     done
-   done
+    if [ ! "$DRY_RUN" = "true" ]; then
+    (
+      set -x
+      helm list --all-namespaces | grep -v NAME | awk '{system("helm uninstall " $1 " --namespace " $2)}'
+    )
+    else 
+      echo @@ `timestamp` Info: DRYRUN: helm uninstall 
+      helm list --all-namespaces | grep -v NAME | awk '{print $1 "\t" $2)}'
+   fi
   fi
 
   # cleanup tiller artifacts
