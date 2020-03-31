@@ -7,7 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-// Presents all parameters that the test InstallParams needs.
+/**
+ * Presents all parameters for downloading a tool.
+ *
+ */
 
 public class InstallParams {
     public static final String WIT_TYPE = "WIT";
@@ -21,11 +24,18 @@ public class InstallParams {
     public static final String DEFAULT_WDT_VERSION      = "weblogic-deploy-tooling-1.7.2";
     public static final String WDT_FILE_NAME    = "weblogic-deploy.zip";
 
+    // WIT or WDT
     private String type;
+    // The version of the tool
     private String version;
+    // The download site location
     private String location;
+    // Whether verify before download
     private boolean verify;
+    // Whether the download zip file needs to be unziped
     private boolean unzip;
+    // Whether the output of the command is redirected
+    private boolean redirect;
 
     public InstallParams type(String type) {
         this.type = type;
@@ -69,6 +79,15 @@ public class InstallParams {
 
     public boolean isVerify() {
         return verify;
+    }
+    
+    public InstallParams redirect(boolean redirect) {
+        this.redirect = redirect;
+        return this;
+    }
+
+    public boolean isRedirect() {
+        return redirect;
     }
 
     public InstallParams unzip(boolean unzip) {

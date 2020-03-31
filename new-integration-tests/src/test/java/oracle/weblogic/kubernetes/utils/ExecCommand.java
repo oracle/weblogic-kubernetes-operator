@@ -16,7 +16,9 @@ import java.util.stream.Collectors;
 
 import com.google.common.io.ByteStreams;
 
-/** Class for executing shell commands from java. */
+/** 
+ * Class for executing shell commands from java. 
+ */
 public class ExecCommand {
 
   public static ExecResult exec(String command) throws IOException, InterruptedException {
@@ -89,7 +91,7 @@ public class ExecCommand {
   /**
    * Generate a string array of name=value items, one for each env map entry.
    *
-   * @return
+   * @return list of envs
    */
   private static String[] generateNameValueArrayFromMap(Map<String, String> map) {
     int mapSize = map.size();

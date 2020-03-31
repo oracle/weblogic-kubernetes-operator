@@ -7,7 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-// Presents all parameters for WIT commands
+/**
+ * Presents all parameters for downloading a tool.
+ *
+ */
 
 public class WITParams {
 
@@ -21,6 +24,9 @@ public class WITParams {
     private List<String> modelArchiveFiles;
     private String wdtVersion;
     private String domainType;
+    
+    // if the command output is redirected
+    private String redirect;
         
     public WITParams baseImageName(String baseImageName) {
     	this.baseImageName = baseImageName;
@@ -106,5 +112,7 @@ public class WITParams {
     public String getGeneratedImageName() {
         return modelImageName + ":" + modelImageTag;
     }
+    
+    
 
 }

@@ -27,14 +27,22 @@ class ItWITValidation implements LoggedTest {
     @Slow
     public void testCreatingMIIImage() {
 
-        boolean downloadWIT = TestActions.verifyAndInstallWIT(null, null);
+    	// install WIT using the default version and location
+        boolean downloadWIT = TestActions.installWIT(
+        		 null /* version */, 
+        		 null /* location */
+        		 false /* do not redirect output */);
         assertEquals(true, downloadWIT);
-
-        boolean downloadWDT = TestActions.verifyAndInstallWDT(null, null);
+        
+    	// install WDT using the default version and location
+        boolean downloadWDT = TestActions.installWDT(
+        		 null /* version */, 
+        		 null /* location */
+        		 false /* do not redirect output */);
         assertEquals(true, downloadWDT);
 
         // create the MII image
-        // TODO add model files and other contents to the image
+        // TODO add model files and other contents to the image once we have those resources
         WITParams params = new WITParams()
             .baseImageName(WebLogicImageTool.WLS_BASE_IMAGE_NAME)
             .baseImageTag(WebLogicImageTool.BASE_IMAGE_TAG)

@@ -56,23 +56,25 @@ public class TestActions {
  
     // ------------------------ Installer  -------------------------
 
-    public static boolean verifyAndInstallWIT(String version, String location) {
+    public static boolean installWIT(String version, String location, boolean redirect) {
         return new Installer()
             .with(new InstallParams()
                   .type(InstallParams.WIT_TYPE)
                   .version(version)
                   .location(location)
+                  .redirect(redirect)
                   .verify(true)
                   .unzip(true))
             .download();
     }
  
-    public static boolean verifyAndInstallWDT(String version, String location) {
+    public static boolean installWDT(String version, String location, boolean redirect) {
         return new Installer()
             .with(new InstallParams()
                   .type(InstallParams.WDT_TYPE)
                   .version(version)
                   .location(location)
+                  .redirect(redirect)
                   .verify(true)
                   .unzip(false))
             .download();

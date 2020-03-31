@@ -9,7 +9,9 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
-// Implementation of all of the WIT primitives that the IT test needs.
+/**
+ *  Implementation of actions that use WebLogic Image Tool to create or update a WebLogic Docker image.
+ */
 
 public class WebLogicImageTool extends BaseInstallWIT {
     public static final String WLS = "WLS";
@@ -19,26 +21,36 @@ public class WebLogicImageTool extends BaseInstallWIT {
     public static final String JRF_BASE_IMAGE_NAME = "container-registry.oracle.com/middleware/fmw-infrastructure";
     public static final String BASE_IMAGE_TAG = "12.2.1.4";
 
-    public static final String MODEL_IMAGE_NAME = "model-in-image";
+    public static final String MODEL_IMAGE_NAME = "test-mii-image";
     public static final String MODEL_IMAGE_TAG  = "v1";
 
     private WITParams params;
 
-    // use the default values
+    /**
+     * Set up the WIT with default values
+     * @return the instance of WIT 
+     */
     public WebLogicImageTool with() {
-      // fill in the default values!!
       return this;
     }
 
+    /**
+     * Set up the WIT with customized parameters
+     * @return the instance of WIT 
+     */
     public WebLogicImageTool with(WITParams params) {
       this.params = params;
       return this;
     }
 
+    /**
+     * Create an image using the params using WIT update command
+     * @return true if the command succeeds 
+     */
     public boolean updateImage() {
-      return executeAndVerify(buildCommand(), true);
+      return executeAndVerify(buildCommand(), params.isRedirect());
     }
-
+    
     private String buildCommand() {
       String command = WORK_DIR + "/imagetool/bin/imagetool.sh update "
           + " --tag " + params.getModelImageName() + ":" + params.getModelImageTag()

@@ -13,13 +13,12 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 // Implementation of all of the WIT primitives that the IT test needs.
 
 public class BaseInstallWIT {
-	// TODO most of the following will be setup outside of the java code
-	// prior to running the Java code.
-	// I hard coded them here temporarily to get things going.
-    protected static final String WORK_DIR = System.getProperty("java.io.tmpdir") + "/it-results";
+
+    protected static final String WORK_DIR 
+        = System.getProperty("java.io.tmpdir") + "/it-results";
 
     protected boolean executeAndVerify(String command, boolean redirectOutput) {
-        logger.info("Executing command = " + command + " WORK_DIR = " + WORK_DIR);
+        logger.info("Executing command = " + command);
         try {
           checkDirectory(WORK_DIR);
           ExecResult result = ExecCommand.exec(command, redirectOutput);

@@ -10,20 +10,30 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
-// Implementation of all of the installation primitives that the IT test needs.
-// This class is a temporary solution, and may go away once we eventually
-// install everything before the Java test is invoked.
+/**
+ *  Implementation of actions that download/install tools for the uses to use.
+ *  NOTE: This class is a temporary solution, and may go away once we eventually
+ *  install everything before the Java test starts to run.
+ */
 
 public class Installer extends BaseInstallWIT {
     // temporary dir, will fix this once we decide on the
     private static final String downloadDir = WORK_DIR + "/download";
     private InstallParams params;
 
+    /**
+     * Set up the installer with given parameters
+     * @return the installer instance 
+     */
     public Installer with(InstallParams params) {
         this.params = params;
         return this;
     }
 
+    /**
+     * Download and install the tool using the params
+     * @return true if the command succeeds 
+     */
     public boolean download() {
         boolean downloadResult = true;
         boolean unzipResult = true;
@@ -31,7 +41,7 @@ public class Installer extends BaseInstallWIT {
             && new File(downloadDir, params.getFileName()).exists()) {
             logger.info("File " + params.getFileName() + " already exists.");
         } else {
-            downloadResult = executeAndVerify(buildDownloadCommand(), true);
+            downloadResult = executeAndVerify(buildDownloadCommand(), params.isRedirect());
         }
         if (!(new File(downloadDir + "../imagetool/imagetool.sh").exists()) 
             && params.isUnzip()) {
@@ -40,9 +50,10 @@ public class Installer extends BaseInstallWIT {
         return downloadResult && unzipResult;
     }
 
-    public boolean unzip(String path, String fileName, String targetDir) {
-        String command = "unzip -o -d " + targetDir + " " + path + "/" + fileName;
-        logger.info("Executing command = " + command);
+    private boolean unzip(String path, String fileName, String targetDir) {
+        String command = "unzip -o "
+                         + "-d " + targetDir + " " 
+        		         + path + "/" + fileName;
         return executeAndVerify(command, false);
     }
 
@@ -52,6 +63,9 @@ public class Installer extends BaseInstallWIT {
           + params.getVersion() 
           + "/" 
           + params.getFileName();
-      return "curl -fL " + url + " -o " + downloadDir + "/" + params.getFileName();
+      
+      return "curl -fL " 
+             + url 
+             + " -o " + downloadDir + "/" + params.getFileName();
     }
 }
