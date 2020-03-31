@@ -81,6 +81,9 @@ public class TestActions {
   /**
    * Create domain custom resource from the given domain yaml file.
    *
+   * @param domainUID - unique domain identifier
+   * @param namespace - name of namespace
+   * @param domainYAML - path to a file containing domain custom resource spec in yaml format
    * @return true on success, false otherwise
    */
   public static boolean createDomainCustomResource(String domainUID, String namespace,
@@ -93,6 +96,7 @@ public class TestActions {
    *
    * @param namespace - name of namespace
    * @return List of names of domain custom resources
+   * @throws ApiException - if Kubernetes client API call fails
    */
   public static List<String> listDomainCustomResources(String namespace) throws ApiException {
     return Domain.listDomainCustomResources(namespace);
@@ -115,7 +119,13 @@ public class TestActions {
   }
 
   /**
+   * Delete a domain custom resource for a given unique domain identifier in a
+   * given namespace.
+   *
+   * @param domainUID - unique domain identifier
+   * @param namespace - name of namespace
    * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean deleteDomainCustomResource(String domainUID, String namespace)
       throws ApiException {

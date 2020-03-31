@@ -82,6 +82,13 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- namespaces -----------------------------------
 
+  /**
+   * Create Kubernetes namespace
+   *
+   * @param name the name of the namespace
+   * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
+   */
   public static boolean createNamespace(String name) throws ApiException {
     V1ObjectMeta meta = new V1ObjectMeta().name(name);
     V1Namespace namespace = new V1Namespace().metadata(meta);
@@ -101,7 +108,8 @@ public class Kubernetes implements LoggedTest {
    * choosing a random name from 26^4 possible combinations, and create a namespace using that
    * random name.
    *
-   * @return the name of the new namespace.
+   * @return the name of the new unique namespace.
+   * @throws ApiException - if Kubernetes client API call fails
    */
   public static String createUniqueNamespace() throws ApiException {
     char[] name = new char[4];
@@ -116,6 +124,12 @@ public class Kubernetes implements LoggedTest {
     }
   }
 
+  /**
+   * List of namespaces in Kubernetes cluster
+   *
+   * @return - List of names of all namespaces in Kubernetes cluster
+   * @throws ApiException - if Kubernetes client API call fails
+   */
   public static List<String> listNamespaces() throws ApiException {
     ArrayList<String> nameSpaces = new ArrayList<>();
 
@@ -138,6 +152,13 @@ public class Kubernetes implements LoggedTest {
     return nameSpaces;
   }
 
+  /**
+   * Delete a namespace for the given name
+   *
+   * @param name - name of namespace
+   * @return true if successful delete, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
+   */
   public static boolean deleteNamespace(String name) throws ApiException {
     V1DeleteOptions deleteOptions = new V1DeleteOptions();
 
@@ -161,6 +182,16 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- Custom Resource Domain -----------------------------------
 
+  /**
+   * Create domain custom resource from the given domain yaml file.
+   *
+   * @param domainUID - unique domain identifier
+   * @param namespace - name of namespace
+   * @param domainYAML - path to a file containing domain custom resource spec in yaml format
+   * @return true on success, false otherwise
+   * @throws IOException - on failure to convert domain YAML spec to JSON object
+   * @throws ApiException - if Kubernetes client API call fails
+   */
   public static boolean createDomainCustomResource(String domainUID, String namespace, String domainYAML)
       throws IOException, ApiException {
     Object json = null;
@@ -182,6 +213,14 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
+  /**
+   * Delete the domain custom resource
+   *
+   * @param domainUID - unique domain identifier
+   * @param namespace - name of namespace
+   * @return true if successful, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
+   */
   public static boolean deleteDomainCustomResource(String domainUID, String namespace)
       throws ApiException {
     V1DeleteOptions deleteOptions = new V1DeleteOptions();
@@ -201,6 +240,14 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
+  /**
+   * Converts YAML file content to JSON object
+   *
+   * @param yamlFile - path to file containing YAML spec
+   * @return JSON object
+   * @throws IOException - failure to load the YAML file
+   * @throws ParseException - failure to parse JSON formatted String object
+   */
   private static Object convertYamlToJson(String yamlFile) throws IOException, ParseException {
     // Read the yaml from file
     ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
@@ -214,6 +261,13 @@ public class Kubernetes implements LoggedTest {
     return json;
   }
 
+  /**
+   * List domain custom resources for a given namespace.
+   *
+   * @param namespace - name of namespace
+   * @return List of names of domain custom resources
+   * @throws ApiException - if Kubernetes client API call fails
+   */
   public static List<String> listDomains(String namespace) throws ApiException {
     ArrayList<String> domains = new ArrayList<>();
 
@@ -231,11 +285,16 @@ public class Kubernetes implements LoggedTest {
         timeoutSeconds, // Timeout for the list/watch call
         false // Watch for changes to the described resources
     );
+
+    // Get all domain names from response as a list
     domains = getDomainNames(namespace, domains, response);
 
     return domains;
   }
 
+  /**
+   * Extracts domain names from response map
+   */
   private static ArrayList<String> getDomainNames(String namespace, ArrayList<String> domains,
       Map result) {
     List items = (List) result.get("items");
@@ -260,12 +319,24 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- config map ---------------------------
 
+  /**
+   * Create a Kubernetes Config Map
+   *
+   * @param cmName - name of the config map
+   * @param namespace - name of namespace for config map
+   * @param fromFile - path to file containing config map data, as name - value pairs
+   * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
+   * @throws IOException - failure to load config map data from file
+   */
   public static boolean createConfigMap(String cmName, String namespace, String fromFile)
       throws ApiException,
       IOException {
+    // Initialize config map meta data
     V1ObjectMeta meta = new V1ObjectMeta().name(cmName);
     V1ConfigMap body = new V1ConfigMap().metadata(meta);
 
+    // Load config map data
     Properties cmProperties = loadProps(fromFile);
     body.data((Map) cmProperties);
 
@@ -280,6 +351,13 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
+  /**
+   * List names of all Config Maps for given namespace.
+   *
+   * @param namespace - name of namespace for config map
+   * @return List of names of config maps
+   * @throws ApiException - if Kubernetes client API call fails
+   */
   public static List<String> listConfigMaps(String namespace) throws ApiException {
     ArrayList<String> configMaps = new ArrayList<>();
 
@@ -303,6 +381,14 @@ public class Kubernetes implements LoggedTest {
     return configMaps;
   }
 
+  /**
+   * Delete Kubernetes Config Map
+   *
+   * @param cmName the name of the Config Map
+   * @param namespace the name of the namespace
+   * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
+   */
   public static boolean deleteConfigMap(String cmName, String namespace) throws ApiException {
     V1DeleteOptions deleteOptions = new V1DeleteOptions();
 
@@ -327,6 +413,17 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- secret ---------------------------
 
+  /**
+   * Create Kubernetes Secret
+   *
+   * @param secretName the name of the secret
+   * @param username username of the domain
+   * @param password password for the domain
+   * @param namespace the name of the namespace
+   * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
+   *
+   */
   public static boolean createSecret(String secretName,
       String username, String password, String namespace) throws ApiException {
     V1ObjectMeta meta = new V1ObjectMeta().name(secretName);
@@ -348,11 +445,19 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
-  public static boolean deleteSecret(String cmName, String namespace) throws ApiException {
+  /**
+   * Delete Kubernetes Secret
+   *
+   * @param secretName the name of the secret
+   * @param namespace the name of the namespace
+   * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
+   */
+  public static boolean deleteSecret(String secretName, String namespace) throws ApiException {
     V1DeleteOptions deleteOptions = new V1DeleteOptions();
 
     V1Status status = coreV1Api.deleteNamespacedSecret(
-        cmName,// name of secret
+        secretName,// name of secret
         namespace,  // name of the Namespace
         pretty, // pretty print output
         null, // indicates that modifications should not be persisted
@@ -372,6 +477,13 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- pv/pvc ---------------------------
 
+  /**
+   * Delete the Kubernetes Persistent Volume
+   *
+   * @param pvName the name of the Persistent Volume
+   * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
+   */
   public static boolean deletePv(String pvName) throws ApiException {
     V1DeleteOptions deleteOptions = new V1DeleteOptions();
 
@@ -393,6 +505,14 @@ public class Kubernetes implements LoggedTest {
     return false;
   }
 
+  /**
+   * Delete the Kubernetes Persistent Volume Claim
+   *
+   * @param pvcName the name of the Persistent Volume Claim
+   * @param namespace the namespace of the Persistent Volume Claim
+   * @return true on success, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
+   */
   public static boolean deletePvc(String pvcName, String namespace) throws ApiException {
     V1DeleteOptions deleteOptions = new V1DeleteOptions();
 
