@@ -36,7 +36,7 @@ public class WebLogicImageTool extends BaseInstallWIT {
     }
 
     public boolean updateImage() {
-      return executeAndVerify(buildCommand());
+      return executeAndVerify(buildCommand(), true);
     }
 
     private String buildCommand() {

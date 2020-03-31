@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
+import java.io.File;
 import java.io.IOException;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -24,12 +25,25 @@ public class Installer extends BaseInstallWIT {
     }
 
     public boolean download() {
-        return executeAndVerify(buildDownloadCommand());
+        boolean downloadResult = true;
+        boolean unzipResult = true;
+        if (params.isVerify()
+            && new File(downloadDir, params.getFileName()).exists()) {
+            logger.info("File " + params.getFileName() + " already exists.");
+        } else {
+            downloadResult = executeAndVerify(buildDownloadCommand(), true);
+        }
+        if (!(new File(downloadDir + "../imagetool/imagetool.sh").exists()) 
+            && params.isUnzip()) {
+            unzipResult = unzip(downloadDir, params.getFileName(), downloadDir + "/..");
+        }
+        return downloadResult && unzipResult;
     }
 
     public boolean unzip(String path, String fileName, String targetDir) {
-        String command = "unzip -o -d " + targetDir + path + "/" + fileName;
-        return executeAndVerify(command);
+        String command = "unzip -o -d " + targetDir + " " + path + "/" + fileName;
+        logger.info("Executing command = " + command);
+        return executeAndVerify(command, false);
     }
 
     private String buildDownloadCommand() {

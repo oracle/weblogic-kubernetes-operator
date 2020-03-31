@@ -24,6 +24,8 @@ public class InstallParams {
     private String type;
     private String version;
     private String location;
+    private boolean verify;
+    private boolean unzip;
 
     public InstallParams type(String type) {
         this.type = type;
@@ -53,11 +55,29 @@ public class InstallParams {
     }
 
     public String getLocation() {
-        if (version == null) {
+        if (location == null) {
             if (WIT_TYPE.equals(type)) return DEFAULT_WIT_DOWNLOAD_URL;
             else return DEFAULT_WDT_DOWNLOAD_URL;
         }
         return location;
+    }
+
+    public InstallParams verify(boolean verify) {
+        this.verify = verify;
+        return this;
+    }
+
+    public boolean isVerify() {
+        return verify;
+    }
+
+    public InstallParams unzip(boolean unzip) {
+        this.unzip = unzip;
+        return this;
+    }
+
+    public boolean isUnzip() {
+        return unzip;
     }
 
     public String getFileName() {

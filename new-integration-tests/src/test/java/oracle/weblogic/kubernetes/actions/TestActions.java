@@ -61,7 +61,9 @@ public class TestActions {
             .with(new InstallParams()
                   .type(InstallParams.WIT_TYPE)
                   .version(version)
-                  .location(location))
+                  .location(location)
+                  .verify(true)
+                  .unzip(true))
             .download();
     }
  
@@ -70,7 +72,9 @@ public class TestActions {
             .with(new InstallParams()
                   .type(InstallParams.WDT_TYPE)
                   .version(version)
-                  .location(location))
+                  .location(location)
+                  .verify(true)
+                  .unzip(false))
             .download();
 
     }
