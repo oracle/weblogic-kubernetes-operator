@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiClient;
+import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -23,10 +24,12 @@ public class ClientPoolTest {
 
   /**
    * Setup test.
+   * @throws NoSuchFieldException if StaticStubSupport fails to install
    */
   @Before
-  public void setUp() {
+  public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(ClientFactoryStub.install());
   }
 
   /**
