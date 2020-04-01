@@ -16,6 +16,8 @@ import java.util.Random;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.kubernetes.client.extended.generic.GenericKubernetesApi;
+import io.kubernetes.client.extended.generic.KubernetesApiResponse;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
@@ -28,6 +30,8 @@ import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -47,10 +51,9 @@ public class Kubernetes implements LoggedTest {
   private static String resourceVersion = "";
   private static Integer timeoutSeconds = 5;
   private static String DOMAIN_GROUP = "weblogic.oracle";
-  private static String NAME = "domains.weblogic.oracle";
   private static String DOMAIN_VERSION = "v7";
   private static String DOMAIN_PLURAL = "domains";
-  private static String DOMAIN_PATH = "namespaces/{namespace}/" + DOMAIN_PLURAL;
+
   // the CoreV1Api loads default api-client from global configuration.
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
@@ -160,24 +163,31 @@ public class Kubernetes implements LoggedTest {
    * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean deleteNamespace(String name) throws ApiException {
-    V1DeleteOptions deleteOptions = new V1DeleteOptions();
 
-    V1Status status = coreV1Api.deleteNamespace(
-        name, // name of the Namespace
-        pretty, // pretty print output
-        null, // indicates that modifications should not be persisted
-        0, // duration in seconds before the object should be deleted
-        false, // Should the dependent objects be orphaned
-        "Foreground", // Whether and how garbage collection will be performed
-        deleteOptions
-    );
+    GenericKubernetesApi<V1Namespace, V1NamespaceList> namespaceClient =
+        new GenericKubernetesApi<>(
+                V1Namespace.class, // the api type class
+                V1NamespaceList.class, // the api list type class
+                "", // the api group
+            "v1", // the api version
+                "namespaces", // the resource plural
+                apiClient //the api client
+        );
 
-    if (status.getCode() == 200 || status.getCode() == 202) {
-      // status code 200 = OK, 202 = Accepted
-      return true;
+    KubernetesApiResponse<V1Namespace> response = namespaceClient.delete(name);
+
+    if (!response.isSuccess()) {
+      throw new ApiException("Failed to delete namespace: "
+          + name + " with HTTP status code: " + response.getHttpStatusCode());
     }
 
-    return false;
+    if (response.getObject() != null) {
+      logger.info(
+          "Received after-deletion status of the requested object, will be deleting namespace"
+          + " in background!");
+    }
+
+    return true;
   }
 
   // --------------------------- Custom Resource Domain -----------------------------------
@@ -518,7 +528,7 @@ public class Kubernetes implements LoggedTest {
 
     V1Status status = coreV1Api.deleteNamespacedPersistentVolumeClaim(
         pvcName, // persistent volume claim (PV) name
-        namespace,
+        namespace, // name of the Namespace
         pretty, // pretty print output
         null, // indicates that modifications should not be persisted
         0, // duration in seconds before the object should be deleted
@@ -534,7 +544,93 @@ public class Kubernetes implements LoggedTest {
 
     return false;
   }
-  // --------------------------
+
+  // --------------------------- service account ---------------------------
+
+  /**
+   * Create a service account for a given namespace
+   *
+   * @param serviceAccount - V1ServiceAccount object containing service account configuration data
+   * @return created service account
+   * @throws ApiException - missing required configuration data or if Kubernetes request fails
+   */
+  public static V1ServiceAccount createServiceAccount(V1ServiceAccount serviceAccount)
+      throws ApiException {
+
+    if (serviceAccount.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling createServiceAccount()");
+    }
+
+    if (serviceAccount.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling createServiceAccount()");
+    }
+
+    serviceAccount = coreV1Api.createNamespacedServiceAccount(
+        serviceAccount.getMetadata().getNamespace(), // name of the Namespace
+        serviceAccount, // service account configuration data
+        pretty, // pretty print output
+        null, // indicates that modifications should not be persisted
+        null // fieldManager is a name associated with the actor
+    );
+
+    return serviceAccount;
+  }
+
+  /**
+   * Delete a service account for given namespace
+   *
+   * @param serviceAccount - V1ServiceAccount object containing service account configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data or if Kubernetes request fails
+   */
+  public static boolean deleteServiceAccount(V1ServiceAccount serviceAccount) throws ApiException {
+    if (serviceAccount.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling deleteServiceAccount()");
+    }
+
+    if (serviceAccount.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling deleteServiceAccount()");
+    }
+
+    if (serviceAccount.getMetadata().getName() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'name' when calling deleteServiceAccount()");
+    }
+
+    String namespace = serviceAccount.getMetadata().getNamespace();
+    String name = serviceAccount.getMetadata().getName();
+
+    GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient =
+        new GenericKubernetesApi<>(
+                V1ServiceAccount.class,  // the api type class
+                V1ServiceAccountList.class, // the api list type class
+                "", // the api group
+                "v1", // the api version
+                "serviceaccounts", // the resource plural
+                apiClient //the api client
+        );
+
+    KubernetesApiResponse<V1ServiceAccount> response = serviceAccountClient.delete(namespace, name);
+
+    if (!response.isSuccess()) {
+      throw new ApiException("Failed to delete Service Account '" + name + "' from namespace: "
+          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+    }
+
+    if (response.getObject() != null) {
+      logger.info(
+          "Received after-deletion status of the requested object, will be deleting "
+          + "service account in background!");
+    }
+
+    return true;
+  }
+
+  //------------------------
 
   /**
    * TODO:  This should go in a utilities class? load properties.
