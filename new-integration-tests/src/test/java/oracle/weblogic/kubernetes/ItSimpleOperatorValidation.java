@@ -59,10 +59,10 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // imagine that installOperator() will try to install the operator, by creating
     // the kubernetes deployment.  this will complete quickly, and will either be
     // successful or not.
-    String namespace = "opns1";
+    String opns = "opns1";
     OperatorParams opParams =
         new OperatorParams().releaseName("weblogic-operator")
-            .namespace(namespace)
+            .namespace(opns)
             .image("weblogic-kubernetes-operator:test_itsimpleoperator")
             .domainNamespaces("domainns1, domainns2")
             .serviceAccount("opns1-sa");
@@ -75,11 +75,10 @@ class ItSimpleOperatorValidation implements LoggedTest {
       fail("Failed to install Operator due to exception" + e.getMessage());
     }
 
-    logger.info(String.format("Operator installed in namespace %s", namespace));
+    logger.info(String.format("Operator installed in namespace %s", opns));
 
     // we can use a standard JUnit assertion to check on the result
     // assertEquals(true, success, "Operator successfully installed in namespace " + namespace);
-
 
     // this is an example of waiting for an async operation to complete.
     // after the previous step was completed, kubernetes will try to pull the image,
@@ -89,20 +88,20 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // in this example, we first wait 30 seconds, since it is unlikely this operation
     // will complete in less than 30 seconds, then we check if the operator is running.
     with().pollDelay(30, SECONDS)
-        // we check again every 10 seconds.
-        .and().with().pollInterval(10, SECONDS)
-        // this listener lets us report some status with each poll
-        .conditionEvaluationListener(
-            condition -> logger.info(() ->
-                String.format("Waiting for operator to be running (elapsed time %dms, remaining time %dms)",
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS())))
-        // and here we can set the maximum time we are prepared to wait
-        .await().atMost(5, MINUTES)
-        // operatorIsRunning() is one of our custom, reusable assertions
-        .until(operatorIsRunning());
+      // we check again every 10 seconds.
+      .and().with().pollInterval(10, SECONDS)
+      // this listener lets us report some status with each poll
+      .conditionEvaluationListener(
+        condition -> logger.info(()
+            -> String.format("Waiting for operator to be running (elapsed time %dms, remaining time %dms)",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS())))
+      // and here we can set the maximum time we are prepared to wait
+      .await().atMost(5, MINUTES)
+      // operatorIsRunning() is one of our custom, reusable assertions
+      .until(operatorIsRunning(opns));
 
-        // i have not done anything yet about reporting the reason for the failure :)
+      // i have not done anything yet about reporting the reason for the failure :)
   }
 
 }

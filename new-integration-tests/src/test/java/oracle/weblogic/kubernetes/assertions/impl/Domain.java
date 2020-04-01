@@ -3,24 +3,28 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
-import java.util.Random;
 import java.util.concurrent.Callable;
-
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Domain {
 
   public static Callable<Boolean> exists(String domainUID, String namespace) {
     return () -> {
-      int outcome = new Random(System.currentTimeMillis()).nextInt(3);
-      if (outcome == 1) {
-        logger.info(String.format("Domain %s exists in namespace %s", domainUID, namespace));
-        return true;
-      } else {
-        logger.info(String.format("Domain %s does not exist in namespace %s", domainUID, namespace));
-        return false;
+      String[] pods = {};
+      for (String pod : pods) {
+        if (!Kubernetes.podRunning(pod, domainUID, namespace).call().booleanValue()) {
+          return false;
+        }
       }
+      return true;
     };
+  }
+
+  public static boolean adminT3ChannelAccessible(String domainUID, String namespace) {
+    return true;
+  }
+
+  public static boolean adminNodePortAccessible(String domainUID, String namespace) {
+    return true;
   }
 
 }
