@@ -25,8 +25,10 @@ public class ExecCommand {
     return exec(command, false, null);
   }
 
-  public static ExecResult exec(String command, boolean isRedirectToOut) 
-      throws IOException, InterruptedException {
+  public static ExecResult exec(
+      String command, 
+      boolean isRedirectToOut
+  ) throws IOException, InterruptedException {
     return exec(command, isRedirectToOut, null);
   }
 
@@ -40,8 +42,11 @@ public class ExecCommand {
    * @throws InterruptedException if the process was interrupted
    */
   public static ExecResult exec(
-      String command, boolean isRedirectToOut, Map<String, String> additionalEnvMap)
-      throws IOException, InterruptedException {
+      String command, 
+      boolean isRedirectToOut,
+      Map<String, 
+      String> additionalEnvMap
+  ) throws IOException, InterruptedException {
 
     Process p = null;
     if (additionalEnvMap == null) {

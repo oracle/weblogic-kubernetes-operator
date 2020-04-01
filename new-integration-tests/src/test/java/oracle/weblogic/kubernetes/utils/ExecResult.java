@@ -20,7 +20,11 @@ public class ExecResult {
    * @param stderr standard err
    * @throws IOException on failure
    */
-  public ExecResult(int exitValue, String stdout, String stderr) throws IOException {
+  public ExecResult(
+      int exitValue, 
+      String stdout, 
+      String stderr
+  ) throws IOException {
     this.exitValue = exitValue;
     this.stdout = stdout;
     this.stderr = stderr;

@@ -34,15 +34,16 @@ public class Installer extends InstallWITCommon {
   public boolean download() {
     boolean downloadResult = true;
     boolean unzipResult = true;
-    if (params.isVerify()
-        && new File(downloadDir, params.getFileName()).exists()) {
-      logger.info("File " + params.getFileName() + " already exists.");
+    if (params.verify()
+        && new File(downloadDir, params.fileName()).exists()) {
+      logger.info("File " + params.fileName() + " already exists.");
     } else {
-      downloadResult = executeAndVerify(buildDownloadCommand(), params.isRedirect());
+      checkDirectory(WORK_DIR);
+      downloadResult = executeAndVerify(buildDownloadCommand(), params.direct());
     }
     if (!(new File(downloadDir + "../imagetool/imagetool.sh").exists()) 
-        && params.isUnzip()) {
-      unzipResult = unzip(downloadDir, params.getFileName(), downloadDir + "/..");
+        && params.unzip()) {
+      unzipResult = unzip(downloadDir, params.fileName(), downloadDir + "/..");
     }
     return downloadResult && unzipResult;
   }
@@ -52,19 +53,20 @@ public class Installer extends InstallWITCommon {
         "unzip -o "
         + "-d " + targetDir + " " 
         + path + "/" + fileName;
+    checkDirectory(targetDir);
     return executeAndVerify(command, false);
   }
 
   private String buildDownloadCommand() {
     String url = 
-        params.getLocation() 
+        params.location() 
         + "/releases/download/" 
-        + params.getVersion() 
+        + params.version() 
         + "/" 
-        + params.getFileName();
+        + params.fileName();
     
     return "curl -fL " 
         + url 
-        + " -o " + downloadDir + "/" + params.getFileName();
+        + " -o " + downloadDir + "/" + params.fileName();
   }
 }

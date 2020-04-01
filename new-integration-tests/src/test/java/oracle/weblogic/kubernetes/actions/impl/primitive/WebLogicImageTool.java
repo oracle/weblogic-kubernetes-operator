@@ -3,31 +3,25 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+
 /**
- * Implementation of actions that use WebLogic Image Tool to create or update a WebLogic Docker image.
+ * Implementation of actions that use WebLogic Image Tool to create/update a WebLogic Docker image.
  */
 
 public class WebLogicImageTool extends InstallWITCommon {
-  public static final String WLS = "WLS";
-  public static final String JRF = "JRF";
-  public static final String RJRF = "RestrictedJRF";
-  public static final String WLS_BASE_IMAGE_NAME = "container-registry.oracle.com/middleware/weblogic";
-  public static final String JRF_BASE_IMAGE_NAME = "container-registry.oracle.com/middleware/fmw-infrastructure";
-  public static final String BASE_IMAGE_TAG = "12.2.1.4";
-
-  public static final String MODEL_IMAGE_NAME = "test-mii-image";
-  public static final String MODEL_IMAGE_TAG  = "v1";
 
   private WITParams params;
 
   /**
-   * Set up the WIT with default values
+   * Set up the WITParams with the default values
    * @return the instance of WIT 
    */
-  public WebLogicImageTool with() {
-    return this;
+  public static WITParams withDefaults() {
+    return new WITParams().defaults();
   }
 
   /**
@@ -44,25 +38,32 @@ public class WebLogicImageTool extends InstallWITCommon {
    * @return true if the command succeeds 
    */
   public boolean updateImage() {
-    return executeAndVerify(buildCommand(), params.isRedirect());
+    try {
+      checkFile(IMAGE_TOOL);
+    } catch (FileNotFoundException fnfe) {
+      logger.warning("Failed to create an image due to " + fnfe.getMessage());
+      return false;
+    }
+    return executeAndVerify(buildCommand(), params.redirect());
   }
   
   private String buildCommand() {
     String command = 
-        WORK_DIR + "/imagetool/bin/imagetool.sh update "
-        + " --tag " + params.getModelImageName() + ":" + params.getModelImageTag()
-        + " --fromImage " + params.getBaseImageName() + ":" + params.getBaseImageTag()
-        + " --wdtDomainType " + params.getDomainType()
+        IMAGE_TOOL 
+        + " update "
+        + " --tag " + params.modelImageName() + ":" + params.modelImageTag()
+        + " --fromImage " + params.baseImageName() + ":" + params.baseImageTag()
+        + " --wdtDomainType " + params.domainType()
         + " --wdtModelOnly ";
   
-    if (params.getModelFiles() != null && params.getModelFiles().size() != 0) {
-      command += " --wdtModel " + buildList(params.getModelFiles());
+    if (params.modelFiles() != null && params.modelFiles().size() != 0) {
+      command += " --wdtModel " + buildList(params.modelFiles());
     }
-    if (params.getModelVariableFiles() != null && params.getModelVariableFiles().size() != 0) {
-      command += " --wdtVariables " + buildList(params.getModelVariableFiles());
+    if (params.modelVariableFiles() != null && params.modelVariableFiles().size() != 0) {
+      command += " --wdtVariables " + buildList(params.modelVariableFiles());
     }
-    if (params.getModelArchiveFiles() != null && params.getModelArchiveFiles().size() != 0) {
-      command += " --wdtArchive " + buildList(params.getModelArchiveFiles());
+    if (params.modelArchiveFiles() != null && params.modelArchiveFiles().size() != 0) {
+      command += " --wdtArchive " + buildList(params.modelArchiveFiles());
     }
   
     return command;

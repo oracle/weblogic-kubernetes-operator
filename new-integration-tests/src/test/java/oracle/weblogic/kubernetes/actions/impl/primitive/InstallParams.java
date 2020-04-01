@@ -4,7 +4,7 @@
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 /**
- * Presents all parameters for downloading a tool.
+ * Contains the parameters for installing the WebLogic Image Tool or WebLogic Deploy Tool.
  */
 
 public class InstallParams {
@@ -21,14 +21,19 @@ public class InstallParams {
 
   // WIT or WDT
   private String type = "WIT";
+  
   // The version of the tool
   private String version;
+  
   // The download site location
   private String location;
+  
   // Whether verify before download
   private boolean verify = true;
+  
   // Whether the download zip file needs to be unziped
   private boolean unzip = false;
+  
   // Whether the output of the command is redirected to system out
   private boolean redirect = true;
 
@@ -37,7 +42,7 @@ public class InstallParams {
     return this;
   }
 
-  public String getType() {
+  public String type() {
     return type;
   }
 
@@ -46,7 +51,7 @@ public class InstallParams {
     return this;
   }
 
-  public String getVersion() {
+  public String version() {
     if (version == null) {
       return WIT_TYPE.equals(type) ? DEFAULT_WIT_VERSION : DEFAULT_WDT_VERSION;
     }
@@ -58,7 +63,7 @@ public class InstallParams {
     return this;
   }
 
-  public String getLocation() {
+  public String location() {
     if (location == null) {
       return WIT_TYPE.equals(type) ? DEFAULT_WIT_DOWNLOAD_URL : DEFAULT_WDT_DOWNLOAD_URL;
     }
@@ -70,7 +75,7 @@ public class InstallParams {
     return this;
   }
 
-  public boolean isVerify() {
+  public boolean verify() {
     return verify;
   }
   
@@ -79,7 +84,7 @@ public class InstallParams {
     return this;
   }
 
-  public boolean isRedirect() {
+  public boolean direct() {
     return redirect;
   }
 
@@ -88,11 +93,11 @@ public class InstallParams {
     return this;
   }
 
-  public boolean isUnzip() {
+  public boolean unzip() {
     return unzip;
   }
 
-  public String getFileName() {
+  public String fileName() {
     if (WIT_TYPE.equals(type)) {
       return WIT_FILE_NAME;
     } else {
