@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
+import java.util.List;
+
 /**
  * Implementation of actions that use WebLogic Image Tool to create or update a WebLogic Docker image.
  */
@@ -54,15 +56,34 @@ public class WebLogicImageTool extends InstallWITCommon {
         + " --wdtModelOnly ";
   
     if (params.getModelFiles() != null && params.getModelFiles().size() != 0) {
-      command += " --wdtModel " + params.getModelFiles();
+      command += " --wdtModel " + buildList(params.getModelFiles());
     }
     if (params.getModelVariableFiles() != null && params.getModelVariableFiles().size() != 0) {
-      command += " --wdtVariables " + params.getModelVariableFiles();
+      command += " --wdtVariables " + buildList(params.getModelVariableFiles());
     }
     if (params.getModelArchiveFiles() != null && params.getModelArchiveFiles().size() != 0) {
-      command += " --wdtArchive " + params.getModelArchiveFiles();
+      command += " --wdtArchive " + buildList(params.getModelArchiveFiles());
     }
   
     return command;
+  }
+
+  private String buildList(List<String> list) {
+    StringBuilder sbString = new StringBuilder("");
+        
+    //iterate through ArrayList
+    for (String item : list) {
+      //append ArrayList element followed by comma
+      sbString.append(item).append(",");
+    }
+        
+    //convert StringBuffer to String
+    String strList = sbString.toString();
+        
+    //remove last comma from String if you want
+    if (strList.length() > 0) {
+      strList = strList.substring(0, strList.length() - 1);
+    }
+    return strList;
   }
 }
