@@ -138,7 +138,7 @@ function cleanupMajor() {
 
   rm -fr /tmp/introspect
   mkdir -p $test_home || exit 1
-
+  rm -fr ${SCRIPTPATH}/mii/workdir
   # now we use the generic integration test cleanup script to
   #
   #   1 - delete all operator related k8s artifacts
