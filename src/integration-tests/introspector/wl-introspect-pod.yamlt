@@ -70,6 +70,8 @@ spec:
       mountPath: /shared
     - name: weblogic-runtime-encryption-volume
       mountPath: /weblogic-operator/model-runtime-secret
+    - name: weblogic-wdt-config-map-volume
+      mountPath: /weblogic-operator/wdt-config-map
   volumes:
   - name: weblogic-credentials-volume
     secret:
@@ -91,6 +93,10 @@ spec:
     configMap:
       defaultMode: 365
       name: weblogic-domain-cm
+  - name: weblogic-wdt-config-map-volume
+    configMap:
+      defaultMode: 365
+      name: ${DOMAIN_UID}-wdt-config-map
   - name: ${DOMAIN_UID}-mycustom-overrides-cm-volume
     configMap:
       defaultMode: 365

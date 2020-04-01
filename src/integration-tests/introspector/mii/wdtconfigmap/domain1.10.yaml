@@ -1,0 +1,15 @@
+resources:
+    JDBCSystemResource:
+        testDS:
+            JdbcResource:
+                JDBCDriverParams:
+                    Properties:
+                        user:
+                            Value: '@@PROP:TESTDS-USER@@'
+        mysqlDS:
+            JdbcResource:
+                JDBCDriverParams:
+                    URL: 'jdbc:mysql://invalid-host:3306/invalid-db-name'
+                    Properties:
+                        user:
+                            Value: '@@PROP:MYSQL-USER@@'
