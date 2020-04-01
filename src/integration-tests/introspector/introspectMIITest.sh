@@ -918,6 +918,12 @@ kubectl -n $NAMESPACE create secret generic my-secret \
         --from-literal=key1=supersecret  \
         --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
 
+# MII only, avoid changing ymlt files for non MII case
+
+kubectl -n $NAMESPACE delete secret runtime-encryption-secret > /dev/null 2>&1
+kubectl -n $NAMESPACE create secret generic runtime-encryption-secret \
+        --from-literal=password=supersecret  2>&1 | tracePipe "Info: kubectl output: "
+
 if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
   createTestRootPVDir
   deployMySQL

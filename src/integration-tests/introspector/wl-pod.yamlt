@@ -59,6 +59,10 @@ spec:
       value: ""
     - name: ADMIN_PASSWORD
       value: ""
+    - name: DOMAIN_SOURCE_TYPE
+      value: "FromModel"
+    - name: WDT_DOMAIN_TYPE
+      value: "WLS"
     image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
     imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
     lifecycle:
@@ -111,11 +115,17 @@ spec:
     - mountPath: /weblogic-operator/introspector
       name: introspect-domain-cm-volume
       readOnly: true
+    - name: weblogic-runtime-encryption-volume
+      mountPath: /weblogic-operator/model-runtime-secret
   dnsPolicy: ClusterFirst
   hostname: ${SERVICE_NAME}
   restartPolicy: Always
   terminationGracePeriodSeconds: 1
   volumes:
+  - name: weblogic-runtime-encryption-volume
+    secret:
+      defaultMode: 420
+      secretName: runtime-encryption-secret
   # WL Pods shouldn't need secrets if the introspector is working:
   #- name: weblogic-credentials-volume
   #  secret:
