@@ -96,7 +96,7 @@ sample]({{< relref "/samples/simple/domains/manually-create-domain/_index.md" >}
 
 ### Modifying domain configurations
 
-You can modify the WebLogic domain configuration for both Domain in PV and the Domain in Image before deploying a domain resource:
+You can modify the WebLogic domain configuration for both Domain in PV and Domain in Image before deploying a domain resource:
 
 * When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.
 * For either case, you can use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).   
