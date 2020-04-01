@@ -1,47 +1,90 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.model;
+package oracle.weblogic.domain.model;
 
-import java.util.Optional;
+import java.util.Map;
 
-import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.json.Description;
+import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class ServerService extends KubernetesResource {
+public class ServerService {
 
-  @SerializedName("precreateService")
-  @Description(
+  @ApiModelProperty(
       "If true, operator will create server services even for server instances without running pods.")
-  private Boolean isPrecreateService;
+  private Boolean precreateService;
 
-  void fillInFrom(ServerService serverService1) {
-    super.fillInFrom(serverService1);
-    this.isPrecreateService =
-        Optional.ofNullable(isPrecreateService).orElse(serverService1.isPrecreateService);
-  }
+  @ApiModelProperty(
+      "The labels to be attached to generated resources. The label names must "
+          + "not start with 'weblogic.'.")
+  private Map<String, String> labels = new HashMap<>();
 
-  public Boolean isPrecreateService() {
-    return Optional.ofNullable(isPrecreateService).orElse(Boolean.FALSE);
-  }
+  @ApiModelProperty("The annotations to be attached to generated resources.")
+  private Map<String, String> annotations = new HashMap<>();
 
-  public void setIsPrecreateService(Boolean isPrecreateService) {
-    this.isPrecreateService = isPrecreateService;
-  }
-
-  public ServerService withIsPrecreateService(Boolean isPrecreateService) {
-    this.isPrecreateService = isPrecreateService;
+  public ServerService precreateService(Boolean precreateService) {
+    this.precreateService = precreateService;
     return this;
+  }
+
+  public Boolean getPrecreateService() {
+    return precreateService;
+  }
+
+  public void setPrecreateService(Boolean precreateService) {
+    this.precreateService = precreateService;
+  }
+
+  public ServerService labels(Map<String, String> labels) {
+    this.labels = labels;
+    return this;
+  }
+
+  public ServerService putLabelsItem(String key, String labelsItem) {
+    if (labels == null) {
+      labels = new HashMap<>();
+    }
+    labels.put(key, labelsItem);
+    return this;
+  }
+
+  public Map<String, String> getLabels() {
+    return labels;
+  }
+
+  public void setLabels(Map<String, String> labels) {
+    this.labels = labels;
+  }
+
+  public ServerService annotations(Map<String, String> annotations) {
+    this.annotations = annotations;
+    return this;
+  }
+
+  public ServerService putAnnotationsItem(String key, String annotationsItem) {
+    if (annotations == null) {
+      annotations = new HashMap<>();
+    }
+    annotations.put(key, annotationsItem);
+    return this;
+  }
+
+  public Map<String, String> getAnnotations() {
+    return annotations;
+  }
+
+  public void setAnnotations(Map<String, String> annotations) {
+    this.annotations = annotations;
   }
 
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-        .appendSuper(super.toString())
-        .append("isPrecreateService", isPrecreateService)
+        .append("precreateService", precreateService)
+        .append("labels", labels)
+        .append("annotations", annotations)
         .toString();
   }
 
@@ -55,19 +98,22 @@ public class ServerService extends KubernetesResource {
       return false;
     }
 
-    ServerService that = (ServerService) o;
+    ServerService rhs = (ServerService) o;
 
     return new EqualsBuilder()
-        .appendSuper(super.equals(o))
-        .append(isPrecreateService, that.isPrecreateService)
+        .append(precreateService, rhs.precreateService)
+        .append(labels, rhs.labels)
+        .append(annotations, rhs.annotations)
         .isEquals();
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
-        .appendSuper(super.hashCode())
-        .append(isPrecreateService)
+        .append(precreateService)
+        .append(labels)
+        .append(annotations)
         .toHashCode();
   }
+
 }

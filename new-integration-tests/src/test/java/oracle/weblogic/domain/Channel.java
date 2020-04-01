@@ -1,19 +1,20 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.model;
+package oracle.weblogic.domain.model;
 
 import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.json.Description;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("Describes a single channel used by the Administration Server.")
+@ApiModel(description = "Describes a single channel used by the Administration Server.")
 public class Channel {
-  @Description(
+  @ApiModelProperty(
       "Name of channel.\n'default' refers to the Administration Server's default channel (configured "
           + "via the ServerMBean's ListenPort) "
           + "\n'default-secure' refers to the Administration Server's default secure channel "
@@ -24,7 +25,7 @@ public class Channel {
           + "(configured via the ServerMBean's NetworkAccessMBeans).")
   private String channelName;
 
-  @Description(
+  @ApiModelProperty(
       "Specifies the port number used to access the WebLogic channel "
           + "outside of the Kubernetes cluster. "
           + "If not specified, defaults to the port defined by the WebLogic channel.")

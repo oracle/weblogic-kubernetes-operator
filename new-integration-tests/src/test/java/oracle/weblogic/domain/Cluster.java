@@ -1,57 +1,49 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.model;
+package oracle.weblogic.domain.model;
 
-import java.util.Map;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.json.Range;
-import oracle.kubernetes.operator.ServerStartPolicy;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("An element representing a cluster in the domain configuration.")
+@ApiModel(description = "An element representing a cluster in the domain configuration.")
 public class Cluster {
-  @Description("The name of this cluster. Required")
+
+  @ApiModelProperty("The name of this cluster. Required")
   private String clusterName;
 
-  @Description("The number of cluster members to run.")
-  @Range(minimum = 0)
+  @ApiModelProperty(value = "The number of cluster members to run.", allowableValues = "range[0,infinity]")
   private Integer replicas;
 
-  @Description(
+  @ApiModelProperty(
       "The strategy for deciding whether to start a server. "
           + "Legal values are NEVER, or IF_NEEDED.")
   private String serverStartPolicy;
 
-  @Description(
-      "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.")
-  @Range(minimum = 1)
+  @ApiModelProperty(
+      value = "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
+      allowableValues = "range[1,infinity]")
   private Integer maxUnavailable;
 
-  @Description("Customization affecting ClusterIP Kubernetes services for the WebLogic cluster.")
-  private KubernetesResource clusterService = new KubernetesResource();
+  @ApiModelProperty("Customization affecting ClusterIP Kubernetes services for the WebLogic cluster.")
+  private ClusterService clusterService;
 
-  @Description("Configuration affecting server pods.")
-  private final ServerPod serverPod;
+  @ApiModelProperty("Configuration affecting server pods.")
+  private ServerPod serverPod;
 
-  @Description(
+  @ApiModelProperty(
       "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
-  private final ServerService serverService;
+  private ServerService serverService;
 
-  @Description(
+  @ApiModelProperty(
       "The state in which the server is to be started. Use ADMIN if server should start "
           + "in the admin state. Defaults to RUNNING.")
   private String serverStartState;
 
-  @Description(
+  @ApiModelProperty(
       "If present, every time this value is updated the operator will restart"
           + " the required servers.")
   private String restartVersion;
@@ -108,16 +100,16 @@ public class Cluster {
     this.maxUnavailable = maxUnavailable;
   }
 
-  public Cluster clusterService(KubernetesResoruce clusterService) {
+  public Cluster clusterService(ClusterService clusterService) {
     this.clusterService = clusterService;
     return this;
   }
 
-  public KubernetesResource getClusterService() {
+  public ClusterService getClusterService() {
     return clusterService;
   }
 
-  public void setClusterService(KubernetesResource clusterService) {
+  public void setClusterService(ClusterService clusterService) {
     this.clusterService = clusterService;
   }
 

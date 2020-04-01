@@ -1,109 +1,95 @@
 // Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.model;
+package oracle.weblogic.domain.model;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import javax.annotation.Nullable;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.json.Pattern;
-import oracle.kubernetes.json.Range;
-import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.ImagePullPolicy;
-import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.ModelInImageDomainType;
-import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("DomainSpec is a description of a domain.")
+@ApiModel(description = "DomainSpec is a description of a domain.")
 public class DomainSpec {
 
-  @Description(
-      "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
-          + " Defaults to the value of metadata.name.")
-  @Pattern("^[a-z0-9-.]{1,253}$")
+  @ApiModelProperty(
+      value = "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
+          + " Defaults to the value of metadata.name.",
+      allowableValues = "pattern[^[a-z0-9-.]{1,253}$]")
   @SerializedName("domainUID")
   private String domainUid;
 
-  @Description(
+  @ApiModelProperty(
       "The folder for the WebLogic Domain. Not required."
           + " Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume."
           + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image."
           + " Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel.")
   private String domainHome;
 
-  @Description(
+  @ApiModelProperty(
       "The strategy for deciding whether to start a server. "
           + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.")
   private String serverStartPolicy;
 
-  @Description(
+  @ApiModelProperty(
       "The name of a pre-created Kubernetes secret, in the domain's namespace, that holds"
           + " the username and password needed to boot WebLogic Server under the 'username' and "
           + "'password' fields.")
   private V1SecretReference webLogicCredentialsSecret;
 
-  @Description(
+  @ApiModelProperty(
       "The in-pod name of the directory in which to store the domain, node manager, server logs, "
           + "and server  *.out files. Defaults to /shared/logs/<domainUID>. Ignored if logHomeEnabled is false.")
   private String logHome;
 
-  @Description(
+  @ApiModelProperty(
       "Specified whether the log home folder is enabled. Not required. "
           + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled;
 
-  @Description(
+  @ApiModelProperty(
       "An optional, in-pod location for data storage of default and custom file stores. "
           + "If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") "
           + "then the data storage directories are determined from the WebLogic domain home configuration.")
   private String dataHome;
 
-  @Description("If true (the default), the server .out file will be included in the pod's stdout.")
+  @ApiModelProperty("If true (the default), the server .out file will be included in the pod's stdout.")
   private Boolean includeServerOutInPodLog;
 
-  @Description(
+  @ApiModelProperty(
       "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
   private String image;
 
-  @Description(
+  @ApiModelProperty(
       "The image pull policy for the WebLogic Docker image. "
           + "Legal values are Always, Never and IfNotPresent. "
           + "Defaults to Always if image ends in :latest, IfNotPresent otherwise.")
   private String imagePullPolicy;
 
-  @Description("A list of image pull secrets for the WebLogic Docker image.")
+  @ApiModelProperty("A list of image pull secrets for the WebLogic Docker image.")
   private List<V1LocalObjectReference> imagePullSecrets = new ArrayList<>();
 
-  @Description(
-      "The number of managed servers to run in any cluster that does not specify a replica count.")
-  @Range(minimum = 0)
+  @ApiModelProperty(
+      value = "The number of managed servers to run in any cluster that does not specify a replica count.",
+      allowableValues = "range[0,infinity]")
   private Integer replicas;
 
   @Deprecated
-  @Description(
+  @ApiModelProperty(
       "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
           + " True indicates that the domain home file system is contained in the Docker image"
           + " specified by the image field. False indicates that the domain home file system is located"
           + " on a persistent volume.")
   private Boolean domainHomeInImage;
 
-  @Description(
+  @ApiModelProperty(
       "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
           + " Image indicates that the domain home file system is contained in the Docker image"
           + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
@@ -113,49 +99,49 @@ public class DomainSpec {
           + " unspecified then domainHomeSourceType defaults to Image.")
   private String domainHomeSourceType;
 
-  @Description(
+  @ApiModelProperty(
       "If present, every time this value is updated, the operator will start introspect domain job")
   private String introspectVersion;
 
-  @Description("Models and overrides affecting the WebLogic domain configuration.")
+  @ApiModelProperty("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
 
   @Deprecated
-  @Description("Deprecated. Use configuration.overridesConfigMap instead."
+  @ApiModelProperty("Deprecated. Use configuration.overridesConfigMap instead."
       + " Ignored if configuration.overridesConfigMap is specified."
       + " The name of the config map for optional WebLogic configuration overrides.")
   private String configOverrides;
 
   @Deprecated
-  @Description("Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
+  @ApiModelProperty("Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
       + " A list of names of the secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets = new ArrayList<>();
 
-  @Description("Configuration for the Administration Server.")
+  @ApiModelProperty("Configuration for the Administration Server.")
   private AdminServer adminServer;
 
-  @Description("Configuration for individual Managed Servers.")
-  private final List<ManagedServer> managedServers = new ArrayList<>();
+  @ApiModelProperty("Configuration for individual Managed Servers.")
+  private List<ManagedServer> managedServers = new ArrayList<>();
 
-  @Description("Configuration for the clusters.")
-  protected final List<Cluster> clusters = new ArrayList<>();
+  @ApiModelProperty("Configuration for the clusters.")
+  private List<Cluster> clusters = new ArrayList<>();
 
-  @Description("Experimental feature configurations.")
+  @ApiModelProperty("Experimental feature configurations.")
   private Experimental experimental;
 
-  @Description("Configuration affecting server pods.")
-  private final ServerPod serverPod;
+  @ApiModelProperty("Configuration affecting server pods.")
+  private ServerPod serverPod;
 
-  @Description(
+  @ApiModelProperty(
       "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
-  private final ServerService serverService;
+  private ServerService serverService;
 
-  @Description(
+  @ApiModelProperty(
       "The state in which the server is to be started. Use ADMIN if server should start "
           + "in the admin state. Defaults to RUNNING.")
   private String serverStartState;
 
-  @Description(
+  @ApiModelProperty(
       "If present, every time this value is updated the operator will restart"
           + " the required servers.")
   private String restartVersion;
@@ -444,7 +430,7 @@ public class DomainSpec {
     return managedServers;
   }
 
-  public void setManagedServers(List<ManagedServers> managedServers) {
+  public void setManagedServers(List<ManagedServer> managedServers) {
     this.managedServers = managedServers;
   }
 

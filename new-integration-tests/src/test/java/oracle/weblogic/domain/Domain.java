@@ -1,57 +1,32 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.model;
+package oracle.weblogic.domain.model;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.validation.Valid;
-
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.kubernetes.json.Description;
-import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.ModelInImageDomainType;
-import oracle.kubernetes.operator.VersionConstants;
-import oracle.kubernetes.operator.helpers.SecretType;
-import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description(
+@ApiModel(description =
     "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
 public class Domain {
 
-  @Description("The API version for the Domain.")
+  @ApiModelProperty("The API version for the Domain.")
   private String apiVersion;
 
-  @Description("The type of resource. Must be 'Domain'.")
+  @ApiModelProperty("The type of resource. Must be 'Domain'.")
   private String kind;
 
-  @Description("The domain meta-data. Must include the name and namespace.")
+  @ApiModelProperty("The domain meta-data. Must include the name and namespace.")
   private V1ObjectMeta metadata = new V1ObjectMeta();
 
-  @Description("The specification of the domain. Required.")
+  @ApiModelProperty("The specification of the domain. Required.")
   private DomainSpec spec = new DomainSpec();
 
-  @Description("The current status of the domain. Updated by the operator.")
+  @ApiModelProperty("The current status of the domain. Updated by the operator.")
   private DomainStatus status;
 
   public Domain apiVersion(String apiVersion) {

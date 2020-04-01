@@ -1,7 +1,7 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.model;
+package oracle.weblogic.domain.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,29 +10,30 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.json.Description;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import oracle.kubernetes.weblogic.domain.ServiceConfigurator;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description(
+@ApiModel(description =
     "AdminService describes which of the Administration Server's WebLogic admin channels should be exposed outside"
         + " the Kubernetes cluster via a node port service.")
 public class AdminService {
 
-  @Description(
+  @ApiModelProperty(
       "Specifies which of the Administration Server's WebLogic channels should be exposed outside "
           + "the Kubernetes cluster via a node port service, along with the node port for "
           + "each channel. If not specified, the Administration Server's node port service will "
           + "not be created.")
-  private final List<Channel> channels = new ArrayList<>();
+  private List<Channel> channels = new ArrayList<>();
 
-  @Description("Labels to associate with the external channel service.")
-  private final Map<String, String> labels = new HashMap<>();
+  @ApiModelProperty("Labels to associate with the external channel service.")
+  private Map<String, String> labels = new HashMap<>();
 
-  @Description("Annotations to associate with the external channel service.")
-  private final Map<String, String> annotations = new HashMap<>();
+  @ApiModelProperty("Annotations to associate with the external channel service.")
+  private Map<String, String> annotations = new HashMap<>();
 
   public AdminService channels(List<Channel> channels) {
     this.channels = channels;

@@ -1,43 +1,38 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.model;
+package oracle.weblogic.domain.model;
 
 import javax.annotation.Nonnull;
 
-import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.Range;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-/** ClusterStatus describes the current status of a specific WebLogic cluster. */
+@ApiModel(description = "ClusterStatus describes the current status of a specific WebLogic cluster.")
 public class ClusterStatus {
 
-  @Description("WebLogic cluster name. Required.")
+  @ApiModelProperty("WebLogic cluster name. Required.")
   private String clusterName;
 
-  @Description("The number of intended cluster members. Required.")
-  @Range(minimum = 0)
+  @ApiModelProperty(value = "The number of intended cluster members. Required.", allowableValues = "range[0,infinity]")
   private Integer replicas;
 
-  @Description("The number of ready cluster members. Required.")
-  @Range(minimum = 0)
+  @ApiModelProperty(value = "The number of ready cluster members. Required.", allowableValues = "range[0,infinity]")
   private Integer readyReplicas;
 
-  @Description("The maximum number of cluster members. Required.")
-  @Range(minimum = 0)
+  @ApiModelProperty(value = "The maximum number of cluster members. Required.", allowableValues = "range[0,infinity]")
   private Integer maximumReplicas;
 
-  @Description("The minimum number of cluster members.")
-  @Range(minimum = 0)
+  @ApiModelProperty(value = "The minimum number of cluster members.", allowableValues = "range[0,infinity]")
   private Integer minimumReplicas;
 
-  @Description("The requested number of cluster members from the domain spec. "
-      + "Cluster members will be started by the operator if this value is larger than zero.")
-  @Range(minimum = 0)
+  @ApiModelProperty(value = "The requested number of cluster members from the domain spec. "
+      + "Cluster members will be started by the operator if this value is larger than zero.",
+      allowableValues = "range[0,infinity]")
   private Integer replicasGoal;
 
   public ClusterStatus clusterName(String clusterName) {

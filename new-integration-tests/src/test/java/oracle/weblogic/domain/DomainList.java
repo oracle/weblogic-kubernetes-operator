@@ -5,30 +5,29 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
-import com.google.gson.annotations.Expose;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("DomainList is a list of Domains.")
+@ApiModel(description = "DomainList is a list of Domains.")
 public class DomainList {
 
-  @Description("The API version for the Domain.")
+  @ApiModelProperty("The API version for the Domain.")
   private String apiVersion;
 
-  @Description(
+  @ApiModelProperty(
       "List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md. Required.")
   private List<Domain> items = new ArrayList<Domain>();
 
-  @Description("The type of resource. Must be 'DomainList'.")
+  @ApiModelProperty("The type of resource. Must be 'DomainList'.")
   private String kind;
 
-  @Description(
+  @ApiModelProperty(
       "Standard list metadata. "
           + "More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.")
   private V1ListMeta metadata;

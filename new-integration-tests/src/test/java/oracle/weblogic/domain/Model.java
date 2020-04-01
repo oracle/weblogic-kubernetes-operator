@@ -1,13 +1,13 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.model;
+package oracle.weblogic.domain.model;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 
-import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.EnumClass;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -15,18 +15,21 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Model {
 
-  @Description("WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
+  @ApiModelProperty(value = "WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.",
+      allowableValues = "WLS, RestrictedJRF, JRF")
   private String domainType;
 
-  @Description("WDT config map name.")
+  @ApiModelProperty("WDT config map name.")
   private String configMap;
 
-  @Valid
-  @Nullable
-  @Description("Runtime encryption secret. Required when domainHomeSourceType is set to FromModel.")
+  @ApiModelProperty("Runtime encryption secret. Required when domainHomeSourceType is set to FromModel.")
   private String runtimeEncryptionSecret;
 
-  @Nullable
+  public Model domainType(String domainType) {
+    this.domainType = domainType;
+    return this;
+  }
+
   public String getDomainType() {
     return domainType;
   }
@@ -35,36 +38,30 @@ public class Model {
     this.domainType = domainType;
   }
 
-  public Model withDomainType(@Nullable String domainType) {
-    this.domainType = domainType;
+  public Model withConfigMap(String configMap) {
+    this.configMap = configMap;
     return this;
   }
 
-  @Nullable
-  String getConfigMap() {
+  public String getConfigMap() {
     return configMap;
   }
 
-  void setConfigMap(@Nullable String configMap) {
+  public void setConfigMap(String configMap) {
     this.configMap = configMap;
   }
 
-  public Model withConfigMap(@Nullable String configMap) {
-    this.configMap = configMap;
+  public Model runtimeEncryptionSecret(String runtimeEncryptionSecret) {
+    this.runtimeEncryptionSecret = runtimeEncryptionSecret;
     return this;
   }
 
-  String getRuntimeEncryptionSecret() {
+  public String getRuntimeEncryptionSecret() {
     return runtimeEncryptionSecret;
   }
 
-  void setRuntimeEncryptionSecret(String runtimeEncryptionSecret) {
+  public void setRuntimeEncryptionSecret(String runtimeEncryptionSecret) {
     this.runtimeEncryptionSecret = runtimeEncryptionSecret;
-  }
-
-  public Model withRuntimeEncryptionSecret(String runtimeEncryptionSecret) {
-    this.runtimeEncryptionSecret = runtimeEncryptionSecret;
-    return this;
   }
 
   @Override
@@ -106,4 +103,5 @@ public class Model {
 
     return builder.isEquals();
   }
+
 }

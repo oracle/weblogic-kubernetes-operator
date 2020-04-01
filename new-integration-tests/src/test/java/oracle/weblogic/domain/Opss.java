@@ -1,24 +1,27 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.model;
+package oracle.weblogic.domain.model;
 
-import javax.validation.Valid;
-
-import oracle.kubernetes.json.Description;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Opss {
 
-  @Description("Secret containing the OPSS key wallet file.")
+  @ApiModelProperty("Secret containing the OPSS key wallet file.")
   private String walletFileSecret;
 
-  @Description(
+  @ApiModelProperty(
       "Secret containing OPSS key passphrase.")
-  @Valid
   private String walletPasswordSecret;
+
+  public Opss walletFileSecret(String walletFileSecret) {
+    this.walletFileSecret = walletFileSecret;
+    return this;
+  }
 
   public String getWalletFileSecret() {
     return this.walletFileSecret;
@@ -28,8 +31,8 @@ public class Opss {
     this.walletFileSecret = walletFileSecret;
   }
 
-  public Opss withWalletFileSecret(String walletFileSecret) {
-    this.walletFileSecret = walletFileSecret;
+  public Opss walletPasswordSecret(String walletPasswordSecret) {
+    this.walletPasswordSecret = walletPasswordSecret;
     return this;
   }
 
@@ -39,11 +42,6 @@ public class Opss {
 
   public void setWalletPasswordSecret(String walletPasswordSecret) {
     this.walletPasswordSecret = walletPasswordSecret;
-  }
-
-  public Opss withWalletPasswordSecret(String walletPasswordSecret) {
-    this.walletPasswordSecret = walletPasswordSecret;
-    return this;
   }
 
   @Override
@@ -82,4 +80,5 @@ public class Opss {
 
     return builder.isEquals();
   }
+
 }

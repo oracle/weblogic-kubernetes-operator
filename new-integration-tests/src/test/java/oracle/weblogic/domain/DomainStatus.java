@@ -1,63 +1,51 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.model;
+package oracle.weblogic.domain.model;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Objects;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.json.JsonPatchBuilder;
-import javax.validation.Valid;
 
-import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.Range;
-import oracle.kubernetes.utils.SystemClock;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 
-import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
-
-@Description(
+@ApiModel(description =
     "DomainStatus represents information about the status of a domain. "
         + "Status may trail the actual state of a system.")
 public class DomainStatus {
 
-  @Description("Current service state of domain.")
+  @ApiModelProperty("Current service state of domain.")
   private List<DomainCondition> conditions = new ArrayList<>();
 
-  @Description(
+  @ApiModelProperty(
       "A human readable message indicating details about why the domain is in this condition.")
   private String message;
 
-  @Description(
+  @ApiModelProperty(
       "A brief CamelCase message indicating details about why the domain is in this state.")
   private String reason;
 
-  @Description("Status of WebLogic Servers in this domain.")
+  @ApiModelProperty("Status of WebLogic Servers in this domain.")
   private List<ServerStatus> servers = new ArrayList<>();
 
-  @Description("Status of WebLogic clusters in this domain.")
+  @ApiModelProperty("Status of WebLogic clusters in this domain.")
   private List<ClusterStatus> clusters = new ArrayList<>();
 
-  @Description(
+  @ApiModelProperty(
       "RFC 3339 date and time at which the operator started the domain. This will be when "
           + "the operator begins processing and will precede when the various servers "
           + "or clusters are available.")
   private DateTime startTime;
 
-  @Description(
-      "The number of running Managed Servers in the WebLogic cluster if there is "
+  @ApiModelProperty(
+      value = "The number of running Managed Servers in the WebLogic cluster if there is "
           + "only one cluster in the domain and where the cluster does not explicitly "
-          + "configure its replicas in a cluster specification.")
-  @Range(minimum = 0)
+          + "configure its replicas in a cluster specification.",
+      allowableValues = "range[0,infinity]")
   private Integer replicas;
 
   public DomainStatus conditions(List<DomainCondition> conditions) {

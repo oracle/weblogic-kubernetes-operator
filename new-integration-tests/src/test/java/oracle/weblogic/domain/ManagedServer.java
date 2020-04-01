@@ -1,45 +1,117 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.model;
+package oracle.weblogic.domain.model;
 
 import javax.annotation.Nonnull;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.json.Description;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("ManagedServer represents the operator configuration for a single Managed Server.")
-public class ManagedServer extends Server implements Comparable<ManagedServer> {
+@ApiModel(descrption = "ManagedServer represents the operator configuration for a single Managed Server.")
+public class ManagedServer {
   
-  /** The name of the Managed Server. Required. */
-  @SerializedName("serverName")
-  @Expose
-  @Description("The name of the Managed Server. Required.")
-  @Nonnull
+  @ApiModelProperty("The name of the Managed Server. Required.")
   private String serverName;
+
+  @ApiModelProperty(
+      "The strategy for deciding whether to start a server. "
+          + "Legal values are ALWAYS, NEVER, or IF_NEEDED.")
+  private String serverStartPolicy;
+
+  @ApiModelProperty("Configuration affecting server pods.")
+  private ServerPod serverPod;
+
+  @ApiModelProperty(
+      "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
+  private ServerService serverService;
+
+  @ApiModelProperty(
+      "The state in which the server is to be started. Use ADMIN if server should start "
+          + "in the admin state. Defaults to RUNNING.")
+  private String serverStartState;
+
+  @ApiModelProperty(
+      "If present, every time this value is updated the operator will restart"
+          + " the required servers.")
+  private String restartVersion;
+
+  public ManagedServer serverName(@Nonnull String serverName) {
+    this.serverName = serverName;
+    return this;
+  }
 
   public String getServerName() {
     return serverName;
   }
 
-  public void setServerName(@Nonnull String serverName) {
+  public void setServerName(String serverName) {
     this.serverName = serverName;
   }
 
-  public ManagedServer withServerName(@Nonnull String serverName) {
-    setServerName(serverName);
+  public Server serverStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
     return this;
+  }
+
+  public String getServerStartPolicy() {
+    return serverStartPolicy;
+  }
+
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+  }
+
+  public Server serverPod(ServerPod serverPod) {
+    this.serverPod = serverPod;
+    return this;
+  }
+
+  public ServerPod getServerPod() {
+    return serverPod;
+  }
+
+  public void setServerPod(ServerPod serverPod) {
+    this.serverPod = serverPod;
+  }
+
+  public Server serverStartState(String serverStartState) {
+    this.serverStartState = serverStartState;
+    return this;
+  }
+
+  public String getServerStartState() {
+    return serverStartState;
+  }
+
+  public void setServerStartState(String serverStartState) {
+    this.serverStartState = serverStartState;
+  }
+
+  public Server restartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
+  }
+
+  public String getRestartVersion() {
+    return restartVersion;
+  }
+
+  public void setRestartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
   }
 
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-        .appendSuper(super.toString())
         .append("serverName", serverName)
+        .append("serverStartPolicy", serverStartPolicy)
+        .append("serverStartState", serverStartState)
+        .append("serverPod", serverPod)
+        .append("serverService", serverService)
+        .append("restartVersion", restartVersion)
         .toString();
   }
 
@@ -57,24 +129,28 @@ public class ManagedServer extends Server implements Comparable<ManagedServer> {
       return false;
     }
 
-    ManagedServer that = (ManagedServer) o;
+    ManagedServer rhs = (ManagedServer) o;
 
     return new EqualsBuilder()
-        .appendSuper(super.equals(o))
-        .append(serverName, that.serverName)
+        .append(serverName, rhs.serverName)
+        .append(serverStartPolicy, rhs.serverStartPolicy)
+        .append(serverStartState, rhs.serverStartState)
+        .append(serverPod, rhs.serverPod)
+        .append(serverService, rhs.serverService)
+        .append(restartVersion, rhs.restartVersion)
         .isEquals();
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
-        .appendSuper(super.hashCode())
         .append(serverName)
+        .append(serverStartPolicy)
+        .append(serverStartState)
+        .append(serverPod)
+        .append(serverService)
+        .append(restartVersion)
         .toHashCode();
   }
 
-  @Override
-  public int compareTo(ManagedServer o) {
-    return serverName.compareTo(o.serverName);
-  }
 }

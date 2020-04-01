@@ -53,11 +53,13 @@
             <groupId>io.kubernetes</groupId>
             <artifactId>client-java</artifactId>
             <version>8.0.0</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.kubernetes</groupId>
             <artifactId>client-java-extended</artifactId>
             <version>8.0.0</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -69,6 +71,12 @@
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
             <version>2.10.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>1.6.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

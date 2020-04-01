@@ -1,41 +1,96 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain.model;
+package oracle.weblogic.domain.model;
 
-import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.operator.ServerStartPolicy;
+import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class Server extends BaseConfiguration {
+public class Server {
 
-  /**
-   * Tells the operator whether the customer wants the server to be running. For clustered servers -
-   * the operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server
-   * needs to be started to get to the cluster's replica count.
-   *
-   * @since 2.0
-   */
-  @Description(
+  @ApiModelProperty(
       "The strategy for deciding whether to start a server. "
           + "Legal values are ALWAYS, NEVER, or IF_NEEDED.")
   private String serverStartPolicy;
 
-  protected Server getConfiguration() {
-    Server configuration = new Server();
-    configuration.fillInFrom(this);
-    configuration.setRestartVersion(this.getRestartVersion());
-    return configuration;
+  @ApiModelProperty("Configuration affecting server pods.")
+  private ServerPod serverPod;
+
+  @ApiModelProperty(
+      "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
+  private ServerService serverService;
+
+  @ApiModelProperty(
+      "The state in which the server is to be started. Use ADMIN if server should start "
+          + "in the admin state. Defaults to RUNNING.")
+  private String serverStartState;
+
+  @ApiModelProperty(
+      "If present, every time this value is updated the operator will restart"
+          + " the required servers.")
+  private String restartVersion;
+
+  public Server serverStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+    return this;
+  }
+
+  public String getServerStartPolicy() {
+    return serverStartPolicy;
+  }
+
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+  }
+
+  public Server serverPod(ServerPod serverPod) {
+    this.serverPod = serverPod;
+    return this;
+  }
+
+  public ServerPod getServerPod() {
+    return serverPod;
+  }
+
+  public void setServerPod(ServerPod serverPod) {
+    this.serverPod = serverPod;
+  }
+
+  public Server serverStartState(String serverStartState) {
+    this.serverStartState = serverStartState;
+    return this;
+  }
+
+  public String getServerStartState() {
+    return serverStartState;
+  }
+
+  public void setServerStartState(String serverStartState) {
+    this.serverStartState = serverStartState;
+  }
+
+  public Server restartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
+  }
+
+  public String getRestartVersion() {
+    return restartVersion;
+  }
+
+  public void setRestartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
   }
 
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-        .appendSuper(super.toString())
-        .append(serverStartPolicy)
+        .append("serverStartPolicy", serverStartPolicy)
+        .append("serverStartState", serverStartState)
+        .append("serverPod", serverPod)
+        .append("serverService", serverService)
+        .append("restartVersion", restartVersion)
         .toString();
   }
 
@@ -53,29 +108,26 @@ public class Server extends BaseConfiguration {
       return false;
     }
 
-    Server that = (Server) o;
+    Server rhs = (Server) o;
 
     return new EqualsBuilder()
-        .appendSuper(super.equals(o))
-        .append(serverStartPolicy, that.serverStartPolicy)
+        .append(serverStartPolicy, rhs.serverStartPolicy)
+        .append(serverStartState, rhs.serverStartState)
+        .append(serverPod, rhs.serverPod)
+        .append(serverService, rhs.serverService)
+        .append(restartVersion, rhs.restartVersion)
         .isEquals();
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
-        .appendSuper(super.hashCode())
         .append(serverStartPolicy)
+        .append(serverStartState)
+        .append(serverPod)
+        .append(serverService)
+        .append(restartVersion)
         .toHashCode();
   }
 
-  @Override
-  public String getServerStartPolicy() {
-    return serverStartPolicy;
-  }
-
-  @Override
-  public void setServerStartPolicy(String serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
-  }
 }
