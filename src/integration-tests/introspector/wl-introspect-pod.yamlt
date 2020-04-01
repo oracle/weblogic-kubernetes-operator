@@ -103,6 +103,7 @@ spec:
     configMap:
       defaultMode: 365
       name: ${DOMAIN_UID}-mycustom-overrides-cm
+      optional: ${CUSTOM_OVERRIDE_CM}
   - name: test-script-cm-volume
     configMap:
       defaultMode: 365
