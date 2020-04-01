@@ -3,8 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.Arrays;
-
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
@@ -66,8 +64,8 @@ class ItSimpleOperatorValidation implements LoggedTest {
         new OperatorParams().releaseName("weblogic-operator")
             .namespace(namespace)
             .image("weblogic-kubernetes-operator:test_itsimpleoperator")
-            .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
-            .serviceAccount("sa-opns1");
+            .domainNamespaces("domainns1, domainns2")
+            .serviceAccount("opns1-sa");
 
     //ToDO: use Junit 5 assertions
     try {
@@ -76,9 +74,6 @@ class ItSimpleOperatorValidation implements LoggedTest {
       e.printStackTrace();
       fail("Failed to install Operator due to exception" + e.getMessage());
     }
-
-    /* boolean success = assertDoesNotThrow(TestActions::installOperator(opParams),
-        "Failed to install Opeator due to ApiException"); */
 
     logger.info(String.format("Operator installed in namespace %s", namespace));
 

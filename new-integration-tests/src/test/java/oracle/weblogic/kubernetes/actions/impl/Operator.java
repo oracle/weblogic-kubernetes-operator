@@ -7,14 +7,14 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class Operator implements LoggedTest {
 
   /**
    * The URL of the Operator's Helm Repository.
    */
+  //Question - is this URL correct?
   private static String OPERATOR_HELM_REPO_URL = "https://oracle.github.io/weblogic-kubernetes-operator/charts";
 
   /**
@@ -35,25 +35,21 @@ public class Operator implements LoggedTest {
     String serviceAccount = params.getServiceAccount();
 
     // assertions for required parameters
-    assertNotNull(namespace, "Operator namespace cannot be null");
-    assertNotNull(params.getReleaseName(), "Operator release name cannot be null");
-    assertNotEquals("",namespace.trim(), "Operator namespace cannot be empty string");
-    assertNotEquals("",params.getReleaseName().trim(), "Operator release name cannot be empty string");
+    assertThat(namespace)
+        .as("make sure namespace is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
 
-    //delete the namespace if it exists
-    if (Namespace.exists(namespace)) {
-      try {
-        Namespace.delete(namespace);
-      } catch (Exception ex) {
-        // TODO: Fix as there is a known bug that delete can return either the object
-        //  just deleted or a status.  We can workaround by either retrying or using
-        //  the general GenericKubernetesApi client class and doing our own type checks
-      }
-    }
+    assertThat(params.getReleaseName())
+        .as("make sure namespace is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
 
     // create namespace
-    logger.info(String.format("Creating namespace %s", namespace));
-    Namespace ns = new Namespace().name(namespace);
+    if (!Namespace.exists(namespace)) {
+      logger.info(String.format("Creating namespace %s", namespace));
+      Namespace ns = new Namespace().name(namespace);
+    }
 
     // create service account
     if (serviceAccount != null && !serviceAccount.equals("default")) {
@@ -61,15 +57,14 @@ public class Operator implements LoggedTest {
       // Kubernetes.createServiceAccount(params.getServiceAccount(), namespace);
     }
 
-    // create domain namespaces here?
-
     boolean success = false;
-    if (new Helm.HelmBuilder(OPERATOR_HELM_REPO_URL).build().addRepo()) {
+    if (new Helm().chartName(OPERATOR_CHART_NAME).repoUrl(OPERATOR_HELM_REPO_URL).addRepo()) {
       logger.info(String.format("Installing Operator in namespace %s", namespace));
-      success = new Helm.HelmBuilder(OPERATOR_CHART_NAME, params.getReleaseName())
-          .namespace(namespace)
-          .values(params.values())
-          .build().install();
+      success = new Helm().chartName(OPERATOR_CHART_NAME)
+                        .releaseName(params.getReleaseName())
+                        .namespace(namespace)
+                        .values(params.getValues())
+                        .install();
     }
     return success;
   }

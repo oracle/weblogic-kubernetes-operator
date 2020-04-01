@@ -23,13 +23,16 @@ public class Traefik {
    */
   public static boolean install(TraefikParams params) {
     boolean success = false;
-    if (new Helm.HelmBuilder(TRAEFIK_HELM_REPO_URL).build().addRepo()) {
-      success = new Helm.HelmBuilder(TRAEFIK_CHART_NAME, params.getReleaseName())
+    if (new Helm().chartName(TRAEFIK_CHART_NAME).repoUrl(TRAEFIK_HELM_REPO_URL).addRepo()) {
+      //logger.info(String.format("Installing Traefik Operator in namespace %s", namespace));
+      success = new Helm().chartName(TRAEFIK_CHART_NAME)
+          .releaseName(params.getReleaseName())
           .namespace(params.getNamespace())
-          .values(params.values())
-          .build().install();
+          .values(params.getValues())
+          .install();
     }
     return success;
+
   }
 
   public static boolean createIngress(String valuesYaml) {

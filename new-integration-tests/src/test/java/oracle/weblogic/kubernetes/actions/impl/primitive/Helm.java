@@ -7,26 +7,43 @@ import java.util.HashMap;
 
 public class Helm {
 
-  private String chart;
-  private String name;
+  private String chartName;
+  private String releaseName;
   private String namespace;
   private String repoUrl;
   private HashMap<String, String> values;
 
-  private Helm(HelmBuilder builder) {
-    this.chart = builder.chart;
-    this.name = builder.name;
-    this.namespace = builder.namespace;
-    this.repoUrl = builder.repoUrl;
-    this.values = builder.values;
+  public Helm chartName(String chartName) {
+    this.chartName = chartName;
+    return this;
   }
 
-  public String getChart() {
-    return chart;
+  public Helm releaseName(String releaseName) {
+    this.releaseName = releaseName;
+    return this;
   }
 
-  public String getName() {
-    return name;
+  public Helm namespace(String namespace) {
+    this.namespace = namespace;
+    return this;
+  }
+
+  public Helm repoUrl(String repoUrl) {
+    this.repoUrl = repoUrl;
+    return this;
+  }
+
+  public Helm values(HashMap<String, String> values) {
+    this.values = values;
+    return this;
+  }
+
+  public String getChartName() {
+    return chartName;
+  }
+
+  public String getReleaseName() {
+    return releaseName;
   }
 
   public String getNamespace() {
@@ -54,44 +71,9 @@ public class Helm {
   }
 
   public boolean addRepo() {
+    String addRepoCmd = "helm add repo ";
     return true;
   }
 
-  public static class HelmBuilder {
-    private String chart;
-    private String name;
-    private String namespace;
-    private String repoUrl;
-    private HashMap<String, String> values;
-
-    public HelmBuilder(String chart, String name) {
-      this.chart = chart;
-      this.name = name;
-    }
-
-    public HelmBuilder(String repoUrl) {
-      this.repoUrl = repoUrl;
-    }
-
-    public HelmBuilder namespace(String namespace) {
-      this.namespace = namespace;
-      return this;
-    }
-
-    public HelmBuilder repoUrl(String repoUrl) {
-      this.repoUrl = repoUrl;
-      return this;
-    }
-
-    public HelmBuilder values(HashMap<String, String> values) {
-      this.values = values;
-      return this;
-    }
-
-    public Helm build() {
-      Helm helm = new Helm(this);
-      return helm;
-    }
-  }
 
 }

@@ -4,16 +4,24 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.HashMap;
-import java.util.List;
+import java.util.Objects;
 
 // All parameters needed to install Operator from test
 
 public class OperatorParams {
 
+  private static final String DOMAIN_NAMESPACES = "domainNamespaces";
+  private static final String IMAGE = "image";
+  private static final String SERVICE_ACCOUNT = "serviceAccount";
+  private static final String EXTERNAL_REST_ENABLED = "externalRestEnabled";
+  private static final String EXTERNAL_REST_IDENTITY_SECRET = "externalRestIdentitySecret";
+  private static final String EXTERNAL_REST_HTTPS_PORT = "externalRestHttpsPort";
+  private static final String IMAGE_PULL_POLICY = "imagePullPolicy";
+
   // Adding some of the most commonly used params for now
   private String releaseName;
   private String namespace;
-  private List<String> domainNamespaces;
+  private String domainNamespaces;
   private String image;
   private String serviceAccount;
   private boolean externalRestEnabled;
@@ -31,7 +39,7 @@ public class OperatorParams {
     return this;
   }
 
-  public OperatorParams domainNamespaces(List<String> domainNamespaces) {
+  public OperatorParams domainNamespaces(String domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
     return this;
   }
@@ -78,8 +86,16 @@ public class OperatorParams {
     return serviceAccount;
   }
 
-  public HashMap<String, String> values() {
-    // add all params into map ?
-    return new HashMap<String, String>();
+  public HashMap<String, String> getValues() {
+    HashMap<String, String> values = new HashMap();
+    values.put(DOMAIN_NAMESPACES, domainNamespaces);
+    values.put(IMAGE, image);
+    values.put(SERVICE_ACCOUNT, serviceAccount);
+    values.put(EXTERNAL_REST_ENABLED, Boolean.toString(externalRestEnabled));
+    values.put(EXTERNAL_REST_HTTPS_PORT, Integer.toString(externalRestHttpsPort));
+    values.put(EXTERNAL_REST_IDENTITY_SECRET, externalRestIdentitySecret);
+    values.put(IMAGE_PULL_POLICY, imagePullPolicy);
+    values.values().removeIf(Objects::isNull);
+    return values;
   }
 }
