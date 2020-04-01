@@ -99,6 +99,13 @@ export ALLOW_DYNAMIC_CLUSTER_IN_FMW=${ALLOW_DYNAMIC_CLUSTER_IN_FMW:-false}
 # whether this test run is expecting a domain validation error
 export EXPECT_INVALID_DOMAIN=${EXPECT_INVALID_DOMAIN:-false}
 
+# New schema
+
+export DOMAIN_SOURCE_TYPE="FromModel"
+export WDT_DOMAIN_TYPE="WLS"
+export MII_WDT_CONFIGMAP="false"
+export MII_WDT_ENCRYPT_SECRET="false"
+
 #############################################################################
 #
 # End of setup! All that follows is implementation.
@@ -123,7 +130,7 @@ function cleanupMajor() {
 
   rm -fr /tmp/introspect
   mkdir -p $test_home || exit 1
-
+  rm -fr  ${SCRIPTPATH}/mii/workdir
   # now we use the generic integration test cleanup script to
   #
   #   1 - delete all operator related k8s artifacts

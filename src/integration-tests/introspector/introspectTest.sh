@@ -99,6 +99,11 @@ export ALLOW_DYNAMIC_CLUSTER_IN_FMW=${ALLOW_DYNAMIC_CLUSTER_IN_FMW:-false}
 # whether this test run is expecting a domain validation error
 export EXPECT_INVALID_DOMAIN=${EXPECT_INVALID_DOMAIN:-false}
 
+export DOMAIN_SOURCE_TYPE="Image"
+export WDT_DOMAIN_TYPE="WLS"
+export MII_WDT_CONFIGMAP="true"
+export MII_WDT_ENCRYPT_SECRET="true"
+
 #############################################################################
 #
 # End of setup! All that follows is implementation.

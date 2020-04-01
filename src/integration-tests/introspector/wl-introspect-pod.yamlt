@@ -34,9 +34,9 @@ spec:
     - name: ALLOW_DYNAMIC_CLUSTER_IN_FMW
       value: "${ALLOW_DYNAMIC_CLUSTER_IN_FMW}"
     - name: DOMAIN_SOURCE_TYPE
-      value: "FromModel"
+      value: "${DOMAIN_SOURCE_TYPE}"
     - name: WDT_DOMAIN_TYPE
-      value: "WLS"
+      value: "${WDT_DOMAIN_TYPE}"
     image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
     imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
     name: weblogic-server
@@ -89,6 +89,7 @@ spec:
     secret:
       defaultMode: 420
       secretName: runtime-encryption-secret
+      optional: ${MII_WDT_ENCRYPT_SECRET}
   - name: weblogic-domain-cm-volume
     configMap:
       defaultMode: 365
@@ -97,6 +98,7 @@ spec:
     configMap:
       defaultMode: 365
       name: ${DOMAIN_UID}-wdt-config-map
+      optional: ${MII_WDT_CONFIGMAP}
   - name: ${DOMAIN_UID}-mycustom-overrides-cm-volume
     configMap:
       defaultMode: 365
