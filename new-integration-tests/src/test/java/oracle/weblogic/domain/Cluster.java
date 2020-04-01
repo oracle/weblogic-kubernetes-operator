@@ -155,7 +155,6 @@ public class Cluster {
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-        .appendSuper(super.toString())
         .append("clusterName", clusterName)
         .append("replicas", replicas)
         .append("serverStartPolicy", serverStartPolicy)
@@ -181,7 +180,6 @@ public class Cluster {
     Cluster rhs = (Cluster) o;
 
     return new EqualsBuilder()
-        .appendSuper(super.equals(o))
         .append(clusterName, rhs.clusterName)
         .append(replicas, rhs.replicas)
         .append(serverStartPolicy, rhs.serverStartPolicy)
@@ -197,7 +195,6 @@ public class Cluster {
   @Override
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
-        .appendSuper(super.hashCode())
         .append(clusterName)
         .append(replicas)
         .append(serverStartPolicy)

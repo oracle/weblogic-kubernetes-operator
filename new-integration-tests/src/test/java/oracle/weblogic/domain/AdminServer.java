@@ -10,12 +10,34 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @ApiModel(description = "AdminServer represents the operator configuration for the Administration Server.")
-public class AdminServer extends Server {
+public class AdminServer {
 
   @ApiModelProperty(
       "Configures which of the Administration Server's WebLogic admin channels should be exposed outside"
           + " the Kubernetes cluster via a node port service.")
   private AdminService adminService;
+
+  @ApiModelProperty(
+      "The strategy for deciding whether to start a server. "
+          + "Legal values are ALWAYS, NEVER, or IF_NEEDED.")
+  private String serverStartPolicy;
+
+  @ApiModelProperty("Configuration affecting server pods.")
+  private ServerPod serverPod;
+
+  @ApiModelProperty(
+      "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
+  private ServerService serverService;
+
+  @ApiModelProperty(
+      "The state in which the server is to be started. Use ADMIN if server should start "
+          + "in the admin state. Defaults to RUNNING.")
+  private String serverStartState;
+
+  @ApiModelProperty(
+      "If present, every time this value is updated the operator will restart"
+          + " the required servers.")
+  private String restartVersion;
 
   public AdminServer adminService(AdminService adminService) {
     this.adminService = adminService;
@@ -30,11 +52,67 @@ public class AdminServer extends Server {
     this.adminService = adminService;
   }
 
+  public AdminServer serverStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+    return this;
+  }
+
+  public String getServerStartPolicy() {
+    return serverStartPolicy;
+  }
+
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+  }
+
+  public AdminServer serverPod(ServerPod serverPod) {
+    this.serverPod = serverPod;
+    return this;
+  }
+
+  public ServerPod getServerPod() {
+    return serverPod;
+  }
+
+  public void setServerPod(ServerPod serverPod) {
+    this.serverPod = serverPod;
+  }
+
+  public AdminServer serverStartState(String serverStartState) {
+    this.serverStartState = serverStartState;
+    return this;
+  }
+
+  public String getServerStartState() {
+    return serverStartState;
+  }
+
+  public void setServerStartState(String serverStartState) {
+    this.serverStartState = serverStartState;
+  }
+
+  public AdminServer restartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
+    return this;
+  }
+
+  public String getRestartVersion() {
+    return restartVersion;
+  }
+
+  public void setRestartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-        .appendSuper(super.toString())
         .append("adminService", adminService)
+        .append("serverStartPolicy", serverStartPolicy)
+        .append("serverStartState", serverStartState)
+        .append("serverPod", serverPod)
+        .append("serverService", serverService)
+        .append("restartVersion", restartVersion)
         .toString();
   }
 
@@ -48,19 +126,27 @@ public class AdminServer extends Server {
       return false;
     }
 
-    AdminServer that = (AdminServer) o;
+    AdminServer rhs = (AdminServer) o;
 
     return new EqualsBuilder()
-        .appendSuper(super.equals(o))
-        .append(adminService, that.adminService)
+        .append(adminService, rhs.adminService)
+        .append(serverStartPolicy, rhs.serverStartPolicy)
+        .append(serverStartState, rhs.serverStartState)
+        .append(serverPod, rhs.serverPod)
+        .append(serverService, rhs.serverService)
+        .append(restartVersion, rhs.restartVersion)
         .isEquals();
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
-        .appendSuper(super.hashCode())
         .append(adminService)
+        .append(serverStartPolicy)
+        .append(serverStartState)
+        .append(serverPod)
+        .append(serverService)
+        .append(restartVersion)
         .toHashCode();
   }
 
