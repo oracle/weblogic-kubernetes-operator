@@ -1,15 +1,9 @@
 resources:
     JDBCSystemResource:
-        testDS:
-            JdbcResource:
-                JDBCDriverParams:
-                    Properties:
-                        user:
-                            Value: '@@PROP:TESTDS-USER@@'
         mysqlDS:
             JdbcResource:
                 JDBCDriverParams:
-                    URL: 'jdbc:mysql://invalid-host:3306/invalid-db-name'
+                    URL: 'jdbc:mysql://@@ENV:DOMAIN_UID@@-mysql:3306/mysql'
                     Properties:
                         user:
-                            Value: '@@PROP:MYSQL-USER@@'
+                            Value: '@@SECRET:@@ENV:DOMAIN_UID@@-mysql-secret:root-user@@'

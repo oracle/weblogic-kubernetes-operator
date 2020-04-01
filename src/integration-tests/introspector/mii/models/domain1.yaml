@@ -69,7 +69,6 @@ resources:
                     JNDIName: testDS
                 JDBCDriverParams:
                     URL: '@@PROP:TESTDS_URL@@'
-                    #URL: 'jdbc:oracle:thin:@invalid-host:1521:invalid-sid'
                     PasswordEncrypted: '@@SECRET:my-secret:encryptd@@'
                     DriverName: oracle.jdbc.OracleDriver
                     Properties:
@@ -88,12 +87,12 @@ resources:
                 JDBCDataSourceParams:
                     JNDIName: mysqlDS
                 JDBCDriverParams:
-                    URL: 'jdbc:mysql://@@ENV:DOMAIN_UID@@-mysql:3306/mysql'
+                    URL: 'jdbc:mysql://invalid-host:3306/invalid-db-name'
                     PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-mysql-secret:root-password@@'
                     DriverName: com.mysql.jdbc.Driver
                     Properties:
                         user:
-                            Value: '@@SECRET:@@ENV:DOMAIN_UID@@-mysql-secret:root-user@@'
+                            Value: '@@PROP:MYSQL-USER@@'
     FileStore:
         AdminServerCustomFileStore:
             Directory: 'stores/AdminServerCustomFileStore/'

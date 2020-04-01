@@ -311,6 +311,11 @@ function deployCustomOverridesConfigMap() {
      ${SCRIPTPATH}/util_subst.sh -g ${filname} ${cmdir}/${bfilname}  || exit 1
   done
 
+  # We don't use overrides for MII
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
+    rm ${cmdir}/jdbc* ${cmdir}/diagnostics*
+  fi
+
   kubectl -n $NAMESPACE delete cm $cmname \
     --ignore-not-found  \
     2>&1 | tracePipe "Info: kubectl output: "
@@ -971,7 +976,9 @@ checkWLVersionChecks
 # Check admin-server pod log and also call on-line WLST to check if
 # automatic and custom overrides are taking effect in the bean tree:
 
-checkOverrides
+if [ "${DOMAIN_SOURCE_TYPE}" != "FromModel" ] ; then
+  checkOverrides
+fi
 
 # Check DS to see if it can contact the DB.  This will only pass if the
 # overrides actually took effect:
