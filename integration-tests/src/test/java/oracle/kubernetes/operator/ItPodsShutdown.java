@@ -145,7 +145,7 @@ public class ItPodsShutdown extends BaseTest {
 
   private static void getDefaultShutdownTime() throws Exception {
     terminationDefaultOptionsTime = shutdownServer("managed-server1");
-    for ( int i=0; i<3; i++) {
+    for (int i = 0; i < 3; i++) {
       long tempTime = shutdownServer("managed-server1");
       //check 3 times and choose the highest number
       if (terminationDefaultOptionsTime > tempTime) {
