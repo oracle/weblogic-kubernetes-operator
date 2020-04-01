@@ -88,7 +88,7 @@ resources:
                 JDBCDataSourceParams:
                     JNDIName: mysqlDS
                 JDBCDriverParams:
-                    URL: '@@SECRET:@@ENV:DOMAIN_UID@@-mysql-ds:jdbc_url@@'
+                    URL: 'jdbc:mysql://@@ENV:DOMAIN_UID@@-mysql:3306/mysql'
                     PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-mysql-secret:root-password@@'
                     DriverName: com.mysql.jdbc.Driver
                     Properties:
