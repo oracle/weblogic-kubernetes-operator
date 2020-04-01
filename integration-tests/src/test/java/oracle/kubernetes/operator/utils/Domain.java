@@ -126,24 +126,10 @@ public class Domain {
   /**
    * Verifies the required pods are created, services are created and the servers are ready.
    *
-   * @throws Exception exception
+   * @throws RuntimeException if pods/services of the domain are not created or WLS is not running
    */
   public void verifyDomainCreated() throws Exception {
-    StringBuffer command = new StringBuffer();
-    command.append("kubectl get domain ").append(domainUid).append(" -n ").append(domainNS);
-    ExecResult result = TestUtils.exec(command.toString());
-    if (!result.stdout().contains(domainUid)) {
-      throw new RuntimeException("FAILURE: domain not found, exiting!");
-    }
-    verifyPodsCreated();
-    verifyServicesCreated();
-    verifyServersReady();
-    if (createLoadBalancer) {
-      String cmd = "curl --silent --noproxy '*' -H 'host: " + domainUid
-          + ".org' http://" + getHostNameForCurl() + ":" + getLoadBalancerWebPort()
-          + "/weblogic/ready --write-out %{http_code} -o /dev/null";
-      callWebAppAndWaitTillReady(cmd);
-    }
+    verifyDomainCreated(BaseTest.getMaxIterationsPod());
   }
   
   /**
@@ -173,27 +159,10 @@ public class Domain {
   /**
    * verify pods are created.
    *
-   * @throws Exception exception
+   * @throws RuntimeException if pod is not in running state
    */
   public void verifyPodsCreated() throws Exception {
-    // check admin pod
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Created");
-    TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
-
-    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
-      // check managed server pods
-      for (int i = 1; i <= initialManagedServerReplicas; i++) {
-        LoggerHelper.getLocal().log(Level.INFO,
-            "Checking if managed pod("
-                + domainUid
-                + "-"
-                + managedServerNameBase
-                + i
-                + ") is Created");
-        TestUtils.checkPodCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
-      }
-    }
+    verifyPodsCreated(BaseTest.getMaxIterationsPod());
   }
    
   /**
@@ -288,112 +257,20 @@ public class Domain {
    *
    * @param precreateService - if true check services are created for configuredManagedServerCount
    *                         number of servers else check for initialManagedServerReplicas number of servers
-   * @throws Exception exception
+   * @throws RuntimeException if service is not created
    */
   public void verifyServicesCreated(boolean precreateService) throws Exception {
-    // check admin service
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Checking if admin service(" + domainUid + "-" + adminServerName + ") is created");
-    TestUtils.checkServiceCreated(domainUid + "-" + adminServerName, domainNS);
-
-    if (exposeAdminT3Channel) {
-      LoggerHelper.getLocal().log(Level.INFO,
-          "Checking if admin t3 channel service("
-              + domainUid
-              + "-"
-              + adminServerName
-              + "-external) is created");
-      TestUtils.checkServiceCreated(domainUid + "-" + adminServerName + "-external", domainNS);
-    }
-
-    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
-      // check managed server services
-      for (int i = 1;
-           i <= (precreateService ? configuredManagedServerCount : initialManagedServerReplicas);
-           i++) {
-        LoggerHelper.getLocal().log(Level.INFO,
-            "Checking if managed service("
-                + domainUid
-                + "-"
-                + managedServerNameBase
-                + i
-                + ") is created");
-        TestUtils.checkServiceCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
-      }
-    }
+    verifyServicesCreated(precreateService, BaseTest.getMaxIterationsPod());
   }
 
 
   /**
    * verify servers are ready.
    *
-   * @throws Exception exception
+   * @throws RuntimeException if WLS pod is not ready and pod output doesn't contain 1/1
    */
   public void verifyServersReady() throws Exception {
-    // check admin pod
-    LoggerHelper.getLocal().log(Level.INFO, "Checking if admin server is Running and Ready");
-    TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
-
-    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
-      // check managed server pods
-      for (int i = 1; i <= initialManagedServerReplicas; i++) {
-        LoggerHelper.getLocal().log(Level.INFO,
-            "Checking if managed server (" + managedServerNameBase + i + ") is Running and Ready");
-        TestUtils.checkPodReady(domainUid + "-" + managedServerNameBase + i, domainNS);
-      }
-    } else {
-      // check no additional servers are started
-      initialManagedServerReplicas = 0;
-    }
-    String additionalManagedServer =
-        domainUid + "-" + managedServerNameBase + (initialManagedServerReplicas + 1);
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Checking if managed server " + additionalManagedServer + " is started, it should not be");
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get pod ").append(additionalManagedServer).append(" -n ").append(domainNS);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-
-    if (result.exitValue() == 0 && result.stdout().contains("1/1")) {
-      throw new RuntimeException(
-          "FAILURE: Managed Server "
-              + additionalManagedServer
-              + " is started, but its not expected.");
-    } else {
-      LoggerHelper.getLocal().log(Level.INFO,
-          additionalManagedServer + " is not running, which is expected behaviour");
-    }
-
-    // check logs are written on PV if logHomeOnPV is true for domain-home-in-image case
-    if ((domainMap.containsKey("domainHomeImageBase")
-        && domainMap.containsKey("logHomeOnPV")
-        && (new Boolean(domainMap.get("logHomeOnPV").toString())).booleanValue())) {
-      LoggerHelper.getLocal().log(Level.INFO,
-          "logHomeOnPV is true, checking if logs are written on PV");
-      cmd = new StringBuffer();
-      cmd.append("kubectl -n ")
-          .append(domainNS)
-          .append(" exec -it ")
-          .append(domainUid)
-          .append("-")
-          .append(adminServerName)
-          .append(" -- ls /shared/logs/")
-          .append(domainUid)
-          .append("/")
-          .append(adminServerName)
-          .append(".log");
-
-      result = ExecCommand.exec(cmd.toString());
-
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: logHomeOnPV is true, but logs are not written at /shared/logs/"
-                + domainUid
-                + " inside the pod");
-      } else {
-        LoggerHelper.getLocal().log(Level.INFO,
-            "Logs are written at /shared/logs/" + domainUid + " inside the pod");
-      }
-    }
+    verifyServersReady(BaseTest.getMaxIterationsPod());
   }
   
   /**

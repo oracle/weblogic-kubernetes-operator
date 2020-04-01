@@ -42,14 +42,10 @@ public class TestUtils {
    *
    * @param podName  pod name
    * @param domainNS namespace
-   * @throws Exception exception
+   * @throws RuntimeException if pod is not ready and output doesn't contain 1/1
    */
   public static void checkPodReady(String podName, String domainNS) throws Exception {
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
-
-    // check for admin pod
-    checkCmdInLoop(cmd.toString(), "1/1", podName);
+    checkPodReady(podName, domainNS, BaseTest.getMaxIterationsPod());    
   }
   
   /**
@@ -90,14 +86,10 @@ public class TestUtils {
    *
    * @param podName  - pod name
    * @param domainNS - domain namespace name
+   * @Exception RuntimeException if pod is not in Running state
    */
   public static void checkPodCreated(String podName, String domainNS) throws Exception {
-
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
-
-    // check for pod to be running
-    checkCmdInLoop(cmd.toString(), "Running", podName);
+    checkPodCreated(podName, domainNS, BaseTest.getMaxIterationsPod());
   }
   
   /**
@@ -187,41 +179,10 @@ public class TestUtils {
    *
    * @param serviceName service name
    * @param domainNS    namespace
-   * @throws Exception exception
+   * @throws RuntimeException if service is not created
    */
   public static void checkServiceCreated(String serviceName, String domainNS) throws Exception {
-    int i = 0;
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get service ").append(serviceName).append(" -n ").append(domainNS);
-
-    // check for service
-    while (i < BaseTest.getMaxIterationsPod()) {
-      ExecResult result = ExecCommand.exec(cmd.toString());
-
-      // service might not have been created
-      if (result.exitValue() != 0
-          || (result.exitValue() == 0 && !result.stdout().contains(serviceName))) {
-        LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
-
-        // check for last iteration
-        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
-          throw new RuntimeException("FAILURE: service is not created, exiting!");
-        }
-        LoggerHelper.getLocal().log(Level.INFO,
-            "Service is not created Ite ["
-                + i
-                + "/"
-                + BaseTest.getMaxIterationsPod()
-                + "], sleeping "
-                + BaseTest.getWaitTimePod()
-                + " seconds more");
-        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
-        i++;
-      } else {
-        LoggerHelper.getLocal().log(Level.INFO, "Service " + serviceName + " is Created");
-        break;
-      }
-    }
+    checkServiceCreated(serviceName, domainNS,BaseTest.getMaxIterationsPod());
   }
   
   /**
@@ -1680,41 +1641,11 @@ public class TestUtils {
    * @param cmd command
    * @param matchStr matcher
    * @param k8sObjName object name
-   * @throws Exception on failure
+   * @throws RuntimeException if pod output does not contain match string defined by caller
    */
   public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
       throws Exception {
-    int i = 0;
-    while (i < BaseTest.getMaxIterationsPod()) {
-      ExecResult result = ExecCommand.exec(cmd);
-
-      // loop command till condition
-      if (result.exitValue() != 0
-          || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
-        LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
-        // check for last iteration
-        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
-          throw new RuntimeException(
-              "FAILURE: Timeout - pod " + k8sObjName + " output does not contain '" + matchStr + "'");
-        }
-        LoggerHelper.getLocal().log(Level.INFO,
-            "Pod "
-                + k8sObjName
-                + "  output does not contain '" + matchStr + "'  Iteration ["
-                + i
-                + "/"
-                + BaseTest.getMaxIterationsPod()
-                + "], sleeping "
-                + BaseTest.getWaitTimePod()
-                + " seconds more");
-
-        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
-        i++;
-      } else {
-        LoggerHelper.getLocal().log(Level.INFO, "SUCCESS: Pod " + k8sObjName + " output contains '" + matchStr + "'");
-        break;
-      }
-    }
+    checkCmdInLoop(cmd, matchStr, k8sObjName, BaseTest.getMaxIterationsPod());
   }
   
   /**
