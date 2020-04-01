@@ -11,13 +11,13 @@ import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
-
 // as in the actions, it is intended tests only use these assertaions and do
 // not go direct to the impl classes
 public class TestAssertions implements LoggedTest {
 
   /**
    * Check if Operator is running.
+   *
    * @param namespace in which is operator is running
    * @return true if running false otherwise
    */
@@ -27,6 +27,7 @@ public class TestAssertions implements LoggedTest {
 
   /**
    * Check if operator Rest service is running.
+   *
    * @param namespace the operator rest service exists
    * @return true if rest service is running otherwise false
    */
@@ -35,7 +36,9 @@ public class TestAssertions implements LoggedTest {
   }
 
   /**
-   * Check if a WebLogic custom resource domain exists in specified namespace and all its pods are running.
+   * Check if a WebLogic custom resource domain exists in specified namespace and all its pods are
+   * running.
+   *
    * @param domainUID ID of the domain
    * @param namespace in which the domain custom resource exists
    * @return true if domain exists and pods running otherwise false
@@ -46,17 +49,21 @@ public class TestAssertions implements LoggedTest {
 
   /**
    * Check if a Kubernetes pod is in running/ready state.
+   *
    * @param podName name of the pod to check for
    * @param domainUID WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is running otherwise false
    */
   public static Callable<Boolean> podReady(String podName, String domainUID, String namespace) throws ApiException {
-    return Kubernetes.podRunning(podName, domainUID, namespace);
+    return () -> {
+      return Kubernetes.podRunning(podName, domainUID, namespace);
+    };
   }
 
   /**
    * Check if a pod given by the podName is in Terminating state.
+   *
    * @param podName name of the pod to check for Terminating status
    * @param domainUID WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
@@ -68,7 +75,8 @@ public class TestAssertions implements LoggedTest {
 
   /**
    * Check is a service exists in given namespace.
-   * @param serviceName  the name of the service to check for
+   *
+   * @param serviceName the name of the service to check for
    * @param namespace in which the service is running
    * @return true if the service exists otherwise false
    */
@@ -78,6 +86,7 @@ public class TestAssertions implements LoggedTest {
 
   /**
    * Check if a loadbalancer pod is ready.
+   *
    * @param domainUID id of the WebLogic domain custom resource domain
    * @return
    */
@@ -87,6 +96,7 @@ public class TestAssertions implements LoggedTest {
 
   /**
    * Check if the admin server pod is ready.
+   *
    * @param domainUID id of the domain in which admin server pod is running
    * @param namespace in which the pod exists
    * @return true if the admin server is ready otherwise false
@@ -97,6 +107,7 @@ public class TestAssertions implements LoggedTest {
 
   /**
    * Check if a adminserver T3 channel is accessible.
+   *
    * @param domainUID id of the domain in which admin server pod is running
    * @param namespace in which the WebLogic server pod exists
    * @return true if the admin T3 channel is accessible otherwise false
@@ -107,6 +118,7 @@ public class TestAssertions implements LoggedTest {
 
   /**
    * Check if a admin server pod admin node port is accessible.
+   *
    * @param domainUID domainUID id of the domain in which admin server pod is running
    * @param namespace in which the WebLogic server pod exists
    * @return true if the admin node port is accessible otherwise false
