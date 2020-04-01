@@ -16,7 +16,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Operator prerequisites
 
-* Kubernetes 1.13.5+, 1.14.8+, and 1.15.7+  (check with `kubectl version`).  Not supported on Kubernetes 1.16 or 1.17; see note below.
+* Kubernetes 1.13.5+, 1.14.8+, 1.15.7+, and 1.16 or later.  (check with `kubectl version`).  Not supported on Kubernetes 1.16 or 1.17; see note below.
   See note below for OpenShift.
 * Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`) *or* OpenShift SDN on OpenShift 4.3 systems.
 * Docker 18.9.1 or 19.03.1 (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
