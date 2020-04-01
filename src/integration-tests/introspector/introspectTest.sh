@@ -99,10 +99,22 @@ export ALLOW_DYNAMIC_CLUSTER_IN_FMW=${ALLOW_DYNAMIC_CLUSTER_IN_FMW:-false}
 # whether this test run is expecting a domain validation error
 export EXPECT_INVALID_DOMAIN=${EXPECT_INVALID_DOMAIN:-false}
 
-export DOMAIN_SOURCE_TYPE="Image"
-export WDT_DOMAIN_TYPE="WLS"
-export MII_WDT_CONFIGMAP="true"
-export MII_WDT_ENCRYPT_SECRET="true"
+DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE:-Image}
+export DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE}
+WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
+export WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE}
+
+if [ "${DOMAIN_SOURCE_TYPE}" == "FromModel" ] ; then
+  export WDT_DOMAIN_TYPE="${WDT_DOMAIN_TYPE}"
+  # Make sure the configmap and secrets are not optional
+  export MII_WDT_CONFIGMAP="false"
+  export MII_WDT_ENCRYPT_SECRET="false"
+else
+  export WDT_DOMAIN_TYPE="${WDT_DOMAIN_TYPE}"
+  # Make sure the configmap and secrets are optional
+  export MII_WDT_CONFIGMAP="true"
+  export MII_WDT_ENCRYPT_SECRET="true"
+fi
 
 #############################################################################
 #
@@ -309,6 +321,11 @@ function deployCustomOverridesConfigMap() {
      ${SCRIPTPATH}/util_subst.sh -g ${filname} ${cmdir}/${bfilname}  || exit 1
   done
 
+  # We don't use overrides for MII
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
+    rm ${cmdir}/jdbc* ${cmdir}/diagnostics*
+  fi
+
   kubectl -n $NAMESPACE delete cm $cmname \
     --ignore-not-found  \
     2>&1 | tracePipe "Info: kubectl output: "
@@ -396,6 +413,34 @@ function deployCreateDomainJobPod() {
   # Wait for pod to come up successfully
 
   waitForPod $pod_name
+}
+
+#
+# Create the model in image docker image
+#
+function createMII_Image() {
+  trace "Info: Run create domain pod."
+
+
+  mkdir -p ${SCRIPTPATH}/mii/workdir/models || exit 1
+  cp ${SCRIPTPATH}/mii/models/*  ${SCRIPTPATH}/mii/workdir/models || exit 1
+  cd ${SCRIPTPATH}/mii/workdir || exit 1
+  export WORKDIR=${SCRIPTPATH}/mii/workdir || exit 1
+  export MODEL_IMAGE_TAG=it || exit 1
+  export MODEL_IMAGE_NAME=model-in-image || exit 1
+
+  docker rmi ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG} --force
+  ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_download.sh || exit 1
+
+  ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_image_model.sh || exit 1
+
+  export WEBLOGIC_IMAGE_NAME=model-in-image || exit 1
+  export WEBLOGIC_IMAGE_TAG=it || exit 1
+
+  kubectl -n $NAMESPACE delete configmap ${DOMAIN_UID}-wdt-config-map --ignore-not-found || exit 1
+  kubectl -n $NAMESPACE create configmap  ${DOMAIN_UID}-wdt-config-map \
+        --from-file=${SCRIPTPATH}/mii/wdtconfigmap | tracePipe "Info: kubectl output: "
+
 }
 
 #############################################################################
@@ -933,7 +978,11 @@ if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
   createTestRootPVDir
   deployMySQL
   deployWebLogic_PV_PVC_and_Secret
-  deployCreateDomainJobPod
+  if [ "${DOMAIN_SOURCE_TYPE}" == "FromModel" ] ; then
+    createMII_Image
+  else
+    deployCreateDomainJobPod
+  fi
 fi
 
 deployIntrospectJobPod
@@ -960,7 +1009,9 @@ checkWLVersionChecks
 # Check admin-server pod log and also call on-line WLST to check if
 # automatic and custom overrides are taking effect in the bean tree:
 
-checkOverrides
+if [ "${DOMAIN_SOURCE_TYPE}" != "FromModel" ] ; then
+  checkOverrides
+fi
 
 # Check DS to see if it can contact the DB.  This will only pass if the
 # overrides actually took effect:
