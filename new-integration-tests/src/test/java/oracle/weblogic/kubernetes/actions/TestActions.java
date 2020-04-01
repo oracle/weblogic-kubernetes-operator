@@ -218,8 +218,8 @@ public class TestActions {
    */
   public static boolean createMIIImage(WITParams params) {
     return 
-        new WebLogicImageTool()
-            .with(params)
+        WebLogicImageTool
+            .withParams(params)
             .updateImage();
   }
  

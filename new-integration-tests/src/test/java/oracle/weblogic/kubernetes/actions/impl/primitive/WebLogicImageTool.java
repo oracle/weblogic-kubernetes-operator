@@ -28,7 +28,11 @@ public class WebLogicImageTool extends InstallWITCommon {
    * Set up the WIT with customized parameters
    * @return the instance of WIT 
    */
-  public WebLogicImageTool with(WITParams params) {
+  public static WebLogicImageTool withParams(WITParams params) {
+    return new WebLogicImageTool().with(params);
+  }
+  
+  private WebLogicImageTool with(WITParams params) {
     this.params = params;
     return this;
   }
