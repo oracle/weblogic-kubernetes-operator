@@ -376,6 +376,9 @@ function createMII_Image() {
   cd ${SCRIPTPATH}/mii/workdir || exit 1
   export WORKDIR=${SCRIPTPATH}/mii/workdir || exit 1
   export MODEL_IMAGE_TAG=it || exit 1
+  export MODEL_IMAGE_NAME=model-in-image || exit 1
+
+  docker rmi ${MODEL_IMAGE_NAMGE}:${MODEL_IAMGE_TAG} || exit 1
   ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_download.sh || exit 1
 
   ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_image_model.sh || exit 1
@@ -383,6 +386,7 @@ function createMII_Image() {
   export WEBLOGIC_IMAGE_NAME=model-in-image || exit 1
   export WEBLOGIC_IMAGE_TAG=it || exit 1
 
+  kubectl -n $NAMESPACE delete configmap ${DOMAIN_UID}-wdt-config-map --ignore-not-found || exit 1
   kubectl -n $NAMESPACE create configmap  ${DOMAIN_UID}-wdt-config-map \
         --from-file=${SCRIPTPATH}/mii/wdtconfigmap | tracePipe "Info: kubectl output: "
 
