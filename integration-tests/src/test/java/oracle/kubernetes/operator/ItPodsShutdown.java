@@ -105,6 +105,9 @@ public class ItPodsShutdown extends BaseTest {
       }
       domainUid = domain.getDomainUid();
       domainNS = domain.getDomainNs();
+      if (terminationDefaultOptionsTime == 0) {
+        getDefaultShutdownTime();
+      }
     }
   }
 
@@ -142,9 +145,17 @@ public class ItPodsShutdown extends BaseTest {
 
   private static void getDefaultShutdownTime() throws Exception {
     terminationDefaultOptionsTime = shutdownServer("managed-server1");
+    for ( int i=0; i<3; i++) {
+      long tempTime = shutdownServer("managed-server1");
+      //check 3 times and choose the highest number
+      if (terminationDefaultOptionsTime > tempTime) {
+        terminationDefaultOptionsTime = tempTime;
+      }
+    }
     LoggerHelper.getLocal().log(Level.INFO,
         " termination pod's time with default shutdown options is: "
             + terminationDefaultOptionsTime);
+
   }
 
   private static void resetDomainCrd() throws Exception {
@@ -183,12 +194,13 @@ public class ItPodsShutdown extends BaseTest {
   public static void callWebApp(String testAppPath, Domain domain, boolean deployApp)
       throws Exception {
     // String testAppPath =  "httpsessionreptestapp/CounterServlet?delayTime=" + delayTime;
+    /*
     if (deployApp) {
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
       domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
     }
-
+    */
     String nodePortHost = domain.getHostNameForCurl();
     int nodePort = domain.getLoadBalancerWebPort();
 
@@ -369,7 +381,7 @@ public class ItPodsShutdown extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified
    */
   // commenting out due OWLS-75023
-  // @Test
+  @Test
   public void testAddShutdownOptionsToMsIgnoreSessions() throws Exception {
 
     Assumptions.assumeTrue(FULLTEST);
@@ -385,7 +397,7 @@ public class ItPodsShutdown extends BaseTest {
     shutdownProps.put("timeoutSeconds", 160);
     shutdownProps.put("ignoreSessions", false);
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
-    long delayTime = 30 * 1000;
+    long delayTime = 60 * 1000;
     updateCrdYamlVerifyShutdown(crd, delayTime);
 
     Assertions.assertTrue(
@@ -443,17 +455,17 @@ public class ItPodsShutdown extends BaseTest {
     // Modify the original domain yaml to include shutdown options in domain spec node
     DomainCrd crd = new DomainCrd(originalYaml);
 
-    long delayTime = 30 * 1000;
+    long delayTime = 80 * 1000;
     // testing timeout
     Map<String, Object> shutdownProps = new HashMap();
-    shutdownProps.put("timeoutSeconds", 20);
+    shutdownProps.put("timeoutSeconds", 10);
     shutdownProps.put("ignoreSessions", false);
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
     try {
       updateCrdYamlVerifyShutdown(crd, delayTime);
       Assertions.assertTrue(
-          checkShutdownUpdatedProp(domainUid + "-managed-server1", "20", "false", "Graceful"));
-      if (terminationTime > (3 * 20 * 1000)) {
+          checkShutdownUpdatedProp(domainUid + "-managed-server1", "10", "false", "Graceful"));
+      if (terminationTime > delayTime) {
         LoggerHelper.getLocal().log(Level.INFO, "\"FAILURE: ignored timeoutValue during shutdown");
         throw new Exception("FAILURE: ignored timeoutValue during shutdown");
       }
@@ -479,14 +491,11 @@ public class ItPodsShutdown extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    if (terminationDefaultOptionsTime == 0) {
-      getDefaultShutdownTime();
-    }
     Files.createDirectories(Paths.get(shutdownTmpDir));
     // Modify the original domain yaml to include shutdown options in domain spec node
     DomainCrd crd = new DomainCrd(originalYaml);
 
-    long delayTime = 30 * 1000;
+    long delayTime = 120 * 1000;
     // testing timeout
     Map<String, Object> shutdownProps = new HashMap();
     shutdownProps.put("shutdownType", "Forced");
@@ -495,7 +504,7 @@ public class ItPodsShutdown extends BaseTest {
       updateCrdYamlVerifyShutdown(crd, delayTime);
 
       Assertions.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
-      if ((2 * terminationDefaultOptionsTime < terminationTime)) {
+      if ((delayTime < terminationTime)) {
         LoggerHelper.getLocal().log(Level.INFO, "\"FAILURE: ignored timeout Forced value during shutdown");
         throw new Exception("FAILURE: ignored timeout Forced during shutdown");
       }
@@ -625,10 +634,10 @@ public class ItPodsShutdown extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, modYaml);
     terminationTime = 0;
     // change version to restart domain
-    Map<String, String> domain = new HashMap();
-    domain.put("restartVersion", "v1." + podVer);
+    Map<String, String> domainMap = new HashMap();
+    domainMap.put("restartVersion", "v1." + podVer);
     podVer++;
-    crd.addObjectNodeToDomain(domain);
+    crd.addObjectNodeToDomain(domainMap);
     // Write the modified yaml to a new file
     Path path = Paths.get(shutdownTmpDir, "shutdown.managed.yaml");
     LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
@@ -636,18 +645,19 @@ public class ItPodsShutdown extends BaseTest {
     Files.write(path, modYaml.getBytes(charset));
     modifiedYaml = path.toString();
     // Apply the new yaml to update the domain crd
-    this.domain.shutdown();
+    domain.shutdown();
     LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
     ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
     LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
 
     LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
-    this.domain.verifyDomainCreated();
+    domain.verifyDomainCreated();
     // invoke servlet to keep sessions opened, terminate pod and check shutdown time
     if (delayTime > 0) {
-      String testAppPath = "httpsessionreptestapp/CounterServlet?delayTime=" + delayTime;
-      callWebApp(testAppPath, this.domain, true);
-      SessionDelayThread sessionDelay = new SessionDelayThread(delayTime, this.domain);
+      domain.buildDeployJavaAppInPod(
+          testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
+      domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
+      SessionDelayThread sessionDelay = new SessionDelayThread(delayTime, domain);
       new Thread(sessionDelay).start();
       // sleep 5 secs before shutdown
       Thread.sleep(5 * 1000);
