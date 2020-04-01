@@ -6,7 +6,7 @@ weight: 1
 
 ### Overview
 
-WebLogic Server Kubernetes Operator version 2.3 includes experimental support for Istio 1.2.2.
+WebLogic Server Kubernetes Operator version 2.3 and later includes experimental support for Istio 1.2.2 and later.
 This support allows you to run the operator itself, and WebLogic domains managed by
 the operator with Istio sidecar injection enabled.  It will allow you to use
 Istio gateways and virtual services to access applications deployed in these domains.
@@ -18,7 +18,7 @@ other components and services that have tracing enabled.
 
 The current experimental support for Istio has these limitations:
 
-* It is tested with Istio 1.2.2 only, however it is tested with both single and
+* It is tested with Istio 1.2.2 and later (up to 1.5), however it is tested with both single and
   multicluster installations of Istio.
 * Support is provided only for domains that are stored in persistent
   volumes and created with the provided sample using the WLST option.

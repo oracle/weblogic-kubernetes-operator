@@ -31,13 +31,17 @@ Here are the steps:
 
 ##### Kubernetes `NodePorts`
 
-The Kubernetes `NodePorts` approach for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster involves configuring a network channel on the desired WebLogic cluster that accepts T3 protocol traffic, and deploying a Kubernetes `NodePort` that redirects external network traffic on the Kubernetes nodes to the network channel.
+The Kubernetes `NodePorts` approach for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster involves configuring a network channel on the desired WebLogic cluster that accepts T3 protocol traffic, and exposing a Kubernetes `NodePort` that redirects external network traffic on the Kubernetes nodes to the network channel.
+
+
+{{% notice note %}} The `NodePort` approach is available only when worker nodes are accessible by the clients, for example, when they have public IP addresses. If private worker nodes are used and access to them is possible only through a load balancer or bastion, then the `NodePort` approach is not a valid option to provide access to external clients.
+{{% /notice %}}
 
 Here are the steps:
 
 - Configure a custom channel for the T3 protocol in WebLogic that specifies an external address and port that are suitable for remote client use.  See [Adding a WebLogic Custom Channel](#adding-a-weblogic-custom-channel).
 
-- Deploy a Kubernetes `NodePort` to publicly expose the WebLogic ports. See [Setting up a `NodePort`](#setting-up-a-nodeport).
+- Define a Kubernetes `NodePort` to publicly expose the WebLogic ports. See [Setting up a `NodePort`](#setting-up-a-nodeport).
 
 - Review the [Security notes](#security-notes).
 
@@ -140,9 +144,9 @@ In this example:
 
 ##### Getting started
 
-A Kubernetes `NodePort` exposes a port on each machine that hosts the Kubernetes cluster where the port is accessible from outside of a Kubernetes cluster. This port redirects network traffic to pods within the Kubernetes cluster. Setting up a Kubernetes `NodePort` is one approach for giving external WebLogic clients access to JMS or EJBs.
+A Kubernetes `NodePort` exposes a port on each worker node in the Kubernetes cluster (they are not typically exposed on masters), where the port is accessible from outside of a Kubernetes cluster. This port redirects network traffic to pods within the Kubernetes cluster. Setting up a Kubernetes `NodePort` is one approach for giving external WebLogic clients access to JMS or EJBs.
 
-If an EJB or JMS service is running on an Administration Server, then you can skip the rest of this section and use the `spec.adminServer.adminService.channels` domain resource attribute to have the operator create a `NodePort` for you. See [Reference - Domain resource]({{<relref "/reference/domain-resource/_index.md">}}). Otherwise, if the EJB or JMS service is running in a WebLogic cluster or standalone WebLogic Managed Server, and you desire to provide access to the service using a `NodePort`, then the `NodePort` must be deployed 'manually' - see the following sample and table.
+If an EJB or JMS service is running on an Administration Server, then you can skip the rest of this section and use the `spec.adminServer.adminService.channels` domain resource attribute to have the operator create a `NodePort` for you. See [Reference - Domain resource]({{<relref "/reference/domain-resource/_index.md">}}). Otherwise, if the EJB or JMS service is running in a WebLogic cluster or standalone WebLogic Managed Server, and you desire to provide access to the service using a `NodePort`, then the `NodePort` must be exposed 'manually' - see the following sample and table.
 
 {{% notice note %}}
 Setting up a `NodePort` usually also requires setting up a custom network channel. See [Adding a WebLogic Custom Channel](#adding-a-weblogic-custom-channel).
@@ -150,7 +154,7 @@ Setting up a `NodePort` usually also requires setting up a custom network channe
 
 ##### Sample `NodePort` resource
 
-The following `NodePort` YAML deploys an external node port of `30999` and internal port `7999` for a domain UID of `DOMAIN_UID`, a domain name of `DOMAIN_NAME`, and a cluster name of `CLUSTER_NAME`. It assumes that `7999` corresponds to a T3 protocol port of a channel that's configured on your WebLogic cluster.
+The following `NodePort` YAML exposes an external node port of `30999` and internal port `7999` for a domain UID of `DOMAIN_UID`, a domain name of `DOMAIN_NAME`, and a cluster name of `CLUSTER_NAME`. It assumes that `7999` corresponds to a T3 protocol port of a channel that's configured on your WebLogic cluster.
 
 ```
 apiVersion: v1

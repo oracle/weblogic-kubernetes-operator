@@ -61,7 +61,7 @@ AKE support and limitations:
 * Both Domain in Image and Domain in PV domain home source types are supported.  
 * For Domain in PV, we support Azure Files volumes accessed through
   a persistent volume claim - see [here](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume).
-* Azure load balancers are supported when provisioned using a Kubernetes service of `type=LoadBalancer`.
+* Azure Load Balancers are supported when provisioned using a Kubernetes service of `type=LoadBalancer`.
 * Oracle databases running in Oracle Cloud Infrastructure are supported for Fusion Middleware
   Infrastructure MDS data stores only when accessed through an OCI FastConnect.
 * Windows Server containers are not currently supported, only Linux containers.

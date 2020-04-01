@@ -5,7 +5,7 @@ draft: false
 weight: 1
 ---
 
-Each operator deployment manages a number of Kubernetes namespaces. For information about setting domain namespaces, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}). A number of Kubernetes resources
+Each operator deployment manages a number of Kubernetes namespaces. For more information, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}). A number of Kubernetes resources
 must be present in a namespace before any WebLogic domain custom resources can be successfully
 deployed into it.
 Those Kubernetes resources are created either as part of the installation
@@ -19,6 +19,10 @@ This FAQ describes some considerations to be aware of when you manage the namesp
 * [Delete and recreate a Kubernetes namespace that the operator manages](#recreate-a-previously-deleted-kubernetes-namespace)
 
 For others, see [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#common-mistakes-and-solutions" >}}).
+
+{{% notice note %}}
+There can be multiple operators in a Kubernetes cluster, and in that case, you must ensure that their respective lists of `domainNamespaces` do not overlap.
+{{% /notice %}}
 
 #### Check the namespaces that the operator manages
 You can find the list of the namespaces that the operator manages using the `helm get values` command.
@@ -54,7 +58,7 @@ $ helm ls
 ```
 
 #### Add a Kubernetes namespace to the operator
-If you want an operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to be pre-created, for example, using the `kubectl create` command.
+If you want an operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to already exist, for example, using the `kubectl create` command.
 
 Adding a namespace to the `domainNamespaces` list tells the operator deployment or runtime
 to initialize the necessary Kubernetes resources for the namespace so that the operator is ready to host WebLogic domain resources in that namespace.
