@@ -105,7 +105,6 @@ export DOMAIN_SOURCE_TYPE="FromModel"
 export WDT_DOMAIN_TYPE="WLS"
 export MII_WDT_CONFIGMAP="false"
 export MII_WDT_ENCRYPT_SECRET="false"
-export CUSTOM_OVERRIDE_CM="true"
 
 #############################################################################
 #
@@ -926,7 +925,7 @@ deployDomainConfigMap
 # Set up integration test scripts
 deployTestScriptConfigMap
 # No support for config overrides config map
-#deployCustomOverridesConfigMap
+deployCustomOverridesConfigMap
 
 kubectl -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
 kubectl -n $NAMESPACE create secret generic my-secret \

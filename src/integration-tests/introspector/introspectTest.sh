@@ -103,7 +103,6 @@ export DOMAIN_SOURCE_TYPE="Image"
 export WDT_DOMAIN_TYPE="WLS"
 export MII_WDT_CONFIGMAP="true"
 export MII_WDT_ENCRYPT_SECRET="true"
-export CUSTOM_OVERRIDE_CM="false"
 
 #############################################################################
 #
