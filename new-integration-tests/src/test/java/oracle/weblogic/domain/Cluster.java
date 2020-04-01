@@ -1,7 +1,7 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.domain.model;
+package oracle.weblogic.domain;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -141,6 +141,7 @@ public class Cluster {
 
   public Cluster restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
+    return this;
   }
 
   public String getRestartVersion() {
@@ -177,19 +178,19 @@ public class Cluster {
       return false;
     }
 
-    Cluster cluster = (Cluster) o;
+    Cluster rhs = (Cluster) o;
 
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
-        .append(clusterName, cluster.clusterName)
-        .append(replicas, cluster.replicas)
-        .append(serverStartPolicy, cluster.serverStartPolicy)
-        .append(clusterService, cluster.clusterService)
-        .append(maxUnavailable, cluster.maxUnavailable)
-        .append(serverPod, that.serverPod)
-        .append(serverService, that.serverService)
-        .append(serverStartState, that.serverStartState)
-        .append(restartVersion, that.restartVersion)
+        .append(clusterName, rhs.clusterName)
+        .append(replicas, rhs.replicas)
+        .append(serverStartPolicy, rhs.serverStartPolicy)
+        .append(clusterService, rhs.clusterService)
+        .append(maxUnavailable, rhs.maxUnavailable)
+        .append(serverPod, rhs.serverPod)
+        .append(serverService, rhs.serverService)
+        .append(serverStartState, rhs.serverStartState)
+        .append(restartVersion, rhs.restartVersion)
         .isEquals();
   }
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.domain.model;
+package oracle.weblogic.domain;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +50,7 @@ public class DomainStatus {
 
   public DomainStatus conditions(List<DomainCondition> conditions) {
     this.conditions = conditions;
-    return DomainStatus;
+    return this;
   }
 
   public DomainStatus addConditionsItem(DomainCondition conditionsItem) {

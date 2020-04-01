@@ -1,9 +1,8 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.domain.model;
+package oracle.weblogic.domain;
 
-import com.google.gson.annotations.SerializedName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -89,7 +88,6 @@ public class DomainCondition {
 
   public void setMessage(String message) {
     this.message = message;
-    return this;
   }
 
   public DomainCondition reason(String reason) {
@@ -114,7 +112,7 @@ public class DomainCondition {
     return status;
   }
 
-  public String setStatus(String status) {
+  public void setStatus(String status) {
     this.status = status;
   }
 

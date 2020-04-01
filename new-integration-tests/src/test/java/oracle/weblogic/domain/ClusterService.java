@@ -1,12 +1,11 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.domain.model;
+package oracle.weblogic.domain;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -82,11 +81,11 @@ public class ClusterService {
       return false;
     }
 
-    KubernetesResource that = (KubernetesResource) o;
+    ClusterService rhs = (ClusterService) o;
 
     return new EqualsBuilder()
-        .append(labels, that.labels)
-        .append(annotations, that.annotations)
+        .append(labels, rhs.labels)
+        .append(annotations, rhs.annotations)
         .isEquals();
   }
 

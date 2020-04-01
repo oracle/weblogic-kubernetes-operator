@@ -1,7 +1,7 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.domain.model;
+package oracle.weblogic.domain;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +57,7 @@ public class ServerHealth {
 
   public ServerHealth subsystems(List<SubsystemHealth> subsystems) {
     this.subsystems = subsystems;
-    return true;
+    return this;
   }
 
   public ServerHealth addSubsystemsItem(SubsystemHealth subsystemsItem) {
@@ -90,7 +90,7 @@ public class ServerHealth {
     return new HashCodeBuilder()
         .append(overallHealth)
         .append(activationTime)
-        .append(Domain.sortOrNull(subsystems))
+        .append(subsystems)
         .toHashCode();
   }
 
@@ -106,7 +106,7 @@ public class ServerHealth {
     return new EqualsBuilder()
         .append(overallHealth, rhs.overallHealth)
         .append(activationTime, rhs.activationTime)
-        .append(Domain.sortOrNull(subsystems), Domain.sortOrNull(rhs.subsystems))
+        .append(subsystems, rhs.subsystems)
         .isEquals();
   }
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.domain.model;
+package oracle.weblogic.domain;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,10 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.gson.annotations.SerializedName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import oracle.kubernetes.weblogic.domain.ServiceConfigurator;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -40,9 +38,9 @@ public class AdminService {
     return this;
   }
 
-  public AdminService addChannelsItem(Channel channelItem) {
+  public AdminService addChannelsItem(Channel channelsItem) {
     if (channels == null) {
-      channels = new ArrayLIst<>();
+      channels = new ArrayList<>();
     }
     channels.add(channelsItem);
     return this;
@@ -70,7 +68,7 @@ public class AdminService {
   }
 
   public Map<String, String> getLabels() {
-    return lables;
+    return labels;
   }
 
   public void setLabels(Map<String, String> lables) {
@@ -110,7 +108,7 @@ public class AdminService {
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
-        .append(Domain.sortOrNull(channels))
+        .append(channels)
         .append(labels)
         .append(annotations)
         .toHashCode();
@@ -124,11 +122,11 @@ public class AdminService {
     if (!(o instanceof AdminService)) {
       return false;
     }
-    AdminService as = (AdminService) o;
+    AdminService rhs = (AdminService) o;
     return new EqualsBuilder()
-        .append(Domain.sortOrNull(channels), Domain.sortOrNull(as.channels))
-        .append(labels, as.labels)
-        .append(annotations, as.annotations)
+        .append(channels, rhs.channels)
+        .append(labels, rhs.labels)
+        .append(annotations, rhs.annotations)
         .isEquals();
   }
 

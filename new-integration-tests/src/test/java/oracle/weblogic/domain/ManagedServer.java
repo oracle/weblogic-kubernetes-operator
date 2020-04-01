@@ -1,7 +1,7 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.domain.model;
+package oracle.weblogic.domain;
 
 import javax.annotation.Nonnull;
 
@@ -11,7 +11,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ApiModel(descrption = "ManagedServer represents the operator configuration for a single Managed Server.")
+@ApiModel(description = "ManagedServer represents the operator configuration for a single Managed Server.")
 public class ManagedServer {
   
   @ApiModelProperty("The name of the Managed Server. Required.")
@@ -52,7 +52,7 @@ public class ManagedServer {
     this.serverName = serverName;
   }
 
-  public Server serverStartPolicy(String serverStartPolicy) {
+  public ManagedServer serverStartPolicy(String serverStartPolicy) {
     this.serverStartPolicy = serverStartPolicy;
     return this;
   }
@@ -65,7 +65,7 @@ public class ManagedServer {
     this.serverStartPolicy = serverStartPolicy;
   }
 
-  public Server serverPod(ServerPod serverPod) {
+  public ManagedServer serverPod(ServerPod serverPod) {
     this.serverPod = serverPod;
     return this;
   }
@@ -78,7 +78,7 @@ public class ManagedServer {
     this.serverPod = serverPod;
   }
 
-  public Server serverStartState(String serverStartState) {
+  public ManagedServer serverStartState(String serverStartState) {
     this.serverStartState = serverStartState;
     return this;
   }
@@ -91,8 +91,9 @@ public class ManagedServer {
     this.serverStartState = serverStartState;
   }
 
-  public Server restartVersion(String restartVersion) {
+  public ManagedServer restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
+    return this;
   }
 
   public String getRestartVersion() {

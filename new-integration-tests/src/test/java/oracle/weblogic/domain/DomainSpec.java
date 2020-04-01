@@ -1,7 +1,7 @@
 // Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.domain.model;
+package oracle.weblogic.domain;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -283,6 +283,7 @@ public class DomainSpec {
 
   public DomainSpec imagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
     this.imagePullSecrets = imagePullSecrets;
+    return this;
   }
 
   public DomainSpec addImagePullSecretsItem(V1LocalObjectReference imagePullSecretsItem) {
@@ -496,6 +497,7 @@ public class DomainSpec {
 
   public DomainSpec restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
+    return this;
   }
 
   public String getRestartVersion() {

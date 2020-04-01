@@ -1,7 +1,7 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.domain.model;
+package oracle.weblogic.domain;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,22 +51,26 @@ class ServerPod {
   @ApiModelProperty("If specified, the pod's scheduling constraints")
   private V1Affinity affinity;
 
-  @ApiModelProperty("If specified, indicates the pod's priority. \"system-node-critical\" and \"system-cluster-critical\" "
+  @ApiModelProperty(
+      "If specified, indicates the pod's priority. \"system-node-critical\" and \"system-cluster-critical\" "
       + "are two special keywords which indicate the highest priorities with the former being the highest priority. "
       + "Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod "
       + "priority will be default or zero if there is no default.")
   private String priorityClassName;
 
-  @ApiModelProperty("If specified, all readiness gates will be evaluated for pod readiness. A pod is ready when all its "
+  @ApiModelProperty(
+      "If specified, all readiness gates will be evaluated for pod readiness. A pod is ready when all its "
       + "containers are ready AND all conditions specified in the readiness gates have status equal to \"True\" More "
       + "info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md")
   private List<V1PodReadinessGate> readinessGates = new ArrayList<>();
 
-  @ApiModelProperty("Restart policy for all containers within the pod. One of Always, OnFailure, Never. Default to Always. "
+  @ApiModelProperty(
+      "Restart policy for all containers within the pod. One of Always, OnFailure, Never. Default to Always. "
       + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy")
   private String restartPolicy;
 
-  @ApiModelProperty("RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run "
+  @ApiModelProperty(
+      "RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run "
       + "this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, "
       + "the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the "
       + "default runtime handler. More "
@@ -74,11 +78,13 @@ class ServerPod {
       + "alpha feature and may change in the future.")
   private String runtimeClassName;
 
-  @ApiModelProperty("NodeName is a request to schedule this pod onto a specific node. If it is non-empty, the scheduler "
+  @ApiModelProperty(
+      "NodeName is a request to schedule this pod onto a specific node. If it is non-empty, the scheduler "
       + "simply schedules this pod onto that node, assuming that it fits resource requirements.")
   private String nodeName;
 
-  @ApiModelProperty("If specified, the pod will be dispatched by specified scheduler. If not specified, the pod will be "
+  @ApiModelProperty(
+      "If specified, the pod will be dispatched by specified scheduler. If not specified, the pod will be "
       + "dispatched by default scheduler.")
   private String schedulerName;
 
