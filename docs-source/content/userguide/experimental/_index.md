@@ -7,7 +7,7 @@ draft: false
 ---
 
 This section provides details of experimental features in the operator.
-These are features are not considered "complete" but are
+These features are not considered "complete" but are
 included as a "preview" to allow users to experiment with them and
 give feedback.
 
