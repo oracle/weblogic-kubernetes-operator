@@ -155,11 +155,24 @@ public class Kubernetes implements LoggedTest {
     return nameSpaces;
   }
 
+  /**
+   * Delete a namespace for the given name
+   *
+   * @param name - name of namespace
+   * @return true if successful delete, false otherwise
+   * @throws ApiException - if Kubernetes client API call fails
+   */
   public static boolean deleteNamespace(String name) throws ApiException {
 
     GenericKubernetesApi<V1Namespace, V1NamespaceList> namespaceClient =
-        new GenericKubernetesApi<>(V1Namespace.class, V1NamespaceList.class, "",
-            "v1", "namespaces", apiClient);
+        new GenericKubernetesApi<>(
+                V1Namespace.class, // the api type class
+                V1NamespaceList.class, // the api list type class
+                "", // the api group
+            "v1", // the api version
+                "namespaces", // the resource plural
+                apiClient //the api client
+        );
 
     KubernetesApiResponse<V1Namespace> response = namespaceClient.delete(name);
 
@@ -555,11 +568,11 @@ public class Kubernetes implements LoggedTest {
     }
 
     serviceAccount = coreV1Api.createNamespacedServiceAccount(
-        serviceAccount.getMetadata().getNamespace(),
-        serviceAccount,
-        pretty,
-        null,
-        null
+        serviceAccount.getMetadata().getNamespace(), // name of the Namespace
+        serviceAccount, // service account configuration data
+        pretty, // pretty print output
+        null, // indicates that modifications should not be persisted
+        null // fieldManager is a name associated with the actor
     );
 
     return serviceAccount;
@@ -592,8 +605,14 @@ public class Kubernetes implements LoggedTest {
     String name = serviceAccount.getMetadata().getName();
 
     GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient =
-        new GenericKubernetesApi<>(V1ServiceAccount.class, V1ServiceAccountList.class, "",
-            "v1", "serviceaccounts", apiClient);
+        new GenericKubernetesApi<>(
+                V1ServiceAccount.class,  // the api type class
+                V1ServiceAccountList.class, // the api list type class
+                "", // the api group
+                "v1", // the api version
+                "serviceaccounts", // the resource plural
+                apiClient //the api client
+        );
 
     KubernetesApiResponse<V1ServiceAccount> response = serviceAccountClient.delete(namespace, name);
 
