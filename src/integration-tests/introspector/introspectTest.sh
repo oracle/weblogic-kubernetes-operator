@@ -972,6 +972,7 @@ deployCustomOverridesConfigMap
 kubectl -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
 kubectl -n $NAMESPACE create secret generic my-secret \
         --from-literal=key1=supersecret  \
+        --from-literal=encryptd=supersecret  \
         --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
 
 if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
