@@ -3,7 +3,10 @@
 
 package oracle.weblogic.kubernetes;
 
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.kubernetes.actions.TestActions;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -13,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -32,9 +34,16 @@ class ItSimpleDomainValidation implements LoggedTest {
     String domainYAML = "something";
 
     // get a new unique namespace
-    String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
+    final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
         "Failed to create unique namespace due to ApiException");
     logger.info(String.format("Got a new namespace called %s", namespace));
+
+    // Create a service account for the unique namespace
+    final String serviceAccountName = namespace + "-sa";
+    final V1ServiceAccount serviceAccount = assertDoesNotThrow(
+        () -> Kubernetes.createServiceAccount(new V1ServiceAccount()
+            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+    logger.info("Created service account: " + serviceAccount.getMetadata().getName());
 
     // create the domain CR
     boolean success = createDomainCustomResource(domainUID, namespace, domainYAML);
@@ -58,17 +67,16 @@ class ItSimpleDomainValidation implements LoggedTest {
 
     // wait for the managed servers to exist
 
-    // Delete namespace
-    try {
-      if (deleteNamespace(namespace)) {
-        logger.info("Deleted namespace: " + namespace);
-      }
-    } catch (Exception e) {
-      // TODO: Fix as there is a known bug that delete can return either the object
-      //  just deleted or a status.  We can workaround by either retrying or using
-      //  the general GenericKubernetesApi client class and doing our own type checks
-    }
+    // Delete service account from unique namespace
+    assertDoesNotThrow(
+        () -> Kubernetes.deleteServiceAccount(serviceAccount));
+    logger.info("Deleted service account \'" + serviceAccount.getMetadata().getName()
+        + "' in namespace: " + serviceAccount.getMetadata().getNamespace());
 
+    // Delete namespace
+    assertDoesNotThrow(
+        () -> TestActions.deleteNamespace(namespace));
+    logger.info("Deleted namespace: " + namespace);
   }
 
 }
