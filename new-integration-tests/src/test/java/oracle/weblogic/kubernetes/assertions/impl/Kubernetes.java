@@ -101,7 +101,7 @@ public class Kubernetes implements LoggedTest {
     return false;
   }
 
-  public static boolean serviceCreated(String domainUID, String namespace) throws ApiException {
+  public static boolean serviceCreated(String serviceName, String namespace) throws ApiException {
     V1ServiceAccountList listServiceAccountForAllNamespaces =
         coreV1Api.listServiceAccountForAllNamespaces(null, null, null, null, null, null, null, null, null);
     for (V1ServiceAccount sa : listServiceAccountForAllNamespaces.getItems()) {
@@ -113,6 +113,7 @@ public class Kubernetes implements LoggedTest {
         logger.log(Level.INFO, "Service Account Name :", sa.getMetadata().getName());
         logger.log(Level.INFO, "Service Account Namespace :", sa.getMetadata().getNamespace());
         logger.log(Level.INFO, "Service Account Uid :", sa.getMetadata().getUid());
+        logger.log(Level.INFO, "Service Account Kind :", sa.getKind());
       }
     }
     return true;

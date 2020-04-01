@@ -62,6 +62,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
     try {
       Kubernetes.operatorPodRunning(opns);
       Kubernetes.podRunning(podName,  namespace);
+      Kubernetes.serviceCreated("", namespace);
     } catch (ApiException ex) {
       Logger.getLogger(ItSimpleOperatorValidation.class.getName()).log(Level.SEVERE, null, ex);
     }
