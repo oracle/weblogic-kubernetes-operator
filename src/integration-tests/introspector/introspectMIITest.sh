@@ -378,7 +378,7 @@ function createMII_Image() {
   export MODEL_IMAGE_TAG=it || exit 1
   export MODEL_IMAGE_NAME=model-in-image || exit 1
 
-  docker rmi ${MODEL_IMAGE_NAMGE}:${MODEL_IAMGE_TAG} || exit 1
+  docker rmi ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG} --force
   ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_download.sh || exit 1
 
   ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_image_model.sh || exit 1
