@@ -57,7 +57,7 @@ public class TestAssertions implements LoggedTest {
    */
   public static Callable<Boolean> podReady(String podName, String domainUID, String namespace) throws ApiException {
     return () -> {
-      return Kubernetes.podRunning(podName, domainUID, namespace);
+      return Kubernetes.podRunning(podName, namespace);
     };
   }
 
@@ -70,7 +70,9 @@ public class TestAssertions implements LoggedTest {
    * @return true if the pod is terminating otherwise false
    */
   public static Callable<Boolean> podTerminating(String podName, String domainUID, String namespace) {
-    return Kubernetes.podTerminating(podName, domainUID, namespace);
+    return () -> {
+      return Kubernetes.podTerminating(podName, namespace);
+    };
   }
 
   /**
@@ -80,7 +82,7 @@ public class TestAssertions implements LoggedTest {
    * @param namespace in which the service is running
    * @return true if the service exists otherwise false
    */
-  public static boolean serviceReady(String serviceName, String namespace) {
+  public static boolean serviceReady(String serviceName, String namespace) throws ApiException {
     return Kubernetes.serviceCreated(serviceName, namespace);
   }
 

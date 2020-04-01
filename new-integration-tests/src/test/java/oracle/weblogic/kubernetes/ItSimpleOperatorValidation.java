@@ -61,7 +61,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
     String podName = "itmodelinimageconfigupdate-domain-2-managed-server2";
     try {
       Kubernetes.operatorPodRunning(opns);
-      Kubernetes.podRunning(podName, domainUID, namespace);
+      Kubernetes.podRunning(podName,  namespace);
     } catch (ApiException ex) {
       Logger.getLogger(ItSimpleOperatorValidation.class.getName()).log(Level.SEVERE, null, ex);
     }
