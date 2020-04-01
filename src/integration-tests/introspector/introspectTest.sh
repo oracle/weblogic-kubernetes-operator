@@ -105,12 +105,10 @@ WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 export WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE}
 
 if [ "${DOMAIN_SOURCE_TYPE}" == "FromModel" ] ; then
-  export WDT_DOMAIN_TYPE="${WDT_DOMAIN_TYPE}"
   # Make sure the configmap and secrets are not optional
   export MII_WDT_CONFIGMAP="false"
   export MII_WDT_ENCRYPT_SECRET="false"
 else
-  export WDT_DOMAIN_TYPE="${WDT_DOMAIN_TYPE}"
   # Make sure the configmap and secrets are optional
   export MII_WDT_CONFIGMAP="true"
   export MII_WDT_ENCRYPT_SECRET="true"
