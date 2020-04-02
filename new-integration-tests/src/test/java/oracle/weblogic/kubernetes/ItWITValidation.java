@@ -19,7 +19,7 @@ class ItWITValidation implements LoggedTest {
 
     // create the MII image
     // TODO add model files and other contents to the image once we have those resources
-    boolean success = TestActions.createMIIImage(withWITParams());
+    boolean success = TestActions.createMIIImage(TestActions.withWITParams());
 
     assertEquals(true, success, "Failed to create the image using WebLogic Deploy Tool");
   } 
