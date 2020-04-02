@@ -51,8 +51,8 @@ public class InstallWITCommon extends ActionImplCommon {
   protected void checkFile(String fileName) throws FileNotFoundException {
     File file = new File(fileName);
     if (!file.exists()) {
-      logger.warning("The expected file \" + file + \" not found.");
-      throw new FileNotFoundException("The expected file \" + file + \" not found.");
+      logger.warning("The expected file \" + fileName + \" not found.");
+      throw new FileNotFoundException("The expected file \" + fileName + \" not found.");
     }
   }
 }

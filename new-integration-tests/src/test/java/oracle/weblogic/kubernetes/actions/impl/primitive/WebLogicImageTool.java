@@ -42,13 +42,6 @@ public class WebLogicImageTool extends InstallWITCommon {
    * @return true if the command succeeds 
    */
   public boolean updateImage() {
-    try {
-      checkFile(IMAGE_TOOL);
-    } catch (FileNotFoundException fnfe) {
-      logger.warning("Failed to create an image due to " + fnfe.getMessage());
-      return false;
-    }
-  
     // download WIT if it is not in the expected location 
     if (!downloadWIT()) {
       logger.warning("Failed to download or unzip WebLogic Image Tool");
@@ -60,6 +53,14 @@ public class WebLogicImageTool extends InstallWITCommon {
       logger.warning("Failed to download WebLogic Deploy Tool");
       return false;
     } 
+
+    try {
+      checkFile(IMAGE_TOOL);
+    } catch (FileNotFoundException fnfe) {
+      logger.warning("Failed to create an image due to Exception: " + fnfe.getMessage());
+      return false;
+    }
+  
     return executeAndVerify(buildCommand(), params.redirect());
   }
   
