@@ -5,6 +5,10 @@ package oracle.weblogic.kubernetes;
 
 import java.util.Arrays;
 
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
@@ -22,7 +26,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static org.awaitility.Awaitility.with;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.fail;
+//import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // this is a POC for a new way of writing tests.
 // this is meant to be a simple test.  later i will add more complex tests and deal
@@ -59,18 +65,37 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // the kubernetes deployment.  this will complete quickly, and will either be
     // successful or not.
 
-    String opns = "opns1";
-    OperatorParams opParams
-        = new OperatorParams().image("weblogic-kubernetes-operator:test_itsimpleoperator")
-          .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
-          .serviceAccount("sa-opns1");
-    boolean success = installOperator("weblogic-operator", opns, opParams);
+    // get a new unique namespace
+    final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
+        "Failed to create unique namespace due to ApiException");
+    logger.info(String.format("Got a new namespace called %s", namespace));
+
+    // Create a service account for the unique namespace
+    final String serviceAccountName = namespace + "-sa";
+    assertDoesNotThrow(
+        () -> TestActions.createServiceAccount(new V1ServiceAccount()
+            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+    logger.info("Created service account: " + serviceAccountName);
+
+    OperatorParams opParams =
+        new OperatorParams().releaseName("weblogic-operator")
+            .namespace(namespace)
+            .image("weblogic-kubernetes-operator:test_itsimpleoperator")
+            .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
+            .serviceAccount("opns1-sa");
+
+    //ToDO: use Junit 5 assertions
+    try {
+      installOperator(opParams);
+    } catch (ApiException e) {
+      e.printStackTrace();
+      fail("Failed to install Operator due to exception" + e.getMessage());
+    }
+
+    logger.info(String.format("Operator installed in namespace %s", namespace));
 
     // we can use a standard JUnit assertion to check on the result
-    assertEquals(true, success, "There MUST be a descriptive message here");
-
-    // we can use the injected logger like this:
-    logger.info("hello");
+    // assertEquals(true, success, "Operator successfully installed in namespace " + namespace);
 
     // this is an example of waiting for an async operation to complete.
     // after the previous step was completed, kubernetes will try to pull the image,
@@ -80,20 +105,29 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // in this example, we first wait 30 seconds, since it is unlikely this operation
     // will complete in less than 30 seconds, then we check if the operator is running.
     with().pollDelay(30, SECONDS)
-      // we check again every 10 seconds.
-      .and().with().pollInterval(10, SECONDS)
-      // this listener lets us report some status with each poll
-      .conditionEvaluationListener(
-        condition -> logger.info(()
-            -> String.format("Waiting for operator to be running (elapsed time %dms, remaining time %dms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS())))
-      // and here we can set the maximum time we are prepared to wait
-      .await().atMost(5, MINUTES)
-      // operatorIsRunning() is one of our custom, reusable assertions
-      .until(operatorIsRunning(opns));
+        // we check again every 10 seconds.
+        .and().with().pollInterval(10, SECONDS)
+        // this listener lets us report some status with each poll
+        .conditionEvaluationListener(
+            condition -> logger.info(()
+                -> String.format("Waiting for operator to be running (elapsed time %dms, remaining time %dms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS())))
+        // and here we can set the maximum time we are prepared to wait
+        .await().atMost(5, MINUTES)
+        // operatorIsRunning() is one of our custom, reusable assertions
+        .until(operatorIsRunning(namespace));
 
-      // i have not done anything yet about reporting the reason for the failure :)
+    // Delete service account from unique namespace
+    assertDoesNotThrow(
+        () -> TestActions.deleteServiceAccount(new V1ServiceAccount()
+            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+    logger.info("Deleted service account " + serviceAccountName);
+
+    // Delete namespace
+    assertDoesNotThrow(
+        () -> TestActions.deleteNamespace(namespace));
+    logger.info("Deleted namespace: " + namespace);
   }
 
 }
