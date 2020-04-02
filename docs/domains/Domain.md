@@ -25,7 +25,7 @@ DomainSpec is a description of a domain.
 | `domainHomeInImage` | Boolean | True if this domain's home is defined in the Docker image for the domain. Defaults to true. |
 | `domainUID` | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name. |
 | `experimental` | [Experimental](#experimental) | Experimental feature configurations. |
-| `httpAccessLogInLogHome` | Boolean | If true (the default), the server HTTP access log file will be written to the same directory specified in logHome. Otherwise, server HTTP access log file will be written to the directory as configured in the WebLogic domain home configuration. |
+| `httpAccessLogInLogHome` | Boolean | If true (the default), the server HTTP access log file will be written to the same directory specified in logHome. Otherwise, server HTTP access log file will be written to the directory configured in the WebLogic domain home configuration. |
 | `image` | string | The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3. |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |

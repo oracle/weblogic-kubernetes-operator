@@ -115,7 +115,7 @@ public class DomainSpec extends BaseConfiguration {
    *  if {@link #logHomeEnabled} is true. Default is true. */
   @Description("If true (the default), the server HTTP access log file will be written to the same "
       + "directory specified in logHome. Otherwise, server HTTP access log file will be written to "
-      + "the directory as configured in the WebLogic domain home configuration.")
+      + "the directory configured in the WebLogic domain home configuration.")
   private Boolean httpAccessLogInLogHome;
 
   /**
