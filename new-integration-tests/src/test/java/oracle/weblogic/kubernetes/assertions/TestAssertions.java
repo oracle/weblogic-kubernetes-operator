@@ -39,12 +39,12 @@ public class TestAssertions implements LoggedTest {
   }
 
   /**
-   * Check if a WebLogic custom resource domain exists in specified namespace and all its pods are
-   * running.
+   * Check if a WebLogic custom resource domain object exists in specified
+   * namespace.
    *
    * @param domainUID ID of the domain
-   * @param namespace in which the domain custom resource exists
-   * @return true if domain exists and pods running otherwise false
+   * @param namespace in which the domain custom resource object exists
+   * @return true if domain object exists
    */
   public static Callable<Boolean> domainExists(String domainUID, String namespace) {
     return Domain.exists(domainUID, namespace);

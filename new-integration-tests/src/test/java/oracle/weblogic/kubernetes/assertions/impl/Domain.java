@@ -23,17 +23,20 @@ public class Domain implements LoggedTest {
   private static ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
   private static ApisApi apisApi = new ApisApi();
 
+
   /**
-   * verify domain CRD.
-   * @throws Exception on failure
+   * Check if the Domain CRD exists
+   * @return true if domains.weblogic.oracle CRD exists otherwise false
+   * @throws Exception
    */
-  public static void isCRDExists() throws Exception {
+  public static boolean isCRDExists() throws Exception {
     try {
       V1beta1CustomResourceDefinition domainBetaCrd =
           apiextensionsV1beta1Api.readCustomResourceDefinition(
               "domains.weblogic.oracle", null, null, null);
       assertNotNull(domainBetaCrd);
       logger.info("domainBetaCrd is not null");
+      return true;
     } catch (ApiException aex) {
       if (aex.getCode() == 404) {
         assertTrue(false, "Expected CRD domains.weblogic.oracle existed.");
@@ -41,8 +44,15 @@ public class Domain implements LoggedTest {
         throw aex;
       }
     }
+    return false;
   }
 
+  /**
+   * Checks if weblogic.oracle CRD domain object exists.
+   * @param domainUID domain UID of the domain object
+   * @param namespace in which the domain object exists
+   * @return true if domain object exists otherwise false
+   */
   public static Callable<Boolean> exists(String domainUID, String namespace) {
     return () -> {
       Object domainObject =

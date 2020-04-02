@@ -43,6 +43,14 @@ public class Kubernetes implements LoggedTest {
     }
   }
 
+  /**
+   * Checks if a pod exists in a given namespace in any state.
+   * @param namespace in which to check for the pod existence
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @return true if pod exists otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
   public static boolean isPodExists(String namespace, String domainUid, String podName) throws ApiException {
     logger.info("Checking if the pod exists in namespace");
     String labelSelector = null;
@@ -53,6 +61,14 @@ public class Kubernetes implements LoggedTest {
     return pod != null;
   }
 
+  /**
+   * Checks if a pod exists in a given namespace and in Running state.
+   * @param namespace in which to check for the pod running
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @return true if pod exists and running otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
   public static boolean isPodRunning(String namespace, String domainUid, String podName) throws ApiException {
     logger.info("Checking if the pod running in namespace");
     String labelSelector = null;
@@ -63,6 +79,14 @@ public class Kubernetes implements LoggedTest {
     return pod.getStatus().getPhase().equals(RUNNING);
   }
 
+  /**
+   * Checks if a pod exists in a given namespace and in Terminating state.
+   * @param namespace in which to check for the pod
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @return true if pod is in Terminating state otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
   public static boolean isPodTerminating(String namespace, String domainUid, String podName) throws ApiException {
     logger.info("Checking if the pod terminating in namespace");
     String labelSelector = null;
@@ -73,12 +97,28 @@ public class Kubernetes implements LoggedTest {
     return pod.getStatus().getPhase().equals(TERMINATING);
   }
 
+  /**
+   * Checks if a Operator pod exists in a given namespace.
+   * The method assumes the operator name to starts with weblogic-operator-
+   * and decorated with label weblogic.operatorName:namespace
+   * @param namespace in which to check for the pod existence
+   * @return true if pod exists and running otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
   public static boolean isOperatorPodRunning(String namespace) throws ApiException {
     String labelSelector = String.format("weblogic.operatorName in (%s)", namespace);
     V1Pod pod = getPod(namespace, labelSelector, "weblogic-operator-");
     return pod.getStatus().getPhase().equals(RUNNING);
   }
 
+  /**
+   * Returns the V1Pod object given the following parameters.
+   * @param namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod to return
+   * @return V1Pod object if found otherwise null
+   * @throws ApiException when there is error in querying the cluster
+   */
   public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
     V1PodList v1PodList =
         coreV1Api.listNamespacedPod(
@@ -104,10 +144,26 @@ public class Kubernetes implements LoggedTest {
     return null;
   }
 
+  /**
+   * Checks if a Kubernetes service object exists in a given namespace.
+   * @param serviceName name of the service to check for
+   * @param label the key value pair with which the service is decorated with
+   * @param namespace the namespace in which to check for the service
+   * @return true if the service is found otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
   public static boolean isServiceCreated(String serviceName, HashMap label, String namespace) throws ApiException {
     return getService(serviceName, label, namespace) != null;
   }
 
+  /**
+   * Get V1Service object for the given servicename, label and namespace
+   * @param serviceName name of the service to look for
+   * @param label the key value pair with which the service is decorated with
+   * @param namespace the namespace in which to check for the service
+   * @return V1Service object if found otherwise null
+   * @throws ApiException when there is error in querying the cluster
+   */
   public static V1Service getService(String serviceName, HashMap label, String namespace) throws ApiException {
     String labelSelector = null;
     if (label != null) {
@@ -145,10 +201,13 @@ public class Kubernetes implements LoggedTest {
     return null;
   }
 
-
-
-
-
+  /**
+   * A utility method to list all pods in given namespace and a label
+   * This method can be used as diagnostic tool to get the details of pods.
+   * @param namespace in which to list all pods
+   * @param labelSelectors with which the pods are decorated
+   * @throws ApiException when there is error in querying the cluster
+   */
   public static void listPods(String namespace, String labelSelectors) throws ApiException {
     V1PodList v1PodList =
         coreV1Api.listNamespacedPod(
@@ -166,6 +225,13 @@ public class Kubernetes implements LoggedTest {
     logger.info(Arrays.toString(items.toArray()));
   }
 
+  /**
+   * A utillity method to list all services in a given namespace.
+   * This method can be used as diagnostic tool to get the details of services.
+   * @param namespace in which to list all services
+   * @param labelSelectors  with which the services are decorated
+   * @throws ApiException when there is error in querying the cluster
+   */
   public static void listServices(String namespace, String labelSelectors) throws ApiException {
     V1ServiceList v1ServiceList
         = coreV1Api.listServiceForAllNamespaces(
