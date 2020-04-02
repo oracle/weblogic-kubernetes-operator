@@ -201,50 +201,6 @@ public class Kubernetes implements LoggedTest {
     }
   }
 
-  public static void verifyServices() throws ApiException {
-    // Verify services
-    String labelSelector = String.format("weblogic.operatorName in (%s)",
-        "itmodelinimageconfigupdate-opns-1");
-    logger.log(Level.INFO, labelSelector);
-    V1ServiceList v1ServiceList =
-        coreV1Api.listServiceForAllNamespaces(
-            Boolean.FALSE,
-            null,
-            null,
-            labelSelector,
-            null,
-            Boolean.FALSE.toString(),
-            null,
-            null,
-            Boolean.FALSE);
-    List<V1Service> items = v1ServiceList.getItems();
-    logger.info(Arrays.toString(items.toArray()));
-    for (V1Service service : v1ServiceList.getItems()) {
-      logger.info("Service getApiVersion :" + service.getApiVersion());
-      logger.info("Service getApiVersion :" + service.getApiVersion());
-      logger.info("Service getKind :" + service.getKind());
-      logger.info("Service getMetadata().getCreationTimestamp :"
-          + service.getMetadata().getCreationTimestamp());
-      Map<String, String> labels = service.getMetadata().getLabels();
-      if (labels != null) {
-        for (Map.Entry<String, String> entry : labels.entrySet()) {
-          logger.log(Level.INFO, "LABEL KEY: {0} LABEL VALUE: {1}",
-              new Object[]{entry.getKey(), entry.getValue()});
-        }
-      }
-      logger.info("Service getMetadata().getName :" + service.getMetadata().getName());
-      logger.info("Service getMetadata().getNamespace :" + service.getMetadata().getNamespace());
-      logger.info("Service getMetadata().getResourceVersion :" + service.getMetadata().getResourceVersion());
-      logger.info("Service getMetadata().getSelfLink :" + service.getMetadata().getSelfLink());
-      logger.info("Service getMetadata().getUid :" + service.getMetadata().getUid());
-      logger.info("Service Spec Cluster IP :" + service.getSpec().getClusterIP());
-      logger.info("Service Spec getExternalIPs :" + service.getSpec().getExternalIPs());
-      logger.info("Service Spec getExternalName :" + service.getSpec().getExternalName());
-      logger.info("Service Spec getType :" + service.getSpec().getType());
-
-    }
-  }
-
   public static boolean loadBalancerReady(String domainUID) {
     return true;
   }

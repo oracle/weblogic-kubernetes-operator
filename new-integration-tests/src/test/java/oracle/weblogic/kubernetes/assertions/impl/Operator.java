@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
+import io.kubernetes.client.openapi.ApiException;
+import java.util.HashMap;
 import java.util.concurrent.Callable;
 
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -18,8 +20,11 @@ public class Operator implements LoggedTest {
     };
   }
 
-  public static boolean isRestServiceCreated(String namespace) {
-    return true;
+  public static boolean isExternalRestServiceCreated(String namespace) throws ApiException {
+    HashMap label = new HashMap();
+    label.put("weblogic.operatorName", namespace);
+    String serviceName = "external-weblogic-operator-svc";
+    return Kubernetes.isServiceCreated(serviceName, label, namespace);
   }
 
 }

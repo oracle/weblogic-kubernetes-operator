@@ -10,7 +10,9 @@ import java.util.logging.Logger;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
+import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
+import oracle.weblogic.kubernetes.assertions.impl.Operator;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +24,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+
 
 // this is a POC for a new way of writing tests.
 // this is meant to be a simple test.  later i will add more complex tests and deal
@@ -72,7 +76,12 @@ class ItSimpleOperatorValidation implements LoggedTest {
       assertTrue(Kubernetes.isOperatorPodRunning(opns));
       assertTrue(Kubernetes.isServiceCreated(podName, label, domainNS));
       Kubernetes.listServices(domainNS, null);
+      assertTrue(Operator.isExternalRestServiceCreated(opns));
+      assertTrue(Domain.exists(domainUid, domainNS).call().booleanValue());
+      Domain.isCRDExists();
     } catch (ApiException ex) {
+      Logger.getLogger(ItSimpleOperatorValidation.class.getName()).log(Level.SEVERE, null, ex);
+    } catch (Exception ex) {
       Logger.getLogger(ItSimpleOperatorValidation.class.getName()).log(Level.SEVERE, null, ex);
     }
   }

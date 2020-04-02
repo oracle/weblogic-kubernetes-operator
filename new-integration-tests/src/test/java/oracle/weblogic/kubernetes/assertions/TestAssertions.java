@@ -32,8 +32,10 @@ public class TestAssertions implements LoggedTest {
    * @param namespace the operator rest service exists
    * @return true if rest service is running otherwise false
    */
-  public static boolean operatorRestServiceRunning(String namespace) {
-    return Operator.isRestServiceCreated(namespace);
+  public static Callable<Boolean> operatorRestServiceRunning(String namespace) throws ApiException {
+    return () -> {
+      return Operator.isExternalRestServiceCreated(namespace);
+    };
   }
 
   /**
