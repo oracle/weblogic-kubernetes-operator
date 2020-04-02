@@ -48,9 +48,9 @@ $ kubectl patch svc alertmanager-main -n monitoring --type=json -p '[{"op": "rep
 
 **NOTE**:
 
-* 32100 is the external port for Grafana
-* 32101 is the external port for Prometheus
-* 32102 is the external port for Alertmanager
+* `32100` is the external port for Grafana
+* `32101` is the external port for Prometheus
+* `32102` is the external port for Alertmanager
 
 --------------
 
