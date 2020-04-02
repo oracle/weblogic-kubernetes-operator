@@ -3,10 +3,10 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
-import io.kubernetes.client.openapi.ApiException;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
 

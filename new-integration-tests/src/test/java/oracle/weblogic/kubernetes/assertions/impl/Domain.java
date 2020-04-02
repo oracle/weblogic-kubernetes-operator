@@ -6,6 +6,9 @@ package oracle.weblogic.kubernetes.assertions.impl;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
+import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.ApisApi;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1APIGroup;
 import io.kubernetes.client.openapi.models.V1APIGroupList;
@@ -17,11 +20,6 @@ import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
-import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
-import io.kubernetes.client.openapi.apis.ApisApi;
-
-
 public class Domain implements LoggedTest {
 
   private static CustomObjectsApi customObjectsApi = new CustomObjectsApi();
@@ -29,7 +27,7 @@ public class Domain implements LoggedTest {
   private static ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
   private static ApisApi apisApi = new ApisApi();
 
-    /**
+  /**
    * verify domain CRD.
    * @throws Exception on failure
    */
