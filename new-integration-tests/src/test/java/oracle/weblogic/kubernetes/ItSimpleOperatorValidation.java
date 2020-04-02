@@ -3,16 +3,15 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Arrays;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import oracle.weblogic.kubernetes.actions.TestActions;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.assertions.impl.Domain;
-import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
-import oracle.weblogic.kubernetes.assertions.impl.Operator;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
 import org.junit.jupiter.api.DisplayName;
@@ -24,11 +23,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static org.awaitility.Awaitility.with;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.fail;
+//import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // this is a POC for a new way of writing tests.
 // this is meant to be a simple test.  later i will add more complex tests and deal
@@ -65,39 +65,69 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // the kubernetes deployment.  this will complete quickly, and will either be
     // successful or not.
 
-    String domainNS = "itmodelinimageconfigupdate-domainns-1";
-    String opns = "itmodelinimageconfigupdate-opns-1";
-    String domainUid = "itmodelinimageconfigupdate-domain-2";
-    String podName = "itmodelinimageconfigupdate-domain-2-managed-server2";
-    HashMap label = new HashMap();
-    label.put("weblogic.serverName", "managed-server2");
+    // get a new unique namespace
+    final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
+        "Failed to create unique namespace due to ApiException");
+    logger.info(String.format("Got a new namespace called %s", namespace));
+
+    // Create a service account for the unique namespace
+    final String serviceAccountName = namespace + "-sa";
+    assertDoesNotThrow(
+        () -> TestActions.createServiceAccount(new V1ServiceAccount()
+            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+    logger.info("Created service account: " + serviceAccountName);
+
+    OperatorParams opParams =
+        new OperatorParams().releaseName("weblogic-operator")
+            .namespace(namespace)
+            .image("weblogic-kubernetes-operator:test_itsimpleoperator")
+            .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
+            .serviceAccount("opns1-sa");
+
+    //ToDO: use Junit 5 assertions
     try {
-      Kubernetes.listPods(domainNS, null);
-      assertTrue(Kubernetes.isPodExists(domainNS, domainUid, podName));
-      assertTrue(Kubernetes.isPodRunning(domainNS, domainUid, podName));
-      assertFalse(Kubernetes.isPodTerminating(domainNS, domainUid, podName));
-      assertTrue(Kubernetes.isOperatorPodRunning(opns));
-      assertTrue(Kubernetes.isServiceCreated(podName, label, domainNS));
-      Kubernetes.listServices(domainNS, null);
-      assertTrue(Operator.isExternalRestServiceCreated(opns));
-      Domain.isCRDExists();
-      with().pollDelay(30, SECONDS)
+      installOperator(opParams);
+    } catch (ApiException e) {
+      e.printStackTrace();
+      fail("Failed to install Operator due to exception" + e.getMessage());
+    }
+
+    logger.info(String.format("Operator installed in namespace %s", namespace));
+
+    // we can use a standard JUnit assertion to check on the result
+    // assertEquals(true, success, "Operator successfully installed in namespace " + namespace);
+
+    // this is an example of waiting for an async operation to complete.
+    // after the previous step was completed, kubernetes will try to pull the image,
+    // start the pod, check the readiness/health probes, etc.  this will take some
+    // period of time and either the operator will come to a running state, or it
+    // will not.
+    // in this example, we first wait 30 seconds, since it is unlikely this operation
+    // will complete in less than 30 seconds, then we check if the operator is running.
+    with().pollDelay(30, SECONDS)
+        // we check again every 10 seconds.
         .and().with().pollInterval(10, SECONDS)
+        // this listener lets us report some status with each poll
         .conditionEvaluationListener(
-            condition -> logger.info(() ->
-                String.format(
-                    "Waiting for domain to be running (elapsed time %dms, remaining time %dms)",
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS())))
+            condition -> logger.info(()
+                -> String.format("Waiting for operator to be running (elapsed time %dms, remaining time %dms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS())))
         // and here we can set the maximum time we are prepared to wait
         .await().atMost(5, MINUTES)
         // operatorIsRunning() is one of our custom, reusable assertions
-        .until(domainExists(domainUid, domainNS));
-    } catch (ApiException ex) {
-      Logger.getLogger(ItSimpleOperatorValidation.class.getName()).log(Level.SEVERE, null, ex);
-    } catch (Exception ex) {
-      Logger.getLogger(ItSimpleOperatorValidation.class.getName()).log(Level.SEVERE, null, ex);
-    }
+        .until(operatorIsRunning(namespace));
+
+    // Delete service account from unique namespace
+    assertDoesNotThrow(
+        () -> TestActions.deleteServiceAccount(new V1ServiceAccount()
+            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+    logger.info("Deleted service account " + serviceAccountName);
+
+    // Delete namespace
+    assertDoesNotThrow(
+        () -> TestActions.deleteNamespace(namespace));
+    logger.info("Deleted namespace: " + namespace);
   }
 
 }
