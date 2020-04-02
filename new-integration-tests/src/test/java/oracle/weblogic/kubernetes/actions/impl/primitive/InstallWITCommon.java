@@ -22,9 +22,9 @@ public class InstallWITCommon extends ActionImplCommon {
 
 
   /**
-   * Check if the required directoies exist.
-   * Currently the directies will be created if missing. We may remove this function
-   * once we have all required working directies pre-created.
+   * Check if the required directories exist.
+   * Currently the directories will be created if missing. We may remove this function
+   * once we have all required working directives pre-created.
    *
    * @param dir the directory that needs to be checked
    */
