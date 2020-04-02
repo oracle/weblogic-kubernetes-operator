@@ -41,7 +41,7 @@ public class Operator implements LoggedTest {
         .isNotEmpty();
 
     assertThat(params.getReleaseName())
-        .as("make sure namespace is not empty or null")
+        .as("make sure releaseName is not empty or null")
         .isNotNull()
         .isNotEmpty();
 
