@@ -228,16 +228,12 @@ public class TestActions {
   /**
    * Download and install WebLogic Image Tool
    *
-   * @param version - the version of the tool
    * @return true if the operation succeeded, false otherwise
    */
-  public static boolean installWIT(String version, String location, boolean redirect) {
+  public static boolean installWIT() {
     return new Installer()
         .with(new InstallParams()
               .type(InstallParams.WIT_TYPE)
-              .version(version)
-              .location(location)
-              .redirect(redirect)
               .verify(true)
               .unzip(true))
         .download();
@@ -246,16 +242,12 @@ public class TestActions {
   /**
    * Download and install WebLogic Deploy Tool
    *
-   * @param version - the version of the tool
    * @return true if the operation succeeded, false otherwise
    */
-  public static boolean installWDT(String version, String location, boolean redirect) {
+  public static boolean installWDT() {
     return new Installer()
         .with(new InstallParams()
               .type(InstallParams.WDT_TYPE)
-              .version(version)
-              .location(location)
-              .redirect(redirect)
               .verify(true)
               .unzip(false))
         .download();
