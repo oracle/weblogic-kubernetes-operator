@@ -144,6 +144,12 @@ spec:
                 description: 'Specified whether the log home folder is enabled. Not
                   required. Defaults to true if domainHomeInImage is false. Defaults
                   to false if domainHomeInImage is true. '
+              httpAccessLogInLogHome:
+                type: boolean
+                description: If true (the default), the server HTTP access log file
+                  will be written to the same directory specified in logHome. Otherwise,
+                  server HTTP access log file will be written to the directory as
+                  configured in the WebLogic configuration for each server.
               webLogicCredentialsSecret:
                 type: object
                 description: The name of a pre-created Kubernetes secret, in the domain's
@@ -10374,7 +10380,8 @@ spec:
               logHome:
                 type: string
                 description: The in-pod name of the directory in which to store the
-                  domain, node manager, server logs, and server  *.out files
+                  domain, node manager, server logs, server  *.out, and optionally
+                  HTTP access log files
               includeServerOutInPodLog:
                 type: boolean
                 description: If true (the default), the server .out file will be included

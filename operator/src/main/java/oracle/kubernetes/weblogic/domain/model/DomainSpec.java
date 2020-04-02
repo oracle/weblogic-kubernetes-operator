@@ -82,7 +82,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The in-pod name of the directory in which to store the domain, node manager, server logs, "
-          + "and server  *.out files")
+          + "server  *.out, and optionally HTTP access log files")
   private String logHome;
 
   /**
@@ -110,6 +110,13 @@ public class DomainSpec extends BaseConfiguration {
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
   @Description("If true (the default), the server .out file will be included in the pod's stdout.")
   private Boolean includeServerOutInPodLog;
+
+  /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
+   *  if {@link #logHomeEnabled} is true. Default is true. */
+  @Description("If true (the default), the server HTTP access log file will be written to the same "
+      + "directory specified in logHome. Otherwise, server HTTP access log file will be written to "
+      + "the directory as configured in the WebLogic configuration for each server.")
+  private Boolean httpAccessLogInLogHome;
 
   /**
    * The WebLogic Docker image.
@@ -446,6 +453,24 @@ public class DomainSpec extends BaseConfiguration {
 
   public DomainSpec withIncludeServerOutInPodLog(boolean includeServerOutInPodLog) {
     this.includeServerOutInPodLog = includeServerOutInPodLog;
+    return this;
+  }
+
+  /**
+   * Whether to write the server HTTP access log file to the directory specified in
+   * {@link #logHome} if {@link #logHomeEnabled} is true.
+   *
+   * @return true if the server HTTP access log file should be included in the directory
+   *     specified in {@link #logHome}, false if server HTTP access log file should be written
+   *     to the directory as configured in WebLogic domain configuration
+   */
+  boolean getHttpAccessLogInLogHome() {
+    return Optional.ofNullable(httpAccessLogInLogHome)
+        .orElse(KubernetesConstants.DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME);
+  }
+
+  public DomainSpec withIsHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {
+    this.httpAccessLogInLogHome = httpAccessLogInLogHome;
     return this;
   }
 
