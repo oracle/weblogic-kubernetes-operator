@@ -17,19 +17,6 @@ class ItWITValidation implements LoggedTest {
   @DisplayName("Create a MII image")
   public void testCreatingMIIImage() {
 
-    // TODO the installWIT and installWDT calls below need to be moved to 
-    // an action that does all the prerequisites once we have that action.
-  
-    // install WIT using the default version and location
-    boolean downloadWIT = TestActions.installWIT();
-   
-    assertEquals(true, downloadWIT, "Failed to download or unzip WebLogic Image Tool");
-    
-    // install WDT using the default version and location
-    boolean downloadWDT = TestActions.installWDT();
-
-    assertEquals(true, downloadWDT, "Failed to download WebLogic Deploy Tool");
-
     // create the MII image
     // TODO add model files and other contents to the image once we have those resources
     boolean success = TestActions.createMIIImage(withWITParams());

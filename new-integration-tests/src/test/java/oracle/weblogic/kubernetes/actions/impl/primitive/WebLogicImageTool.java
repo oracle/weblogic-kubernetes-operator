@@ -48,8 +48,40 @@ public class WebLogicImageTool extends InstallWITCommon {
       logger.warning("Failed to create an image due to " + fnfe.getMessage());
       return false;
     }
+  
+    // download WIT if it is not in the expected location 
+    if (!downloadWIT()) {
+      logger.warning("Failed to download or unzip WebLogic Image Tool");
+      return false;
+    } 
+   
+    // download WDT if it is not in the expected location 
+    if (!downloadWDT()) {
+      logger.warning("Failed to download WebLogic Deploy Tool");
+      return false;
+    } 
     return executeAndVerify(buildCommand(), params.redirect());
   }
+  
+  private boolean downloadWIT() {
+    // install WIT if needed
+    return new Installer()
+        .with(new InstallParams()
+            .type(InstallParams.WIT_TYPE)
+            .verify(true)
+            .unzip(true))
+        .download();
+  }
+  
+  private boolean downloadWDT() {
+    // install WDT if needed
+    return new Installer()
+        .with(new InstallParams()
+            .type(InstallParams.WDT_TYPE)
+            .verify(true)
+            .unzip(false))
+        .download();
+  } 
   
   private String buildCommand() {
     String command = 

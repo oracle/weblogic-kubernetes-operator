@@ -16,8 +16,6 @@ import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Traefik;
-import oracle.weblogic.kubernetes.actions.impl.primitive.InstallParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WITParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 
@@ -221,36 +219,6 @@ public class TestActions {
         WebLogicImageTool
             .withParams(params)
             .updateImage();
-  }
- 
-  // ------------------------ Installer  -------------------------
-
-  /**
-   * Download and install WebLogic Image Tool
-   *
-   * @return true if the operation succeeded, false otherwise
-   */
-  public static boolean installWIT() {
-    return new Installer()
-        .with(new InstallParams()
-              .type(InstallParams.WIT_TYPE)
-              .verify(true)
-              .unzip(true))
-        .download();
-  }
- 
-  /**
-   * Download and install WebLogic Deploy Tool
-   *
-   * @return true if the operation succeeded, false otherwise
-   */
-  public static boolean installWDT() {
-    return new Installer()
-        .with(new InstallParams()
-              .type(InstallParams.WDT_TYPE)
-              .verify(true)
-              .unzip(false))
-        .download();
   }
  
   // -------------------------   pv/pvc  ---------------------------------
