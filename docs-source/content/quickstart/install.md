@@ -26,16 +26,7 @@ EOF
 
 #### Use Helm to install the operator and [Traefik](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md) load balancer.
 
-First, set up Helm.
-
-For Helm version 2.x:
-
-```bash
-$ helm init
-
-```
-
-For Helm version 3.x:
+First, set up Helm:
 
 ```bash
 $ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
