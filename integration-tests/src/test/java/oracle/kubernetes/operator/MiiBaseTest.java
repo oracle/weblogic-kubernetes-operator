@@ -14,6 +14,7 @@ import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
+import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -77,14 +78,108 @@ public class MiiBaseTest extends BaseTest {
   }
 
   /**
+   * Modify the domain yaml to change domain-level restart version.
+   * @param domainNS the domain namespace
+   * @param domainUid the domain UID
+   * @param versionNo version number of domain
+   *
+   * @throws Exception if patching domain fails
+   */
+  protected void createDomainImage(Map<String, Object> domainMap, String imageName,
+                                   String modelFile, String modelPropFile) throws Exception {
+    String domainBaseImageName = (String) domainMap.get("domainHomeImageBase");
+    String domainUid = (String) domainMap.get("domainUID");
+    String domainName = (String) domainMap.get("domainName");
+    LoggerHelper.getLocal().log(Level.INFO, "imageName: " + imageName);
+    LoggerHelper.getLocal().log(Level.INFO, "domainBaseImageName: " + domainBaseImageName);
+    LoggerHelper.getLocal().log(Level.INFO, "domainUid: " + domainUid);
+    LoggerHelper.getLocal().log(Level.INFO, "domainName: " + domainName);
+
+    // Get the map of any additional environment vars, or null
+    Map<String, String> additionalEnvMap = (Map<String, String>) domainMap.get("additionalEnvMap");
+    String resultsDir = (String) domainMap.get("resultDir");
+    StringBuffer createDomainImageScriptCmd = new StringBuffer("export WDT_VERSION=");
+
+    createDomainImageScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
+      .append(getUserProjectsDir())
+      .append("/weblogic-domains/")
+      .append(domainName)
+      .append("/miiWorkDir/")
+      .append("imagetool/bin/imagetool.sh update")
+      .append(" --tag ")
+      .append(imageName)
+      .append(" --fromImage ")
+      .append(domainBaseImageName)
+      .append(" --wdtModel ")
+      .append(resultsDir)
+      .append("/samples/model-in-image/")
+      .append(modelFile)
+      .append(" --wdtVariables ")
+      .append(resultsDir)
+      .append("/samples/model-in-image/")
+      .append(modelPropFile)
+      .append(" --wdtArchive ")
+      .append(getUserProjectsDir())
+      .append("/weblogic-domains/")
+      .append(domainName)
+      .append("/miiWorkDir/models/archive.zip")
+      .append(" --wdtModelOnly ")
+      .append(" --wdtDomainType ")
+      .append(WdtDomainType.WLS.geWdtDomainType());
+
+    // patching the domain
+    LoggerHelper.getLocal().log(Level.INFO, "Command to create domain image: " + createDomainImageScriptCmd);
+    ExecResult result = ExecCommand.exec(createDomainImageScriptCmd.toString(), true, additionalEnvMap);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+        "FAILURE: command "
+          + createDomainImageScriptCmd
+          + " failed, returned "
+          + result.stdout()
+          + "\n"
+          + result.stderr());
+    }
+  }
+
+  /**
+   * Modify the domain yaml to change image name.
+   * @param domainNS the domain namespace
+   * @param domainUid the domain UID
+   * @param imageName image name
+   *
+   * @throws Exception if patching domain fails
+   */
+  protected void modifyDomainYamlWithImageName(
+      Domain domain, String domainNS, String imageName) throws Exception {
+    String versionNo = getRestartVersion(domainNS, domain.getDomainUid());
+    StringBuffer patchDomainCmd = new StringBuffer("kubectl -n ");
+    patchDomainCmd
+        .append(domainNS)
+        .append(" patch domain ")
+        .append(domain.getDomainUid())
+        .append(" --type='json' ")
+        .append(" -p='[{\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"'")
+        .append(imageName)
+        .append("'\" }]'");
+
+    // patching the domain
+    LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
+    ExecResult result = TestUtils.exec(patchDomainCmd.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
+
+    // verify the domain restarted
+    domain.verifyAdminServerRestarted();
+    domain.verifyManagedServersRestarted();
+  }
+
+  /**
    * Modify the domain yaml to add reference to config map and change domain-level restart version.
    * @param cmName Config map name
    * @param domain the domain
    * @throws Exception on failure
    */
   public void modifyDomainYamlWithNewConfigMapAndDomainRestartVersion(
-      String cmName, Domain domain)
-      throws Exception {
+      String cmName, Domain domain) throws Exception {
     String originalYaml =
         getUserProjectsDir()
             + "/weblogic-domains/"

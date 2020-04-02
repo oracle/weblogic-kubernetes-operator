@@ -109,7 +109,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
    * @throws Exception if domain creation, config update or test veriofication fails
    */
   @Test
-  public void testMiiConfigUpdateNonExistJdbc() throws Exception {
+  public void testMiiConfigUpdateNonJdbcCm() throws Exception {
     Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -154,6 +154,62 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
   }
 
   /**
+   * Create a domain without a JDBC DS using model in image and having configmap
+   * in the domain.yaml before deploying the domain. After deploying the domain crd,
+   * create a new image with diff tag name and model files that define a JDBC DataSource
+   * and update the domain crd to change image name to reload the model,
+   * generate new config and initiate a rolling restart.
+   *
+   * @throws Exception if domain creation, config update or test veriofication fails
+   */
+  @Test
+  public void testMiiConfigUpdateNonJdbcImage() throws Exception {
+    Assumptions.assumeTrue(QUICKTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Creating Domain & waiting for the script to complete execution");
+    boolean testCompletedSuccessfully = false;
+    try {
+      // create Domain w/o JDBC DS using the image created by MII
+      boolean createDS = false;
+      createDomainUsingMii(createDS);
+
+      // create image with a new tag to update config
+      Map<String, Object> domainMap = domain.getDomainMap();
+      final String imageName = (String) domainMap.get("image") + "_nonjdbc";
+      final String wdtModelFile = "model.jdbc.yaml";
+      final String wdtModelPropFile = "model.jdbc.properties";
+      createDomainImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
+
+      // update domain yaml with new image tag and
+      // apply the domain yaml, verify domain rolling-restarted
+      modifyDomainYamlWithImageName(domain, domainNS, imageName);
+
+      // verify the test result by checking updated config file on server pod
+      verifyJdbcUpdate();
+
+      // verify that JDBC DS is created by checking JDBC DS name and read timeout
+      LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
+      Set<String> jdbcResourcesToVerify = new HashSet<String>();
+      jdbcResourcesToVerify.add("datasource.name.1=" + dsName);
+      jdbcResourcesToVerify.add("datasource.readTimeout.1=" + readTimeout_2);
+
+      final String destDir = getResultDir() + "/samples/model-in-image-update";
+      verifyJdbcResources(jdbcResourcesToVerify, destDir);
+
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+    }
+
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
+
+  /**
    * Create a domain with a JDBC DS using model in image and having configmap
    * in the domain.yaml before deploying the domain. After deploying the domain crd,
    * re-create the configmap with a model file that define a JDBC DataSource
@@ -163,7 +219,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
    * @throws Exception if domain creation, config update or test veriofication fails
    */
   @Test
-  public void testMiiConfigUpdateExistJdbc() throws Exception {
+  public void testMiiConfigUpdateJdbcCm() throws Exception {
     Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -206,6 +262,62 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
       jdbcResourcesToVerify.add("datasource.readTimeout.1=" + readTimeout_2);
       jdbcResourcesToVerify.add("datasource.connectionTimeout.1=" + connTimeout);
 
+      verifyJdbcResources(jdbcResourcesToVerify, destDir);
+
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+    }
+
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Create a domain with a JDBC DS using model in image and having configmap
+   * in the domain.yaml before deploying the domain. After deploying the domain crd,
+   * create a new image with diff tag name and model files that define a JDBC DataSource
+   * and update the domain crd to change image name to reload the model,
+   * generate new config and initiate a rolling restart.
+   *
+   * @throws Exception if domain creation, config update or test veriofication fails
+   */
+  @Test
+  public void testMiiConfigUpdateJdbcImage() throws Exception {
+    Assumptions.assumeTrue(QUICKTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    LoggerHelper.getLocal().log(Level.INFO,
+        "Creating Domain & waiting for the script to complete execution");
+    boolean testCompletedSuccessfully = false;
+    try {
+      // create Domain w/o JDBC DS using the image created by MII
+      boolean createDS = true;
+      createDomainUsingMii(createDS);
+
+      // create image with a new tag to update config
+      Map<String, Object> domainMap = domain.getDomainMap();
+      final String imageName = (String) domainMap.get("image") + "_jdbc";
+      final String wdtModelFile = "model.jdbc.yaml";
+      final String wdtModelPropFile = "model.jdbc.properties";
+      createDomainImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
+
+      // update domain yaml with new image tag and
+      // apply the domain yaml, verify domain rolling-restarted
+      modifyDomainYamlWithImageName(domain, domainNS, imageName);
+
+      // verify the test result by checking updated config file on server pod
+      verifyJdbcUpdate();
+
+      // verify that JDBC DS is created by checking JDBC DS name and read timeout
+      LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
+      Set<String> jdbcResourcesToVerify = new HashSet<String>();
+      jdbcResourcesToVerify.add("datasource.name.1=" + dsName);
+      jdbcResourcesToVerify.add("datasource.readTimeout.1=" + readTimeout_2);
+
+      final String destDir = getResultDir() + "/samples/model-in-image-update";
       verifyJdbcResources(jdbcResourcesToVerify, destDir);
 
       testCompletedSuccessfully = true;
@@ -290,13 +402,13 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
   }
 
   private void createDomainUsingMii(boolean createDS) throws Exception {
-    final String cmFile = "./model.empty.properties";
-    String wdtModelFile = "./model.wls.yaml";
-    String wdtModelPropFile = "./model.properties";
+    final String cmFile = "model.empty.properties";
+    String wdtModelFile = "model.wls.yaml";
+    String wdtModelPropFile = "model.properties";
 
     if (createDS) {
-      wdtModelFile = "./model.jdbc.image.yaml";
-      wdtModelPropFile = "./model.jdbc.image.properties";
+      wdtModelFile = "model.jdbc.image.yaml";
+      wdtModelPropFile = "model.jdbc.image.properties";
     }
 
     StringBuffer paramBuff = new StringBuffer("Creating a Domain with: ");
@@ -462,11 +574,11 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Creating configMap");
     String origDir = BaseTest.getProjectRoot()
         + "/integration-tests/src/test/resources/model-in-image";
-    String origModelFile = origDir + "/model.jdbc.yaml";
-    String origPropFile = origDir + "/model.jdbc.properties";
-    String destDir = getResultDir() + "/samples/model-in-image-override";;
-    String destModelFile = destDir + "/model.jdbc_2.yaml";
-    String destPropFile = destDir + "/model.jdbc_2.properties";
+    final String origModelFile = origDir + "/model.jdbc.yaml";
+    final String origPropFile = origDir + "/model.jdbc.properties";
+    final String destDir = getResultDir() + "/samples/model-in-image-override";;
+    final String destModelFile = destDir + "/model.jdbc_2.yaml";
+    final String destPropFile = destDir + "/model.jdbc_2.properties";
     Files.createDirectories(Paths.get(destDir));
 
     Path path = Paths.get(origModelFile);
@@ -508,5 +620,4 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
     ExecResult exec = TestUtils.exec(cmdStrBuff.toString(), true);
     return exec.stdout();
   }
-
 }
