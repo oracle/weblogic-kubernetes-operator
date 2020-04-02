@@ -4,6 +4,9 @@
 package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -14,8 +17,8 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import io.kubernetes.client.openapi.models.V1ServiceAccountList;
+import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
@@ -40,83 +43,205 @@ public class Kubernetes implements LoggedTest {
     }
   }
 
-  public static boolean podExists(String podName, String namespace) throws ApiException {
-    V1PodList list = coreV1Api.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null);
-    for (V1Pod item : list.getItems()) {
-      if (item.getMetadata().getName().startsWith(podName.trim())
-          && item.getMetadata().getNamespace().equals(namespace.trim())) {
-        logPodStatus(item);
-        return true;
+  public static boolean isPodExists(String namespace, String domainUid, String podName) throws ApiException {
+    logger.info("Checking if the pod exists in namespace");
+    String labelSelector = null;
+    if (domainUid != null) {
+      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    }
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    return pod != null;
+  }
+
+  public static boolean isPodRunning(String namespace, String domainUid, String podName) throws ApiException {
+    logger.info("Checking if the pod running in namespace");
+    String labelSelector = null;
+    if (domainUid != null) {
+      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    }
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    return pod.getStatus().getPhase().equals(RUNNING);
+  }
+
+  public static boolean isPodTerminating(String namespace, String domainUid, String podName) throws ApiException {
+    logger.info("Checking if the pod terminating in namespace");
+    String labelSelector = null;
+    if (domainUid != null) {
+      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    }
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    return pod.getStatus().getPhase().equals(TERMINATING);
+  }
+
+  public static boolean isOperatorPodRunning(String namespace) throws ApiException {
+    String labelSelector = String.format("weblogic.operatorName in (%s)", namespace);
+    V1Pod pod = getPod(namespace, labelSelector, "weblogic-operator-");
+    return pod.getStatus().getPhase().equals(RUNNING);
+  }
+
+  public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
+    V1PodList v1PodList =
+        coreV1Api.listNamespacedPod(
+            namespace,
+            Boolean.FALSE.toString(),
+            Boolean.FALSE,
+            null,
+            null,
+            labelSelector,
+            null,
+            null,
+            null,
+            Boolean.FALSE);
+    for (V1Pod item : v1PodList.getItems()) {
+      if (item.getMetadata().getName().startsWith(podName.trim())) {
+        logger.info("Pod Name :" + item.getMetadata().getName());
+        logger.info("Pod Namespace :" + item.getMetadata().getNamespace());
+        logger.info("Pod UID :" + item.getMetadata().getUid());
+        logger.info("Pod Status :" + item.getStatus().getPhase());
+        return item;
       }
     }
-    return false;
+    return null;
   }
 
-  public static boolean podRunning(String podName, String namespace) throws ApiException {
-    V1PodList list = coreV1Api.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null);
-    for (V1Pod item : list.getItems()) {
-      if (item.getMetadata().getNamespace().equals(namespace.trim())
-          && item.getMetadata().getName().equals(podName)
-          && item.getStatus().getPhase().equals(RUNNING)) {
-        logPodStatus(item);
-        return true;
-      }
+  public static boolean isServiceCreated(String serviceName, HashMap label, String namespace) throws ApiException {
+    return getService(serviceName, label, namespace) != null;
+  }
+
+  public static V1Service getService(String serviceName, HashMap label, String namespace) throws ApiException {
+    String labelSelector = null;
+    if (label != null) {
+      String key = label.keySet().iterator().next().toString();
+      String value = label.get(key).toString();
+      labelSelector = String.format("(%s) in (%s)", key, value);
     }
-    return false;
-  }
-
-  public static boolean operatorPodRunning(String namespace) throws ApiException {
-    V1PodList list = coreV1Api.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null);
-    for (V1Pod item : list.getItems()) {
-      if (item.getMetadata().getNamespace().equals(namespace.trim())
-          && item.getMetadata().getName().startsWith(OPERATOR_NAME)
-          && item.getStatus().getPhase().equals(RUNNING)) {
-        logPodStatus(item);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private static void logPodStatus(V1Pod pod) {
-    logger.log(Level.INFO, "NAME:{0}", pod.getMetadata().getName());
-    logger.log(Level.INFO, "LABELS:{0}", pod.getMetadata().getLabels());
-    logger.log(Level.INFO, "NAMESPACE:{0}", pod.getMetadata().getNamespace());
-    logger.log(Level.INFO, "PODSTATUS:{0}", pod.getStatus().getMessage());
-    logger.log(Level.INFO, "REASON:{0}", pod.getStatus().getReason());
-    logger.log(Level.INFO, "PHASE:{0}", pod.getStatus().getPhase());
-    logger.log(Level.INFO, "STARTTME:{0}", pod.getStatus().getStartTime());
-  }
-
-  public static boolean podTerminating(String podName, String namespace) throws ApiException {
-    V1PodList list = coreV1Api.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null);
-    for (V1Pod item : list.getItems()) {
-      if (item.getMetadata().getNamespace().equals(namespace.trim())
-          && item.getMetadata().getName().startsWith(OPERATOR_NAME)
-          && item.getStatus().getPhase().equals(TERMINATING)) {
-        logPodStatus(item);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public static boolean serviceCreated(String serviceName, String namespace) throws ApiException {
-    V1ServiceAccountList listServiceAccountForAllNamespaces =
-        coreV1Api.listServiceAccountForAllNamespaces(null, null, null, null, null, null, null, null, null);
-    for (V1ServiceAccount sa : listServiceAccountForAllNamespaces.getItems()) {
-      if (sa.getMetadata().getNamespace().equals(namespace)) {
-        Map<String, String> labels = sa.getMetadata().getLabels();
-        for (Map.Entry<String, String> entry : labels.entrySet()) {
-          logger.log(Level.INFO, "LABEL KEY: {0} LABEL VALUE: {1}", new Object[]{entry.getKey(), entry.getValue()});
+    V1ServiceList v1ServiceList
+        = coreV1Api.listServiceForAllNamespaces(
+        Boolean.FALSE,
+        null,
+        null,
+        labelSelector,
+        null,
+        Boolean.FALSE.toString(),
+        null,
+        null,
+        Boolean.FALSE);
+    for (V1Service service : v1ServiceList.getItems()) {
+      if (service.getMetadata().getName().equals(serviceName.trim())
+          && service.getMetadata().getNamespace().equals(namespace.trim())) {
+        logger.info("Service Name :" + service.getMetadata().getName());
+        logger.info("Service Namespace :" + service.getMetadata().getNamespace());
+        Map<String, String> labels = service.getMetadata().getLabels();
+        if (labels != null) {
+          for (Map.Entry<String, String> entry : labels.entrySet()) {
+            logger.log(Level.INFO, "Label Key: {0} Label Value: {1}",
+                new Object[]{entry.getKey(), entry.getValue()});
+          }
         }
-        logger.log(Level.INFO, "Service Account Name :", sa.getMetadata().getName());
-        logger.log(Level.INFO, "Service Account Namespace :", sa.getMetadata().getNamespace());
-        logger.log(Level.INFO, "Service Account Uid :", sa.getMetadata().getUid());
-        logger.log(Level.INFO, "Service Account Kind :", sa.getKind());
+        return service;
       }
     }
-    return true;
+    return null;
+  }
+
+
+
+
+
+  public static void listPods(String namespace, String labelSelectors) throws ApiException {
+    V1PodList v1PodList =
+        coreV1Api.listNamespacedPod(
+            namespace,
+            Boolean.FALSE.toString(),
+            Boolean.FALSE,
+            null,
+            null,
+            labelSelectors,
+            null,
+            null,
+            null,
+            Boolean.FALSE);
+    List<V1Pod> items = v1PodList.getItems();
+    logger.info(Arrays.toString(items.toArray()));
+  }
+
+  public static void listServices(String namespace, String labelSelectors) throws ApiException {
+    V1ServiceList v1ServiceList
+        = coreV1Api.listServiceForAllNamespaces(
+        Boolean.FALSE,
+        null,
+        null,
+        labelSelectors,
+        null,
+        Boolean.FALSE.toString(),
+        null,
+        null,
+        Boolean.FALSE);
+    List<V1Service> items = v1ServiceList.getItems();
+    logger.info(Arrays.toString(items.toArray()));
+    for (V1Service service : items) {
+      logger.info("Service Name :" + service.getMetadata().getName());
+      logger.info("Service Namespace :" + service.getMetadata().getNamespace());
+      logger.info("Service ResourceVersion :" + service.getMetadata().getResourceVersion());
+      logger.info("Service SelfLink :" + service.getMetadata().getSelfLink());
+      logger.info("Service Uid :" + service.getMetadata().getUid());
+      logger.info("Service Spec Cluster IP :" + service.getSpec().getClusterIP());
+      logger.info("Service Spec getExternalIPs :" + service.getSpec().getExternalIPs());
+      logger.info("Service Spec getExternalName :" + service.getSpec().getExternalName());
+      logger.info("Service Spec getPorts :" + service.getSpec().getPorts());
+      logger.info("Service Spec getType :" + service.getSpec().getType());
+      Map<String, String> labels = service.getMetadata().getLabels();
+      if (labels != null) {
+        for (Map.Entry<String, String> entry : labels.entrySet()) {
+          logger.log(Level.INFO, "LABEL KEY: {0} LABEL VALUE: {1}",
+              new Object[]{entry.getKey(), entry.getValue()});
+        }
+      }
+    }
+  }
+
+  public static void verifyServices() throws ApiException {
+    // Verify services
+    String labelSelector = String.format("weblogic.operatorName in (%s)",
+        "itmodelinimageconfigupdate-opns-1");
+    logger.log(Level.INFO, labelSelector);
+    V1ServiceList v1ServiceList =
+        coreV1Api.listServiceForAllNamespaces(
+            Boolean.FALSE,
+            null,
+            null,
+            labelSelector,
+            null,
+            Boolean.FALSE.toString(),
+            null,
+            null,
+            Boolean.FALSE);
+    List<V1Service> items = v1ServiceList.getItems();
+    logger.info(Arrays.toString(items.toArray()));
+    for (V1Service service : v1ServiceList.getItems()) {
+      logger.info("Service getApiVersion :" + service.getApiVersion());
+      logger.info("Service getApiVersion :" + service.getApiVersion());
+      logger.info("Service getKind :" + service.getKind());
+      logger.info("Service getMetadata().getCreationTimestamp :"
+          + service.getMetadata().getCreationTimestamp());
+      Map<String, String> labels = service.getMetadata().getLabels();
+      if (labels != null) {
+        for (Map.Entry<String, String> entry : labels.entrySet()) {
+          logger.log(Level.INFO, "LABEL KEY: {0} LABEL VALUE: {1}",
+              new Object[]{entry.getKey(), entry.getValue()});
+        }
+      }
+      logger.info("Service getMetadata().getName :" + service.getMetadata().getName());
+      logger.info("Service getMetadata().getNamespace :" + service.getMetadata().getNamespace());
+      logger.info("Service getMetadata().getResourceVersion :" + service.getMetadata().getResourceVersion());
+      logger.info("Service getMetadata().getSelfLink :" + service.getMetadata().getSelfLink());
+      logger.info("Service getMetadata().getUid :" + service.getMetadata().getUid());
+      logger.info("Service Spec Cluster IP :" + service.getSpec().getClusterIP());
+      logger.info("Service Spec getExternalIPs :" + service.getSpec().getExternalIPs());
+      logger.info("Service Spec getExternalName :" + service.getSpec().getExternalName());
+      logger.info("Service Spec getType :" + service.getSpec().getType());
+
+    }
   }
 
   public static boolean loadBalancerReady(String domainUID) {
@@ -126,4 +251,5 @@ public class Kubernetes implements LoggedTest {
   public static boolean adminServerReady(String domainUID, String namespace) {
     return true;
   }
+
 }

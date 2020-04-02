@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,6 +20,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // this is a POC for a new way of writing tests.
 // this is meant to be a simple test.  later i will add more complex tests and deal
@@ -55,14 +58,19 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // the kubernetes deployment.  this will complete quickly, and will either be
     // successful or not.
 
-    String namespace = "itmodelinimageconfigupdate-domainns-1";
+    String domainNS = "itmodelinimageconfigupdate-domainns-1";
     String opns = "itmodelinimageconfigupdate-opns-1";
-    String domainUID = "itmodelinimageconfigupdate-domain-2";
+    String domainUid = "itmodelinimageconfigupdate-domain-2";
     String podName = "itmodelinimageconfigupdate-domain-2-managed-server2";
+    HashMap label = new HashMap();
+    label.put("weblogic.serverName", "managed-server2");
     try {
-      Kubernetes.operatorPodRunning(opns);
-      Kubernetes.podRunning(podName,  namespace);
-      Kubernetes.serviceCreated("", namespace);
+      Kubernetes.listPods(domainNS, null);
+      assertTrue(Kubernetes.isPodExists(domainNS, domainUid, podName));
+      assertTrue(Kubernetes.isPodRunning(domainNS, domainUid, podName));
+      assertFalse(Kubernetes.isPodTerminating(domainNS, domainUid, podName));
+      assertTrue(Kubernetes.isOperatorPodRunning(opns));
+      assertTrue(Kubernetes.isServiceCreated(podName, label, podName));
     } catch (ApiException ex) {
       Logger.getLogger(ItSimpleOperatorValidation.class.getName()).log(Level.SEVERE, null, ex);
     }

@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.assertions;
 
+import java.util.HashMap;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -48,6 +49,20 @@ public class TestAssertions implements LoggedTest {
   }
 
   /**
+   * Check if a Kubernetes pod exists in any state.
+   *
+   * @param podName name of the pod to check for
+   * @param domainUID WebLogic domain uid in which the pod belongs
+   * @param namespace in which the pod exists
+   * @return true if the pod exists in the namespace otherwise false
+   */
+  public static Callable<Boolean> podExists(String podName, String domainUID, String namespace) throws ApiException {
+    return () -> {
+      return Kubernetes.isPodExists(namespace, domainUID, podName);
+    };
+  }
+
+  /**
    * Check if a Kubernetes pod is in running/ready state.
    *
    * @param podName name of the pod to check for
@@ -57,7 +72,7 @@ public class TestAssertions implements LoggedTest {
    */
   public static Callable<Boolean> podReady(String podName, String domainUID, String namespace) throws ApiException {
     return () -> {
-      return Kubernetes.podRunning(podName, namespace);
+      return Kubernetes.isPodRunning(namespace, domainUID, podName);
     };
   }
 
@@ -71,7 +86,7 @@ public class TestAssertions implements LoggedTest {
    */
   public static Callable<Boolean> podTerminating(String podName, String domainUID, String namespace) {
     return () -> {
-      return Kubernetes.podTerminating(podName, namespace);
+      return Kubernetes.isPodTerminating(namespace, domainUID, podName);
     };
   }
 
@@ -82,8 +97,8 @@ public class TestAssertions implements LoggedTest {
    * @param namespace in which the service is running
    * @return true if the service exists otherwise false
    */
-  public static boolean serviceReady(String serviceName, String namespace) throws ApiException {
-    return Kubernetes.serviceCreated(serviceName, namespace);
+  public static boolean serviceReady(String serviceName, HashMap label, String namespace) throws ApiException {
+    return Kubernetes.isServiceCreated(serviceName, label, namespace);
   }
 
   /**
