@@ -1,0 +1,5 @@
+resources:
+    WLDFSystemResource:
+        'TestWldfModule':
+            Description: WLDF Module for Situational Config Override
+            Target: 'admin-server'

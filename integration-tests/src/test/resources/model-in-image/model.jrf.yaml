@@ -1,12 +1,11 @@
 domainInfo:
-    AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
-    AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
+    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
     ServerStartMode: 'prod'
     RCUDbInfo:
-        rcu_prefix: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_prefix@@'
-        rcu_schema_password: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_schema_password@@'
-        rcu_admin_password: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_admin_password@@'
-        rcu_db_conn_string: '@@FILE:/weblogic-operator/config-overrides-secrets/sample-domain1-rcu-access/rcu_db_conn_string@@'
+        rcu_prefix: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@'
+        rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@'
+        rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'
 
 topology:
     Name: domain1

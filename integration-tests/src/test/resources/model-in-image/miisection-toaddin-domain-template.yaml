@@ -1,5 +1,5 @@
   %MII_PREFIX%configuration:
-  # secrets: [ %DOMAIN_UID%-rcu-access ]
+    %MII_PREFIX%  secrets: [ %WEBLOGIC_CREDENTIALS_SECRET_NAME% ]
 
     %MII_PREFIX%  model:
   #

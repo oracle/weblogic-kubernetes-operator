@@ -1,6 +1,6 @@
 domainInfo:
-    AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
-    AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
+    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
     ServerStartMode: 'prod'
 
 topology:
