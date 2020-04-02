@@ -56,7 +56,7 @@ public class ActionImplCommon {
   }
 
   protected boolean executeAndVerify(String command, boolean redirectOutput) {
-    logger.info("Executing command = " + command);
+    logger.info("Executing command " + command);
     try {
       ExecResult result = ExecCommand.exec(command, redirectOutput);
       return result.exitValue() == 0;
