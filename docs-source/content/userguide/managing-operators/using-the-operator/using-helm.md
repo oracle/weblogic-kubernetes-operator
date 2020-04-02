@@ -17,7 +17,7 @@ description: "Useful Helm operations."
   * [Debugging options](#debugging-options)
 * [Common mistakes and solutions](#common-mistakes-and-solutions)
 
-Note that the operator Helm chart is available from the GitHub chart repository, see [Alternatively, install the operator Helm chart from GitHub chart repository](../../installation/#alternatively-install-the-operator-helm-chart-from-github-chart-repository).
+Note that the operator Helm chart is available from the GitHub chart repository, see [Alternatively, install the operator Helm chart from the GitHub chart repository]({{< relref "/userguide/managing-operators/installation/_index.md#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository" >}}).
 
 #### Useful Helm operations
 
@@ -96,7 +96,7 @@ serviceAccount: "weblogic-operator"
 
 ##### `dedicated`
 
-Specifies if this operator will only manage WebLogic domains in the same namespace in which the operator itself is deployed.  If set to `true`, then the `domainNamespaces` value is ignored. 
+Specifies if this operator will only manage WebLogic domains in the same namespace in which the operator itself is deployed.  If set to `true`, then the `domainNamespaces` value is ignored.
 
 Defaults to `false`.
 
@@ -105,7 +105,7 @@ Example:
 dedicated: false
 ```
 
-In the `dedicated` mode, the operator does not require permissions to access the cluster-scoped Kubernetes resources, such as `CustomResourceDefinitions`, `PersistentVolumes`, and `Namespaces`. In those situations, the operator may skip some of its operations, such as verifying the WebLogic domain `CustomResoruceDefinition` `domains.weblogic.oracle` (and creating it when it is absent), watching namespace events, and cleaning up `PersistentVolumes` as part of deleting a domain. 
+In the `dedicated` mode, the operator does not require permissions to access the cluster-scoped Kubernetes resources, such as `CustomResourceDefinitions`, `PersistentVolumes`, and `Namespaces`. In those situations, the operator may skip some of its operations, such as verifying the WebLogic domain `CustomResoruceDefinition` `domains.weblogic.oracle` (and creating it when it is absent), watching namespace events, and cleaning up `PersistentVolumes` as part of deleting a domain.
 
 {{% notice note %}}
 It is the responsibility of the administrator to make sure that the required `CustomResourceDefinition (CRD)` `domains.weblogic.oracle` is deployed in the Kubernetes cluster before the operator is installed. The creation of the `CRD` requires the Kubernetes `cluster-admin` privileges. A YAML file for creating the `CRD` can be found at [domain-crd.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/crd/domain-crd.yaml).
@@ -185,7 +185,7 @@ You must include the `default` namespace in the list if you want the operator to
 This value is ignored if `dedicated` is set to `true`. Then, the operator will manage only domains in its own namespace.
 {{% /notice %}}
 
-Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about managing `domainNamespaces`.
+For more information about managing `domainNamespaces`, see [Managing domain namespaces]({{< relref "/faq/namespace-management.md" >}}).
 
 #### Elastic Stack integration
 
@@ -390,7 +390,7 @@ Both the previous and new release own the resources created by the previous oper
 * All you can do is delete both operator releases and reinstall the original operator.
 See https://github.com/helm/helm/issues/2349
 
-#### Installing an operator and telling it to manage a domain namespace that another operator is already managing
+#### Installing an operator and having it manage a domain namespace that another operator is already managing
 
 A new `FAILED` Helm release is created.
 ```
@@ -406,7 +406,7 @@ To recover:
   - This recreates the role binding.
   - There might be intermittent failures in the operator for the period of time when the role binding was deleted.
 
-#### Upgrading an operator and telling it to manage a domain namespace that another operator is already managing
+#### Upgrading an operator and having it manage a domain namespace that another operator is already managing
 
 The `helm upgrade` succeeds, and silently adopts the resources the first operator's Helm chart created in the domain namespace (for example, `rolebinding`), and, if you also told it to stop managing another domain namespace, it abandons the role binding it created in that namespace.
 
@@ -415,7 +415,7 @@ For example, if you delete this release, then the first operator will get messed
 * This can be fixed by just upgrading the Helm release.
 * This may also be fixed by rolling back the Helm release.
 
-#### Installing an operator and telling it to use the same external REST port number as another operator
+#### Installing an operator and assigning it the same external REST port number as another operator
 
 A new `FAILED` Helm release is created.
 ```
@@ -428,7 +428,7 @@ To recover:
 - $ `helm delete --purge` the failed release.
 - Change the port number and `helm install` the second operator again.
 
-#### Upgrading an operator and telling it to use the same external REST port number as another operator
+#### Upgrading an operator and assigning it the same external REST port number as another operator
 
 The `helm upgrade` fails and moves the release to the `FAILED` state.
 ```
@@ -439,7 +439,7 @@ Error: UPGRADE FAILED: Service "external-weblogic-operator-svc" is invalid: spec
 * You can fix this by upgrading the Helm release (to fix the port number).
 * You can also fix this by rolling back the Helm release.
 
-#### Installing an operator and telling it to use a service account that doesn't exist
+#### Installing an operator and assigning it a service account that doesn't exist
 
 The `helm install` eventually times out and creates a failed release.
 ```
@@ -458,7 +458,7 @@ To recover:
 - Create the service account.
 - `helm install` again.
 
-#### Upgrading an operator and telling it to use a service account that doesn't exist
+#### Upgrading an operator and assigning it a service account that doesn't exist
 
 The `helm upgrade` succeeds and changes the service account on the existing operator deployment, but the existing deployment's pod doesn't get modified, so it keeps running. If the pod is deleted, the deployment creates another one using the OLD service account. However, there's an error in the deployment's status section saying that the service account doesn't exist.
 ```
@@ -477,7 +477,7 @@ To recover:
 - `helm rollback`
 - `helm upgrade` again.
 
-#### Installing an operator and telling it to manage a domain namespace that doesn't exist
+#### Installing an operator and having it manage a domain namespace that doesn't exist
 
 A new `FAILED` Helm release is created.
 ```
@@ -491,7 +491,7 @@ To recover:
 - Create the domain namespace.
 - `helm install` again.
 
-#### Upgrading an operator and telling it to manage a domain namespace that doesn't exist
+#### Upgrading an operator and having it manage a domain namespace that doesn't exist
 
 The `helm upgrade` fails and moves the release to the `FAILED` state.
 ```
@@ -508,4 +508,4 @@ To recover:
 
 If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
 
-Refer to [Domain Namespace Management] ({{<relref "/faq/namespace-management.md">}}) for more information about the problem and solutions.
+For more information about the problem and solutions, see [Managing domain namespaces]({{<relref "/faq/namespace-management.md">}}).
