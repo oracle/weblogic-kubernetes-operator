@@ -22,10 +22,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-
 
 // this is a POC for a new way of writing tests.
 // this is meant to be a simple test.  later i will add more complex tests and deal
@@ -77,8 +80,19 @@ class ItSimpleOperatorValidation implements LoggedTest {
       assertTrue(Kubernetes.isServiceCreated(podName, label, domainNS));
       Kubernetes.listServices(domainNS, null);
       assertTrue(Operator.isExternalRestServiceCreated(opns));
-      assertTrue(Domain.exists(domainUid, domainNS).call().booleanValue());
       Domain.isCRDExists();
+      with().pollDelay(30, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .conditionEvaluationListener(
+            condition -> logger.info(() ->
+                String.format(
+                    "Waiting for domain to be running (elapsed time %dms, remaining time %dms)",
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS())))
+        // and here we can set the maximum time we are prepared to wait
+        .await().atMost(5, MINUTES)
+        // operatorIsRunning() is one of our custom, reusable assertions
+        .until(domainExists(domainUid, domainNS));
     } catch (ApiException ex) {
       Logger.getLogger(ItSimpleOperatorValidation.class.getName()).log(Level.SEVERE, null, ex);
     } catch (Exception ex) {

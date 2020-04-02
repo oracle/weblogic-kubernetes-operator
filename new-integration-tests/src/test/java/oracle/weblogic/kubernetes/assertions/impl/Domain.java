@@ -10,10 +10,6 @@ import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
 import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
 import io.kubernetes.client.openapi.apis.ApisApi;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
-import io.kubernetes.client.openapi.models.V1APIGroup;
-import io.kubernetes.client.openapi.models.V1APIGroupList;
-import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
-import io.kubernetes.client.openapi.models.V1GroupVersionForDiscovery;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
@@ -33,27 +29,11 @@ public class Domain implements LoggedTest {
    */
   public static void isCRDExists() throws Exception {
     try {
-      V1APIGroupList apis = apisApi.getAPIVersions();
-      for (V1APIGroup group : apis.getGroups()) {
-        if ("apiextensions.k8s.io".equals(group.getName())) {
-          for (V1GroupVersionForDiscovery version : group.getVersions()) {
-            logger.info("CRD versions :" + version.getVersion());
-            if ("v1".equals(version.getVersion())) {
-              // v1 is supported
-              V1CustomResourceDefinition domainCrd =
-                  apiextensionsV1Api.readCustomResourceDefinition(
-                      "domains.weblogic.oracle", null, null, null);
-              assertNotNull(domainCrd, "v1 Domain CRD exists");
-              return;
-            }
-          }
-          break;
-        }
-      }
       V1beta1CustomResourceDefinition domainBetaCrd =
           apiextensionsV1beta1Api.readCustomResourceDefinition(
               "domains.weblogic.oracle", null, null, null);
-      assertNotNull(domainBetaCrd, "beta1 Domain CRD exists");
+      assertNotNull(domainBetaCrd);
+      logger.info("domainBetaCrd is not null");
     } catch (ApiException aex) {
       if (aex.getCode() == 404) {
         assertTrue(false, "Expected CRD domains.weblogic.oracle existed.");
@@ -68,6 +48,7 @@ public class Domain implements LoggedTest {
       Object domainObject =
           customObjectsApi.getNamespacedCustomObject(
               "weblogic.oracle", "v2", namespace, "domains", domainUID);
+      logger.info("Domain Object exists : " + (domainObject != null));
       return domainObject != null;
     };
   }
