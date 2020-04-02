@@ -19,7 +19,7 @@ class ItWITValidation implements LoggedTest {
 
     // TODO the installWIT and installWDT calls below need to be moved to 
     // an action that does all the prerequisites once we have that action.
-	  
+  
     // install WIT using the default version and location
     boolean downloadWIT = TestActions.installWIT();
    
