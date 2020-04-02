@@ -43,9 +43,9 @@ public class TraefikParams {
     return namespace;
   }
 
-  public HashMap<String, String> getValues() {
+  public HashMap<String, Object> getValues() {
     // add all params into map ?
-    return new HashMap<String, String>();
+    return new HashMap<String, Object>();
   }
 
 }

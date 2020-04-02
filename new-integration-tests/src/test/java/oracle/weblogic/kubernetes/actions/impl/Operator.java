@@ -45,18 +45,6 @@ public class Operator implements LoggedTest {
         .isNotNull()
         .isNotEmpty();
 
-    // create namespace
-    if (!Namespace.exists(namespace)) {
-      logger.info(String.format("Creating namespace %s", namespace));
-      Namespace ns = new Namespace().name(namespace);
-    }
-
-    // create service account
-    if (serviceAccount != null && !serviceAccount.equals("default")) {
-      logger.info(String.format("Creating service account %s", serviceAccount));
-      // Kubernetes.createServiceAccount(params.getServiceAccount(), namespace);
-    }
-
     boolean success = false;
     if (new Helm().chartName(OPERATOR_CHART_NAME).repoUrl(OPERATOR_HELM_REPO_URL).addRepo()) {
       logger.info(String.format("Installing Operator in namespace %s", namespace));

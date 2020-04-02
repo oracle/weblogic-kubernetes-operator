@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
@@ -15,6 +16,7 @@ import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
+import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.Traefik;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.InstallParams;
@@ -333,6 +335,30 @@ public class TestActions {
    */
   public static boolean deleteConfigMap(String cmName, String namespace) throws ApiException {
     return ConfigMap.delete(cmName, namespace);
+  }
+
+  // ------------------------ service account  --------------------------
+
+  /**
+   * Create a service account for a given namespace
+   *
+   * @param serviceAccount - V1ServiceAccount object containing service account configuration data
+   * @return true on success, false otherwise
+   * @throws ApiException - missing required configuration data or if Kubernetes request fails
+   */
+  public static boolean createServiceAccount(V1ServiceAccount serviceAccount) throws ApiException {
+    return ServiceAccount.create(serviceAccount);
+  }
+
+  /**
+   * Delete a service account for a given namespace
+   *
+   * @param serviceAccount - V1ServiceAccount object containing service account configuration data
+   * @return true on success, false otherwise
+   * @throws ApiException - missing required configuration data or if Kubernetes request fails
+   */
+  public static boolean deleteServiceAccount(V1ServiceAccount serviceAccount) throws ApiException {
+    return ServiceAccount.delete(serviceAccount);
   }
 
   // ------------------------ where does this go  -------------------------

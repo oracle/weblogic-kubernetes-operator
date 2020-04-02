@@ -5,13 +5,15 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.util.HashMap;
 
-public class Helm {
+import oracle.weblogic.kubernetes.extensions.LoggedTest;
+
+public class Helm implements LoggedTest {
 
   private String chartName;
   private String releaseName;
   private String namespace;
   private String repoUrl;
-  private HashMap<String, String> values;
+  private HashMap<String, Object> values;
 
   public Helm chartName(String chartName) {
     this.chartName = chartName;
@@ -33,7 +35,7 @@ public class Helm {
     return this;
   }
 
-  public Helm values(HashMap<String, String> values) {
+  public Helm values(HashMap<String, Object> values) {
     this.values = values;
     return this;
   }
@@ -54,11 +56,19 @@ public class Helm {
     return repoUrl;
   }
 
-  public HashMap<String, String> getValues() {
+  public HashMap<String, Object> getValues() {
     return values;
   }
 
   public boolean install() {
+    StringBuffer installCmd = new StringBuffer("helm install ")
+                              .append(releaseName).append(" ").append(chartName);
+    values.forEach((key, value) ->
+                    installCmd.append(" --set ")
+                              .append(key)
+                              .append("=")
+                              .append(value.toString().replaceAll("\\[","{").replaceAll("\\]","}")));
+    logger.info("Running helm install command " + installCmd);
     return true;
   }
 
@@ -71,7 +81,8 @@ public class Helm {
   }
 
   public boolean addRepo() {
-    String addRepoCmd = "helm add repo ";
+    String addRepoCmd = "helm add repo " + chartName + " " + repoUrl;
+    // execute addRepoCmd
     return true;
   }
 
