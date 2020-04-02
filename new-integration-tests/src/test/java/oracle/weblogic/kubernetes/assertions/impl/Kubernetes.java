@@ -113,7 +113,8 @@ public class Kubernetes implements LoggedTest {
     if (label != null) {
       String key = label.keySet().iterator().next().toString();
       String value = label.get(key).toString();
-      labelSelector = String.format("(%s) in (%s)", key, value);
+      labelSelector = String.format("%s in (%s)", key, value);
+      logger.info(labelSelector);
     }
     V1ServiceList v1ServiceList
         = coreV1Api.listServiceForAllNamespaces(

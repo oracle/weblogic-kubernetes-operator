@@ -70,7 +70,8 @@ class ItSimpleOperatorValidation implements LoggedTest {
       assertTrue(Kubernetes.isPodRunning(domainNS, domainUid, podName));
       assertFalse(Kubernetes.isPodTerminating(domainNS, domainUid, podName));
       assertTrue(Kubernetes.isOperatorPodRunning(opns));
-      assertTrue(Kubernetes.isServiceCreated(podName, label, podName));
+      assertTrue(Kubernetes.isServiceCreated(podName, label, domainNS));
+      Kubernetes.listServices(domainNS, null);
     } catch (ApiException ex) {
       Logger.getLogger(ItSimpleOperatorValidation.class.getName()).log(Level.SEVERE, null, ex);
     }
