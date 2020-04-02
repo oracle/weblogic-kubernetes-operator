@@ -55,6 +55,9 @@ public class WebLogicImageTool extends InstallWITCommon {
     } 
 
     try {
+      // check if the WIT binary exists, throws FileNotFoundException if the file does not exist
+      checkFile(IMAGE_TOOL);
+
       // delete the old cache entry for the WDT installer
       if (!deleteEntry()) {
         logger.warning("Failed to delete cache entry in WebLogic Image Tool");
@@ -67,8 +70,6 @@ public class WebLogicImageTool extends InstallWITCommon {
         return false;
       }
   
-      // check if the file exists, throws FileNotFoundException if the file does not exist
-      checkFile(IMAGE_TOOL);
     } catch (FileNotFoundException fnfe) {
       logger.warning("Failed to create an image due to Exception: " + fnfe.getMessage());
       return false;

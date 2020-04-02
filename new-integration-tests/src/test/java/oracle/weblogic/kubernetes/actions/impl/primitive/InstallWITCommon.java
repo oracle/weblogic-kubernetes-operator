@@ -19,6 +19,8 @@ public class InstallWITCommon extends ActionImplCommon {
       = System.getProperty("java.io.tmpdir") + "/it-results";
   protected static final String IMAGE_TOOL 
       = WORK_DIR + "/imagetool/bin/imagetool.sh";
+  protected static final String WDT_ZIP 
+      = WORK_DIR + "/download/weblogic-deploy.zip";
 
 
   /**
@@ -51,8 +53,8 @@ public class InstallWITCommon extends ActionImplCommon {
   protected void checkFile(String fileName) throws FileNotFoundException {
     File file = new File(fileName);
     if (!file.exists()) {
-      logger.warning("The expected file \" + file + \" not found.");
-      throw new FileNotFoundException("The expected file \" + file + \" not found.");
+      logger.warning("The expected file " + fileName + " not found.");
+      throw new FileNotFoundException("The expected file " + fileName + " not found.");
     }
   }
 }

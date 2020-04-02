@@ -51,6 +51,10 @@ public class ActionImplCommon {
   }
   */
   
+  protected boolean executeAndVerify(String command) {
+    return executeAndVerify(command, false);
+  }
+
   protected boolean executeAndVerify(String command, boolean redirectOutput) {
     logger.info("Executing command = " + command);
     try {
