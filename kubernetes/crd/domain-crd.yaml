@@ -149,7 +149,7 @@ spec:
                 description: If true (the default), the server HTTP access log file
                   will be written to the same directory specified in logHome. Otherwise,
                   server HTTP access log file will be written to the directory as
-                  configured in the WebLogic configuration for each server.
+                  configured in the WebLogic domain home configuration.
               webLogicCredentialsSecret:
                 type: object
                 description: The name of a pre-created Kubernetes secret, in the domain's
