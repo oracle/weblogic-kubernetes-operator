@@ -469,7 +469,7 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(KubernetesConstants.DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME);
   }
 
-  public DomainSpec withIsHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {
+  public DomainSpec withHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {
     this.httpAccessLogInLogHome = httpAccessLogInLogHome;
     return this;
   }
