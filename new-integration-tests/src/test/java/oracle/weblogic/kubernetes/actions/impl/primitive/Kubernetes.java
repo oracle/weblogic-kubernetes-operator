@@ -106,26 +106,6 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
-  /**
-   * Create a new namespace with a "unique" name. This method will create a "unique" name by
-   * choosing a random name from 26^4 possible combinations, and create a namespace using that
-   * random name.
-   *
-   * @return the name of the new unique namespace.
-   * @throws ApiException - if Kubernetes client API call fails
-   */
-  public static String createUniqueNamespace() throws ApiException {
-    char[] name = new char[4];
-    for (int i = 0; i < name.length; i++) {
-      name[i] = (char) (random.nextInt(25) + (int) 'a');
-    }
-    String namespace = "ns-" + new String(name);
-    if (createNamespace(namespace)) {
-      return namespace;
-    } else {
-      return "";
-    }
-  }
 
   /**
    * List of namespaces in Kubernetes cluster
@@ -135,7 +115,6 @@ public class Kubernetes implements LoggedTest {
    */
   public static List<String> listNamespaces() throws ApiException {
     ArrayList<String> nameSpaces = new ArrayList<>();
-
     V1NamespaceList namespaceList = coreV1Api.listNamespace(
         pretty, // pretty print output
         allowWatchBookmarks, // allowWatchBookmarks requests watch events with type "BOOKMARK"
@@ -195,11 +174,11 @@ public class Kubernetes implements LoggedTest {
   /**
    * Create domain custom resource from the given domain yaml file.
    *
-   * @param domainUID - unique domain identifier
-   * @param namespace - name of namespace
+   * @param domainUID  - unique domain identifier
+   * @param namespace  - name of namespace
    * @param domainYAML - path to a file containing domain custom resource spec in yaml format
    * @return true on success, false otherwise
-   * @throws IOException - on failure to convert domain YAML spec to JSON object
+   * @throws IOException  - on failure to convert domain YAML spec to JSON object
    * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean createDomainCustomResource(String domainUID, String namespace, String domainYAML)
@@ -255,7 +234,7 @@ public class Kubernetes implements LoggedTest {
    *
    * @param yamlFile - path to file containing YAML spec
    * @return JSON object
-   * @throws IOException - failure to load the YAML file
+   * @throws IOException    - failure to load the YAML file
    * @throws ParseException - failure to parse JSON formatted String object
    */
   private static Object convertYamlToJson(String yamlFile) throws IOException, ParseException {
@@ -306,7 +285,7 @@ public class Kubernetes implements LoggedTest {
    * Extracts domain names from response map
    */
   private static ArrayList<String> getDomainNames(String namespace, ArrayList<String> domains,
-      Map result) {
+                                                  Map result) {
     List items = (List) result.get("items");
     for (Object item : items) {
       Map metadata = (Map) ((Map) item).get("metadata");
@@ -332,12 +311,12 @@ public class Kubernetes implements LoggedTest {
   /**
    * Create a Kubernetes Config Map
    *
-   * @param cmName - name of the config map
+   * @param cmName    - name of the config map
    * @param namespace - name of namespace for config map
-   * @param fromFile - path to file containing config map data, as name - value pairs
+   * @param fromFile  - path to file containing config map data, as name - value pairs
    * @return true on success, false otherwise
    * @throws ApiException - if Kubernetes client API call fails
-   * @throws IOException - failure to load config map data from file
+   * @throws IOException  - failure to load config map data from file
    */
   public static boolean createConfigMap(String cmName, String namespace, String fromFile)
       throws ApiException,
@@ -394,7 +373,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete Kubernetes Config Map
    *
-   * @param cmName the name of the Config Map
+   * @param cmName    the name of the Config Map
    * @param namespace the name of the namespace
    * @return true on success, false otherwise
    * @throws ApiException - if Kubernetes client API call fails
@@ -427,15 +406,14 @@ public class Kubernetes implements LoggedTest {
    * Create Kubernetes Secret
    *
    * @param secretName the name of the secret
-   * @param username username of the domain
-   * @param password password for the domain
-   * @param namespace the name of the namespace
+   * @param username   username of the domain
+   * @param password   password for the domain
+   * @param namespace  the name of the namespace
    * @return true on success, false otherwise
    * @throws ApiException - if Kubernetes client API call fails
-   *
    */
   public static boolean createSecret(String secretName,
-      String username, String password, String namespace) throws ApiException {
+                                     String username, String password, String namespace) throws ApiException {
     V1ObjectMeta meta = new V1ObjectMeta().name(secretName);
     HashMap<String, byte[]> data = new HashMap<>();
     data.put("username", username.getBytes(StandardCharsets.UTF_8));
@@ -459,7 +437,7 @@ public class Kubernetes implements LoggedTest {
    * Delete Kubernetes Secret
    *
    * @param secretName the name of the secret
-   * @param namespace the name of the namespace
+   * @param namespace  the name of the namespace
    * @return true on success, false otherwise
    * @throws ApiException - if Kubernetes client API call fails
    */
@@ -518,7 +496,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete the Kubernetes Persistent Volume Claim
    *
-   * @param pvcName the name of the Persistent Volume Claim
+   * @param pvcName   the name of the Persistent Volume Claim
    * @param namespace the namespace of the Persistent Volume Claim
    * @return true on success, false otherwise
    * @throws ApiException - if Kubernetes client API call fails
