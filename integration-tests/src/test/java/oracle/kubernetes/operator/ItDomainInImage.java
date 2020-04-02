@@ -98,7 +98,7 @@ public class ItDomainInImage extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain & verifing the domain creation");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain & verifying the domain creation");
     // create domain
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
@@ -107,6 +107,17 @@ public class ItDomainInImage extends BaseTest {
                 getNewSuffixCount(), false, testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.remove("clusterType");
+
+      // If the domain input YAML contains "sslEnabled: false" param, then let's set it to "true" to test SSL.
+      // This is backward compatible because the older sample that does not support SSL should not have
+      // this parameter.
+      String sslEnabledValue = (String) domainMap.get("sslEnabled");
+      if (sslEnabledValue != null) {
+        if (!Boolean.parseBoolean(sslEnabledValue)) {
+          domainMap.put("sslEnabled", "true");
+        }
+      }
+
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       testBasicUseCases(domain, true);
