@@ -25,7 +25,9 @@
         <resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
         <junit.jupiter.version>5.6.0</junit.jupiter.version>
         <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
+        <maven.failsafe.version>2.22.0</maven.failsafe.version>
         <jackson-version>2.10.3</jackson-version>
+        <assertj.core.version>3.15.0</assertj.core.version>
         <skipITs>false</skipITs>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
@@ -77,6 +79,12 @@
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
             <version>1.6.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.core.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -151,6 +159,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven.failsafe.version}</version>
                 <configuration>
                     <argLine>
                         --illegal-access=permit
