@@ -88,7 +88,7 @@ spec:
   - name: weblogic-runtime-encryption-volume
     secret:
       defaultMode: 420
-      secretName: runtime-encryption-secret
+      secretName: ${DOMAIN_UID}-runtime-encryption-secret
       optional: ${MII_WDT_ENCRYPT_SECRET}
   - name: weblogic-domain-cm-volume
     configMap:

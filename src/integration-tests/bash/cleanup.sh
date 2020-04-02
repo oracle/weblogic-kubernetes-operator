@@ -528,7 +528,6 @@ if [ -x "$(command -v helm)" ]; then
   do 
    if [ ! "$DRY_RUN" = "true" ]; then
      (
-     set -x
      helm list --short --namespace $ns | while read helm_name; do
        if [ "$HELM_VERSION" == "V2" ]; then
          helm delete --purge  $helm_name

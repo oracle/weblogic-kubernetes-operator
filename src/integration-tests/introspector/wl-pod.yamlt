@@ -125,7 +125,7 @@ spec:
   - name: weblogic-runtime-encryption-volume
     secret:
       defaultMode: 420
-      secretName: runtime-encryption-secret
+      secretName: ${DOMAIN_UID}-runtime-encryption-secret
       optional: ${MII_WDT_ENCRYPT_SECRET}
   # WL Pods shouldn't need secrets if the introspector is working:
   #- name: weblogic-credentials-volume
