@@ -5,28 +5,47 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.util.HashMap;
 
-public class Helm {
+import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
-  private String chart;
-  private String name;
+public class Helm implements LoggedTest {
+
+  private String chartName;
+  private String releaseName;
   private String namespace;
   private String repoUrl;
-  private HashMap<String, String> values;
+  private HashMap<String, Object> values;
 
-  private Helm(HelmBuilder builder) {
-    this.chart = builder.chart;
-    this.name = builder.name;
-    this.namespace = builder.namespace;
-    this.repoUrl = builder.repoUrl;
-    this.values = builder.values;
+  public Helm chartName(String chartName) {
+    this.chartName = chartName;
+    return this;
   }
 
-  public String getChart() {
-    return chart;
+  public Helm releaseName(String releaseName) {
+    this.releaseName = releaseName;
+    return this;
   }
 
-  public String getName() {
-    return name;
+  public Helm namespace(String namespace) {
+    this.namespace = namespace;
+    return this;
+  }
+
+  public Helm repoUrl(String repoUrl) {
+    this.repoUrl = repoUrl;
+    return this;
+  }
+
+  public Helm values(HashMap<String, Object> values) {
+    this.values = values;
+    return this;
+  }
+
+  public String getChartName() {
+    return chartName;
+  }
+
+  public String getReleaseName() {
+    return releaseName;
   }
 
   public String getNamespace() {
@@ -37,11 +56,19 @@ public class Helm {
     return repoUrl;
   }
 
-  public HashMap<String, String> getValues() {
+  public HashMap<String, Object> getValues() {
     return values;
   }
 
   public boolean install() {
+    StringBuffer installCmd = new StringBuffer("helm install ")
+                              .append(releaseName).append(" ").append(chartName);
+    values.forEach((key, value) ->
+                    installCmd.append(" --set ")
+                              .append(key)
+                              .append("=")
+                              .append(value.toString().replaceAll("\\[","{").replaceAll("\\]","}")));
+    logger.info("Running helm install command " + installCmd);
     return true;
   }
 
@@ -54,44 +81,10 @@ public class Helm {
   }
 
   public boolean addRepo() {
+    String addRepoCmd = "helm add repo " + chartName + " " + repoUrl;
+    // execute addRepoCmd
     return true;
   }
 
-  public static class HelmBuilder {
-    private String chart;
-    private String name;
-    private String namespace;
-    private String repoUrl;
-    private HashMap<String, String> values;
-
-    public HelmBuilder(String chart, String name) {
-      this.chart = chart;
-      this.name = name;
-    }
-
-    public HelmBuilder(String repoUrl) {
-      this.repoUrl = repoUrl;
-    }
-
-    public HelmBuilder namespace(String namespace) {
-      this.namespace = namespace;
-      return this;
-    }
-
-    public HelmBuilder repoUrl(String repoUrl) {
-      this.repoUrl = repoUrl;
-      return this;
-    }
-
-    public HelmBuilder values(HashMap<String, String> values) {
-      this.values = values;
-      return this;
-    }
-
-    public Helm build() {
-      Helm helm = new Helm(this);
-      return helm;
-    }
-  }
 
 }

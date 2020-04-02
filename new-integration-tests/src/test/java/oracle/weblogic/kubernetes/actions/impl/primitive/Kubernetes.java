@@ -16,6 +16,8 @@ import java.util.Random;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.kubernetes.client.extended.generic.GenericKubernetesApi;
+import io.kubernetes.client.extended.generic.KubernetesApiResponse;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
@@ -28,6 +30,8 @@ import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -47,10 +51,9 @@ public class Kubernetes implements LoggedTest {
   private static String resourceVersion = "";
   private static Integer timeoutSeconds = 5;
   private static String DOMAIN_GROUP = "weblogic.oracle";
-  private static String NAME = "domains.weblogic.oracle";
   private static String DOMAIN_VERSION = "v7";
   private static String DOMAIN_PLURAL = "domains";
-  private static String DOMAIN_PATH = "namespaces/{namespace}/" + DOMAIN_PLURAL;
+
   // the CoreV1Api loads default api-client from global configuration.
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
@@ -103,26 +106,6 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
-  /**
-   * Create a new namespace with a "unique" name. This method will create a "unique" name by
-   * choosing a random name from 26^4 possible combinations, and create a namespace using that
-   * random name.
-   *
-   * @return the name of the new unique namespace.
-   * @throws ApiException - if Kubernetes client API call fails
-   */
-  public static String createUniqueNamespace() throws ApiException {
-    char[] name = new char[4];
-    for (int i = 0; i < name.length; i++) {
-      name[i] = (char) (random.nextInt(25) + (int) 'a');
-    }
-    String namespace = "ns-" + new String(name);
-    if (createNamespace(namespace)) {
-      return namespace;
-    } else {
-      return "";
-    }
-  }
 
   /**
    * List of namespaces in Kubernetes cluster
@@ -132,7 +115,6 @@ public class Kubernetes implements LoggedTest {
    */
   public static List<String> listNamespaces() throws ApiException {
     ArrayList<String> nameSpaces = new ArrayList<>();
-
     V1NamespaceList namespaceList = coreV1Api.listNamespace(
         pretty, // pretty print output
         allowWatchBookmarks, // allowWatchBookmarks requests watch events with type "BOOKMARK"
@@ -160,24 +142,31 @@ public class Kubernetes implements LoggedTest {
    * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean deleteNamespace(String name) throws ApiException {
-    V1DeleteOptions deleteOptions = new V1DeleteOptions();
 
-    V1Status status = coreV1Api.deleteNamespace(
-        name, // name of the Namespace
-        pretty, // pretty print output
-        null, // indicates that modifications should not be persisted
-        0, // duration in seconds before the object should be deleted
-        false, // Should the dependent objects be orphaned
-        "Foreground", // Whether and how garbage collection will be performed
-        deleteOptions
-    );
+    GenericKubernetesApi<V1Namespace, V1NamespaceList> namespaceClient =
+        new GenericKubernetesApi<>(
+                V1Namespace.class, // the api type class
+                V1NamespaceList.class, // the api list type class
+                "", // the api group
+            "v1", // the api version
+                "namespaces", // the resource plural
+                apiClient //the api client
+        );
 
-    if (status.getCode() == 200 || status.getCode() == 202) {
-      // status code 200 = OK, 202 = Accepted
-      return true;
+    KubernetesApiResponse<V1Namespace> response = namespaceClient.delete(name);
+
+    if (!response.isSuccess()) {
+      throw new ApiException("Failed to delete namespace: "
+          + name + " with HTTP status code: " + response.getHttpStatusCode());
     }
 
-    return false;
+    if (response.getObject() != null) {
+      logger.info(
+          "Received after-deletion status of the requested object, will be deleting namespace"
+          + " in background!");
+    }
+
+    return true;
   }
 
   // --------------------------- Custom Resource Domain -----------------------------------
@@ -185,11 +174,11 @@ public class Kubernetes implements LoggedTest {
   /**
    * Create domain custom resource from the given domain yaml file.
    *
-   * @param domainUID - unique domain identifier
-   * @param namespace - name of namespace
+   * @param domainUID  - unique domain identifier
+   * @param namespace  - name of namespace
    * @param domainYAML - path to a file containing domain custom resource spec in yaml format
    * @return true on success, false otherwise
-   * @throws IOException - on failure to convert domain YAML spec to JSON object
+   * @throws IOException  - on failure to convert domain YAML spec to JSON object
    * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean createDomainCustomResource(String domainUID, String namespace, String domainYAML)
@@ -245,7 +234,7 @@ public class Kubernetes implements LoggedTest {
    *
    * @param yamlFile - path to file containing YAML spec
    * @return JSON object
-   * @throws IOException - failure to load the YAML file
+   * @throws IOException    - failure to load the YAML file
    * @throws ParseException - failure to parse JSON formatted String object
    */
   private static Object convertYamlToJson(String yamlFile) throws IOException, ParseException {
@@ -296,7 +285,7 @@ public class Kubernetes implements LoggedTest {
    * Extracts domain names from response map
    */
   private static ArrayList<String> getDomainNames(String namespace, ArrayList<String> domains,
-      Map result) {
+                                                  Map result) {
     List items = (List) result.get("items");
     for (Object item : items) {
       Map metadata = (Map) ((Map) item).get("metadata");
@@ -322,12 +311,12 @@ public class Kubernetes implements LoggedTest {
   /**
    * Create a Kubernetes Config Map
    *
-   * @param cmName - name of the config map
+   * @param cmName    - name of the config map
    * @param namespace - name of namespace for config map
-   * @param fromFile - path to file containing config map data, as name - value pairs
+   * @param fromFile  - path to file containing config map data, as name - value pairs
    * @return true on success, false otherwise
    * @throws ApiException - if Kubernetes client API call fails
-   * @throws IOException - failure to load config map data from file
+   * @throws IOException  - failure to load config map data from file
    */
   public static boolean createConfigMap(String cmName, String namespace, String fromFile)
       throws ApiException,
@@ -384,7 +373,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete Kubernetes Config Map
    *
-   * @param cmName the name of the Config Map
+   * @param cmName    the name of the Config Map
    * @param namespace the name of the namespace
    * @return true on success, false otherwise
    * @throws ApiException - if Kubernetes client API call fails
@@ -417,15 +406,14 @@ public class Kubernetes implements LoggedTest {
    * Create Kubernetes Secret
    *
    * @param secretName the name of the secret
-   * @param username username of the domain
-   * @param password password for the domain
-   * @param namespace the name of the namespace
+   * @param username   username of the domain
+   * @param password   password for the domain
+   * @param namespace  the name of the namespace
    * @return true on success, false otherwise
    * @throws ApiException - if Kubernetes client API call fails
-   *
    */
   public static boolean createSecret(String secretName,
-      String username, String password, String namespace) throws ApiException {
+                                     String username, String password, String namespace) throws ApiException {
     V1ObjectMeta meta = new V1ObjectMeta().name(secretName);
     HashMap<String, byte[]> data = new HashMap<>();
     data.put("username", username.getBytes(StandardCharsets.UTF_8));
@@ -449,7 +437,7 @@ public class Kubernetes implements LoggedTest {
    * Delete Kubernetes Secret
    *
    * @param secretName the name of the secret
-   * @param namespace the name of the namespace
+   * @param namespace  the name of the namespace
    * @return true on success, false otherwise
    * @throws ApiException - if Kubernetes client API call fails
    */
@@ -508,7 +496,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete the Kubernetes Persistent Volume Claim
    *
-   * @param pvcName the name of the Persistent Volume Claim
+   * @param pvcName   the name of the Persistent Volume Claim
    * @param namespace the namespace of the Persistent Volume Claim
    * @return true on success, false otherwise
    * @throws ApiException - if Kubernetes client API call fails
@@ -518,7 +506,7 @@ public class Kubernetes implements LoggedTest {
 
     V1Status status = coreV1Api.deleteNamespacedPersistentVolumeClaim(
         pvcName, // persistent volume claim (PV) name
-        namespace,
+        namespace, // name of the Namespace
         pretty, // pretty print output
         null, // indicates that modifications should not be persisted
         0, // duration in seconds before the object should be deleted
@@ -534,7 +522,93 @@ public class Kubernetes implements LoggedTest {
 
     return false;
   }
-  // --------------------------
+
+  // --------------------------- service account ---------------------------
+
+  /**
+   * Create a service account for a given namespace
+   *
+   * @param serviceAccount - V1ServiceAccount object containing service account configuration data
+   * @return created service account
+   * @throws ApiException - missing required configuration data or if Kubernetes request fails
+   */
+  public static V1ServiceAccount createServiceAccount(V1ServiceAccount serviceAccount)
+      throws ApiException {
+
+    if (serviceAccount.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling createServiceAccount()");
+    }
+
+    if (serviceAccount.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling createServiceAccount()");
+    }
+
+    serviceAccount = coreV1Api.createNamespacedServiceAccount(
+        serviceAccount.getMetadata().getNamespace(), // name of the Namespace
+        serviceAccount, // service account configuration data
+        pretty, // pretty print output
+        null, // indicates that modifications should not be persisted
+        null // fieldManager is a name associated with the actor
+    );
+
+    return serviceAccount;
+  }
+
+  /**
+   * Delete a service account for given namespace
+   *
+   * @param serviceAccount - V1ServiceAccount object containing service account configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data or if Kubernetes request fails
+   */
+  public static boolean deleteServiceAccount(V1ServiceAccount serviceAccount) throws ApiException {
+    if (serviceAccount.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling deleteServiceAccount()");
+    }
+
+    if (serviceAccount.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling deleteServiceAccount()");
+    }
+
+    if (serviceAccount.getMetadata().getName() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'name' when calling deleteServiceAccount()");
+    }
+
+    String namespace = serviceAccount.getMetadata().getNamespace();
+    String name = serviceAccount.getMetadata().getName();
+
+    GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient =
+        new GenericKubernetesApi<>(
+                V1ServiceAccount.class,  // the api type class
+                V1ServiceAccountList.class, // the api list type class
+                "", // the api group
+                "v1", // the api version
+                "serviceaccounts", // the resource plural
+                apiClient //the api client
+        );
+
+    KubernetesApiResponse<V1ServiceAccount> response = serviceAccountClient.delete(namespace, name);
+
+    if (!response.isSuccess()) {
+      throw new ApiException("Failed to delete Service Account '" + name + "' from namespace: "
+          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+    }
+
+    if (response.getObject() != null) {
+      logger.info(
+          "Received after-deletion status of the requested object, will be deleting "
+          + "service account in background!");
+    }
+
+    return true;
+  }
+
+  //------------------------
 
   /**
    * TODO:  This should go in a utilities class? load properties.
