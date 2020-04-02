@@ -1005,7 +1005,7 @@ class SitConfigGenerator(Generator):
                    + logs_dir + "/" + name + "_access.log</d:file-name>")
       self.undent()
       self.writeln("</d:web-server-log>")
-      self.indent()
+      self.undent()
       self.writeln("</d:web-server>")
 
 class CustomSitConfigIntrospector(SecretManager):
