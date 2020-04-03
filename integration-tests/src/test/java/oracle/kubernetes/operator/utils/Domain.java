@@ -2083,7 +2083,7 @@ public class Domain {
           .append(" -p ")
           .append(BaseTest.getPassword())
           .append(" -k -i ");
-    } else if (domainMap.containsKey("rcuDatabaseURL")) {
+    } else if (domainMap.containsKey("rcuDatabaseURL") && !domainHomeSourceType.equals("FromModel")) {
       createDomainScriptCmd.append(
           "/samples/scripts/create-fmw-infrastructure-domain/"
               + "domain-home-on-pv/create-domain.sh -v -i ");

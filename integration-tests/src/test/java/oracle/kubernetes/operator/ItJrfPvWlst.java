@@ -122,7 +122,9 @@ public class ItJrfPvWlst extends BaseTest {
         Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
         domainMap.put("namespace", domainNS);
         domainMap.put("initialManagedServerReplicas", new Integer("2"));
-        domainMap.put("image", "container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4");
+        domainMap.put(
+            "image",
+             BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag());
         domainMap.put("clusterName", "infra-cluster");
         domainMap.put("managedServerNameBase", "infraserver");
         domainMap.put("rcuSchemaPrefix", "jrfdomain");

@@ -9,6 +9,10 @@ public class RcuSecret extends Secret {
 
   private String sysUsername;
   private String sysPassword;
+  private String rcuPrefix;
+  private String rcuSchemaPass;
+  private String rcuConnection;
+  
 
   /**
    * Construct RCU secret.
@@ -56,6 +60,50 @@ public class RcuSecret extends Secret {
     ExecResult result = TestUtils.exec(command);
     LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
   }
+  
+  /**
+   * Construct RCU secret.
+   * @param secretname secret name
+   * @param rcuPrefix username
+   * @param password password
+   * @param sysUsername sys username
+   * @param sysPassword sys password
+   * @throws Exception on failure
+   */
+  public RcuSecret(
+      String namespace,
+      String secretName,
+      String rcuPrefix,
+      String rcuSchemaPass,
+      String rcuConnection
+  )
+      throws Exception {
+    this.namespace = namespace;
+    this.secretName = secretName;
+    this.rcuPrefix = rcuPrefix;
+    this.rcuSchemaPass = rcuSchemaPass;
+    this.rcuConnection = rcuConnection;
+    
+    // delete the secret first if exists
+    deleteSecret();
+
+    // create the secret
+    String command =
+        "kubectl -n "
+            + this.namespace
+            + " create secret generic "
+            + this.secretName
+            + " --from-literal=rcu_prefix="
+            + this.rcuPrefix
+            + " --from-literal=rcu_schema_password="
+            + this.rcuSchemaPass
+            + " --from-literal=rcu_db_conn_string="
+            + this.rcuConnection;
+            
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
+    ExecResult result = TestUtils.exec(command);
+    LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
+  }
 
   public String getSysUsername() {
     return sysUsername;
@@ -63,6 +111,18 @@ public class RcuSecret extends Secret {
 
   public String getSysPassword() {
     return sysPassword;
+  }
+  
+  public String getrcuPrefix() {
+    return rcuPrefix;
+  }
+  
+  public String getrcuSchemaPass() {
+    return rcuSchemaPass;
+  }
+  
+  public String getrcuConnection() {
+    return rcuConnection;
   }
 
   private void deleteSecret() throws Exception {

@@ -1,7 +1,10 @@
   %MII_PREFIX%configuration:
-  # secrets: [ %DOMAIN_UID%-rcu-access ]
-
-    %MII_PREFIX%  model:
+    #secrets: [ %DOMAIN_UID%-rcu-access ]
+  
+    # increase the introspector job active timeout value. Mainly for JRF use cases
+    #introspectorJobActiveDeadlineSeconds: 300
+    
+    %MII_PREFIX%model:
   #
   # Optional configmap for additional models and variable files
   #
@@ -10,17 +13,15 @@
      #
      # wdt domain type for model in image case
      # Valid WDT_DOMAIN_TYPE_VALUES are 'WLS', 'JRF', and 'RestrictedJRF'
-  #
+  
     %MII_PREFIX%    domainType: %WDT_DOMAIN_TYPE%
     %MII_PREFIX%    runtimeEncryptionSecret: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
 
-     #opss:
-     #
-     # k8 secret for the opss extract wallet.  It contains the key passphrase used to extract the wallet
-     #
-     #walletPasswordSecret: %DOMAIN_UID%-opss-key-passphrase-secret
-     #
-     # opss wallet file secret containing key ewallet.p12 containing the base64 encoded opss wallet
-     #walletFileSecret: %DOMAIN_UID%-opss-walletfile-secret
-     #
-  #
+    #opss:
+      #
+      # k8 secret for the opss extract wallet.  It contains the key passphrase used to extract the wallet
+      #
+      #walletPasswordSecret: %DOMAIN_UID%-opss-wallet-password-secret
+      #
+      # opss wallet file secret containing key ewallet.p12 containing the base64 encoded opss wallet
+      #walletFileSecret: %DOMAIN_UID%-opss-walletfile-secret

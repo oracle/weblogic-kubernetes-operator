@@ -533,7 +533,15 @@ function createFiles {
   else
     sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
   fi
-
+  
+  #for mii JRF domain
+  if [ "${wdtDomainType}" == "JRF" ] ; then
+    sed -i -e "s/\#\(opss\):/\1:/" ${dcrOutput}
+    sed -i -e "s/\#\(walletPasswordSecret\):/\1:/" ${dcrOutput}
+    sed -i -e "s/\#\(secrets\):/\1:/" ${dcrOutput}
+    sed -i -e "s/\#\(introspectorJobActiveDeadlineSeconds\):/\1:/" ${dcrOutput}
+  fi
+  
   # Remove any "...yaml-e" and "...properties-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e
   rm -f ${domainOutputDir}/*.properties-e
