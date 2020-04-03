@@ -3,7 +3,10 @@
 
 package oracle.weblogic.kubernetes;
 
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1NamespaceBuilder;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -74,8 +77,10 @@ class ItSimpleDomainValidation implements LoggedTest {
         + "' in namespace: " + serviceAccount.getMetadata().getNamespace());
 
     // Delete namespace
+    V1ObjectMeta metdata = new V1ObjectMetaBuilder().withName(namespace).build();
+    V1Namespace v1Namespace = new V1NamespaceBuilder().withMetadata(metdata).build();
     assertDoesNotThrow(
-        () -> TestActions.deleteNamespace(namespace));
+        () -> TestActions.deleteNamespace(v1Namespace));
     logger.info("Deleted namespace: " + namespace);
   }
 

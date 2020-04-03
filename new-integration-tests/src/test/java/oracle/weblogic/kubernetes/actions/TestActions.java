@@ -3,10 +3,15 @@
 
 package oracle.weblogic.kubernetes.actions;
 
-import java.io.IOException;
 import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1Service;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
@@ -15,6 +20,7 @@ import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
+import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.Traefik;
 import oracle.weblogic.kubernetes.actions.impl.primitive.InstallParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
@@ -159,12 +165,13 @@ public class TestActions {
   /**
    * Create Kubernetes namespace
    *
-   * @param name the name of the namespace
+   * @param name - V1Namespace object containing namespace configuration data
    * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    */
-  public static boolean createNamespace(String name) throws ApiException {
-    return Namespace.createNamespace(name);
+  public static boolean createNamespace(V1Namespace name) throws ApiException {
+    return Namespace.create(name);
   }
 
   /**
@@ -188,16 +195,16 @@ public class TestActions {
   }
 
   /**
-   * Delete a namespace for the given name
+   * Delete a Kubernetes namespace
    *
-   * @param name - name of namespace
-   * @return true if successful delete, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @param namespace - V1Namespace object containing name space configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    */
-  public static boolean deleteNamespace(String name) throws ApiException {
-    return Namespace.deleteNamespace(name);
+  public static boolean deleteNamespace(V1Namespace namespace) throws ApiException {
+    return Namespace.delete(namespace);
   }
-
   // ------------------------ Docker image  -------------------------
 
   public static boolean createMIIImage(WITParams params) {
@@ -240,18 +247,32 @@ public class TestActions {
   }
 
   /**
-   * Delete the Kubernetes Persistent Volume
    *
-   * @param pvName the name of the Persistent Volume
-   * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @param persistentVolume - V1PersistentVolume object containing Kubernetes persistent volume
+   *     configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    */
-  public static boolean deletePersistentVolume(String pvName) throws ApiException {
-    return PersistentVolume.delete(pvName);
+  public static boolean createPersistentVolume(V1PersistentVolume persistentVolume) throws ApiException {
+    return PersistentVolume.create(persistentVolume);
   }
 
   /**
-   * Create Kubernetes Persistent Volume Claim using the yaml provided
+   * Delete the Kubernetes Persistent Volume
+   *
+   * @param persistentVolume - V1PersistentVolume object containing PV configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean deletePersistentVolume(V1PersistentVolume persistentVolume)
+      throws ApiException {
+    return PersistentVolume.delete(persistentVolume);
+  }
+
+  /**
+   * Create a Kubernetes Persistent Volume Claim using the specified path to a file in yaml format
    *
    * @param pvcYaml the persistent volume claim yaml file
    * @return true on success, false otherwise
@@ -261,16 +282,29 @@ public class TestActions {
   }
 
   /**
+   * @param persistentVolumeClaim - V1PersistentVolumeClaim object containing Kubernetes
+   *     persistent volume claim configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean createPersistentVolumeClaim(V1PersistentVolumeClaim persistentVolumeClaim)
+      throws ApiException {
+    return PersistentVolumeClaim.create(persistentVolumeClaim);
+  }
+
+  /**
    * Delete the Kubernetes Persistent Volume Claim
    *
-   * @param pvcName the name of the Persistent Volume Claim
-   * @param namespace the namespace of the Persistent Volume Claim
-   * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @param persistentVolumeClaim - V1PersistentVolumeClaim object containing PVC configuration
+   *     data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    */
-  public static boolean deletePersistentVolumeClaim(String pvcName, String namespace)
+  public static boolean deletePersistentVolumeClaim(V1PersistentVolumeClaim persistentVolumeClaim)
       throws ApiException {
-    return PersistentVolumeClaim.delete(pvcName, namespace);
+    return PersistentVolumeClaim.delete(persistentVolumeClaim);
   }
 
   // --------------------------  secret  ----------------------------------
@@ -278,57 +312,76 @@ public class TestActions {
   /**
    * Create Kubernetes Secret
    *
-   * @param secretName the name of the secret
-   * @param userName username
-   * @param password password
-   * @param namespace the name of the namespace
-   * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
-   *
+   * @param secret - V1Secret object containing Kubernetes secret configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    */
-  public static boolean createSecret(String secretName,
-      String userName, String password, String namespace) throws ApiException {
-    return Secret.create(secretName, userName, password, namespace);
+  public static boolean createSecret(V1Secret secret) throws ApiException {
+    return Secret.create(secret);
   }
 
   /**
    * Delete Kubernetes Secret
    *
-   * @param secretName the name of the secret
-   * @param namespace the name of the namespace
-   * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @param secret - V1Secret object containing Kubernetes secret configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    */
-  public static boolean deleteSecret(String secretName, String namespace) throws ApiException {
-    return Secret.delete(secretName, namespace);
+  public static boolean deleteSecret(V1Secret secret) throws ApiException {
+    return Secret.delete(secret);
   }
+
   // -------------------------- config map ---------------------------------
 
   /**
    * Create Kubernetes Config Map
    *
-   * @param cmName the name of the Config Map
-   * @param namespace the name of the namespace
-   * @param fromFile file or dir path
+   * @param configMap - V1ConfigMap object containing config map configuration data
    * @return true on success, false otherwise
    * @throws ApiException - if Kubernetes client API call fails
-   * @throws IOException - if fail to read fromFile
    */
-  public static boolean createConfigMap(String cmName, String namespace, String fromFile)
-      throws IOException, ApiException {
-    return ConfigMap.create(cmName, namespace, fromFile);
+  public static boolean createConfigMap(V1ConfigMap configMap) throws ApiException {
+    return ConfigMap.create(configMap);
   }
 
   /**
    * Delete Kubernetes Config Map
    *
-   * @param cmName the name of the Config Map
-   * @param namespace the name of the namespace
-   * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @param configMap - V1ConfigMap object containing config map configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    */
-  public static boolean deleteConfigMap(String cmName, String namespace) throws ApiException {
-    return ConfigMap.delete(cmName, namespace);
+  public static boolean deleteConfigMap(V1ConfigMap configMap) throws ApiException {
+    return ConfigMap.delete(configMap);
+  }
+
+  // -------------------------- Service ---------------------------------
+
+  /**
+   * Create Kubernetes Service
+   *
+   * @param service - V1Service object containing service configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean createService(V1Service service) throws ApiException {
+    return Service.create(service);
+  }
+
+  /**
+   * Delete Kubernetes Service
+   *
+   * @param service - V1Service object containing service configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean deleteService(V1Service service) throws ApiException {
+    return Service.delete(service);
   }
 
   // ------------------------ where does this go  -------------------------

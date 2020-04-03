@@ -4,32 +4,32 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Service;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
-public class ConfigMap {
+public class Service {
 
   /**
-   * Create Kubernetes Config Map
+   * Create Kubernetes Service
    *
-   * @param configMap - V1ConfigMap object containing config map configuration data
-   * @return true on success, false otherwise
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
-   */
-  public static boolean create(V1ConfigMap configMap) throws ApiException {
-    return Kubernetes.createConfigMap(configMap);
-  }
-
-  /**
-   * Delete Kubernetes Config Map
-   *
-   * @param configMap - V1ConfigMap object containing config map configuration data
+   * @param service - V1Service object containing Kubernetes secret configuration data
    * @return true if successful
    * @throws ApiException - missing required configuration data, if Kubernetes request fails or
    *     unsuccessful
    */
-  public static boolean delete(V1ConfigMap configMap) throws ApiException {
-    return Kubernetes.deleteConfigMap(configMap);
+  public static boolean create(V1Service service) throws ApiException {
+    return Kubernetes.createService(service);
+  }
+
+  /**
+   * Delete Kubernetes Service
+   *
+   * @param service - V1Service object containing service configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean delete(V1Service service) throws ApiException {
+    return Kubernetes.deleteService(service);
   }
 }

@@ -6,9 +6,7 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -24,7 +22,6 @@ import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ConfigMapBuilder;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1Namespace;
@@ -33,15 +30,12 @@ import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeBuilder;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimBuilder;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretBuilder;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -233,7 +227,20 @@ public class Kubernetes implements LoggedTest {
     return log;
   }
 
+  /**
+   * Delete Kubernetes Pod
+   *
+   * @param pod - V1Pod object containing pod's configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
   public static boolean deletePod(V1Pod pod) throws ApiException {
+    if (pod == null) {
+      throw new ApiException(
+          "Parameter 'pod' is null when calling deletePod()");
+    }
+
     if (pod.getMetadata() == null) {
       throw new ApiException(
           "Missing the required parameter 'metadata' when calling deletePod()");
@@ -273,16 +280,19 @@ public class Kubernetes implements LoggedTest {
   /**
    * Create Kubernetes namespace
    *
-   * @param name the name of the namespace
-   * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @param namespace - V1Namespace object containing namespace configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    */
-  public static boolean createNamespace(String name) throws ApiException {
-    V1ObjectMeta meta = new V1ObjectMetaBuilder().withName(name).build();
-    V1Namespace namespace = new V1NamespaceBuilder().withMetadata(meta).build();
+  public static boolean createNamespace(V1Namespace namespace) throws ApiException {
+    if (namespace == null) {
+      throw new ApiException(
+          "Parameter 'namespace' is null when calling createNamespace()");
+    }
 
-    namespace = coreV1Api.createNamespace(
-        namespace, // name of the Namespace
+    V1Namespace ns = coreV1Api.createNamespace(
+        namespace, // V1Namespace configuration data object
         PRETTY, // pretty print output
         null, // indicates that modifications should not be persisted
         null // name associated with the actor or entity that is making these changes
@@ -305,7 +315,9 @@ public class Kubernetes implements LoggedTest {
       name[i] = (char) (RANDOM.nextInt(25) + (int) 'a');
     }
     String namespace = "ns-" + new String(name);
-    if (createNamespace(namespace)) {
+    V1ObjectMeta meta = new V1ObjectMetaBuilder().withName(namespace).build();
+    V1Namespace v1Namespace = new V1NamespaceBuilder().withMetadata(meta).build();
+    if (createNamespace(v1Namespace)) {
       return namespace;
     } else {
       return "";
@@ -341,20 +353,6 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Delete a namespace for the given name
-   *
-   * @param name - name of namespace
-   * @return true if successful delete, false otherwise
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
-   */
-  public static boolean deleteNamespace(String name) throws ApiException {
-    V1ObjectMeta metdata = new V1ObjectMetaBuilder().withName(name).build();
-    V1Namespace namespace = new V1NamespaceBuilder().withMetadata(metdata).build();
-    return deleteNamespace(namespace);
-  }
-
-  /**
    * Delete a Kubernetes namespace
    *
    * @param namespace - V1Namespace object containing name space configuration data
@@ -363,6 +361,11 @@ public class Kubernetes implements LoggedTest {
    *     unsuccessful
    */
   public static boolean deleteNamespace(V1Namespace namespace) throws ApiException {
+    if (namespace == null) {
+      throw new ApiException(
+          "Parameter 'namespace' is null when calling deleteNamespace()");
+    }
+
     if (namespace.getMetadata() == null) {
       throw new ApiException(
           "Missing the required parameter 'metadata' when calling deleteNamespace()");
@@ -555,36 +558,17 @@ public class Kubernetes implements LoggedTest {
   /**
    * Create a Kubernetes Config Map
    *
-   * @param cmName - name of the config map
-   * @param namespace - name of namespace for config map
-   * @param fromFile - path to file containing config map data, as name - value pairs
-   * @return true on success, false otherwise
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
-   * @throws IOException - failure to load config map data from file
-   */
-  public static boolean createConfigMap(String cmName, String namespace, String fromFile)
-      throws ApiException,
-      IOException {
-    // Load config map data
-    Properties cmProperties = loadProps(fromFile);
-
-    // Initialize config map configuration data
-    V1ObjectMeta meta = new V1ObjectMetaBuilder().withName(cmName).build();
-    V1ConfigMap body = new V1ConfigMapBuilder().withMetadata(meta).withData((Map) cmProperties).build();
-
-    return createConfigMap(body);
-  }
-
-  /**
-   * Create a Kubernetes Config Map
-   *
    * @param configMap - V1ConfigMap object containing config map configuration data
    * @return true if successful
    * @throws ApiException - missing required configuration data, if Kubernetes request fails or
    *     unsuccessful
    */
   public static boolean createConfigMap(V1ConfigMap configMap) throws ApiException {
+    if (configMap == null) {
+      throw new ApiException(
+          "Parameter 'configMap' is null when calling createConfigMap()");
+    }
+
     if (configMap.getMetadata() == null) {
       throw new ApiException(
           "Missing the required parameter 'metadata' when calling createConfigMap()");
@@ -641,27 +625,17 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete Kubernetes Config Map
    *
-   * @param cmName the name of the Config Map
-   * @param namespace the name of the namespace
-   * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
-   */
-  public static boolean deleteConfigMap(String cmName, String namespace) throws ApiException {
-    V1ObjectMeta metdata = new V1ObjectMetaBuilder().withNamespace(namespace).withName(cmName)
-        .build();
-    V1ConfigMap configMap = new V1ConfigMapBuilder().withMetadata(metdata).build();
-    return deleteConfigMap(configMap);
-  }
-
-  /**
-   * Delete Kubernetes Config Map
-   *
    * @param configMap - V1ConfigMap object containing config map configuration data
    * @return true if successful
    * @throws ApiException - missing required configuration data, if Kubernetes request fails or
    *     unsuccessful
    */
   public static boolean deleteConfigMap(V1ConfigMap configMap) throws ApiException {
+    if (configMap == null) {
+      throw new ApiException(
+          "Parameter 'configMap' is null when calling deleteConfigMap()");
+    }
+
     if (configMap.getMetadata() == null) {
       throw new ApiException(
           "Missing the required parameter 'metadata' when calling deleteConfigMap()");
@@ -701,38 +675,17 @@ public class Kubernetes implements LoggedTest {
   /**
    * Create Kubernetes Secret
    *
-   * @param secretName the name of the secret
-   * @param username username of the domain
-   * @param password password for the domain
-   * @param namespace the name of the namespace
-   * @return true on success, false otherwise
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
-   */
-  public static boolean createSecret(String secretName,
-      String username, String password, String namespace) throws ApiException {
-    V1ObjectMeta meta = new V1ObjectMetaBuilder().withNamespace(namespace).withName(secretName)
-        .build();
-    HashMap<String, byte[]> data = new HashMap<>();
-    data.put("username", username.getBytes(StandardCharsets.UTF_8));
-    data.put("password", password.getBytes(StandardCharsets.UTF_8));
-    V1Secret secret = new V1SecretBuilder().withMetadata(meta).withType("Opaque").withData(data)
-        .build();
-
-    // TODO: what about labels?
-
-    return createSecret(secret);
-  }
-
-  /**
-   * Create Kubernetes Secret
-   *
    * @param secret - V1Secret object containing Kubernetes secret configuration data
    * @return true if successful
    * @throws ApiException - missing required configuration data, if Kubernetes request fails or
    *     unsuccessful
    */
   public static boolean createSecret(V1Secret secret) throws ApiException {
+    if (secret == null) {
+      throw new ApiException(
+          "Parameter 'secret' is null when calling createSecret()");
+    }
+
     if (secret.getMetadata() == null) {
       throw new ApiException(
           "Missing the required parameter 'metadata' when calling createSecret()");
@@ -745,7 +698,7 @@ public class Kubernetes implements LoggedTest {
 
     String namespace = secret.getMetadata().getNamespace();
 
-    V1Secret secrt = coreV1Api.createNamespacedSecret(
+    V1Secret v1Secret = coreV1Api.createNamespacedSecret(
         namespace, // name of the Namespace
         secret, // secret configuration data
         PRETTY, // pretty print output
@@ -759,28 +712,17 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete Kubernetes Secret
    *
-   * @param secretName the name of the secret
-   * @param namespace the name of the namespace
-   * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
-   */
-  public static boolean deleteSecret(String secretName, String namespace) throws ApiException {
-    V1ObjectMeta metdata = new V1ObjectMetaBuilder().withNamespace(namespace).withName(secretName)
-        .build();
-    V1Secret secret = new V1SecretBuilder()
-        .withMetadata(metdata).build();
-    return deleteSecret(secret);
-  }
-
-  /**
-   * Delete Kubernetes Secret
-   *
    * @param secret - V1Secret object containing Kubernetes secret configuration data
    * @return true if successful
    * @throws ApiException - missing required configuration data, if Kubernetes request fails or
    *     unsuccessful
    */
   public static boolean deleteSecret(V1Secret secret) throws ApiException {
+    if (secret == null) {
+      throw new ApiException(
+          "Parameter 'secret' is null when calling deleteSecret()");
+    }
+
     if (secret.getMetadata() == null) {
       throw new ApiException(
           "Missing the required parameter 'metadata' when calling deleteSecret()");
@@ -818,29 +760,80 @@ public class Kubernetes implements LoggedTest {
   // --------------------------- pv/pvc ---------------------------
 
   /**
-   * Delete the Kubernetes Persistent Volume
    *
-   * @param pvName the name of the Persistent Volume
-   * @return true on success
+   * @param persistentVolume - V1PersistentVolume object containing Kubernetes persistent volume
+   *     configuration data
+   * @return true if successful
    * @throws ApiException - missing required configuration data, if Kubernetes request fails or
    *     unsuccessful
    */
-  public static boolean deletePv(String pvName) throws ApiException {
-    V1ObjectMeta metdata = new V1ObjectMetaBuilder().withName(pvName).build();
-    V1PersistentVolume persistentVolume = new V1PersistentVolumeBuilder().withMetadata(metdata)
-        .build();
-    return deletePv(persistentVolume);
+  public static boolean createPv(V1PersistentVolume persistentVolume) throws ApiException {
+    if (persistentVolume == null) {
+      throw new ApiException(
+          "Parameter 'persistentVolume' is null when calling createPv()");
+    }
+
+    V1PersistentVolume pv = coreV1Api.createPersistentVolume(
+        persistentVolume, // persistent volume configuration data
+        PRETTY, // pretty print output
+        null, // indicates that modifications should not be persisted
+        null // fieldManager is a name associated with the actor
+    );
+
+    return true;
   }
+
+  /**
+   * @param persistentVolumeClaim - V1PersistentVolumeClaim object containing Kubernetes
+   *     persistent volume claim configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean createPvc(V1PersistentVolumeClaim persistentVolumeClaim) throws ApiException {
+    if (persistentVolumeClaim == null) {
+      throw new ApiException(
+          "Parameter 'persistentVolume' is null when calling createPv()");
+    }
+
+    if (persistentVolumeClaim.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling createPvc()");
+    }
+
+    if (persistentVolumeClaim.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling createPvc()");
+    }
+
+    String namespace = persistentVolumeClaim.getMetadata().getNamespace();
+
+    V1PersistentVolumeClaim pvc = coreV1Api.createNamespacedPersistentVolumeClaim(
+        namespace, // name of the Namespace
+        persistentVolumeClaim, // persistent volume claim configuration data
+        PRETTY, // pretty print output
+        null, // indicates that modifications should not be persisted
+        null // fieldManager is a name associated with the actor
+    );
+
+    return true;
+  }
+
 
   /**
    * Delete the Kubernetes Persistent Volume
    *
-   * @param persistentVolume - V1ServiceAccount object containing PV configuration data
+   * @param persistentVolume - V1PersistentVolume object containing PV configuration data
    * @return true if successful
    * @throws ApiException - missing required configuration data, if Kubernetes request fails or
    *     unsuccessful
    */
   public static boolean deletePv(V1PersistentVolume persistentVolume) throws ApiException {
+    if (persistentVolume == null) {
+      throw new ApiException(
+          "Parameter 'persistentVolume' is null when calling deletePv()");
+    }
+
     if (persistentVolume.getMetadata() == null) {
       throw new ApiException(
           "Missing the required parameter 'metadata' when calling deletePv()");
@@ -872,22 +865,6 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete the Kubernetes Persistent Volume Claim
    *
-   * @param pvcName the name of the Persistent Volume Claim
-   * @param namespace the namespace of the Persistent Volume Claim
-   * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
-   */
-  public static boolean deletePvc(String pvcName, String namespace) throws ApiException {
-    V1ObjectMeta metdata = new V1ObjectMetaBuilder().withNamespace(namespace).withName(pvcName)
-        .build();
-    V1PersistentVolumeClaim persistentVolumeClaim = new V1PersistentVolumeClaimBuilder()
-        .withMetadata(metdata).build();
-    return deletePvc(persistentVolumeClaim);
-  }
-
-  /**
-   * Delete the Kubernetes Persistent Volume Claim
-   *
    * @param persistentVolumeClaim - V1PersistentVolumeClaim object containing PVC configuration
    *     data
    * @return true if successful
@@ -896,6 +873,11 @@ public class Kubernetes implements LoggedTest {
    */
   public static boolean deletePvc(V1PersistentVolumeClaim persistentVolumeClaim)
       throws ApiException {
+    if (persistentVolumeClaim == null) {
+      throw new ApiException(
+          "Parameter 'persistentVolumeClaim' is null when calling deletePvc()");
+    }
+
     if (persistentVolumeClaim.getMetadata() == null) {
       throw new ApiException(
           "Missing the required parameter 'metadata' when calling deletePvc()");
@@ -942,6 +924,10 @@ public class Kubernetes implements LoggedTest {
    */
   public static V1ServiceAccount createServiceAccount(V1ServiceAccount serviceAccount)
       throws ApiException {
+    if (serviceAccount == null) {
+      throw new ApiException(
+          "Parameter 'serviceAccount' is null when calling createServiceAccount()");
+    }
 
     if (serviceAccount.getMetadata() == null) {
       throw new ApiException(
@@ -975,6 +961,12 @@ public class Kubernetes implements LoggedTest {
    *     unsuccessful
    */
   public static boolean deleteServiceAccount(V1ServiceAccount serviceAccount) throws ApiException {
+    if (serviceAccount == null) {
+      throw new ApiException(
+          "Parameter 'serviceAccount' is null when calling deleteServiceAccount()");
+    }
+
+
     if (serviceAccount.getMetadata() == null) {
       throw new ApiException(
           "Missing the required parameter 'metadata' when calling deleteServiceAccount()");
@@ -1020,6 +1012,11 @@ public class Kubernetes implements LoggedTest {
    *     unsuccessful
    */
   public static boolean createService(V1Service service) throws ApiException {
+    if (service == null) {
+      throw new ApiException(
+          "Parameter 'service' is null when calling createService()");
+    }
+
     if (service.getMetadata() == null) {
       throw new ApiException(
           "Missing the required parameter 'metadata' when calling createService()");
@@ -1052,6 +1049,11 @@ public class Kubernetes implements LoggedTest {
    *     unsuccessful
    */
   public static boolean deleteService(V1Service service) throws ApiException {
+    if (service == null) {
+      throw new ApiException(
+          "Parameter 'service' is null when calling deleteService()");
+    }
+
     if (service.getMetadata() == null) {
       throw new ApiException(
           "Missing the required parameter 'metadata' when calling deleteService()");
