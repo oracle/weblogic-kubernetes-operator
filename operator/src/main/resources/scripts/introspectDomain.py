@@ -795,8 +795,6 @@ class UserConfigAndKeyGenerator(Generator):
     finally:
       nmDisconnect()
 
-
-# noinspection PyInterpreter
 class SitConfigGenerator(Generator):
 
   def __init__(self, env):
