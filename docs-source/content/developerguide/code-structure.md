@@ -16,7 +16,7 @@ This project has the following directory structure:
 * `model`: Domain resource Java model
 * `operator`: Operator runtime
 * `site`: This documentation
-* `src/scripts`: Scripts operator injects into WebLogic server instance Pods
+* `src/scripts`: Scripts operator injects into WebLogic Server instance Pods
 * `swagger`: Swagger files for the Kubernetes API server and domain resource
 
 ### Watch package

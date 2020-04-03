@@ -9,19 +9,19 @@ If you are running your Kubernetes cluster on Oracle Container Engine
 for Kubernetes (commonly known as OKE), you can have OCI automatically
 provision load balancers for you by creating a `Service` of type
 `LoadBalancer` instead of (or in addition to) installing an
-ingress controller like Traefik or Voyager.
+Ingress controller like Traefik or Voyager.
 
 OKE Kubernetes worker nodes normally do not have public IP addresses.
 This means that the `NodePort` services created by the operator are
 not usable, because they would expose ports on the worker node's private
 IP addresses only, which are not reachable from outside the cluster.  
-Instead, you can use an OCI Load Balancer to provide access
+Instead, you can use an OCI load balancer to provide access
 to services running in OKE.
 
 {{% notice note %}}
-It is also possible, if desirable, to have an OCI Load Balancer route
-traffic to an ingress controller running inside the Kubernetes cluster
-and have that ingress controller in turn route traffic to services in the
+It is also possible, if desirable, to have an OCI load balancer route
+traffic to an Ingress controller running inside the Kubernetes cluster
+and have that Ingress controller in turn route traffic to services in the
 cluster.
 {{% /notice %}}
 
@@ -81,7 +81,7 @@ bobs-bookstore-managed-server2         ClusterIP      None            <none>    
 bobs-bookstore-oci-lb-service          LoadBalancer   10.96.121.216   <pending>     31111:31671/TCP               9s
 ```
 
-After a short time (typically less than a minute) the OCI Load Balancer will be provisioned and the
+After a short time (typically less than a minute) the OCI load balancer will be provisioned and the
 external IP address will be displayed:
 
 ```
@@ -96,6 +96,5 @@ bobs-bookstore-oci-lb-service          LoadBalancer   10.96.121.216   132.145.23
 ```
 
 You can now use the external IP address and port to access your pods.  There are several
-options that can be used to configure more advanced load balancing behavior.  Please
-refer to the [OCI documentation](https://docs.cloud.oracle.com/iaas/Content/ContEng/Tasks/contengcreatingloadbalancer.htm)
-for more information, including how to configure SSL support, supporting internal and external subnets, and so on.
+options that can be used to configure more advanced load balancing behavior. For more information, including how to configure SSL support,
+supporting internal and external subnets, and so one, refer to the [OCI documentation](https://docs.cloud.oracle.com/iaas/Content/ContEng/Tasks/contengcreatingloadbalancer.htm).

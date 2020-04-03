@@ -124,8 +124,7 @@ kubectl patch serviceaccount default \
 {{% notice note %}}
 You can provide mutliple `imagePullSecrets` if you need to pull Docker images from multiple
 remote Docker registries or if your images require different authentication credentials.
-For more information, see [Docker Image Protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}})
-under **Security**.
+For more information, see [Docker Image Protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}}).
 {{% /notice %}}
 
 #### Manually copying the image to your worker nodes

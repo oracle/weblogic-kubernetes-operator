@@ -11,9 +11,9 @@ various approaches.  We can start by asking ourselves questions like these:
 
 
 - *Can you make the desired change with a configuration override?*  
-  The WebLogic Kubernetes Operator allows you to inject a number of [configuration
+  The WebLogic Server Kubernetes Operator allows you to inject a number of [configuration
   overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}})
-  into your pods before starting any servers in the domain.  This allows you to use 
+  into your pods before starting any servers in the domain.  This allows you to use
   the same image for multiple
   different configurations.  A good example would be changing the settings for a data
   source, for example. You may wish to have a larger connection pool in your production
