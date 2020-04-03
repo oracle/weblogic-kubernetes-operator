@@ -10,6 +10,7 @@ import javax.validation.constraints.NotNull;
 
 import com.google.gson.annotations.Expose;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.utils.OperatorUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -46,6 +47,9 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @Valid
   private ServerHealth health;
 
+  // volatile so it will not be included in the json schema
+  private volatile boolean isAdminServer;
+
   public ServerStatus() {
   }
 
@@ -59,6 +63,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     this.desiredState = other.desiredState;
     this.clusterName = other.clusterName;
     this.nodeName = other.nodeName;
+    this.isAdminServer = other.isAdminServer;
     this.health = Optional.ofNullable(other.health).map(ServerHealth::new).orElse(null);
   }
 
@@ -218,10 +223,26 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     return this;
   }
 
+  private boolean isAdminServer() {
+    return isAdminServer;
+  }
+
+  /**
+   * Boolean indication whether this server is the admin server.
+   *
+   * @param isAdminServer whether this server is the admin server
+   * @return this
+   */
+  public ServerStatus withIsAdminServer(boolean isAdminServer) {
+    this.isAdminServer = isAdminServer;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("serverName", serverName)
+        .append("isAdminServer", isAdminServer)
         .append("state", state)
         .append("desiredState", desiredState)
         .append("clusterName", clusterName)
@@ -239,6 +260,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(state)
         .append(desiredState)
         .append(clusterName)
+        .append(isAdminServer)
         .toHashCode();
   }
 
@@ -258,12 +280,23 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(state, rhs.state)
         .append(desiredState, rhs.desiredState)
         .append(clusterName, rhs.clusterName)
+        .append(isAdminServer, rhs.isAdminServer)
         .isEquals();
   }
 
   @Override
   public int compareTo(@Nonnull ServerStatus o) {
-    return serverName.compareTo(o.serverName);
+    int clustersCompareTo = OperatorUtils.compareSortingStrings(clusterName, o.clusterName);
+    return clustersCompareTo == 0 ? compareToServer(o) : clustersCompareTo;
+  }
+
+  private int compareToServer(ServerStatus o) {
+    if (!isAdminServer && o.isAdminServer) {
+      return 1;
+    } else if (isAdminServer && !o.isAdminServer) {
+      return -1;
+    }
+    return OperatorUtils.compareSortingStrings(serverName, o.serverName);
   }
 
   @Override

@@ -34,7 +34,7 @@ The planned feature changes in 3.0.0-rc1 are:
 
 * Introduction of a new "Model In Image" feature which allows you to have a domain
   created at pod startup time from a WebLogic Deploy Tool model and archive.
-  This supports user-requested use cases like creating multiple domains from 
+  This supports user-requested use cases like creating multiple domains from
   the same model and automated updating of the domain based on model changes.
   The operator automates management of the domain encryption keys to ensure
   that they are not changed during domain updates.
@@ -111,8 +111,6 @@ See the [Release Notes]({{< relref "release-notes.md" >}})  for recent changes t
 ### Developer guide
 
 Developers interested in this project are encouraged to read the [Developer guide]({{< relref "/developerguide/_index.md" >}}) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kubernetes API.
-
-Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something to which you would like to contribute!
 
 ### API documentation
 

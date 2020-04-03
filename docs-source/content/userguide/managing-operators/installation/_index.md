@@ -45,11 +45,11 @@ You can verify the operator installation by examining the output from the `helm 
 
 {{% notice note %}}
 When the operator image is stored in a private registry, see
-[WebLogic Kubernetes Operator image pull secret]({{<relref "/security/secrets.md#weblogic-kubernetes-operator-image-pull-secret">}})
+[WebLogic Server Kubernetes Operator image pull secret]({{<relref "/security/secrets.md#weblogic-kubernetes-operator-image-pull-secret">}})
 for more information on specifying the registry credentials.
 {{% /notice %}}
 
-#### Alternatively, install the operator Helm chart from GitHub chart repository
+#### Alternatively, install the operator Helm chart from the GitHub chart repository
 
 Add this repository to the Helm installation:
 

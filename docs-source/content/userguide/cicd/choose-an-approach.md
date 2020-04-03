@@ -13,7 +13,7 @@ various approaches.  We can start by asking ourselves questions like these:
 - *Can you make the desired change with a configuration override or Model in Image config map?*  
 
   When your domain home source type is Domain in PV or Domain in Image,
-  the WebLogic Kubernetes Operator allows you to inject a number of [configuration
+  the WebLogic Server Kubernetes Operator allows you to inject a number of [configuration
   overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}})
   into your pods before starting any servers in the domain.  
 
