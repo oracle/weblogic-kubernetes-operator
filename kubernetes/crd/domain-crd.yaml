@@ -147,9 +147,9 @@ spec:
                   to false if domainHomeInImage is true. '
               httpAccessLogInLogHome:
                 type: boolean
-                description: If true (the default), the server HTTP access log file
-                  will be written to the same directory specified in logHome. Otherwise,
-                  server HTTP access log file will be written to the directory configured
+                description: If true (the default), then server HTTP access log files
+                  will be written to the same directory specified in `logHome`. Otherwise,
+                  server HTTP access log files will be written to the directory configured
                   in the WebLogic domain home configuration.
               webLogicCredentialsSecret:
                 type: object
@@ -10381,8 +10381,8 @@ spec:
               logHome:
                 type: string
                 description: The in-pod name of the directory in which to store the
-                  domain, node manager, server logs, server  *.out, and optionally
-                  HTTP access log files
+                  domain, Node Manager, server logs, server  *.out, and optionally
+                  HTTP access log files if `httpAccessLogInLogHome` is true.
               includeServerOutInPodLog:
                 type: boolean
                 description: If true (the default), the server .out file will be included

@@ -77,12 +77,12 @@ public class DomainSpec extends BaseConfiguration {
   private V1SecretReference webLogicCredentialsSecret;
 
   /**
-   * The in-pod name of the directory to store the domain, node manager, server logs, and server
-   * .out files in.
+   * The in-pod name of the directory to store the domain, Node Manager, server logs, server
+   * .out, and HTTP access log files in.
    */
   @Description(
-      "The in-pod name of the directory in which to store the domain, node manager, server logs, "
-          + "server  *.out, and optionally HTTP access log files")
+      "The in-pod name of the directory in which to store the domain, Node Manager, server logs, "
+          + "server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true.")
   private String logHome;
 
   /**
@@ -113,8 +113,8 @@ public class DomainSpec extends BaseConfiguration {
 
   /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
    *  if {@link #logHomeEnabled} is true. Default is true. */
-  @Description("If true (the default), the server HTTP access log file will be written to the same "
-      + "directory specified in logHome. Otherwise, server HTTP access log file will be written to "
+  @Description("If true (the default), then server HTTP access log files will be written to the same "
+      + "directory specified in `logHome`. Otherwise, server HTTP access log files will be written to "
       + "the directory configured in the WebLogic domain home configuration.")
   private Boolean httpAccessLogInLogHome;
 

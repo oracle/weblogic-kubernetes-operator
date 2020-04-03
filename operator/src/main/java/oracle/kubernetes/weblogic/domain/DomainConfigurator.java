@@ -148,11 +148,11 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Sets whether to write the server HTTP access log file to the directory specified in
+   * Sets whether to write server HTTP access log files to the directory specified in
    * logHome.
    *
-   * @param httpAccessLogInLogHome boolean specifying whether to write the server HTTP
-   *                               access log file to the logHome directory
+   * @param httpAccessLogInLogHome boolean specifying whether to write server HTTP
+   *                               access log files to the logHome directory
    * @return this object
    */
   public DomainConfigurator withHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {

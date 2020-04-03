@@ -1217,7 +1217,7 @@ window.onload = function() {
           "type": "boolean"
         },
         "httpAccessLogInLogHome": {
-          "description": "If true (the default), the server HTTP access log file will be written to the same directory specified in logHome. Otherwise, server HTTP access log file will be written to the directory configured in the WebLogic domain home configuration.",
+          "description": "If true (the default), then server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain home configuration.",
           "type": "boolean"
         },
         "webLogicCredentialsSecret": {
@@ -1233,7 +1233,7 @@ window.onload = function() {
           "$ref": "#/definitions/ServerPod"
         },
         "logHome": {
-          "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, server  *.out, and optionally HTTP access log files",
+          "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true.",
           "type": "string"
         },
         "includeServerOutInPodLog": {
