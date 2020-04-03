@@ -13,6 +13,7 @@ spec:
     shortNames:
     - dom
     singular: domain
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     scale:
