@@ -1361,61 +1361,6 @@ class CustomSitConfigIntrospector(SecretManager):
       gen.close()
       gen.addGeneratedFile()
 
-
-class WDTConfigIntrospector(SecretManager):
-
-  def __init__(self, env):
-    SecretManager.__init__(self, env)
-    self.env = env
-
-  def generateAndValidate(self):
-
-    # For each custom sit-cfg template, generate a file using macro substitution,
-    # validate that it has a correponding module if it's a module override file,
-    # and validate that all of its 'secret:' and 'env:' macros are resolvable.
-
-    if not os.path.exists(self.env.WDT_CONFIGMAP_PATH):
-      return
-
-    # We expect the user to include a 'version.txt' file in their situational
-    # config directory.
-    #
-    # That file is expected to contain '2.0'
-    #
-    # versionPath=os.path.join(self.env.CUSTOM_SITCFG_PATH,"version.txt")
-    # if not os.path.exists(versionPath):
-    #   self.env.addError("Error, Required file, '"+versionPath+"', does not exist")
-    # else:
-    #   version=self.env.readFile(versionPath).strip()
-    #   if not version == "2.0":
-    #     # truncate and ellipsify at 75 characters
-    #     version = version[:75] + (version[75:] and '...')
-    #     self.env.addError("Error, "+versionPath+" does not have the value of"
-    #                       + " '2.0'. The current content: '" + version
-    #                       + "' is not valid.")
-
-    for the_file in os.listdir(self.env.WDT_CONFIGMAP_PATH):
-
-      # if the_file == "version.txt":
-      #   continue
-
-      the_file_path = os.path.join(self.env.WDT_CONFIGMAP_PATH, the_file)
-
-      if not os.path.isfile(the_file_path):
-        continue
-
-      trace("Processing wdt config file '" + the_file + "'")
-
-      file_str = self.env.readFile(the_file_path)
-
-      genfile = self.env.INTROSPECT_HOME + '/' + the_file;
-      gen = Generator(self.env, genfile)
-      gen.open()
-      gen.write(file_str)
-      gen.close()
-      gen.addGeneratedFile()
-
-
 class DomainIntrospector(SecretManager):
 
   def __init__(self, env):
@@ -1459,7 +1404,6 @@ class DomainIntrospector(SecretManager):
 
 
     CustomSitConfigIntrospector(self.env).generateAndValidate()
-    #WDTConfigIntrospector(self.env).generateAndValidate()
 
     # If the topology is invalid, the generated topology
     # file contains a list of one or more validation errors
