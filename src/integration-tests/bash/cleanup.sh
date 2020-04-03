@@ -61,7 +61,6 @@ USER_PROJECTS_DIR="$RESULT_DIR/user-projects"
 TMP_DIR="$RESULT_DIR/cleanup_tmp"
 JOB_NAME="weblogic-command-job"
 
-
 function fail {
   echo @@ cleanup.sh: Error "$@"
   exit 1
