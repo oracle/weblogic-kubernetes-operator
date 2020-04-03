@@ -325,12 +325,12 @@ if [ -x "$(command -v helm)" ]; then
   echo @@ Deleting installed helm charts
   namespaces=`kubectl get ns | grep -v NAME | awk '{ print $1 }'`
   for ns in $namespaces
-  do
+  do 
      helm list --short --namespace $ns | while read helm_name; do
      if [ "$HELM_VERSION" == "V2" ]; then
        helm delete --purge  $helm_name
-     else
-      helm uninstall $helm_name -n $ns
+     else 
+      helm uninstall $helm_name -n $ns 
      fi
      done
   done
@@ -347,7 +347,7 @@ echo @@ Starting deleteWithLabels
 deleteWithLabels
 
 # third, try a generic delete in case there are some leftover resources, this runs in two phases:
-#   phase 1:  wait to see if artifacts dissappear naturally due to the above
+#   phase 1:  wait to see if artifacts dissappear naturally due to the above 
 #   phase 2:  kubectl delete left over artifacts
 # arguments
 #   arg1 - namespaced kubernetes artifacts

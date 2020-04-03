@@ -1990,6 +1990,11 @@ public class TestUtils {
   public static void createConfigMap(String cmName, String fileOrDirPath,
                                      String namespace, String label) throws Exception {
     String cmd = "kubectl -n " + namespace
+        + " delete configmap " + cmName
+        + " --ignore-not-found";
+    TestUtils.exec(cmd);
+
+    cmd = "kubectl -n " + namespace
         + " create configmap " + cmName
         + " --from-file=" + fileOrDirPath;
     TestUtils.exec(cmd, true);
@@ -2000,6 +2005,7 @@ public class TestUtils {
             + namespace
             + " label cm "
             + cmName
+            + " "
             + label;
     TestUtils.exec(cmd);
   }
