@@ -99,7 +99,7 @@ export ALLOW_DYNAMIC_CLUSTER_IN_FMW=${ALLOW_DYNAMIC_CLUSTER_IN_FMW:-false}
 # whether this test run is expecting a domain validation error
 export EXPECT_INVALID_DOMAIN=${EXPECT_INVALID_DOMAIN:-false}
 
-DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE:-Image}
+DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE:-PersistentVolume}
 export DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE}
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 export WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE}
@@ -138,7 +138,7 @@ function cleanupMajor() {
 
   rm -fr /tmp/introspect
   mkdir -p $test_home || exit 1
-  rm -fr ${SCRIPTPATH}/mii/workdir
+  rm -fr ${test_home}/mii/workdir
   # now we use the generic integration test cleanup script to
   #
   #   1 - delete all operator related k8s artifacts
@@ -426,12 +426,17 @@ function deployCreateDomainJobPod() {
 function createMII_Image() {
   trace "Info: Create MII Image"
 
-  mkdir -p ${SCRIPTPATH}/mii/workdir/models || exit 1
-  cp ${SCRIPTPATH}/mii/models/*  ${SCRIPTPATH}/mii/workdir/models || exit 1
-  cd ${SCRIPTPATH}/mii/workdir || exit 1
-  export WORKDIR=${SCRIPTPATH}/mii/workdir || exit 1
+  mkdir -p ${test_home}/mii/workdir/models || exit 1
+  cp ${SCRIPTPATH}/mii/models/*  ${test_home}/mii/workdir/models || exit 1
+  cd ${test_home}/mii/workdir  || exit 1
+  echo "place holder" > dummy.txt || exit 1
+  zip archive.zip dummy.txt || exit 1
+
+  (
+  export WORKDIR=${test_home}/mii/workdir  || exit 1
   export MODEL_IMAGE_TAG=it || exit 1
   export MODEL_IMAGE_NAME=model-in-image || exit 1
+  export MODEL_IMAGE_BUILD="when-missing"
 
   docker rmi ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG} --force > /dev/null 2>&1
 
@@ -440,11 +445,23 @@ function createMII_Image() {
   ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_download.sh \
    > ${test_home}/miibuild_download.out 2>&1 || exit 1
 
+  if [ $? -ne 0 ] ; then
+    trace "Error: createMII_Image: download tools failed"
+    cat ${test_home}/miibuild_download.out
+    exit 1
+  fi
+
   trace "Info: Launching WIT to build the image..."
 
   ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_image_model.sh \
    > ${test_home}/miibuild_image.out  2>&1  || exit 1
 
+  if [ $? -ne 0 ] ; then
+    trace "Error: createMII_Image: build image failed"
+    cat ${test_home}/miibuild_image.out
+    exit 1
+  fi
+  )
   export WEBLOGIC_IMAGE_NAME=model-in-image || exit 1
   export WEBLOGIC_IMAGE_TAG=it || exit 1
 

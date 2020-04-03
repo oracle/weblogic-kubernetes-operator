@@ -577,7 +577,6 @@ function generateMergedModel() {
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
   ret=$?
   trace "RETURNING $ret"
-  sleep 5
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Failed: Validate Model Failed "
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
