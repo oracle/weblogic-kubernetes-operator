@@ -27,9 +27,9 @@ public class Domain {
   /**
    * Check if the Domain CRD exists
    * @return true if domains.weblogic.oracle CRD exists otherwise false
-   * @throws Exception
+   * @throws ApiException when Domain CRD doesn't exist
    */
-  public static boolean doesCRDExist() throws Exception {
+  public static boolean doesCRDExist() throws ApiException {
     try {
       V1beta1CustomResourceDefinition domainBetaCrd =
           apiextensionsV1beta1Api.readCustomResourceDefinition(

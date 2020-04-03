@@ -13,7 +13,7 @@ import oracle.weblogic.kubernetes.assertions.impl.Operator;
 
 
 /**
- * General assertions needed by the tests to validate CRD, Domain, Pods etc., *
+ * General assertions needed by the tests to validate CRD, Domain, Pods etc.
  */
 public class TestAssertions {
 
