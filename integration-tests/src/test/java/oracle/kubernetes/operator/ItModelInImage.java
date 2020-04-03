@@ -178,60 +178,6 @@ public class ItModelInImage extends MiiBaseTest {
   }
 
   /**
-   * Negative test. overridesConfigMap should fail with model in image domain.
-   * Create a domain using model in image and deploy the domain.
-   * After deploying the domain, update domain crd with overrides configmap and
-   * apply the crd.
-   * Verify that the domain deployment fails with proper error in the operator log.
-   *
-   * @throws Exception exception
-   */
-  //@Test
-  public void testModelInImageNegativeOverridesUseCase() throws Exception {
-    Assumptions.assumeTrue(QUICKTEST);
-    String testMethodName = new Object() {
-    }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Creating Domain & waiting for the script to complete execution");
-    Domain domain = null;
-    boolean testCompletedSuccessfully = false;
-    try {
-      Map<String, Object> domainMap =
-          createModelInImageMap(getNewSuffixCount(), testClassName);
-      domainMap.put("namespace", domainNS);
-      String domainUid = (String)domainMap.get("domainUID");
-      String overridesConfigMap = domainUid + "-mii-overrides-config-map";
-      String overridesConfigMapFileOrDir = "./model.cm.properties";
-      // the below override attributes are just place holders,
-      // they are not used while creating the domain first time
-      domainMap.put("overridesConfigMap", overridesConfigMap);
-      domainMap.put("overridesConfigMapFileOrDir", overridesConfigMapFileOrDir);
-
-      // domain = TestUtils.createDomain(domainMap);
-      domain = new Domain(domainMap, true, false);
-      domain.verifyDomainCreated();
-
-      domain.createMiiConfigMap("overridesConfigMap",
-          "overridesConfigMapFileOrDir");
-
-      //append overridesConfigMap to domain.yaml
-      domain.appendOverridesConfigMapAndApply();
-
-
-      //ToDo: access MS using port given in configmap props
-
-      testCompletedSuccessfully = true;
-    } finally {
-      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-      }
-    }
-
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
-  }
-
-  /**
    * Create a domain using model in image with model yaml and model properties file in the image.
    * Change the weblogic credentials and verify the pods can restart with changed password
    *

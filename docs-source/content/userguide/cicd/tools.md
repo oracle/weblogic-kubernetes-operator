@@ -45,7 +45,7 @@ Other than the tools themselves, there are three components to the WDT tools:
 - (Docker) A sample for creating a domain in a Docker image with WDT can be found
   [here](https://github.com/oracle/weblogic-deploy-tooling/tree/master/samples/docker-domain).
 - (Kubernetes) A similar sample of creating a domain in a Docker image with WDT
-  can be found in the WebLogic Kubernetes Operator project for creating a
+  can be found in the WebLogic Server Kubernetes Operator project for creating a
   [domain-in-image with WDT](https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/domain-home-in-image/).
 - (Kubernetes) A [Model in Image sample]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}})
   for supplying an image that contains a WDT model only,
@@ -72,4 +72,4 @@ manually when migrating to a new version of WebLogic for example.
 WebLogic Server provides tools called "pack" and "unpack" that can be used to
 "clone" a domain home.  These tools do not preserve the domain encryption key.
 You can use these tools to make copies of Domain in PV and Domain in Image
-domain homes in scenarios when you do not need the same domain encryption key.
+domain homes in scenarios when you do not need the same domain encryption key. See [Creating Templates and Domains Using the Pack and Unpack Commands](https://docs.oracle.com/en/middleware/fusion-middleware/12.2.1.3/wldpu/index.html).

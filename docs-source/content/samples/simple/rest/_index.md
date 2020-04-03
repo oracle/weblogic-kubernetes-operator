@@ -26,7 +26,7 @@ $ kubernetes/samples/scripts/rest/generate-external-rest-identity.sh \
 ```
 
 Where `<SANs>` lists the subject alternative names to put into the generated self-signed
-certificate for the external WebLogic Kubernetes Operator REST HTTPS interface, `<operator-namespace>` should match
+certificate for the external WebLogic Server Kubernetes Operator REST HTTPS interface, `<operator-namespace>` should match
 the namespace where the operator will be installed, and optionally the secret name, which defaults
 to `weblogic-operator-external-rest-identity`.
 
@@ -39,8 +39,7 @@ by `DNS:` for a host name, or `IP:` for an address, as with this example:
 ```
 
 The external certificate and key can be changed after installation of the operator. For
-more information, see [updating operator external certificate]({{<relref "/security/certificates.md#updating-operator-external-certificate">}})
-in the ***Security*** section.
+more information, see [Updating operator external certificates]({{<relref "/security/certificates.md#updating-operator-external-certificate">}}).
 
 The script as used below will create the `tls secret` named `weblogic-operator-identity` in the namespace `weblogic-operator-ns` using a self-signed
 certificate and private key:
