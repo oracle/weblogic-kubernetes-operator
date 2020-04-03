@@ -50,7 +50,7 @@ public class OperatorUtils {
 
   /**
    * Compare the 'numero lexi sorting name' as defined in {@link #getSortingString(String)} of the
-   * given 2 Strings.
+   * given two Strings.
    *
    * @param str1 First string for comparison
    * @param str2 Second string for comparison
