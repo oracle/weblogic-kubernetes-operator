@@ -197,6 +197,7 @@ public class CrdHelper {
       V1CustomResourceDefinitionSpec spec =
           new V1CustomResourceDefinitionSpec()
               .group(KubernetesConstants.DOMAIN_GROUP)
+              .preserveUnknownFields(false)
               .versions(getCrdVersions())
               .scope("Namespaced")
               .names(getCrdNames());
@@ -207,6 +208,7 @@ public class CrdHelper {
       V1beta1CustomResourceDefinitionSpec spec =
           new V1beta1CustomResourceDefinitionSpec()
               .group(KubernetesConstants.DOMAIN_GROUP)
+              .preserveUnknownFields(false)
               .versions(getBetaCrdVersions())
               .validation(createBetaSchemaValidation())
               .subresources(createBetaSubresources())
