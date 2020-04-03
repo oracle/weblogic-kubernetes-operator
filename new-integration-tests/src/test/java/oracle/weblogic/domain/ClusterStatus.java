@@ -41,10 +41,6 @@ public class ClusterStatus {
     return clusterName;
   }
 
-  public void setClusterName(String clusterName) {
-    this.clusterName = clusterName;
-  }
-
   public ClusterStatus replicas(Integer replicas) {
     this.replicas = replicas;
     return this;
@@ -52,10 +48,6 @@ public class ClusterStatus {
 
   public Integer getReplicas() {
     return replicas;
-  }
-
-  public void setReplicas(Integer replicas) {
-    this.replicas = replicas;
   }
 
   public ClusterStatus readyReplicas(Integer readyReplicas) {
@@ -67,10 +59,6 @@ public class ClusterStatus {
     return readyReplicas;
   }
 
-  public void setReadyReplicas(Integer readyReplicas) {
-    this.readyReplicas = readyReplicas;
-  }
-
   public ClusterStatus maximumReplicas(Integer maximumReplicas) {
     this.maximumReplicas = maximumReplicas;
     return this;
@@ -78,10 +66,6 @@ public class ClusterStatus {
 
   public Integer getMaximumReplicas() {
     return maximumReplicas;
-  }
-
-  public void setMaximumReplicas(Integer maximumReplicas) {
-    this.maximumReplicas = maximumReplicas;
   }
 
   public ClusterStatus minimumReplicas(Integer minimumReplicas) {
@@ -93,10 +77,6 @@ public class ClusterStatus {
     return minimumReplicas;
   }
 
-  public void setMinimumReplicas(Integer minimumReplicas) {
-    this.minimumReplicas = minimumReplicas;
-  }
-
   public ClusterStatus replicasGoal(Integer replicasGoal) {
     this.replicasGoal = replicasGoal;
     return this;
@@ -104,10 +84,6 @@ public class ClusterStatus {
 
   public Integer getReplicasGoal() {
     return replicasGoal;
-  }
-
-  public void setReplicasGoal(Integer replicasGoal) {
-    this.replicasGoal = replicasGoal;
   }
 
   @Override
@@ -136,13 +112,14 @@ public class ClusterStatus {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof ClusterStatus)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    ClusterStatus rhs = ((ClusterStatus) other);
+    ClusterStatus rhs = (ClusterStatus) other;
     return new EqualsBuilder()
         .append(clusterName, rhs.clusterName)
         .append(replicas, rhs.replicas)

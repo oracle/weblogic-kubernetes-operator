@@ -48,10 +48,6 @@ public class AdminServer {
     return adminService;
   }
 
-  public void setAdminService(AdminService adminService) {
-    this.adminService = adminService;
-  }
-
   public AdminServer serverStartPolicy(String serverStartPolicy) {
     this.serverStartPolicy = serverStartPolicy;
     return this;
@@ -59,10 +55,6 @@ public class AdminServer {
 
   public String getServerStartPolicy() {
     return serverStartPolicy;
-  }
-
-  public void setServerStartPolicy(String serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
   }
 
   public AdminServer serverPod(ServerPod serverPod) {
@@ -74,10 +66,6 @@ public class AdminServer {
     return serverPod;
   }
 
-  public void setServerPod(ServerPod serverPod) {
-    this.serverPod = serverPod;
-  }
-
   public AdminServer serverStartState(String serverStartState) {
     this.serverStartState = serverStartState;
     return this;
@@ -87,10 +75,6 @@ public class AdminServer {
     return serverStartState;
   }
 
-  public void setServerStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
-  }
-
   public AdminServer restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
     return this;
@@ -98,10 +82,6 @@ public class AdminServer {
 
   public String getRestartVersion() {
     return restartVersion;
-  }
-
-  public void setRestartVersion(String restartVersion) {
-    this.restartVersion = restartVersion;
   }
 
   @Override
@@ -117,17 +97,15 @@ public class AdminServer {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
+  public boolean equals(Object other) {
+    if (this == other) {
       return true;
     }
 
-    if (o == null || getClass() != o.getClass()) {
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    AdminServer rhs = (AdminServer) o;
-
+    AdminServer rhs = (AdminServer) other;
     return new EqualsBuilder()
         .append(adminService, rhs.adminService)
         .append(serverStartPolicy, rhs.serverStartPolicy)

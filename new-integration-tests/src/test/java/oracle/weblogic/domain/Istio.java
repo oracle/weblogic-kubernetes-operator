@@ -27,10 +27,6 @@ public class Istio {
     return this.enabled;
   }
 
-  public void setEnabled(Boolean enabled) {
-    this.enabled = enabled;
-  }
-
   public Istio readinessPort(Integer readinessPort) {
     this.readinessPort = readinessPort;
     return this;
@@ -38,10 +34,6 @@ public class Istio {
 
   public Integer getReadinessPort() {
     return this.readinessPort;
-  }
-
-  public void setReadinessPort(Integer readinessPort) {
-    this.readinessPort = readinessPort;
   }
 
   @Override
@@ -63,14 +55,14 @@ public class Istio {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof Istio)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    Istio rhs = ((Istio) other);
+    Istio rhs = (Istio) other;
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(enabled, rhs.enabled)

@@ -42,10 +42,6 @@ public class DomainCondition {
     return type;
   }
 
-  public void setType(String type) {
-    this.type = type;
-  }
-
   public DomainCondition lastProbeTime(DateTime lastProbeTime) {
     this.lastProbeTime = lastProbeTime;
     return this;
@@ -53,15 +49,6 @@ public class DomainCondition {
 
   public DateTime getLastProbeTime() {
     return lastProbeTime;
-  }
-
-  public void setLastProbeTime(DateTime lastProbeTime) {
-    this.lastProbeTime = lastProbeTime;
-  }
-
-  public DomainCondition withLastProbeTime(DateTime lastProbeTime) {
-    this.lastProbeTime = lastProbeTime;
-    return this;
   }
 
   public DomainCondition lastTransitionTime(DateTime lastTransitionTime) {
@@ -73,10 +60,6 @@ public class DomainCondition {
     return lastTransitionTime;
   }
 
-  public void setLastTransitionTime(DateTime lastTransitionTime) {
-    this.lastTransitionTime = lastTransitionTime;
-  }
-
   public DomainCondition message(String message) {
     this.message = message;
     return this;
@@ -84,10 +67,6 @@ public class DomainCondition {
 
   public String getMessage() {
     return message;
-  }
-
-  public void setMessage(String message) {
-    this.message = message;
   }
 
   public DomainCondition reason(String reason) {
@@ -99,10 +78,6 @@ public class DomainCondition {
     return reason;
   }
 
-  public void setReason(String reason) {
-    this.reason = reason;
-  }
-
   public DomainCondition status(String status) {
     this.status = status;
     return this;
@@ -110,10 +85,6 @@ public class DomainCondition {
 
   public String getStatus() {
     return status;
-  }
-
-  public void setStatus(String status) {
-    this.status = status;
   }
 
   @Override
@@ -142,13 +113,14 @@ public class DomainCondition {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof DomainCondition)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    DomainCondition rhs = ((DomainCondition) other);
+    DomainCondition rhs = (DomainCondition) other;
     return new EqualsBuilder()
         .append(type, rhs.type)
         .append(lastProbeTime, rhs.lastProbeTime)

@@ -40,10 +40,6 @@ public class DomainList {
     return apiVersion;
   }
 
-  public void setApiVersion(String apiVersion) {
-    this.apiVersion = apiVersion;
-  }
-
   public DomainList items(List<Domain> items) {
     this.items = items;
     return this;
@@ -51,10 +47,6 @@ public class DomainList {
 
   public List<Domain> getItems() {
     return items;
-  }
-
-  public void setItems(List<Domain> items) {
-    this.items = items;
   }
 
   public DomainList kind(String kind) {
@@ -66,10 +58,6 @@ public class DomainList {
     return kind;
   }
 
-  public void setKind(String kind) {
-    this.kind = kind;
-  }
-
   public DomainList metadata(V1ListMeta metadata) {
     this.metadata = metadata;
     return this;
@@ -77,10 +65,6 @@ public class DomainList {
 
   public V1ListMeta getMetadata() {
     return metadata;
-  }
-
-  public void setMetadata(V1ListMeta metadata) {
-    this.metadata = metadata;
   }
 
   @Override
@@ -105,13 +89,14 @@ public class DomainList {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof DomainList)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    DomainList rhs = ((DomainList) other);
+    DomainList rhs = (DomainList) other;
     return new EqualsBuilder()
         .append(metadata, rhs.metadata)
         .append(apiVersion, rhs.apiVersion)

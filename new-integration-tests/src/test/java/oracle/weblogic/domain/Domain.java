@@ -38,10 +38,6 @@ public class Domain {
     return apiVersion;
   }
 
-  public void setApiVersion(String apiVersion) {
-    this.apiVersion = apiVersion;
-  }
-
   public Domain kind(String kind) {
     this.kind = kind;
     return this;
@@ -49,10 +45,6 @@ public class Domain {
 
   public String getKind() {
     return kind;
-  }
-
-  public void setKind(String kind) {
-    this.kind = kind;
   }
 
   public Domain metadata(V1ObjectMeta metadata) {
@@ -64,10 +56,6 @@ public class Domain {
     return metadata;
   }
 
-  public void setMetadata(V1ObjectMeta metadata) {
-    this.metadata = metadata;
-  }
-
   public Domain spec(DomainSpec spec) {
     this.spec = spec;
     return this;
@@ -77,10 +65,6 @@ public class Domain {
     return spec;
   }
 
-  public void setSpec(DomainSpec spec) {
-    this.spec = spec;
-  }
-
   public Domain status(DomainStatus status) {
     this.status = status;
     return this;
@@ -88,10 +72,6 @@ public class Domain {
 
   public DomainStatus getStatus() {
     return status;
-  }
-
-  public void setStatus(DomainStatus status) {
-    this.status = status;
   }
 
   @Override
@@ -118,13 +98,14 @@ public class Domain {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof Domain)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    Domain rhs = ((Domain) other);
+    Domain rhs = (Domain) other;
     return new EqualsBuilder()
         .append(metadata, rhs.metadata)
         .append(apiVersion, rhs.apiVersion)

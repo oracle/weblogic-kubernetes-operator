@@ -22,10 +22,6 @@ public class Experimental {
     return this.istio;
   }
 
-  public void setIstio(Istio istio) {
-    this.istio = istio;
-  }
-
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -46,14 +42,14 @@ public class Experimental {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof Experimental)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    Experimental rhs = ((Experimental) other);
+    Experimental rhs = (Experimental) other;
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(istio, rhs.istio);

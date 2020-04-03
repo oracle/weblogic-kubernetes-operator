@@ -37,10 +37,6 @@ public class Channel {
     return channelName;
   }
 
-  public void setChannelName(String channelName) {
-    this.channelName = channelName;
-  }
-
   public Channel nodePort(Integer nodePort) {
     this.nodePort = nodePort;
     return this;
@@ -48,10 +44,6 @@ public class Channel {
 
   public Integer getNodePort() {
     return nodePort;
-  }
-
-  public void setNodePort(Integer nodePort) {
-    this.nodePort = nodePort;
   }
 
   @Override
@@ -68,17 +60,18 @@ public class Channel {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (o == null) {
+  public boolean equals(Object other) {
+    if (this == other) {
+      return true;
+    }
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    if (!(o instanceof Channel)) {
-      return false;
-    }
-    Channel ch = (Channel) o;
+    Channel rhs = (Channel) other;
     return new EqualsBuilder()
-        .append(channelName, ch.channelName)
-        .append(nodePort, ch.nodePort)
+        .append(channelName, rhs.channelName)
+        .append(nodePort, rhs.nodePort)
         .isEquals();
   }
 

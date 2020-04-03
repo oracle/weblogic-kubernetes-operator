@@ -3,8 +3,6 @@
 
 package oracle.weblogic.domain;
 
-import javax.annotation.Nullable;
-
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -31,21 +29,13 @@ public class Model {
     return domainType;
   }
 
-  public void setDomainType(@Nullable String domainType) {
-    this.domainType = domainType;
-  }
-
-  public Model withConfigMap(String configMap) {
+  public Model configMap(String configMap) {
     this.configMap = configMap;
     return this;
   }
 
   public String getConfigMap() {
     return configMap;
-  }
-
-  public void setConfigMap(String configMap) {
-    this.configMap = configMap;
   }
 
   public Model runtimeEncryptionSecret(String runtimeEncryptionSecret) {
@@ -55,10 +45,6 @@ public class Model {
 
   public String getRuntimeEncryptionSecret() {
     return runtimeEncryptionSecret;
-  }
-
-  public void setRuntimeEncryptionSecret(String runtimeEncryptionSecret) {
-    this.runtimeEncryptionSecret = runtimeEncryptionSecret;
   }
 
   @Override
@@ -84,14 +70,14 @@ public class Model {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof Model)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    Model rhs = ((Model) other);
+    Model rhs = (Model) other;
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(domainType, rhs.domainType)

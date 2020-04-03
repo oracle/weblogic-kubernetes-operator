@@ -33,10 +33,6 @@ public class SubsystemHealth {
     return health;
   }
 
-  public void setHealth(String health) {
-    this.health = health;
-  }
-
   public SubsystemHealth subsystemName(String subsystemName) {
     this.subsystemName = subsystemName;
     return this;
@@ -44,10 +40,6 @@ public class SubsystemHealth {
 
   public String getSubsystemName() {
     return subsystemName;
-  }
-
-  public void setSubsystemName(String subsystemName) {
-    this.subsystemName = subsystemName;
   }
 
   public SubsystemHealth symptoms(List<String> symptoms) {
@@ -65,10 +57,6 @@ public class SubsystemHealth {
 
   public List<String> getSymptoms() {
     return symptoms;
-  }
-
-  public void setSymptoms(List<String> symptoms) {
-    this.symptoms = symptoms;
   }
 
   @Override
@@ -91,13 +79,14 @@ public class SubsystemHealth {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof SubsystemHealth)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    SubsystemHealth rhs = ((SubsystemHealth) other);
+    SubsystemHealth rhs = (SubsystemHealth) other;
     return new EqualsBuilder()
         .append(symptoms, rhs.symptoms)
         .append(health, rhs.health)

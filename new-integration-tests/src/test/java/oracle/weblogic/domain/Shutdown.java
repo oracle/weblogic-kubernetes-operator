@@ -37,10 +37,6 @@ public class Shutdown {
     return shutdownType;
   }
 
-  public void setShutdownType(String shutdownType) {
-    this.shutdownType = shutdownType;
-  }
-
   public Shutdown timeoutSeconds(Long timeoutSeconds) {
     this.timeoutSeconds = timeoutSeconds;
     return this;
@@ -50,10 +46,6 @@ public class Shutdown {
     return timeoutSeconds;
   }
 
-  public void setTimeoutSeconds(Long timeoutSeconds) {
-    this.timeoutSeconds = timeoutSeconds;
-  }
-
   public Shutdown ignoreSessions(Boolean ignoreSessions) {
     this.ignoreSessions = ignoreSessions;
     return this;
@@ -61,10 +53,6 @@ public class Shutdown {
 
   public Boolean getIgnoreSessions() {
     return ignoreSessions;
-  }
-
-  public void setIgnoreSessions(Boolean ignoreSessions) {
-    this.ignoreSessions = ignoreSessions;
   }
 
   @Override
@@ -77,17 +65,15 @@ public class Shutdown {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
+  public boolean equals(Object other) {
+    if (this == other) {
       return true;
     }
 
-    if (o == null || getClass() != o.getClass()) {
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    Shutdown rhs = (Shutdown) o;
-
+    Shutdown rhs = (Shutdown) other;
     return new EqualsBuilder()
         .append(shutdownType, rhs.shutdownType)
         .append(timeoutSeconds, rhs.timeoutSeconds)

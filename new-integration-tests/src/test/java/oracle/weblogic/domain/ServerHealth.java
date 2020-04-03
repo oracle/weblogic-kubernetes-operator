@@ -38,10 +38,6 @@ public class ServerHealth {
     return activationTime;
   }
 
-  public void setActivationTime(DateTime activationTime) {
-    this.activationTime = activationTime;
-  }
-
   public ServerHealth overallHealth(String overallHealth) {
     this.overallHealth = overallHealth;
     return this;
@@ -49,10 +45,6 @@ public class ServerHealth {
 
   public String getOverallHealth() {
     return overallHealth;
-  }
-
-  public void setOverallHealth(String overallHealth) {
-    this.overallHealth = overallHealth;
   }
 
   public ServerHealth subsystems(List<SubsystemHealth> subsystems) {
@@ -70,10 +62,6 @@ public class ServerHealth {
 
   public List<SubsystemHealth> getSubsystems() {
     return subsystems;
-  }
-
-  public void setSubsystems(List<SubsystemHealth> subsystems) {
-    this.subsystems = subsystems;
   }
 
   @Override
@@ -96,13 +84,14 @@ public class ServerHealth {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof ServerHealth)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    ServerHealth rhs = ((ServerHealth) other);
+    ServerHealth rhs = (ServerHealth) other;
     return new EqualsBuilder()
         .append(overallHealth, rhs.overallHealth)
         .append(activationTime, rhs.activationTime)

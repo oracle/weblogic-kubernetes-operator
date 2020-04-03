@@ -26,10 +26,6 @@ public class Opss {
     return this.walletFileSecret;
   }
 
-  public void setWalletFileSecret(String walletFileSecret) {
-    this.walletFileSecret = walletFileSecret;
-  }
-
   public Opss walletPasswordSecret(String walletPasswordSecret) {
     this.walletPasswordSecret = walletPasswordSecret;
     return this;
@@ -37,10 +33,6 @@ public class Opss {
 
   public String getWalletPasswordSecret() {
     return this.walletPasswordSecret;
-  }
-
-  public void setWalletPasswordSecret(String walletPasswordSecret) {
-    this.walletPasswordSecret = walletPasswordSecret;
   }
 
   @Override
@@ -64,14 +56,14 @@ public class Opss {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof Opss)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    Opss rhs = ((Opss) other);
+    Opss rhs = (Opss) other;
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(walletFileSecret, rhs.walletFileSecret)

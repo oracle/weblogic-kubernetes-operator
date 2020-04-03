@@ -39,10 +39,6 @@ public class ServerStatus {
     return serverName;
   }
 
-  public void setServerName(String serverName) {
-    this.serverName = serverName;
-  }
-
   public ServerStatus state(String state) {
     this.state = state;
     return this;
@@ -50,10 +46,6 @@ public class ServerStatus {
 
   public String getState() {
     return state;
-  }
-
-  public void setState(String state) {
-    this.state = state;
   }
 
   public ServerStatus desiredState(String desiredState) {
@@ -65,10 +57,6 @@ public class ServerStatus {
     return desiredState;
   }
 
-  public void setDesiredState(String desiredState) {
-    this.desiredState = desiredState;
-  }
-
   public ServerStatus clusterName(String clusterName) {
     this.clusterName = clusterName;
     return this;
@@ -76,10 +64,6 @@ public class ServerStatus {
 
   public String getClusterName() {
     return clusterName;
-  }
-
-  public void setClusterName(String clusterName) {
-    this.clusterName = clusterName;
   }
 
   public ServerStatus nodeName(String nodeName) {
@@ -91,10 +75,6 @@ public class ServerStatus {
     return nodeName;
   }
 
-  public void setNodeName(String nodeName) {
-    this.nodeName = nodeName;
-  }
-
   public ServerStatus health(ServerHealth health) {
     this.health = health;
     return this;
@@ -102,10 +82,6 @@ public class ServerStatus {
 
   public ServerHealth getHealth() {
     return health;
-  }
-
-  public void setHealth(ServerHealth health) {
-    this.health = health;
   }
 
   @Override
@@ -134,13 +110,14 @@ public class ServerStatus {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof ServerStatus)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    ServerStatus rhs = ((ServerStatus) other);
+    ServerStatus rhs = (ServerStatus) other;
     return new EqualsBuilder()
         .append(serverName, rhs.serverName)
         .append(state, rhs.state)

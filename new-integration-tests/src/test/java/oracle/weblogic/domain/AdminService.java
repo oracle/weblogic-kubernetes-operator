@@ -50,10 +50,6 @@ public class AdminService {
     return channels;
   }
 
-  public void setChannels(List<Channel> channels) {
-    this.channels = channels;
-  }
-
   public AdminService labels(Map<String, String> labels) {
     this.labels = labels;
     return this;
@@ -71,10 +67,6 @@ public class AdminService {
     return labels;
   }
 
-  public void setLabels(Map<String, String> lables) {
-    this.labels = labels;
-  }
-
   public AdminService annotations(Map<String, String> annotations) {
     this.annotations = annotations;
     return this;
@@ -90,10 +82,6 @@ public class AdminService {
 
   public Map<String, String> getAnnotations() {
     return Collections.unmodifiableMap(annotations);
-  }
-
-  public void setAnnotations(Map<String, String> annotations) {
-    this.annotations = annotations;
   }
 
   @Override
@@ -115,14 +103,15 @@ public class AdminService {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (o == null) {
+  public boolean equals(Object other) {
+    if (this == other) {
+      return true;
+    }
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    if (!(o instanceof AdminService)) {
-      return false;
-    }
-    AdminService rhs = (AdminService) o;
+    AdminService rhs = (AdminService) other;
     return new EqualsBuilder()
         .append(channels, rhs.channels)
         .append(labels, rhs.labels)

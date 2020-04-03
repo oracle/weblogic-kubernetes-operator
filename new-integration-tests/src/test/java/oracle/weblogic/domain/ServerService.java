@@ -34,10 +34,6 @@ public class ServerService {
     return precreateService;
   }
 
-  public void setPrecreateService(Boolean precreateService) {
-    this.precreateService = precreateService;
-  }
-
   public ServerService labels(Map<String, String> labels) {
     this.labels = labels;
     return this;
@@ -53,10 +49,6 @@ public class ServerService {
 
   public Map<String, String> getLabels() {
     return labels;
-  }
-
-  public void setLabels(Map<String, String> labels) {
-    this.labels = labels;
   }
 
   public ServerService annotations(Map<String, String> annotations) {
@@ -76,10 +68,6 @@ public class ServerService {
     return annotations;
   }
 
-  public void setAnnotations(Map<String, String> annotations) {
-    this.annotations = annotations;
-  }
-
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -90,17 +78,15 @@ public class ServerService {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
+  public boolean equals(Object other) {
+    if (this == other) {
       return true;
     }
 
-    if (o == null || getClass() != o.getClass()) {
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    ServerService rhs = (ServerService) o;
-
+    ServerService rhs = (ServerService) other;
     return new EqualsBuilder()
         .append(precreateService, rhs.precreateService)
         .append(labels, rhs.labels)

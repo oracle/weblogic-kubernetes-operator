@@ -137,10 +137,6 @@ class ServerPod {
     return env;
   }
 
-  public void setEnv(List<V1EnvVar> env) {
-    this.env = env;
-  }
-
   public ServerPod labels(Map<String, String> labels) {
     this.labels = labels;
     return this;
@@ -156,10 +152,6 @@ class ServerPod {
 
   public Map<String, String> getLabels() {
     return labels;
-  }
-
-  public void setLabels(Map<String, String> labels) {
-    this.labels = labels;
   }
 
   public ServerPod annotations(Map<String, String> annotations) {
@@ -179,10 +171,6 @@ class ServerPod {
     return annotations;
   }
 
-  public void setAnnotations(Map<String, String> annotations) {
-    this.annotations = annotations;
-  }
-
   public ServerPod livenessProve(ProbeTuning livenessProbe) {
     this.livenessProbe = livenessProbe;
     return this;
@@ -192,10 +180,6 @@ class ServerPod {
     return livenessProbe;
   }
 
-  public void setLivenessProbe(ProbeTuning livenessProbe) {
-    this.livenessProbe = livenessProbe;
-  }
-
   public ServerPod readinessProbe(ProbeTuning readinessProbe) {
     this.readinessProbe = readinessProbe;
     return this;
@@ -203,10 +187,6 @@ class ServerPod {
 
   public ProbeTuning getReadinessProbe() {
     return readinessProbe;
-  }
-
-  public void setReadinessProbe(ProbeTuning readinessProbe) {
-    this.readinessProbe = readinessProbe;
   }
 
   public ServerPod nodeSelector(Map<String, String> nodeSelector) {
@@ -226,10 +206,6 @@ class ServerPod {
     return nodeSelector;
   }
 
-  public void setNodeSelector(Map<String, String> nodeSelector) {
-    this.nodeSelector = nodeSelector;
-  }
-
   public ServerPod affinity(V1Affinity affinity) {
     this.affinity = affinity;
     return this;
@@ -239,10 +215,6 @@ class ServerPod {
     return affinity;
   }
 
-  public void setAffinity(V1Affinity affinity) {
-    this.affinity = affinity;
-  }
-
   public ServerPod priorityClassName(String priorityClassName) {
     this.priorityClassName = priorityClassName;
     return this;
@@ -250,10 +222,6 @@ class ServerPod {
 
   public String getPriorityClassName() {
     return priorityClassName;
-  }
-
-  public void setPriorityClassName(String priorityClassName) {
-    this.priorityClassName = priorityClassName;
   }
 
   public ServerPod readinessGates(List<V1PodReadinessGate> readinessGates) {
@@ -273,10 +241,6 @@ class ServerPod {
     return readinessGates;
   }
 
-  public void setReadinessGates(List<V1PodReadinessGate> readinessGates) {
-    this.readinessGates = readinessGates;
-  }
-
   public ServerPod restartPolicy(String restartPolicy) {
     this.restartPolicy = restartPolicy;
     return this;
@@ -284,10 +248,6 @@ class ServerPod {
 
   public String getRestartPolicy() {
     return restartPolicy;
-  }
-
-  public void setRestartPolicy(String restartPolicy) {
-    this.restartPolicy = restartPolicy;
   }
 
   public ServerPod runtimeClassName(String runtimeClassName) {
@@ -299,10 +259,6 @@ class ServerPod {
     return runtimeClassName;
   }
 
-  public void setRuntimeClassName(String runtimeClassName) {
-    this.runtimeClassName = runtimeClassName;
-  }
-
   public ServerPod nodeName(String nodeName) {
     this.nodeName = nodeName;
     return this;
@@ -312,10 +268,6 @@ class ServerPod {
     return nodeName;
   }
 
-  public void setNodeName(String nodeName) {
-    this.nodeName = nodeName;
-  }
-
   public ServerPod schedulerName(String schedulerName) {
     this.schedulerName = schedulerName;
     return this;
@@ -323,10 +275,6 @@ class ServerPod {
 
   public String getSchedulerName() {
     return schedulerName;
-  }
-
-  public void setSchedulerName(String schedulerName) {
-    this.schedulerName = schedulerName;
   }
 
   public ServerPod tolerations(List<V1Toleration> tolerations) {
@@ -346,10 +294,6 @@ class ServerPod {
     return tolerations;
   }
 
-  public void setTolerations(List<V1Toleration> tolerations) {
-    this.tolerations = tolerations;
-  }
-
   public ServerPod serviceAccountName(String serviceAccountName) {
     this.serviceAccountName = serviceAccountName;
     return this;
@@ -357,10 +301,6 @@ class ServerPod {
 
   public String getServiceAccountName() {
     return serviceAccountName;
-  }
-
-  public void setServiceAccountName(String serviceAccountName) {
-    this.serviceAccountName = serviceAccountName;
   }
 
   public ServerPod resources(V1ResourceRequirements resources) {
@@ -372,10 +312,6 @@ class ServerPod {
     return resources;
   }
 
-  public void setResources(V1ResourceRequirements resources) {
-    this.resources = resources;
-  }
-
   public ServerPod podSecurityContext(V1PodSecurityContext podSecurityContext) {
     this.podSecurityContext = podSecurityContext;
     return this;
@@ -383,10 +319,6 @@ class ServerPod {
 
   public V1PodSecurityContext getPodSecurityContext() {
     return podSecurityContext;
-  }
-
-  public void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
-    this.podSecurityContext = podSecurityContext;
   }
 
   public ServerPod initContainers(List<V1Container> initContainers) {
@@ -406,10 +338,6 @@ class ServerPod {
     return initContainers;
   }
 
-  public void setInitContainers(List<V1Container> initContainers) {
-    this.initContainers = initContainers;
-  }
-
   public ServerPod containers(List<V1Container> containers) {
     this.containers = containers;
     return this;
@@ -427,10 +355,6 @@ class ServerPod {
     return containers;
   }
 
-  public void setContainers(List<V1Container> containers) {
-    this.containers = containers;
-  }
-
   public ServerPod shutdown(Shutdown shutdown) {
     this.shutdown = shutdown;
     return this;
@@ -440,10 +364,6 @@ class ServerPod {
     return shutdown;
   }
 
-  public void setShutdown(Shutdown shutdown) {
-    this.shutdown = shutdown;
-  }
-
   public ServerPod containerSecurityContext(V1SecurityContext containerSecurityContext) {
     this.containerSecurityContext = containerSecurityContext;
     return this;
@@ -451,10 +371,6 @@ class ServerPod {
 
   public V1SecurityContext getContainerSecurityContext() {
     return containerSecurityContext;
-  }
-
-  public void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
-    this.containerSecurityContext = containerSecurityContext;
   }
 
   public ServerPod volumes(List<V1Volume> volumes) {
@@ -474,10 +390,6 @@ class ServerPod {
     return volumes;
   }
 
-  public void setVolumes(List<V1Volume> volumes) {
-    this.volumes = volumes;
-  }
-
   public ServerPod volumeMounts(List<V1VolumeMount> volumeMounts) {
     this.volumeMounts = volumeMounts;
     return this;
@@ -493,10 +405,6 @@ class ServerPod {
 
   public List<V1VolumeMount> getVolumeMounts() {
     return volumeMounts;
-  }
-
-  public void setVolumeMounts(List<V1VolumeMount> volumeMounts) {
-    this.volumeMounts = volumeMounts;
   }
 
   @Override
@@ -529,17 +437,15 @@ class ServerPod {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
+  public boolean equals(Object other) {
+    if (this == other) {
       return true;
     }
 
-    if (o == null || getClass() != o.getClass()) {
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    ServerPod rhs = (ServerPod) o;
-
+    ServerPod rhs = (ServerPod) other;
     return new EqualsBuilder()
         .append(env, rhs.env)
         .append(labels, rhs.labels)

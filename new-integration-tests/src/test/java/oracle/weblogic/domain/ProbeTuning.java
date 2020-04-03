@@ -28,10 +28,6 @@ public class ProbeTuning {
     return initialDelaySeconds;
   }
 
-  public void setInitialDelaySeconds(Integer initialDelaySeconds) {
-    this.initialDelaySeconds = initialDelaySeconds;
-  }
-
   public ProbeTuning periodSeconds(Integer periodSeconds) {
     this.periodSeconds = periodSeconds;
     return this;
@@ -41,10 +37,6 @@ public class ProbeTuning {
     return periodSeconds;
   }
 
-  public void setPeriodSeconds(Integer periodSeconds) {
-    this.periodSeconds = periodSeconds;
-  }
-
   public ProbeTuning timeoutSeconds(Integer timeoutSeconds) {
     this.timeoutSeconds = timeoutSeconds;
     return this;
@@ -52,10 +44,6 @@ public class ProbeTuning {
 
   public Integer getTimeoutSeconds() {
     return timeoutSeconds;
-  }
-
-  public void setTimeoutSeconds(Integer timeoutSeconds) {
-    this.timeoutSeconds = timeoutSeconds;
   }
 
   @Override
@@ -68,17 +56,15 @@ public class ProbeTuning {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
+  public boolean equals(Object other) {
+    if (this == other) {
       return true;
     }
 
-    if (o == null || getClass() != o.getClass()) {
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    ProbeTuning rhs = (ProbeTuning) o;
-
+    ProbeTuning rhs = (ProbeTuning) other;
     return new EqualsBuilder()
         .append(initialDelaySeconds, rhs.initialDelaySeconds)
         .append(periodSeconds, rhs.periodSeconds)

@@ -57,10 +57,6 @@ public class Cluster {
     return clusterName;
   }
 
-  public void setClusterName(String clusterName) {
-    this.clusterName = clusterName;
-  }
-
   public Cluster replicas(Integer replicas) {
     this.replicas = replicas;
     return this;
@@ -68,10 +64,6 @@ public class Cluster {
 
   public Integer getReplicas() {
     return replicas;
-  }
-
-  public void setReplicas(Integer replicas) {
-    this.replicas = replicas;
   }
 
   public Cluster serverStartPolicy(String serverStartPolicy) {
@@ -83,10 +75,6 @@ public class Cluster {
     return serverStartPolicy;
   }
 
-  public void setServerStartPolicy(String serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
-  }
-
   public Cluster maxUnavailable(Integer maxUnavailable) {
     this.maxUnavailable = maxUnavailable;
     return this;
@@ -94,10 +82,6 @@ public class Cluster {
 
   public Integer getMaxUnavailable() {
     return maxUnavailable;
-  }
-
-  public void setMaxUnavailable(Integer maxUnavailable) {
-    this.maxUnavailable = maxUnavailable;
   }
 
   public Cluster clusterService(ClusterService clusterService) {
@@ -109,10 +93,6 @@ public class Cluster {
     return clusterService;
   }
 
-  public void setClusterService(ClusterService clusterService) {
-    this.clusterService = clusterService;
-  }
-
   public Cluster serverPod(ServerPod serverPod) {
     this.serverPod = serverPod;
     return this;
@@ -120,10 +100,6 @@ public class Cluster {
 
   public ServerPod getServerPod() {
     return serverPod;
-  }
-
-  public void setServerPod(ServerPod serverPod) {
-    this.serverPod = serverPod;
   }
 
   public Cluster serverStartState(String serverStartState) {
@@ -135,10 +111,6 @@ public class Cluster {
     return serverStartState;
   }
 
-  public void setServerStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
-  }
-
   public Cluster restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
     return this;
@@ -146,10 +118,6 @@ public class Cluster {
 
   public String getRestartVersion() {
     return restartVersion;
-  }
-
-  public void setRestartVersion(String restartVersion) {
-    this.restartVersion = restartVersion;
   }
 
   @Override
@@ -168,17 +136,15 @@ public class Cluster {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
+  public boolean equals(Object other) {
+    if (this == other) {
       return true;
     }
 
-    if (o == null || getClass() != o.getClass()) {
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    Cluster rhs = (Cluster) o;
-
+    Cluster rhs = (Cluster) other;
     return new EqualsBuilder()
         .append(clusterName, rhs.clusterName)
         .append(replicas, rhs.replicas)

@@ -38,10 +38,6 @@ public class ClusterService {
     return labels;
   }
 
-  public void setLabels(Map<String, String> labels) {
-    this.labels = labels;
-  }
-
   public ClusterService annotations(Map<String, String> annotations) {
     this.annotations = annotations;
     return this;
@@ -59,10 +55,6 @@ public class ClusterService {
     return annotations;
   }
 
-  public void setAnnotations(Map<String, String> annotations) {
-    this.annotations = annotations;
-  }
-
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -72,17 +64,15 @@ public class ClusterService {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
+  public boolean equals(Object other) {
+    if (this == other) {
       return true;
     }
 
-    if (o == null || getClass() != o.getClass()) {
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    ClusterService rhs = (ClusterService) o;
-
+    ClusterService rhs = (ClusterService) other;
     return new EqualsBuilder()
         .append(labels, rhs.labels)
         .append(annotations, rhs.annotations)

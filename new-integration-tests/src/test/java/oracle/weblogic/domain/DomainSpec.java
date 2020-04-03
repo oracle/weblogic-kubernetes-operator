@@ -155,10 +155,6 @@ public class DomainSpec {
     return domainUid;
   }
 
-  public void setDomainUid(String domainUid) {
-    this.domainUid = domainUid;
-  }
-
   public DomainSpec domainHome(String domainHome) {
     this.domainHome = domainHome;
     return this;
@@ -166,10 +162,6 @@ public class DomainSpec {
 
   public String getDomainHome() {
     return domainHome;
-  }
-
-  public void setDomainHome(String domainHome) {
-    this.domainHome = domainHome;
   }
 
   public DomainSpec serverStartPolicy(String serverStartPolicy) {
@@ -181,10 +173,6 @@ public class DomainSpec {
     return serverStartPolicy;
   }
 
-  public void setServerStartPolicy(String serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
-  }
-
   public DomainSpec webLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
     return this;
@@ -192,15 +180,6 @@ public class DomainSpec {
 
   public V1SecretReference getWebLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
-  }
-
-  void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
-    this.webLogicCredentialsSecret = webLogicCredentialsSecret;
-  }
-
-  public DomainSpec withWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
-    this.webLogicCredentialsSecret = webLogicCredentialsSecret;
-    return this;
   }
 
   public DomainSpec logHome(String logHome) {
@@ -212,10 +191,6 @@ public class DomainSpec {
     return logHome;
   }
 
-  public void setLogHome(String logHome) {
-    this.logHome = logHome;
-  }
-
   public DomainSpec logHomeEnabled(Boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
     return this;
@@ -223,10 +198,6 @@ public class DomainSpec {
 
   public Boolean getLogHomeEnabled() {
     return logHomeEnabled;
-  }
-
-  public void setLogHomeEnabled(Boolean logHomeEnabled) {
-    this.logHomeEnabled = logHomeEnabled;
   }
 
   public DomainSpec dataHome(String dataHome) {
@@ -238,21 +209,8 @@ public class DomainSpec {
     return dataHome;
   }
 
-  public void setDataHome(String dataHome) {
-    this.dataHome = dataHome;
-  }
-
-  public DomainSpec withIncludeServerOutInPodLog(Boolean includeServerOutInPodLog) {
-    this.includeServerOutInPodLog = includeServerOutInPodLog;
-    return this;
-  }
-
   public Boolean getIncludeServerOutInPodLog() {
     return includeServerOutInPodLog;
-  }
-
-  public void setIncludeServerOutInPodLog(Boolean includeServerOutInPodLog) {
-    this.includeServerOutInPodLog = includeServerOutInPodLog;
   }
 
   public DomainSpec image(String image) {
@@ -264,10 +222,6 @@ public class DomainSpec {
     return image;
   }
 
-  public void setImage(String image) {
-    this.image = image;
-  }
-
   public DomainSpec imagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
@@ -275,10 +229,6 @@ public class DomainSpec {
 
   public String getImagePullPolicy() {
     return imagePullPolicy;
-  }
-
-  public void setImagePullPolicy(String imagePullPolicy) {
-    this.imagePullPolicy = imagePullPolicy;
   }
 
   public DomainSpec imagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
@@ -298,10 +248,6 @@ public class DomainSpec {
     return imagePullSecrets;
   }
 
-  public void setImagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
-    this.imagePullSecrets = imagePullSecrets;
-  }
-
   public DomainSpec replicas(Integer replicas) {
     this.replicas = replicas;
     return this;
@@ -311,21 +257,13 @@ public class DomainSpec {
     return this.replicas;
   }
 
-  public void setReplicas(Integer replicas) {
-    this.replicas = replicas;
-  }
-
-  public DomainSpec domainHomeInImage(boolean domainHomeInImage) {
-    setDomainHomeInImage(domainHomeInImage);
+  public DomainSpec domainHomeInImage(Boolean domainHomeInImage) {
+    this.domainHomeInImage = domainHomeInImage;
     return this;
   }
 
   public Boolean getDomainHomeInImage() {
     return domainHomeInImage;
-  }
-
-  public void setDomainHomeInImage(boolean domainHomeInImage) {
-    this.domainHomeInImage = domainHomeInImage;
   }
 
   public DomainSpec domainHomeSourceType(String domainHomeSourceType) {
@@ -337,10 +275,6 @@ public class DomainSpec {
     return domainHomeSourceType;
   }
 
-  public void setDomainHomeSourceType(String domainHomeSourceType) {
-    this.domainHomeSourceType = domainHomeSourceType;
-  }
-
   public DomainSpec introspectVersion(String introspectVersion) {
     this.introspectVersion = introspectVersion;
     return this;
@@ -348,10 +282,6 @@ public class DomainSpec {
 
   public String getIntrospectVersion() {
     return introspectVersion;
-  }
-
-  public void setIntrospectVersionn(String introspectVersion) {
-    this.introspectVersion = introspectVersion;
   }
 
   public DomainSpec configuration(Configuration configuration) {
@@ -363,10 +293,6 @@ public class DomainSpec {
     return configuration;
   }
 
-  public void setConfiguration(Configuration configuration) {
-    this.configuration = configuration;
-  }
-
   public DomainSpec configOverrides(String configOverrides) {
     this.configOverrides = configOverrides;
     return this;
@@ -374,10 +300,6 @@ public class DomainSpec {
 
   String getConfigOverrides() {
     return configOverrides;
-  }
-
-  void setConfigOverrides(String configOverrides) {
-    this.configOverrides = configOverrides;
   }
 
   public DomainSpec configOverrideSecrets(List<String> configOverrideSecrets) {
@@ -397,10 +319,6 @@ public class DomainSpec {
     return configOverrideSecrets;
   }
 
-  public void setConfigOverrideSecrets(List<String> configOverrideSecrets) {
-    this.configOverrideSecrets = configOverrideSecrets;
-  }
-
   public DomainSpec adminServer(AdminServer adminServer) {
     this.adminServer = adminServer;
     return this;
@@ -408,10 +326,6 @@ public class DomainSpec {
 
   public AdminServer getAdminServer() {
     return adminServer;
-  }
-
-  public void setAdminServer(AdminServer adminServer) {
-    this.adminServer = adminServer;
   }
 
   public DomainSpec managedServers(List<ManagedServer> managedServers) {
@@ -431,10 +345,6 @@ public class DomainSpec {
     return managedServers;
   }
 
-  public void setManagedServers(List<ManagedServer> managedServers) {
-    this.managedServers = managedServers;
-  }
-
   public DomainSpec clusters(List<Cluster> clusters) {
     this.clusters = clusters;
     return this;
@@ -452,10 +362,6 @@ public class DomainSpec {
     return clusters;
   }
 
-  public void setClusters(List<Cluster> clusters) {
-    this.clusters = clusters;
-  }
-
   public DomainSpec experimental(Experimental experimental) {
     this.experimental = experimental;
     return this;
@@ -463,10 +369,6 @@ public class DomainSpec {
 
   public Experimental getExperimental() {
     return experimental;
-  }
-
-  public void setExperimental(Experimental experimental) {
-    this.experimental = experimental;
   }
 
   public DomainSpec serverPod(ServerPod serverPod) {
@@ -478,10 +380,6 @@ public class DomainSpec {
     return serverPod;
   }
 
-  public void setServerPod(ServerPod serverPod) {
-    this.serverPod = serverPod;
-  }
-
   public DomainSpec serverStartState(String serverStartState) {
     this.serverStartState = serverStartState;
     return this;
@@ -491,10 +389,6 @@ public class DomainSpec {
     return serverStartState;
   }
 
-  public void setServerStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
-  }
-
   public DomainSpec restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
     return this;
@@ -502,10 +396,6 @@ public class DomainSpec {
 
   public String getRestartVersion() {
     return restartVersion;
-  }
-
-  public void setRestartVersion(String restartVersion) {
-    this.restartVersion = restartVersion;
   }
 
   @Override
@@ -578,14 +468,14 @@ public class DomainSpec {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof DomainSpec)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    DomainSpec rhs = ((DomainSpec) other);
+    DomainSpec rhs = (DomainSpec) other;
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(domainUid, rhs.domainUid)

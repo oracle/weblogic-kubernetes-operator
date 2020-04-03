@@ -65,10 +65,6 @@ public class DomainStatus {
     return conditions;
   }
 
-  public void setConditions(List<DomainCondition> conditions) {
-    this.conditions = conditions;
-  }
-
   public DomainStatus message(String message) {
     this.message = message;
     return this;
@@ -78,10 +74,6 @@ public class DomainStatus {
     return message;
   }
 
-  public void setMessage(String message) {
-    this.message = message;
-  }
-
   public String getReason() {
     return reason;
   }
@@ -89,10 +81,6 @@ public class DomainStatus {
   public DomainStatus reason(String reason) {
     this.reason = reason;
     return this;
-  }
-
-  public void setReason(String reason) {
-    this.reason = reason;
   }
 
   public DomainStatus servers(List<ServerStatus> servers) {
@@ -112,10 +100,6 @@ public class DomainStatus {
     return servers;
   }
 
-  public void setServers(List<ServerStatus> servers) {
-    this.servers = servers;
-  }
-
   public DomainStatus clusters(List<ClusterStatus> clusters) {
     this.clusters = clusters;
     return this;
@@ -133,10 +117,6 @@ public class DomainStatus {
     return clusters;
   }
 
-  public void setClusters(List<ClusterStatus> clusters) {
-    this.clusters = clusters;
-  }
-
   public DomainStatus startTime(DateTime startTime) {
     this.startTime = startTime;
     return this;
@@ -146,10 +126,6 @@ public class DomainStatus {
     return startTime;
   }
 
-  public void setStartTime(DateTime startTime) {
-    this.startTime = startTime;
-  }
-
   public DomainStatus replicas(Integer replicas) {
     this.replicas = replicas;
     return this;
@@ -157,10 +133,6 @@ public class DomainStatus {
 
   public Integer getReplicas() {
     return this.replicas;
-  }
-
-  public void setReplicas(Integer replicas) {
-    this.replicas = replicas;
   }
 
   @Override
@@ -191,13 +163,14 @@ public class DomainStatus {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof DomainStatus)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    DomainStatus rhs = ((DomainStatus) other);
+    DomainStatus rhs = (DomainStatus) other;
     return new EqualsBuilder()
         .append(conditions, rhs.conditions)
         .append(message, rhs.message)

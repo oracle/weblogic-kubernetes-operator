@@ -41,10 +41,6 @@ public class Configuration {
     return model;
   }
 
-  public void setModel(Model model) {
-    this.model = model;
-  }
-
   public Configuration opss(Opss opss) {
     this.opss = opss;
     return this;
@@ -52,10 +48,6 @@ public class Configuration {
 
   public Opss getOpss() {
     return this.opss;
-  }
-
-  public void setOpss(Opss opss) {
-    this.opss = opss;
   }
 
   public Configuration secrets(List<String> secrets) {
@@ -75,21 +67,13 @@ public class Configuration {
     return secrets;
   }
 
-  public void setSecrets(List<String> secrets) {
-    this.secrets = secrets;
-  }
-
-  public Configuration withOverridesConfigMap(String overridesConfigMap) {
+  public Configuration overridesConfigMap(String overridesConfigMap) {
     this.overridesConfigMap = overridesConfigMap;
     return this;
   }
 
   public String getOverridesConfigMap() {
     return this.overridesConfigMap;
-  }
-
-  public void setOverridesConfigMap(String overridesConfigMap) {
-    this.overridesConfigMap = overridesConfigMap;
   }
 
   public Configuration introspectorJobActiveDeadlineSeconds(Long introspectorJobActiveDeadlineSeconds) {
@@ -99,10 +83,6 @@ public class Configuration {
 
   public Long getIntrospectorJobActiveDeadlineSeconds() {
     return this.introspectorJobActiveDeadlineSeconds;
-  }
-
-  public void setIntrospectorJobActiveDeadlineSeconds(Long introspectorJobActiveDeadlineSeconds) {
-    this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
   }
 
   @Override
@@ -129,14 +109,14 @@ public class Configuration {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof Configuration)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    Configuration rhs = ((Configuration) other);
+    Configuration rhs = (Configuration) other;
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(model, rhs.model)
