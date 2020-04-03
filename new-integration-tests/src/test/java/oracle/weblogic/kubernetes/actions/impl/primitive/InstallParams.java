@@ -3,13 +3,13 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
-import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_WDT_DOWNLOAD_URL;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_WDT_VERSION;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_WIT_DOWNLOAD_URL;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_WIT_VERSION;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.TYPE_WIT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_FILE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_FILE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_VERSION;
 
 /**
  * Contains the parameters for installing the WebLogic Image Tool or WebLogic Deploy Tool.
@@ -18,7 +18,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_FILE_NAME;
 public class InstallParams {
 
   // WIT or WDT
-  private String type = TYPE_WIT;
+  private String type = WIT;
   
   // The version of the tool
   private String version;
@@ -51,7 +51,7 @@ public class InstallParams {
 
   public String version() {
     if (version == null) {
-      return TYPE_WIT.equals(type) ? DEFAULT_WIT_VERSION : DEFAULT_WDT_VERSION;
+      return WIT.equals(type) ? WIT_VERSION : WDT_VERSION;
     }
     return version;
   }
@@ -63,7 +63,7 @@ public class InstallParams {
 
   public String location() {
     if (location == null) {
-      return TYPE_WIT.equals(type) ? DEFAULT_WIT_DOWNLOAD_URL : DEFAULT_WDT_DOWNLOAD_URL;
+      return WIT.equals(type) ? WIT_DOWNLOAD_URL : WDT_DOWNLOAD_URL;
     }
     return location;
   }
@@ -96,7 +96,7 @@ public class InstallParams {
   }
 
   public String fileName() {
-    if (TYPE_WIT.equals(type)) {
+    if (WIT.equals(type)) {
       return WIT_FILE_NAME;
     } else {
       return WDT_FILE_NAME;

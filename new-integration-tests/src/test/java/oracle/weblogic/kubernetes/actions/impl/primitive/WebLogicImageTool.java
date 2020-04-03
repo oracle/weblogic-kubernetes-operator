@@ -7,9 +7,9 @@ import java.io.FileNotFoundException;
 import java.util.List;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.TYPE_WDT;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.TYPE_WIT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
@@ -86,7 +86,7 @@ public class WebLogicImageTool extends InstallWITCommon {
     // install WIT if needed
     return new Installer()
         .with(new InstallParams()
-            .type(TYPE_WIT)
+            .type(WIT)
             .verify(true)
             .unzip(true))
         .download();
@@ -96,7 +96,7 @@ public class WebLogicImageTool extends InstallWITCommon {
     // install WDT if needed
     return new Installer()
         .with(new InstallParams()
-            .type(TYPE_WDT)
+            .type(WDT)
             .verify(true)
             .unzip(false))
         .download();
